@@ -217,5 +217,4 @@ public class Benchmark {
             return String.format("%s\t%s\t%s\t%s\t%s\t%s", algorithm, timing, num, factor, tries, success);
         }
     }
-
 }
