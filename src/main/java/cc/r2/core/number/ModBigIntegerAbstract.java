@@ -14,19 +14,23 @@ abstract class ModBigIntegerAbstract {
         this.val = val;
     }
 
+    public BigInteger value() {
+        return val;
+    }
+
     BigInteger mod0(BigInteger a) {
         return a.mod(mod);
     }
 
-    BigInteger add(BigInteger a) {
+    BigInteger add0(BigInteger a) {
         return mod0(val.add(a));
     }
 
-    BigInteger subtract(BigInteger a) {
+    BigInteger subtract0(BigInteger a) {
         return mod0(val.subtract(a));
     }
 
-    BigInteger multiply(BigInteger a) {
+    BigInteger multiply0(BigInteger a) {
         return mod0(val.multiply(a));
     }
 

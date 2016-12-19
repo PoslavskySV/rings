@@ -3,12 +3,41 @@ package cc.r2.core.number;
 import gnu.trove.list.TLongList;
 import gnu.trove.list.array.TLongArrayList;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * Created by poslavsky on 01/11/2016.
  */
 public class BigIntegerTest {
+
+
+    static void assertExtendedGCD(long a, long b) {
+        assertExtendedGCD(BigInteger.valueOf(a), BigInteger.valueOf(b));
+    }
+
+    static void assertExtendedGCD(BigInteger a, BigInteger b) {
+        BigInteger[] r = a.gcdExtended(b);
+        Assert.assertEquals(r[0], a.multiply(r[1]).add(b.multiply(r[2])));
+    }
+
+    @Test
+    public void hcd112e() throws Exception {
+        assertExtendedGCD(10, 14);
+        assertExtendedGCD(123434, 132443);
+    }
+
+    @Test
+    public void sad123() throws Exception {
+        BigInteger integer = BigInteger.valueOf(324124123542315L);
+        System.out.println(integer.bitLength());
+        double dbl = Math.ceil(Math.log(integer.doubleValue()) / Math.log(2));
+        System.out.println(dbl);
+        System.out.println(integer);
+        System.out.println(BigInteger.TWO.pow((int) dbl));
+        System.out.println(BigInteger.TWO.pow(integer.bitLength()));
+    }
+
     @Test
     public void test1() throws Exception {
 

@@ -16,17 +16,17 @@ public final class ModBigInteger extends ModBigIntegerAbstract
 
     @Override
     public ModBigInteger add(ModBigInteger a) {
-        return new ModBigInteger(true, ring, add(a.val));
+        return new ModBigInteger(true, ring, add0(a.val));
     }
 
     @Override
     public ModBigInteger subtract(ModBigInteger a) {
-        return new ModBigInteger(true, ring, subtract(a.val));
+        return new ModBigInteger(true, ring, subtract0(a.val));
     }
 
     @Override
     public ModBigInteger multiply(ModBigInteger a) {
-        return new ModBigInteger(true, ring, multiply(a.val));
+        return new ModBigInteger(true, ring, multiply0(a.val));
     }
 
     @Override

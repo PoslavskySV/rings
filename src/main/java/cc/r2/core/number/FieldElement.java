@@ -9,4 +9,14 @@ public interface FieldElement<R extends FieldElement<R>>
     default R reciprocal() {
         return getOne().divide((R) this);
     }
+
+    @Override
+    default R gcd(R oth) {
+        return getOne();
+    }
+
+    @Override
+    default R[] gcdExtended(R oth) {
+        throw new UnsupportedOperationException();
+    }
 }

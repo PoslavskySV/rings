@@ -7,6 +7,10 @@ abstract class ModBigIntegerRingAbstract<R extends RingElement> implements Ring<
         this.mod = mod;
     }
 
+    public BigInteger getMod() {
+        return mod;
+    }
+
     @Override
     public R getOne() {
         ensureInitialized();

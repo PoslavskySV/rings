@@ -1,13 +1,15 @@
 package cc.r2.core.polynomial;
 
-import cc.r2.core.number.EuclideanRingElement;
-import cc.r2.core.number.Ring;
-import cc.r2.core.number.RingElement;
+import cc.r2.core.number.*;
+import cc.r2.core.number.qsi.factpor.SieveOfAtkin;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import static cc.r2.core.number.BigIntegerRing.IntegerRing;
 
 /**
  * Created by poslavsky on 04/11/2016.
@@ -165,7 +167,7 @@ public final class Polynomials {
                                                   final UnivariatePolynomial<R> a,
                                                   final UnivariatePolynomial<R> b) {
         if (b.degree() > a.degree())
-            return primitivePRS(ring, b, a);
+            return subResultantPRS(ring, b, a);
 
         R aContent = content(a),
                 bContent = content(b),
@@ -220,6 +222,8 @@ public final class Polynomials {
     EuclideanGCD(final Ring<R> ring,
                  final UnivariatePolynomial<R> a,
                  final UnivariatePolynomial<R> b) {
+        if (b.internalDegree > a.internalDegree)
+            return EuclideanGCD(ring, b, a);
         UnivariatePolynomial<R> x = a, y = b, r;
         while (!y.isZero()) {
             r = divideAndRemainder(ring, x, y)[1];
@@ -227,5 +231,171 @@ public final class Polynomials {
             y = r;
         }
         return x;
+    }
+
+
+    private static BigInteger bigIntSqRootCeil(BigInteger x)
+            throws IllegalArgumentException {
+        if (x.signum() < 0)
+            throw new IllegalArgumentException("Negative argument.");
+
+        if (x.isZero() || x.isOne())
+            return x;
+        BigInteger two = BigInteger.TWO;
+        BigInteger y;
+        for (y = x.divide(two);
+             y.compareTo(x.divide(y)) > 0;
+             y = ((x.divide(y)).add(y)).divide(two))
+            ;
+        if (x.compareTo(y.multiply(y)) == 0)
+            return y;
+        else
+            return y.increment();
+    }
+
+    public static BigInteger norm(BigInteger[] factors) {
+        BigInteger r = BigInteger.ZERO;
+        for (BigInteger factor : factors)
+            r = r.add(factor.multiply(factor));
+        return bigIntSqRootCeil(r);
+    }
+
+    public static int log2(BigInteger f) {
+        return f.bitLength();
+    }
+
+    public static BigInteger max(BigInteger a, BigInteger b) {
+        return a.compareTo(b) < 0 ? b : a;
+    }
+
+
+    public static UnivariatePolynomial<ModPrimeBigInteger> convert(ModPrimeBigIntegerField primeF, UnivariatePolynomial<BigInteger> poly) {
+        final ModPrimeBigInteger[] cfs = new ModPrimeBigInteger[poly.coefficients.length];
+        for (int i = 0; i < cfs.length; i++)
+            cfs[i] = new ModPrimeBigInteger(primeF, poly.coefficients[i]);
+        return new UnivariatePolynomial<>(primeF, cfs);
+    }
+
+    public static UnivariatePolynomial<BigInteger> toSymMod(UnivariatePolynomial<ModPrimeBigInteger> poly) {
+        final BigInteger[] cfs = new BigInteger[poly.coefficients.length];
+        for (int i = 0; i < cfs.length; i++)
+            cfs[i] = toSymMod(poly.coefficients[i].value(), poly.coefficients[i].getRing().getMod());
+        return new UnivariatePolynomial<>(IntegerRing, cfs);
+    }
+
+    static BigInteger toSymMod(BigInteger b, BigInteger prime) {
+//        BigInteger min = prime.divide(BigInteger.TWO);
+//        BigInteger prev;
+//        while (b.subtract(prime).compareTo(min) > 0){
+//            prev = b;
+//            b = b.subtract(prime);
+//        }
+//        return prev;
+        BigInteger t;
+        if(prime.mod(BigInteger.TWO).isZero())
+            t = prime.divide(BigInteger.TWO);
+        else
+            t = prime.decrement().divide(BigInteger.TWO);
+        if (b.compareTo(t) <= 0)
+            return b;
+        else return b.subtract(prime);
+    }
+
+    public static UnivariatePolynomial<BigInteger>
+    modularGCD(final UnivariatePolynomial<BigInteger> f,
+               final UnivariatePolynomial<BigInteger> g) {
+
+        if (f.degree() < g.degree())
+            return modularGCD(g, f);
+
+        final BigInteger A = max(norm(f.coefficients), norm(g.coefficients));
+        final int n = f.degree();
+        final BigInteger bign = BigInteger.valueOf(n);
+        final BigInteger b = f.lc().gcd(g.lc());
+        final int k = 2 * log2(bign.increment().pow(n).multiply(b).multiply(A.pow(n * 2)));
+        final BigInteger B = bigIntSqRootCeil(bign.increment()).multiply(BigInteger.TWO.pow(n)).multiply(A).multiply(b);
+        final int l = log2(BigInteger.TWO.multiply(B).increment());
+
+
+        ArrayList<UnivariatePolynomial<ModPrimeBigInteger>> mods = new ArrayList<>();
+        ArrayList<BigInteger> primes = new ArrayList<>();
+
+        int TTT = (int) (2 * k * Math.log(k));
+        SieveOfAtkin sieveOfAtkin = SieveOfAtkin.createSieve(TTT);
+        int minDegree = -1;
+        for (int i = 0; i < TTT; i++) {
+            if (!sieveOfAtkin.isPrime(i))
+                continue;
+            BigInteger prime = BigInteger.valueOf(i);
+//            System.out.println("->" + prime);
+            if (b.divideAndRemainder(prime)[1].isZero())
+                continue;
+
+
+            ModPrimeBigIntegerField field = new ModPrimeBigIntegerField(prime);
+            UnivariatePolynomial<ModPrimeBigInteger> fMod = convert(field, f);
+            UnivariatePolynomial<ModPrimeBigInteger> gMod = convert(field, g);
+            UnivariatePolynomial<ModPrimeBigInteger> modGcd = EuclideanGCD(field, fMod, gMod);
+
+            if (modGcd.degree() == 0)
+                return f.getOne();
+
+
+            if (minDegree == -1)
+                minDegree = modGcd.degree();
+            else if (modGcd.degree() < minDegree) {
+                minDegree = modGcd.degree();
+                mods.clear();
+                primes.clear();
+            } else if (modGcd.degree() > minDegree)
+                continue;
+
+
+
+            UnivariatePolynomial<ModPrimeBigInteger> tmoMOd = modGcd.multiplyByFactor(new ModPrimeBigInteger(field, b));
+            mods.add(tmoMOd);
+            primes.add(prime);
+
+            System.out.println(prime);
+            System.out.println(tmoMOd);
+            System.out.println("====");
+
+            if (mods.size() > l) {
+                //CRT
+                BigInteger[] newCoeffs = new BigInteger[minDegree + 1];
+                BigInteger[] coprimes = primes.toArray(new BigInteger[primes.size()]);
+                BigInteger hui = BigInteger.ONE;
+                for (int j = 0; j < coprimes.length; j++)
+                    hui = hui.multiply(coprimes[j]);
+
+                System.out.println("HUI: " + hui);
+                BigInteger[] tmpCfx = new BigInteger[primes.size()];
+                for (int j = 0; j < minDegree + 1; j++) {
+                    for (int m = 0; m < tmpCfx.length; m++)
+                        tmpCfx[m] = mods.get(m).coefficients[j].value();
+
+                    System.out.println(Arrays.toString(coprimes));
+                    System.out.println(Arrays.toString(tmpCfx));
+                    BigInteger tmp = ChineseRemainderAlgorithm.CRT(coprimes, tmpCfx).mod(hui);
+                    System.out.println(tmp);
+                    newCoeffs[j] = toSymMod(tmp,hui);
+                    System.out.println(newCoeffs[j]);
+                }
+
+
+                UnivariatePolynomial<BigInteger> poly = new UnivariatePolynomial<>(IntegerRing, newCoeffs);
+
+                System.out.println("----");
+                System.out.println(hui);
+                System.out.println("----");
+                System.out.println(poly);
+                System.out.println("----");
+                System.out.println(primitivePart(poly));
+                if (divideAndRemainder(IntegerRing, f, poly)[1].isZero() && divideAndRemainder(IntegerRing, g, poly)[1].isZero())
+                    return poly;
+            }
+        }
+//        BigInteger k = BigInteger.TWO.multiply(n.increment().pow(n).multiply(b).multiply());
+        return null;
     }
 }

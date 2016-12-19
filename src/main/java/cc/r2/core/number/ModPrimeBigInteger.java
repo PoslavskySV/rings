@@ -16,17 +16,17 @@ public final class ModPrimeBigInteger extends ModBigIntegerAbstract
 
     @Override
     public ModPrimeBigInteger add(ModPrimeBigInteger a) {
-        return new ModPrimeBigInteger(true, ring, add(a.val));
+        return new ModPrimeBigInteger(true, ring, add0(a.val));
     }
 
     @Override
     public ModPrimeBigInteger subtract(ModPrimeBigInteger a) {
-        return new ModPrimeBigInteger(true, ring, subtract(a.val));
+        return new ModPrimeBigInteger(true, ring, subtract0(a.val));
     }
 
     @Override
     public ModPrimeBigInteger multiply(ModPrimeBigInteger a) {
-        return new ModPrimeBigInteger(true, ring, multiply(a.val));
+        return new ModPrimeBigInteger(true, ring, multiply0(a.val));
     }
 
     @Override
@@ -64,13 +64,8 @@ public final class ModPrimeBigInteger extends ModBigIntegerAbstract
     }
 
     @Override
-    public Ring<ModPrimeBigInteger> getRing() {
+    public ModPrimeBigIntegerField getRing() {
         return ring;
-    }
-
-    @Override
-    public ModPrimeBigInteger gcd(ModPrimeBigInteger oth) {
-        return getOne();
     }
 
     @Override

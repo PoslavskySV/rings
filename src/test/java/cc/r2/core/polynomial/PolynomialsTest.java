@@ -11,9 +11,11 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static cc.r2.core.number.BigIntegerRing.IntegerRing;
 import static cc.r2.core.number.BigRationalField.BigRationalField;
+import static cc.r2.core.polynomial.Polynomials.*;
 
 public class PolynomialsTest {
 
@@ -29,6 +31,22 @@ public class PolynomialsTest {
         return new UnivariatePolynomial<>(field, Arrays.stream(cfx).mapToObj(x -> new ModPrimeBigInteger(field, BigInteger.valueOf(x))).toArray(ModPrimeBigInteger[]::new));
     }
 
+
+    @Test
+    public void nameasdasds() throws Exception {
+        UnivariatePolynomial<BigInteger> f = makeZx(11234, 2, 3, 42342, 5, 6, 7, 8, 9, 10);
+        UnivariatePolynomial<BigInteger> g = makeZx(1234, 2, 3, 4, -5324, 6, 7, 8, 9, 10);
+
+        BigInteger A = max(norm(f.coefficients), norm(g.coefficients));
+        System.out.println(A);
+        int n = f.degree();
+        BigInteger bign = BigInteger.valueOf(n);
+        BigInteger b = f.lc().gcd(g.lc());
+        BigInteger underK = bign.increment().pow(n).multiply(b).multiply(A.pow(n * 2));
+        System.out.println(underK);
+        int k = 2 * log2(underK);
+        System.out.println(k);
+    }
 
     @Test
     public void pDivideAndRemainder() throws Exception {
@@ -150,6 +168,11 @@ public class PolynomialsTest {
 
     @Test
     public void testRandom1() throws Exception {
+        class x extends java.math.BigInteger {
+            public x(String val) {
+                super(val);
+            }
+        }
         RandomDataGenerator rnd = new RandomDataGenerator(new Well512a());
 
         BigInteger minCoeff = new BigInteger("12414324");
@@ -190,6 +213,33 @@ public class PolynomialsTest {
                 cfx[i] = cfx[i].negate();
         }
         return new UnivariatePolynomial<>(ring, cfx);
+    }
+
+
+    @Test
+    public void asasprs1() throws Exception {
+        UnivariatePolynomial<BigInteger> p1 = makeZx(7, -7, 3, 3);
+        UnivariatePolynomial<BigInteger> p2 = makeZx(-7, 0, 3);
+        UnivariatePolynomial<BigInteger> p3 = makeZx(-1, -2, 3);
+        UnivariatePolynomial<BigInteger> p4 = makeZx(-3, -2, -3);
+        p1 = p1.multiply(p3).multiply(p4);
+        p2 = p2.multiply(p3).multiply(p4);
+
+//        System.out.println(p1);
+//        System.out.println(p2);
+//        System.out.println(p3.multiply(p4));
+        p1 = primitivePart(p1);
+        p2 = primitivePart(p2);
+
+        System.out.println(p1);
+        System.out.println(p2);
+        System.out.println(p1.lc().gcd(p2.lc()));
+
+        List<UnivariatePolynomial<BigInteger>> prs = Polynomials.primitivePRS(IntegerRing, p1, p2);
+        System.out.println(prs.get(prs.size() - 1));
+
+
+        System.out.println(Polynomials.modularGCD(p1, p2));
     }
 
 
@@ -242,7 +292,7 @@ public class PolynomialsTest {
     @Test
     public void sasadasdasdas() throws Exception {
         for (int i = 0; i < 1000; i++) {
-            System.out.println( new String(new char[i]));
+            System.out.println(new String(new char[i]));
         }
 
 //
@@ -321,5 +371,65 @@ public class PolynomialsTest {
 //        System.out.println(prs.get(prs.size() - 3));
 //        System.out.println(prs.get(prs.size() - 4));
 //        System.out.println(prs);
+    }
+
+
+    static double func0(double a, double b) {
+        //some code with the use of operators '+-*/'
+        //some code with the use of operators '+-*/'
+        double tmp = a * b;
+        double i = 0.0;
+        while (i < 1000.0) {
+            i = i + 1;
+            tmp = tmp - a * b / tmp + tmp * tmp;
+            tmp = tmp - a - b - i;
+            tmp = (a + b) + tmp / i;
+        }
+        return tmp;
+    }
+
+    static double func0(double[] a, double[] b) {
+        double r = a[0];
+        for (int i = 0; i < a.length; i++) {
+            r += a[i] * b[i] - a[i] - b[i];
+            r /= r + a[i] / b[i] + b[i] / a[i];
+        }
+        return r;
+    }
+
+    @Test
+    public void testASA() {
+
+        Random rnd = new Random();
+        int i = 0;
+        int nits = 100000;
+        while (i < nits) {
+            i = i + 1;
+
+//    if (i % 1000 == 0){
+//      println(i)
+//    }
+            double[] arrA = new double[100];
+            double[] arrB = new double[100];
+            for (int j = 0; j < arrA.length; j++) {
+                arrA[j] = rnd.nextDouble();
+                arrB[j] = rnd.nextDouble();
+            }
+//            double a = rnd.nextDouble();
+//            double b = rnd.nextDouble();
+
+            long start = System.nanoTime();
+            double c = func0(arrA, arrB);
+            long sTime = System.nanoTime() - start;
+
+
+//    assert(c == d)
+
+            if (i < 100 || i > nits - 100) {
+                System.out.println(c);
+                System.out.println("double: " + sTime);
+                System.out.println("---");
+            }
+        }
     }
 }
