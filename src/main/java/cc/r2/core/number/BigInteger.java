@@ -5996,21 +5996,4 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
     public boolean isOne() {
         return signum() > 0 && mag.length == 1 && mag[0] == 1;
     }
-
-    //TODO improve
-    public boolean isPrime() {
-        if (TWO.equals(this))
-            return true;
-        if (!isProbablePrime(5))
-            return false;
-
-        if (equals(TWO) || mod(TWO).isZero())
-            return false;
-
-        for (BigInteger i = THREE; compareTo(i.multiply(i)) > 0; i = i.add(2))
-            if (mod(i).isZero())
-                return false;
-
-        return true;
-    }
 }
