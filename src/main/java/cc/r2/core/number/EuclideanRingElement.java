@@ -11,6 +11,8 @@ public interface EuclideanRingElement<R extends EuclideanRingElement<R>>
      */
     R gcd(R oth);
 
+    R[] gcdExtended(R oth);
+
     /**
      * Least common multiple of{@code this} and {@code oth}.
      *

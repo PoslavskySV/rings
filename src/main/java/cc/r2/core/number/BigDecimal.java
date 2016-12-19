@@ -5271,9 +5271,4 @@ public class BigDecimal extends Number implements FieldElement<BigDecimal> {
     public Ring<BigDecimal> getRing() {
         return BigDecimalField.BigDecimalField;
     }
-
-    @Override
-    public BigDecimal gcd(BigDecimal oth) {
-        return ONE;
-    }
 }

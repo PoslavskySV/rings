@@ -644,6 +644,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
     public BigInteger(int numBits, RandomGenerator rnd) {
         this(1, randomBits(numBits, rnd));
     }
+
     private static byte[] randomBits(int numBits, Random rnd) {
         if (numBits < 0)
             throw new IllegalArgumentException("numBits must be non-negative");
@@ -1169,6 +1170,39 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             mag[0] = highWord;
             mag[1] = (int) val;
         }
+    }
+
+    /**
+     * Returns a BigInteger whose value is equal to that of the
+     * specified {@code long}.  This "static factory method" is
+     * provided in preference to a ({@code long}) constructor
+     * because it allows for reuse of frequently used BigIntegers.
+     *
+     * @param val value of the BigInteger to return.
+     * @return a BigInteger with the specified value.
+     */
+    public static BigInteger valueOf(int val) {
+        // If -MAX_CONSTANT < val < MAX_CONSTANT, return stashed constant
+        if (val == 0)
+            return ZERO;
+        if (val > 0 && val <= MAX_CONSTANT)
+            return posConst[val];
+        else if (val < 0 && val >= -MAX_CONSTANT)
+            return negConst[-val];
+
+        return new BigInteger(val);
+    }
+
+    /**
+     * Constructs a BigInteger with the specified value, which may not be zero.
+     */
+    private BigInteger(int val) {
+        if (val < 0) {
+            val = -val;
+            signum = -1;
+        } else
+            signum = 1;
+        mag = new int[]{val};
     }
 
     /**
@@ -3714,6 +3748,33 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
                 return answer;
             }
         }
+    }
+
+    @Override
+    public BigInteger[] gcdExtended(BigInteger b) {
+        BigInteger s = BigInteger.ZERO, old_s = BigInteger.ONE;
+        BigInteger t = BigInteger.ONE, old_t = BigInteger.ZERO;
+        BigInteger r = b, old_r = this;
+
+        BigInteger q;
+        BigInteger tmp;
+        while (!r.isZero()) {
+            q = old_r.divide(r);
+
+            tmp = old_r;
+            old_r = r;
+            r = tmp.subtract(q.multiply(r));
+
+            tmp = old_s;
+            old_s = s;
+            s = tmp.subtract(q.multiply(s));
+
+            tmp = old_t;
+            old_t = t;
+            t = tmp.subtract(q.multiply(t));
+        }
+        assert old_r.equals(this.multiply(old_s).add(b.multiply(old_t)));
+        return new BigInteger[]{old_r, old_s, old_t};
     }
 
     /**

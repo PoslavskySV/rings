@@ -18,6 +18,55 @@ import static cc.r2.core.number.qsi.factpor.Primes.QuadraticSieve;
  */
 public class FactorTest {
 
+    @Test
+    public void asdasdasdasv() throws Exception {
+        System.out.println(factor(BigInteger.valueOf(12314324249L).multiply(BigInteger.valueOf(12312L))));
+    }
+
+    @Test
+    public void as1231243() throws Exception {
+        BigInteger n = BigInteger.valueOf(30011);
+        n = n.multiply(BigInteger.valueOf(30103));
+        n = n.multiply(BigInteger.valueOf(40111));
+        n = n.multiply(BigInteger.valueOf(41113));
+        n = n.multiply(BigInteger.valueOf(411101));
+        n = n.multiply(BigInteger.valueOf(411113));
+        n = n.multiply(BigInteger.valueOf(44111));
+        System.out.println(n);
+        System.out.println(QuadraticSieve(new BigInteger("18134605543"), 30000));
+    }
+
+    @Test
+    public void name123() throws Exception {
+        BigInteger r = new BigInteger("3124214347")
+                .multiply(new BigInteger("3124214363")
+                        .multiply(new BigInteger("10007")));
+
+        System.out.println(QuadraticSieve(BigInteger.valueOf(17161), 10000));
+
+    }
+
+    @Test
+    public void sdfsdfsdfsdf() throws Exception {
+        ArrayList<BigInteger> factors = new ArrayList<>();
+        BigInteger n = new BigInteger("4294967311");
+        n = n.multiply(new BigInteger("4294967357"));
+        n = n.multiply(new BigInteger("4294967371"));
+        n = n.multiply(new BigInteger("42949679"));
+        n = n.multiply(new BigInteger("42949691"));
+        n = n.multiply(new BigInteger("2949701"));
+
+        HardFactor(n, factors) ;
+        BigInteger r = BigInteger.ONE;
+        for (BigInteger factor : factors) {
+            System.out.println(factor);
+            r = factor.multiply(r);
+        }
+
+        System.out.println(n);
+        System.out.println(r);
+    }
+
     public static ArrayList<TestData> readBenchmarkingData() {
         File file = new File("/Users/poslavsky/Downloads/bench");
         if (!file.exists())

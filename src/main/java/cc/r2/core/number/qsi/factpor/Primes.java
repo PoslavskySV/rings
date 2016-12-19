@@ -3,18 +3,22 @@ package cc.r2.core.number.qsi.factpor;
 
 import cc.r2.core.number.BigInteger;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.Well1024a;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static cc.r2.core.number.BigInteger.*;
 import static cc.r2.core.number.qsi.factpor.QuadraticSieve.sqrtBigInt;
+import static cc.r2.core.number.qsi.factpor.SieveOfAtkin.SmallPrimesSieve;
 
 public final class Primes {
     private Primes() {
     }
 
     public static boolean isPrime(int j) {
+        if (j == 2)
+            return true;
         long k = (long) Math.sqrt(j);
         if (j % 2 == 0)
             return false;
@@ -22,6 +26,10 @@ public final class Primes {
             if (j % p == 0)
                 return false;
         return true;
+    }
+
+    public static boolean isPrime(BigInteger b) {
+        return findFactor(b).equals(b);
     }
 
     /**
@@ -208,5 +216,140 @@ public final class Primes {
 
     public static BigInteger QuadraticSieve(BigInteger n, int bound) {
         return new QuadraticSieve(n).quadraticSieve(bound);
+    }
+
+    private static final RandomGenerator PollardRnd = new Well1024a();
+
+
+    static BigInteger findFactor(BigInteger n) {
+        int numBits = n.bitCount();
+        BigInteger r;
+
+        //switching between algorithms
+
+        if (numBits < 20) {
+            // t = 1e4 - 3e6
+            r = PollardRho(n, 131_072);
+            if (r != null)
+                return r;
+        }
+
+        if (numBits < 30) {
+            // t = 5e6
+            r = PollardRho(n, 1024, PollardRnd);
+            if (r != null)
+                return r;
+            // t = 2e6 - 5e7
+            r = PollardRho(n, 131_072);
+            if (r != null)
+                return r;
+        }
+
+        if (numBits < 60) {
+            // t = 2e5
+            r = PollardRho(n, 128);
+            if (r != null)
+                return r;
+
+            // t = 5e5
+            r = PollardRho(n, 128, PollardRnd);
+            if (r != null)
+                return r;
+
+            // t = 1e6
+            r = PollardP1(n, 128);
+            if (r != null)
+                return r;
+
+            // t = 2e7
+            r = PollardRho(n, 131_072);
+            if (r != null)
+                return r;
+        }
+
+        //<-really large number with large primes
+
+        // t = 5e5
+        r = PollardRho(n, 128);
+        if (r != null)
+            return r;
+
+        // t = 5e5
+        r = PollardP1(n, 128);
+        if (r != null)
+            return r;
+
+        // t = 5e6
+        r = PollardRho(n, 1032, PollardRnd);
+        if (r != null)
+            return r;
+
+        // t = 1e8
+        r = PollardRho(n, 131_072);
+        if (r != null)
+            return r;
+
+
+        // t = 1e9
+        r = PollardP1(n, 131_072);
+        if (r != null)
+            return r;
+
+        // t = 1e9 -> oo
+        // be sure that trial division is done
+        assert n.compareTo(BigInteger.valueOf(32768)) > 0;
+        r = QuadraticSieve(n, 32768);
+        assert r != null;
+        return r;
+    }
+
+    private static boolean checkKnownSmallPrime(BigInteger b) {
+        return b.compareTo(SmallPrimesSieve.getLimitAsBigInteger()) < 0
+                && SmallPrimesSieve.isPrime(b.intValue());
+    }
+
+    public static ArrayList<BigInteger> factor(BigInteger num) {
+        ArrayList<BigInteger> factors = new ArrayList<>();
+
+        //fast check for small prime
+        if (checkKnownSmallPrime(num)) {
+            factors.add(num);
+            return factors;
+        }
+
+        //start with trial divisions
+        num = TrialDivision(num, factors);
+
+        //switch to hard algorithms
+        HardFactor(num, factors);
+
+        return factors;
+    }
+
+    static BigInteger TrialDivision(BigInteger num, ArrayList<BigInteger> factors) {
+        for (int p : PrimesList.SmallPrimes12) {
+            BigInteger prime = BigInteger.valueOf(p);
+            BigInteger[] qr = num.divideAndRemainder(prime);
+            while (qr[1].isZero()) {
+                num = qr[0];
+                factors.add(prime);
+                qr = num.divideAndRemainder(prime);
+            }
+        }
+        return num;
+    }
+
+    static void HardFactor(BigInteger num, ArrayList<BigInteger> factors) {
+        BigInteger factor;
+        while (true) {
+            factor = findFactor(num);
+            if (factor.isOne() || factor.equals(num)) {
+                factors.add(num);
+                return;
+            } else
+                //TODO: ? check whether factor is prime ?
+                HardFactor(factor, factors);
+            num = num.divide(factor);
+        }
     }
 }
