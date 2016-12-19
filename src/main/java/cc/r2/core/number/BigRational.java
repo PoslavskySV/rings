@@ -18,7 +18,7 @@ package cc.r2.core.number;
 
 import java.io.Serializable;
 
-public class BigRational
+public final class BigRational
         implements FieldElement<BigRational>, Serializable {
     /**
      * A fraction representing "2 / 1".

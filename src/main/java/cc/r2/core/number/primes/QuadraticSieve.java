@@ -1,4 +1,4 @@
-package cc.r2.core.number.qsi.factpor;
+package cc.r2.core.number.primes;
 
 import cc.r2.core.number.BigInteger;
 
@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import static cc.r2.core.number.BigInteger.ONE;
 import static cc.r2.core.number.BigInteger.ZERO;
-import static cc.r2.core.number.qsi.factpor.PrimesList.SmallPrimes12;
 
 final class QuadraticSieve {
     private final BigInteger n;
@@ -30,7 +29,7 @@ final class QuadraticSieve {
         primes[0] = -1;
         primes[1] = 2;
         int k = 2, nModP;
-        for (int j : SmallPrimes12) {
+        for (int j : SmallPrimes.SmallPrimes12) {
             if (j == 2) continue;
             nModP = n.mod(BigInteger.valueOf(j)).intValue();
             if (legendreSymbol(nModP, j) == 1) {
@@ -43,7 +42,7 @@ final class QuadraticSieve {
         if (k < PRIME_BASE) {
             int j = primes[k - 1] + 2;
             while (k < PRIME_BASE) {
-                if (Primes.isPrime(j)) {
+                if (SmallPrimes.isPrime(j)) {
                     nModP = n.mod(BigInteger.valueOf(j)).intValue();
                     if (legendreSymbol(nModP, j) == 1)
                         primes[k++] = j;

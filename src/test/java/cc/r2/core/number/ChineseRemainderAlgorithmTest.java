@@ -1,6 +1,8 @@
 package cc.r2.core.number;
 
-import cc.r2.core.number.qsi.factpor.*;
+import cc.r2.core.number.primes.BigPrimes;
+import cc.r2.core.number.primes.SieveOfAtkin;
+import cc.r2.core.number.primes.SmallPrimes;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
 import org.junit.Assert;
@@ -62,7 +64,7 @@ public class ChineseRemainderAlgorithmTest {
                 while (!primes.isPrime(prime = 1 + rnd.nextInt(bound - 1)) || used.get(prime)) ;
                 used.set(prime);
                 comprimes[j] = BigInteger.valueOf(prime);
-                Assert.assertTrue(cc.r2.core.number.qsi.factpor.Primes.isPrime(prime));
+                Assert.assertTrue(SmallPrimes.isPrime(prime));
                 remainders[j] = BigInteger.valueOf(rnd.nextInt(prime));
             }
 

@@ -1,9 +1,11 @@
 package cc.r2.core.number;
 
+import cc.r2.core.number.primes.BigPrimes;
+
 public final class ModPrimeBigIntegerField extends ModBigIntegerRingAbstract<ModPrimeBigInteger> {
     public ModPrimeBigIntegerField(BigInteger mod) {
         super(mod);
-        if (!mod.isPrime())
+        if (!BigPrimes.isPrime(mod))
             throw new IllegalArgumentException("Not a prime.");
     }
 

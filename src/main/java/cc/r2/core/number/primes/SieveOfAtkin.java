@@ -1,4 +1,4 @@
-package cc.r2.core.number.qsi.factpor;
+package cc.r2.core.number.primes;
 
 import cc.r2.core.number.BigInteger;
 

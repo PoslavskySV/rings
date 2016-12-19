@@ -1,7 +1,7 @@
 package cc.r2.core.polynomial;
 
 import cc.r2.core.number.*;
-import cc.r2.core.number.qsi.factpor.SieveOfAtkin;
+import cc.r2.core.number.primes.SieveOfAtkin;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.lang.reflect.Array;
