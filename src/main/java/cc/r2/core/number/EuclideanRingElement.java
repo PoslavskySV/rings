@@ -11,6 +11,13 @@ public interface EuclideanRingElement<R extends EuclideanRingElement<R>>
      */
     R gcd(R oth);
 
+    /**
+     * Runs extended Euclidean algorithm to compute {@code [gcd(this, oth), x, y]} such that {@code x * this + y * oth = gcd(this, oth)}
+     *
+     * @param a a long
+     * @param b a long
+     * @return array of {@code [gcd(this, oth), x, y]} such that {@code x * this + y * oth = gcd(this, oth)}
+     */
     R[] gcdExtended(R oth);
 
     /**

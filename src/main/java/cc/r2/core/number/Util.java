@@ -1,8 +1,11 @@
 package cc.r2.core.number;
 
+import org.apache.commons.math3.util.ArithmeticUtils;
+
 public final class Util {
     private Util() {
     }
+
 
     public static <R extends EuclideanRingElement<R>> R gcd(final R... vals) {
         if (vals.length < 2)
