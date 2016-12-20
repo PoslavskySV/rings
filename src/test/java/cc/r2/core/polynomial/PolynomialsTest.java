@@ -33,6 +33,15 @@ public class PolynomialsTest {
 
 
     @Test
+    public void name() throws Exception {
+        UnivariatePolynomial<BigInteger> a = makeZx(3, 2, 2, 4);
+        UnivariatePolynomial<BigInteger> b = makeZx(4, 2);
+
+        System.out.println(Arrays.toString(divideAndRemainder(IntegerRing, a, b)));
+
+    }
+
+    @Test
     public void nameasdasds() throws Exception {
         UnivariatePolynomial<BigInteger> f = makeZx(11234, 2, 3, 42342, 5, 6, 7, 8, 9, 10);
         UnivariatePolynomial<BigInteger> g = makeZx(1234, 2, 3, 4, -5324, 6, 7, 8, 9, 10);
