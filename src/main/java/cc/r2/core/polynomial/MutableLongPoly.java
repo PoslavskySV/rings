@@ -24,13 +24,27 @@ final class MutableLongPoly {
         this.degree = degree;
     }
 
-    MutableLongPoly(long... data) {
+    private MutableLongPoly(long[] data) {
         this.data = data;
         this.degree = data.length - 1;
         fixDegree();
     }
 
+    static MutableLongPoly create(long... data) {
+        return new MutableLongPoly(data);
+    }
+
+    static MutableLongPoly one() {
+        return new MutableLongPoly(new long[]{1});
+    }
+
+    static MutableLongPoly zero() {
+        return new MutableLongPoly(new long[]{0});
+    }
+
     boolean isZero() {return degree == 0 && data[0] == 0;}
+
+    boolean isOne() {return degree == 0 && data[0] == 1;}
 
     /**
      * Returns the leading coefficient of the poly
@@ -74,7 +88,7 @@ final class MutableLongPoly {
             return this;
         }
         for (int i = 0; i <= degree; ++i) {
-            assert safeMultiply(data[i], factor) : "long overflow";
+            assert safeMultiply(data[i], factor) : "long overflow: " + data[i] + " * " + factor;
             data[i] *= factor;
         }
         return this;
@@ -86,21 +100,36 @@ final class MutableLongPoly {
         if (factor == 1)
             return this;
         for (int i = 0; i <= degree; ++i) {
-            assert data[i] % factor == 0 : "long overflow";
+            assert data[i] % factor == 0 : "not divisible";
             data[i] /= factor;
         }
         return this;
     }
 
-    MutableLongPoly multiply(long coefficient, long modulus) {
-        if (coefficient == 0) {
+    MutableLongPoly divideOrNull(long factor) {
+        if (factor == 0)
+            throw new ArithmeticException("Divide by zero");
+        if (factor == 1)
+            return this;
+        for (int i = 0; i <= degree; ++i) {
+            if (data[i] % factor != 0)
+                return null;
+            data[i] /= factor;
+        }
+        return this;
+    }
+
+    MutableLongPoly multiply(long factor, long modulus) {
+        if (factor == 1)
+            return modulus(modulus);
+        if (factor == 0) {
             degree = 0;
             Arrays.fill(data, 0);
             return this;
         }
         for (int i = 0; i <= degree; ++i) {
             long x = floorMod(data[i], modulus);
-            long y = floorMod(coefficient, modulus);
+            long y = floorMod(factor, modulus);
             assert safeMultiply(x, y) : "long overflow";
             data[i] = floorMod(x * y, modulus);
         }
@@ -122,7 +151,8 @@ final class MutableLongPoly {
 
     MutableLongPoly add(MutableLongPoly oth, long modulus) {
         if (oth.isZero())
-            return this;
+            return modulus(modulus);
+
         ensureCapacity(oth.degree);
 
         int i = 0;
@@ -153,7 +183,7 @@ final class MutableLongPoly {
 
     MutableLongPoly subtract(MutableLongPoly oth, long modulus) {
         if (oth.isZero())
-            return this;
+            return modulus(modulus);
         ensureCapacity(oth.degree);
 
         int i = 0;
@@ -185,7 +215,7 @@ final class MutableLongPoly {
 
     MutableLongPoly subtract(MutableLongPoly oth, long factor, int exponent, long modulus) {
         if (oth.isZero())
-            return this;
+            return modulus(modulus);
         ensureCapacity(oth.degree + exponent);
 
         int i = 0;
@@ -211,32 +241,35 @@ final class MutableLongPoly {
         if (oth.degree == 0)
             return multiply(oth.data[0]);
 
-        final long[] thisData = Arrays.copyOf(data, degree + 1);
-        ensureCapacity(degree * oth.degree);
-        for (int i = 0; i <= degree; ++i)
-            for (int j = 0; j <= oth.degree; ++j) {
-                assert safeMultiply(thisData[i], oth.data[j]) : "long overflow";
-                data[i + j] = thisData[i] * oth.data[j];
+        final long[] newData = new long[degree + oth.degree + 1];
+        for (int j = 0; j <= oth.degree; ++j) // <- upper loop over oth (safe redundant floorMod operations)
+            for (int i = 0; i <= degree; ++i) {
+                assert safeMultiply(data[i], oth.data[j]) : "long overflow";
+                assert safeAdd(newData[i + j], data[i] * oth.data[j]) : "long overflow";
+                newData[i + j] += data[i] * oth.data[j];
             }
 
+        data = newData;
+        degree = degree + oth.degree;
         fixDegree();
         return this;
     }
 
     MutableLongPoly multiply(MutableLongPoly oth, long modulus) {
         if (oth.degree == 0)
-            return multiply(oth.data[0]);
+            return multiply(oth.data[0], modulus);
 
         modulus(modulus);
-        final long[] thisData = Arrays.copyOf(data, degree + 1);
-
-        ensureCapacity(degree * oth.degree);
-        for (int i = 0; i <= degree; ++i) // <- upper loop over oth (safe redundant floorMod operations)
-            for (int j = 0; j <= oth.degree; ++j) {
-                assert safeMultiply(thisData[j], floorMod(oth.data[i], modulus)) : "long overflow";
-                data[i + j] = floorMod(thisData[j] * floorMod(oth.data[i], modulus), modulus);
+        final long[] newData = new long[degree + oth.degree + 1];
+        for (int j = 0; j <= oth.degree; ++j)// <- upper loop over oth (safe redundant floorMod operations)
+            for (int i = 0; i <= degree; ++i) {
+                assert safeMultiply(data[i], floorMod(oth.data[j], modulus)) : "long overflow";
+                assert safeAdd(newData[i + j], floorMod(data[i] * floorMod(oth.data[j], modulus), modulus)) : "long overflow";
+                newData[i + j] = floorMod(newData[i + j] + floorMod(data[i] * floorMod(oth.data[j], modulus), modulus), modulus);
             }
 
+        data = newData;
+        degree = degree + oth.degree;
         fixDegree();
         return this;
     }
@@ -252,12 +285,18 @@ final class MutableLongPoly {
         for (int i = 0; i < data.length; i++) {
             if (data[i] == 0)
                 continue;
-            String c = String.valueOf(data[i]);
-            if (!c.startsWith("-") && sb.length() != 0)
-                sb.append("+");
-            sb.append(c);
-            if (i != 0)
+            if (i != 0 && data[i] == 1) {
+                if (sb.length() != 0)
+                    sb.append("+");
                 sb.append("x^").append(i);
+            } else {
+                String c = String.valueOf(data[i]);
+                if (!c.startsWith("-") && sb.length() != 0)
+                    sb.append("+");
+                sb.append(c);
+                if (i != 0)
+                    sb.append("x^").append(i);
+            }
         }
 
         if (sb.length() == 0)

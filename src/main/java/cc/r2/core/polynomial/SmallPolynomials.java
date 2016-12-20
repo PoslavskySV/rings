@@ -24,18 +24,22 @@ public final class SmallPolynomials {
     public static PolynomialRemainders Euclid(final MutableLongPoly a,
                                               final MutableLongPoly b) {
         ArrayList<MutableLongPoly> prs = new ArrayList<>();
+        prs.add(a); prs.add(b);
+
         MutableLongPoly x = a, y = b, r;
-        while (!y.isZero()) {
+        while (true) {
             MutableLongPoly[] tmp = divideAndRemainder(x, y);
             if (tmp == null)
-                throw new IllegalArgumentException("Not divisible");
+                throw new IllegalArgumentException("Not divisible: (" + x + ") / (" + y + ")");
 
             r = tmp[1];
+            if (r.isZero())
+                break;
+
             prs.add(r);
             x = y;
             y = r;
         }
-        prs.add(x);
         return new PolynomialRemainders(prs);
     }
 
@@ -56,15 +60,16 @@ public final class SmallPolynomials {
         prs.add(a); prs.add(b);
 
         MutableLongPoly x = a, y = b, r;
-        while (!y.isZero()) {
+        while (true) {
             MutableLongPoly[] tmp = divideAndRemainder(x, y, modulus);
             assert tmp != null;
             r = tmp[1];
+            if (r.isZero())
+                break;
             prs.add(r);
             x = y;
             y = r;
         }
-        prs.add(x);
         return new PolynomialRemainders(prs);
     }
 
@@ -191,6 +196,8 @@ public final class SmallPolynomials {
      */
     public static MutableLongPoly primitivePart(MutableLongPoly poly) {
         long content = content(poly);
+        if (content == 1)
+            return poly;
         if (poly.lc() < 0)
             content = -content;
         for (int i = 0; i <= poly.degree; ++i) {
@@ -221,8 +228,8 @@ public final class SmallPolynomials {
      * @param divider  divider
      * @return {quotient, remainder}
      */
-    private static MutableLongPoly[] divideAndRemainder(final MutableLongPoly dividend,
-                                                        final MutableLongPoly divider) {
+    public static MutableLongPoly[] divideAndRemainder(final MutableLongPoly dividend,
+                                                       final MutableLongPoly divider) {
         return divideAndRemainder0(dividend, divider, 1);
     }
 
@@ -238,6 +245,17 @@ public final class SmallPolynomials {
                                                          long dividendRaiseFactor) {
         if (dividend.degree < divider.degree)
             return null;
+
+        if (divider.degree == 0) {
+            if (dividendRaiseFactor % divider.lc() == 0)
+                return new MutableLongPoly[]{dividend.clone().multiply(dividendRaiseFactor / divider.lc()), MutableLongPoly.zero()};
+            else {
+                MutableLongPoly quot = dividend.clone().multiply(dividendRaiseFactor).divideOrNull(divider.lc());
+                if (quot == null)
+                    return null;
+                return new MutableLongPoly[]{quot, MutableLongPoly.zero()};
+            }
+        }
 
         MutableLongPoly
                 remainder = dividend.clone().multiply(dividendRaiseFactor),
@@ -293,11 +311,12 @@ public final class SmallPolynomials {
 
         public PolynomialRemainders(ArrayList<MutableLongPoly> remainders) {
             this.remainders = remainders;
+//            if (remainders.size() == 2)
+//                remainders.add(MutableLongPoly.one());
         }
 
         public MutableLongPoly gcd() {
             return remainders.get(remainders.size() - 1);
         }
     }
-
 }

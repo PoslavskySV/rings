@@ -24,14 +24,16 @@ public class ArithmeticUtilsTest {
     public void test2() throws Exception {
         Well1024a rnd = new Well1024a();
         for (int i = 0; i < 1000; i++) {
-            long a = 1 + rnd.nextInt(1000), b = 1 + rnd.nextInt(100000);
-            if (gcd(a, b) != 1) {
+            long aa = 1 + rnd.nextInt(1000), b = 1 + rnd.nextInt(100000);
+            if (gcd(aa, b) != 1) {
                 --i;
                 continue;
             }
-            long l = modInverse(a, b);
-            assertEquals(1L, (a * l) % b);
-            assertEquals(BigInteger.valueOf(a).modInverse(BigInteger.valueOf(b)).longValue(), l);
+            for (long a : new long[]{aa, -aa}) {
+                long l = modInverse(a, b);
+                assertEquals(1L, Math.floorMod(a * l, b));
+                assertEquals(BigInteger.valueOf(a).modInverse(BigInteger.valueOf(b)).longValue(), l);
+            }
         }
     }
 
@@ -133,5 +135,10 @@ public class ArithmeticUtilsTest {
             e = -e;
             assertEquals(BigInteger.valueOf(a).modPow(BigInteger.valueOf(e), BigInteger.valueOf(b)).longValue(), modPow(a, e, b));
         }
+    }
+
+    @Test
+    public void test8() throws Exception {
+        assertEquals(BigInteger.valueOf(-1).modInverse(BigInteger.valueOf(11)).longValue(), modInverse(-1, 11));
     }
 }
