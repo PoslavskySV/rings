@@ -34,10 +34,10 @@ public class PolynomialsTest {
 
     @Test
     public void name() throws Exception {
-        UnivariatePolynomial<BigInteger> a = makeZx(3, 2, 2, 4);
-        UnivariatePolynomial<BigInteger> b = makeZx(4, 2);
+        UnivariatePolynomial<BigInteger> a = makeZx(7, 4, 10, 10, 0, 2);
+        UnivariatePolynomial<BigInteger> b = makeZx(6, 7, 9, 8, 3);
 
-        System.out.println(Arrays.toString(divideAndRemainder(IntegerRing, a, b)));
+        System.out.println(Polynomials.subResultantPRS(IntegerRing, a, b));
 
     }
 

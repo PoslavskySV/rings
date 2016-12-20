@@ -1,5 +1,7 @@
 package cc.r2.core.number;
 
+import org.apache.commons.math3.util.FastMath;
+
 public final class ArithmeticUtils {
     private ArithmeticUtils() {
     }
@@ -62,6 +64,9 @@ public final class ArithmeticUtils {
      * @throws IllegalArgumentException {@code a} and {@code modulus} are not coprime
      */
     public static long modInverse(long a, long p) {
+        if (a < 0)
+            a = Math.floorMod(a, p);
+
         long s = 0, old_s = 1;
         long r = p, old_r = a;
 
@@ -79,7 +84,7 @@ public final class ArithmeticUtils {
             s = tmp - q * s;
         }
         if (old_r != 1)
-            throw new IllegalArgumentException("Not invertable");
+            throw new IllegalArgumentException("Not invertible: val = " + a + ", modulus = " + p + ", old_r = " + old_r);
         return Math.floorMod(old_s, p);
     }
 
@@ -104,12 +109,12 @@ public final class ArithmeticUtils {
      * @return greatest common divisor of {@code a} and {@code b}
      */
     public static long gcd(final long p, final long q) {
-        if (p < 0 || q < 0)
-            throw new IllegalArgumentException();
         long u = p;
         long v = q;
-        if (u == 0 || v == 0) {
-            return u + v;
+        if ((u == 0) || (v == 0)) {
+            if ((u == Long.MIN_VALUE) || (v == Long.MIN_VALUE))
+                throw new IllegalArgumentException("long overflow");
+            return FastMath.abs(u) + FastMath.abs(v);
         }
         // keep u and v negative, as negative integers range down to
         // -2^63, while positive numbers can only be as large as 2^63-1
