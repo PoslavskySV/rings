@@ -2,12 +2,16 @@ package cc.r2.core.polynomial;
 
 
 import cc.r2.core.number.ArithmeticUtils;
+import cc.r2.core.number.primes.PrimesIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static cc.r2.core.number.ArithmeticUtils.*;
+import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
+import static java.lang.Math.*;
 
 public final class SmallPolynomials {
     private SmallPolynomials() {
@@ -57,7 +61,7 @@ public final class SmallPolynomials {
             return Euclid(b, a, modulus);
 
         ArrayList<MutableLongPoly> prs = new ArrayList<>();
-        prs.add(a); prs.add(b);
+        prs.add(a.clone().modulus(modulus)); prs.add(b.clone().modulus(modulus));
 
         MutableLongPoly x = a, y = b, r;
         while (true) {
@@ -143,21 +147,15 @@ public final class SmallPolynomials {
                 cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
                 cPsi = -1;
             } else {
-                assert safePow(-curr.lc(), deltas.get(i - 1));
-                cPsi = pow(-curr.lc(), deltas.get(i - 1));
+                cPsi = powExact(-curr.lc(), deltas.get(i - 1));
                 if (deltas.get(i - 1) < 1) {
-                    assert safePow(psi.get(i - 1), -deltas.get(i - 1) + 1);
-                    assert safeMultiply(cPsi, pow(psi.get(i - 1), -deltas.get(i - 1) + 1));
-                    cPsi = cPsi * pow(psi.get(i - 1), -deltas.get(i - 1) + 1);
+                    cPsi = multiplyExact(cPsi, powExact(psi.get(i - 1), -deltas.get(i - 1) + 1));
                 } else {
-                    assert safePow(psi.get(i - 1), deltas.get(i - 1) - 1);
-                    long tmp = pow(psi.get(i - 1), deltas.get(i - 1) - 1);
+                    long tmp = powExact(psi.get(i - 1), deltas.get(i - 1) - 1);
                     assert cPsi % tmp == 0;
                     cPsi /= tmp;
                 }
-                assert safePow(cPsi, delta);
-                assert safeMultiply(-curr.lc(), pow(cPsi, delta));
-                cBeta = -curr.lc() * pow(cPsi, delta);
+                cBeta = multiplyExact(-curr.lc(), powExact(cPsi, delta));
             }
 
             MutableLongPoly q = pseudoDivideAndRemainder(curr, next)[1];
@@ -174,6 +172,108 @@ public final class SmallPolynomials {
         PolynomialRemainders res = new PolynomialRemainders(prs);
         res.gcd().multiply(contentGCD);
         return res;
+    }
+
+    public static MutableLongPoly ModularGCD(MutableLongPoly a, MutableLongPoly b) {
+        if (a == b)
+            return a.clone();
+        if (a.degree < b.degree)
+            return ModularGCD(b, a);
+
+        long aContent = content(a), bContent = content(b);
+        long contentGCD = gcd(aContent, bContent);
+        return ModularGCD0(a.divide(aContent), b.divide(bContent)).multiply(contentGCD);
+
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private static MutableLongPoly ModularGCD0(MutableLongPoly a, MutableLongPoly b) {
+        if (a.degree < b.degree)
+            return ModularGCD(b, a);
+
+        long lcGCD = gcd(a.lc(), b.lc());
+        double bound = sqrt(a.degree + 1) * (1L << a.degree) * Math.max(a.norm(), b.norm()) * lcGCD;
+
+        MutableLongPoly previousBase, base = null;
+        long basePrime = -1;
+
+        PrimesIterator primesLoop = new PrimesIterator(3);
+        while (true) {
+            long prime = primesLoop.take();
+            assert prime != -1 : "long overflow";
+
+            if (a.lc() % prime == 0 || b.lc() % prime == 0)
+                continue;
+
+            MutableLongPoly modularGCD = Euclid(a, b, prime).gcd();
+            //clone if necessary
+            if (modularGCD == a || modularGCD == b)
+                modularGCD = modularGCD.clone();
+
+            //coprime polynomials
+            if (modularGCD.degree == 0)
+                return MutableLongPoly.one();
+
+
+            //save the base
+            if (base == null) {
+                //make base monic and multiply lcGCD
+                modularGCD.monic(lcGCD, prime);
+                base = modularGCD;
+                basePrime = prime;
+                continue;
+            }
+
+            //unlucky base => start over
+            if (base.degree > modularGCD.degree) {
+                base = null;
+                basePrime = -1;
+                continue;
+            }
+
+            //skip unlucky prime
+            if (base.degree < modularGCD.degree)
+                continue;
+
+            //cache current base
+            previousBase = base.clone();
+
+            //lifting
+            long newBasePrime = multiplyExact(basePrime, prime);
+            long monicFactor = modInverse(modularGCD.lc(), prime);
+            long lcMod = floorMod(lcGCD, prime);
+            for (int i = 0; i <= base.degree; ++i) {
+                //this is monic modularGCD multiplied by lcGCD mod prime
+                long oth = floorMod(multiplyExact(floorMod(multiplyExact(modularGCD.data[i], monicFactor), prime), lcMod), prime);
+                base.data[i] = ChineseRemainders(basePrime, prime, base.data[i], oth);
+            }
+            base.fixDegree();
+            basePrime = newBasePrime;
+
+            //we are lucky with Mignotte's bound
+            if ((double) basePrime >= 2 * bound) {
+                MutableLongPoly result = primitivePart((base.symModulus(basePrime)));
+                assert pseudoDivideAndRemainderAdaptive(a, result)[1].isZero() && pseudoDivideAndRemainderAdaptive(b, result)[1].isZero();
+                return result;
+            }
+
+            //two trials didn't change the result, probably we are done
+            if (base.equals(previousBase)) {
+                MutableLongPoly candidate = primitivePart(base.clone().symModulus(basePrime));
+
+                if (pseudoDivideAndRemainderAdaptive(b, candidate) == null
+                        && pseudoDivideAndRemainderAdaptive(a, candidate) == null) {
+                    System.out.println(Arrays.toString(a.data));
+                    System.out.println(Arrays.toString(b.data));
+                    System.out.println(Arrays.toString(candidate.data));
+                }
+
+                //first check b since b is less degree
+                if (pseudoDivideAndRemainderAdaptive(b, candidate)[1].isZero()
+                        && pseudoDivideAndRemainderAdaptive(a, candidate)[1].isZero())
+                    return candidate;
+            }
+        }
     }
 
     /**
@@ -217,8 +317,7 @@ public final class SmallPolynomials {
     public static MutableLongPoly[] pseudoDivideAndRemainder(
             MutableLongPoly dividend,
             MutableLongPoly divider) {
-        assert safePow(divider.lc(), dividend.degree - divider.degree + 1) : "long overflow";
-        return divideAndRemainder0(dividend, divider, pow(divider.lc(), dividend.degree - divider.degree + 1));
+        return divideAndRemainder0(dividend, divider, powExact(divider.lc(), dividend.degree - divider.degree + 1));
     }
 
     /**
@@ -265,6 +364,42 @@ public final class SmallPolynomials {
             if (remainder.degree == divider.degree + i) {
                 if (remainder.lc() % divider.lc() != 0)
                     return null;
+
+                quotient.data[i] = remainder.lc() / divider.lc();
+                remainder.subtract(divider, quotient.data[i], i);
+
+            } else quotient.data[i] = 0;
+        }
+
+        quotient.fixDegree();
+        return new MutableLongPoly[]{quotient, remainder};
+    }
+
+    /**
+     * Pseudo divide and remainder
+     *
+     * @param dividend dividend
+     * @param divider  divider
+     * @return {quotient, remainder}
+     */
+    public static MutableLongPoly[] pseudoDivideAndRemainderAdaptive(
+            final MutableLongPoly dividend,
+            final MutableLongPoly divider) {
+        if (dividend.degree < divider.degree)
+            return null;
+
+        MutableLongPoly
+                remainder = dividend.clone(),
+                quotient = new MutableLongPoly(dividend.degree - divider.degree);
+
+        for (int i = dividend.degree - divider.degree; i >= 0; --i) {
+            if (remainder.degree == divider.degree + i) {
+                if (remainder.lc() % divider.lc() != 0) {
+                    long gcd = gcd(remainder.lc(), divider.lc());
+                    long factor = divider.lc() / gcd;
+                    remainder.multiply(factor);
+                    quotient.multiply(factor);
+                }
 
                 quotient.data[i] = remainder.lc() / divider.lc();
                 remainder.subtract(divider, quotient.data[i], i);

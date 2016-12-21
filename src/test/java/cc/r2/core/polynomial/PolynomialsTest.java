@@ -38,7 +38,7 @@ public class PolynomialsTest {
         UnivariatePolynomial<BigInteger> b = makeZx(6, 7, 9, 8, 3);
 
         System.out.println(Polynomials.subResultantPRS(IntegerRing, a, b));
-
+        System.out.println(toSymMod(BigInteger.valueOf(3), BigInteger.valueOf(7)));
     }
 
     @Test

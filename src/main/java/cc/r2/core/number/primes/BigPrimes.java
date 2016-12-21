@@ -26,6 +26,20 @@ public final class BigPrimes {
      * @param n number to test
      * @return {@code true} if input is certainly prime, {@code false} is certainly composite
      */
+    public static boolean isPrime(long n) {
+        if (n < Integer.MAX_VALUE)
+            return SmallPrimes.isPrime((int) n);
+        return isPrime(BigInteger.valueOf(n));
+    }
+
+    /**
+     * Strong primality test. Switches between trial divisions, probabilistic Miller-Rabin (ensures that is not prime),
+     * probabilistic Lucas test (ensures that is prime) and finally (if all above fail to provide deterministic answer)
+     * to Pollard's p-1, Pollard's rho and quadratic sieve.
+     *
+     * @param n number to test
+     * @return {@code true} if input is certainly prime, {@code false} is certainly composite
+     */
     public static boolean isPrime(BigInteger n) {
         if (n.signum() < 0)
             throw new IllegalArgumentException("Argument must be positive");

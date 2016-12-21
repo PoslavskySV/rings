@@ -376,7 +376,7 @@ public final class Polynomials {
 
                     System.out.println(Arrays.toString(coprimes));
                     System.out.println(Arrays.toString(tmpCfx));
-                    BigInteger tmp = ChineseRemainderAlgorithm.CRT(coprimes, tmpCfx).mod(hui);
+                    BigInteger tmp = ChineseRemainders.CRT(coprimes, tmpCfx).mod(hui);
                     System.out.println(tmp);
                     newCoeffs[j] = toSymMod(tmp,hui);
                     System.out.println(newCoeffs[j]);
