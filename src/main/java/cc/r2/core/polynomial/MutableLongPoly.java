@@ -2,8 +2,9 @@ package cc.r2.core.polynomial;
 
 import java.util.Arrays;
 
-import static cc.r2.core.number.ArithmeticUtils.*;
-import static java.lang.Math.floorMod;
+import static cc.r2.core.number.ArithmeticUtils.modInverse;
+import static cc.r2.core.number.ArithmeticUtils.symMod;
+import static java.lang.Math.*;
 
 /**
  * Intermediate structure for long[] polynomial.
@@ -46,6 +47,24 @@ final class MutableLongPoly {
 
     boolean isOne() {return degree == 0 && data[0] == 1;}
 
+    boolean isMonic() {return lc() == 1;}
+
+    boolean isConstant() {return degree == 0;}
+
+    double norm() {
+        double norm = 0;
+        for (int i = 0; i <= degree; ++i)
+            norm += ((double) data[i]) * data[i];
+        return ceil(sqrt(norm));
+    }
+
+    double norm1() {
+        double norm = data[0];
+        for (int i = 1; i <= degree; ++i)
+            norm = max((double) data[i], norm);
+        return norm;
+    }
+
     /**
      * Returns the leading coefficient of the poly
      *
@@ -79,18 +98,10 @@ final class MutableLongPoly {
         return this;
     }
 
-    MutableLongPoly multiply(long factor) {
-        if (factor == 1)
-            return this;
-        if (factor == 0) {
-            degree = 0;
-            Arrays.fill(data, 0);
-            return this;
-        }
-        for (int i = 0; i <= degree; ++i) {
-            assert safeMultiply(data[i], factor) : "long overflow: " + data[i] + " * " + factor;
-            data[i] *= factor;
-        }
+    MutableLongPoly symModulus(long modulus) {
+        for (int i = 0; i <= degree; ++i)
+            data[i] = symMod(data[i], modulus);
+        fixDegree();
         return this;
     }
 
@@ -119,32 +130,62 @@ final class MutableLongPoly {
         return this;
     }
 
+    MutableLongPoly monic(long modulus) {
+        long inverse = modInverse(lc(), modulus);
+        for (int i = 0; i <= degree; ++i)
+            data[i] = floorMod(floorMod(multiplyExact(floorMod(data[i], modulus), inverse), modulus), modulus);
+        return this;
+    }
+
+    MutableLongPoly monic(long factor, long modulus) {
+        if (factor == 0)
+            return toZero();
+        if (lc() == 1)
+            return multiply(factor, modulus);
+
+        long inverse = modInverse(lc(), modulus);
+        for (int i = 0; i <= degree; ++i)
+            data[i] = floorMod(
+                    multiplyExact(
+                            floorMod(multiplyExact(floorMod(data[i], modulus), inverse), modulus),
+                            floorMod(factor, modulus)),
+                    modulus);
+        return this;
+    }
+
+    private MutableLongPoly toZero() {
+        degree = 0;
+        Arrays.fill(data, 0);
+        return this;
+    }
+
+    MutableLongPoly multiply(long factor) {
+        if (factor == 1)
+            return this;
+        if (factor == 0)
+            return toZero();
+        for (int i = 0; i <= degree; ++i)
+            data[i] = multiplyExact(data[i], factor);
+        return this;
+    }
+
     MutableLongPoly multiply(long factor, long modulus) {
         if (factor == 1)
             return modulus(modulus);
-        if (factor == 0) {
-            degree = 0;
-            Arrays.fill(data, 0);
-            return this;
-        }
-        for (int i = 0; i <= degree; ++i) {
-            long x = floorMod(data[i], modulus);
-            long y = floorMod(factor, modulus);
-            assert safeMultiply(x, y) : "long overflow";
-            data[i] = floorMod(x * y, modulus);
-        }
+        if (factor == 0)
+            return toZero();
+        for (int i = 0; i <= degree; ++i)
+            data[i] = floorMod(multiplyExact(floorMod(data[i], modulus), floorMod(factor, modulus)), modulus);
         return this;
     }
 
     MutableLongPoly add(MutableLongPoly oth) {
         if (oth.isZero())
             return this;
-        ensureCapacity(oth.degree);
 
-        for (int i = 0; i <= oth.degree; ++i) {
-            assert safeAdd(data[i], oth.data[i]) : "long overflow";
-            data[i] += oth.data[i];
-        }
+        ensureCapacity(oth.degree);
+        for (int i = 0; i <= oth.degree; ++i)
+            data[i] = addExact(data[i], oth.data[i]);
         fixDegree();
         return this;
     }
@@ -154,14 +195,9 @@ final class MutableLongPoly {
             return modulus(modulus);
 
         ensureCapacity(oth.degree);
-
         int i = 0;
-        for (; i <= oth.degree; ++i) {
-            long x = floorMod(data[i], modulus);
-            long y = floorMod(oth.data[i], modulus);
-            assert safeAdd(x, y) : "long overflow";
-            data[i] = floorMod(x + y, modulus);
-        }
+        for (; i <= oth.degree; ++i)
+            data[i] = floorMod(addExact(floorMod(data[i], modulus), floorMod(oth.data[i], modulus)), modulus);
         for (; i <= degree; ++i)
             data[i] = floorMod(data[i], modulus);
         fixDegree();
@@ -171,12 +207,10 @@ final class MutableLongPoly {
     MutableLongPoly subtract(MutableLongPoly oth) {
         if (oth.isZero())
             return this;
-        ensureCapacity(oth.degree);
 
-        for (int i = 0; i <= oth.degree; ++i) {
-            assert safeSubtract(data[i], oth.data[i]) : "long overflow";
-            data[i] -= oth.data[i];
-        }
+        ensureCapacity(oth.degree);
+        for (int i = 0; i <= oth.degree; ++i)
+            data[i] = subtractExact(data[i], oth.data[i]);
         fixDegree();
         return this;
     }
@@ -184,15 +218,11 @@ final class MutableLongPoly {
     MutableLongPoly subtract(MutableLongPoly oth, long modulus) {
         if (oth.isZero())
             return modulus(modulus);
-        ensureCapacity(oth.degree);
 
+        ensureCapacity(oth.degree);
         int i = 0;
-        for (; i <= oth.degree; ++i) {
-            long x = floorMod(data[i], modulus);
-            long y = floorMod(oth.data[i], modulus);
-            assert safeSubtract(x, y) : "long overflow";
-            data[i] = floorMod(x - y, modulus);
-        }
+        for (; i <= oth.degree; ++i)
+            data[i] = floorMod(subtractExact(floorMod(data[i], modulus), floorMod(oth.data[i], modulus)), modulus);
         for (; i <= degree; ++i)
             data[i] = floorMod(data[i], modulus);
         fixDegree();
@@ -202,13 +232,10 @@ final class MutableLongPoly {
     MutableLongPoly subtract(MutableLongPoly oth, long factor, int exponent) {
         if (oth.isZero())
             return this;
-        ensureCapacity(oth.degree + exponent);
 
-        for (int i = exponent; i <= oth.degree + exponent; ++i) {
-            assert safeMultiply(factor, oth.data[i - exponent]) : "long overflow";
-            assert safeSubtract(data[i], factor * oth.data[i - exponent]) : "long overflow";
-            data[i] -= factor * oth.data[i - exponent];
-        }
+        ensureCapacity(oth.degree + exponent);
+        for (int i = exponent; i <= oth.degree + exponent; ++i)
+            data[i] = subtractExact(data[i], multiplyExact(factor, oth.data[i - exponent]));
         fixDegree();
         return this;
     }
@@ -216,21 +243,18 @@ final class MutableLongPoly {
     MutableLongPoly subtract(MutableLongPoly oth, long factor, int exponent, long modulus) {
         if (oth.isZero())
             return modulus(modulus);
-        ensureCapacity(oth.degree + exponent);
 
+        ensureCapacity(oth.degree + exponent);
         int i = 0;
         for (; i < exponent; ++i)
             data[i] = floorMod(data[i], modulus);
 
         factor = floorMod(factor, modulus);
-        for (; i <= oth.degree + exponent; ++i) {
-            long xThis = floorMod(data[i], modulus);
-            long xOther = floorMod(oth.data[i - exponent], modulus);
-            assert safeMultiply(xOther, factor) : "long overflow";
-            xOther = floorMod(factor * xOther, modulus);
-            assert safeSubtract(xThis, xOther) : "long overflow";
-            data[i] = floorMod(xThis - xOther, modulus);
-        }
+        for (; i <= oth.degree + exponent; ++i)
+            data[i] = floorMod(subtractExact(
+                    floorMod(data[i], modulus),
+                    floorMod(multiplyExact(factor, floorMod(oth.data[i - exponent], modulus)), modulus))
+                    , modulus);
         for (; i <= degree; ++i)
             data[i] = floorMod(data[i], modulus);
         fixDegree();
@@ -243,11 +267,8 @@ final class MutableLongPoly {
 
         final long[] newData = new long[degree + oth.degree + 1];
         for (int j = 0; j <= oth.degree; ++j) // <- upper loop over oth (safe redundant floorMod operations)
-            for (int i = 0; i <= degree; ++i) {
-                assert safeMultiply(data[i], oth.data[j]) : "long overflow";
-                assert safeAdd(newData[i + j], data[i] * oth.data[j]) : "long overflow";
-                newData[i + j] += data[i] * oth.data[j];
-            }
+            for (int i = 0; i <= degree; ++i)
+                newData[i + j] = addExact(newData[i + j], multiplyExact(data[i], oth.data[j]));
 
         data = newData;
         degree = degree + oth.degree;
@@ -262,11 +283,11 @@ final class MutableLongPoly {
         modulus(modulus);
         final long[] newData = new long[degree + oth.degree + 1];
         for (int j = 0; j <= oth.degree; ++j)// <- upper loop over oth (safe redundant floorMod operations)
-            for (int i = 0; i <= degree; ++i) {
-                assert safeMultiply(data[i], floorMod(oth.data[j], modulus)) : "long overflow";
-                assert safeAdd(newData[i + j], floorMod(data[i] * floorMod(oth.data[j], modulus), modulus)) : "long overflow";
-                newData[i + j] = floorMod(newData[i + j] + floorMod(data[i] * floorMod(oth.data[j], modulus), modulus), modulus);
-            }
+            for (int i = 0; i <= degree; ++i)
+                newData[i + j] = floorMod(addExact(
+                        newData[i + j],
+                        floorMod(multiplyExact(data[i], floorMod(oth.data[j], modulus)), modulus))
+                        , modulus);
 
         data = newData;
         degree = degree + oth.degree;
@@ -311,7 +332,7 @@ final class MutableLongPoly {
         MutableLongPoly oth = (MutableLongPoly) obj;
         if (degree != oth.degree)
             return false;
-        for (int i = 0; i <= degree; i++)
+        for (int i = 0; i <= degree; ++i)
             if (data[i] != oth.data[i])
                 return false;
         return true;

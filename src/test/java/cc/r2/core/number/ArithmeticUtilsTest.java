@@ -1,9 +1,12 @@
 package cc.r2.core.number;
 
+import cc.r2.core.number.primes.PrimesIterator;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
 import org.junit.Test;
 
 import static cc.r2.core.number.ArithmeticUtils.*;
+import static java.lang.Math.floorMod;
 import static org.junit.Assert.*;
 
 public class ArithmeticUtilsTest {
@@ -31,7 +34,7 @@ public class ArithmeticUtilsTest {
             }
             for (long a : new long[]{aa, -aa}) {
                 long l = modInverse(a, b);
-                assertEquals(1L, Math.floorMod(a * l, b));
+                assertEquals(1L, floorMod(a * l, b));
                 assertEquals(BigInteger.valueOf(a).modInverse(BigInteger.valueOf(b)).longValue(), l);
             }
         }
@@ -109,6 +112,8 @@ public class ArithmeticUtilsTest {
         for (int i = 0; i < 100; i++) {
             int x = rnd.nextInt(1000);
             int y = rnd.nextInt(6);
+            assertEquals(pow(x, y), powExact(x, y));
+            assertEquals(pow(-x, y), powExact(-x, y));
             assertTrue(safePow(x, y));
             assertTrue(safePow(-x, y));
         }
@@ -118,6 +123,8 @@ public class ArithmeticUtilsTest {
             int y = 7 + rnd.nextInt(6);
             assertFalse(safePow(x, y));
             assertFalse(safePow(-x, y));
+            try { powExact(x, y);} catch (Exception e) {assertEquals(ArithmeticException.class, e.getClass());}
+            try { powExact(-x, y);} catch (Exception e) {assertEquals(ArithmeticException.class, e.getClass());}
         }
     }
 
@@ -140,5 +147,25 @@ public class ArithmeticUtilsTest {
     @Test
     public void test8() throws Exception {
         assertEquals(BigInteger.valueOf(-1).modInverse(BigInteger.valueOf(11)).longValue(), modInverse(-1, 11));
+    }
+
+    @Test
+    public void test9() throws Exception {
+        assertEquals(0, symMod(0, 7));
+        assertEquals(3, symMod(3, 7));
+        assertEquals(-3, symMod(4, 7));
+    }
+
+    @Test
+    public void test10() throws Exception {
+        RandomGenerator rnd = new Well1024a();
+        for (int i = 0; i < 100; i++) {
+            long prime = new PrimesIterator(rnd.nextInt(10000)).take();
+            for (int j = 0; j < 10; j++) {
+                long k = rnd.nextInt();
+                long symMod = symMod(k, prime);
+                assertEquals(floorMod(symMod, prime), floorMod(k, prime));
+            }
+        }
     }
 }

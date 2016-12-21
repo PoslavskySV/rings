@@ -6,8 +6,7 @@ import org.apache.commons.math3.random.Well512a;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static cc.r2.core.number.primes.SmallPrimes.SmallPrimes10;
-import static cc.r2.core.number.primes.SmallPrimes.SmallPrimes12;
+import static cc.r2.core.number.primes.SmallPrimes.*;
 import static org.junit.Assert.*;
 
 public class SmallPrimesTest {
@@ -40,6 +39,14 @@ public class SmallPrimesTest {
         assertEquals(1, SmallPrimes.primeFactors(0).length);
     }
 
+    @Test
+    public void test5() throws Exception {
+        SieveOfAtkin sieve = SieveOfAtkin.createSieve(PRIMES12_LAST);
+        int p = 0;
+        for (int i = 0; i < PRIMES12_LAST; i++)
+            if (sieve.isPrime(i))
+                assertEquals(i, SmallPrimes12[p++]);
+    }
 
     @Test
     public void randomTest() throws Exception {

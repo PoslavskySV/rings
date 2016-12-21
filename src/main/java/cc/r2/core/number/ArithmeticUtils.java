@@ -2,6 +2,10 @@ package cc.r2.core.number;
 
 import org.apache.commons.math3.util.FastMath;
 
+import static java.lang.Math.*;
+
+import java.lang.Math;
+
 public final class ArithmeticUtils {
     private ArithmeticUtils() {
     }
@@ -26,6 +30,42 @@ public final class ArithmeticUtils {
             e = e >> 1;
         }
         return result;
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative)
+     *
+     * @param base base
+     * @param e    exponent (non negative)
+     * @return {@code base} in a power of {@code e} (non negative)
+     */
+    public static long powExact(final long base, long e) {
+        if (e < 0)
+            throw new IllegalArgumentException();
+
+        long result = 1L;
+        long k2p = base;
+        while (true) {
+            if ((e&1) != 0)
+                result = multiplyExact(result, k2p);
+            e = e >> 1;
+            if (e == 0)
+                return result;
+            k2p = multiplyExact(k2p, k2p);
+        }
+    }
+
+    /**
+     * Returns {@code value mod modulus} in the symmetric representation ({@code -modulus/2 <= result <= modulus/2})
+     *
+     * @param value   a long
+     * @param modulus modulus
+     * @return {@code value mod modulus} in the symmetric representation ({@code -modulus/2 <= result <= modulus/2})
+     */
+    public static long symMod(long value, long modulus) {
+        assert modulus > 0;
+        value = floorMod(value, modulus);
+        return value <= modulus / 2 ? value : value - modulus;
     }
 
     /**
@@ -77,15 +117,15 @@ public final class ArithmeticUtils {
 
             tmp = old_r;
             old_r = r;
-            r = tmp - q * r;
+            r = subtractExact(tmp, multiplyExact(q, r));
 
             tmp = old_s;
             old_s = s;
-            s = tmp - q * s;
+            s = subtractExact(tmp, multiplyExact(q, s));
         }
         if (old_r != 1)
             throw new IllegalArgumentException("Not invertible: val = " + a + ", modulus = " + p + ", old_r = " + old_r);
-        return Math.floorMod(old_s, p);
+        return floorMod(old_s, p);
     }
 
     /**
@@ -98,7 +138,7 @@ public final class ArithmeticUtils {
      * @throws IllegalArgumentException if {@code b} and {@code p} are not coprime
      */
     public static long divide(long a, long b, long p) {
-        return Math.floorMod(a * modInverse(b, p), p);
+        return floorMod(multiplyExact(a, modInverse(b, p)), p);
     }
 
     /**
@@ -220,11 +260,11 @@ public final class ArithmeticUtils {
     public static long gcd(final long[] vals, int from, int to) {
         if (vals.length < 2)
             throw new IllegalArgumentException();
-        long gcd = org.apache.commons.math3.util.ArithmeticUtils.gcd(vals[from], vals[from + 1]);
+        long gcd = gcd(vals[from], vals[from + 1]);
         if (gcd == 1)
             return gcd;
         for (int i = from + 2; i < to; i++) {
-            gcd = org.apache.commons.math3.util.ArithmeticUtils.gcd(vals[i], gcd);
+            gcd = gcd(vals[i], gcd);
             if (gcd == 1)
                 return gcd;
         }
