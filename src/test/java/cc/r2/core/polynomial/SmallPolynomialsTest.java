@@ -2,6 +2,7 @@ package cc.r2.core.polynomial;
 
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -328,27 +329,35 @@ public class SmallPolynomialsTest {
         RandomGenerator rnd = new Well1024a();
         int overflow = 0;
         int larger = 0;
-        for (int i = 0; i < 1000; i++) {
-            try {
-                MutableLongPoly a = randomPoly(7, 100, rnd);
-                MutableLongPoly b = randomPoly(6, 100, rnd);
-                MutableLongPoly gcd = randomPoly(2 + rnd.nextInt(4), 30, rnd);
-                a = a.multiply(gcd);
-                b = b.multiply(gcd);
+        DescriptiveStatistics timings = null;
+        for (int k = 0; k < 2; k++) {
+            timings = new DescriptiveStatistics();
+            for (int i = 0; i < 1000; i++) {
+                try {
+                    MutableLongPoly a = randomPoly(7, 100, rnd);
+                    MutableLongPoly b = randomPoly(6, 100, rnd);
+                    MutableLongPoly gcd = randomPoly(2 + rnd.nextInt(5), 30, rnd);
+                    a = a.multiply(gcd);
+                    b = b.multiply(gcd);
 
-                MutableLongPoly mgcd = ModularGCD(a, b);
-                assertFalse(mgcd.isConstant());
+                    long start = System.nanoTime();
+                    MutableLongPoly mgcd = ModularGCD(a, b);
+                    timings.addValue(System.nanoTime() - start);
 
-                MutableLongPoly[] qr = pseudoDivideAndRemainderAdaptive(mgcd, gcd);
-                assertNotNull(qr);
-                assertTrue(qr[1].isZero());
-                if (!qr[0].isConstant()) ++larger;
+                    assertFalse(mgcd.isConstant());
 
-                assertGCD(a, b, mgcd);
-            } catch (ArithmeticException e) {++overflow;}
+                    MutableLongPoly[] qr = pseudoDivideAndRemainderAdaptive(mgcd, gcd);
+                    assertNotNull(qr);
+                    assertTrue(qr[1].isZero());
+                    if (!qr[0].isConstant()) ++larger;
+
+                    assertGCD(a, b, mgcd);
+                } catch (ArithmeticException e) {++overflow;}
+            }
         }
         System.out.println("Overflows: " + overflow);
         System.out.println("Larger gcd: " + larger);
+        System.out.println("\nTiming statistics:\n" + timings);
     }
 
     private static void assertGCD(MutableLongPoly a, MutableLongPoly b, MutableLongPoly gcd) {
