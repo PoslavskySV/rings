@@ -7,7 +7,6 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static cc.r2.core.number.ArithmeticUtils.*;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
@@ -260,14 +259,6 @@ public final class SmallPolynomials {
             //two trials didn't change the result, probably we are done
             if (base.equals(previousBase)) {
                 MutableLongPoly candidate = primitivePart(base.clone().symModulus(basePrime));
-
-                if (pseudoDivideAndRemainderAdaptive(b, candidate) == null
-                        && pseudoDivideAndRemainderAdaptive(a, candidate) == null) {
-                    System.out.println(Arrays.toString(a.data));
-                    System.out.println(Arrays.toString(b.data));
-                    System.out.println(Arrays.toString(candidate.data));
-                }
-
                 //first check b since b is less degree
                 if (pseudoDivideAndRemainderAdaptive(b, candidate)[1].isZero()
                         && pseudoDivideAndRemainderAdaptive(a, candidate)[1].isZero())
@@ -446,8 +437,6 @@ public final class SmallPolynomials {
 
         public PolynomialRemainders(ArrayList<MutableLongPoly> remainders) {
             this.remainders = remainders;
-//            if (remainders.size() == 2)
-//                remainders.add(MutableLongPoly.one());
         }
 
         public MutableLongPoly gcd() {
