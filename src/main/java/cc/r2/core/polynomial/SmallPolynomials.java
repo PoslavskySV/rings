@@ -144,15 +144,15 @@ public final class SmallPolynomials {
                 cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
                 cPsi = -1;
             } else {
-                cPsi = powExact(-curr.lc(), deltas.get(i - 1));
+                cPsi = pow(-curr.lc(), deltas.get(i - 1));
                 if (deltas.get(i - 1) < 1) {
-                    cPsi = multiplyExact(cPsi, powExact(psi.get(i - 1), -deltas.get(i - 1) + 1));
+                    cPsi = multiply(cPsi, pow(psi.get(i - 1), -deltas.get(i - 1) + 1));
                 } else {
-                    long tmp = powExact(psi.get(i - 1), deltas.get(i - 1) - 1);
+                    long tmp = pow(psi.get(i - 1), deltas.get(i - 1) - 1);
                     assert cPsi % tmp == 0;
                     cPsi /= tmp;
                 }
-                cBeta = multiplyExact(-curr.lc(), powExact(cPsi, delta));
+                cBeta = multiply(-curr.lc(), pow(cPsi, delta));
             }
 
             MutableLongPoly q = pseudoDivideAndRemainder(curr, next)[1];
@@ -236,12 +236,12 @@ public final class SmallPolynomials {
             previousBase = base.clone();
 
             //lifting
-            long newBasePrime = multiplyExact(basePrime, prime);
+            long newBasePrime = multiply(basePrime, prime);
             long monicFactor = modInverse(modularGCD.lc(), prime);
-            long lcMod = floorMod(lcGCD, prime);
+            long lcMod = mod(lcGCD, prime);
             for (int i = 0; i <= base.degree; ++i) {
                 //this is monic modularGCD multiplied by lcGCD mod prime
-                long oth = floorMod(multiplyExact(floorMod(multiplyExact(modularGCD.data[i], monicFactor), prime), lcMod), prime);
+                long oth = mod(multiply(mod(multiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
                 base.data[i] = ChineseRemainders(basePrime, prime, base.data[i], oth);
             }
             base.fixDegree();
@@ -329,7 +329,7 @@ public final class SmallPolynomials {
             MutableLongPoly divider) {
         if (dividend.degree < divider.degree)
             return null;
-        long factor = powExact(divider.lc(), dividend.degree - divider.degree + 1);
+        long factor = pow(divider.lc(), dividend.degree - divider.degree + 1);
         if (divider.degree == 0)
             return new MutableLongPoly[]{dividend.clone().multiply(factor / dividend.lc()), MutableLongPoly.zero()};
         if (divider.degree == 1)
@@ -441,7 +441,7 @@ public final class SmallPolynomials {
 
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
             if (remainder.degree == divider.degree + i) {
-                quotient.data[i] = divide(remainder.lc(), divider.lc(), modulus);
+                quotient.data[i] = divideMod(remainder.lc(), divider.lc(), modulus);
                 remainder.subtract(divider, quotient.data[i], i, modulus);
             } else quotient.data[i] = 0;
         }
@@ -455,18 +455,18 @@ public final class SmallPolynomials {
 
         //apply Horner's method
 
-        long cc = floorMod(-divider.cc(), modulus);
+        long cc = mod(-divider.cc(), modulus);
         long lcInverse = modInverse(divider.lc(), modulus);
 
         if (divider.lc() != 1)
-            cc = floorMod(multiplyExact(cc, lcInverse), modulus);
+            cc = mod(multiply(cc, lcInverse), modulus);
 
         long[] quotient = new long[dividend.degree];
         long res = 0;
         for (int i = dividend.degree; i >= 0; --i) {
             if (i != dividend.degree)
-                quotient[i] = floorMod(multiplyExact(res, lcInverse), modulus);
-            res = addMod(multiplyExact(res, cc), dividend.data[i], modulus);
+                quotient[i] = mod(multiply(res, lcInverse), modulus);
+            res = addMod(multiply(res, cc), dividend.data[i], modulus);
         }
         return new MutableLongPoly[]{MutableLongPoly.create(quotient), MutableLongPoly.create(res)};
     }
@@ -478,7 +478,7 @@ public final class SmallPolynomials {
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
     static MutableLongPoly[] pseudoDivideAndRemainderLinearDivider(MutableLongPoly dividend, MutableLongPoly divider) {
-        return divideAndRemainderLinearDivider0(dividend, divider, powExact(divider.lc(), dividend.degree));
+        return divideAndRemainderLinearDivider0(dividend, divider, pow(divider.lc(), dividend.degree));
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
@@ -493,7 +493,7 @@ public final class SmallPolynomials {
         for (int i = dividend.degree; ; --i) {
             if (i != dividend.degree)
                 quotient[i] = res;
-            res = addExact(multiplyExact(res, cc), multiplyExact(raiseFactor, dividend.data[i]));
+            res = add(multiply(res, cc), multiply(raiseFactor, dividend.data[i]));
             if (i == 0) break;
             if (res % lc != 0) return null;
             res = res / lc;
@@ -513,15 +513,15 @@ public final class SmallPolynomials {
         for (int i = dividend.degree; ; --i) {
             if (i != dividend.degree)
                 quotient[i] = res;
-            res = addExact(multiplyExact(res, cc), multiplyExact(factor, dividend.data[i]));
+            res = add(multiply(res, cc), multiply(factor, dividend.data[i]));
             if (i == 0) break;
             if (res % lc != 0) {
                 long gcd = gcd(res, lc), f = lc / gcd;
-                factor = multiplyExact(factor, f);
-                res = multiplyExact(res, f);
+                factor = multiply(factor, f);
+                res = multiply(res, f);
                 if (i != dividend.degree)
                     for (int j = quotient.length - 1; j >= i; --j)
-                        quotient[j] = multiplyExact(quotient[j], f);
+                        quotient[j] = multiply(quotient[j], f);
             }
             res = res / lc;
         }
