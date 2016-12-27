@@ -88,7 +88,7 @@ final class MutableLongPoly {
             return cc();
         long res = 0;
         for (int i = degree; i >= 0; --i)
-            res = addExact(multiplyExact(res, point), data[i]);
+            res = LongArithmetics.add(LongArithmetics.multiply(res, point), data[i]);
         return res;
     }
 
@@ -105,10 +105,10 @@ final class MutableLongPoly {
             return cc();
         long res = 0;
         for (int i = degree; i >= 0; --i) {
-            long x = multiplyExact(res, num);
+            long x = LongArithmetics.multiply(res, num);
             if (x % den != 0)
                 throw new IllegalArgumentException("The answer is not integer");
-            res = addExact(x / den, data[i]);
+            res = LongArithmetics.add(x / den, data[i]);
         }
         return res;
     }
@@ -134,7 +134,7 @@ final class MutableLongPoly {
 
     MutableLongPoly modulus(long modulus) {
         for (int i = degree; i >= 0; --i)
-            data[i] = floorMod(data[i], modulus);
+            data[i] = mod(data[i], modulus);
         fixDegree();
         return this;
     }
@@ -176,7 +176,7 @@ final class MutableLongPoly {
     }
 
     MutableLongPoly monic(long factor, long modulus) {
-        return multiply(multiplyExact(floorMod(factor, modulus), modInverse(lc(), modulus)), modulus);
+        return multiply(LongArithmetics.multiply(mod(factor, modulus), modInverse(lc(), modulus)), modulus);
     }
 
     private MutableLongPoly toZero() {
@@ -191,18 +191,18 @@ final class MutableLongPoly {
         if (factor == 0)
             return toZero();
         for (int i = degree; i >= 0; --i)
-            data[i] = multiplyExact(data[i], factor);
+            data[i] = LongArithmetics.multiply(data[i], factor);
         return this;
     }
 
     MutableLongPoly multiply(long factor, long modulus) {
-        factor = floorMod(factor, modulus);
+        factor = mod(factor, modulus);
         if (factor == 1)
             return modulus(modulus);
         if (factor == 0)
             return toZero();
         for (int i = degree; i >= 0; --i)
-            data[i] = floorMod(multiplyExact(floorMod(data[i], modulus), factor), modulus);
+            data[i] = mod(LongArithmetics.multiply(mod(data[i], modulus), factor), modulus);
         return this;
     }
 
@@ -212,7 +212,7 @@ final class MutableLongPoly {
 
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
-            data[i] = addExact(data[i], oth.data[i]);
+            data[i] = LongArithmetics.add(data[i], oth.data[i]);
         fixDegree();
         return this;
     }
@@ -225,7 +225,7 @@ final class MutableLongPoly {
         for (int i = oth.degree; i >= 0; --i)
             data[i] = addMod(data[i], oth.data[i], modulus);
         for (int i = degree; i > oth.degree; --i)
-            data[i] = floorMod(data[i], modulus);
+            data[i] = mod(data[i], modulus);
         fixDegree();
         return this;
     }
@@ -236,7 +236,7 @@ final class MutableLongPoly {
 
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
-            data[i] = subtractExact(data[i], oth.data[i]);
+            data[i] = LongArithmetics.subtract(data[i], oth.data[i]);
         fixDegree();
         return this;
     }
@@ -249,7 +249,7 @@ final class MutableLongPoly {
         for (int i = oth.degree; i >= 0; --i)
             data[i] = subtractMod(data[i], oth.data[i], modulus);
         for (int i = degree; i > oth.degree; --i)
-            data[i] = floorMod(data[i], modulus);
+            data[i] = mod(data[i], modulus);
         fixDegree();
         return this;
     }
@@ -260,7 +260,7 @@ final class MutableLongPoly {
 
         ensureCapacity(oth.degree + exponent);
         for (int i = oth.degree + exponent; i >= exponent; --i)
-            data[i] = subtractExact(data[i], multiplyExact(factor, oth.data[i - exponent]));
+            data[i] = LongArithmetics.subtract(data[i], LongArithmetics.multiply(factor, oth.data[i - exponent]));
         fixDegree();
         return this;
     }
@@ -271,13 +271,13 @@ final class MutableLongPoly {
 
         ensureCapacity(oth.degree + exponent);
         for (int i = exponent - 1; i >= 0; --i)
-            data[i] = floorMod(data[i], modulus);
+            data[i] = mod(data[i], modulus);
 
-        factor = floorMod(factor, modulus);
+        factor = mod(factor, modulus);
         for (int i = oth.degree + exponent; i >= exponent; --i)
-            data[i] = subtractMod(data[i], multiplyExact(factor, floorMod(oth.data[i - exponent], modulus)), modulus);
+            data[i] = subtractMod(data[i], LongArithmetics.multiply(factor, mod(oth.data[i - exponent], modulus)), modulus);
         for (int i = degree, to = oth.degree + exponent; i > to; --i)
-            data[i] = floorMod(data[i], modulus);
+            data[i] = mod(data[i], modulus);
         fixDegree();
         return this;
     }
@@ -287,9 +287,9 @@ final class MutableLongPoly {
             return multiply(oth.data[0]);
 
         final long[] newData = new long[degree + oth.degree + 1];
-        for (int j = oth.degree; j >= 0; --j) // <- upper loop over oth (safe redundant floorMod operations)
+        for (int j = oth.degree; j >= 0; --j) // <- upper loop over oth (safe redundant mod operations)
             for (int i = degree; i >= 0; --i)
-                newData[i + j] = addExact(newData[i + j], multiplyExact(data[i], oth.data[j]));
+                newData[i + j] = LongArithmetics.add(newData[i + j], LongArithmetics.multiply(data[i], oth.data[j]));
 
         data = newData;
         degree = degree + oth.degree;
@@ -303,11 +303,11 @@ final class MutableLongPoly {
 
         modulus(modulus);
         final long[] newData = new long[degree + oth.degree + 1];
-        for (int j = oth.degree; j >= 0; --j)// <- upper loop over oth (safe redundant floorMod operations)
+        for (int j = oth.degree; j >= 0; --j)// <- upper loop over oth (safe redundant mod operations)
             for (int i = degree; i >= 0; --i)
-                newData[i + j] = floorMod(addExact(
+                newData[i + j] = mod(LongArithmetics.add(
                         newData[i + j],
-                        floorMod(multiplyExact(data[i], floorMod(oth.data[j], modulus)), modulus))
+                        mod(LongArithmetics.multiply(data[i], mod(oth.data[j], modulus)), modulus))
                         , modulus);
 
         data = newData;

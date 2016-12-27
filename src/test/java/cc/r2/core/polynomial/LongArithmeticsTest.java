@@ -110,22 +110,22 @@ public class LongArithmeticsTest {
     @Test
     public void test6() throws Exception {
         Well1024a rnd = new Well1024a();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             int x = rnd.nextInt(1000);
             int y = rnd.nextInt(6);
-//            assertEquals(pow(x, y), powExact(x, y));
-//            assertEquals(pow(-x, y), powExact(-x, y));
+//            assertEquals(pow(x, y), pow(x, y));
+//            assertEquals(pow(-x, y), pow(-x, y));
             assertTrue(safePow(x, y));
             assertTrue(safePow(-x, y));
         }
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             int x = 1000 + rnd.nextInt(1000);
-            int y = 7 + rnd.nextInt(6);
+            int y = 8 + rnd.nextInt(6);
             assertFalse(safePow(x, y));
             assertFalse(safePow(-x, y));
-            try { powExact(x, y);} catch (Exception e) {assertEquals(ArithmeticException.class, e.getClass());}
-            try { powExact(-x, y);} catch (Exception e) {assertEquals(ArithmeticException.class, e.getClass());}
+            try { pow(x, y);} catch (Exception e) {assertEquals(ArithmeticException.class, e.getClass());}
+            try { pow(-x, y);} catch (Exception e) {assertEquals(ArithmeticException.class, e.getClass());}
         }
     }
 
@@ -139,9 +139,9 @@ public class LongArithmeticsTest {
                 continue;
             }
             long e = 1 + rnd.nextInt(100);
-            assertEquals(BigInteger.valueOf(a).modPow(BigInteger.valueOf(e), BigInteger.valueOf(b)).longValue(), modPow(a, e, b));
+            assertEquals(BigInteger.valueOf(a).modPow(BigInteger.valueOf(e), BigInteger.valueOf(b)).longValue(), powMod(a, e, b));
             e = -e;
-            assertEquals(BigInteger.valueOf(a).modPow(BigInteger.valueOf(e), BigInteger.valueOf(b)).longValue(), modPow(a, e, b));
+            assertEquals(BigInteger.valueOf(a).modPow(BigInteger.valueOf(e), BigInteger.valueOf(b)).longValue(), powMod(a, e, b));
         }
     }
 

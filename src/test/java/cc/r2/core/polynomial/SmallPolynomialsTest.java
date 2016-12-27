@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static cc.r2.core.polynomial.LongArithmetics.gcd;
-import static cc.r2.core.polynomial.LongArithmetics.powExact;
+import static cc.r2.core.polynomial.LongArithmetics.pow;
 import static cc.r2.core.polynomial.SmallPolynomials.*;
 import static org.junit.Assert.*;
 
@@ -375,13 +375,13 @@ public class SmallPolynomialsTest {
     @Test
     public void test19() throws Exception {
         MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
-        poly.multiply(powExact(5, poly.degree));
+        poly.multiply(pow(5, poly.degree));
 
         assertEquals(3045900, poly.evaluateAtRational(1, 5));
         assertEquals(-74846713560L, poly.evaluateAtRational(13, 5));
         assertEquals(40779736470L, poly.evaluateAtRational(13, -5));
 
-        poly.divide(powExact(5, poly.degree));
+        poly.divide(pow(5, poly.degree));
         poly.multiply(512);
         assertEquals(-654063683625L, poly.evaluateAtRational(17, 2));
     }
@@ -441,7 +441,7 @@ public class SmallPolynomialsTest {
             actual = pseudoDivideAndRemainderLinearDivider(dividend, divider);
             fastPseudo.addValue(System.nanoTime() - start);
             start = System.nanoTime();
-            long factor = powExact(divider.lc(), dividend.degree - divider.degree + 1);
+            long factor = pow(divider.lc(), dividend.degree - divider.degree + 1);
             expected = divideAndRemainderGeneral0(dividend, divider, factor);
             genPseudo.addValue(System.nanoTime() - start);
             assertArrayEquals(expected, actual);
