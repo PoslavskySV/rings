@@ -1,58 +1,123 @@
-package cc.r2.core.number;
+package cc.r2.core.polynomial;
 
-import org.apache.commons.math3.util.FastMath;
 
-import static java.lang.Math.*;
+public final class LongArithmetics {
+    private LongArithmetics() {
+    }
 
-import java.lang.Math;
+    /** dividend / divisor */
+    public static long divide(long dividend, long divisor) {
+        return dividend / divisor;
+    }
 
-public final class ArithmeticUtils {
-    private ArithmeticUtils() {
+    /** dividend % divisor */
+    public static long rem(long dividend, long divisor) {
+        return dividend % divisor;
+    }
+
+    /** Delegates to {@link Math#multiplyExact(long, long)} */
+    public static long multiplyExact(long x, long y) {
+        return Math.multiplyExact(x, y);
+    }
+
+    /** Delegates to {@link Math#addExact(long, long)} */
+    public static long addExact(long x, long y) {
+        return Math.addExact(x, y);
+    }
+
+    /** Delegates to {@link Math#subtractExact(long, long)} */
+    public static long subtractExact(long a, long b) {
+        return Math.subtractExact(a, b);
+    }
+
+    /** Delegates to {@link Math#floorMod(long, long)} */
+    public static long floorMod(long num, long modulus) {
+        return Math.floorMod(num, modulus);
     }
 
     /**
-     * Returns {@code base} in a power of {@code e} (non negative)
+     * Returns the product of its arguments modulo {@code modulus},
+     * throwing an exception if long overflow occurs at intermediate step.
      *
-     * @param base base
-     * @param e    exponent (non negative)
-     * @return {@code base} in a power of {@code e} (non negative)
+     * @param x       the first value
+     * @param y       the second value
+     * @param modulus modulus
+     * @return the result
+     * @throws ArithmeticException if long overflow occurs at intermediate step
      */
-    public static long pow(final long base, long e) {
-        if (e < 0)
-            throw new IllegalArgumentException();
-
-        long result = 1L;
-        long k2p = base;
-        while (e != 0) {
-            if ((e&1) != 0)
-                result *= k2p;
-            k2p *= k2p;
-            e = e >> 1;
-        }
-        return result;
+    public static long multiplyMod(long x, long y, long modulus) {
+        return floorMod(multiplyExact(floorMod(x, modulus), floorMod(y, modulus)), modulus);
     }
 
     /**
-     * Returns {@code base} in a power of {@code e} (non negative)
+     * Returns the product of its arguments modulo {@code modulus},
+     * throwing an exception if long overflow occurs at intermediate step.
      *
-     * @param base base
-     * @param e    exponent (non negative)
-     * @return {@code base} in a power of {@code e} (non negative)
+     * @param x       the first value
+     * @param y       the second value
+     * @param z       the third value
+     * @param modulus modulus
+     * @return the result
+     * @throws ArithmeticException if long overflow occurs at intermediate step
      */
-    public static long powExact(final long base, long e) {
-        if (e < 0)
-            throw new IllegalArgumentException();
+    public static long multiplyMod(long x, long y, long z, long modulus) {
+        return multiplyMod(multiplyMod(x, y, modulus), z, modulus);
+    }
 
-        long result = 1L;
-        long k2p = base;
-        while (true) {
-            if ((e&1) != 0)
-                result = multiplyExact(result, k2p);
-            e = e >> 1;
-            if (e == 0)
-                return result;
-            k2p = multiplyExact(k2p, k2p);
-        }
+    /**
+     * Returns the sum of its arguments modulo {@code modulus},
+     * throwing an exception if long overflow occurs at intermediate step.
+     *
+     * @param x       the first value
+     * @param y       the second value
+     * @param modulus modulus
+     * @return the result
+     * @throws ArithmeticException if long overflow occurs at intermediate step
+     */
+    public static long addMod(long x, long y, long modulus) {
+        return floorMod(addExact(floorMod(x, modulus), floorMod(y, modulus)), modulus);
+    }
+
+    /**
+     * Returns the sum of its arguments modulo {@code modulus},
+     * throwing an exception if long overflow occurs at intermediate step.
+     *
+     * @param x       the first value
+     * @param y       the second value
+     * @param z       the third value
+     * @param modulus modulus
+     * @return the result
+     * @throws ArithmeticException if long overflow occurs at intermediate step
+     */
+    public static long addMod(long x, long y, long z, long modulus) {
+        return addMod(addMod(x, y, modulus), z, modulus);
+    }
+
+    /**
+     * Returns the difference of its arguments modulo {@code modulus},
+     * throwing an exception if long overflow occurs at intermediate step.
+     *
+     * @param x       the first value
+     * @param y       the second value
+     * @param modulus modulus
+     * @return the result
+     * @throws ArithmeticException if long overflow occurs at intermediate step
+     */
+    public static long subtractMod(long x, long y, long modulus) {
+        return floorMod(subtractExact(floorMod(x, modulus), floorMod(y, modulus)), modulus);
+    }
+
+    /**
+     * Returns {@code a/b mod p}
+     *
+     * @param dividend a long
+     * @param divider  a long
+     * @param modulus  mosulus
+     * @return {@code a/b mod p}
+     * @throws IllegalArgumentException if {@code b} and {@code p} are not coprime
+     */
+    public static long divide(long dividend, long divider, long modulus) {
+        return floorMod(multiplyExact(dividend, modInverse(divider, modulus)), modulus);
     }
 
     /**
@@ -63,52 +128,50 @@ public final class ArithmeticUtils {
      * @return {@code value mod modulus} in the symmetric representation ({@code -modulus/2 <= result <= modulus/2})
      */
     public static long symMod(long value, long modulus) {
-        assert modulus > 0;
+        if (modulus < 0)
+            throw new IllegalArgumentException("Negative modulus");
         value = floorMod(value, modulus);
         return value <= modulus / 2 ? value : value - modulus;
     }
 
     /**
-     * Returns {@code base} in a power of {@code e} (may be negative) modulus {@code p}
+     * Returns {@code base} in a power of {@code e} (non negative)
      *
-     * @param base base
-     * @param e    exponent (may be negative, if base and modulus are coprime)
-     * @param p    modulus
-     * @return {@code base} in a power of {@code e} (may be negative) modulus {@code p}
-     * @throws IllegalArgumentException if e < 0 and base and modulus are not coprime
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code e} (non negative)
+     * @throws ArithmeticException if long overflow occurs at some intermediate step
      */
-    public static long modPow(long base, long e, long p) {
-        if (e < 0) {
-            base = modInverse(base, p);
-            e = -e;
-        }
+    public static long powExact(final long base, long exponent) {
+        if (exponent < 0)
+            throw new IllegalArgumentException();
 
         long result = 1L;
         long k2p = base;
-        while (e != 0) {
-            if ((e&1) != 0)
-                result = (result * k2p) % p;
-            k2p = (k2p * k2p) % p;
-            e = e >> 1;
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result = multiplyExact(result, k2p);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = multiplyExact(k2p, k2p);
         }
-
-        return result;
     }
 
     /**
      * Returns a solution of congruence {@code a * x = 1 mod p}
      *
-     * @param a base
-     * @param p modulus
+     * @param num     base
+     * @param modulus modulus
      * @return {@code a^(-1) mod p}
      * @throws IllegalArgumentException {@code a} and {@code modulus} are not coprime
      */
-    public static long modInverse(long a, long p) {
-        if (a < 0)
-            a = Math.floorMod(a, p);
+    public static long modInverse(long num, long modulus) {
+        if (num < 0)
+            num = floorMod(num, modulus);
 
         long s = 0, old_s = 1;
-        long r = p, old_r = a;
+        long r = modulus, old_r = num;
 
         long q;
         long tmp;
@@ -124,21 +187,35 @@ public final class ArithmeticUtils {
             s = subtractExact(tmp, multiplyExact(q, s));
         }
         if (old_r != 1)
-            throw new IllegalArgumentException("Not invertible: val = " + a + ", modulus = " + p + ", old_r = " + old_r);
-        return floorMod(old_s, p);
+            throw new IllegalArgumentException("Not invertible: val = " + num + ", modulus = " + modulus + ", old_r = " + old_r);
+        return floorMod(old_s, modulus);
     }
 
     /**
-     * Returns {@code a/b mod p}
+     * Returns {@code base} in a power of {@code e} (may be negative) modulus {@code p}
      *
-     * @param a a long
-     * @param b a long
-     * @param p mosulus
-     * @return {@code a/b mod p}
-     * @throws IllegalArgumentException if {@code b} and {@code p} are not coprime
+     * @param base     base
+     * @param exponent exponent (may be negative, if base and modulus are coprime)
+     * @param modulus  modulus
+     * @return {@code base} in a power of {@code e} (may be negative) modulus {@code p}
+     * @throws IllegalArgumentException if e < 0 and {@code base} and {@code modulus} are not coprime
      */
-    public static long divide(long a, long b, long p) {
-        return floorMod(multiplyExact(a, modInverse(b, p)), p);
+    public static long modPow(long base, long exponent, long modulus) {
+        if (exponent < 0) {
+            base = modInverse(base, modulus);
+            exponent = -exponent;
+        }
+
+        long result = 1L;
+        long k2p = base;
+        while (true) {
+            if ((exponent&1) != 0)
+                result = floorMod(multiplyExact(result, k2p), modulus);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = floorMod(multiplyExact(k2p, k2p), modulus);
+        }
     }
 
     /**
@@ -154,7 +231,7 @@ public final class ArithmeticUtils {
         if ((u == 0) || (v == 0)) {
             if ((u == Long.MIN_VALUE) || (v == Long.MIN_VALUE))
                 throw new IllegalArgumentException("long overflow");
-            return FastMath.abs(u) + FastMath.abs(v);
+            return Math.abs(u) + Math.abs(v);
         }
         // keep u and v negative, as negative integers range down to
         // -2^63, while positive numbers can only be as large as 2^63-1
@@ -252,19 +329,19 @@ public final class ArithmeticUtils {
     /**
      * Returns the greatest common an array of longs
      *
-     * @param vals array of longs
-     * @param from from position (inclusive)
-     * @param to   to position (exclusive)
+     * @param integers array of longs
+     * @param from     from position (inclusive)
+     * @param to       to position (exclusive)
      * @return greatest common divisor of array
      */
-    public static long gcd(final long[] vals, int from, int to) {
-        if (vals.length < 2)
+    public static long gcd(final long[] integers, int from, int to) {
+        if (integers.length < 2)
             throw new IllegalArgumentException();
-        long gcd = gcd(vals[from], vals[from + 1]);
+        long gcd = gcd(integers[from], integers[from + 1]);
         if (gcd == 1)
             return gcd;
         for (int i = from + 2; i < to; i++) {
-            gcd = gcd(vals[i], gcd);
+            gcd = gcd(integers[i], gcd);
             if (gcd == 1)
                 return gcd;
         }
@@ -274,11 +351,11 @@ public final class ArithmeticUtils {
     /**
      * Returns the greatest common an array of longs
      *
-     * @param vals array of longs
+     * @param integers array of longs
      * @return greatest common divisor of array
      */
-    public static long gcd(final long... vals) {
-        return gcd(vals, 0, vals.length);
+    public static long gcd(final long... integers) {
+        return gcd(integers, 0, integers.length);
     }
 
     /**

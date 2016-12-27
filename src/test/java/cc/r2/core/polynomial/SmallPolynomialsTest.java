@@ -1,5 +1,6 @@
 package cc.r2.core.polynomial;
 
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -9,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static cc.r2.core.polynomial.LongArithmetics.gcd;
+import static cc.r2.core.polynomial.LongArithmetics.powExact;
 import static cc.r2.core.polynomial.SmallPolynomials.*;
 import static org.junit.Assert.*;
 
@@ -358,6 +361,119 @@ public class SmallPolynomialsTest {
         System.out.println("Overflows: " + overflow);
         System.out.println("Larger gcd: " + larger);
         System.out.println("\nTiming statistics:\n" + timings);
+    }
+
+    @Test
+    public void test18() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        assertEquals(0, poly.evaluate(1));
+        assertEquals(-3999, poly.evaluate(2));
+        assertEquals(1881, poly.evaluate(-2));
+        assertEquals(566220912246L, poly.evaluate(-17));
+    }
+
+    @Test
+    public void test19() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        poly.multiply(powExact(5, poly.degree));
+
+        assertEquals(3045900, poly.evaluateAtRational(1, 5));
+        assertEquals(-74846713560L, poly.evaluateAtRational(13, 5));
+        assertEquals(40779736470L, poly.evaluateAtRational(13, -5));
+
+        poly.divide(powExact(5, poly.degree));
+        poly.multiply(512);
+        assertEquals(-654063683625L, poly.evaluateAtRational(17, 2));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test20() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        poly.evaluateAtRational(1, 5);
+    }
+
+    @Test
+    public void test21() throws Exception {
+        RandomGenerator rnd = new Well1024a();
+        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
+        DescriptiveStatistics
+                fast = new DescriptiveStatistics(), fastPseudo = new DescriptiveStatistics(),
+                gen = new DescriptiveStatistics(), genPseudo = new DescriptiveStatistics();
+
+        for (int i = 0; i < 10_000; i++) {
+            MutableLongPoly dividend = randomPoly(rndd.nextInt(1, 10), 10, rnd);
+            MutableLongPoly divider;
+            do {
+                divider = MutableLongPoly.create(rndd.nextInt(-10, 10), 1);
+            } while (divider.degree == 0);
+
+            if (i == 100) {
+                fast.clear();
+                gen.clear();
+            }
+
+            long start = System.nanoTime();
+            MutableLongPoly[] actual = divideAndRemainderLinearDivider(dividend, divider);
+            fast.addValue(System.nanoTime() - start);
+            start = System.nanoTime();
+            MutableLongPoly[] expected = divideAndRemainderGeneral0(dividend, divider, 1);
+            gen.addValue(System.nanoTime() - start);
+            assertArrayEquals(expected, actual);
+
+
+            for (long modulus : new long[]{2, 3, 5, 7, 11, 13, 19, 101}) {
+                do {
+                    divider = MutableLongPoly.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
+                } while (divider.degree == 0 || gcd(divider.lc(), modulus) != 1);
+                start = System.nanoTime();
+                actual = divideAndRemainderLinearDividerModulus(dividend, divider, modulus);
+                fast.addValue(System.nanoTime() - start);
+                start = System.nanoTime();
+                expected = divideAndRemainderModulus(dividend, divider, modulus);
+                gen.addValue(System.nanoTime() - start);
+                assertArrayEquals(expected, actual);
+            }
+
+            do {
+                divider = MutableLongPoly.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
+            } while (divider.degree == 0);
+            start = System.nanoTime();
+            actual = pseudoDivideAndRemainderLinearDivider(dividend, divider);
+            fastPseudo.addValue(System.nanoTime() - start);
+            start = System.nanoTime();
+            long factor = powExact(divider.lc(), dividend.degree - divider.degree + 1);
+            expected = divideAndRemainderGeneral0(dividend, divider, factor);
+            genPseudo.addValue(System.nanoTime() - start);
+            assertArrayEquals(expected, actual);
+
+            do {
+                divider = MutableLongPoly.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
+            } while (divider.degree == 0);
+            start = System.nanoTime();
+            actual = pseudoDivideAndRemainderLinearDividerAdaptive(dividend, divider);
+            fastPseudo.addValue(System.nanoTime() - start);
+            start = System.nanoTime();
+            expected = pseudoDivideAndRemainderAdaptive0(dividend, divider);
+            genPseudo.addValue(System.nanoTime() - start);
+            assertArrayEquals(expected, actual);
+        }
+        System.out.println("Fast:");
+        System.out.println(fast);
+        System.out.println("General:");
+        System.out.println(gen);
+
+        System.out.println("Fast:");
+        System.out.println(fastPseudo);
+        System.out.println("General:");
+        System.out.println(genPseudo);
+    }
+
+    @Test
+    public void test22() throws Exception {
+        MutableLongPoly dividend = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
+        MutableLongPoly divider = MutableLongPoly.create(1, 2);
+        System.out.println(Arrays.toString(divideAndRemainderLinearDivider(dividend, divider)));
+        System.out.println(Arrays.toString(divideAndRemainder(dividend, divider)));
     }
 
     private static void assertGCD(MutableLongPoly a, MutableLongPoly b, MutableLongPoly gcd) {

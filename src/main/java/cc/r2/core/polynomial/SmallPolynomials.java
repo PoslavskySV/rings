@@ -1,16 +1,14 @@
 package cc.r2.core.polynomial;
 
 
-import cc.r2.core.number.ArithmeticUtils;
 import cc.r2.core.number.primes.PrimesIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 
-import static cc.r2.core.number.ArithmeticUtils.*;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
-import static java.lang.Math.*;
+import static cc.r2.core.polynomial.LongArithmetics.*;
 
 public final class SmallPolynomials {
     private SmallPolynomials() {
@@ -191,7 +189,7 @@ public final class SmallPolynomials {
             return ModularGCD(b, a);
 
         long lcGCD = gcd(a.lc(), b.lc());
-        double bound = sqrt(a.degree + 1) * (1L << a.degree) * Math.max(a.norm(), b.norm()) * lcGCD;
+        double bound = Math.sqrt(a.degree + 1) * (1L << a.degree) * Math.max(a.norm(), b.norm()) * lcGCD;
 
         MutableLongPoly previousBase, base = null;
         long basePrime = -1;
@@ -299,6 +297,27 @@ public final class SmallPolynomials {
     }
 
     /**
+     * Divide and remainder
+     *
+     * @param dividend dividend
+     * @param divider  divider
+     * @return {quotient, remainder}
+     */
+    public static MutableLongPoly[] divideAndRemainder(final MutableLongPoly dividend,
+                                                       final MutableLongPoly divider) {
+        if (dividend.degree < divider.degree)
+            return null;
+        if (divider.degree == 0) {
+            MutableLongPoly div = dividend.clone().divideOrNull(divider.lc());
+            if (div == null) return null;
+            return new MutableLongPoly[]{div, MutableLongPoly.zero()};
+        }
+        if (divider.degree == 1)
+            return divideAndRemainderLinearDivider(dividend, divider);
+        return divideAndRemainderGeneral0(dividend, divider, 1);
+    }
+
+    /**
      * Pseudo divide and remainder
      *
      * @param dividend dividend
@@ -308,44 +327,21 @@ public final class SmallPolynomials {
     public static MutableLongPoly[] pseudoDivideAndRemainder(
             MutableLongPoly dividend,
             MutableLongPoly divider) {
-        return divideAndRemainder0(dividend, divider, powExact(divider.lc(), dividend.degree - divider.degree + 1));
-    }
-
-    /**
-     * Divide and remainder
-     *
-     * @param dividend dividend
-     * @param divider  divider
-     * @return {quotient, remainder}
-     */
-    public static MutableLongPoly[] divideAndRemainder(final MutableLongPoly dividend,
-                                                       final MutableLongPoly divider) {
-        return divideAndRemainder0(dividend, divider, 1);
-    }
-
-    /**
-     * Divide and remainder
-     *
-     * @param dividend dividend
-     * @param divider  divider
-     * @return {quotient, remainder}
-     */
-    private static MutableLongPoly[] divideAndRemainder0(final MutableLongPoly dividend,
-                                                         final MutableLongPoly divider,
-                                                         long dividendRaiseFactor) {
         if (dividend.degree < divider.degree)
             return null;
+        long factor = powExact(divider.lc(), dividend.degree - divider.degree + 1);
+        if (divider.degree == 0)
+            return new MutableLongPoly[]{dividend.clone().multiply(factor / dividend.lc()), MutableLongPoly.zero()};
+        if (divider.degree == 1)
+            return divideAndRemainderLinearDivider0(dividend, divider, factor);
+        return divideAndRemainderGeneral0(dividend, divider, factor);
+    }
 
-        if (divider.degree == 0) {
-            if (dividendRaiseFactor % divider.lc() == 0)
-                return new MutableLongPoly[]{dividend.clone().multiply(dividendRaiseFactor / divider.lc()), MutableLongPoly.zero()};
-            else {
-                MutableLongPoly quot = dividend.clone().multiply(dividendRaiseFactor).divideOrNull(divider.lc());
-                if (quot == null)
-                    return null;
-                return new MutableLongPoly[]{quot, MutableLongPoly.zero()};
-            }
-        }
+    /** Plain school implementation */
+    static MutableLongPoly[] divideAndRemainderGeneral0(final MutableLongPoly dividend,
+                                                        final MutableLongPoly divider,
+                                                        long dividendRaiseFactor) {
+        assert dividend.degree >= divider.degree;
 
         MutableLongPoly
                 remainder = dividend.clone().multiply(dividendRaiseFactor),
@@ -373,11 +369,22 @@ public final class SmallPolynomials {
      * @param divider  divider
      * @return {quotient, remainder}
      */
-    public static MutableLongPoly[] pseudoDivideAndRemainderAdaptive(
-            final MutableLongPoly dividend,
-            final MutableLongPoly divider) {
+    static MutableLongPoly[] pseudoDivideAndRemainderAdaptive(final MutableLongPoly dividend,
+                                                              final MutableLongPoly divider) {
         if (dividend.degree < divider.degree)
             return null;
+        if (divider.degree == 0)
+            return new MutableLongPoly[]{dividend.clone(), MutableLongPoly.zero()};
+        if (divider.degree == 1)
+            return pseudoDivideAndRemainderLinearDividerAdaptive(dividend, divider);
+        return pseudoDivideAndRemainderAdaptive0(dividend, divider);
+    }
+
+    /** general implementation */
+    static MutableLongPoly[] pseudoDivideAndRemainderAdaptive0(
+            final MutableLongPoly dividend,
+            final MutableLongPoly divider) {
+        assert dividend.degree >= divider.degree;
 
         MutableLongPoly
                 remainder = dividend.clone(),
@@ -405,8 +412,9 @@ public final class SmallPolynomials {
     /**
      * Divide and remainder
      *
-     * @param dividend divident
+     * @param dividend dividend
      * @param divider  divider
+     * @param modulus  modulus
      * @return {quotient, remainder}
      */
     public static MutableLongPoly[] divideAndRemainder(final MutableLongPoly dividend,
@@ -414,6 +422,18 @@ public final class SmallPolynomials {
                                                        final long modulus) {
         if (dividend.degree < divider.degree)
             return null;
+        if (divider.degree == 0)
+            return new MutableLongPoly[]{dividend.clone().multiply(modInverse(divider.lc(), modulus), modulus), MutableLongPoly.zero()};
+        if (divider.degree == 1)
+            return divideAndRemainderLinearDividerModulus(dividend, divider, modulus);
+        return divideAndRemainderModulus(dividend, divider, modulus);
+    }
+
+    /** Plain school implementation */
+    static MutableLongPoly[] divideAndRemainderModulus(final MutableLongPoly dividend,
+                                                       final MutableLongPoly divider,
+                                                       final long modulus) {
+        assert dividend.degree >= divider.degree;
 
         MutableLongPoly
                 remainder = dividend.clone(),
@@ -421,12 +441,91 @@ public final class SmallPolynomials {
 
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
             if (remainder.degree == divider.degree + i) {
-                quotient.data[i] = ArithmeticUtils.divide(remainder.lc(), divider.lc(), modulus);
+                quotient.data[i] = divide(remainder.lc(), divider.lc(), modulus);
                 remainder.subtract(divider, quotient.data[i], i, modulus);
             } else quotient.data[i] = 0;
         }
 
         return new MutableLongPoly[]{quotient.modulus(modulus), remainder.modulus(modulus)};
+    }
+
+    /** Fast division with remainder for divider of the form f(x) = x - u **/
+    static MutableLongPoly[] divideAndRemainderLinearDividerModulus(MutableLongPoly dividend, MutableLongPoly divider, long modulus) {
+        assert divider.degree == 1;
+
+        //apply Horner's method
+
+        long cc = floorMod(-divider.cc(), modulus);
+        long lcInverse = modInverse(divider.lc(), modulus);
+
+        if (divider.lc() != 1)
+            cc = floorMod(multiplyExact(cc, lcInverse), modulus);
+
+        long[] quotient = new long[dividend.degree];
+        long res = 0;
+        for (int i = dividend.degree; i >= 0; --i) {
+            if (i != dividend.degree)
+                quotient[i] = floorMod(multiplyExact(res, lcInverse), modulus);
+            res = addMod(multiplyExact(res, cc), dividend.data[i], modulus);
+        }
+        return new MutableLongPoly[]{MutableLongPoly.create(quotient), MutableLongPoly.create(res)};
+    }
+
+    /** Fast division with remainder for divider of the form f(x) = x - u **/
+    static MutableLongPoly[] divideAndRemainderLinearDivider(MutableLongPoly dividend, MutableLongPoly divider) {
+        return divideAndRemainderLinearDivider0(dividend, divider, 1);
+    }
+
+    /** Fast division with remainder for divider of the form f(x) = x - u **/
+    static MutableLongPoly[] pseudoDivideAndRemainderLinearDivider(MutableLongPoly dividend, MutableLongPoly divider) {
+        return divideAndRemainderLinearDivider0(dividend, divider, powExact(divider.lc(), dividend.degree));
+    }
+
+    /** Fast division with remainder for divider of the form f(x) = x - u **/
+    static MutableLongPoly[] divideAndRemainderLinearDivider0(MutableLongPoly dividend, MutableLongPoly divider, long raiseFactor) {
+        assert divider.degree == 1;
+
+        //apply Horner's method
+
+        long cc = -divider.cc(), lc = divider.lc();
+        long[] quotient = new long[dividend.degree];
+        long res = 0;
+        for (int i = dividend.degree; ; --i) {
+            if (i != dividend.degree)
+                quotient[i] = res;
+            res = addExact(multiplyExact(res, cc), multiplyExact(raiseFactor, dividend.data[i]));
+            if (i == 0) break;
+            if (res % lc != 0) return null;
+            res = res / lc;
+        }
+        return new MutableLongPoly[]{MutableLongPoly.create(quotient), MutableLongPoly.create(res)};
+    }
+
+    /** Fast division with remainder for divider of the form f(x) = x - u **/
+    static MutableLongPoly[] pseudoDivideAndRemainderLinearDividerAdaptive(MutableLongPoly dividend, MutableLongPoly divider) {
+        assert divider.degree == 1;
+
+        //apply Horner's method
+
+        long cc = -divider.cc(), lc = divider.lc(), factor = 1;
+        long[] quotient = new long[dividend.degree];
+        long res = 0;
+        for (int i = dividend.degree; ; --i) {
+            if (i != dividend.degree)
+                quotient[i] = res;
+            res = addExact(multiplyExact(res, cc), multiplyExact(factor, dividend.data[i]));
+            if (i == 0) break;
+            if (res % lc != 0) {
+                long gcd = gcd(res, lc), f = lc / gcd;
+                factor = multiplyExact(factor, f);
+                res = multiplyExact(res, f);
+                if (i != dividend.degree)
+                    for (int j = quotient.length - 1; j >= i; --j)
+                        quotient[j] = multiplyExact(quotient[j], f);
+            }
+            res = res / lc;
+        }
+        return new MutableLongPoly[]{MutableLongPoly.create(quotient), MutableLongPoly.create(res)};
     }
 
     /**

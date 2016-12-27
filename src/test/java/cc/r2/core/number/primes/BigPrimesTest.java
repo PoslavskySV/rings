@@ -1,6 +1,7 @@
 package cc.r2.core.number.primes;
 
 import cc.r2.core.number.BigInteger;
+import org.apache.commons.math3.primes.Primes;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
 import org.junit.Assert;
@@ -17,6 +18,13 @@ public class BigPrimesTest {
     public void test1() throws Exception {
         assertFalse(BigPrimes.isPrime(ZERO));
         assertEquals(1, BigPrimes.primeFactors(ZERO).size());
+    }
+
+    @Test
+    public void name() throws Exception {
+//        System.out.println(BigPrimes.nextPrime(new BigInteger("19837569384756932487563451")));
+        System.out.println(BigPrimes.primeFactors(new BigInteger("19837569384756932487563500")));
+        System.out.println(BigPrimes.isPrime(new BigInteger("19837569384756932487563501")));
     }
 
     @Test
