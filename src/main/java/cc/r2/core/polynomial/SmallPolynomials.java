@@ -6,9 +6,11 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.polynomial.LongArithmetics.*;
+import static cc.r2.core.polynomial.SmallPolynomialArithmetics.derivative;
 
 public final class SmallPolynomials {
     private SmallPolynomials() {
@@ -24,8 +26,13 @@ public final class SmallPolynomials {
      */
     public static PolynomialRemainders Euclid(final MutableLongPoly a,
                                               final MutableLongPoly b) {
+        if (a.degree < b.degree)
+            return Euclid(b, a);
+
         ArrayList<MutableLongPoly> prs = new ArrayList<>();
-        prs.add(a); prs.add(b);
+        prs.add(a.clone()); prs.add(b.clone());
+
+        if (a.isZero() || b.isZero()) return new PolynomialRemainders(prs);
 
         MutableLongPoly x = a, y = b, r;
         while (true) {
@@ -60,6 +67,8 @@ public final class SmallPolynomials {
         ArrayList<MutableLongPoly> prs = new ArrayList<>();
         prs.add(a.clone().modulus(modulus)); prs.add(b.clone().modulus(modulus));
 
+        if (a.isZero() || b.isZero()) return new PolynomialRemainders(prs);
+
         MutableLongPoly x = a, y = b, r;
         while (true) {
             MutableLongPoly[] tmp = divideAndRemainder(x, y, modulus);
@@ -88,9 +97,12 @@ public final class SmallPolynomials {
         if (a.degree < b.degree)
             return PolynomialEuclid(b, a, primitivePRS);
 
+
+        if (a.isZero() || b.isZero()) return new PolynomialRemainders(a.clone(), b.clone());
+
         long aContent = content(a), bContent = content(b);
         long contentGCD = gcd(aContent, bContent);
-        MutableLongPoly aPP = a.divide(aContent), bPP = b.divide(bContent);
+        MutableLongPoly aPP = a.clone().divide(aContent), bPP = b.clone().divide(bContent);
 
         ArrayList<MutableLongPoly> prs = new ArrayList<>();
         prs.add(aPP); prs.add(bPP);
@@ -125,9 +137,12 @@ public final class SmallPolynomials {
         if (b.degree > a.degree)
             return SubresultantEuclid(b, a);
 
+        if (a.isZero() || b.isZero()) return new PolynomialRemainders(a.clone(), b.clone());
+
+
         long aContent = content(a), bContent = content(b);
         long contentGCD = gcd(aContent, bContent);
-        MutableLongPoly aPP = a.divide(aContent), bPP = b.divide(bContent);
+        MutableLongPoly aPP = a.clone().divide(aContent), bPP = b.clone().divide(bContent);
 
         ArrayList<MutableLongPoly> prs = new ArrayList<>();
         prs.add(aPP); prs.add(bPP);
@@ -171,18 +186,53 @@ public final class SmallPolynomials {
         return res;
     }
 
+
+    /**
+     * Representation for polynomial remainders sequence produced by the Euclidean algorithm
+     */
+    public static final class PolynomialRemainders {
+        public final ArrayList<MutableLongPoly> remainders;
+
+        public PolynomialRemainders(MutableLongPoly... remainders) {
+            this(new ArrayList<>(Arrays.asList(remainders)));
+        }
+
+        public PolynomialRemainders(ArrayList<MutableLongPoly> remainders) {
+            this.remainders = remainders;
+        }
+
+        public MutableLongPoly gcd() {
+            if (remainders.size() == 2 && remainders.get(1).isZero())
+                return remainders.get(0);
+            return remainders.get(remainders.size() - 1);
+        }
+    }
+
+    /**
+     * Modular GCD algorithm for polynomials
+     *
+     * @param a the first polynomial
+     * @param b the second polynomial
+     * @return GCD of two polynomials
+     */
     public static MutableLongPoly ModularGCD(MutableLongPoly a, MutableLongPoly b) {
         if (a == b)
             return a.clone();
+        if (a.isZero()) return b.clone();
+        if (b.isZero()) return a.clone();
+
         if (a.degree < b.degree)
             return ModularGCD(b, a);
-
         long aContent = content(a), bContent = content(b);
         long contentGCD = gcd(aContent, bContent);
-        return ModularGCD0(a.divide(aContent), b.divide(bContent)).multiply(contentGCD);
+        if (a.isConstant() || b.isConstant())
+            return MutableLongPoly.create(contentGCD);
+
+        return ModularGCD0(a.clone().divide(aContent), b.clone().divide(bContent)).multiply(contentGCD);
 
     }
 
+    /** modular GCD for primitive polynomials */
     @SuppressWarnings("ConstantConditions")
     private static MutableLongPoly ModularGCD0(MutableLongPoly a, MutableLongPoly b) {
         if (a.degree < b.degree)
@@ -247,23 +297,278 @@ public final class SmallPolynomials {
             base.fixDegree();
             basePrime = newBasePrime;
 
-            //we are lucky with Mignotte's bound
-            if ((double) basePrime >= 2 * bound) {
-                MutableLongPoly result = primitivePart((base.symModulus(basePrime)));
-                assert pseudoDivideAndRemainderAdaptive(a, result)[1].isZero() && pseudoDivideAndRemainderAdaptive(b, result)[1].isZero();
-                return result;
-            }
-
-            //two trials didn't change the result, probably we are done
-            if (base.equals(previousBase)) {
+            //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
+            if ((double) basePrime >= 2 * bound || base.equals(previousBase)) {
                 MutableLongPoly candidate = primitivePart(base.clone().symModulus(basePrime));
                 //first check b since b is less degree
-                if (pseudoDivideAndRemainderAdaptive(b, candidate)[1].isZero()
-                        && pseudoDivideAndRemainderAdaptive(a, candidate)[1].isZero())
-                    return candidate;
+                MutableLongPoly[] div;
+                div = divideAndRemainder(b, candidate);
+                if (div == null || !div[1].isZero())
+                    continue;
+
+                div = divideAndRemainder(a, candidate);
+                if (div == null || !div[1].isZero())
+                    continue;
+
+                return candidate;
             }
         }
     }
+
+    /**
+     * Computes GCD of two polynomials
+     *
+     * @param a the first polynomial
+     * @param b the second polynomial
+     * @return GCD of two polynomials
+     */
+    public static MutableLongPoly PolynomialGCD(MutableLongPoly a, MutableLongPoly b) {
+        return ModularGCD(a, b);
+    }
+
+    /**
+     * Computes GCD of two polynomials modulo prime
+     *
+     * @param a       the first polynomial
+     * @param b       the second polynomial
+     * @param modulus prime modulus
+     * @return GCD of two polynomials
+     */
+    public static MutableLongPoly PolynomialGCD(MutableLongPoly a, MutableLongPoly b, long modulus) {
+        return Euclid(a, b, modulus).gcd();
+    }
+
+    /**
+     * Performs square free factorization of a poly.
+     *
+     * @param poly the polynomial
+     * @return square free decomposition
+     */
+    public static Factorization SquareFreeFactorization(MutableLongPoly poly) {
+        return SquareFreeFactorizationYun(poly);
+    }
+
+    /**
+     * Performs square free factorization of a poly using Yun's algorithm.
+     *
+     * @param poly the polynomial
+     * @return square free decomposition
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static Factorization SquareFreeFactorizationYun(MutableLongPoly poly) {
+        long content = content(poly);
+        if (poly.lc() < 0)
+            content = -content;
+
+        poly = poly.clone().divide(content);
+        if (poly.degree <= 1)
+            return new Factorization(poly, content);
+
+        MutableLongPoly derivative = derivative(poly), gcd = PolynomialGCD(poly, derivative);
+        if (gcd.isConstant())
+            return new Factorization(poly, content);
+
+        MutableLongPoly
+                quot = divideAndRemainder(poly, gcd)[0],
+                dQuot = divideAndRemainder(derivative, gcd)[0];
+
+        ArrayList<MutableLongPoly> factors = new ArrayList<>();
+        TIntArrayList exponents = new TIntArrayList();
+        int i = 0;
+        while (!quot.isConstant()) {
+            ++i;
+            dQuot = dQuot.subtract(derivative(quot));
+            MutableLongPoly factor = PolynomialGCD(quot, dQuot);
+            quot = divideAndRemainder(quot, factor)[0];
+            dQuot = divideAndRemainder(dQuot, factor)[0];
+            if (!factor.isOne()) {
+                factors.add(factor);
+                exponents.add(i);
+            }
+        }
+
+        return new Factorization(factors.toArray(new MutableLongPoly[factors.size()]), exponents.toArray(), content);
+    }
+
+    /**
+     * Performs square free factorization of a poly using Musser's algorithm
+     *
+     * @param poly the polynomial
+     * @return square free decomposition
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static Factorization SquareFreeFactorizationMusser(MutableLongPoly poly) {
+        long content = content(poly);
+        if (poly.lc() < 0)
+            content = -content;
+
+        poly = poly.clone().divide(content);
+        if (poly.degree <= 1)
+            return new Factorization(poly, content);
+
+        MutableLongPoly derivative = derivative(poly), gcd = PolynomialGCD(poly, derivative);
+        if (gcd.isConstant())
+            return new Factorization(poly, content);
+
+        MutableLongPoly quot = divideAndRemainder(poly, gcd)[0];
+
+        ArrayList<MutableLongPoly> factors = new ArrayList<>();
+        TIntArrayList exponents = new TIntArrayList();
+        int i = 0;
+        while (true) {
+            ++i;
+            MutableLongPoly nextQuot = PolynomialGCD(gcd, quot);
+            gcd = divideAndRemainder(gcd, nextQuot)[0];
+            MutableLongPoly factor = divideAndRemainder(quot, nextQuot)[0];
+            if (!factor.isConstant()) {
+                factors.add(factor);
+                exponents.add(i);
+            }
+            if (nextQuot.isConstant())
+                break;
+            quot = nextQuot;
+        }
+
+        return new Factorization(factors.toArray(new MutableLongPoly[factors.size()]), exponents.toArray(), content);
+    }
+
+    /**
+     * Performs square free factorization of a poly.
+     *
+     * @param poly    the polynomial
+     * @param modulus prime modulus
+     * @return square free decomposition
+     */
+    public static Factorization SquareFreeFactorization(MutableLongPoly poly, long modulus) {
+        if (modulus >= Integer.MAX_VALUE)
+            throw new IllegalArgumentException();
+        return SquareFreeFactorizationMusser(poly, (int) modulus);
+    }
+
+    private static MutableLongPoly pRoot(MutableLongPoly poly, long modulus) {
+        assert poly.degree % modulus == 0;
+        long[] rootData = new long[poly.degree / (int) modulus + 1];
+        Arrays.fill(rootData, 0);
+        for (int i = poly.degree; i >= 0; --i) {
+            if (poly.data[i] != 0) {
+                assert i % modulus == 0;
+                rootData[i / (int) modulus] = poly.data[i];
+            }
+        }
+        return MutableLongPoly.create(rootData);
+    }
+
+    private static Factorization monicFactorization(Factorization factorization, long modulus) {
+        if (true) return factorization;
+        long newFactor = factorization.factor;
+        for (int i = factorization.factors.length - 1; i >= 0; --i) {
+            long f = factorization.factors[i].lc();
+            newFactor = multiplyMod(newFactor, powMod(f, factorization.exponents[i], modulus), modulus);
+            factorization.factors[i].multiply(modInverse(f, modulus), modulus);
+        }
+        return new Factorization(factorization.factors, factorization.exponents, newFactor);
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private static Factorization SquareFreeFactorizationMusser(MutableLongPoly poly, long modulus) {
+        poly = poly.clone().modulus(modulus);
+        if (poly.isConstant())
+            return new Factorization(poly.clone(), 1);
+
+        long content = poly.lc();
+        poly = poly.multiply(modInverse(poly.lc(), modulus), modulus);
+        if (poly.degree <= 1)
+            return new Factorization(poly, content);
+
+        MutableLongPoly derivative = derivative(poly, modulus);
+        if (!derivative.isZero()) {
+            MutableLongPoly gcd = PolynomialGCD(poly, derivative, modulus);
+            if (gcd.isConstant())
+                return new Factorization(poly, content);
+
+            MutableLongPoly quot = divideAndRemainder(poly, gcd, modulus)[0];
+
+            ArrayList<MutableLongPoly> factors = new ArrayList<>();
+            TIntArrayList exponents = new TIntArrayList();
+            int i = 0;
+//            if (!quot.isConstant())
+                while (true) {
+                    ++i;
+                    MutableLongPoly nextQuot = PolynomialGCD(gcd, quot, modulus);
+                    MutableLongPoly factor = divideAndRemainder(quot, nextQuot, modulus)[0];
+                    if (!factor.isConstant()) {
+                        factors.add(factor);
+                        exponents.add(i);
+                    }
+                    gcd = divideAndRemainder(gcd, nextQuot, modulus)[0];
+                    if (nextQuot.isConstant())
+                        break;
+                    quot = nextQuot;
+                }
+            Factorization factorization;
+            if (!gcd.isConstant()) {
+                gcd = pRoot(gcd, modulus);
+                factorization = SquareFreeFactorizationMusser(gcd, modulus);
+                for (int j = factorization.exponents.length - 1; j >= 0; --j)
+                    factorization.exponents[j] *= modulus;
+                MutableLongPoly[] newFactors = factors.toArray(new MutableLongPoly[factorization.factors.length + factors.size()]);
+                int[] newExponents = Arrays.copyOf(exponents.toArray(), factorization.factors.length + factors.size());
+                System.arraycopy(factorization.factors, 0, newFactors, factors.size(), factorization.factors.length);
+                System.arraycopy(factorization.exponents, 0, newExponents, exponents.size(), factorization.exponents.length);
+                factorization = new Factorization(newFactors, newExponents, multiplyMod(factorization.factor, content, modulus));
+            } else
+                factorization = new Factorization(factors.toArray(new MutableLongPoly[factors.size()]), exponents.toArray(), content);
+            return monicFactorization(factorization, modulus);
+        } else {
+            MutableLongPoly pRoot = pRoot(poly, modulus);
+            Factorization factorization = SquareFreeFactorizationMusser(pRoot, modulus);
+            for (int j = factorization.exponents.length - 1; j >= 0; --j)
+                factorization.exponents[j] *= modulus;
+            return monicFactorization(new Factorization(factorization.factors, factorization.exponents, multiplyMod(factorization.factor, content, modulus)), modulus);
+        }
+    }
+
+    /**
+     * Polynomial factorization
+     */
+    public static final class Factorization {
+        /** Integer factor (polynomial content) */
+        final long factor;
+        /** Factors */
+        final MutableLongPoly[] factors;
+        /** Exponents */
+        final int[] exponents;
+
+        //not factorazable
+        Factorization(MutableLongPoly poly, long factor) {
+            this(new MutableLongPoly[]{poly}, new int[]{1}, factor);
+        }
+
+        Factorization(MutableLongPoly[] factors, int[] exponents, long factor) {
+            this.factors = factors;
+            this.exponents = exponents;
+            this.factor = factor;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            if (factor != 1) {
+                sb.append(factor);
+                if (factors.length > 0)
+                    sb.append("*");
+            }
+            for (int i = 0; ; i++) {
+                sb.append("(").append(factors[i]).append(")");
+                if (exponents[i] != 1)
+                    sb.append("^").append(exponents[i]);
+                if (i == factors.length - 1)
+                    return sb.toString();
+                sb.append("*");
+            }
+        }
+    }
+
 
     /**
      * Returns the content of the poly
@@ -305,6 +610,8 @@ public final class SmallPolynomials {
      */
     public static MutableLongPoly[] divideAndRemainder(final MutableLongPoly dividend,
                                                        final MutableLongPoly divider) {
+        if (dividend.isZero())
+            return new MutableLongPoly[]{MutableLongPoly.zero(), MutableLongPoly.zero()};
         if (dividend.degree < divider.degree)
             return null;
         if (divider.degree == 0) {
@@ -327,6 +634,8 @@ public final class SmallPolynomials {
     public static MutableLongPoly[] pseudoDivideAndRemainder(
             MutableLongPoly dividend,
             MutableLongPoly divider) {
+        if (dividend.isZero())
+            return new MutableLongPoly[]{MutableLongPoly.zero(), MutableLongPoly.zero()};
         if (dividend.degree < divider.degree)
             return null;
         long factor = pow(divider.lc(), dividend.degree - divider.degree + 1);
@@ -371,6 +680,8 @@ public final class SmallPolynomials {
      */
     static MutableLongPoly[] pseudoDivideAndRemainderAdaptive(final MutableLongPoly dividend,
                                                               final MutableLongPoly divider) {
+        if (dividend.isZero())
+            return new MutableLongPoly[]{MutableLongPoly.zero(), MutableLongPoly.zero()};
         if (dividend.degree < divider.degree)
             return null;
         if (divider.degree == 0)
@@ -420,6 +731,8 @@ public final class SmallPolynomials {
     public static MutableLongPoly[] divideAndRemainder(final MutableLongPoly dividend,
                                                        final MutableLongPoly divider,
                                                        final long modulus) {
+        if (dividend.isZero())
+            return new MutableLongPoly[]{MutableLongPoly.zero(), MutableLongPoly.zero()};
         if (dividend.degree < divider.degree)
             return null;
         if (divider.degree == 0)
@@ -526,20 +839,5 @@ public final class SmallPolynomials {
             res = res / lc;
         }
         return new MutableLongPoly[]{MutableLongPoly.create(quotient), MutableLongPoly.create(res)};
-    }
-
-    /**
-     * Representation for polynomial remainders sequence produced by the Euclidean algorithm
-     */
-    public static final class PolynomialRemainders {
-        public final ArrayList<MutableLongPoly> remainders;
-
-        public PolynomialRemainders(ArrayList<MutableLongPoly> remainders) {
-            this.remainders = remainders;
-        }
-
-        public MutableLongPoly gcd() {
-            return remainders.get(remainders.size() - 1);
-        }
     }
 }

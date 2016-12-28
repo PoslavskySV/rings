@@ -12,6 +12,8 @@ import java.util.List;
 
 import static cc.r2.core.polynomial.LongArithmetics.gcd;
 import static cc.r2.core.polynomial.LongArithmetics.pow;
+import static cc.r2.core.polynomial.SmallPolynomialArithmetics.pow;
+import static cc.r2.core.polynomial.SmallPolynomialArithmetics.powMod;
 import static cc.r2.core.polynomial.SmallPolynomials.*;
 import static org.junit.Assert.*;
 
@@ -335,10 +337,10 @@ public class SmallPolynomialsTest {
         DescriptiveStatistics timings = null;
         for (int k = 0; k < 2; k++) {
             timings = new DescriptiveStatistics();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 10000; i++) {
                 try {
-                    MutableLongPoly a = randomPoly(7, 100, rnd);
-                    MutableLongPoly b = randomPoly(6, 100, rnd);
+                    MutableLongPoly a = randomPoly(1 + rnd.nextInt(7), 100, rnd);
+                    MutableLongPoly b = randomPoly(1 + rnd.nextInt(6), 100, rnd);
                     MutableLongPoly gcd = randomPoly(2 + rnd.nextInt(5), 30, rnd);
                     a = a.multiply(gcd);
                     b = b.multiply(gcd);
@@ -470,10 +472,61 @@ public class SmallPolynomialsTest {
 
     @Test
     public void test22() throws Exception {
-        MutableLongPoly dividend = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
-        MutableLongPoly divider = MutableLongPoly.create(1, 2);
-        System.out.println(Arrays.toString(divideAndRemainderLinearDivider(dividend, divider)));
-        System.out.println(Arrays.toString(divideAndRemainder(dividend, divider)));
+        MutableLongPoly a = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
+        MutableLongPoly b = MutableLongPoly.zero();
+        assertEquals(a, SubresultantEuclid(a, b).gcd());
+        assertEquals(a, SubresultantEuclid(b, a).gcd());
+        assertEquals(a, PolynomialEuclid(a, b, true).gcd());
+        assertEquals(a, PolynomialEuclid(b, a, true).gcd());
+        assertEquals(a, Euclid(a, b).gcd());
+        assertEquals(a, Euclid(b, a).gcd());
+        assertEquals(a, PolynomialGCD(a, b));
+        assertEquals(a, PolynomialGCD(b, a));
+    }
+
+    @Test
+    public void test23() throws Exception {
+        MutableLongPoly a = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
+        MutableLongPoly b = MutableLongPoly.create(2);
+        assertEquals(b, SubresultantEuclid(a, b).gcd());
+        assertEquals(b, SubresultantEuclid(b, a).gcd());
+        assertEquals(b, PolynomialEuclid(a, b, true).gcd());
+        assertEquals(b, PolynomialEuclid(b, a, true).gcd());
+        assertEquals(b, PolynomialEuclid(a, b, false).gcd());
+        assertEquals(b, PolynomialEuclid(b, a, false).gcd());
+        assertEquals(b, Euclid(a, b).gcd());
+        assertEquals(b, Euclid(b, a).gcd());
+        assertEquals(b, PolynomialGCD(a, b));
+        assertEquals(b, PolynomialGCD(b, a));
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void test24() throws Exception {
+        MutableLongPoly a = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
+        MutableLongPoly b = MutableLongPoly.create(0);
+        divideAndRemainder(a, b);
+    }
+
+    @Test
+    public void test25() throws Exception {
+        MutableLongPoly a = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
+        MutableLongPoly b = MutableLongPoly.create(0);
+        MutableLongPoly[] zeros = {MutableLongPoly.zero(), MutableLongPoly.zero()};
+        assertArrayEquals(zeros, divideAndRemainder(b, a));
+        assertArrayEquals(zeros, pseudoDivideAndRemainder(b, a));
+        assertArrayEquals(zeros, pseudoDivideAndRemainderAdaptive(b, a));
+        assertArrayEquals(zeros, divideAndRemainder(b, a, 13));
+    }
+
+    @Test
+    public void test26() throws Exception {
+        MutableLongPoly a = MutableLongPoly.create(32);
+        MutableLongPoly b = MutableLongPoly.create(24);
+        MutableLongPoly gcd = MutableLongPoly.create(8);
+        assertEquals(gcd, PolynomialGCD(a, b));
+        assertEquals(gcd, SubresultantEuclid(a, b).gcd());
+        assertEquals(gcd, PolynomialEuclid(a, b, true).gcd());
+        assertEquals(gcd, PolynomialEuclid(a, b, false).gcd());
     }
 
     private static void assertGCD(MutableLongPoly a, MutableLongPoly b, MutableLongPoly gcd) {
@@ -573,5 +626,195 @@ public class SmallPolynomialsTest {
         while (data[degree] == 0)
             data[degree] = rnd.nextInt(bound);
         return new MutableLongPoly(data, degree);
+    }
+
+
+    @Test
+    public void test27() throws Exception {
+        MutableLongPoly poly = pow(MutableLongPoly.create(1, 3).multiply(2), 3).multiply(pow(MutableLongPoly.create(-3, -5, 7), 2));
+        assertFactorization(poly, SquareFreeFactorizationYun(poly));
+        poly = MutableLongPoly.create(1, 3);
+        assertFactorization(poly, SquareFreeFactorizationYun(poly));
+        poly = MutableLongPoly.create(3);
+        assertFactorization(poly, SquareFreeFactorizationYun(poly));
+        poly = MutableLongPoly.create(33);
+        assertFactorization(poly, SquareFreeFactorizationYun(poly));
+        poly = MutableLongPoly.create(22, 22).multiply(MutableLongPoly.create(12, 12, 12)).multiply(12);
+        assertFactorization(poly, SquareFreeFactorizationYun(poly));
+    }
+
+    @Test
+    public void test28() throws Exception {
+        RandomGenerator rnd = new Well1024a();
+        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
+        DescriptiveStatistics yun = new DescriptiveStatistics(), musser = new DescriptiveStatistics();
+
+        long overflows = 0;
+        for (int i = 0; i < 1000; i++) {
+            if (i == 100) {
+                yun.clear();
+                musser.clear();
+            }
+            int nbase = rndd.nextInt(1, 5);
+            MutableLongPoly poly;
+            try {
+                poly = MutableLongPoly.create(rndd.nextLong(1, 10));
+                for (int j = 0; j < nbase; j++) {
+                    MutableLongPoly factor = randomPoly(rndd.nextInt(1, 3), 10, rnd);
+                    int exponent = rndd.nextInt(1, 5);
+                    poly = poly.multiply(pow(factor, exponent));
+                }
+            } catch (ArithmeticException e) {
+                --i;
+                continue;
+            }
+            try {
+                long start = System.nanoTime();
+                Factorization yunFactorization = SquareFreeFactorizationYun(poly);
+                yun.addValue(System.nanoTime() - start);
+
+                start = System.nanoTime();
+                Factorization musserFactorization = SquareFreeFactorizationMusser(poly);
+                musser.addValue(System.nanoTime() - start);
+
+                assertEquals(yunFactorization.factors.length, musserFactorization.factors.length);
+                assertFactorization(poly, musserFactorization);
+                assertFactorization(poly, yunFactorization);
+            } catch (ArithmeticException exc) {
+                if (!exc.getMessage().contains("overflow"))
+                    throw exc;
+                ++overflows;
+            }
+        }
+
+        System.out.println("Overflows: " + overflows);
+        System.out.println("Timings Yun:\n" + yun);
+        System.out.println("\nTimings Musser:\n" + musser);
+    }
+
+    @Test
+    public void test29() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(0, 0, -1458, 6561, -6561);
+        Factorization factorization = SquareFreeFactorizationYun(poly);
+        assertFactorization(poly, factorization);
+    }
+
+    @Test
+    public void test30() throws Exception {
+        MutableLongPoly a = MutableLongPoly.create(8, 2, -1, -2, -7);
+        MutableLongPoly b = MutableLongPoly.create(1, -9, -5, -21);
+        assertTrue(ModularGCD(a, b).isOne());
+    }
+
+    static void assertFactorization(MutableLongPoly poly, Factorization factorization) {
+        MutableLongPoly r = MutableLongPoly.create(factorization.factor);
+        for (int i = 0; i < factorization.factors.length; i++)
+            r = r.multiply(pow(factorization.factors[i], factorization.exponents[i]));
+        assertEquals(poly, r);
+    }
+
+    static void assertFactorization(MutableLongPoly poly, Factorization factorization, long modulus) {
+        MutableLongPoly r = MutableLongPoly.create(factorization.factor);
+        for (int i = 0; i < factorization.factors.length; i++)
+            r = r.multiply(powMod(factorization.factors[i], factorization.exponents[i], modulus), modulus);
+        assertEquals(poly, r);
+    }
+
+    @Test
+    public void test31() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(1, 0, 1, 0, 2);
+        poly = poly.multiply(MutableLongPoly.create(1, 0, 1, 0, 2), 2);
+        assertFactorization(poly, SquareFreeFactorization(poly, 2), 2);
+    }
+
+    @Test
+    public void test32() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(1, 0, 0, 0, 1);
+        assertFactorization(poly, SquareFreeFactorization(poly, 2), 2);
+    }
+
+    @Test
+    public void test33() throws Exception {
+        RandomGenerator rnd = new Well1024a();
+        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
+        DescriptiveStatistics timings = new DescriptiveStatistics();
+        long overflows = 0;
+        long[] primes = {2, 3, 5, 7, 11, 13, 101};
+        for (int i = 0; i < 1000; i++) {
+            if (i == 100)
+                timings.clear();
+            int nbase = rndd.nextInt(1, 3);
+            for (long modulus : primes) {
+                MutableLongPoly poly;
+                poly = MutableLongPoly.create(rndd.nextLong(1, 10)).modulus(modulus);
+                for (int j = 0; j < nbase; j++) {
+                    MutableLongPoly f = randomPoly(rndd.nextInt(1, 3), 10, rnd);
+                    poly = poly.multiply(powMod(f, rndd.nextInt(1, 3), modulus), modulus);
+                }
+                try {
+                    long start = System.nanoTime();
+                    System.out.println(modulus);
+                    System.out.println(poly);
+                    Factorization factorization = SquareFreeFactorization(poly, modulus);
+                    timings.addValue(System.nanoTime() - start);
+                    assertFactorization(poly, factorization, modulus);
+                } catch (ArithmeticException exc) {
+                    if (!exc.getMessage().contains("overflow"))
+                        throw exc;
+                    ++overflows;
+                }
+
+            }
+        }
+
+        System.out.println("Overflows: " + overflows);
+        System.out.println("Timings:\n" + timings);
+    }
+
+    @Test
+    public void test33a() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(0, 0, 1, 3, 4, 3, 3, 2, 3);
+        assertFactorization(poly, SquareFreeFactorization(poly, 5), 5);
+    }
+
+    @Test
+    public void test33b() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(0, 0, 0, 2);
+        assertFactorization(poly, SquareFreeFactorization(poly, 3), 3);
+    }
+
+    @Test
+    public void test33c() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(0, 0, 0, 1, 1);
+        assertFactorization(poly, SquareFreeFactorization(poly, 2), 2);
+    }
+
+    @Test
+    public void test33d() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2);
+        assertFactorization(poly, SquareFreeFactorization(poly, 3), 3);
+    }
+
+    @Test
+    public void test33e() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(2, 3, 2, 1, 3, 3, 3);
+        System.out.println(poly);
+        System.out.println(SquareFreeFactorization(poly, 5));
+        assertFactorization(poly, SquareFreeFactorization(poly, 5), 5);
+    }
+
+    @Test
+    public void test33f() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(1, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0, 1);
+        assertFactorization(poly, SquareFreeFactorization(poly, 3), 3);
+    }
+
+    @Test
+    public void test33g() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(0, 0, 0, 8, 20, 67, 55);
+        System.out.println(poly.clone().monic(101));
+        System.out.println(poly);
+        System.out.println(SquareFreeFactorization(poly, 101));
+        assertFactorization(poly, SquareFreeFactorization(poly, 101), 101);
     }
 }
