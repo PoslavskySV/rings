@@ -183,8 +183,9 @@ public final class LongArithmetics {
         if (exponent < 0) {
             base = modInverse(base, modulus);
             exponent = -exponent;
-        } else
-            base = mod(base, modulus);
+        }
+//        else
+//            base = mod(base, modulus);
         return powMod0(base, exponent, modulus);
     }
 

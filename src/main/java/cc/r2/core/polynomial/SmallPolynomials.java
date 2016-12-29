@@ -356,6 +356,9 @@ public final class SmallPolynomials {
      */
     @SuppressWarnings("ConstantConditions")
     public static Factorization SquareFreeFactorizationYun(MutableLongPoly poly) {
+        if (poly.isConstant())
+            return new Factorization(new MutableLongPoly[0], new int[0], poly.lc());
+
         long content = content(poly);
         if (poly.lc() < 0)
             content = -content;
@@ -398,6 +401,9 @@ public final class SmallPolynomials {
      */
     @SuppressWarnings("ConstantConditions")
     public static Factorization SquareFreeFactorizationMusser(MutableLongPoly poly) {
+        if (poly.isConstant())
+            return new Factorization(new MutableLongPoly[0], new int[0], poly.lc());
+
         long content = content(poly);
         if (poly.lc() < 0)
             content = -content;
@@ -442,8 +448,6 @@ public final class SmallPolynomials {
     public static Factorization SquareFreeFactorization(MutableLongPoly poly, long modulus) {
         if (modulus >= Integer.MAX_VALUE)
             throw new IllegalArgumentException();
-        if (poly.isConstant())
-            return new Factorization(poly.clone(), 1);
         return SquareFreeFactorizationMusser(poly, modulus).setFactor(mod(poly.lc(), modulus));
     }
 
@@ -461,9 +465,10 @@ public final class SmallPolynomials {
 
     @SuppressWarnings("ConstantConditions")
     private static Factorization SquareFreeFactorizationMusser(MutableLongPoly poly, long modulus) {
-        poly = poly.clone().modulus(modulus);
         if (poly.isConstant())
-            return new Factorization(poly.clone(), 1);
+            return EMPTY_FACTORIZATION;
+
+        poly = poly.clone().modulus(modulus);
 
         //make poly monic
         poly = poly.monic(modulus);
@@ -480,7 +485,7 @@ public final class SmallPolynomials {
             ArrayList<MutableLongPoly> factors = new ArrayList<>();
             TIntArrayList exponents = new TIntArrayList();
             int i = 0;
-            //if (!quot.isConstant()) ? really
+            //if (!quot.isConstant())
             while (true) {
                 ++i;
                 MutableLongPoly nextQuot = PolynomialGCD(gcd, quot, modulus);
@@ -512,6 +517,8 @@ public final class SmallPolynomials {
             return new Factorization(factorization.factors, factorization.exponents, 1);
         }
     }
+
+    private static final Factorization EMPTY_FACTORIZATION = new Factorization(new MutableLongPoly[0], new int[0], 1);
 
     /**
      * Polynomial factorization
