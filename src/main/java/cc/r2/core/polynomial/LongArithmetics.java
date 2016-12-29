@@ -183,8 +183,33 @@ public final class LongArithmetics {
         if (exponent < 0) {
             base = modInverse(base, modulus);
             exponent = -exponent;
-        }
+        } else
+            base = mod(base, modulus);
+        return powMod0(base, exponent, modulus);
+    }
 
+    /**
+     * Returns {@code base} in a power of {@code e} (may be negative) modulus <i>prime</i> {@code p}
+     *
+     * @param base     base
+     * @param exponent exponent (may be negative, if base and modulus are coprime)
+     * @param modulus  prime modulus
+     * @return {@code base} in a power of {@code e} (may be negative) modulus {@code p}
+     * @throws IllegalArgumentException if e < 0 and {@code base} and {@code modulus} are not coprime
+     */
+    public static long powModPrime(long base, long exponent, long modulus) {
+        if (exponent < 0) {
+            base = modInverse(base, modulus);
+            exponent = -exponent;
+        } else
+            base = mod(base, modulus);
+        return multiplyMod(
+                powMod0(base, divide(exponent, modulus), modulus),
+                powMod0(base, mod(exponent, modulus), modulus),
+                modulus);
+    }
+
+    private static long powMod0(long base, long exponent, long modulus) {
         long result = 1L;
         long k2p = base;
         while (true) {
