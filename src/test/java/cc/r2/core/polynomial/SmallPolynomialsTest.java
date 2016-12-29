@@ -740,7 +740,7 @@ public class SmallPolynomialsTest {
         DescriptiveStatistics timings = new DescriptiveStatistics();
         long overflows = 0;
         long[] primes = {2, 3, 5, 7, 11, 13, 101};
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100000; i++) {
             if (i == 100)
                 timings.clear();
             int nbase = rndd.nextInt(1, 3);
@@ -753,8 +753,6 @@ public class SmallPolynomialsTest {
                 }
                 try {
                     long start = System.nanoTime();
-                    System.out.println(modulus);
-                    System.out.println(poly);
                     Factorization factorization = SquareFreeFactorization(poly, modulus);
                     timings.addValue(System.nanoTime() - start);
                     assertFactorization(poly, factorization, modulus);
@@ -798,8 +796,6 @@ public class SmallPolynomialsTest {
     @Test
     public void test33e() throws Exception {
         MutableLongPoly poly = MutableLongPoly.create(2, 3, 2, 1, 3, 3, 3);
-        System.out.println(poly);
-        System.out.println(SquareFreeFactorization(poly, 5));
         assertFactorization(poly, SquareFreeFactorization(poly, 5), 5);
     }
 
@@ -812,9 +808,6 @@ public class SmallPolynomialsTest {
     @Test
     public void test33g() throws Exception {
         MutableLongPoly poly = MutableLongPoly.create(0, 0, 0, 8, 20, 67, 55);
-        System.out.println(poly.clone().monic(101));
-        System.out.println(poly);
-        System.out.println(SquareFreeFactorization(poly, 101));
         assertFactorization(poly, SquareFreeFactorization(poly, 101), 101);
     }
 }
