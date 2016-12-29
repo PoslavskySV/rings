@@ -735,38 +735,56 @@ public class SmallPolynomialsTest {
 
     @Test
     public void test33() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
-        DescriptiveStatistics timings = new DescriptiveStatistics();
-        long overflows = 0;
-        long[] primes = {2, 3, 5, 7, 11, 13, 101};
-        for (int i = 0; i < 100000; i++) {
-            if (i == 100)
-                timings.clear();
-            int nbase = rndd.nextInt(1, 3);
-            for (long modulus : primes) {
-                MutableLongPoly poly;
-                poly = MutableLongPoly.create(rndd.nextLong(1, 10)).modulus(modulus);
-                for (int j = 0; j < nbase; j++) {
-                    MutableLongPoly f = randomPoly(rndd.nextInt(1, 3), 10, rnd);
-                    poly = poly.multiply(powMod(f, rndd.nextInt(1, 3), modulus), modulus);
-                }
-                try {
-                    long start = System.nanoTime();
-                    Factorization factorization = SquareFreeFactorization(poly, modulus);
-                    timings.addValue(System.nanoTime() - start);
-                    assertFactorization(poly, factorization, modulus);
-                } catch (ArithmeticException exc) {
-                    if (!exc.getMessage().contains("overflow"))
-                        throw exc;
-                    ++overflows;
-                }
+        final class test {
+            long overflows = 0;
+            final DescriptiveStatistics arithmetics = new DescriptiveStatistics();
+            final DescriptiveStatistics timings = new DescriptiveStatistics();
 
+            void run(int bound, int maxDegree, int maxNBase, int maxExponent, int nIterations) {
+                RandomGenerator rnd = new Well1024a();
+                RandomDataGenerator rndd = new RandomDataGenerator(rnd);
+                long[] primes = {2, 3, 5, 7, 11, 13, 101};
+                long start;
+                for (int i = 0; i < nIterations; i++) {
+                    if (i == 100)
+                        timings.clear();
+                    int nbase = rndd.nextInt(1, maxNBase);
+                    for (long modulus : primes) {
+                        MutableLongPoly poly;
+                        start = System.nanoTime();
+                        poly = MutableLongPoly.create(rndd.nextLong(1, 1000)).modulus(modulus);
+                        for (int j = 0; j < nbase; j++) {
+                            MutableLongPoly f = randomPoly(rndd.nextInt(1, maxDegree), bound, rnd);
+                            f = f.modulus(modulus);
+                            poly = poly.multiply(powMod(f, rndd.nextInt(1, maxExponent), modulus), modulus);
+                        }
+                        arithmetics.addValue(System.nanoTime() - start);
+                        try {
+                            start = System.nanoTime();
+                            Factorization factorization = SquareFreeFactorization(poly, modulus);
+                            timings.addValue(System.nanoTime() - start);
+                            assertFactorization(poly, factorization, modulus);
+                        } catch (ArithmeticException exc) {
+                            if (!exc.getMessage().contains("overflow"))
+                                throw exc;
+                            ++overflows;
+                        }
+
+                    }
+                }
             }
         }
+        test smallPolys = new test();
+        smallPolys.run(10, 3, 5, 5, 1000);
+        System.out.println("Overflows: " + smallPolys.overflows);
+        System.out.println("Timings:\n" + smallPolys.timings);
+        System.out.println("Arithmetics:\n" + smallPolys.arithmetics);
 
-        System.out.println("Overflows: " + overflows);
-        System.out.println("Timings:\n" + timings);
+        test largePolys = new test();
+        largePolys.run(1000, 15, 10, 20, 10);
+        System.out.println("Overflows: " + largePolys.overflows);
+        System.out.println("Timings:\n" + largePolys.timings);
+        System.out.println("Arithmetics:\n" + largePolys.arithmetics);
     }
 
     @Test
