@@ -2,6 +2,7 @@ package cc.r2.core.polynomial;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.PrimesIterator;
+import cc.r2.core.number.primes.SieveOfAtkin;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
 import org.junit.Test;
@@ -132,7 +133,7 @@ public class LongArithmeticsTest {
     @Test
     public void test7() throws Exception {
         Well1024a rnd = new Well1024a();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             long a = 1 + rnd.nextInt(1000), b = 1 + rnd.nextInt(100000);
             if (gcd(a, b) != 1) {
                 --i;
@@ -143,6 +144,12 @@ public class LongArithmeticsTest {
             e = -e;
             assertEquals(BigInteger.valueOf(a).modPow(BigInteger.valueOf(e), BigInteger.valueOf(b)).longValue(), powMod(a, e, b));
         }
+    }
+
+    @Test
+    public void test7a() throws Exception {
+        long num = 959, modulus = 69, exponent = 76;
+        assertEquals(BigInteger.valueOf(num).modPow(BigInteger.valueOf(exponent), BigInteger.valueOf(modulus)).longValue(), powMod(num, exponent, modulus));
     }
 
     @Test
@@ -167,6 +174,34 @@ public class LongArithmeticsTest {
                 long symMod = symMod(k, prime);
                 assertEquals(floorMod(symMod, prime), floorMod(k, prime));
             }
+        }
+    }
+
+
+    @Test
+    public void test11() throws Exception {
+        SieveOfAtkin sieve = SieveOfAtkin.createSieve(1000);
+        RandomGenerator rnd = new Well1024a();
+        for (int i = 0; i < 10000; i++) {
+            int base = rnd.nextInt();
+            int exponent = rnd.nextInt();
+            int prime = sieve.randomPrime(rnd);
+            if (gcd(base, prime) != 1) {
+                --i; continue;
+            }
+            assertEquals(powMod(base, exponent, prime), powModPrime(base, exponent, prime));
+        }
+    }
+
+    @Test
+    public void testFermat() throws Exception {
+        SieveOfAtkin sieve = SieveOfAtkin.createSieve(1000);
+        RandomGenerator rnd = new Well1024a();
+        for (int i = 0; i < 10000; i++) {
+            int base = rnd.nextInt();
+            int prime = sieve.randomPrime(rnd);
+            assertEquals(mod(base, prime), powMod(base, prime, prime));
+            assertEquals(mod(base, prime), powMod(base, 1, prime));
         }
     }
 }

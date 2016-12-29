@@ -1,6 +1,7 @@
 package cc.r2.core.number.primes;
 
 import cc.r2.core.number.BigInteger;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.BitSet;
 
@@ -92,6 +93,14 @@ public final class SieveOfAtkin {
         if (n > limit)
             throw new IndexOutOfBoundsException("Out of sieve bounds.");
         return sieve.get(n);
+    }
+
+    public int randomPrime(RandomGenerator rnd) {
+        int i;
+        do {
+            i = rnd.nextInt(limit);
+        } while (!isPrime(i));
+        return i;
     }
 
     public int getLimit() {
