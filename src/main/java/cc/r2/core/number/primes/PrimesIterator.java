@@ -7,15 +7,13 @@ import java.util.Arrays;
 public final class PrimesIterator {
     private final int[] smallPrimes = SmallPrimes.SmallPrimes12;
     private long pointer;
-    private final long from;
     private static final int largeSieveLimit = 16777216;
     private final SieveOfAtkin smallSieve = SieveOfAtkin.SmallPrimesSieve;
     private SieveOfAtkin largeSieve = null;
 
-    public PrimesIterator() {from = 0;}
+    public PrimesIterator() {pointer = 0;}
 
     public PrimesIterator(long from) {
-        this.from = from;
         if (from < smallPrimes[smallPrimes.length - 1]) {
             pointer = Arrays.binarySearch(smallPrimes, (int) from);
             if (pointer < 0) pointer = ~pointer;

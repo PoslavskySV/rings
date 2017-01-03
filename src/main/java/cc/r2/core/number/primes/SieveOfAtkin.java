@@ -13,6 +13,16 @@ public final class SieveOfAtkin {
     private final BigInteger blimit;
     private final BitSet sieve;
 
+    private SieveOfAtkin(int limit, BigInteger blimit, BitSet sieve) {
+        this.limit = limit;
+        this.blimit = blimit;
+        this.sieve = sieve;
+    }
+
+    SieveOfAtkin toLimit(int newLimit) {
+        return limit == newLimit ? this : new SieveOfAtkin(newLimit, BigInteger.valueOf(newLimit), sieve);
+    }
+
     /**
      * Constructs Atkin sieve.
      *
@@ -116,13 +126,13 @@ public final class SieveOfAtkin {
 
     public static SieveOfAtkin createSieve(int limit) {
         if (limit <= SmallPrimesSieve.limit)
-            return SmallPrimesSieve;
+            return SmallPrimesSieve.toLimit(limit);
         return new SieveOfAtkin(limit);
     }
 
     public static SieveOfAtkin createSieve(BigInteger limit) {
         if (limit.compareTo(SmallPrimesSieve.blimit) < 9)
-            return SmallPrimesSieve;
+            return SmallPrimesSieve.toLimit(limit.intValue());
         return new SieveOfAtkin(limit.intValueExact(), limit);
     }
 }

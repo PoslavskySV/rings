@@ -2,11 +2,13 @@ package cc.r2.core.polynomial;
 
 
 import cc.r2.core.number.primes.PrimesIterator;
+import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.polynomial.LongArithmetics.*;
@@ -339,25 +341,35 @@ public final class SmallPolynomials {
     }
 
     /**
-     * Performs square free factorization of a poly.
+     * Performs square-free factorization of a poly.
      *
      * @param poly the polynomial
-     * @return square free decomposition
+     * @return square-free decomposition
      */
     public static Factorization SquareFreeFactorization(MutableLongPoly poly) {
-        return SquareFreeFactorizationYun(poly);
+        if (poly.isConstant())
+            return oneFactor(poly.lc());
+
+        // x^2 + x^3 -> x^2 (1 + x)
+        int exponent = 0;
+        while (exponent <= poly.degree && poly.data[exponent] == 0) { ++exponent; }
+        if (exponent == 0)
+            return SquareFreeFactorizationYun(poly);
+
+        MutableLongPoly expFree = MutableLongPoly.create(Arrays.copyOfRange(poly.data, exponent, poly.degree + 1));
+        return SquareFreeFactorizationYun(expFree).addFactor(MutableLongPoly.createMonomial(1, exponent), 1);
     }
 
     /**
-     * Performs square free factorization of a poly using Yun's algorithm.
+     * Performs square-free factorization of a poly using Yun's algorithm.
      *
      * @param poly the polynomial
-     * @return square free decomposition
+     * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
     public static Factorization SquareFreeFactorizationYun(MutableLongPoly poly) {
         if (poly.isConstant())
-            return new Factorization(new MutableLongPoly[0], new int[0], poly.lc());
+            return oneFactor(poly.lc());
 
         long content = content(poly);
         if (poly.lc() < 0)
@@ -365,11 +377,11 @@ public final class SmallPolynomials {
 
         poly = poly.clone().divide(content);
         if (poly.degree <= 1)
-            return new Factorization(poly, content);
+            return oneFactor(poly.clone(), content);
 
         MutableLongPoly derivative = derivative(poly), gcd = PolynomialGCD(poly, derivative);
         if (gcd.isConstant())
-            return new Factorization(poly, content);
+            return oneFactor(poly.clone(), content);
 
         MutableLongPoly
                 quot = divideAndRemainder(poly, gcd)[0],
@@ -389,20 +401,19 @@ public final class SmallPolynomials {
                 exponents.add(i);
             }
         }
-
-        return new Factorization(factors.toArray(new MutableLongPoly[factors.size()]), exponents.toArray(), content);
+        return new Factorization(factors, exponents, content);
     }
 
     /**
-     * Performs square free factorization of a poly using Musser's algorithm
+     * Performs square-free factorization of a poly using Musser's algorithm
      *
      * @param poly the polynomial
-     * @return square free decomposition
+     * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
     public static Factorization SquareFreeFactorizationMusser(MutableLongPoly poly) {
         if (poly.isConstant())
-            return new Factorization(new MutableLongPoly[0], new int[0], poly.lc());
+            return oneFactor(poly.lc());
 
         long content = content(poly);
         if (poly.lc() < 0)
@@ -410,11 +421,11 @@ public final class SmallPolynomials {
 
         poly = poly.clone().divide(content);
         if (poly.degree <= 1)
-            return new Factorization(poly, content);
+            return oneFactor(poly.clone(), content);
 
         MutableLongPoly derivative = derivative(poly), gcd = PolynomialGCD(poly, derivative);
         if (gcd.isConstant())
-            return new Factorization(poly, content);
+            return oneFactor(poly.clone(), content);
 
         MutableLongPoly quot = divideAndRemainder(poly, gcd)[0];
 
@@ -434,52 +445,60 @@ public final class SmallPolynomials {
                 break;
             quot = nextQuot;
         }
-
-        return new Factorization(factors.toArray(new MutableLongPoly[factors.size()]), exponents.toArray(), content);
+        return new Factorization(factors, exponents, content);
     }
 
     /**
-     * Performs square free factorization of a poly.
+     * Performs square-free factorization of a {@code poly} modulo {@code modulus}.
      *
      * @param poly    the polynomial
      * @param modulus prime modulus
-     * @return square free decomposition
+     * @return square-free decomposition modulo {@code modulus}
      */
     public static Factorization SquareFreeFactorization(MutableLongPoly poly, long modulus) {
-        if (modulus >= Integer.MAX_VALUE)
+        if (modulus >= Integer.MAX_VALUE)// <- just to be on the safe side)
             throw new IllegalArgumentException();
-        return SquareFreeFactorizationMusser(poly, modulus).setFactor(mod(poly.lc(), modulus));
-    }
-
-    private static MutableLongPoly pRoot(MutableLongPoly poly, long modulus) {
-        assert poly.degree % modulus == 0;
-        long[] rootData = new long[poly.degree / (int) modulus + 1];
-        Arrays.fill(rootData, 0);
-        for (int i = poly.degree; i >= 0; --i)
-            if (poly.data[i] != 0) {
-                assert i % modulus == 0;
-                rootData[i / (int) modulus] = poly.data[i];
-            }
-        return MutableLongPoly.create(rootData);
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    private static Factorization SquareFreeFactorizationMusser(MutableLongPoly poly, long modulus) {
-        if (poly.isConstant())
-            return EMPTY_FACTORIZATION;
 
         poly = poly.clone().modulus(modulus);
-
+        long lc = poly.lc();
         //make poly monic
         poly = poly.monic(modulus);
+
+        if (poly.isConstant())
+            return oneFactor(lc);
+
         if (poly.degree <= 1)
-            return new Factorization(poly, 1);
+            return oneFactor(poly, lc);
+
+        Factorization factorization;
+        // x^2 + x^3 -> x^2 (1 + x)
+        int exponent = 0;
+        while (exponent <= poly.degree && poly.data[exponent] == 0) { ++exponent; }
+        if (exponent == 0)
+            factorization = SquareFreeFactorizationMusser0(poly, modulus);
+        else {
+            MutableLongPoly expFree = MutableLongPoly.create(Arrays.copyOfRange(poly.data, exponent, poly.degree + 1));
+            factorization = SquareFreeFactorizationMusser0(expFree, modulus).addFactor(MutableLongPoly.createMonomial(1, exponent), 1);
+        }
+
+        return factorization.setFactor(lc);
+    }
+
+    /** {@code poly} will be destroyed */
+    @SuppressWarnings("ConstantConditions")
+    private static Factorization SquareFreeFactorizationMusser0(MutableLongPoly poly, long modulus) {
+        poly.monic(modulus);
+        if (poly.isConstant())
+            return oneFactor(poly.lc());
+
+        if (poly.degree <= 1)
+            return oneFactor(poly, 1);
 
         MutableLongPoly derivative = derivative(poly, modulus);
         if (!derivative.isZero()) {
             MutableLongPoly gcd = PolynomialGCD(poly, derivative, modulus);
             if (gcd.isConstant())
-                return new Factorization(poly, 1);
+                return oneFactor(poly, 1);
             MutableLongPoly quot = divideAndRemainder(poly, gcd, modulus)[0];
 
             ArrayList<MutableLongPoly> factors = new ArrayList<>();
@@ -501,24 +520,163 @@ public final class SmallPolynomials {
             }
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd, modulus);
-                Factorization factorization = SquareFreeFactorizationMusser(gcd, modulus);
-                factorization.raiseExponents((int) modulus);
-                MutableLongPoly[] newFactors = factors.toArray(new MutableLongPoly[factorization.factors.length + factors.size()]);
-                int[] newExponents = Arrays.copyOf(exponents.toArray(), factorization.factors.length + factors.size());
-                System.arraycopy(factorization.factors, 0, newFactors, factors.size(), factorization.factors.length);
-                System.arraycopy(factorization.exponents, 0, newExponents, exponents.size(), factorization.exponents.length);
+                Factorization gcdFactorization = SquareFreeFactorizationMusser0(gcd, modulus);
+                gcdFactorization.raiseExponents((int) modulus);
+                MutableLongPoly[] newFactors = factors.toArray(new MutableLongPoly[gcdFactorization.factors.length + factors.size()]);
+                int[] newExponents = Arrays.copyOf(exponents.toArray(), gcdFactorization.factors.length + factors.size());
+                System.arraycopy(gcdFactorization.factors, 0, newFactors, factors.size(), gcdFactorization.factors.length);
+                System.arraycopy(gcdFactorization.exponents, 0, newExponents, exponents.size(), gcdFactorization.exponents.length);
                 return new Factorization(newFactors, newExponents, 1);
             } else
                 return new Factorization(factors.toArray(new MutableLongPoly[factors.size()]), exponents.toArray(), 1);
         } else {
             MutableLongPoly pRoot = pRoot(poly, modulus);
-            Factorization factorization = SquareFreeFactorizationMusser(pRoot, modulus);
+            Factorization factorization = SquareFreeFactorizationMusser0(pRoot, modulus);
             factorization.raiseExponents((int) modulus);
             return new Factorization(factorization.factors, factorization.exponents, 1);
         }
     }
 
-    private static final Factorization EMPTY_FACTORIZATION = new Factorization(new MutableLongPoly[0], new int[0], 1);
+    /** p-th root of poly */
+    private static MutableLongPoly pRoot(MutableLongPoly poly, long modulus) {
+        assert poly.degree % modulus == 0;
+        long[] rootData = new long[poly.degree / (int) modulus + 1];
+        Arrays.fill(rootData, 0);
+        for (int i = poly.degree; i >= 0; --i)
+            if (poly.data[i] != 0) {
+                assert i % modulus == 0;
+                rootData[i / (int) modulus] = poly.data[i];
+            }
+        return MutableLongPoly.create(rootData);
+    }
+
+    /**
+     * Returns {@code true} if and only if {@code poly} is square-free and {@code false} otherwise
+     *
+     * @param poly the polynomial
+     * @return {@code true} if and only if {@code poly} is square-free and {@code false} otherwise
+     */
+    public static boolean isSquareFree(MutableLongPoly poly) {
+        return PolynomialGCD(poly, derivative(poly)).isConstant();
+    }
+
+    /**
+     * Returns {@code true} if and only if {@code poly} is square-free modulo {@code modulus} and {@code false} otherwise
+     *
+     * @param poly the polynomial
+     * @return {@code true} if and only if {@code poly} is square-free modulo {@code modulus} and {@code false} otherwise
+     */
+    public static boolean isSquareFree(MutableLongPoly poly, long modulus) {
+        return PolynomialGCD(poly, derivative(poly, modulus), modulus).isConstant();
+    }
+
+    /**
+     * Performs distinct-degree factorization for square-free polynomial {@code poly} modulo {@code modulus}.
+     * In the case of not square-free input, the algorithm works, but the resulting factorization is not compete.
+     *
+     * @param poly    the polynomial
+     * @param modulus prime modulus
+     * @return distinct-degree decomposition of {@code poly} modulo {@code modulus}
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static Factorization DistinctDegreeFactorization(MutableLongPoly poly, long modulus) {
+        if (poly.isConstant())
+            return oneFactor(poly.lc());
+
+        long factor = mod(poly.lc(), modulus);
+        MutableLongPoly base = poly.clone().monic(modulus);
+
+        if (base.degree <= 1)
+            return oneFactor(base, factor);
+
+        if (base.isMonomial())
+            return oneFactor(base, factor);
+
+        MutableLongPoly exponent = MutableLongPoly.create(0, 1);
+        ArrayList<MutableLongPoly> factors = new ArrayList<>();
+        TIntArrayList degrees = new TIntArrayList();
+        int i = 0;
+        while (!base.isConstant()) {
+            ++i;
+            exponent = SmallPolynomialArithmetics.powMod(exponent, modulus, poly, modulus);
+            MutableLongPoly tmpExponent = exponent.clone();
+            //subtract x^1 effectively
+            tmpExponent.ensureCapacity(1);
+            tmpExponent.data[1] = subtractMod(tmpExponent.data[1], 1, modulus);
+            tmpExponent.fixDegree();
+            MutableLongPoly gcd = PolynomialGCD(tmpExponent, base, modulus);
+            if (!gcd.isConstant())  {
+                factors.add(gcd.monic(modulus));
+                degrees.add(i);
+            }
+            assert divideAndRemainder(base, gcd, modulus)[1].isZero();
+            base = divideAndRemainder(base, gcd, modulus)[0];
+
+            if (base.degree < 2 * (i + 1)) {// <- early termination
+                if (!base.isConstant()) {
+                    factors.add(base.monic(modulus));
+                    degrees.add(i + 1);
+                }
+                break;
+            }
+        }
+
+        return new Factorization(factors, degrees, factor);
+    }
+
+    /**
+     * Performs square-free factorization followed by distinct-degree factorization modulo {@code modulus}.
+     *
+     * @param poly    the polynomial
+     * @param modulus prime modulus
+     * @return square-free and distinct-degree decomposition of {@code poly} modulo {@code modulus}
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static Factorization DistinctDegreeFactorizationComplete(MutableLongPoly poly, long modulus) {
+        Factorization squareFree = SquareFreeFactorization(poly, modulus);
+        long overallFactor = squareFree.factor;
+        ArrayList<MutableLongPoly> finalFactors = new ArrayList<>(squareFree.factors.length);
+        TIntArrayList finalExponents = new TIntArrayList(squareFree.factors.length);
+        for (int i = squareFree.factors.length - 1; i >= 0; --i) {
+            Factorization dd = DistinctDegreeFactorization(squareFree.factors[i], modulus);
+            int nFactors = dd.factors.length;
+            finalFactors.ensureCapacity(finalFactors.size() + nFactors);
+            finalExponents.ensureCapacity(finalExponents.size() + nFactors);
+            for (int j = nFactors - 1; j >= 0; --j) {
+                finalFactors.add(dd.factors[j]);
+                finalExponents.add(squareFree.exponents[i]);
+            }
+            overallFactor = multiplyMod(overallFactor, dd.factor, modulus);
+        }
+
+        return new Factorization(finalFactors, finalExponents, overallFactor);
+    }
+
+    /** pretty print for factorization */
+    private static String toStringFactorization(Object[] factors, int[] exponents, long factor, boolean infoAsExponents) {
+        StringBuilder sb = new StringBuilder();
+        if (factor != 1) {
+            sb.append(factor);
+            if (factors.length > 0)
+                sb.append("*");
+        }
+        for (int i = 0; ; i++) {
+            sb.append("(").append(factors[i]).append(")");
+            if (infoAsExponents && exponents[i] != 1)
+                sb.append("^").append(exponents[i]);
+            if (i == factors.length - 1)
+                return sb.toString();
+            sb.append("*");
+        }
+    }
+
+    static Factorization oneFactor(long factor) {
+        return new Factorization(new MutableLongPoly[0], new int[0], factor);
+    }
+
+    static Factorization oneFactor(MutableLongPoly poly, long factor) {
+        return new Factorization(new MutableLongPoly[]{poly}, new int[]{1}, factor);
+    }
 
     /**
      * Polynomial factorization
@@ -528,13 +686,8 @@ public final class SmallPolynomials {
         final long factor;
         /** Factors */
         final MutableLongPoly[] factors;
-        /** Exponents */
+        /** Either exponents or distinct-degree powers */
         final int[] exponents;
-
-        //not factorazable
-        Factorization(MutableLongPoly poly, long factor) {
-            this(new MutableLongPoly[]{poly}, new int[]{1}, factor);
-        }
 
         Factorization(MutableLongPoly[] factors, int[] exponents, long factor) {
             this.factors = factors;
@@ -542,7 +695,16 @@ public final class SmallPolynomials {
             this.factor = factor;
         }
 
+        Factorization(List<MutableLongPoly> factors, TIntArrayList exponents, long factor) {
+            this(factors.toArray(new MutableLongPoly[factors.size()]), exponents.toArray(), factor);
+        }
+
+        protected String toString(boolean infoAsExponents) {
+            return toStringFactorization(factors, exponents, factor, infoAsExponents);
+        }
+
         Factorization setFactor(long factor) {
+            if (factor == this.factor) return this;
             return new Factorization(factors, exponents, factor);
         }
 
@@ -551,25 +713,59 @@ public final class SmallPolynomials {
                 exponents[i] *= val;
         }
 
+        Factorization canonical() {
+            MutableLongPoly[] fTmp = factors.clone();
+            int[] eTmp = exponents.clone();
+            for (int i = fTmp.length - 1; i >= 0; --i) {
+                MutableLongPoly poly = fTmp[i];
+                if (poly.isMonomial() && eTmp[i] != 1) {
+                    int degree = poly.degree;
+                    poly.ensureCapacity(poly.degree * eTmp[i]);
+                    poly.data[degree * eTmp[i]] = poly.data[degree];
+                    poly.data[degree] = 0;
+                    eTmp[i] = 1;
+                    assert poly.isMonomial();
+                }
+            }
+
+            ArraysUtil.quickSort(fTmp, eTmp);
+            return new Factorization(fTmp, eTmp, factor);
+        }
+
+        Factorization addFactor(MutableLongPoly poly, int exponent) {
+            MutableLongPoly[] factors = Arrays.copyOf(this.factors, this.factors.length + 1);
+            int[] exponents = Arrays.copyOf(this.exponents, this.exponents.length + 1);
+            factors[factors.length - 1] = poly;
+            exponents[exponents.length - 1] = exponent;
+            return new Factorization(factors, exponents, factor);
+        }
+
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            if (factor != 1) {
-                sb.append(factor);
-                if (factors.length > 0)
-                    sb.append("*");
-            }
-            for (int i = 0; ; i++) {
-                sb.append("(").append(factors[i]).append(")");
-                if (exponents[i] != 1)
-                    sb.append("^").append(exponents[i]);
-                if (i == factors.length - 1)
-                    return sb.toString();
-                sb.append("*");
-            }
+            return toString(true);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Factorization that = (Factorization) o;
+
+            if (factor != that.factor) return false;
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(factors, that.factors)) return false;
+            return Arrays.equals(exponents, that.exponents);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (factor^(factor >>> 32));
+            result = 31 * result + Arrays.hashCode(factors);
+            result = 31 * result + Arrays.hashCode(exponents);
+            return result;
         }
     }
-
 
     /**
      * Returns the content of the poly

@@ -232,6 +232,8 @@ public final class LongArithmetics {
      * @throws IllegalArgumentException {@code a} and {@code modulus} are not coprime
      */
     public static long modInverse(long num, long modulus) {
+        if (num == 1)
+            return num;
         if (num < 0)
             num = mod(num, modulus);
 
