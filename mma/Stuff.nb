@@ -1,0 +1,254 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      6888,        246]
+NotebookOptionsPosition[      6055,        211]
+NotebookOutlinePosition[      6408,        227]
+CellTagsIndexPosition[      6365,        224]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", "[", 
+   RowBox[{"NotebookDirectory", "[", "]"}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<mathematicaUtils.m\>\"", "]"}], ";"}]}], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"tmp", "=", 
+   RowBox[{"RandomDistinctDegreeFactorization", "[", 
+    RowBox[{"4", ",", "3", ",", "6", ",", "1000", ",", "100", ",", "11"}], 
+    "]"}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"22", "+", 
+  RowBox[{"14", " ", "x"}], "+", 
+  RowBox[{"12", " ", 
+   SuperscriptBox["x", "2"]}], "+", 
+  SuperscriptBox["x", "3"], "+", 
+  RowBox[{"40", " ", 
+   SuperscriptBox["x", "4"]}], "+", 
+  RowBox[{"25", " ", 
+   SuperscriptBox["x", "5"]}], "+", 
+  RowBox[{"24", " ", 
+   SuperscriptBox["x", "6"]}], "+", 
+  SuperscriptBox["x", "7"]}]], "Print"],
+
+Cell[BoxData["43"], "Print"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Close", "[", 
+  "\"\<src/test/resources/cc/r2/core/polynomial/\
+DistinctDegreeFactorizationSmall.txt\>\"", "]"}]], "Input"],
+
+Cell[BoxData["\<\"src/test/resources/cc/r2/core/polynomial/\
+DistinctDegreeFactorizationSmall.txt\"\>"], "Output"]
+}, Open  ]],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"PrintTemporary", "[", 
+   RowBox[{"Dynamic", "[", "i", "]"}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Block", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"out", " ", "=", " ", 
+      RowBox[{"OpenWrite", "[", 
+       RowBox[{
+       "\"\<src/test/resources/cc/r2/core/polynomial/\
+DistinctDegreeFactorizationSmall.txt\>\"", ",", " ", 
+        RowBox[{"BinaryFormat", "\[Rule]", "True"}], ",", 
+        RowBox[{"FormatType", "\[Rule]", "OutputForm"}], ",", 
+        RowBox[{"PageWidth", "\[Rule]", "Infinity"}]}], "]"}]}], ",", "i", 
+     ",", "tmp"}], "}"}], ",", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"For", "[", 
+     RowBox[{
+      RowBox[{"i", "=", "0"}], ",", " ", 
+      RowBox[{"i", "<", "10000"}], ",", 
+      RowBox[{"++", "i"}], ",", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"tmp", "=", 
+        RowBox[{"EncodeFactorization", "[", 
+         RowBox[{"RandomDistinctDegreeFactorization", "[", 
+          RowBox[{"4", ",", "3", ",", "6", ",", "1000", ",", "100"}], "]"}], 
+         "]"}]}], ";", "\[IndentingNewLine]", 
+       RowBox[{"Write", "[", 
+        RowBox[{"out", ",", " ", "tmp"}], "]"}], ";"}]}], 
+     "\[IndentingNewLine]", 
+     RowBox[{"(*", 
+      RowBox[{
+       RowBox[{"Write", "[", 
+        RowBox[{"out", ",", " ", "\"\<\\n\>\""}], "]"}], ";"}], "*)"}], 
+     "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+    RowBox[{"Close", "[", "out", "]"}], ";"}]}], "\[IndentingNewLine]", 
+  "]"}]}], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"tmp", " ", "=", " ", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"x", "^", "1"}], ")"}], "^", "2"}], "*", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"17", "+", 
+       RowBox[{"x", "^", "1"}]}], ")"}], "^", "2"}], "*", 
+    RowBox[{"(", 
+     RowBox[{"17", "+", 
+      RowBox[{"26", 
+       RowBox[{"x", "^", "1"}]}], "+", 
+      RowBox[{"x", "^", "2"}]}], ")"}], "*", 
+    RowBox[{"(", 
+     RowBox[{"8", "+", 
+      RowBox[{"15", 
+       RowBox[{"x", "^", "1"}]}], "+", 
+      RowBox[{"6", 
+       RowBox[{"x", "^", "2"}]}], "+", 
+      RowBox[{"5", 
+       RowBox[{"x", "^", "3"}]}], "+", 
+      RowBox[{"x", "^", "4"}]}], ")"}], "*", 
+    RowBox[{"(", 
+     RowBox[{"6", "+", 
+      RowBox[{"21", 
+       RowBox[{"x", "^", "1"}]}], "+", 
+      RowBox[{"8", 
+       RowBox[{"x", "^", "2"}]}], "+", 
+      RowBox[{"x", "^", "3"}]}], ")"}]}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Factor", "[", 
+  RowBox[{
+   RowBox[{"Expand", "[", 
+    RowBox[{"tmp", ",", 
+     RowBox[{"Modulus", "\[Rule]", "31"}]}], "]"}], ",", 
+   RowBox[{"Modulus", "->", "31"}]}], "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  SuperscriptBox["x", "2"], " ", 
+  RowBox[{"(", 
+   RowBox[{"2", "+", "x"}], ")"}], " ", 
+  SuperscriptBox[
+   RowBox[{"(", 
+    RowBox[{"17", "+", "x"}], ")"}], "2"], " ", 
+  RowBox[{"(", 
+   RowBox[{"24", "+", "x"}], ")"}], " ", 
+  RowBox[{"(", 
+   RowBox[{"17", "+", 
+    RowBox[{"6", " ", "x"}], "+", 
+    SuperscriptBox["x", "2"]}], ")"}], " ", 
+  RowBox[{"(", 
+   RowBox[{"26", "+", 
+    RowBox[{"30", " ", "x"}], "+", 
+    SuperscriptBox["x", "2"]}], ")"}], " ", 
+  RowBox[{"(", 
+   RowBox[{"6", "+", 
+    RowBox[{"21", " ", "x"}], "+", 
+    RowBox[{"8", " ", 
+     SuperscriptBox["x", "2"]}], "+", 
+    SuperscriptBox["x", "3"]}], ")"}]}]], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"FactorDistinctDegree", "[", 
+  RowBox[{
+   RowBox[{"Expand", "[", 
+    RowBox[{"tmp", ",", 
+     RowBox[{"Modulus", "\[Rule]", "31"}]}], "]"}], ",", "31"}], 
+  "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   SuperscriptBox["x", "2"], ",", 
+   SuperscriptBox[
+    RowBox[{"(", 
+     RowBox[{"17", "+", "x"}], ")"}], "2"], ",", 
+   RowBox[{"17", "+", 
+    RowBox[{"26", " ", "x"}], "+", 
+    SuperscriptBox["x", "2"]}], ",", 
+   RowBox[{"8", "+", 
+    RowBox[{"15", " ", "x"}], "+", 
+    RowBox[{"6", " ", 
+     SuperscriptBox["x", "2"]}], "+", 
+    RowBox[{"5", " ", 
+     SuperscriptBox["x", "3"]}], "+", 
+    SuperscriptBox["x", "4"]}], ",", 
+   RowBox[{"6", "+", 
+    RowBox[{"21", " ", "x"}], "+", 
+    RowBox[{"8", " ", 
+     SuperscriptBox["x", "2"]}], "+", 
+    SuperscriptBox["x", "3"]}]}], "}"}]], "Output"]
+}, Open  ]]
+},
+WindowSize->{1218, 751},
+WindowMargins->{{4, Automatic}, {Automatic, 0}},
+FrontEndVersion->"11.0 for Mac OS X x86 (32-bit, 64-bit Kernel) (July 28, \
+2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 231, 6, 54, "Input"],
+Cell[CellGroupData[{
+Cell[814, 30, 206, 5, 32, "Input"],
+Cell[CellGroupData[{
+Cell[1045, 39, 378, 12, 25, "Print"],
+Cell[1426, 53, 28, 0, 24, "Print"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1503, 59, 147, 3, 32, "Input"],
+Cell[1653, 64, 114, 1, 32, "Output"]
+}, Open  ]],
+Cell[1782, 68, 1523, 38, 243, "Input"],
+Cell[3308, 108, 916, 31, 32, "Input"],
+Cell[CellGroupData[{
+Cell[4249, 143, 214, 6, 32, "Input"],
+Cell[4466, 151, 683, 23, 35, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5186, 179, 200, 6, 32, "Input"],
+Cell[5389, 187, 650, 21, 35, "Output"]
+}, Open  ]]
+}
+]
+*)
+

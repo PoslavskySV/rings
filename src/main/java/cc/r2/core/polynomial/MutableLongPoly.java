@@ -7,7 +7,7 @@ import static cc.r2.core.polynomial.LongArithmetics.*;
 /**
  * Intermediate structure for long[] polynomial.
  */
-final class MutableLongPoly {
+final class MutableLongPoly implements Comparable<MutableLongPoly> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     long[] data;
     /** points to the last non zero element in the data array */
@@ -33,6 +33,12 @@ final class MutableLongPoly {
         return new MutableLongPoly(data);
     }
 
+    static MutableLongPoly createMonomial(long coefficient, int exponent) {
+        long[] data = new long[exponent + 1];
+        data[exponent] = coefficient;
+        return new MutableLongPoly(data);
+    }
+
     static MutableLongPoly one() {
         return new MutableLongPoly(new long[]{1});
     }
@@ -41,13 +47,20 @@ final class MutableLongPoly {
         return new MutableLongPoly(new long[]{0});
     }
 
-    boolean isZero() {return degree == 0 && data[0] == 0;}
+    boolean isZero() {return data[degree] == 0;}
 
     boolean isOne() {return degree == 0 && data[0] == 1;}
 
     boolean isMonic() {return lc() == 1;}
 
     boolean isConstant() {return degree == 0;}
+
+    boolean isMonomial() {
+        for (int i = 0; i < degree; ++i)
+            if (data[i] != 0)
+                return false;
+        return true;
+    }
 
     double norm() {
         double norm = 0;
@@ -172,6 +185,12 @@ final class MutableLongPoly {
     }
 
     MutableLongPoly monic(long modulus) {
+        if (data[degree] == 0) // isZero()
+            return this;
+        if (degree == 0) {
+            data[0] = 1;
+            return this;
+        }
         return multiply(modInverse(lc(), modulus), modulus);
     }
 
@@ -316,6 +335,29 @@ final class MutableLongPoly {
         return this;
     }
 
+    MutableLongPoly multiplyMonomial(int exponent) {
+        if (exponent == 0)
+            return this;
+        int oldDegree = degree;
+        ensureCapacity(oldDegree * exponent);
+        System.arraycopy(data, 0, data, exponent, oldDegree + 1);
+        Arrays.fill(data, 0, exponent, 0);
+        return this;
+    }
+
+    @Override
+    public int compareTo(MutableLongPoly o) {
+        int c = Integer.compare(degree, o.degree);
+        if (c != 0)
+            return c;
+        for (int i = degree; i >= 0; --i) {
+            c = Long.compare(data[i], o.data[i]);
+            if (c != 0)
+                return c;
+        }
+        return 0;
+    }
+
     @Override
     public MutableLongPoly clone() {
         return new MutableLongPoly(data.clone(), degree);
@@ -357,5 +399,16 @@ final class MutableLongPoly {
             if (data[i] != oth.data[i])
                 return false;
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 1;
+        for (int i = degree; i >= 0; --i) {
+            long element = data[i];
+            int elementHash = (int) (element^(element >>> 32));
+            result = 31 * result + elementHash;
+        }
+        return result;
     }
 }
