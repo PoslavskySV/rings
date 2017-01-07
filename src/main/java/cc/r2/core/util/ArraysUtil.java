@@ -42,6 +42,23 @@ public final class ArraysUtil {
 
     public static final Comparator<Object> HASH_COMPARATOR = (o1, o2) -> Integer.compare(o1.hashCode(), o2.hashCode());
 
+    public static String toString(long[] a, int from, int to) {
+        if (a == null)
+            return "null";
+        int iMax = to - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = from; ; i++) {
+            b.append(a[i]);
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(", ");
+        }
+    }
+
     public static int[] short2int(final short[] a) {
         int[] r = new int[a.length];
         for (int i = 0; i < a.length; ++i)
