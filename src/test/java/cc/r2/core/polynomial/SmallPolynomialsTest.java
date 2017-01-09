@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import static cc.r2.core.polynomial.LongArithmetics.gcd;
+import static cc.r2.core.polynomial.RandomPolynomials.randomPoly;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.pow;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.powMod;
 import static cc.r2.core.polynomial.SmallPolynomials.*;
@@ -679,25 +680,6 @@ public class SmallPolynomialsTest {
             throw new IllegalArgumentException();
         }
     }
-
-    private static final int CBOUND = 100;
-
-    public static MutableLongPoly randomPoly(int degree, RandomGenerator rnd) {
-        return randomPoly(degree, CBOUND, rnd);
-    }
-
-    public static MutableLongPoly randomPoly(int degree, int bound, RandomGenerator rnd) {
-        long[] data = new long[degree + 1];
-        for (int i = 0; i <= degree; ++i) {
-            data[i] = rnd.nextInt(bound);
-            if (rnd.nextBoolean() && rnd.nextBoolean())
-                data[i] = -data[i];
-        }
-        while (data[degree] == 0)
-            data[degree] = rnd.nextInt(bound);
-        return new MutableLongPoly(data, degree);
-    }
-
 
     @Test
     public void test27() throws Exception {

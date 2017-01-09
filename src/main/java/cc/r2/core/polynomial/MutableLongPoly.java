@@ -7,7 +7,7 @@ import java.util.Arrays;
 import static cc.r2.core.polynomial.LongArithmetics.*;
 
 /**
- * Intermediate structure for long[] polynomial.
+ * Intermediate structure for {@code long[]} polynomial.
  */
 final class MutableLongPoly implements Comparable<MutableLongPoly> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
@@ -318,510 +318,102 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /** when use Karatsuba fast multiplication */
+    private static final long
+            MUL_CLASSICAL_THRESHOLD = 256L * 256L,
+            MUL_MOD_CLASSICAL_THRESHOLD = 128L * 128L;
+
+    /**
+     * Multiply {@code this} and {@code oth} and write the result to {@code this}. Classical multiplication and
+     * Karatsuba used depending on the degree of input polynomials.
+     *
+     * @param oth other polynomial
+     * @return {@code this}
+     */
     MutableLongPoly multiply(MutableLongPoly oth) {
         if (oth.degree == 0)
             return multiply(oth.data[0]);
-
-        final long[] newData = new long[degree + oth.degree + 1];
-        for (int j = oth.degree; j >= 0; --j) { // <- upper loop over oth (safe redundant mod operations)
-            long c = oth.data[j];
-            if (c != 0)
-                for (int i = degree; i >= 0; --i)
-                    newData[i + j] = LongArithmetics.add(newData[i + j], LongArithmetics.multiply(data[i], c));
-        }
-
-        data = newData;
-        degree = degree + oth.degree;
-        fixDegree();
-        return this;
-    }
-
-    MutableLongPoly multiply(MutableLongPoly oth, long modulus) {
-        if (oth.degree == 0)
-            return multiply(oth.data[0], modulus);
-
-        modulus(modulus);
-        final long[] newData = new long[degree + oth.degree + 1];
-        for (int j = oth.degree; j >= 0; --j)// <- upper loop over oth (safe redundant mod operations)
-            for (int i = degree; i >= 0; --i)
-                newData[i + j] = mod(LongArithmetics.add(
-                        newData[i + j],
-                        mod(LongArithmetics.multiply(data[i], mod(oth.data[j], modulus)), modulus))
-                        , modulus);
-
-        data = newData;
-        degree = degree + oth.degree;
-        fixDegree();
-        return this;
-    }
-
-    MutableLongPoly multiply(MutableLongPoly oth, long modulus, MutableLongPoly cache) {
-        if (oth.degree == 0) {
-            cache.data = multiply(oth.data[0], modulus).data;
+        if (isZero())
+            return this;
+        if (degree == 0) {
+            long factor = data[0];
+            data = oth.data.clone();
+            degree = oth.degree;
+            multiply(factor);
             return this;
         }
 
-        modulus(modulus);
-        cache.ensureCapacity(degree + oth.degree + 1);
-        cache.degree = degree + oth.degree + 1;
+        if (LongArithmetics.multiply(degree + 1, oth.degree + 1) <= MUL_CLASSICAL_THRESHOLD)
+            return multiplyClassical(oth);
+        else
+            return multiplyKaratsuba(oth);
+    }
 
-        final long[] newData = cache.data;
-        for (int j = oth.degree; j >= 0; --j)// <- upper loop over oth (safe redundant mod operations)
-            for (int i = degree; i >= 0; --i) {
-                long di = data[i];
-                newData[i + j] = mod(LongArithmetics.add(
-                        newData[i + j],
-                        mod(LongArithmetics.multiply(di, mod(oth.data[j], modulus)), modulus))
-                        , modulus);
-            }
-
-        data = newData;
+    /** Karatsuba multiplication */
+    private MutableLongPoly multiplyKaratsuba(MutableLongPoly oth) {
+        data = multiplyKaratsuba(data, 0, degree + 1, oth.data, 0, oth.degree + 1);
         degree = degree + oth.degree;
+        fixDegree();
         return this;
     }
 
-    static MutableLongPoly create0(long... data) {
-        if (data.length == 0) data = new long[1];
-        return new MutableLongPoly(data);
-    }
-
-    static long[] copyOfRange(long[] data, int from, int to) {
-        if (from >= to)
-            return new long[0];
-        return Arrays.copyOfRange(data, from, to);
-    }
-
-    static long[] copy(long[] a, int from, int to) {
-        if (from >= a.length)
-            return new long[0];
-        if (to > a.length) return a;
-        return Arrays.copyOfRange(a, from, to);
-    }
-
-    long[] multiplyKaratsuba4(long[] a, long[] b) {
-        if (a.length == 0)
-            return new long[0];
-        if (b.length == 0)
-            return new long[0];
-
-        if (a.length == 1) {
-            long[] result = new long[b.length];
-            //single element in a
-            for (int i = 0; i < b.length; ++i)
-                result[i] = a[0] * b[i];
-            return result;
-        }
-        if (b.length == 1) {
-            long[] result = new long[a.length];
-            //single element in b
-            for (int i = 0; i < a.length; ++i)
-                result[i] = b[0] * a[i];
-            return result;
-        }
-        if (a.length == 2 && b.length == 2) {
-            long[] result = new long[3];
-            //both a and b are linear
-            result[0] = a[0] * b[0];
-            result[1] = a[0] * b[1] + a[1] * b[0]; ;
-            result[2] = a[1] * b[1];
-            return result;
-        }
-
-
-        int imid = Math.max(a.length, b.length) / 2;
-//        int aMid = aFrom + (aTo - aFrom) / 2, bMid = bFrom + (bTo - bFrom) / 2;
-//        int aMid = aFrom + imid, bMid = bFrom + imid;
-
-//        int nDegree = Math.max(aTo - aFrom, bTo - bFrom);
-//        if (Integer.bitCount(nDegree) != 1)
-//            nDegree = 1 << (32 - Integer.numberOfLeadingZeros(nDegree));
-//
-//        assert nDegree % 2 == 0;
-
-
-        //f0*g0
-        long[] f0 = copy(a, 0, imid), f1 = copy(a, imid, a.length);
-        long[] g0 = copy(b, 0, imid), g1 = copy(b, imid, b.length);
-
-        long[] f0g0 = multiplyKaratsuba4(f0, g0);
-        long[] f1g1 = multiplyKaratsuba4(f1, g1);
-
-
-        // f0 + f1
-        if (f1.length > f0.length) {
-            long[] tmp = f0;
-            f0 = f1;
-            f1 = tmp;
-        }
-        if (g1.length > g0.length) {
-            long[] tmp = g0;
-            g0 = g1;
-            g1 = tmp;
-        }
-
-        for (int i = 0; i < f1.length; ++i)
-            f0[i] += f1[i];
-        for (int i = 0; i < g1.length; ++i)
-            g0[i] += g1[i];
-
-        long[] mid = multiplyKaratsuba4(f0, g0);
-
-        if (mid.length < f0g0.length)
-            mid = Arrays.copyOf(mid, f0g0.length);
-        if (mid.length < f1g1.length)
-            mid = Arrays.copyOf(mid, f1g1.length);
-
-        //subtract f0g0, f1g1
-        for (int i = 0; i < f0g0.length; i++)
-            mid[i] -= f0g0[i];
-
-        for (int i = 0; i < f1g1.length; i++)
-            mid[i] -= f1g1[i];
-
-
-        long[] result = Arrays.copyOf(f0g0, a.length + b.length - 1);
-        for (int i = 0; i < mid.length; i++)
-            result[i + imid] = LongArithmetics.add(result[i + imid], mid[i]);
-        for (int i = 0; i < f1g1.length; i++)
-            result[i + 2 * imid] = LongArithmetics.add(result[i + 2 * imid], f1g1[i]);
-
-        return result;
-    }
-
-
-    MutableLongPoly multiplyKaratsuba4(MutableLongPoly oth) {
-        return MutableLongPoly.create(multiplyKaratsuba4(data, oth.data));
-    }
-
-    static long[] multiplyNaive(final long[] a, final long[] b, final int aFrom, final int aTo, final int bFrom, final int bTo) {
-        long[] result = new long[aTo - aFrom + bTo - bFrom - 1];
-        for (int i = 0; i < aTo - aFrom; i++) {
-            for (int j = 0; j < bTo - bFrom; j++) {
-                result[i + j] += a[aFrom + i] * b[bFrom + j];
-            }
-        }
-        return result;
-    }
-
-    static long[] multiplyKaratsuba4a(final long[] a, final long[] b, final int aFrom, final int aTo, final int bFrom, final int bTo) {
-        if (aFrom >= aTo)
-            return new long[0];
-        if (bFrom >= bTo)
-            return new long[0];
-
-        if (aTo - aFrom == 1) {
-            long[] result = new long[bTo - bFrom];
-            //single element in a
-            for (int i = bFrom; i < bTo; ++i)
-                result[i - bFrom] = a[aFrom] * b[i];
-            return result;
-        }
-        if (bTo - bFrom == 1) {
-            long[] result = new long[aTo - aFrom];
-            //single element in b
-            for (int i = aFrom; i < aTo; ++i)
-                result[i - aFrom] = b[bFrom] * a[i];
-            return result;
-        }
-        if (aTo - aFrom == 2 && bTo - bFrom == 2) {
-            long[] result = new long[3];
-            //both a and b are linear
-            result[0] = a[aFrom] * b[bFrom];
-            result[1] = a[aFrom] * b[aFrom + 1] + a[aFrom + 1] * b[bFrom]; ;
-            result[2] = a[aFrom + 1] * b[bFrom + 1];
-            return result;
-        }
-        if ((aTo - aFrom) * (bTo - bFrom) < 1000)
-            return multiplyNaive(a, b, aFrom, aTo, bFrom, bTo);
-
-
-        int imid = (Math.max(aTo - aFrom, bTo - bFrom)) / 2;
-//        System.out.println(aTo - aFrom);
-//        System.out.println(bTo - bFrom);
-//        System.out.println(imid);
-//        int aMid = aFrom + (aTo - aFrom) / 2, bMid = bFrom + (bTo - bFrom) / 2;
-//        int aMid = aFrom + imid, bMid = bFrom + imid;
-
-//        int nDegree = Math.max(aTo - aFrom, bTo - bFrom);
-//        if (Integer.bitCount(nDegree) != 1)
-//            nDegree = 1 << (32 - Integer.numberOfLeadingZeros(nDegree));
-//        imid = nDegree /2;
-//        assert nDegree % 2 == 0;
-
-
-        //f0*g0
-        int aMid = Math.min(aFrom + imid, aTo);
-        int bMid = Math.min(bFrom + imid, bTo);
-
-//        long[] f0 = copy(a, 0, imid), f1 = copy(a, imid, a.length);
-//        long[] g0 = copy(b, 0, imid), g1 = copy(b, imid, b.length);
-
-        long[] f0g0 = multiplyKaratsuba4a(a, b, aFrom, aMid, bFrom, bMid);
-        long[] f1g1 = multiplyKaratsuba4a(a, b, aMid, aTo, bMid, bTo);
-
-
-        // f0 + f1
-        long[] f0_plus_f1 = new long[Math.max(aMid - aFrom, aTo - aMid)];
-        long[] g0_plus_g1 = new long[Math.max(bMid - bFrom, bTo - bMid)];
-
-        for (int i = aFrom; i < aMid; i++)
-            f0_plus_f1[i - aFrom] = a[i];
-        for (int i = aMid; i < aTo; ++i)
-            f0_plus_f1[i - aMid] += a[i];
-
-        for (int i = bFrom; i < bMid; i++)
-            g0_plus_g1[i - bFrom] = b[i];
-        for (int i = bMid; i < bTo; ++i)
-            g0_plus_g1[i - bMid] += b[i];
-
-        long[] mid = multiplyKaratsuba4a(f0_plus_f1, g0_plus_g1, 0, f0_plus_f1.length, 0, g0_plus_g1.length);
-//        System.out.println(Arrays.toString(mid));
-
-        if (mid.length < f0g0.length)
-            mid = Arrays.copyOf(mid, f0g0.length);
-        if (mid.length < f1g1.length)
-            mid = Arrays.copyOf(mid, f1g1.length);
-
-        //subtract f0g0, f1g1
-        for (int i = 0; i < f0g0.length; i++)
-            mid[i] -= f0g0[i];
-
-        for (int i = 0; i < f1g1.length; i++)
-            mid[i] -= f1g1[i];
-
-
-        long[] result = Arrays.copyOf(f0g0, (aTo - aFrom) + (bTo - bFrom) - 1);
-        for (int i = 0; i < mid.length; i++) {
-//            if (mid[i] != 0)
-            result[i + imid] += mid[i];
-        }
-        for (int i = 0; i < f1g1.length; i++) {
-//            if(f1g1[i] != 0)
-            result[i + 2 * imid] += f1g1[i];
-        }
-
-        return result;
-    }
-
-    MutableLongPoly multiplyKaratsuba4a(MutableLongPoly oth) {
-        return MutableLongPoly.create(multiplyKaratsuba4a(data, oth.data, 0, degree + 1, 0, oth.degree + 1));
-    }
-
-    long[] multiplyKaratsuba3(long[] a, long[] b, int aFrom, int aTo, int bFrom, int bTo) {
-//
-//        aTo = Math.min(aTo, a.length);
-//        bTo = Math.min(bTo, b.length);
-
-        if (aFrom >= aTo || bFrom >= bTo)
-            return new long[0];
-
-        if (aTo - aFrom == 1) {
-            long[] result = new long[bTo - bFrom];
-            //single element in a
-            for (int i = bFrom; i < bTo; ++i)
-                result[i - bFrom] = LongArithmetics.multiply(a[aFrom], b[i]);
-            return result;
-        }
-        if (bTo - bFrom == 1) {
-            long[] result = new long[aTo - aFrom];
-            //single element in b
-            for (int i = aFrom; i < aTo; ++i)
-                result[i - aFrom] = LongArithmetics.multiply(b[bFrom], a[i]);
-            return result;
-        }
-        if (aTo - aFrom == 2 && bTo - bFrom == 2) {
-            long[] result = new long[3];
-            //both a and b are linear
-            result[0] = LongArithmetics.multiply(a[aFrom], b[bFrom]);
-            result[1] = LongArithmetics.add(LongArithmetics.multiply(a[aFrom], b[bFrom + 1]), LongArithmetics.multiply(a[aFrom + 1], b[bFrom]));
-            result[2] = LongArithmetics.multiply(a[aFrom + 1], b[bFrom + 1]);
-            return result;
-        }
-
-
-        int imid = Math.max(aTo - aFrom, bTo - bFrom) / 2;
-//        int aMid = aFrom + (aTo - aFrom) / 2, bMid = bFrom + (bTo - bFrom) / 2;
-//        int aMid = aFrom + imid, bMid = bFrom + imid;
-
-//        int nDegree = Math.max(aTo - aFrom, bTo - bFrom);
-//        if (Integer.bitCount(nDegree) != 1)
-//            nDegree = 1 << (32 - Integer.numberOfLeadingZeros(nDegree));
-//
-//        assert nDegree % 2 == 0;
-
-
-        //f0*g0
-        long[] f0g0 = multiplyKaratsuba3(a, b, aFrom, aFrom + imid, bFrom, bFrom + imid);
-        //f1*g1
-        long[] f1g1 = multiplyKaratsuba3(a, b, aFrom + imid, aTo, bFrom + imid, bTo);
-
-
-        // a <- f0 + f1
-        for (int i = aFrom + imid; i < aTo; i++)
-            a[i - imid] = LongArithmetics.add(a[i - imid], a[i]);
-
-        // b <- g0 + g1
-        for (int i = bFrom + imid; i < bTo; i++)
-            b[i - imid] = LongArithmetics.add(b[i - imid], b[i]);
-
-        long[] mid = multiplyKaratsuba3(a, b, aFrom, aFrom + imid, bFrom, bFrom + imid);
-
-        //subtract f0g0, f1g1
-        for (int i = 0; i < f0g0.length; i++)
-            mid[i] = LongArithmetics.subtract(mid[i], f0g0[i]);
-
-        for (int i = 0; i < f1g1.length; i++)
-            mid[i] = LongArithmetics.subtract(mid[i], f1g1[i]);
-
-
-        // restore a: a <- f0 + f1
-        for (int i = aFrom + imid; i < aTo; i++)
-            a[i - imid] = LongArithmetics.subtract(a[i - imid], a[i]);
-
-        for (int i = bFrom + imid; i < bTo; i++)
-            b[i - imid] = LongArithmetics.subtract(b[i - imid], b[i]);
-
-
-        long[] result = Arrays.copyOf(f0g0, (aTo - aFrom - 1) + (bTo - bFrom - 1) + 1);
-        for (int i = 0; i < mid.length; i++)
-            result[i + imid] = LongArithmetics.add(result[i + imid], mid[i]);
-        for (int i = 0; i < f1g1.length; i++)
-            result[i + 2 * imid] = LongArithmetics.add(result[i + 2 * imid], f1g1[i]);
-
-        return result;
-    }
-
-    MutableLongPoly multiplyKaratsuba3(MutableLongPoly oth) {
-        return MutableLongPoly.create(multiplyKaratsuba3(data, oth.data, 0, degree + 1, 0, oth.degree + 1));
-    }
-
-    private final long[] cache = new long[100000];
-
-    int multiplyKaratsuba(int recursion, int aDegree, int bDegree, long[] a, long[] b, long[] target, int aFrom, int aTo, int bFrom, int bTo, int targetFrom) {
-//        assert aTo - aFrom == bTo - bFrom;
-
-        if (aFrom > (aDegree + 1) || bFrom > (bDegree + 1))
-            return 0;
-
-        aTo = Math.min(aTo, aDegree + 1);
-        bTo = Math.min(bTo, bDegree + 1);
-
-
-        if (aTo - aFrom == 1) {
-            //single element in a
-            for (int i = bFrom; i < bTo; ++i)
-                target[i - bFrom + targetFrom] = LongArithmetics.add(target[i - bFrom + targetFrom], LongArithmetics.multiply(a[aFrom], b[i]));
-            return bTo - bFrom;
-        }
-        if (bTo - bFrom == 1) {
-            //single element in b
-            for (int i = aFrom; i < aTo; ++i)
-                target[i - aFrom + targetFrom] = LongArithmetics.add(target[i - aFrom + targetFrom], LongArithmetics.multiply(b[bFrom], a[i]));
-            return aTo - aFrom;
-        }
-        if (aTo - aFrom == 2 && bTo - bFrom == 2) {
-            //both a and b are linear
-            target[targetFrom] = LongArithmetics.add(target[targetFrom], LongArithmetics.multiply(a[aFrom], b[bFrom]));
-            target[targetFrom + 1] = LongArithmetics.add(target[targetFrom + 1],
-                    LongArithmetics.add(LongArithmetics.multiply(a[aFrom], b[bFrom + 1]), LongArithmetics.multiply(a[aFrom + 1], b[bFrom])));
-            target[targetFrom + 2] = LongArithmetics.add(target[targetFrom + 2], LongArithmetics.multiply(a[aFrom + 1], b[bFrom + 1]));
-            return 3;
-        }
-
-
-        int nDegree = Math.max(aTo - aFrom, bTo - bFrom);
-        if (Integer.bitCount(nDegree) != 1)
-            nDegree = 1 << (32 - Integer.numberOfLeadingZeros(nDegree));
-
-        assert nDegree % 2 == 0;
-
-        //f0*g0
-        int f0g0 = multiplyKaratsuba(recursion + 1, aDegree, bDegree, a, b, target, aFrom, aFrom + nDegree / 2, bFrom, bFrom + nDegree / 2, targetFrom);
-        //f1*g1
-        int f1g1 = multiplyKaratsuba(recursion + 1, aDegree, bDegree, a, b, target, aFrom + nDegree / 2, aFrom + nDegree, bFrom + nDegree / 2, bFrom + nDegree, targetFrom + nDegree);
-
-
-        // a <- f0 + f1
-        for (int i = 0; i < nDegree / 2 && aFrom + nDegree / 2 + i < aTo; i++)
-            a[aFrom + i] = LongArithmetics.add(a[aFrom + i], a[aFrom + nDegree / 2 + i]);
-
-        // b <- g0 + g1
-        for (int i = 0; i < nDegree / 2 && bFrom + nDegree / 2 + i < bTo; i++)
-            b[bFrom + i] = LongArithmetics.add(b[bFrom + i], b[bFrom + nDegree / 2 + i]);
-
-        int cacheFrom = recursion * nDegree;
-        Arrays.fill(cache, cacheFrom, cacheFrom + nDegree, 0);
-        int mid = multiplyKaratsuba(recursion + 1, aDegree, bDegree, a, b, cache, aFrom, aFrom + nDegree / 2, bFrom, bFrom + nDegree / 2, cacheFrom);
-
-        // restore a: a <- f0 + f1
-        for (int i = 0; i < nDegree / 2 && aFrom + nDegree / 2 + i < aTo; i++)
-            a[aFrom + i] = LongArithmetics.subtract(a[aFrom + i], a[aFrom + nDegree / 2 + i]);
-
-        // restore b: b <- g0 + g1
-        for (int i = 0; i < nDegree / 2 && bFrom + nDegree / 2 + i < bTo; i++)
-            b[bFrom + i] = LongArithmetics.subtract(b[bFrom + i], b[bFrom + nDegree / 2 + i]);
-
-
-        // subtract f0g0
-        for (int i = 0; i < f0g0; ++i)
-            cache[cacheFrom + i] = LongArithmetics.subtract(cache[cacheFrom + i], target[targetFrom + i]);
-
-        // subtract f1g1
-        for (int i = 0; i < f1g1; ++i)
-            cache[cacheFrom + i] = LongArithmetics.subtract(cache[cacheFrom + i], target[targetFrom + nDegree + i]);
-
-        int l = Math.max(f0g0, f1g1);
-        l = Math.max(l, mid);
-        //write (f0+f1)(g0+g1) - f0g0 - f1g1
-        for (int i = nDegree / 2; i < nDegree / 2 + l; i++) {
-            target[i] = LongArithmetics.add(target[i], cache[cacheFrom + i - nDegree / 2]);
-        }
-        return f0g0 + f1g1;
-    }
-
-
-    MutableLongPoly multiplyKaratsuba2(MutableLongPoly oth) {
-        long[] data = new long[Math.max(degree, oth.degree) * 4];
-        multiplyKaratsuba(0, degree, oth.degree, this.data, oth.data, data, 0, degree + 1, 0, oth.degree + 1, 0);
-        return MutableLongPoly.create(data);
-    }
-
-    MutableLongPoly multiplyKaratsuba(MutableLongPoly oth, long modulus) {
-        if (oth.degree * degree <= 10)
-            return multiply(oth, modulus);
-
-        //thisF
-        int nDegree = Math.max(degree, oth.degree);
-        do {
-            ++nDegree;
-        } while (Integer.bitCount(nDegree) != 1);
-
-        MutableLongPoly f0 = create0(copyOfRange(data, 0, nDegree / 2));
-        MutableLongPoly f1 = create0(copyOfRange(data, nDegree / 2, data.length));
-
-        MutableLongPoly g0 = create0(copyOfRange(oth.data, 0, nDegree / 2));
-        MutableLongPoly g1 = create0(copyOfRange(oth.data, nDegree / 2, oth.data.length));
-
-        MutableLongPoly f0g0 = f0.clone().multiplyKaratsuba(g0, modulus);
-        MutableLongPoly f1g1 = f1.clone().multiplyKaratsuba(g1, modulus);
-        MutableLongPoly mid = f0.add(f1, modulus).multiplyKaratsuba(g0.add(g1, modulus), modulus).subtract(f0g0, modulus).subtract(f1g1, modulus);
-
-        long[] newData = Arrays.copyOf(f0g0.data, degree + oth.degree + 1);
-        for (int i = 0; i <= mid.degree; i++) {
-            if (mid.data[i] != 0)
-                newData[i + nDegree / 2] = addMod(newData[i + nDegree / 2], mid.data[i], modulus);
-        }
-
-        for (int i = 0; i <= f1g1.degree; i++) {
-            if (f1g1.data[i] != 0)
-                newData[i + nDegree] = addMod(newData[i + nDegree], f1g1.data[i], modulus);
-        }
-//        System.out.println(degree + oth.degree + 1);
-////        System.out.println(f0g0.degree + 1 + mid.degree + 1 + f1g1.degree + 1);
-//        System.arraycopy(mid.data, 0, newData, nDegree / 2, mid.degree + 1);
-//        System.arraycopy(f1g1.data, 0, newData, nDegree, f1g1.degree + 1);
-        this.data = newData;
+    /** classical multiplication */
+    private MutableLongPoly multiplyClassical(MutableLongPoly oth) {
+        data = multiplyClassical(data, 0, degree + 1, oth.data, 0, oth.degree + 1);
         degree = degree + oth.degree;
+        assert data[degree] != 0;
+        return this;
+    }
+
+    /**
+     * Multiply {@code this} and {@code oth} modulo {@code modulus} and write the result to {@code this}. Classical multiplication and
+     * Karatsuba used depending on the degree of input polynomials.
+     *
+     * @param oth other polynomial
+     * @return {@code this}
+     */
+    MutableLongPoly multiply(MutableLongPoly oth, long modulus) {
+        if (oth.degree == 0)
+            return multiply(oth.data[0], modulus);
+        if (isZero())
+            return this;
+        if (degree == 0) {
+            long factor = data[0];
+            data = oth.data.clone();
+            degree = oth.degree;
+            multiply(factor, modulus);
+            return this;
+        }
+
+        if (LongArithmetics.multiply(degree + 1, oth.degree + 1) <= MUL_MOD_CLASSICAL_THRESHOLD)
+            return multiplyModClassical(oth, modulus);
+        else
+            return multiplyModKaratsuba(oth, modulus);
+    }
+
+    /** Karatsuba multiplication */
+    private MutableLongPoly multiplyModKaratsuba(MutableLongPoly oth, long modulus) {
+        data = multiplyModKaratsuba(data, 0, degree + 1, oth.data, 0, oth.degree + 1, modulus);
+        degree = degree + oth.degree;
+        fixDegree();
+        return this;
+    }
+
+    /** classical multiplication */
+    private MutableLongPoly multiplyModClassical(MutableLongPoly oth, long modulus) {
+        data = multiplyModClassical(data, 0, degree + 1, oth.data, 0, oth.degree + 1, modulus);
+        degree = degree + oth.degree;
+        fixDegree();
+        return this;
+    }
+
+    /** classical multiplication */
+    private MutableLongPoly multiplyModClassical(MutableLongPoly oth, MutableLongPoly cache, long modulus) {
+        cache.ensureCapacity(degree + oth.degree);
+        multiplyModClassical(cache.data, 0, degree + 1, oth.data, 0, oth.degree + 1, modulus);
+        data = cache.data;
+        degree = degree + oth.degree;
+        fixDegree();
         return this;
     }
 
@@ -904,6 +496,300 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             int elementHash = (int) (element^(element >>> 32));
             result = 31 * result + elementHash;
         }
+        return result;
+    }
+
+    /**
+     * Classical n*m multiplication algorithm
+     *
+     * @param result where to write the result
+     * @param a      the first multiplier
+     * @param aFrom  begin in a
+     * @param aTo    end in a
+     * @param b      the second multiplier
+     * @param bFrom  begin in b
+     * @param bTo    end in a
+     */
+    static void multiplyClassical(final long[] result, final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo) {
+        if (aTo - aFrom > bTo - bFrom) {
+            multiplyClassical(result, b, bFrom, bTo, a, aFrom, aTo);
+            return;
+        }
+        for (int i = 0; i < aTo - aFrom; i++) {
+            long c = a[aFrom + i];
+            if (c != 0)
+                for (int j = 0; j < bTo - bFrom; j++)
+                    result[i + j] = LongArithmetics.add(result[i + j], LongArithmetics.multiply(c, b[bFrom + j]));
+        }
+    }
+
+    /**
+     * Classical n*m multiplication algorithm
+     *
+     * @param a     the first multiplier
+     * @param aFrom begin in a
+     * @param aTo   end in a
+     * @param b     the second multiplier
+     * @param bFrom begin in b
+     * @param bTo   end in a
+     * @return the result
+     */
+    static long[] multiplyClassical(final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo) {
+        long[] result = new long[aTo - aFrom + bTo - bFrom - 1];
+        multiplyClassical(result, a, aFrom, aTo, b, bFrom, bTo);
+        return result;
+    }
+
+    /**
+     * Classical n*m multiplication algorithm
+     *
+     * @param result  where to write the result
+     * @param a       the first multiplier
+     * @param aFrom   begin in a
+     * @param aTo     end in a
+     * @param b       the second multiplier
+     * @param bFrom   begin in b
+     * @param bTo     end in a
+     * @param modulus the modulus
+     */
+    static void multiplyModClassical(final long[] result, final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo, long modulus) {
+        if (aTo - aFrom > bTo - bFrom) {
+            multiplyModClassical(result, b, bFrom, bTo, a, aFrom, aTo, modulus);
+            return;
+        }
+        for (int i = 0; i < aTo - aFrom; i++) {
+            long c = mod(a[aFrom + i], modulus);
+            if (c != 0)
+                for (int j = 0; j < bTo - bFrom; j++)
+                    result[i + j] = LongArithmetics.addMod(result[i + j], LongArithmetics.multiplyMod(c, b[bFrom + j], modulus), modulus);
+        }
+    }
+
+    /**
+     * Classical n*m multiplication algorithm
+     *
+     * @param a       the first multiplier
+     * @param aFrom   begin in a
+     * @param aTo     end in a
+     * @param b       the second multiplier
+     * @param bFrom   begin in b
+     * @param bTo     end in a
+     * @param modulus the modulus
+     * @return the result
+     */
+    static long[] multiplyModClassical(final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo, final long modulus) {
+        long[] result = new long[aTo - aFrom + bTo - bFrom - 1];
+        multiplyModClassical(result, a, aFrom, aTo, b, bFrom, bTo, modulus);
+        return result;
+    }
+
+    /** switch to classical multiplication */
+    private static final int KARATSUBA_THRESHOLD = 1024;
+
+    /**
+     * Karatsuba multiplication
+     *
+     * @param f     the first multiplier
+     * @param g     the second multiplier
+     * @param fFrom begin in f
+     * @param fTo   end in f
+     * @param gFrom begin in g
+     * @param gTo   end in g
+     * @return the result
+     */
+    static long[] multiplyKaratsuba(
+            final long[] f, final int fFrom, final int fTo,
+            final long[] g, final int gFrom, final int gTo) {
+        // return zero
+        if (fFrom >= fTo || gFrom >= gTo)
+            return new long[0];
+
+        // single element in f
+        if (fTo - fFrom == 1) {
+            long[] result = new long[gTo - gFrom];
+            for (int i = gFrom; i < gTo; ++i)
+                result[i - gFrom] = LongArithmetics.multiply(f[fFrom], g[i]);
+            return result;
+        }
+        // single element in g
+        if (gTo - gFrom == 1) {
+            long[] result = new long[fTo - fFrom];
+            //single element in b
+            for (int i = fFrom; i < fTo; ++i)
+                result[i - fFrom] = LongArithmetics.multiply(g[gFrom], f[i]);
+            return result;
+        }
+        // linear factors
+        if (fTo - fFrom == 2 && gTo - gFrom == 2) {
+            long[] result = new long[3];
+            //both a and b are linear
+            result[0] = LongArithmetics.multiply(f[fFrom], g[gFrom]);
+            result[1] = LongArithmetics.add(LongArithmetics.multiply(f[fFrom], g[gFrom + 1]), LongArithmetics.multiply(f[fFrom + 1], g[gFrom]));
+            result[2] = LongArithmetics.multiply(f[fFrom + 1], g[gFrom + 1]);
+            return result;
+        }
+        //switch to classical
+        if ((fTo - fFrom) * (gTo - gFrom) < KARATSUBA_THRESHOLD)
+            return multiplyClassical(g, gFrom, gTo, f, fFrom, fTo);
+
+        if (fTo - fFrom < gTo - gFrom)
+            return multiplyKaratsuba(g, gFrom, gTo, f, fFrom, fTo);
+
+
+        //we now split a and b into 2 parts:
+        int split = (fTo - fFrom + 1) / 2;
+        //if we can't split b
+        if (gFrom + split >= gTo) {
+            long[] f0g = multiplyKaratsuba(f, fFrom, fFrom + split, g, gFrom, gTo);
+            long[] f1g = multiplyKaratsuba(f, fFrom + split, fTo, g, gFrom, gTo);
+
+            long[] result = Arrays.copyOf(f0g, fTo - fFrom + gTo - gFrom - 1);
+            for (int i = 0; i < f1g.length; i++)
+                result[i + split] = LongArithmetics.add(result[i + split], f1g[i]);
+            return result;
+        }
+
+        int fMid = fFrom + split, gMid = gFrom + split;
+        long[] f0g0 = multiplyKaratsuba(f, fFrom, fMid, g, gFrom, gMid);
+        long[] f1g1 = multiplyKaratsuba(f, fMid, fTo, g, gMid, gTo);
+
+        // f0 + f1
+        long[] f0_plus_f1 = new long[Math.max(fMid - fFrom, fTo - fMid)];
+        System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
+        for (int i = fMid; i < fTo; ++i)
+            f0_plus_f1[i - fMid] = LongArithmetics.add(f0_plus_f1[i - fMid], f[i]);
+
+        //g0 + g1
+        long[] g0_plus_g1 = new long[Math.max(gMid - gFrom, gTo - gMid)];
+        System.arraycopy(g, gFrom, g0_plus_g1, 0, gMid - gFrom);
+        for (int i = gMid; i < gTo; ++i)
+            g0_plus_g1[i - gMid] = LongArithmetics.add(g0_plus_g1[i - gMid], g[i]);
+
+        long[] mid = multiplyKaratsuba(f0_plus_f1, 0, f0_plus_f1.length, g0_plus_g1, 0, g0_plus_g1.length);
+
+        if (mid.length < f0g0.length)
+            mid = Arrays.copyOf(mid, f0g0.length);
+        if (mid.length < f1g1.length)
+            mid = Arrays.copyOf(mid, f1g1.length);
+
+        //subtract f0g0, f1g1
+        for (int i = 0; i < f0g0.length; ++i)
+            mid[i] = LongArithmetics.subtract(mid[i], f0g0[i]);
+        for (int i = 0; i < f1g1.length; ++i)
+            mid[i] = LongArithmetics.subtract(mid[i], f1g1[i]);
+
+
+        long[] result = Arrays.copyOf(f0g0, (fTo - fFrom) + (gTo - gFrom) - 1);
+        for (int i = 0; i < mid.length; ++i)
+            result[i + split] = LongArithmetics.add(result[i + split], mid[i]);
+        for (int i = 0; i < f1g1.length; ++i)
+            result[i + 2 * split] = LongArithmetics.add(result[i + 2 * split], f1g1[i]);
+
+        return result;
+    }
+
+
+    /**
+     * Karatsuba multiplication
+     *
+     * @param f       the first multiplier
+     * @param g       the second multiplier
+     * @param fFrom   begin in f
+     * @param fTo     end in f
+     * @param gFrom   begin in g
+     * @param gTo     end in g
+     * @param modulus the modulus
+     * @return the result
+     */
+    static long[] multiplyModKaratsuba(
+            final long[] f, final int fFrom, final int fTo,
+            final long[] g, final int gFrom, final int gTo,
+            long modulus) {
+        // return zero
+        if (fFrom >= fTo || gFrom >= gTo)
+            return new long[0];
+
+        // single element in f
+        if (fTo - fFrom == 1) {
+            long[] result = new long[gTo - gFrom];
+            for (int i = gFrom; i < gTo; ++i)
+                result[i - gFrom] = LongArithmetics.multiplyMod(f[fFrom], g[i], modulus);
+            return result;
+        }
+        // single element in g
+        if (gTo - gFrom == 1) {
+            long[] result = new long[fTo - fFrom];
+            //single element in b
+            for (int i = fFrom; i < fTo; ++i)
+                result[i - fFrom] = LongArithmetics.multiplyMod(g[gFrom], f[i], modulus);
+            return result;
+        }
+        // linear factors
+        if (fTo - fFrom == 2 && gTo - gFrom == 2) {
+            long[] result = new long[3];
+            //both a and b are linear
+            result[0] = LongArithmetics.multiplyMod(f[fFrom], g[gFrom], modulus);
+            result[1] = LongArithmetics.addMod(LongArithmetics.multiplyMod(f[fFrom], g[gFrom + 1], modulus), LongArithmetics.multiplyMod(f[fFrom + 1], g[gFrom], modulus), modulus);
+            result[2] = LongArithmetics.multiplyMod(f[fFrom + 1], g[gFrom + 1], modulus);
+            return result;
+        }
+        //switch to classical
+        if ((fTo - fFrom) * (gTo - gFrom) < KARATSUBA_THRESHOLD)
+            return multiplyModClassical(g, gFrom, gTo, f, fFrom, fTo, modulus);
+
+        if (fTo - fFrom < gTo - gFrom)
+            return multiplyModKaratsuba(g, gFrom, gTo, f, fFrom, fTo, modulus);
+
+
+        //we now split a and b into 2 parts:
+        int split = (fTo - fFrom + 1) / 2;
+        //if we can't split b
+        if (gFrom + split >= gTo) {
+            long[] f0g = multiplyModKaratsuba(f, fFrom, fFrom + split, g, gFrom, gTo, modulus);
+            long[] f1g = multiplyModKaratsuba(f, fFrom + split, fTo, g, gFrom, gTo, modulus);
+
+            long[] result = Arrays.copyOf(f0g, fTo - fFrom + gTo - gFrom - 1);
+            for (int i = 0; i < f1g.length; i++)
+                result[i + split] = LongArithmetics.addMod(result[i + split], f1g[i], modulus);
+            return result;
+        }
+
+        int fMid = fFrom + split, gMid = gFrom + split;
+        long[] f0g0 = multiplyModKaratsuba(f, fFrom, fMid, g, gFrom, gMid, modulus);
+        long[] f1g1 = multiplyModKaratsuba(f, fMid, fTo, g, gMid, gTo, modulus);
+
+        // f0 + f1
+        long[] f0_plus_f1 = new long[Math.max(fMid - fFrom, fTo - fMid)];
+        System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
+        for (int i = fMid; i < fTo; ++i)
+            f0_plus_f1[i - fMid] = LongArithmetics.addMod(f0_plus_f1[i - fMid], f[i], modulus);
+
+        //g0 + g1
+        long[] g0_plus_g1 = new long[Math.max(gMid - gFrom, gTo - gMid)];
+        System.arraycopy(g, gFrom, g0_plus_g1, 0, gMid - gFrom);
+        for (int i = gMid; i < gTo; ++i)
+            g0_plus_g1[i - gMid] = LongArithmetics.addMod(g0_plus_g1[i - gMid], g[i], modulus);
+
+        long[] mid = multiplyModKaratsuba(f0_plus_f1, 0, f0_plus_f1.length, g0_plus_g1, 0, g0_plus_g1.length, modulus);
+
+        if (mid.length < f0g0.length)
+            mid = Arrays.copyOf(mid, f0g0.length);
+        if (mid.length < f1g1.length)
+            mid = Arrays.copyOf(mid, f1g1.length);
+
+        //subtract f0g0, f1g1
+        for (int i = 0; i < f0g0.length; ++i)
+            mid[i] = LongArithmetics.subtractMod(mid[i], f0g0[i], modulus);
+        for (int i = 0; i < f1g1.length; ++i)
+            mid[i] = LongArithmetics.subtractMod(mid[i], f1g1[i], modulus);
+
+
+        long[] result = Arrays.copyOf(f0g0, (fTo - fFrom) + (gTo - gFrom) - 1);
+        for (int i = 0; i < mid.length; ++i)
+            result[i + split] = LongArithmetics.addMod(result[i + split], mid[i], modulus);
+        for (int i = 0; i < f1g1.length; ++i)
+            result[i + 2 * split] = LongArithmetics.addMod(result[i + 2 * split], f1g1[i], modulus);
+
         return result;
     }
 }
