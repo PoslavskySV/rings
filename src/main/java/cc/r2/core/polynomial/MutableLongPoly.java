@@ -7,7 +7,10 @@ import java.util.Arrays;
 import static cc.r2.core.polynomial.LongArithmetics.*;
 
 /**
- * Intermediate structure for {@code long[]} polynomial.
+ * Intermediate structure for {@code long[]} univariate polynomial. All operations such as {@link #multiply(MutableLongPoly)},
+ * {@link #add(MutableLongPoly)} etc. modify the content of this. All arithmetics operations are safe from long
+ * overflow, so that in the case of overflow the {@link ArithmeticException} is always thrown. Thus, the results of all
+ * math operations are garantied to be correct.
  */
 final class MutableLongPoly implements Comparable<MutableLongPoly> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
@@ -15,55 +18,105 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     /** points to the last non zero element in the data array */
     int degree;
 
-    MutableLongPoly(int desiredDegree) {
-        data = new long[desiredDegree + 1];
-        degree = desiredDegree;
-    }
-
-    MutableLongPoly(long[] data, int degree) {
+    /** copy constructor */
+    private MutableLongPoly(long[] data, int degree) {
         this.data = data;
         this.degree = degree;
     }
 
+    /** private constructor */
     private MutableLongPoly(long[] data) {
         this.data = data;
         this.degree = data.length - 1;
         fixDegree();
     }
 
+    /**
+     * Creates poly with specified coefficients
+     *
+     * @param data coefficients
+     * @return the polynomial
+     */
     static MutableLongPoly create(long... data) {
         return new MutableLongPoly(data);
     }
 
+    /**
+     * Creates monomial {@code coefficient * x^exponent}
+     *
+     * @param coefficient monomial coefficient
+     * @param exponent    monomial exponent
+     * @return {@code coefficient * x^exponent}
+     */
     static MutableLongPoly createMonomial(long coefficient, int exponent) {
         long[] data = new long[exponent + 1];
         data[exponent] = coefficient;
         return new MutableLongPoly(data);
     }
 
+    /**
+     * Returns polynomial corresponding to math 1
+     *
+     * @return polynomial 1
+     */
     static MutableLongPoly one() {
-        return new MutableLongPoly(new long[]{1});
+        return new MutableLongPoly(new long[]{1}, 0);
     }
 
+    /**
+     * Returns polynomial corresponding to math 0
+     *
+     * @return polynomial 0
+     */
     static MutableLongPoly zero() {
-        return new MutableLongPoly(new long[]{0});
+        return new MutableLongPoly(new long[]{0}, 0);
     }
 
+    /**
+     * Returns {@code true} if this is zero
+     *
+     * @return whether {@code this} is zero
+     */
     boolean isZero() {return data[degree] == 0;}
 
+    /**
+     * Returns {@code true} if this is one
+     *
+     * @return whether {@code this} is one
+     */
     boolean isOne() {return degree == 0 && data[0] == 1;}
 
+    /**
+     * Returns {@code true} if this polynomial is monic
+     *
+     * @return whether {@code this} is monic
+     */
     boolean isMonic() {return lc() == 1;}
 
+    /**
+     * Returns {@code true} if this polynomial has only constant term
+     *
+     * @return whether {@code this} is constant
+     */
     boolean isConstant() {return degree == 0;}
 
+    /**
+     * Returns {@code true} if this polynomial is has only one monomial term
+     *
+     * @return whether {@code this} has the form {@code c*x^i} (one term)
+     */
     boolean isMonomial() {
-        for (int i = 0; i < degree; ++i)
+        for (int i = degree - 1; i >= 0; --i)
             if (data[i] != 0)
                 return false;
         return true;
     }
 
+    /**
+     * Returns L2 norm of this polynomial, i.e. a square root of a sum of coefficient squares.
+     *
+     * @return L2 norm of {@code this}
+     */
     double norm() {
         double norm = 0;
         for (int i = 0; i <= degree; ++i)
@@ -71,6 +124,11 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return Math.ceil(Math.sqrt(norm));
     }
 
+    /**
+     * Returns L1 norm of this polynomial, i.e. the maximal absolute coefficient of {@code this}
+     *
+     * @return L1 norm of {@code this}
+     */
     double norm1() {
         double norm = data[0];
         for (int i = 1; i <= degree; ++i)
@@ -93,7 +151,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     long cc() {return data[0];}
 
     /**
-     * Evaluates this poly at a give {@code point}
+     * Evaluates this poly at a given {@code point} (via Horner method).
      *
      * @param point {@code point}
      * @return value at {@code point}
@@ -108,10 +166,11 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     }
 
     /**
-     * Evaluates this poly at a give {@code point}
+     * Evaluates this poly at a given {@code point} modulo {@code modulus} (via Horner method).
      *
-     * @param point {@code point}
-     * @return value at {@code point}
+     * @param point   {@code point}
+     * @param modulus the modulus
+     * @return value at {@code point} modulo {@code modulus}
      */
     long evaluate(long point, long modulus) {
         if (point == 0)
@@ -125,8 +184,8 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     /**
      * Evaluates this poly at a give rational point {@code num/den}
      *
-     * @param num evaluation point numerator
-     * @param den evaluation point denominator
+     * @param num point numerator
+     * @param den point denominator
      * @return value at {@code num/den}
      * @throws ArithmeticException if the result is not integer
      */
@@ -143,6 +202,12 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return res;
     }
 
+    /**
+     * Ensures that the capcity of internal storage is enough for storing polynomial of the {@code desiredDegree}.
+     * The degree of {@code this} is set to {@code desiredDegree} if the latter is greater than the former.
+     *
+     * @param desiredDegree desired degree
+     */
     void ensureCapacity(int desiredDegree) {
         if (degree < desiredDegree)
             degree = desiredDegree;
@@ -151,6 +216,9 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             data = Arrays.copyOf(data, desiredDegree + 1);
     }
 
+    /**
+     * Removes the zero tail of the polynoamial and sets the degree to its actual value.
+     */
     void fixDegree() {
         int i = degree;
         while (i >= 0 && data[i] == 0) --i;
@@ -162,6 +230,12 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         }
     }
 
+    /**
+     * Reduces coefficients of this polynomial modulo {@code modulus}
+     *
+     * @param modulus the modulus
+     * @return {@code this} reduced modulo {@code modulus}
+     */
     MutableLongPoly modulus(long modulus) {
         for (int i = degree; i >= 0; --i)
             data[i] = mod(data[i], modulus);
@@ -169,6 +243,13 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Reduces coefficients of this polynomial modulo {@code modulus} using the symmetric representation for Zp
+     * elements, i.e. so that each coefficient is in the bound {@code -modulus / 2 <= c <= modulus / 2}.
+     *
+     * @param modulus the modulus
+     * @return {@code this} reduced modulo {@code modulus} in the symmetric representation for Zp elements
+     */
     MutableLongPoly symModulus(long modulus) {
         for (int i = degree; i >= 0; --i)
             data[i] = symMod(data[i], modulus);
@@ -176,6 +257,13 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Divides this polynomial by a {@code factor}.
+     *
+     * @param factor the factor
+     * @return {@code this} divided by the {@code factor}
+     * @throws ArithmeticException if some of the elements can't be exactly divided by the {@code factor}
+     */
     MutableLongPoly divide(long factor) {
         if (factor == 0)
             throw new ArithmeticException("Divide by zero");
@@ -188,6 +276,13 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Divides this polynomial by a {@code factor} or returns {@code null} if some of the elements can't be exactly
+     * divided by the {@code factor}
+     *
+     * @param factor the factor
+     * @return {@code this} divided by the {@code factor} or {@code null}
+     */
     MutableLongPoly divideOrNull(long factor) {
         if (factor == 0)
             throw new ArithmeticException("Divide by zero");
@@ -201,6 +296,13 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Reduces this polynomial modulo {@code modulus} and returns its monic part (that is {@code this} multiplied by
+     * its inversed leading coefficient).
+     *
+     * @param modulus the modulus
+     * @return {@code this} as a monic polynomial
+     */
     MutableLongPoly monic(long modulus) {
         if (data[degree] == 0) // isZero()
             return this;
@@ -211,16 +313,31 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return multiply(modInverse(lc(), modulus), modulus);
     }
 
+    /**
+     * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is
+     * {@code monic(modulus).multiply(factor, modulus)} ).
+     *
+     * @param factor  the factor
+     * @param modulus the modulus
+     * @return {@code this }
+     */
     MutableLongPoly monic(long factor, long modulus) {
         return multiply(LongArithmetics.multiply(mod(factor, modulus), modInverse(lc(), modulus)), modulus);
     }
 
+    /** fill content with zeroes */
     private MutableLongPoly toZero() {
         degree = 0;
         Arrays.fill(data, 0);
         return this;
     }
 
+    /**
+     * Raises {@code this} by the {@code factor}
+     *
+     * @param factor the factor
+     * @return {@code} this multiplied by the {@code factor}
+     */
     MutableLongPoly multiply(long factor) {
         if (factor == 1)
             return this;
@@ -231,6 +348,13 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Raises {@code this} by the {@code factor} modulo {@code modulus}
+     *
+     * @param factor  the factor
+     * @param modulus the modulus
+     * @return {@code} this multiplied by the {@code factor} modulo {@code modulus}
+     */
     MutableLongPoly multiply(long factor, long modulus) {
         factor = mod(factor, modulus);
         if (factor == 1)
@@ -242,6 +366,12 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Adds {@code oth} to {@code this}.
+     *
+     * @param oth the polynomial
+     * @return {@code this + oth}
+     */
     MutableLongPoly add(MutableLongPoly oth) {
         if (oth.isZero())
             return this;
@@ -253,6 +383,13 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Adds {@code oth} to {@code this} modulo {@code modulus}.
+     *
+     * @param oth     the polynomial
+     * @param modulus the modulus
+     * @return {@code this + oth} modulo {@code modulus}
+     */
     MutableLongPoly add(MutableLongPoly oth, long modulus) {
         if (oth.isZero())
             return modulus(modulus);
@@ -266,6 +403,12 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Subtracts {@code oth} from {@code this}.
+     *
+     * @param oth the polynomial
+     * @return {@code this - oth}
+     */
     MutableLongPoly subtract(MutableLongPoly oth) {
         if (oth.isZero())
             return this;
@@ -277,6 +420,13 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Subtracts {@code oth} from {@code this} modulo {@code modulus}.
+     *
+     * @param oth     the polynomial
+     * @param modulus the modulus
+     * @return {@code this - oth} modulo {@code modulus}
+     */
     MutableLongPoly subtract(MutableLongPoly oth, long modulus) {
         if (oth.isZero())
             return modulus(modulus);
@@ -290,6 +440,14 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Subtracts {@code factor * x^exponent * oth} from {@code this}.
+     *
+     * @param oth      the polynomial
+     * @param factor   the factor
+     * @param exponent the exponent
+     * @return {@code this - factor * x^exponent * oth}
+     */
     MutableLongPoly subtract(MutableLongPoly oth, long factor, int exponent) {
         if (oth.isZero())
             return this;
@@ -301,6 +459,15 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /**
+     * Subtracts {@code factor * x^exponent * oth} from {@code this} modulo {@code modulus}.
+     *
+     * @param oth      the polynomial
+     * @param factor   the factor
+     * @param exponent the exponent
+     * @param modulus  the modulus
+     * @return {@code this - factor * x^exponent * oth} modulo {@code modulus}
+     */
     MutableLongPoly subtract(MutableLongPoly oth, long factor, int exponent, long modulus) {
         if (oth.isZero())
             return modulus(modulus);
@@ -324,11 +491,11 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             MUL_MOD_CLASSICAL_THRESHOLD = 128L * 128L;
 
     /**
-     * Multiply {@code this} and {@code oth} and write the result to {@code this}. Classical multiplication and
+     * Multiply {@code this} and {@code oth}. Classical multiplication and
      * Karatsuba used depending on the degree of input polynomials.
      *
-     * @param oth other polynomial
-     * @return {@code this}
+     * @param oth this polynomial
+     * @return {@code this * oth}
      */
     MutableLongPoly multiply(MutableLongPoly oth) {
         if (oth.degree == 0)
@@ -366,11 +533,11 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     }
 
     /**
-     * Multiply {@code this} and {@code oth} modulo {@code modulus} and write the result to {@code this}. Classical multiplication and
+     * Multiply {@code this} and {@code oth} modulo {@code modulus}. Classical multiplication and
      * Karatsuba used depending on the degree of input polynomials.
      *
-     * @param oth other polynomial
-     * @return {@code this}
+     * @param oth the polynomial
+     * @return {@code this * oth}
      */
     MutableLongPoly multiply(MutableLongPoly oth, long modulus) {
         if (oth.degree == 0)
@@ -407,16 +574,12 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
-    /** classical multiplication */
-    private MutableLongPoly multiplyModClassical(MutableLongPoly oth, MutableLongPoly cache, long modulus) {
-        cache.ensureCapacity(degree + oth.degree);
-        multiplyModClassical(cache.data, 0, degree + 1, oth.data, 0, oth.degree + 1, modulus);
-        data = cache.data;
-        degree = degree + oth.degree;
-        fixDegree();
-        return this;
-    }
-
+    /**
+     * Multiplies {@code this} by the monomial with the specified {@code exponent}.
+     *
+     * @param exponent monomial exponent
+     * @return {@code this * x^exponent}
+     */
     MutableLongPoly multiplyMonomial(int exponent) {
         if (exponent == 0)
             return this;
@@ -440,6 +603,9 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return 0;
     }
 
+    /**
+     * Deep copy
+     */
     @Override
     public MutableLongPoly clone() {
         return new MutableLongPoly(data.clone(), degree);
@@ -470,7 +636,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return sb.toString();
     }
 
-    public String toStringForCopy() {
+    String toStringForCopy() {
         String s = ArraysUtil.toString(data, 0, degree + 1);
         return "create(" + s.substring(1, s.length() - 1) + ")";
     }

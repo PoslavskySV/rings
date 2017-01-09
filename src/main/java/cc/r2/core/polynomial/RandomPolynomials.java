@@ -51,6 +51,6 @@ public final class RandomPolynomials {
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
     public static MutableLongPoly randomPoly(int degree, int bound, RandomGenerator rnd) {
-        return new MutableLongPoly(randomArray(degree, bound, rnd), degree);
+        return MutableLongPoly.create(randomArray(degree, bound, rnd));
     }
 }

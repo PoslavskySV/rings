@@ -913,22 +913,21 @@ public final class SmallPolynomials {
         assert dividend.degree >= divider.degree;
 
         MutableLongPoly
-                remainder = (copy ? dividend.clone() : dividend).multiply(dividendRaiseFactor),
-                quotient = new MutableLongPoly(dividend.degree - divider.degree);
+                remainder = (copy ? dividend.clone() : dividend).multiply(dividendRaiseFactor);
+        long[] quotient = new long[dividend.degree - divider.degree + 1];
 
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
             if (remainder.degree == divider.degree + i) {
                 if (remainder.lc() % divider.lc() != 0)
                     return null;
 
-                quotient.data[i] = remainder.lc() / divider.lc();
-                remainder.subtract(divider, quotient.data[i], i);
+                quotient[i] = remainder.lc() / divider.lc();
+                remainder.subtract(divider, quotient[i], i);
 
-            } else quotient.data[i] = 0;
+            } else quotient[i] = 0;
         }
 
-        quotient.fixDegree();
-        return new MutableLongPoly[]{quotient, remainder};
+        return new MutableLongPoly[]{MutableLongPoly.create(quotient), remainder};
     }
 
     /**
@@ -960,9 +959,8 @@ public final class SmallPolynomials {
                                                                final boolean copy) {
         assert dividend.degree >= divider.degree;
 
-        MutableLongPoly
-                remainder = copy ? dividend.clone() : dividend,
-                quotient = new MutableLongPoly(dividend.degree - divider.degree);
+        MutableLongPoly remainder = copy ? dividend.clone() : dividend;
+        long[] quotient = new long[dividend.degree - divider.degree + 1];
 
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
             if (remainder.degree == divider.degree + i) {
@@ -970,17 +968,17 @@ public final class SmallPolynomials {
                     long gcd = gcd(remainder.lc(), divider.lc());
                     long factor = divider.lc() / gcd;
                     remainder.multiply(factor);
-                    quotient.multiply(factor);
+                    for (int j = i + 1; j < quotient.length; ++j)
+                        quotient[j] = multiply(quotient[j], factor);
                 }
 
-                quotient.data[i] = remainder.lc() / divider.lc();
-                remainder.subtract(divider, quotient.data[i], i);
+                quotient[i] = remainder.lc() / divider.lc();
+                remainder.subtract(divider, quotient[i], i);
 
-            } else quotient.data[i] = 0;
+            } else quotient[i] = 0;
         }
 
-        quotient.fixDegree();
-        return new MutableLongPoly[]{quotient, remainder};
+        return new MutableLongPoly[]{MutableLongPoly.create(quotient), remainder};
     }
 
     /**
@@ -1015,18 +1013,17 @@ public final class SmallPolynomials {
                                                        final boolean copy) {
         assert dividend.degree >= divider.degree;
 
-        MutableLongPoly
-                remainder = copy ? dividend.clone() : dividend,
-                quotient = new MutableLongPoly(dividend.degree - divider.degree);
+        MutableLongPoly remainder = copy ? dividend.clone() : dividend;
+        long[] quotient = new long[dividend.degree - divider.degree + 1];
 
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
             if (remainder.degree == divider.degree + i) {
-                quotient.data[i] = divideMod(remainder.lc(), divider.lc(), modulus);
-                remainder.subtract(divider, quotient.data[i], i, modulus);
-            } else quotient.data[i] = 0;
+                quotient[i] = divideMod(remainder.lc(), divider.lc(), modulus);
+                remainder.subtract(divider, quotient[i], i, modulus);
+            } else quotient[i] = 0;
         }
 
-        return new MutableLongPoly[]{quotient.modulus(modulus), remainder.modulus(modulus)};
+        return new MutableLongPoly[]{MutableLongPoly.create(quotient).modulus(modulus), remainder.modulus(modulus)};
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
