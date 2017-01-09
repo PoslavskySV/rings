@@ -90,11 +90,11 @@ final class SmallPolynomialArithmetics {
         MutableLongPoly k2p = mod(base, polyModulus, modulus, copy); // this will copy the base
         for (; ; ) {
             if ((exponent&1) != 0)
-                result = mod(result.multiply(k2p, modulus, cache), polyModulus, modulus, false);
+                result = mod(result.multiply(k2p, modulus), polyModulus, modulus, false);
             exponent = exponent >> 1;
             if (exponent == 0)
                 return result;
-            k2p = mod(k2p.multiply(k2p, modulus, cache), polyModulus, modulus, false);
+            k2p = mod(k2p.multiply(k2p, modulus), polyModulus, modulus, false);
         }
     }
 
