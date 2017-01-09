@@ -39,8 +39,8 @@ public class SmallPolynomialsTest {
     @Test(expected = ArithmeticException.class)
     public void test2() throws Exception {
         //test long overflow
-        MutableLongPoly dividend = new MutableLongPoly(new long[]{28130, 95683, 93697, 176985, 135507, 101513, 75181, 17575, 0}, 7);
-        MutableLongPoly divider = new MutableLongPoly(new long[]{24487310, 38204421, 12930314, 41553770, -1216266, 7382581, 15631547, 0, 0}, 6);
+        MutableLongPoly dividend = MutableLongPoly.create(28130, 95683, 93697, 176985, 135507, 101513, 75181, 17575, 0);
+        MutableLongPoly divider = MutableLongPoly.create(24487310, 38204421, 12930314, 41553770, -1216266, 7382581, 15631547, 0, 0);
         pseudoDivideAndRemainder(dividend, divider, true);
     }
 

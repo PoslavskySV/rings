@@ -99,10 +99,10 @@ final class SmallPolynomialArithmetics {
     }
 
     static MutableLongPoly powMod0(MutableLongPoly base, int modulus) {
-        MutableLongPoly result = new MutableLongPoly(base.degree * modulus);
+        long[] result = new long[base.degree * modulus + 1];
         for (int i = base.degree; i >= 0; --i)
-            result.data[i * modulus] = LongArithmetics.mod(base.data[i], modulus);
-        return result;
+            result[i * modulus] = LongArithmetics.mod(base.data[i], modulus);
+        return MutableLongPoly.create(result);
     }
 
     public static MutableLongPoly derivative(MutableLongPoly poly) {
