@@ -230,6 +230,43 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         }
     }
 
+    MutableLongPoly shiftLeft(int d) {
+        if (d == 0)
+            return this;
+        if (d > degree)
+            return toZero();
+
+        System.arraycopy(data, d, data, 0, degree - d + 1);
+        Arrays.fill(data, degree - d + 1, degree + 1, 0);
+        degree = degree - d;
+        return this;
+    }
+
+    MutableLongPoly shiftRight(int n) {
+        if (n == 0)
+            return this;
+        int degree = this.degree;
+        ensureCapacity(n + degree);
+        System.arraycopy(data, 0, data, n, degree + 1);
+        Arrays.fill(data, 0, n, 0);
+        return this;
+    }
+
+    MutableLongPoly cut(int newDegree) {
+        if (newDegree >= degree)
+            return this;
+        Arrays.fill(data, newDegree + 1, degree + 1, 0);
+        degree = newDegree;
+        fixDegree();
+        return this;
+    }
+
+    MutableLongPoly reverse() {
+        ArraysUtil.reverse(data, 0, degree + 1);
+        fixDegree();
+        return this;
+    }
+
     /**
      * Reduces coefficients of this polynomial modulo {@code modulus}
      *
@@ -328,7 +365,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     /** fill content with zeroes */
     private MutableLongPoly toZero() {
         degree = 0;
-        Arrays.fill(data, 0);
+        Arrays.fill(data, 0, degree + 1, 0);
         return this;
     }
 
@@ -358,7 +395,8 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     MutableLongPoly multiply(long factor, long modulus) {
         factor = mod(factor, modulus);
         if (factor == 1)
-            return modulus(modulus);
+            return this;
+        //return modulus(modulus);
         if (factor == 0)
             return toZero();
         for (int i = degree; i >= 0; --i)
