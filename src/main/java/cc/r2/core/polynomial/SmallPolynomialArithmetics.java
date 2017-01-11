@@ -5,7 +5,7 @@ import static cc.r2.core.polynomial.LongArithmetics.multiply;
 final class SmallPolynomialArithmetics {
     @SuppressWarnings("ConstantConditions")
     public static MutableLongPoly polyMod(MutableLongPoly a, MutableLongPoly polyModulus, long modulus, boolean copy) {
-        return SmallPolynomials.remainder(a, polyModulus, modulus, copy);
+        return SmallPolynomialsDivideAndRemainder.remainder(a, polyModulus, modulus, copy);
     }
 
     public static MutableLongPoly polyMultiplyMod(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus, boolean copy) {

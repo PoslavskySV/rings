@@ -18,6 +18,7 @@ import static cc.r2.core.polynomial.LongArithmetics.gcd;
 import static cc.r2.core.polynomial.RandomPolynomials.randomPoly;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyPow;
 import static cc.r2.core.polynomial.SmallPolynomials.*;
+import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.divideAndRemainder;
 import static org.junit.Assert.*;
 
 public class SmallPolynomialsTest {
@@ -33,14 +34,6 @@ public class SmallPolynomialsTest {
         assertEquals(3, gcd.degree);
         assertTrue(divideAndRemainder(a, gcd, modulus, true)[1].isZero());
         assertTrue(divideAndRemainder(b, gcd, modulus, true)[1].isZero());
-    }
-
-    @Test(expected = ArithmeticException.class)
-    public void test2() throws Exception {
-        //test long overflow
-        MutableLongPoly dividend = MutableLongPoly.create(28130, 95683, 93697, 176985, 135507, 101513, 75181, 17575, 0);
-        MutableLongPoly divider = MutableLongPoly.create(24487310, 38204421, 12930314, 41553770, -1216266, 7382581, 15631547, 0, 0);
-        pseudoDivideAndRemainder(dividend, divider, true);
     }
 
     @Test
@@ -178,51 +171,7 @@ public class SmallPolynomialsTest {
             assertEquals(0, prs.gcd().degree);
     }
 
-    @Test
-    public void test10() throws Exception {
-        MutableLongPoly dividend = MutableLongPoly.create(28130, 95683, 93697, 176985, 135507, 101513, 75181, 17575);
-        MutableLongPoly divider = MutableLongPoly.one();
-        MutableLongPoly[] qr = divideAndRemainder(dividend, divider, true);
-        assertEquals(dividend, qr[0]);
-        assertTrue(qr[1].isZero());
-    }
 
-    @Test
-    public void test11() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        MutableLongPoly[] qd;
-        long[] primes = {3, 5, 7, 11, 13, 67, 97, 113, 127};
-        for (int i = 0; i < 1000; i++) {
-            MutableLongPoly dividend = randomPoly(rnd.nextInt(20), rnd);
-            MutableLongPoly divider = randomPoly(rnd.nextInt(20), rnd);
-
-            for (long prime : primes) {
-                if (dividend.lc() % prime == 0 || divider.lc() % prime == 0)
-                    continue;
-                qd = divideAndRemainder(dividend, divider, prime, true);
-                assertQuotientRemainder(dividend, divider, qd, prime);
-                qd = divideAndRemainder(dividend.clone(), divider, prime, false);
-                try {
-                    assertQuotientRemainder(dividend, divider, qd, prime);
-                } catch (AssertionError err) {
-                    System.out.println(dividend.toStringForCopy());
-                    System.out.println(divider.toStringForCopy());
-                    System.out.println(prime);
-                    throw err;
-                }
-            }
-        }
-    }
-
-    @Test
-    public void test11a() throws Exception {
-        MutableLongPoly dividend = MutableLongPoly.create(95, 45, 67, 5, -2, 65, 24, 24, 60);
-        MutableLongPoly divider = MutableLongPoly.create(94, 86);
-        long prime = 7;
-
-        MutableLongPoly[] qd = divideAndRemainder(dividend.clone(), divider, prime, false);
-        assertQuotientRemainder(dividend, divider, qd, prime);
-    }
 
     @Test
     public void test12() throws Exception {
@@ -316,44 +265,6 @@ public class SmallPolynomialsTest {
         assertEquals(MutableLongPoly.create(-1, 2), gcd);
     }
 
-    @Test
-    public void testRandom4() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        int passed = 0;
-        int wins = 0;
-        for (int i = 0; i < 10000; i++) {
-            MutableLongPoly dividend = randomPoly(15, 1000, rnd);
-            MutableLongPoly divider = randomPoly(10, 1000, rnd);
-            double norm = -1;
-            try {
-                MutableLongPoly[] qr = pseudoDivideAndRemainder(dividend, divider, true);
-                assertPseudoQuotientRemainder(dividend, divider, qr);
-                qr = pseudoDivideAndRemainder(dividend.clone(), divider, false);
-                assertPseudoQuotientRemainder(dividend, divider, qr);
-                norm = qr[0].norm();
-                ++passed;
-            } catch (ArithmeticException e) {}
-
-            double normAdaptive = -1;
-            try {
-                MutableLongPoly[] qr = pseudoDivideAndRemainderAdaptive(dividend, divider, true);
-                assertPseudoQuotientRemainder(dividend, divider, qr);
-                qr = pseudoDivideAndRemainderAdaptive(dividend.clone(), divider, false);
-                assertPseudoQuotientRemainder(dividend, divider, qr);
-                normAdaptive = qr[0].norm();
-                ++passed;
-            } catch (ArithmeticException e) {}
-
-            if (norm != -1) {
-                assertTrue(normAdaptive != -1);
-                assertTrue(normAdaptive <= norm);
-                if (normAdaptive < norm)
-                    ++wins;
-            }
-        }
-        System.out.println(passed);
-        System.out.println(wins);
-    }
 
     @Test
     public void testRandom5() throws Exception {
@@ -377,10 +288,10 @@ public class SmallPolynomialsTest {
 
                     assertFalse(mgcd.isConstant());
 
-                    MutableLongPoly[] qr = pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
+                    MutableLongPoly[] qr = SmallPolynomialsDivideAndRemainder.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
                     assertNotNull(qr);
                     assertTrue(qr[1].isZero());
-                    MutableLongPoly[] qr1 = pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
+                    MutableLongPoly[] qr1 = SmallPolynomialsDivideAndRemainder.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
                     assertArrayEquals(qr, qr1);
                     if (!qr[0].isConstant()) ++larger;
 
@@ -393,27 +304,6 @@ public class SmallPolynomialsTest {
         System.out.println("\nTiming statistics:\n" + timings);
     }
 
-    @Test
-    public void testRemainderRandom1() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        long[] primes = {2, 3, 5, 7, 11, 17, 41, 43, 101};
-        for (int i = 0; i < 1000; i++) {
-            MutableLongPoly dividend = randomPoly(5 + rnd.nextInt(20), 100, rnd);
-            MutableLongPoly divider = randomPoly(rnd.nextInt(20), 100, rnd);
-            if (dividend.degree < divider.degree) {
-                MutableLongPoly tmp = dividend;
-                dividend = divider;
-                divider = tmp;
-            }
-            for (long prime : primes) {
-                if (dividend.lc() % prime == 0 || divider.lc() % prime == 0)
-                    continue;
-                MutableLongPoly expected = divideAndRemainder(dividend, divider, prime, true)[1];
-                assertEquals(expected, remainder(dividend, divider, prime, true));
-                assertEquals(expected, remainder(dividend.clone(), divider, prime, false));
-            }
-        }
-    }
 
     @Test
     public void test18() throws Exception {
@@ -444,100 +334,7 @@ public class SmallPolynomialsTest {
         poly.evaluateAtRational(1, 5);
     }
 
-    @Test
-    public void test21() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
-        DescriptiveStatistics
-                fast = new DescriptiveStatistics(), fastPseudo = new DescriptiveStatistics(),
-                gen = new DescriptiveStatistics(), genPseudo = new DescriptiveStatistics();
 
-        for (int i = 0; i < 10_000; i++) {
-            MutableLongPoly dividend = randomPoly(rndd.nextInt(1, 10), 10, rnd);
-            MutableLongPoly divider;
-            do {
-                divider = MutableLongPoly.create(rndd.nextInt(-10, 10), 1);
-            } while (divider.degree == 0);
-
-            if (i == 100) {
-                fast.clear();
-                gen.clear();
-            }
-
-            long start = System.nanoTime();
-            MutableLongPoly[] actual = divideAndRemainderLinearDivider(dividend, divider, true);
-            fast.addValue(System.nanoTime() - start);
-            start = System.nanoTime();
-            MutableLongPoly[] expected = divideAndRemainderGeneral0(dividend, divider, 1, true);
-            gen.addValue(System.nanoTime() - start);
-            assertArrayEquals(expected, actual);
-            MutableLongPoly[] expectedNoCopy = divideAndRemainderGeneral0(dividend.clone(), divider, 1, false);
-            MutableLongPoly[] actualNoCopy = divideAndRemainderLinearDivider(dividend.clone(), divider, false);
-            assertArrayEquals(expected, actualNoCopy);
-            assertArrayEquals(expected, expectedNoCopy);
-
-
-            for (long modulus : new long[]{2, 3, 5, 7, 11, 13, 19, 101}) {
-                do {
-                    divider = MutableLongPoly.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
-                } while (divider.degree == 0 || gcd(divider.lc(), modulus) != 1);
-                start = System.nanoTime();
-                actual = divideAndRemainderLinearDividerModulus(dividend, divider, modulus, true);
-                fast.addValue(System.nanoTime() - start);
-                start = System.nanoTime();
-                expected = divideAndRemainderModulus(dividend, divider, modulus, true);
-                gen.addValue(System.nanoTime() - start);
-                assertArrayEquals(expected, actual);
-
-                actualNoCopy = divideAndRemainderLinearDividerModulus(dividend.clone(), divider, modulus, false);
-                expectedNoCopy = divideAndRemainderModulus(dividend.clone(), divider, modulus, false);
-                assertArrayEquals(expected, actualNoCopy);
-                assertArrayEquals(expected, expectedNoCopy);
-            }
-
-            do {
-                divider = MutableLongPoly.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
-            } while (divider.degree == 0);
-            start = System.nanoTime();
-            actual = pseudoDivideAndRemainderLinearDivider(dividend, divider, true);
-            fastPseudo.addValue(System.nanoTime() - start);
-            start = System.nanoTime();
-            long factor = LongArithmetics.pow(divider.lc(), dividend.degree - divider.degree + 1);
-            expected = divideAndRemainderGeneral0(dividend, divider, factor, true);
-            genPseudo.addValue(System.nanoTime() - start);
-            assertArrayEquals(expected, actual);
-
-            actualNoCopy = pseudoDivideAndRemainderLinearDivider(dividend.clone(), divider, false);
-            expectedNoCopy = divideAndRemainderGeneral0(dividend.clone(), divider, factor, false);
-            assertArrayEquals(expected, actualNoCopy);
-            assertArrayEquals(expected, expectedNoCopy);
-
-            do {
-                divider = MutableLongPoly.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
-            } while (divider.degree == 0);
-            start = System.nanoTime();
-            actual = pseudoDivideAndRemainderLinearDividerAdaptive(dividend, divider, true);
-            fastPseudo.addValue(System.nanoTime() - start);
-            start = System.nanoTime();
-            expected = pseudoDivideAndRemainderAdaptive0(dividend, divider, true);
-            genPseudo.addValue(System.nanoTime() - start);
-            assertArrayEquals(expected, actual);
-
-            actualNoCopy = pseudoDivideAndRemainderLinearDividerAdaptive(dividend.clone(), divider, false);
-            expectedNoCopy = pseudoDivideAndRemainderAdaptive0(dividend.clone(), divider, false);
-            assertArrayEquals(expected, actualNoCopy);
-            assertArrayEquals(expected, expectedNoCopy);
-        }
-        System.out.println("Fast:");
-        System.out.println(fast);
-        System.out.println("General:");
-        System.out.println(gen);
-
-        System.out.println("Fast:");
-        System.out.println(fastPseudo);
-        System.out.println("General:");
-        System.out.println(genPseudo);
-    }
 
     @Test
     public void test22() throws Exception {
@@ -569,23 +366,6 @@ public class SmallPolynomialsTest {
         assertEquals(b, PolynomialGCD(b, a));
     }
 
-    @Test(expected = ArithmeticException.class)
-    public void test24() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
-        MutableLongPoly b = MutableLongPoly.create(0);
-        divideAndRemainder(a, b, false);
-    }
-
-    @Test
-    public void test25() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(8, -2 * 8, 8, 8 * 2);
-        MutableLongPoly b = MutableLongPoly.create(0);
-        MutableLongPoly[] zeros = {MutableLongPoly.zero(), MutableLongPoly.zero()};
-        assertArrayEquals(zeros, divideAndRemainder(b, a, true));
-        assertArrayEquals(zeros, pseudoDivideAndRemainder(b, a, true));
-        assertArrayEquals(zeros, pseudoDivideAndRemainderAdaptive(b, a, true));
-        assertArrayEquals(zeros, divideAndRemainder(b, a, 13, true));
-    }
 
     @Test
     public void test26() throws Exception {
@@ -601,30 +381,12 @@ public class SmallPolynomialsTest {
     private static void assertGCD(MutableLongPoly a, MutableLongPoly b, MutableLongPoly gcd) {
         MutableLongPoly[] qr;
         for (MutableLongPoly dividend : Arrays.asList(a, b)) {
-            qr = pseudoDivideAndRemainderAdaptive(dividend, gcd, true);
+            qr = SmallPolynomialsDivideAndRemainder.pseudoDivideAndRemainderAdaptive(dividend, gcd, true);
             assertNotNull(qr);
             assertTrue(qr[1].isZero());
         }
     }
 
-    private static void assertQuotientRemainder(MutableLongPoly dividend, MutableLongPoly divider, MutableLongPoly[] qr) {
-        if (qr == null) return;
-        assertEquals(dividend, divider.clone().multiply(qr[0]).add(qr[1]));
-    }
-
-    private static void assertPseudoQuotientRemainder(MutableLongPoly dividend, MutableLongPoly divider, MutableLongPoly[] qr) {
-        if (qr == null) return;
-        MutableLongPoly d = divider.clone().multiply(qr[0]).add(qr[1]);
-        MutableLongPoly[] factor = divideAndRemainder(d, dividend, true);
-        assertNotNull(factor);
-        assertTrue(factor[1].isZero());
-        assertTrue(factor[0].isConstant());
-    }
-
-    private static void assertQuotientRemainder(MutableLongPoly dividend, MutableLongPoly divider, MutableLongPoly[] qr, long modulus) {
-        if (qr == null) return;
-        assertEquals(dividend.clone().modulus(modulus), divider.clone().multiply(qr[0], modulus).add(qr[1], modulus));
-    }
 
     @SuppressWarnings("ConstantConditions")
     private static void assertPolynomialRemainders(MutableLongPoly a, MutableLongPoly b, PolynomialRemainders prs) {
@@ -637,8 +399,8 @@ public class SmallPolynomialsTest {
         assertEquals(b, prs.remainders.get(1));
 
         MutableLongPoly gcd = primitivePart(prs.gcd().clone());
-        assertTrue(pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
-        assertTrue(pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
+        assertTrue(SmallPolynomialsDivideAndRemainder.pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
+        assertTrue(SmallPolynomialsDivideAndRemainder.pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -650,8 +412,8 @@ public class SmallPolynomialsTest {
         assertEquals(b.clone().modulus(modulus), prs.remainders.get(1));
 
         MutableLongPoly gcd = prs.gcd().clone();
-        assertTrue(divideAndRemainder(a, gcd, modulus, true)[1].isZero());
-        assertTrue(divideAndRemainder(b, gcd, modulus, true)[1].isZero());
+        assertTrue(SmallPolynomialsDivideAndRemainder.divideAndRemainder(a, gcd, modulus, true)[1].isZero());
+        assertTrue(SmallPolynomialsDivideAndRemainder.divideAndRemainder(b, gcd, modulus, true)[1].isZero());
     }
 
 
@@ -1091,23 +853,24 @@ public class SmallPolynomialsTest {
 //        assertMMATest(100, "cc/r2/core/polynomial/DistinctDegreeFactorizationHuge.gz");
 //    }
 //
+//
+//    @Test
+//    public void testDDFLarge() throws Exception {
+//        MutableLongPoly bigPoly = MutableLongPoly.create(6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1);
+//        System.out.println(Arrays.toString(bigPoly.data).replace(",", ""));
+//        long modulus = 5659;
+//        System.out.println(DistinctDegreeFactorizationComplete(bigPoly, modulus));
+//        System.out.println(1L * bigPoly.degree * bigPoly.degree * bigPoly.degree);
+//        System.out.println(LongArithmetics.COUNTER);
+//    }
+//
+//    @Test
+//    public void name() throws Exception {
+//        long[] data = {6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1};
+//        System.out.println("f.SetLength(" + data.length + ");");
+//        for (int i = 0; i < data.length; i++) {
+//            System.out.println("f[" + i + "] = " + data[i] + ";");
+//        }
+//    }
 
-    @Test
-    public void testDDFLarge() throws Exception {
-        MutableLongPoly bigPoly = MutableLongPoly.create(6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1);
-        System.out.println(Arrays.toString(bigPoly.data).replace(",", ""));
-        long modulus = 5659;
-        System.out.println(DistinctDegreeFactorizationComplete(bigPoly, modulus));
-        System.out.println(1L * bigPoly.degree * bigPoly.degree * bigPoly.degree);
-        System.out.println(LongArithmetics.COUNTER);
-    }
-
-    @Test
-    public void name() throws Exception {
-        long[] data = {6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1};
-        System.out.println("f.SetLength(" + data.length + ");");
-        for (int i = 0; i < data.length; i++) {
-            System.out.println("f[" + i + "] = " + data[i] + ";");
-        }
-    }
 }
