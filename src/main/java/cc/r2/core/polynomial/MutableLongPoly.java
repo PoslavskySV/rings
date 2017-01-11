@@ -364,8 +364,8 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
 
     /** fill content with zeroes */
     private MutableLongPoly toZero() {
-        degree = 0;
         Arrays.fill(data, 0, degree + 1, 0);
+        degree = 0;
         return this;
     }
 
