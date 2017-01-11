@@ -59,6 +59,11 @@ public final class ArraysUtil {
         }
     }
 
+    public static void reverse(long[] array, int from, int to) {
+        for (int i = 0; i < (to - from) / 2; ++i)
+            swap(array, from + i, to - 1 - i);
+    }
+
     public static int[] short2int(final short[] a) {
         int[] r = new int[a.length];
         for (int i = 0; i < a.length; ++i)

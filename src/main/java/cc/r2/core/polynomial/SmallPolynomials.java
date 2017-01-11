@@ -987,7 +987,7 @@ public final class SmallPolynomials {
         if (dividend.isZero())
             return new MutableLongPoly[]{MutableLongPoly.zero(), MutableLongPoly.zero()};
         if (dividend.degree < divider.degree)
-            return null;
+            return new MutableLongPoly[]{MutableLongPoly.zero(), copy ? dividend.clone() : dividend};
         if (divider.degree == 0)
             return new MutableLongPoly[]{(copy ? dividend.clone() : dividend).multiply(modInverse(divider.lc(), modulus), modulus), MutableLongPoly.zero()};
         if (divider.degree == 1)

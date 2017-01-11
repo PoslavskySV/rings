@@ -8,6 +8,20 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class MutableLongPolyTest {
+    @Test
+    public void testShift1() throws Exception {
+        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5, 6);
+        MutableLongPoly expected = MutableLongPoly.create(3, 4, 5, 6);
+        Assert.assertEquals(expected, a.clone().shiftLeft(2));
+    }
+
+    @Test
+    public void testShift2() throws Exception {
+        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5, 6);
+        MutableLongPoly expected = MutableLongPoly.create(0, 0, 1, 2, 3, 4, 5, 6);
+        Assert.assertEquals(expected, a.clone().shiftRight(2));
+    }
+
 
     @Test
     public void testMultiply1() throws Exception {
@@ -47,7 +61,6 @@ public class MutableLongPolyTest {
             testMultiplyModRandom(rnd, 10, 1000, 5000, 1000, 5000, Integer.MAX_VALUE, modulus);
         }
     }
-
 
     @Test
     public void testSquare1() throws Exception {
@@ -103,6 +116,13 @@ public class MutableLongPolyTest {
 
             Assert.assertArrayEquals(classical, karatsuba);
             Assert.assertArrayEquals(classical, asis);
+            if (modulus != -1) {
+                for (int j = 0; j < classical.length; j++) {
+                    Assert.assertTrue(asis[j] < modulus && asis[j] >= 0);
+                    Assert.assertTrue(classical[j] < modulus && classical[j] >= 0);
+                    Assert.assertTrue(karatsuba[j] < modulus && karatsuba[j] >= 0);
+                }
+            }
         }
 
         System.out.println("========== Classical ===========");
