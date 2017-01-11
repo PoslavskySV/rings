@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class MutableLongPolyTest {
+
     @Test
     public void testMultiply1() throws Exception {
         RandomGenerator rnd = new Well1024a();
@@ -47,6 +48,14 @@ public class MutableLongPolyTest {
         }
     }
 
+
+    @Test
+    public void testSquare1() throws Exception {
+        RandomGenerator rnd = new Well1024a();
+        testSquareRandom(rnd, 15009, 300, 301, 3);
+    }
+
+
     private static void testMultiplyRandom(RandomGenerator rnd,
                                            int nIterations,
                                            int minADegree, int maxADegree,
@@ -70,8 +79,8 @@ public class MutableLongPolyTest {
             }
             int aDegree = minADegree + rnd.nextInt(maxADegree - minADegree);
             int bDegree = minBDegree + rnd.nextInt(maxBDegree - minBDegree);
-            long[] a = RandomPolynomials.randomArray(aDegree, bound, rnd);
-            long[] b = RandomPolynomials.randomArray(bDegree, bound, rnd);
+            long[] a = RandomPolynomials.randomLongArray(aDegree, bound, rnd);
+            long[] b = RandomPolynomials.randomLongArray(bDegree, bound, rnd);
 
             long[] classical;
             long start = System.nanoTime();
@@ -100,5 +109,85 @@ public class MutableLongPolyTest {
         System.out.println(classicalTimes);
         System.out.println("========== Karatsuba ===========");
         System.out.println(karatsubaTimes);
+    }
+
+
+    private static void testSquareRandom(RandomGenerator rnd,
+                                         int nIterations,
+                                         int minADegree, int maxADegree,
+                                         int bound) {
+        testSquareModRandom(rnd, nIterations, minADegree, maxADegree, bound, -1);
+    }
+
+    private static void testSquareModRandom(RandomGenerator rnd,
+                                            int nIterations,
+                                            int minADegree, int maxADegree,
+                                            int bound, long modulus) {
+        DescriptiveStatistics
+                classicalTimes = new DescriptiveStatistics(),
+                karatsubaTimes = new DescriptiveStatistics(),
+                multClassicalTimes = new DescriptiveStatistics(),
+                multKaratsubaTimes = new DescriptiveStatistics();
+        ;
+        for (int i = 0; i < nIterations; i++) {
+            if (i == nIterations / 10) {
+                classicalTimes.clear();
+                karatsubaTimes.clear();
+                multClassicalTimes.clear();
+                multKaratsubaTimes.clear();
+            }
+            int aDegree = minADegree + rnd.nextInt(maxADegree - minADegree);
+            long[] a = RandomPolynomials.randomLongArray(aDegree, bound, rnd);
+
+            for (int j = 0; j < a.length; j++)
+                if (a[j] == 0) a[j] = 1;
+
+            long[] classical;
+            long start = System.nanoTime();
+            if (modulus != -1)
+                classical = MutableLongPoly.squareModClassical(a, 0, a.length, modulus);
+            else
+                classical = MutableLongPoly.squareClassical(a, 0, a.length);
+            classicalTimes.addValue(System.nanoTime() - start);
+
+            long[] karatsuba;
+            start = System.nanoTime();
+            if (modulus != -1)
+                karatsuba = MutableLongPoly.squareModKaratsuba(a, 0, a.length, modulus);
+            else
+                karatsuba = MutableLongPoly.squareKaratsuba(a, 0, a.length);
+            karatsubaTimes.addValue(System.nanoTime() - start);
+
+
+            long[] multClassical;
+            start = System.nanoTime();
+            if (modulus != -1)
+                multClassical = MutableLongPoly.multiplyModClassical(a, 0, a.length, a, 0, a.length, modulus);
+            else
+                multClassical = MutableLongPoly.multiplyClassical(a, 0, a.length, a, 0, a.length);
+            multClassicalTimes.addValue(System.nanoTime() - start);
+
+
+            long[] multKaratsuba;
+            start = System.nanoTime();
+            if (modulus != -1)
+                multKaratsuba = MutableLongPoly.multiplyModKaratsuba(a, 0, a.length, a, 0, a.length, modulus);
+            else
+                multKaratsuba = MutableLongPoly.multiplyKaratsuba(a, 0, a.length, a, 0, a.length);
+            multKaratsubaTimes.addValue(System.nanoTime() - start);
+
+            Assert.assertArrayEquals(classical, karatsuba);
+            Assert.assertArrayEquals(classical, multClassical);
+            Assert.assertArrayEquals(classical, multKaratsuba);
+        }
+
+        System.out.println("========== Classical square ===========");
+        System.out.println(classicalTimes);
+        System.out.println("========== Karatsuba square ===========");
+        System.out.println(karatsubaTimes);
+        System.out.println("========== Classical multiplication ===========");
+        System.out.println(multClassicalTimes);
+        System.out.println("========== Karatsuba multiplication ===========");
+        System.out.println(multKaratsubaTimes);
     }
 }

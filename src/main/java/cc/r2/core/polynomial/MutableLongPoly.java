@@ -130,9 +130,9 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
      * @return L1 norm of {@code this}
      */
     double norm1() {
-        double norm = data[0];
+        double norm = Math.abs(data[0]);
         for (int i = 1; i <= degree; ++i)
-            norm = Math.max((double) data[i], norm);
+            norm = Math.max((double) Math.abs(data[i]), norm);
         return norm;
     }
 
@@ -397,8 +397,29 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = addMod(data[i], oth.data[i], modulus);
-        for (int i = degree; i > oth.degree; --i)
-            data[i] = mod(data[i], modulus);
+//        for (int i = degree; i > oth.degree; --i)
+//            data[i] = mod(data[i], modulus);
+        fixDegree();
+        return this;
+    }
+
+    /**
+     * Adds {@code oth * factor} to {@code this} modulo {@code modulus}.
+     *
+     * @param oth     the polynomial
+     * @param factor  the factor
+     * @param modulus the modulus
+     * @return {@code this + oth * factor} modulo {@code modulus}
+     */
+    MutableLongPoly addMul(MutableLongPoly oth, long factor, long modulus) {
+        if (oth.isZero())
+            return modulus(modulus);
+
+        ensureCapacity(oth.degree);
+        for (int i = oth.degree; i >= 0; --i)
+            data[i] = addMod(data[i], multiplyMod(factor, oth.data[i], modulus), modulus);
+//        for (int i = degree; i > oth.degree; --i)
+//            data[i] = mod(data[i], modulus);
         fixDegree();
         return this;
     }
@@ -434,8 +455,8 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = subtractMod(data[i], oth.data[i], modulus);
-        for (int i = degree; i > oth.degree; --i)
-            data[i] = mod(data[i], modulus);
+//        for (int i = degree; i > oth.degree; --i)
+//            data[i] = mod(data[i], modulus);
         fixDegree();
         return this;
     }
@@ -479,8 +500,8 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         factor = mod(factor, modulus);
         for (int i = oth.degree + exponent; i >= exponent; --i)
             data[i] = subtractMod(data[i], LongArithmetics.multiply(factor, mod(oth.data[i - exponent], modulus)), modulus);
-        for (int i = degree, to = oth.degree + exponent; i > to; --i)
-            data[i] = mod(data[i], modulus);
+//        for (int i = degree, to = oth.degree + exponent; i > to; --i)
+//            data[i] = mod(data[i], modulus);
         fixDegree();
         return this;
     }
@@ -498,6 +519,8 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
      * @return {@code this * oth}
      */
     MutableLongPoly multiply(MutableLongPoly oth) {
+        if (this == oth)
+            return square();
         if (oth.degree == 0)
             return multiply(oth.data[0]);
         if (isZero())
@@ -509,11 +532,37 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             multiply(factor);
             return this;
         }
+        return multiply0(oth);
+    }
 
+    /**
+     * Square {@code this}. Classical multiplication and
+     * Karatsuba used depending on the degree.
+     *
+     * @return {@code this * this}
+     */
+    MutableLongPoly square() {
+        if (degree == 0) {
+            data[0] = LongArithmetics.multiply(data[0], data[0]);
+            return this;
+        }
+        return square0();
+    }
+
+    /** switch algorithms */
+    private MutableLongPoly multiply0(MutableLongPoly oth) {
         if (LongArithmetics.multiply(degree + 1, oth.degree + 1) <= MUL_CLASSICAL_THRESHOLD)
             return multiplyClassical(oth);
         else
             return multiplyKaratsuba(oth);
+    }
+
+    /** switch algorithms */
+    private MutableLongPoly square0() {
+        if (LongArithmetics.multiply(degree + 1, degree + 1) <= MUL_CLASSICAL_THRESHOLD)
+            return squareClassical();
+        else
+            return squareKaratsuba();
     }
 
     /** Karatsuba multiplication */
@@ -532,6 +581,22 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return this;
     }
 
+    /** Karatsuba square */
+    private MutableLongPoly squareKaratsuba() {
+        data = squareKaratsuba(data, 0, degree + 1);
+        degree = 2 * degree;
+        fixDegree();
+        return this;
+    }
+
+    /** classical square */
+    private MutableLongPoly squareClassical() {
+        data = squareClassical(data, 0, degree + 1);
+        degree = 2 * degree;
+        assert data[degree] != 0;
+        return this;
+    }
+
     /**
      * Multiply {@code this} and {@code oth} modulo {@code modulus}. Classical multiplication and
      * Karatsuba used depending on the degree of input polynomials.
@@ -540,6 +605,8 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
      * @return {@code this * oth}
      */
     MutableLongPoly multiply(MutableLongPoly oth, long modulus) {
+        if (this == oth)
+            return square(modulus);
         if (oth.degree == 0)
             return multiply(oth.data[0], modulus);
         if (isZero())
@@ -552,10 +619,41 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             return this;
         }
 
+        double rBound = norm1() * oth.norm1() * Math.max(degree + 1, oth.degree + 1);
+        if (rBound < Long.MAX_VALUE) {
+            //don't use modular arithmetic at all
+            return multiply0(oth).modulus(modulus);
+        }
+
         if (LongArithmetics.multiply(degree + 1, oth.degree + 1) <= MUL_MOD_CLASSICAL_THRESHOLD)
             return multiplyModClassical(oth, modulus);
         else
             return multiplyModKaratsuba(oth, modulus);
+    }
+
+    /**
+     * Square {@code this} and {@code oth} modulo {@code modulus}. Classical multiplication and
+     * Karatsuba used depending on the degree.
+     *
+     * @return {@code this * this}
+     */
+    MutableLongPoly square(long modulus) {
+        if (degree == 0) {
+            data[0] = LongArithmetics.multiplyMod(data[0], data[0], modulus);
+            return this;
+        }
+
+        double norm1 = norm1();
+        double rBound = norm1 * norm1 * (degree + 1);
+        if (rBound < Long.MAX_VALUE) {
+            //don't use modular arithmetic at all
+            return square().modulus(modulus);
+        }
+
+        if (LongArithmetics.multiply(degree + 1, degree + 1) <= MUL_MOD_CLASSICAL_THRESHOLD)
+            return squareModClassical(modulus);
+        else
+            return squareModKaratsuba(modulus);
     }
 
     /** Karatsuba multiplication */
@@ -570,6 +668,22 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     private MutableLongPoly multiplyModClassical(MutableLongPoly oth, long modulus) {
         data = multiplyModClassical(data, 0, degree + 1, oth.data, 0, oth.degree + 1, modulus);
         degree = degree + oth.degree;
+        fixDegree();
+        return this;
+    }
+
+    /** Karatsuba multiplication */
+    private MutableLongPoly squareModKaratsuba(long modulus) {
+        data = squareModKaratsuba(data, 0, degree + 1, modulus);
+        degree = 2 * degree;
+        fixDegree();
+        return this;
+    }
+
+    /** classical multiplication */
+    private MutableLongPoly squareModClassical(long modulus) {
+        data = squareModClassical(data, 0, degree + 1, modulus);
+        degree = 2 * degree;
         fixDegree();
         return this;
     }
@@ -674,17 +788,17 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
      * @param aTo    end in a
      * @param b      the second multiplier
      * @param bFrom  begin in b
-     * @param bTo    end in a
+     * @param bTo    end in b
      */
     static void multiplyClassical(final long[] result, final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo) {
         if (aTo - aFrom > bTo - bFrom) {
             multiplyClassical(result, b, bFrom, bTo, a, aFrom, aTo);
             return;
         }
-        for (int i = 0; i < aTo - aFrom; i++) {
+        for (int i = 0; i < aTo - aFrom; ++i) {
             long c = a[aFrom + i];
             if (c != 0)
-                for (int j = 0; j < bTo - bFrom; j++)
+                for (int j = 0; j < bTo - bFrom; ++j)
                     result[i + j] = LongArithmetics.add(result[i + j], LongArithmetics.multiply(c, b[bFrom + j]));
         }
     }
@@ -697,7 +811,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
      * @param aTo   end in a
      * @param b     the second multiplier
      * @param bFrom begin in b
-     * @param bTo   end in a
+     * @param bTo   end in b
      * @return the result
      */
     static long[] multiplyClassical(final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo) {
@@ -715,7 +829,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
      * @param aTo     end in a
      * @param b       the second multiplier
      * @param bFrom   begin in b
-     * @param bTo     end in a
+     * @param bTo     end in b
      * @param modulus the modulus
      */
     static void multiplyModClassical(final long[] result, final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo, long modulus) {
@@ -723,10 +837,10 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             multiplyModClassical(result, b, bFrom, bTo, a, aFrom, aTo, modulus);
             return;
         }
-        for (int i = 0; i < aTo - aFrom; i++) {
+        for (int i = 0; i < aTo - aFrom; ++i) {
             long c = mod(a[aFrom + i], modulus);
             if (c != 0)
-                for (int j = 0; j < bTo - bFrom; j++)
+                for (int j = 0; j < bTo - bFrom; ++j)
                     result[i + j] = LongArithmetics.addMod(result[i + j], LongArithmetics.multiplyMod(c, b[bFrom + j], modulus), modulus);
         }
     }
@@ -739,7 +853,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
      * @param aTo     end in a
      * @param b       the second multiplier
      * @param bFrom   begin in b
-     * @param bTo     end in a
+     * @param bTo     end in b
      * @param modulus the modulus
      * @return the result
      */
@@ -750,7 +864,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     }
 
     /** switch to classical multiplication */
-    private static final int KARATSUBA_THRESHOLD = 1024;
+    private static final long KARATSUBA_THRESHOLD = 1024L;
 
     /**
      * Karatsuba multiplication
@@ -795,7 +909,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             return result;
         }
         //switch to classical
-        if ((fTo - fFrom) * (gTo - gFrom) < KARATSUBA_THRESHOLD)
+        if (LongArithmetics.multiply(fTo - fFrom, gTo - gFrom) < KARATSUBA_THRESHOLD)
             return multiplyClassical(g, gFrom, gTo, f, fFrom, fTo);
 
         if (fTo - fFrom < gTo - gFrom)
@@ -854,7 +968,6 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         return result;
     }
 
-
     /**
      * Karatsuba multiplication
      *
@@ -900,7 +1013,7 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
             return result;
         }
         //switch to classical
-        if ((fTo - fFrom) * (gTo - gFrom) < KARATSUBA_THRESHOLD)
+        if (LongArithmetics.multiply(fTo - fFrom, gTo - gFrom) < KARATSUBA_THRESHOLD)
             return multiplyModClassical(g, gFrom, gTo, f, fFrom, fTo, modulus);
 
         if (fTo - fFrom < gTo - gFrom)
@@ -951,6 +1064,231 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
 
 
         long[] result = Arrays.copyOf(f0g0, (fTo - fFrom) + (gTo - gFrom) - 1);
+        for (int i = 0; i < mid.length; ++i)
+            result[i + split] = LongArithmetics.addMod(result[i + split], mid[i], modulus);
+        for (int i = 0; i < f1g1.length; ++i)
+            result[i + 2 * split] = LongArithmetics.addMod(result[i + 2 * split], f1g1[i], modulus);
+
+        return result;
+    }
+
+    /** classical square */
+    static long[] squareClassical(long[] a, int from, int to) {
+        long[] x = new long[(to - from) * 2 - 1];
+        squareClassical(x, a, from, to);
+        return x;
+    }
+
+    static long[] squareModClassical(long[] a, int from, int to, long modulus) {
+        long[] x = new long[(to - from) * 2 - 1];
+        squareModClassical(x, a, from, to, modulus);
+        return x;
+    }
+
+
+//     NOT EFFECTIVE METHODS !
+//    /**
+//     * Square the poly {@code data} using classical algorithm
+//     *
+//     * @param result result destination
+//     * @param data   the data
+//     * @param from   data from
+//     * @param to     end point in the {@code data}
+//     */
+//    static void squareClassical(final long[] result, long[] data, int from, int to) {
+//        int degree = to - from - 1;
+//        for (int i = 0, s = 2 * degree; i <= s; ++i) {
+//            int jFrom = Math.max(0, i - degree);
+//            int jTo = Math.min(degree, i);
+//            int m = jTo - jFrom + 1;
+//            int m2 = m >> 1;
+//            jTo = jFrom + m2 - 1;
+//            long r = 0;
+//            for (int j = jFrom; j <= jTo; ++j)
+//                r = LongArithmetics.add(r, LongArithmetics.multiply(data[from + j], data[from + i - j]));
+//
+//            r = LongArithmetics.add(r, r);
+//            if ((m&1) == 1)
+//                r = LongArithmetics.add(r, LongArithmetics.multiply(data[from + jTo + 1], data[from + jTo + 1]));
+//            result[i] = r;
+//        }
+//    }
+
+//    /**
+//     * Square the poly {@code data} using classical algorithm modulo {@code modulus}
+//     *
+//     * @param result  result destination
+//     * @param data    the data
+//     * @param from    end point in the {@code data}
+//     * @param modulus the modulus
+//     */
+//    static void squareModClassical(final long[] result, long[] data, int from, int to, long modulus) {
+//        int degree = to - from - 1;
+//        for (int i = 0, s = 2 * degree; i <= s; ++i) {
+//            int jFrom = Math.max(0, i - degree);
+//            int jTo = Math.min(degree, i);
+//            int m = jTo - jFrom + 1;
+//            int m2 = m >> 1;
+//            jTo = jFrom + m2 - 1;
+//            long r = 0;
+//            for (int j = jFrom; j <= jTo; ++j)
+//                r = LongArithmetics.addMod(r, LongArithmetics.multiplyMod(data[from + j], data[from + i - j], modulus), modulus);
+//
+//            r = LongArithmetics.addMod(r, r, modulus);
+//            if ((m&1) == 1)
+//                r = LongArithmetics.addMod(r, LongArithmetics.multiplyMod(data[from + jTo + 1], data[from + jTo + 1], modulus), modulus);
+//            result[i] = r;
+//        }
+//    }
+
+    /**
+     * Square the poly {@code data} using classical algorithm
+     *
+     * @param result result destination
+     * @param data   the data
+     * @param from   data from
+     * @param to     end point in the {@code data}
+     */
+    static void squareClassical(final long[] result, long[] data, int from, int to) {
+        int len = to - from;
+        for (int i = 0; i < len; ++i) {
+            long c = data[from + i];
+            if (c != 0)
+                for (int j = 0; j < len; ++j)
+                    result[i + j] = LongArithmetics.add(result[i + j], LongArithmetics.multiply(c, data[from + j]));
+        }
+    }
+
+    /**
+     * Square the poly {@code data} using classical algorithm
+     *
+     * @param result result destination
+     * @param data   the data
+     * @param from   data from
+     * @param to     end point in the {@code data}
+     */
+    static void squareModClassical(final long[] result, long[] data, int from, int to, long modulus) {
+        int len = to - from;
+        for (int i = 0; i < len; ++i) {
+            long c = data[from + i];
+            if (c != 0)
+                for (int j = 0; j < len; ++j)
+                    result[i + j] = LongArithmetics.addMod(result[i + j], LongArithmetics.multiplyMod(c, data[from + j], modulus), modulus);
+        }
+    }
+
+    /**
+     * Karatsuba squaring
+     *
+     * @param f     the data
+     * @param fFrom begin in f
+     * @param fTo   end in f
+     * @return the result
+     */
+    static long[] squareKaratsuba(final long[] f, final int fFrom, final int fTo) {
+        if (fFrom >= fTo)
+            return new long[0];
+        if (fTo - fFrom == 1)
+            return new long[]{LongArithmetics.multiply(f[fFrom], f[fFrom])};
+        if (fTo - fFrom == 2) {
+            long[] result = new long[3];
+            result[0] = LongArithmetics.multiply(f[fFrom], f[fFrom]);
+            result[1] = LongArithmetics.multiply(2L, f[fFrom], f[fFrom + 1]);
+            result[2] = LongArithmetics.multiply(f[fFrom + 1], f[fFrom + 1]);
+            return result;
+        }
+        //switch to classical
+        if (LongArithmetics.multiply(fTo - fFrom, fTo - fFrom) < KARATSUBA_THRESHOLD)
+            return MutableLongPoly.squareClassical(f, fFrom, fTo);
+
+
+        //we now split a and b into 2 parts:
+        int split = (fTo - fFrom + 1) / 2;
+        int fMid = fFrom + split;
+        long[] f0g0 = squareKaratsuba(f, fFrom, fMid);
+        long[] f1g1 = squareKaratsuba(f, fMid, fTo);
+
+        // f0 + f1
+        long[] f0_plus_f1 = new long[Math.max(fMid - fFrom, fTo - fMid)];
+        System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
+        for (int i = fMid; i < fTo; ++i)
+            f0_plus_f1[i - fMid] = LongArithmetics.add(f0_plus_f1[i - fMid], f[i]);
+
+        long[] mid = squareKaratsuba(f0_plus_f1, 0, f0_plus_f1.length);
+
+        if (mid.length < f0g0.length)
+            mid = Arrays.copyOf(mid, f0g0.length);
+        if (mid.length < f1g1.length)
+            mid = Arrays.copyOf(mid, f1g1.length);
+
+        //subtract f0g0, f1g1
+        for (int i = 0; i < f0g0.length; ++i)
+            mid[i] = LongArithmetics.subtract(mid[i], f0g0[i]);
+        for (int i = 0; i < f1g1.length; ++i)
+            mid[i] = LongArithmetics.subtract(mid[i], f1g1[i]);
+
+
+        long[] result = Arrays.copyOf(f0g0, 2 * (fTo - fFrom) - 1);
+        for (int i = 0; i < mid.length; ++i)
+            result[i + split] = LongArithmetics.add(result[i + split], mid[i]);
+        for (int i = 0; i < f1g1.length; ++i)
+            result[i + 2 * split] = LongArithmetics.add(result[i + 2 * split], f1g1[i]);
+
+        return result;
+    }
+
+    /**
+     * Karatsuba squaring
+     *
+     * @param f     the data
+     * @param fFrom begin in f
+     * @param fTo   end in f
+     * @return the result
+     */
+    static long[] squareModKaratsuba(final long[] f, final int fFrom, final int fTo, long modulus) {
+        if (fFrom >= fTo)
+            return new long[0];
+        if (fTo - fFrom == 1)
+            return new long[]{LongArithmetics.multiplyMod(f[fFrom], f[fFrom], modulus)};
+        if (fTo - fFrom == 2) {
+            long[] result = new long[3];
+            result[0] = LongArithmetics.multiplyMod(f[fFrom], f[fFrom], modulus);
+            result[1] = LongArithmetics.multiplyMod(2L, f[fFrom], f[fFrom + 1], modulus);
+            result[2] = LongArithmetics.multiplyMod(f[fFrom + 1], f[fFrom + 1], modulus);
+            return result;
+        }
+        //switch to classical
+        if (LongArithmetics.multiply(fTo - fFrom, fTo - fFrom) < KARATSUBA_THRESHOLD)
+            return MutableLongPoly.squareModClassical(f, fFrom, fTo, modulus);
+
+
+        //we now split a and b into 2 parts:
+        int split = (fTo - fFrom + 1) / 2;
+        int fMid = fFrom + split;
+        long[] f0g0 = squareModKaratsuba(f, fFrom, fMid, modulus);
+        long[] f1g1 = squareModKaratsuba(f, fMid, fTo, modulus);
+
+        // f0 + f1
+        long[] f0_plus_f1 = new long[Math.max(fMid - fFrom, fTo - fMid)];
+        System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
+        for (int i = fMid; i < fTo; ++i)
+            f0_plus_f1[i - fMid] = LongArithmetics.addMod(f0_plus_f1[i - fMid], f[i], modulus);
+
+        long[] mid = squareModKaratsuba(f0_plus_f1, 0, f0_plus_f1.length, modulus);
+
+        if (mid.length < f0g0.length)
+            mid = Arrays.copyOf(mid, f0g0.length);
+        if (mid.length < f1g1.length)
+            mid = Arrays.copyOf(mid, f1g1.length);
+
+        //subtract f0g0, f1g1
+        for (int i = 0; i < f0g0.length; ++i)
+            mid[i] = LongArithmetics.subtractMod(mid[i], f0g0[i], modulus);
+        for (int i = 0; i < f1g1.length; ++i)
+            mid[i] = LongArithmetics.subtractMod(mid[i], f1g1[i], modulus);
+
+
+        long[] result = Arrays.copyOf(f0g0, 2 * (fTo - fFrom) - 1);
         for (int i = 0; i < mid.length; ++i)
             result[i + split] = LongArithmetics.addMod(result[i + split], mid[i], modulus);
         for (int i = 0; i < f1g1.length; ++i)

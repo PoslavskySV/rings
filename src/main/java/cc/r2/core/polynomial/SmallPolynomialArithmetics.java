@@ -4,20 +4,20 @@ import static cc.r2.core.polynomial.LongArithmetics.multiply;
 
 final class SmallPolynomialArithmetics {
     @SuppressWarnings("ConstantConditions")
-    public static MutableLongPoly mod(MutableLongPoly a, MutableLongPoly polyModulus, long modulus, boolean copy) {
+    public static MutableLongPoly polyMod(MutableLongPoly a, MutableLongPoly polyModulus, long modulus, boolean copy) {
         return SmallPolynomials.remainder(a, polyModulus, modulus, copy);
     }
 
-    public static MutableLongPoly multiplyMod(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus, boolean copy) {
-        return mod((copy ? a.clone() : a).multiply(b, modulus), polyModulus, modulus, false);
+    public static MutableLongPoly polyMultiplyMod(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus, boolean copy) {
+        return polyMod((copy ? a.clone() : a).multiply(b, modulus), polyModulus, modulus, false);
     }
 
-    public static MutableLongPoly addMod(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus, boolean copy) {
-        return mod((copy ? a.clone() : a).add(b, modulus), polyModulus, modulus, false);
+    public static MutableLongPoly polyAddMod(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus, boolean copy) {
+        return polyMod((copy ? a.clone() : a).add(b, modulus), polyModulus, modulus, false);
     }
 
-    public static MutableLongPoly subtractMod(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus, boolean copy) {
-        return mod((copy ? a.clone() : a).subtract(b, modulus), polyModulus, modulus, false);
+    public static MutableLongPoly polySubtractMod(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus, boolean copy) {
+        return polyMod((copy ? a.clone() : a).subtract(b, modulus), polyModulus, modulus, false);
     }
 
     /**
@@ -28,7 +28,7 @@ final class SmallPolynomialArithmetics {
      * @return {@code base} in a power of {@code e} (non negative)
      * @throws ArithmeticException if the result overflows a long
      */
-    public static MutableLongPoly pow(final MutableLongPoly base, long exponent, boolean copy) {
+    public static MutableLongPoly polyPow(final MutableLongPoly base, long exponent, boolean copy) {
         if (exponent < 0)
             throw new IllegalArgumentException();
 
@@ -52,7 +52,7 @@ final class SmallPolynomialArithmetics {
      * @return {@code base} in a power of {@code e} (non negative)
      * @throws ArithmeticException if the result overflows a long
      */
-    public static MutableLongPoly powMod(final MutableLongPoly base, long exponent, long modulus, boolean copy) {
+    public static MutableLongPoly polyPowMod(final MutableLongPoly base, long exponent, long modulus, boolean copy) {
         if (exponent < 0)
             throw new IllegalArgumentException();
 
@@ -79,22 +79,21 @@ final class SmallPolynomialArithmetics {
      * @return {@code base} in a power of {@code e} (non negative)
      * @throws ArithmeticException if the result overflows a long
      */
-    public static MutableLongPoly powMod(final MutableLongPoly base, long exponent, MutableLongPoly polyModulus, long modulus, boolean copy) {
+    public static MutableLongPoly polyPowMod(final MutableLongPoly base, long exponent, MutableLongPoly polyModulus, long modulus, boolean copy) {
         if (exponent < 0)
             throw new IllegalArgumentException();
         if (exponent == 0)
             return MutableLongPoly.one();
 
-        MutableLongPoly cache = MutableLongPoly.zero();
         MutableLongPoly result = MutableLongPoly.one();
-        MutableLongPoly k2p = mod(base, polyModulus, modulus, copy); // this will copy the base
+        MutableLongPoly k2p = polyMod(base, polyModulus, modulus, copy); // this will copy the base
         for (; ; ) {
             if ((exponent&1) != 0)
-                result = mod(result.multiply(k2p, modulus), polyModulus, modulus, false);
+                result = polyMod(result.multiply(k2p, modulus), polyModulus, modulus, false);
             exponent = exponent >> 1;
             if (exponent == 0)
                 return result;
-            k2p = mod(k2p.multiply(k2p, modulus), polyModulus, modulus, false);
+            k2p = polyMod(k2p.multiply(k2p, modulus), polyModulus, modulus, false);
         }
     }
 
