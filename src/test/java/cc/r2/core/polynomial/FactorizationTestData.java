@@ -61,7 +61,7 @@ public final class FactorizationTestData {
             exponents[i - 2] = (int) pe[1];
         }
         return new FactorizationTestData(
-                SmallPolynomialArithmetics.powMod((MutableLongPoly) poly[0], (int) poly[1], modulus, false),
+                SmallPolynomialArithmetics.polyPowMod((MutableLongPoly) poly[0], (int) poly[1], modulus, false),
                 new SmallPolynomials.Factorization(factors, exponents, 1),
                 modulus);
     }

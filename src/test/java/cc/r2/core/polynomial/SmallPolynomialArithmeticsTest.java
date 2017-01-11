@@ -15,8 +15,8 @@ public class SmallPolynomialArithmeticsTest {
         MutableLongPoly b = MutableLongPoly.create(0, 2, 3);
         MutableLongPoly polyModulus = MutableLongPoly.create(0, 4, 0, 1);
         long modulus = 5;
-        assertEquals(MutableLongPoly.create(0, 4, 1), multiplyMod(a, b, polyModulus, modulus, true));
-        assertEquals(MutableLongPoly.create(0, 4, 1), multiplyMod(a.clone(), b, polyModulus, modulus, false));
+        assertEquals(MutableLongPoly.create(0, 4, 1), polyMultiplyMod(a, b, polyModulus, modulus, true));
+        assertEquals(MutableLongPoly.create(0, 4, 1), polyMultiplyMod(a.clone(), b, polyModulus, modulus, false));
     }
 
     @Test
@@ -27,8 +27,8 @@ public class SmallPolynomialArithmeticsTest {
 
     @Test
     public void test3() throws Exception {
-        assertEquals(MutableLongPoly.create(1, 2, 1), pow(MutableLongPoly.create(1, 1), 2, true));
-        assertEquals(MutableLongPoly.create(1, 2, 1), pow(MutableLongPoly.create(1, 1), 2, false));
+        assertEquals(MutableLongPoly.create(1, 2, 1), polyPow(MutableLongPoly.create(1, 1), 2, true));
+        assertEquals(MutableLongPoly.create(1, 2, 1), polyPow(MutableLongPoly.create(1, 1), 2, false));
     }
 
     @Test
@@ -37,7 +37,7 @@ public class SmallPolynomialArithmeticsTest {
 //        assertEquals(MutableLongPoly.create(1, 2, 1), pow(MutableLongPoly.create(1, 1), 2));
         MutableLongPoly a = MutableLongPoly.create(1, 0, 1, 0, 1);
         MutableLongPoly b = MutableLongPoly.create(1, 1, 1);
-        System.out.println(SmallPolynomialArithmetics.powMod(b, 2, 2, true));
+        System.out.println(SmallPolynomialArithmetics.polyPowMod(b, 2, 2, true));
     }
 
     @Test
@@ -45,8 +45,8 @@ public class SmallPolynomialArithmeticsTest {
         MutableLongPoly a = MutableLongPoly.create(0, 0, 0, 1);
         MutableLongPoly polyModulus = MutableLongPoly.create(0, -1, -1, -1, 0, 1, -1, 1, 1);
         long modulus = 3;
-        assertEquals(MutableLongPoly.create(0, -1, 0, 0, 1, 1, 1, -1).modulus(modulus), powMod(a, modulus, polyModulus, modulus, true));
-        assertEquals(MutableLongPoly.create(0, -1, 0, 0, 1, 1, 1, -1).modulus(modulus), powMod(a, modulus, polyModulus, modulus, false));
+        assertEquals(MutableLongPoly.create(0, -1, 0, 0, 1, 1, 1, -1).modulus(modulus), SmallPolynomialArithmetics.polyPowMod(a, modulus, polyModulus, modulus, true));
+        assertEquals(MutableLongPoly.create(0, -1, 0, 0, 1, 1, 1, -1).modulus(modulus), SmallPolynomialArithmetics.polyPowMod(a, modulus, polyModulus, modulus, false));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class SmallPolynomialArithmeticsTest {
             for (long prime : primes) {
                 MutableLongPoly base = poly.clone().monic(prime);
                 MutableLongPoly modulus = polyModulus.clone().monic(prime);
-                assertEquals(mod(powMod(base, exponent, prime, true), modulus, prime, false), powMod(base, exponent, polyModulus, prime, true));
+                assertEquals(polyMod(polyPowMod(base, exponent, prime, true), modulus, prime, false), SmallPolynomialArithmetics.polyPowMod(base, exponent, polyModulus, prime, true));
             }
         }
     }
@@ -78,13 +78,13 @@ public class SmallPolynomialArithmeticsTest {
         System.out.println(base);
         System.out.println(polyModulus);
         polyModulus.modulus(modulus);
-        powMod(base.clone(), 100 * modulus, polyModulus, modulus, false);
+        SmallPolynomialArithmetics.polyPowMod(base.clone(), 100 * modulus, polyModulus, modulus, false);
 //        System.out.println(mod(base,polyModulus,modulus));
         if(true) {
             int t = 0;
             for (int i = 0; i < 10000; i++) {
                 long start = System.currentTimeMillis();
-                t += powMod(base.clone(), 100 * modulus, polyModulus, modulus, false).degree;
+                t += SmallPolynomialArithmetics.polyPowMod(base.clone(), 100 * modulus, polyModulus, modulus, false).degree;
                 System.out.println(System.currentTimeMillis() - start);
             }
             System.out.println(t);

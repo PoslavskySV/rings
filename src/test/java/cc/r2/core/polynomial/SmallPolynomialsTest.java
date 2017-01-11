@@ -16,8 +16,7 @@ import java.util.zip.GZIPInputStream;
 
 import static cc.r2.core.polynomial.LongArithmetics.gcd;
 import static cc.r2.core.polynomial.RandomPolynomials.randomPoly;
-import static cc.r2.core.polynomial.SmallPolynomialArithmetics.pow;
-import static cc.r2.core.polynomial.SmallPolynomialArithmetics.powMod;
+import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyPow;
 import static cc.r2.core.polynomial.SmallPolynomials.*;
 import static org.junit.Assert.*;
 
@@ -683,7 +682,7 @@ public class SmallPolynomialsTest {
 
     @Test
     public void test27() throws Exception {
-        MutableLongPoly poly = pow(MutableLongPoly.create(1, 3).multiply(2), 3, false).multiply(pow(MutableLongPoly.create(-3, -5, 7), 2, false));
+        MutableLongPoly poly = polyPow(MutableLongPoly.create(1, 3).multiply(2), 3, false).multiply(polyPow(MutableLongPoly.create(-3, -5, 7), 2, false));
         assertFactorization(poly, SquareFreeFactorizationYun(poly));
         poly = MutableLongPoly.create(1, 3);
         assertFactorization(poly, SquareFreeFactorizationYun(poly));
@@ -714,7 +713,7 @@ public class SmallPolynomialsTest {
                 for (int j = 0; j < nbase; j++) {
                     MutableLongPoly factor = randomPoly(rndd.nextInt(1, 3), 10, rnd);
                     int exponent = rndd.nextInt(1, 5);
-                    poly = poly.multiply(pow(factor, exponent, true));
+                    poly = poly.multiply(polyPow(factor, exponent, true));
                 }
             } catch (ArithmeticException e) {
                 --i;
@@ -761,14 +760,14 @@ public class SmallPolynomialsTest {
     static void assertFactorization(MutableLongPoly poly, Factorization factorization) {
         MutableLongPoly r = MutableLongPoly.create(factorization.factor);
         for (int i = 0; i < factorization.factors.length; i++)
-            r = r.multiply(pow(factorization.factors[i], factorization.exponents[i], true));
+            r = r.multiply(polyPow(factorization.factors[i], factorization.exponents[i], true));
         assertEquals(poly, r);
     }
 
     static void assertFactorization(MutableLongPoly poly, Factorization factorization, long modulus) {
         MutableLongPoly r = MutableLongPoly.create(factorization.factor);
         for (int i = 0; i < factorization.factors.length; i++)
-            r = r.multiply(powMod(factorization.factors[i], factorization.exponents[i], modulus, true), modulus);
+            r = r.multiply(SmallPolynomialArithmetics.polyPowMod(factorization.factors[i], factorization.exponents[i], modulus, true), modulus);
         assertEquals(poly.clone().modulus(modulus), r);
     }
 
@@ -815,7 +814,7 @@ public class SmallPolynomialsTest {
                         for (int j = 0; j < nbase; j++) {
                             MutableLongPoly f = randomPoly(rndd.nextInt(1, maxDegree), bound, rnd);
                             f = f.modulus(modulus);
-                            poly = poly.multiply(powMod(f, rndd.nextInt(1, maxExponent), modulus, true), modulus);
+                            poly = poly.multiply(SmallPolynomialArithmetics.polyPowMod(f, rndd.nextInt(1, maxExponent), modulus, true), modulus);
                         }
                         arithmetics.addValue(System.nanoTime() - start);
                         try {
@@ -1076,7 +1075,8 @@ public class SmallPolynomialsTest {
             assertEquals(nLines, nEntries);
         System.out.println(stats);
     }
-//
+
+    //
 //    @Ignore
 //    @Test
 //    public void test40() throws Exception {
@@ -1091,104 +1091,23 @@ public class SmallPolynomialsTest {
 //        assertMMATest(100, "cc/r2/core/polynomial/DistinctDegreeFactorizationHuge.gz");
 //    }
 //
-//    @Test
-//    public void testasdasd() throws Exception {
-//        MutableLongPoly poly = MutableLongPoly.create(6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1);
-//        int modulus = 5659;
-//        long start = System.nanoTime();
-//        System.out.println(DistinctDegreeFactorization(poly, modulus));
-//        System.out.println(System.nanoTime() - start);
-//
-//        start = System.nanoTime();
-//        System.out.println(DistinctDegreeFactorization(poly, modulus));
-//        System.out.println(System.nanoTime() - start);
-//    }
-//
-//
-//    static long[][] qMatrix(MutableLongPoly poly, long modulus) {
-//        int pDegree = poly.degree;
-//        long[][] matrix = new long[pDegree][pDegree];
-//        long[] prevRow = new long[pDegree], nextRow = new long[pDegree];
-//        prevRow[0] = 1;
-//        matrix[0] = prevRow.clone();
-//        for (int i = 1; i <= (pDegree - 1) * modulus; i++) {
-//            nextRow[0] = symMod(-prevRow[pDegree - 1] * poly.data[0], modulus);
-//            for (int j = 1; j < poly.degree; j++) {
-//                nextRow[j] = symMod(prevRow[j - 1] - prevRow[pDegree - 1] * poly.data[j], modulus);
-//            }
-//            if (i % modulus == 0)
-//                matrix[i / (int) modulus] = nextRow.clone();
-//            long[] tmp = prevRow;
-//            prevRow = nextRow;
-//            nextRow = tmp;
-//        }
-//        return matrix;
-//    }
-//
-//    static String toStringMatrix(long[][] matrix) {
-//        StringBuilder sb = new StringBuilder();
-//        for (int i = 0; i < matrix.length; i++) {
-//            sb.append(Arrays.toString(matrix[i])).append("\n");
-//        }
-//        return sb.toString();
-//    }
-//
-//    @Test
-//    public void name() throws Exception {
-//        long[][] expected = {
-//                {1, 0, 0, 0, 0, 0},
-//                {3, 5, -3, -3, -5, 5},
-//                {3, -5, -5, 1, -1, 0},
-//                {-2, 4, -1, 3, -4, -2},
-//                {-4, -3, -1, 0, 0, -3},
-//                {-3, -1, -4, -3, -1, -3}
-//        };
-//        MutableLongPoly poly = MutableLongPoly.create(1, -3, -1, -3, 1, -3, 1);
-//        int modulus = 11;
-//        long[][] qMatrix = qMatrix(poly, modulus);
-//        System.out.println(toStringMatrix(qMatrix));
-//        assertArrayEquals(expected, qMatrix);
-//    }
-//
-//    @Test
-//    public void wrer() throws Exception {
-//        MutableLongPoly poly = MutableLongPoly.create(6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1);
-//        int modulus = 5659;
-//        System.out.println(poly.modulus(modulus));
-//        MutableLongPoly xq = mod(MutableLongPoly.createMonomial(1, modulus), poly, modulus);
-//        MutableLongPoly xq2 = composition(xq, xq, poly, modulus);
-//        System.out.println(xq2);
-//        System.out.println(mod(MutableLongPoly.createMonomial(1, modulus * modulus), poly, modulus));
-//        MutableLongPoly xq3 = composition(xq2, xq, poly, modulus);
-//        System.out.println(xq3);
-//        System.out.println(mod(MutableLongPoly.createMonomial(1, modulus * modulus * modulus), poly, modulus));
-//        MutableLongPoly xq4 = composition(xq2, xq2, poly, modulus);
-//        System.out.println(xq4);
-//        System.out.println(mod(MutableLongPoly.createMonomial(1, modulus * modulus * modulus * modulus), poly, modulus));
-//
-//    }
-//
-//    static MutableLongPoly composition(MutableLongPoly a, MutableLongPoly b, MutableLongPoly polyModulus, long modulus) {
-//        MutableLongPoly res = MutableLongPoly.zero();
-////        for (int i = a.degree; i >= 0; --i) {
-////            res = LongArithmetics.add(LongArithmetics.multiply(res, point), data[i]);
-////        }
-////        return res;
-//
-//        for (int i = 0; i <= a.degree; i++) {
-//            res.add(powMod(b, i, polyModulus, modulus).multiply(a.data[i], modulus), modulus);
-//        }
-//        return mod(res, polyModulus, modulus);
-//    }
 
-    //
-//    @Test
-//    public void test39() throws Exception {
-//        InputStream resource = FactorizationTestDataTest.class.getClassLoader().getResourceAsStream("cc/r2/core/polynomial/DistinctDegreeFactorizationSmall.txt");
-//        assertNotNull(resource);
-//        for (FactorizationTestData fct : FactorizationTestData.allMod(resource)) {
-//            Factorization factorization = DistinctDegreeFactorizationComplete(fct.poly, fct.modulus);
-//
-//        }
-//    }
+    @Test
+    public void testDDFLarge() throws Exception {
+        MutableLongPoly bigPoly = MutableLongPoly.create(6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1);
+        System.out.println(Arrays.toString(bigPoly.data).replace(",", ""));
+        long modulus = 5659;
+        System.out.println(DistinctDegreeFactorizationComplete(bigPoly, modulus));
+        System.out.println(1L * bigPoly.degree * bigPoly.degree * bigPoly.degree);
+        System.out.println(LongArithmetics.COUNTER);
+    }
+
+    @Test
+    public void name() throws Exception {
+        long[] data = {6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1};
+        System.out.println("f.SetLength(" + data.length + ");");
+        for (int i = 0; i < data.length; i++) {
+            System.out.println("f[" + i + "] = " + data[i] + ";");
+        }
+    }
 }

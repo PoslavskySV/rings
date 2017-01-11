@@ -640,27 +640,17 @@ public final class SmallPolynomials {
         ArrayList<MutableLongPoly> factors = new ArrayList<>();
         TIntArrayList degrees = new TIntArrayList();
         int i = 0;
-        long total = 0;
         while (!base.isConstant()) {
-//            System.out.println(i);
             ++i;
-//            System.out.println("before powmod");
-//            System.out.println("Exponent:" + exponent.toStringForCopy());
-//            System.out.println("Modulus:" + modulus);
-//            System.out.println("PolyModulus:" + polyModulus.toStringForCopy());
-            long start = System.nanoTime();
-            exponent = SmallPolynomialArithmetics.powMod(exponent, modulus, base, modulus, false);
-            total += (System.nanoTime() - start);
-//            System.out.println("after powmod");
+//            System.out.println(i);
+            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, base, modulus, false);
             MutableLongPoly tmpExponent = exponent.clone();
-            //subtract x^1 effectively
             tmpExponent.ensureCapacity(1);
             tmpExponent.data[1] = subtractMod(tmpExponent.data[1], 1, modulus);
             tmpExponent.fixDegree();
-//            System.out.println("before gcd");
             MutableLongPoly gcd = PolynomialGCD(tmpExponent, base, modulus);
-//            System.out.println("after gcd");
             if (!gcd.isConstant()) {
+                System.out.println(" <=== " + i);
                 factors.add(gcd.monic(modulus));
                 degrees.add(i);
             }
@@ -676,7 +666,6 @@ public final class SmallPolynomials {
             }
         }
 
-//        System.out.println(total);
         return new Factorization(factors, degrees, factor);
     }
 

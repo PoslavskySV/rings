@@ -1,6 +1,6 @@
 package cc.r2.core.polynomial;
 
-import static cc.r2.core.polynomial.SmallPolynomialArithmetics.powMod;
+import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyPowMod;
 
 /**
  * Created by poslavsky on 04/01/2017.
@@ -14,12 +14,12 @@ public class Main {
         System.out.println(base);
         System.out.println(polyModulus);
         polyModulus.modulus(modulus);
-        powMod(base.clone(), 100 * modulus, polyModulus, modulus, false);
+        polyPowMod(base.clone(), 100 * modulus, polyModulus, modulus, false);
         if (true) {
             int t = 0;
             for (int i = 0; i < 10_000_000; i++) {
                 long start = System.currentTimeMillis();
-                t += powMod(base.clone(), 100 * modulus, polyModulus, modulus, false).degree;
+                t += polyPowMod(base.clone(), 100 * modulus, polyModulus, modulus, false).degree;
                 System.out.println(System.currentTimeMillis() - start);
             }
             System.out.println(t);
