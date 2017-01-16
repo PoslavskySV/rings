@@ -2,6 +2,7 @@ package cc.r2.core.polynomial;
 
 
 import cc.r2.core.number.primes.PrimesIterator;
+import cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.*;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -13,12 +14,10 @@ import java.util.List;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.polynomial.LongArithmetics.*;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.derivative;
-import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.divideAndRemainder;
-import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.pseudoDivideAndRemainder;
+import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.*;
 
 public final class SmallPolynomials {
-    private SmallPolynomials() {
-    }
+    private SmallPolynomials() {}
 
     /**
      * Plain Euclidean algorithm which fails if intermediate polynomials are not divisible at some step
@@ -268,7 +267,6 @@ public final class SmallPolynomials {
             //coprime polynomials
             if (modularGCD.degree == 0)
                 return MutableLongPoly.one();
-
 
             //save the base
             if (base == null) {
@@ -638,6 +636,7 @@ public final class SmallPolynomials {
         if (base.isMonomial())
             return oneFactor(base, factor);
 
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
         MutableLongPoly exponent = MutableLongPoly.create(0, 1);
         ArrayList<MutableLongPoly> factors = new ArrayList<>();
         TIntArrayList degrees = new TIntArrayList();
@@ -645,7 +644,8 @@ public final class SmallPolynomials {
         while (!base.isConstant()) {
             ++i;
 //            System.out.println(i);
-            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, modulus, false);
+//            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, modulus, false);
+            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, invMod, modulus, false);
             MutableLongPoly tmpExponent = exponent.clone();
             tmpExponent.ensureCapacity(1);
             tmpExponent.data[1] = subtractMod(tmpExponent.data[1], 1, modulus);
@@ -656,8 +656,9 @@ public final class SmallPolynomials {
                 factors.add(gcd.monic(modulus));
                 degrees.add(i);
             }
-            assert divideAndRemainder(base, gcd, modulus, true)[1].isZero();
-            base = divideAndRemainder(base, gcd, modulus, false)[0]; //can safely destroy reused base
+//            assert divideAndRemainder(base, gcd, modulus, true)[1].isZero();
+            base = quotient(base, gcd, modulus, false); //can safely destroy reused base
+//            base = quotientFastWithSwitch(base, gcd, invMod, modulus, false);
 
             if (base.degree < 2 * (i + 1)) {// <- early termination
                 if (!base.isConstant()) {

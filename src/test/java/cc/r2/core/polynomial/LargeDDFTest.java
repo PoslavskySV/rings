@@ -1,6 +1,6 @@
 package cc.r2.core.polynomial;
 
-import org.junit.Assert;
+import cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.InverseModMonomial;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -10,6 +10,8 @@ import static cc.r2.core.polynomial.LongArithmetics.symMod;
 import static cc.r2.core.polynomial.MutableLongPoly.createMonomial;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyMod;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyPowMod;
+import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.fastDivisionPreConditioning;
+import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.quotient;
 import static org.junit.Assert.*;
 
 /**
@@ -20,50 +22,92 @@ public class LargeDDFTest {
     static final int bigModulus = 5659;
 
 
-    public static ArrayList<MutableLongPoly> xPowers(MutableLongPoly poly, long modulus) {
+    public static ArrayList<MutableLongPoly> xPowers(MutableLongPoly poly, InverseModMonomial invMod, long modulus) {
         ArrayList<MutableLongPoly> exps = new ArrayList<>();
         exps.add(MutableLongPoly.one());
-        MutableLongPoly base = polyMod(createMonomial(1, (int) modulus), poly, modulus, false);
+        MutableLongPoly base = polyMod(createMonomial(1, (int) modulus), poly, invMod, modulus, false);
         exps.add(base);
         MutableLongPoly prev = base;
         for (int i = 0; i < poly.degree; i++)
-            exps.add(prev = polyMod(prev.clone().multiply(base, modulus), poly, modulus, false));
+            exps.add(prev = polyMod(prev.clone().multiply(base, modulus), poly, invMod, modulus, false));
         return exps;
     }
 
     @Test
+    public void testXPowers1() throws Exception {
+        long modulus = 7;
+        MutableLongPoly poly = MutableLongPoly.create(6, 2, 3, 1);
+        InverseModMonomial invMod = fastDivisionPreConditioning(poly, modulus);
+        ArrayList<MutableLongPoly> xPowers = xPowers(poly, invMod, modulus);
+
+        for (int i = 0; i < xPowers.size(); i++) {
+            System.out.println(xPowers.get(i));
+        }
+//        int m = dividend.degree - divider.degree;
+//        MutableLongPoly q = remainderMonomial(dividend.clone().reverse().multiply(invRevMod.getInverse(m + 1), modulus), m + 1, false).reverse();
+//        if (q.degree < m)
+//            q.shiftRight(m - q.degree);
+
+        System.out.println("------");
+//        for (int i = 0; i < xPowers.size(); i++) {
+//            int monomialExponent  = i * (int) modulus;
+//            int m = monomialExponent  - poly.degree;
+//            if (m > 0) {
+//                MutableLongPoly q = remainderMonomial(invMod.getInverse(m + 1), m + 1, false).reverse();
+//                if (q.degree < m)
+//                    q.shiftRight(m - q.degree);
+//                q.multiply(poly, modulus).negate(modulus);
+//                q.ensureCapacity(monomialExponent);
+//                q.data[monomialExponent] += 1;
+//
+//
+//                dividend.subtract(divider.clone().multiply(q, modulus), modulus)};
+//
+//                System.out.println(q);
+//            }
+//        }
+////        System.out.println(invMod.getInverse(4));
+
+    }
+
+    @Test
     public void testXpowers() throws Exception {
-        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5, 6, 7);
-        ArrayList<MutableLongPoly> exps = xPowers(poly, bigModulus);
+        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5, 6, 1);
+        ArrayList<MutableLongPoly> exps = xPowers(poly, fastDivisionPreConditioning(poly, bigModulus), bigModulus);
         for (int i = 0; i < exps.size(); i++)
             assertTrue(exps.get(i).subtract(polyPowMod(createMonomial(1, bigModulus), i, poly, bigModulus, false)).isZero());
     }
 
-    public static MutableLongPoly powerMod0(MutableLongPoly poly, MutableLongPoly polyModulus, long modulus, ArrayList<MutableLongPoly> xp) {
-        poly = polyMod(poly, polyModulus, modulus, true);
+    public static MutableLongPoly powerModWithXPowers(MutableLongPoly poly,
+                                                      MutableLongPoly polyModulus,
+                                                      InverseModMonomial invMod,
+                                                      long modulus,
+                                                      ArrayList<MutableLongPoly> xPowers) {
+        poly = polyMod(poly, polyModulus, invMod, modulus, true);
         MutableLongPoly res = MutableLongPoly.zero();
         for (int i = poly.degree; i >= 0; --i) {
             if (poly.data[i] == 0)
                 continue;
-            res.addMul(xp.get(i), poly.data[i], modulus);
+            res.addMul(xPowers.get(i), poly.data[i], modulus);
         }
-        return polyMod(res, polyModulus, modulus, false);
+        return polyMod(res, polyModulus, invMod, modulus, false);
     }
 
     @Test
     public void testPowerMod0() throws Exception {
         int modulus = 19;
-        MutableLongPoly polyModulus = MutableLongPoly.create(1, 2, 3, 4, 5, 6, 7);
-        ArrayList<MutableLongPoly> exps = xPowers(polyModulus, modulus);
+        MutableLongPoly polyModulus = MutableLongPoly.create(1, 2, 3, 4, 5, 6, 1);
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
+        ArrayList<MutableLongPoly> exps = xPowers(polyModulus, invMod, modulus);
         MutableLongPoly poly = MutableLongPoly.create(3, 2, 12, 3, 4, 52, 12, 3, 1, 2, 3, 4);
         MutableLongPoly a = polyPowMod(poly, modulus, polyModulus, modulus, true);
-        MutableLongPoly b = powerMod0(poly, polyModulus, modulus, exps);
+        MutableLongPoly b = powerModWithXPowers(poly, polyModulus, invMod, modulus, exps);
 
         System.out.println(a);
         System.out.println(b);
 
         a = polyPowMod(a, modulus, polyModulus, modulus, true);
-        b = powerMod0(b, polyModulus, modulus, exps);
+        b = powerModWithXPowers(b, polyModulus, invMod, modulus, exps);
 
         System.out.println(a);
         System.out.println(b);
@@ -72,29 +116,32 @@ public class LargeDDFTest {
     public static ArrayList<MutableLongPoly> ExponentsNaive(MutableLongPoly polyModulus, long modulus, int n) {
         MutableLongPoly exponent = MutableLongPoly.create(0, 1);
         ArrayList<MutableLongPoly> exps = new ArrayList<>();
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
         for (int j = 0; j < n; j++) {
             exps.add(exponent);
-            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, modulus, true);
+            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, invMod, modulus, true);
         }
         return exps;
     }
 
     public static ArrayList<MutableLongPoly> ExponentsWithXPowers(MutableLongPoly polyModulus, long modulus, int n) {
-        return ExponentsWithXPowers(polyModulus, modulus, n, xPowers(polyModulus, modulus));
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
+        return ExponentsWithXPowers(polyModulus, invMod, modulus, n, xPowers(polyModulus, invMod, modulus));
     }
 
-    public static ArrayList<MutableLongPoly> ExponentsWithXPowers(MutableLongPoly polyModulus, long modulus, int n, ArrayList<MutableLongPoly> xPowers) {
+    public static ArrayList<MutableLongPoly> ExponentsWithXPowers(MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus, int n, ArrayList<MutableLongPoly> xPowers) {
         MutableLongPoly exponent = MutableLongPoly.create(0, 1);
         ArrayList<MutableLongPoly> exps = new ArrayList<>();
         for (int j = 0; j < n; j++) {
             exps.add(exponent);
-            exponent = powerMod0(exponent, polyModulus, modulus, xPowers);
+            exponent = powerModWithXPowers(exponent, polyModulus, invMod, modulus, xPowers);
         }
         return exps;
     }
 
     public static ArrayList<MutableLongPoly> ExponentsWithComposition(MutableLongPoly polyModulus, long modulus, int n) {
-        MutableLongPoly base = polyMod(createMonomial(1, (int) modulus), polyModulus, modulus, false);
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
+        MutableLongPoly base = polyMod(createMonomial(1, (int) modulus), polyModulus, invMod, modulus, false);
         MutableLongPoly exponent = base;
         ArrayList<MutableLongPoly> exps = new ArrayList<>();
         exps.add(MutableLongPoly.create(0, 1));
@@ -102,47 +149,47 @@ public class LargeDDFTest {
             exps.add(exponent);
             if (j == n - 1)
                 break;
-            exponent = horner(exponent, base, polyModulus, modulus);
+            exponent = horner(exponent, base, polyModulus, invMod, modulus);
         }
         return exps;
     }
 
-    static MutableLongPoly horner(MutableLongPoly base, MutableLongPoly poly, MutableLongPoly polyModulus, long modulus) {
+    static MutableLongPoly horner(MutableLongPoly base, MutableLongPoly poly, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus) {
         MutableLongPoly res = MutableLongPoly.zero();
         for (int i = base.degree; i >= 0; --i)
 //            res = LongArithmetics.add(LongArithmetics.multiply(res, point), data[i]);
-            res = polyMod(res.multiply(poly, modulus).add(MutableLongPoly.create(base.data[i])), polyModulus, modulus, false);
+            res = polyMod(res.multiply(poly, modulus).add(MutableLongPoly.create(base.data[i])), polyModulus, invMod, modulus, false);
         return res;
     }
 
 
-    public static ArrayList<MutableLongPoly> hPowers(MutableLongPoly h, MutableLongPoly polyModulus, long modulus, int nIterations) {
+    public static ArrayList<MutableLongPoly> hPowers(MutableLongPoly h, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus, int nIterations) {
         ArrayList<MutableLongPoly> exps = new ArrayList<>();
         exps.add(MutableLongPoly.one());
-        MutableLongPoly base = polyMod(h, polyModulus, modulus, true);
+        MutableLongPoly base = polyMod(h, polyModulus, invMod, modulus, true);
         exps.add(base);
         MutableLongPoly prev = base;
         for (int i = 0; i < nIterations; i++)
-            exps.add(prev = polyMod(prev.clone().multiply(base, modulus), polyModulus, modulus, false));
+            exps.add(prev = polyMod(prev.clone().multiply(base, modulus), polyModulus, invMod, modulus, false));
         return exps;
     }
 
-    static MutableLongPoly BrentKung(MutableLongPoly main, MutableLongPoly point, MutableLongPoly polyModulus, long modulus) {
+    static MutableLongPoly BrentKung(MutableLongPoly main, MutableLongPoly point, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus) {
         int t = (int) Math.sqrt(main.degree);
-        ArrayList<MutableLongPoly> hPowers = hPowers(point, polyModulus, modulus, t);
-        return BrentKung(main, point, polyModulus, modulus, t, hPowers);
+        ArrayList<MutableLongPoly> hPowers = hPowers(point, polyModulus, invMod, modulus, t);
+        return BrentKung(main, point, polyModulus, invMod, modulus, t, hPowers);
     }
 
 
-    static MutableLongPoly BrentKung(MutableLongPoly main, MutableLongPoly point, MutableLongPoly polyModulus, long modulus, int t, ArrayList<MutableLongPoly> hPowers) {
+    static MutableLongPoly BrentKung(MutableLongPoly main, MutableLongPoly point, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus, int t, ArrayList<MutableLongPoly> hPowers) {
         ArrayList<MutableLongPoly> gj = new ArrayList<>();
         for (int i = 0; i <= main.degree; ) {
             int to = i + t;
             if (to > (main.degree + 1))
                 to = main.degree + 1;
             MutableLongPoly g = MutableLongPoly.create(Arrays.copyOfRange(main.data, i, to));
-            gj.add(powerMod0(g, polyModulus, modulus, hPowers));
-//            assert powerMod0(g, polyModulus, modulus, hPowers).subtract(horner(g, point, polyModulus, modulus), modulus).isZero();
+            gj.add(powerModWithXPowers(g, polyModulus, invMod, modulus, hPowers));
+//            assert powerModWithXPowers(g, polyModulus, modulus, hPowers).subtract(horner(g, point, polyModulus, modulus), modulus).isZero();
             i = to;
         }
         MutableLongPoly pt = hPowers.get(t);
@@ -150,22 +197,23 @@ public class LargeDDFTest {
         MutableLongPoly res = MutableLongPoly.zero();
         for (int i = gj.size() - 1; i >= 0; --i)
             //            res = LongArithmetics.add(LongArithmetics.multiply(res, point), data[i]);
-            res = polyMod(res.multiply(pt, modulus).add(gj.get(i)), polyModulus, modulus, false);
+            res = polyMod(res.multiply(pt, modulus).add(gj.get(i)), polyModulus, invMod, modulus, false);
         return res;
     }
 
     public static ArrayList<MutableLongPoly> ExponentsWithBrentKung(MutableLongPoly polyModulus, long modulus, int n) {
-        MutableLongPoly base = polyMod(createMonomial(1, (int) modulus), polyModulus, modulus, false);
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
+        MutableLongPoly base = polyMod(createMonomial(1, (int) modulus), polyModulus, invMod, modulus, false);
         MutableLongPoly exponent = base;
         ArrayList<MutableLongPoly> exps = new ArrayList<>();
         exps.add(MutableLongPoly.create(0, 1));
         int t = (int) Math.sqrt(polyModulus.degree);
-        ArrayList<MutableLongPoly> hPowers = hPowers(base, polyModulus, modulus, t);
+        ArrayList<MutableLongPoly> hPowers = hPowers(base, polyModulus, invMod, modulus, t);
         for (int j = 0; ; j++) {
             exps.add(exponent);
             if (j == n - 1)
                 break;
-            exponent = BrentKung(exponent, base, polyModulus, modulus, t, hPowers);
+            exponent = BrentKung(exponent, base, polyModulus, invMod, modulus, t, hPowers);
         }
         return exps;
     }
@@ -176,7 +224,9 @@ public class LargeDDFTest {
         MutableLongPoly point = MutableLongPoly.create(1, 2, 3, 4);
         MutableLongPoly polyModulus = MutableLongPoly.create(4, 3, 2, 1);
         long modulus = 7;
-        ArrayList<MutableLongPoly> hPowers = hPowers(point, polyModulus, modulus, 4);
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
+
+        ArrayList<MutableLongPoly> hPowers = hPowers(point, polyModulus, invMod, modulus, 4);
         System.out.println(hPowers.get(4).subtract(polyPowMod(point, 4, polyModulus, modulus, true)));
     }
 
@@ -189,9 +239,10 @@ public class LargeDDFTest {
 
 //        System.out.println(hPowers(polyModulus, point, modulus, 4));
 
-        System.out.println(horner(base, point, polyModulus, modulus));
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
+        System.out.println(horner(base, point, polyModulus, invMod, modulus));
         System.out.println("-----");
-        System.out.println(BrentKung(base, point, polyModulus, modulus));
+        System.out.println(BrentKung(base, point, polyModulus, invMod, modulus));
     }
 
     @Test
@@ -203,13 +254,14 @@ public class LargeDDFTest {
 
 //        System.out.println(hPowers(polyModulus, point, modulus, 4));
 
+        InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus, modulus);
         for (int i = 0; i < 1000; i++) {
 
             long start = System.nanoTime();
-            MutableLongPoly a = horner(base, point, polyModulus, modulus);
+            MutableLongPoly a = horner(base, point, polyModulus, invMod, modulus);
             long horner = System.nanoTime() - start;
             start = System.nanoTime();
-            MutableLongPoly b = BrentKung(base, point, polyModulus, modulus);
+            MutableLongPoly b = BrentKung(base, point, polyModulus, invMod, modulus);
             long bk = System.nanoTime() - start;
             assertEquals(a, b);
             System.out.println("----");
@@ -235,29 +287,37 @@ public class LargeDDFTest {
 
     @Test
     public void exps_plain_vs_xpowers_vs_horner_vs_brentkung() throws Exception {
+        MutableLongPoly bigPoly = LargeDDFTest.bigPoly;
+        MutableLongPoly factor = MutableLongPoly.create(4324, 2713, 2712, 4484, 1869, 1384, 452, 4955, 4523, 4247, 4261, 4549, 2584, 1);
+        bigPoly = quotient(bigPoly, factor, bigModulus, true);
         for (int i = 0; i < 1000; i++) {
 
             System.out.println("------");
 
             long start = System.nanoTime();
-            ArrayList<MutableLongPoly> exponents = ExponentsNaive(bigPoly, bigModulus, 20);
-            System.out.println(System.nanoTime() - start);
+            int nExponents = 120 - factor.degree;
+            ArrayList<MutableLongPoly> exponents = ExponentsNaive(bigPoly, bigModulus, nExponents);
+            System.out.println("naive:       " + (System.nanoTime() - start));
 
 
             start = System.nanoTime();
-            ArrayList<MutableLongPoly> xPowers = xPowers(bigPoly, bigModulus);
-            ArrayList<MutableLongPoly> exponents_x = ExponentsWithXPowers(bigPoly, bigModulus, 20, xPowers);
-            System.out.println(System.nanoTime() - start);
+            InverseModMonomial invMod = fastDivisionPreConditioning(bigPoly, bigModulus);
+            ArrayList<MutableLongPoly> xPowers = xPowers(bigPoly, invMod, bigModulus);
+            ArrayList<MutableLongPoly> exponents_x = ExponentsWithXPowers(bigPoly, invMod, bigModulus, nExponents, xPowers);
+            System.out.println("xPower:      " + (System.nanoTime() - start));
 
 
 //            start = System.nanoTime();
-//            ArrayList<MutableLongPoly> exponents_h = ExponentsWithComposition(bigPoly, bigModulus, 20);
-//            System.out.println(System.nanoTime() - start);
+//            ArrayList<MutableLongPoly> exponents_h = ExponentsWithComposition(bigPoly, bigModulus, nExponents);
+//            System.out.println("composition: " + (System.nanoTime() - start));
 
             start = System.nanoTime();
-            ArrayList<MutableLongPoly> exponents_bk = ExponentsWithBrentKung(bigPoly, bigModulus, 20);
-            System.out.println(System.nanoTime() - start);
+            ArrayList<MutableLongPoly> exponents_bk = ExponentsWithBrentKung(bigPoly, bigModulus, nExponents);
+            System.out.println("brend-kung:  " + (System.nanoTime() - start));
 
+//            System.out.println(exponents.get(9));
+//            System.out.println(exponents_x.get(9));
+//            System.out.println(exponents_bk.get(9));
 //            assertEquals(exponents.size(), exponents_x.size());
 //            assertEquals(exponents.size(), exponents_h.size());
 //            assertEquals(exponents.size(), exponents_bk.size());
@@ -268,7 +328,6 @@ public class LargeDDFTest {
     public void test_tmp() throws Exception {
         ExponentsNaive(bigPoly, bigModulus, 20);
         System.out.println(1L * bigPoly.degree * bigPoly.degree * 20);
-        System.out.println(LongArithmetics.COUNTER);
 
     }
 
@@ -291,7 +350,8 @@ public class LargeDDFTest {
         return matrix;
     }
 
-    static long[][] qMatrixHorner(MutableLongPoly poly, int modulus) {
+
+    static long[][] qMatrixHorner(MutableLongPoly poly, InverseModMonomial invMod, int modulus) {
         int pDegree = poly.degree;
         long[][] matrix = new long[pDegree][pDegree];
         matrix[0][0] = 1;
@@ -299,7 +359,7 @@ public class LargeDDFTest {
         MutableLongPoly prev = xMod.clone();
         System.arraycopy(prev.data, 0, matrix[1], 0, pDegree);
         for (int i = 2; i < pDegree; ++i) {
-            prev = horner(createMonomial(1, i), xMod, poly, modulus).symModulus(modulus);
+            prev = horner(createMonomial(1, i), xMod, poly, invMod, modulus).symModulus(modulus);
             prev.ensureCapacity(pDegree);
             System.arraycopy(prev.data, 0, matrix[i], 0, pDegree);
         }
@@ -324,7 +384,8 @@ public class LargeDDFTest {
 
             System.out.println("xxx");
             long start = System.nanoTime();
-            MutableLongPoly a = horner(xq, xq, bigPoly, bigModulus);
+            InverseModMonomial invMod = fastDivisionPreConditioning(bigPoly, bigModulus);
+            MutableLongPoly a = horner(xq, xq, bigPoly, invMod, bigModulus);
             System.out.println(System.nanoTime() - start);
 
             start = System.nanoTime();
@@ -350,42 +411,43 @@ public class LargeDDFTest {
         int modulus = 11;
         long[][] qMatrix = qMatrixIterative(poly.clone(), modulus);
         System.out.println(toStringMatrix(qMatrix));
-        System.out.println(toStringMatrix(qMatrixHorner(poly.clone(), modulus)));
+        InverseModMonomial invMod = fastDivisionPreConditioning(poly, modulus);
+        System.out.println(toStringMatrix(qMatrixHorner(poly.clone(), invMod, modulus)));
         assertArrayEquals(expected, qMatrix);
     }
-
-    @Test
-    public void test1() throws Exception {
-        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5);
-        MutableLongPoly x10 = createMonomial(1, 10);
-        MutableLongPoly x100 = createMonomial(1, 100);
-        MutableLongPoly x2 = createMonomial(1, 2);
-        MutableLongPoly x20 = createMonomial(1, 20);
-
-        assertEquals(
-                polyMod(x100, poly, bigModulus, true),
-                horner(x10, x10, poly, bigModulus)
-        );
-
-        assertEquals(
-                polyMod(x20, poly, bigModulus, true),
-                horner(x10, x2, poly, bigModulus)
-        );
-
-//        if (true) return;
-
-        MutableLongPoly x10000 = createMonomial(1, 10000);
+//
+//    @Test
+//    public void test1() throws Exception {
+//        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5);
+//        MutableLongPoly x10 = createMonomial(1, 10);
 //        MutableLongPoly x100 = createMonomial(1, 100);
-        for (int i = 0; i < 10000; i++) {
-
-            System.out.println("====");
-            long start = System.nanoTime();
-            MutableLongPoly a = polyMod(x10000, bigPoly, bigModulus, true);
-            System.out.println(System.nanoTime() - start);
-            start = System.nanoTime();
-            MutableLongPoly b = horner(x100, x100, bigPoly, bigModulus);
-            System.out.println(System.nanoTime() - start);
-            Assert.assertEquals(a, b);
-        }
-    }
+//        MutableLongPoly x2 = createMonomial(1, 2);
+//        MutableLongPoly x20 = createMonomial(1, 20);
+//
+//        assertEquals(
+//                polyMod(x100, poly, bigModulus, true),
+//                horner(x10, x10, poly, bigModulus)
+//        );
+//
+//        assertEquals(
+//                polyMod(x20, poly, bigModulus, true),
+//                horner(x10, x2, poly, bigModulus)
+//        );
+//
+////        if (true) return;
+//
+//        MutableLongPoly x10000 = createMonomial(1, 10000);
+////        MutableLongPoly x100 = createMonomial(1, 100);
+//        for (int i = 0; i < 10000; i++) {
+//
+//            System.out.println("====");
+//            long start = System.nanoTime();
+//            MutableLongPoly a = polyMod(x10000, bigPoly, bigModulus, true);
+//            System.out.println(System.nanoTime() - start);
+//            start = System.nanoTime();
+//            MutableLongPoly b = horner(x100, x100, bigPoly, bigModulus);
+//            System.out.println(System.nanoTime() - start);
+//            Assert.assertEquals(a, b);
+//        }
+//    }
 }

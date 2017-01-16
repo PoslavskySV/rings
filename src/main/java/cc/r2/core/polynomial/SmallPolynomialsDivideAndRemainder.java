@@ -403,7 +403,7 @@ public final class SmallPolynomialsDivideAndRemainder {
         final long modulus;
         final MutableLongPoly poly;
 
-        private InverseModMonomial(MutableLongPoly poly, long modulus) {
+        public InverseModMonomial(MutableLongPoly poly, long modulus) {
             if (poly.cc() != 1)
                 throw new IllegalArgumentException("Leading coefficient is not a unit: " + poly);
             this.modulus = modulus;
@@ -470,7 +470,7 @@ public final class SmallPolynomialsDivideAndRemainder {
      *
      * @param dividend  the dividend
      * @param divider   the divider
-     * @param invRevMod {@code divide^(-1) mod x^i }
+     * @param invRevMod {@code divider^(-1) mod x^i }
      * @param modulus   the modulus
      * @param copy      whether to clone {@code dividend}; if not, the remainder will be placed directly to
      *                  {@code dividend} and {@code dividend} data will be lost
@@ -569,5 +569,79 @@ public final class SmallPolynomialsDivideAndRemainder {
                 remainder.subtract(divider, divideMod(remainder.lc(), divider.lc(), modulus), i, modulus);
 
         return remainder.modulus(modulus);
+    }
+
+    /**
+     * Fast remainder using Newton iterations with switch to classical remainder for small polynomials.
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @param invMod   {@code divider^(-1) mod x^i }
+     * @param modulus  the modulus
+     * @param copy     whether to clone {@code dividend}; if not, the remainder will be placed directly to
+     *                 {@code dividend} and {@code dividend} data will be lost
+     * @return the remainder
+     */
+    public static MutableLongPoly remainderFastWithSwitch(final MutableLongPoly dividend,
+                                                          final MutableLongPoly divider,
+                                                          final InverseModMonomial invMod,
+                                                          final long modulus,
+                                                          final boolean copy) {
+        MutableLongPoly rem = earlyRemainderChecks(dividend, divider, modulus, copy);
+        if (rem != null)
+            return rem;
+
+        if (useClassicalDivision(dividend, divider))
+            return remainderClassical0(dividend, divider, modulus, copy);
+
+        return divideAndRemainderFast0(dividend, divider, invMod, modulus, copy)[1];
+    }
+
+    /**
+     * Returns the quotient of {@code dividend} divided by {@code divider} modulo {@code modulus}
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @param modulus  prime modulus
+     * @return the quotient
+     */
+    public static MutableLongPoly quotient(final MutableLongPoly dividend,
+                                           final MutableLongPoly divider,
+                                           final long modulus,
+                                           final boolean copy) {
+        MutableLongPoly[] qd = earlyDivideAndRemainderChecks(dividend, divider, modulus, copy);
+        if (qd != null)
+            return qd[0];
+
+        if (useClassicalDivision(dividend, divider))
+            return divideAndRemainderClassic(dividend, divider, modulus, copy)[0];
+
+        return divideAndRemainderFast0(dividend, divider, modulus, copy)[0];
+    }
+
+    /**
+     * Fast quotient using Newton iterations with switch to classical remainder for small polynomials.
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @param invMod   {@code divider^(-1) mod x^i }
+     * @param modulus  the modulus
+     * @param copy     whether to clone {@code dividend}; if not, the remainder will be placed directly to
+     *                 {@code dividend} and {@code dividend} data will be lost
+     * @return the quotient
+     */
+    public static MutableLongPoly quotientFastWithSwitch(final MutableLongPoly dividend,
+                                                         final MutableLongPoly divider,
+                                                         final InverseModMonomial invMod,
+                                                         final long modulus,
+                                                         final boolean copy) {
+        MutableLongPoly[] qd = earlyDivideAndRemainderChecks(dividend, divider, modulus, copy);
+        if (qd != null)
+            return qd[0];
+
+        if (useClassicalDivision(dividend, divider))
+            return divideAndRemainderClassic(dividend, divider, modulus, copy)[0];
+
+        return divideAndRemainderFast0(dividend, divider, invMod, modulus, copy)[0];
     }
 }
