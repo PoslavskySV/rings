@@ -230,6 +230,19 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
         }
     }
 
+    MutableLongPoly negate() {
+        for (int i = degree; i >= 0; --i)
+            data[i] = -data[i];
+        return this;
+    }
+
+    MutableLongPoly negate(long modulus) {
+        for (int i = degree; i >= 0; --i)
+            data[i] = LongArithmetics.mod(-data[i], modulus);
+        fixDegree();
+        return this;
+    }
+
     MutableLongPoly shiftLeft(int d) {
         if (d == 0)
             return this;

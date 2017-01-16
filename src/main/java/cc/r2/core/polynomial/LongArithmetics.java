@@ -5,17 +5,13 @@ public final class LongArithmetics {
     private LongArithmetics() {
     }
 
-    public static long COUNTER = 0;
-
     /** dividend / divisor */
     public static long divide(long dividend, long divisor) {
-        ++COUNTER;
         return dividend / divisor;
     }
 
     /** dividend % divisor */
     public static long rem(long dividend, long divisor) {
-        ++COUNTER;
         return dividend % divisor;
     }
 
@@ -25,7 +21,6 @@ public final class LongArithmetics {
      * @throws ArithmeticException if the result overflows a long
      **/
     public static long multiply(long x, long y) {
-        ++COUNTER;
         return Math.multiplyExact(x, y);
     }
 
@@ -35,7 +30,6 @@ public final class LongArithmetics {
      * @throws ArithmeticException if the result overflows a long
      **/
     public static long multiply(long x, long y, long z) {
-        ++COUNTER;
         return Math.multiplyExact(Math.multiplyExact(x, y), z);
     }
 
@@ -45,7 +39,6 @@ public final class LongArithmetics {
      * @throws ArithmeticException if the result overflows a long
      **/
     public static long add(long x, long y) {
-        ++COUNTER;
         return Math.addExact(x, y);
     }
 
@@ -55,7 +48,6 @@ public final class LongArithmetics {
      * @throws ArithmeticException if the result overflows a long
      **/
     public static long subtract(long a, long b) {
-        ++COUNTER;
         return Math.subtractExact(a, b);
     }
 
@@ -85,7 +77,6 @@ public final class LongArithmetics {
 
     /** Delegates to {@link Math#floorMod(long, long)} */
     public static long mod(long num, long modulus) {
-        ++COUNTER;
         return Math.floorMod(num, modulus);
     }
 
@@ -114,7 +105,6 @@ public final class LongArithmetics {
      * @throws ArithmeticException if long overflow occurs at intermediate step
      */
     public static long multiplyMod(long x, long y, long modulus) {
-        ++COUNTER;
         return mod(multiply(mod(x, modulus), mod(y, modulus)), modulus);
     }
 
@@ -144,7 +134,6 @@ public final class LongArithmetics {
      * @throws ArithmeticException if long overflow occurs at intermediate step
      */
     public static long addMod(long x, long y, long modulus) {
-        ++COUNTER;
         return mod(add(mod(x, modulus), mod(y, modulus)), modulus);
     }
 
@@ -174,7 +163,6 @@ public final class LongArithmetics {
      * @throws ArithmeticException if long overflow occurs at intermediate step
      */
     public static long subtractMod(long x, long y, long modulus) {
-        ++COUNTER;
         return mod(subtract(mod(x, modulus), mod(y, modulus)), modulus);
     }
 
@@ -188,7 +176,6 @@ public final class LongArithmetics {
      * @throws IllegalArgumentException if {@code b} and {@code p} are not coprime
      */
     public static long divideMod(long dividend, long divider, long modulus) {
-        ++COUNTER;
         return mod(multiply(dividend, modInverse(divider, modulus)), modulus);
     }
 
