@@ -14,6 +14,7 @@ import java.util.Arrays;
 
 import static cc.r2.core.polynomial.LongArithmetics.*;
 import static cc.r2.core.polynomial.MutableLongPoly.multiplyModClassical;
+import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyMod;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -111,6 +112,17 @@ public class FFT {
             final long[] fftInverse = new long[this.fft.length];
             Arrays.fill(fft, 0);
             Arrays.fill(fftInverse, 0);
+            return new PolynomialFFT(fft, fftInverse, modulus, rootPowers, rootPowersInv, bits, 0, nInversed);
+        }
+
+        PolynomialFFT createMonomial(int degree) {
+            final long[] fft = new long[this.fft.length];
+            final long[] fftInverse = new long[this.fft.length];
+            for (int i = 0; i < fft.length; i++) {
+                int rootPower = (degree * i) % rootPowers.length;
+                fft[i] = rootPowers[rootPower];
+                fftInverse[i] = rootPowersInv[rootPower];
+            }
             return new PolynomialFFT(fft, fftInverse, modulus, rootPowers, rootPowersInv, bits, 0, nInversed);
         }
 

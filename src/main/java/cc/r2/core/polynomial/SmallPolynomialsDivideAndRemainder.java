@@ -405,7 +405,7 @@ public final class SmallPolynomialsDivideAndRemainder {
 
         public InverseModMonomial(MutableLongPoly poly, long modulus) {
             if (poly.cc() != 1)
-                throw new IllegalArgumentException("Leading coefficient is not a unit: " + poly);
+                throw new IllegalArgumentException("Smallest coefficient is not a unit: " + poly);
             this.modulus = modulus;
             this.poly = poly;
         }
