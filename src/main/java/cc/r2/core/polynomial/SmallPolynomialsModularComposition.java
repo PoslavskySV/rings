@@ -90,13 +90,13 @@ public final class SmallPolynomialsModularComposition {
     /**
      * Returns modular composition {@code poly(point) mod polyModulus } calculated using Brent & Kung algorithm for modular composition.
      *
-     * @param main        the main polynomial
+     * @param main        the polynomial
      * @param pointPowers precomputed powers of evaluation point {@code point^{i} mod polyModulus}
      * @param polyModulus the monic polynomial modulus
      * @param invMod      precomputed inversed {@code rev[polyModulus]}
      * @param modulus     the modulus
      * @param tBrentKung  Brent-Kung splitting parameter (optimal choice is ~sqrt(main.degree))
-     * @return modular composition {@code main(point) mod polyModulus }
+     * @return modular composition {@code poly(point) mod polyModulus }
      * @see #polyPowers(MutableLongPoly, MutableLongPoly, InverseModMonomial, long, int)
      * @see SmallPolynomialsDivideAndRemainder#fastDivisionPreConditioning(MutableLongPoly, long)
      */
@@ -128,12 +128,12 @@ public final class SmallPolynomialsModularComposition {
     /**
      * Returns modular composition {@code poly(point) mod polyModulus } calculated using Brent & Kung algorithm for modular composition.
      *
-     * @param poly        the main polynomial
-     * @param point       evaluation point
+     * @param poly        the polynomial
+     * @param point       the evaluation point
      * @param polyModulus the monic polynomial modulus
      * @param invMod      precomputed inversed {@code rev[polyModulus]}
      * @param modulus     the modulus
-     * @return modular composition {@code main(point) mod polyModulus }
+     * @return modular composition {@code poly(point) mod polyModulus }
      * @see SmallPolynomialsDivideAndRemainder#fastDivisionPreConditioning(MutableLongPoly, long)
      */
     public static MutableLongPoly compositionBrentKung(MutableLongPoly poly, MutableLongPoly point, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus) {
@@ -147,12 +147,12 @@ public final class SmallPolynomialsModularComposition {
     /**
      * Returns modular composition {@code poly(point) mod polyModulus } calculated with plain Horner scheme.
      *
-     * @param poly        the main polynomial
-     * @param point       evaluation point
+     * @param poly        the polynomial
+     * @param point       the evaluation point
      * @param polyModulus the monic polynomial modulus
      * @param invMod      precomputed inversed {@code rev[polyModulus]}
      * @param modulus     the modulus
-     * @return modular composition {@code main(point) mod polyModulus }
+     * @return modular composition {@code poly(point) mod polyModulus }
      * @see SmallPolynomialsDivideAndRemainder#fastDivisionPreConditioning(MutableLongPoly, long)
      */
     public static MutableLongPoly compositionHorner(MutableLongPoly poly, MutableLongPoly point, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus) {
@@ -165,13 +165,14 @@ public final class SmallPolynomialsModularComposition {
     }
 
     /**
-     * Returns modular composition {@code poly(point) mod polyModulus }
+     * Returns modular composition {@code poly(point) mod polyModulus}. Brent & Kung algorithm used
+     * ({@link #compositionBrentKung(MutableLongPoly, MutableLongPoly, MutableLongPoly, InverseModMonomial, long)}).
      *
-     * @param poly        the main polynomial
-     * @param point       evaluation point
+     * @param poly        the polynomial
+     * @param point       the evaluation point
      * @param polyModulus the monic polynomial modulus
      * @param modulus     the modulus
-     * @return modular composition {@code main(point) mod polyModulus }
+     * @return modular composition {@code poly(point) mod polyModulus }
      * @see #polyPowers(MutableLongPoly, MutableLongPoly, InverseModMonomial, long, int)
      * @see SmallPolynomialsDivideAndRemainder#fastDivisionPreConditioning(MutableLongPoly, long)
      */
