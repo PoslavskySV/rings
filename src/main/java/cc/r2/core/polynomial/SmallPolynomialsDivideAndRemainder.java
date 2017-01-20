@@ -442,6 +442,8 @@ public final class SmallPolynomialsDivideAndRemainder {
      * @param modulus the modulus
      */
     public static InverseModMonomial fastDivisionPreConditioning(MutableLongPoly divider, long modulus) {
+        if (divider.lc() != 1)
+            throw new IllegalArgumentException("Only monic polynomials allowed.");
         return new InverseModMonomial(divider.clone().reverse(), modulus);
     }
 
