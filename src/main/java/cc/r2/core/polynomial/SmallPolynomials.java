@@ -14,7 +14,9 @@ import java.util.List;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.polynomial.LongArithmetics.*;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.derivative;
+import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyMultiplyMod;
 import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.*;
+import static cc.r2.core.polynomial.SmallPolynomialsModularComposition.*;
 
 public final class SmallPolynomials {
     private SmallPolynomials() {}
@@ -333,7 +335,7 @@ public final class SmallPolynomials {
     }
 
     /**
-     * Computes GCD of two polynomials modulo prime
+     * Computes GCD of two polynomials modulo prime {@code modulus}
      *
      * @param a       the first polynomial
      * @param b       the second polynomial
@@ -622,7 +624,8 @@ public final class SmallPolynomials {
      * @return distinct-degree decomposition of {@code poly} modulo {@code modulus}
      */
     @SuppressWarnings("ConstantConditions")
-    public static Factorization DistinctDegreeFactorization(MutableLongPoly poly, long modulus) {
+    static Factorization DistinctDegreeFactorizationPlain(
+            MutableLongPoly poly, long modulus) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -643,8 +646,6 @@ public final class SmallPolynomials {
         int i = 0;
         while (!base.isConstant()) {
             ++i;
-//            System.out.println(i);
-//            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, modulus, false);
             exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, invMod, modulus, false);
             MutableLongPoly tmpExponent = exponent.clone();
             tmpExponent.ensureCapacity(1);
@@ -652,14 +653,10 @@ public final class SmallPolynomials {
             tmpExponent.fixDegree();
             MutableLongPoly gcd = PolynomialGCD(tmpExponent, base, modulus);
             if (!gcd.isConstant()) {
-//                System.out.println(" <=== " + i);
                 factors.add(gcd.monic(modulus));
                 degrees.add(i);
             }
-//            assert divideAndRemainder(base, gcd, modulus, true)[1].isZero();
             base = quotient(base, gcd, modulus, false); //can safely destroy reused base
-//            base = quotientFastWithSwitch(base, gcd, invMod, modulus, false);
-
             if (base.degree < 2 * (i + 1)) {// <- early termination
                 if (!base.isConstant()) {
                     factors.add(base.monic(modulus));
@@ -670,6 +667,98 @@ public final class SmallPolynomials {
         }
 
         return new Factorization(factors, degrees, factor);
+    }
+
+    static BabyGiantSteps generateBabyGiantSteps(MutableLongPoly poly, long modulus) {
+        int n = poly.degree;
+        int B = (int) Math.floor(n / 2.);
+        int l = (int) Math.floor(Math.sqrt(B));
+        int m = (int) Math.ceil(1.0 * B / l);
+
+        InverseModMonomial invMod = fastDivisionPreConditioning(poly, modulus);
+        ArrayList<MutableLongPoly> xPowers = xPowers(poly, invMod, modulus);
+
+        //baby steps
+        ArrayList<MutableLongPoly> babySteps = new ArrayList<>();
+        babySteps.add(MutableLongPoly.createMonomial(1, 1)); // <- add x
+        MutableLongPoly xPower = xPowers.get(1); // x^p mod poly
+        babySteps.add(xPower); // <- add x^p mod poly
+        for (int i = 0; i <= l - 2; ++i)
+            babySteps.add(xPower = powModulusMod(xPower, poly, invMod, modulus, xPowers));
+
+        // <- xPower = x^(p^l) mod poly
+
+        //giant steps
+        ArrayList<MutableLongPoly> giantSteps = new ArrayList<>();
+        giantSteps.add(MutableLongPoly.createMonomial(1, 1)); // <- add x
+        giantSteps.add(xPower);
+        MutableLongPoly xPowerBig = xPower;
+        int tBrentKung = (int) Math.sqrt(poly.degree);
+        ArrayList<MutableLongPoly> hPowers = polyPowers(xPowerBig, poly, invMod, modulus, tBrentKung);
+        for (int i = 0; i < m - 1; ++i)
+            giantSteps.add(xPowerBig = compositionBrentKung(xPowerBig, hPowers, poly, invMod, modulus, tBrentKung));
+
+        return new BabyGiantSteps(B, l, m, babySteps, giantSteps, invMod);
+    }
+
+    static Factorization DistinctDegreeFactorizationShoup(MutableLongPoly poly,
+                                                          long modulus,
+                                                          BabyGiantSteps steps) {
+        //generate each I_j
+        ArrayList<MutableLongPoly> iBases = new ArrayList<>();
+        for (int j = 0; j <= steps.m; ++j) {
+            MutableLongPoly iBase = MutableLongPoly.one();
+            for (int i = 0; i <= steps.l - 1; ++i) {
+                MutableLongPoly tmp = steps.giantSteps.get(j).clone().subtract(steps.babySteps.get(i), modulus);
+                iBase = polyMultiplyMod(iBase, tmp, poly, steps.invMod, modulus, false);
+            }
+            iBases.add(iBase);
+        }
+
+        ArrayList<MutableLongPoly> factors = new ArrayList<>();
+        TIntArrayList degrees = new TIntArrayList();
+
+        MutableLongPoly current = poly.clone();
+        for (int j = 1; j <= steps.m; ++j) {
+            MutableLongPoly gcd = PolynomialGCD(current, iBases.get(j), modulus);
+            if (gcd.isConstant())
+                continue;
+            current = quotient(current, gcd, modulus, false);
+            for (int i = steps.l - 1; i >= 0; --i) {
+                MutableLongPoly tmp = PolynomialGCD(gcd, steps.giantSteps.get(j).clone().subtract(steps.babySteps.get(i), modulus), modulus);
+                factors.add(tmp);
+                degrees.add(steps.l * j - i);
+                gcd = quotient(gcd, tmp, modulus, false);
+            }
+        }
+        if (!current.isOne()) {
+            factors.add(current);
+            degrees.add(current.degree - 1);
+        }
+
+        return new Factorization(factors, degrees, 1);
+    }
+
+    static Factorization DistinctDegreeFactorizationShoup(MutableLongPoly poly,
+                                                          long modulus) {
+        return DistinctDegreeFactorizationShoup(poly, modulus, generateBabyGiantSteps(poly, modulus));
+    }
+
+    /** baby-giant steps for Shoup's algorithm for DDF */
+    static final class BabyGiantSteps {
+        final int B, l, m;
+        final ArrayList<MutableLongPoly> babySteps;
+        final ArrayList<MutableLongPoly> giantSteps;
+        final InverseModMonomial invMod;
+
+        public BabyGiantSteps(int b, int l, int m, ArrayList<MutableLongPoly> babySteps, ArrayList<MutableLongPoly> giantSteps, InverseModMonomial invMod) {
+            B = b;
+            this.l = l;
+            this.m = m;
+            this.babySteps = babySteps;
+            this.giantSteps = giantSteps;
+            this.invMod = invMod;
+        }
     }
 
     /**
@@ -686,7 +775,7 @@ public final class SmallPolynomials {
         ArrayList<MutableLongPoly> finalFactors = new ArrayList<>(squareFree.factors.length);
         TIntArrayList finalExponents = new TIntArrayList(squareFree.factors.length);
         for (int i = squareFree.factors.length - 1; i >= 0; --i) {
-            Factorization dd = DistinctDegreeFactorization(squareFree.factors[i], modulus);
+            Factorization dd = DistinctDegreeFactorizationPlain(squareFree.factors[i], modulus);
             int nFactors = dd.factors.length;
             finalFactors.ensureCapacity(finalFactors.size() + nFactors);
             finalExponents.ensureCapacity(finalExponents.size() + nFactors);

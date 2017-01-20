@@ -649,7 +649,7 @@ public class SmallPolynomialsTest {
     @Test
     public void test34() throws Exception {
         MutableLongPoly poly = MutableLongPoly.create(0, -1, -1, -1, 0, 1, -1, 1, 1);
-        Factorization f = DistinctDegreeFactorization(poly, 3);
+        Factorization f = DistinctDegreeFactorizationPlain(poly, 3);
         assertDistinctDegreeFactorization(poly, f, 3);
     }
 
@@ -708,7 +708,7 @@ public class SmallPolynomialsTest {
                             try {
                                 toTest = toTest.multiply(rndd.nextInt(1, 1000), modulus);
                                 start = System.nanoTime();
-                                Factorization factorization = DistinctDegreeFactorization(toTest, modulus);
+                                Factorization factorization = DistinctDegreeFactorizationPlain(toTest, modulus);
                                 timings.addValue(System.nanoTime() - start);
                                 this.nFactors.addValue(factorization.factors.length);
                                 assertDistinctDegreeFactorization(toTest, factorization, modulus);
@@ -762,7 +762,7 @@ public class SmallPolynomialsTest {
                     int modulus = sieve.randomPrime(rnd);
                     MutableLongPoly poly = randomPoly(rndd.nextInt(0, maxDegree), 10000, rnd).modulus(modulus);
                     long start = System.nanoTime();
-                    Factorization factorization = DistinctDegreeFactorization(poly, modulus);
+                    Factorization factorization = DistinctDegreeFactorizationPlain(poly, modulus);
                     timings.addValue(System.nanoTime() - start);
                     nFactors.addValue(factorization.factors.length);
                     assertDistinctDegreeFactorization(poly, factorization, modulus);
@@ -788,7 +788,7 @@ public class SmallPolynomialsTest {
     @Test
     public void test35a() throws Exception {
         MutableLongPoly poly = MutableLongPoly.create(19, 20, 13, 10, 26, 19, 6, 29, 13, 20, 10, 12, 20, 3, 21, 16, 25, 10, 26, 22, 25, 2, 23, 29, 21, 14, 8, 26, 16, 7, 7, 1);
-        Factorization factorization = DistinctDegreeFactorization(poly, 31);
+        Factorization factorization = DistinctDegreeFactorizationPlain(poly, 31);
         assertEquals(5, factorization.factors.length);
         assertDistinctDegreeFactorization(poly, factorization, 31);
     }
@@ -796,7 +796,7 @@ public class SmallPolynomialsTest {
     @Test
     public void test37a() throws Exception {
         MutableLongPoly poly = MutableLongPoly.create(9, 7, 2, 3, 10, 1, 1);
-        Factorization factorization = DistinctDegreeFactorization(poly, 11);
+        Factorization factorization = DistinctDegreeFactorizationPlain(poly, 11);
         assertDistinctDegreeFactorization(poly, factorization, 11);
     }
 
