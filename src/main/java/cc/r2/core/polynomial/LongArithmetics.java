@@ -5,6 +5,12 @@ public final class LongArithmetics {
     private LongArithmetics() {
     }
 
+    public static int toInt(long v){
+        if(v > Integer.MAX_VALUE)
+            throw new ArithmeticException("overflow");
+        return (int) v;
+    }
+
     /** dividend / divisor */
     public static long divide(long dividend, long divisor) {
         return dividend / divisor;

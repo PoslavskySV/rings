@@ -9,6 +9,7 @@ import java.util.Arrays;
 
 import static cc.r2.core.polynomial.MutableLongPoly.createMonomial;
 import static cc.r2.core.polynomial.SmallPolynomialArithmetics.*;
+import static cc.r2.core.polynomial.SmallPolynomials.DistinctDegreeFactorization;
 import static cc.r2.core.polynomial.SmallPolynomials.PolynomialGCD;
 import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.fastDivisionPreConditioning;
 import static cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.quotient;
@@ -31,13 +32,18 @@ public class LargeDDFtest2 {
     /** returns h^{i*modulus} mod polyModulus for i in [0...nIterations] */
     public static ArrayList<MutableLongPoly> hPowers(MutableLongPoly h, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus, int nIterations) {
         ArrayList<MutableLongPoly> exponents = new ArrayList<>();
+        hPowers(h, polyModulus, invMod, modulus, nIterations, exponents);
+        return exponents;
+    }
+
+    /** writes h^{i*modulus} mod polyModulus for i in [0...nIterations] to exponents */
+    public static void hPowers(MutableLongPoly h, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus, int nIterations, ArrayList<MutableLongPoly> exponents) {
         exponents.add(MutableLongPoly.one());
         MutableLongPoly base = polyMod(h, polyModulus, invMod, modulus, true);
         exponents.add(base);
         MutableLongPoly prev = base;
         for (int i = 0; i < nIterations; i++)
             exponents.add(prev = polyMod(prev.clone().multiply(base, modulus), polyModulus, invMod, modulus, false));
-        return exponents;
     }
 
 
@@ -91,53 +97,222 @@ public class LargeDDFtest2 {
         return BrentKung(main, polyModulus, invMod, modulus, t, hPowers);
     }
 
-
-    static MutableLongPoly BrentKung(MutableLongPoly main, MutableLongPoly polyModulus, InverseModMonomial invMod, long modulus, int t, ArrayList<MutableLongPoly> pointPowers) {
+    /** returns main(point) mod polyModulus */
+    static MutableLongPoly BrentKung(
+            MutableLongPoly main,
+            MutableLongPoly polyModulus,
+            InverseModMonomial invMod,
+            long modulus,
+            int tBrentKung,
+            ArrayList<MutableLongPoly> pointPowers) {
         ArrayList<MutableLongPoly> gj = new ArrayList<>();
         for (int i = 0; i <= main.degree; ) {
-            int to = i + t;
+            int to = i + tBrentKung;
             if (to > (main.degree + 1))
                 to = main.degree + 1;
             MutableLongPoly g = MutableLongPoly.create(Arrays.copyOfRange(main.data, i, to));
             gj.add(raiseWithXPowers(g, polyModulus, invMod, modulus, pointPowers));
             i = to;
         }
-        MutableLongPoly pt = pointPowers.get(t);
+        MutableLongPoly pt = pointPowers.get(tBrentKung);
         MutableLongPoly res = MutableLongPoly.zero();
         for (int i = gj.size() - 1; i >= 0; --i)
             res = polyMod(res.multiply(pt, modulus).add(gj.get(i)), polyModulus, invMod, modulus, false);
         return res;
     }
 
-    @Test
-    public void name() throws Exception {
-        int n = bigPoly.degree;
-//        int B = (int) Math.ceil(n / 2.);
-//        int l = (int) Math.ceil(Math.sqrt(B) + 1);
-//        int m = (int) Math.ceil(1.0 * B / l);
+    static final class GiantSteps {
+        final ArrayList<MutableLongPoly> giantSteps = new ArrayList<>();
+        final MutableLongPoly poly;
+        final InverseModMonomial invMod;
+        final long modulus;
+        final MutableLongPoly basePower;
+
+        final int tBrentKung;
+        final ArrayList<MutableLongPoly> hPowers = new ArrayList<>();
+
+        public GiantSteps(MutableLongPoly poly, InverseModMonomial invMod, long modulus, MutableLongPoly basePower) {
+            this.poly = poly;
+            this.invMod = invMod;
+            this.modulus = modulus;
+            this.basePower = basePower;
+            this.tBrentKung = (int) Math.sqrt(poly.degree);
+
+            giantSteps.add(MutableLongPoly.createMonomial(1, 1)); // <- add x
+            giantSteps.add(basePower); // <- add x^p mod poly
+        }
+
+        MutableLongPoly get(int j) {
+            if (j < giantSteps.size())
+                return giantSteps.get(j);
+            if (hPowers.isEmpty())
+                hPowers(basePower, poly, invMod, modulus, tBrentKung, hPowers);
+
+            MutableLongPoly xPowerBig = giantSteps.get(giantSteps.size() - 1);
+            for (int i = giantSteps.size(); i <= j; ++i)
+                giantSteps.add(xPowerBig = BrentKung(xPowerBig, poly, invMod, modulus, tBrentKung, hPowers));
+            return xPowerBig;
+        }
+    }
+
+    static final class DDFSteps2 {
+        final int B, l, m;
+        final ArrayList<MutableLongPoly> babySteps;
+        final GiantSteps giantSteps;
+        final InverseModMonomial invMod;
+
+        public DDFSteps2(int b, int l, int m, ArrayList<MutableLongPoly> babySteps, GiantSteps giantSteps, InverseModMonomial invMod) {
+            B = b;
+            this.l = l;
+            this.m = m;
+            this.babySteps = babySteps;
+            this.giantSteps = giantSteps;
+            this.invMod = invMod;
+        }
+    }
+
+    static DDFSteps2 ShoupDDF2(MutableLongPoly poly, long modulus) {
+        int n = poly.degree;
         int B = (int) Math.floor(n / 2.);
         int l = (int) Math.floor(Math.sqrt(B));
         int m = (int) Math.ceil(1.0 * B / l);
 
+        InverseModMonomial invMod = fastDivisionPreConditioning(poly, modulus);
+        ArrayList<MutableLongPoly> xPowers = xPowers(poly, invMod, modulus);
 
-        System.out.println(n);
-        System.out.println(B);
-        System.out.println(l);
-        System.out.println(m);
-        System.out.println(l * m);
+        //baby steps
+        ArrayList<MutableLongPoly> babySteps = new ArrayList<>();
+        babySteps.add(MutableLongPoly.createMonomial(1, 1)); // <- add x
+        MutableLongPoly xPower = xPowers.get(1); // x^p mod poly
+        babySteps.add(xPower); // <- add x^p mod poly
+        for (int i = 0; i <= l - 2; ++i)
+            babySteps.add(xPower = raiseWithXPowers(xPower, poly, invMod, modulus, xPowers));
+
+        // <- xPower = x^(p^l) mod poly
+        return new DDFSteps2(B, l, m, babySteps, new GiantSteps(poly, invMod, modulus, xPower), invMod);
+    }
+
+    static final class IBases {
+        final DDFSteps2 steps;
+        final long modulus;
+        final MutableLongPoly poly;
+
+        public IBases(DDFSteps2 steps, long modulus, MutableLongPoly poly) {
+            this.steps = steps;
+            this.modulus = modulus;
+            this.poly = poly;
+        }
+
+        final ArrayList<MutableLongPoly> iBases = new ArrayList<>();
+
+        public MutableLongPoly get(int k) {
+            if (k < iBases.size())
+                return iBases.get(k);
+
+            for (int j = iBases.size(); j <= k; ++j) {
+                MutableLongPoly iBase = MutableLongPoly.one();
+                for (int i = 0; i <= steps.l - 1; ++i) {
+                    MutableLongPoly tmp = steps.giantSteps.get(j).clone().subtract(steps.babySteps.get(i), modulus);
+                    iBase = polyMultiplyMod(iBase, tmp, poly, steps.invMod, modulus, false);
+                }
+                iBases.add(iBase);
+            }
+            return iBases.get(k);
+        }
+    }
+
+    static ArrayList<MutableLongPoly> ShoupDDFFactorization2(MutableLongPoly poly, long modulus) {
+        return ShoupDDFFactorization2(poly, modulus, ShoupDDF2(poly, modulus));
+    }
+
+
+    private static ArrayList<MutableLongPoly> ShoupDDFFactorization2(MutableLongPoly poly, long modulus, DDFSteps2 steps) {
+        IBases iBases = new IBases(steps, modulus, poly);
+
+        ArrayList<MutableLongPoly> fList = new ArrayList<>();
+        for (int i = 0; i <= poly.degree; ++i)
+            fList.add(MutableLongPoly.one());
+
+        MutableLongPoly current = poly.clone();
+        for (int j = 1; j <= steps.m; ++j) {
+            MutableLongPoly gcd = PolynomialGCD(current, iBases.get(j), modulus);
+            if (gcd.isConstant())
+                continue;
+            current = quotient(current, gcd, modulus, false);
+            for (int i = steps.l - 1; i >= 0; --i) {
+                MutableLongPoly tmp = PolynomialGCD(gcd, steps.giantSteps.get(j).clone().subtract(steps.babySteps.get(i), modulus), modulus);
+                fList.set(steps.l * j - i, tmp);
+                gcd = quotient(gcd, tmp, modulus, false);
+            }
+        }
+        if (!current.isOne())
+            fList.set(current.degree - 1, current);
+
+        for (int i = fList.size() - 1; i >= 0; --i)
+            if (fList.get(i).isOne())
+                fList.remove(i);
+
+        return fList;
+    }
+
+    @Test
+    public void testGiantSteps() throws Exception {
+        MutableLongPoly poly = MutableLongPoly.create(1, 2, 3, 4, 5, 5, 6, 5, 4, 3, 2, 1);
+        long modulus = 3;
+        int l = 3;
+        MutableLongPoly x = MutableLongPoly.createMonomial(1, 1);
+        MutableLongPoly basePower = polyPowMod(x, (int) LongArithmetics.pow(modulus, l), poly, modulus, true);
+        InverseModMonomial invMod = fastDivisionPreConditioning(poly, modulus);
+        GiantSteps giantSteps = new GiantSteps(poly, invMod, modulus, basePower);
+
+        for (int j = 0; j < 7; j++) {
+            MutableLongPoly expected = polyPowMod(x, LongArithmetics.toInt(LongArithmetics.pow(modulus, l * j)), poly, modulus, true);
+            assertEquals(expected, giantSteps.get(j));
+        }
+    }
+
+    @Test
+    public void testDDF3_2() throws Exception {
+        Well1024a rnd = new Well1024a();
+        long modulus = 17;
+        for (int i = 0; i < 1000; i++) {
+            System.out.println("====");
+            MutableLongPoly poly = RandomPolynomials.randomMonicPoly(250, modulus, rnd);
+            long start = System.nanoTime();
+            ArrayList<MutableLongPoly> f1 = ShoupDDFFactorization(poly, modulus);
+            System.out.println(System.nanoTime() - start);
+
+            start = System.nanoTime();
+            ArrayList<MutableLongPoly> f2 = ShoupDDFFactorization2(poly, modulus);
+            System.out.println(System.nanoTime() - start);
+
+            start = System.nanoTime();
+            DistinctDegreeFactorization(poly, modulus);
+            System.out.println(System.nanoTime() - start);
+
+            assertEquals(f1, f2);
+        }
+//        long modulus = bigModulus;
+//        MutableLongPoly poly = bigPoly;//.clone().multiply(bigPoly, modulus).square(modulus).add(bigPoly.cut(10), modulus);
+//        poly.modulus(modulus).monic(modulus);
+//        System.out.println(poly);
+//        System.out.println(poly.degree);
+//
+//        ArrayList<MutableLongPoly> f = ShoupDDFFactorization2(poly, modulus);
+//        System.out.println(f.size());
+//        MutableLongPoly e = MutableLongPoly.one();
+//        for (MutableLongPoly factor : f) {
+//            System.out.println(factor);
+//            e.multiply(factor, modulus);
+//        }
+//        System.out.println(e.equals(poly));
     }
 
     static DDFSteps ShoupDDF(MutableLongPoly poly, long modulus) {
-//        int B = poly.degree / 2;
-//        int l = (int) Math.sqrt(B);
-//        int m = B / l;
-
         int n = poly.degree;
         int B = (int) Math.floor(n / 2.);
-//        int l = (int) Math.floor(Math.sqrt(B));
-//        int m = (int) Math.ceil(1.0 * B / l);
-        int l = (int) Math.ceil(Math.sqrt(n));
-        int m = (int) Math.ceil(1.0 * n / 2.0 / l);
+        int l = (int) Math.floor(Math.sqrt(B));
+        int m = (int) Math.ceil(1.0 * B / l);
 
         InverseModMonomial invMod = fastDivisionPreConditioning(poly, modulus);
         ArrayList<MutableLongPoly> xPowers = xPowers(poly, invMod, modulus);
@@ -157,10 +332,10 @@ public class LargeDDFtest2 {
         giantSteps.add(MutableLongPoly.createMonomial(1, 1)); // <- add x
         giantSteps.add(xPower);
         MutableLongPoly xPowerBig = xPower;
-        int tBrendKung = (int) Math.sqrt(poly.degree);
-        ArrayList<MutableLongPoly> hPowers = hPowers(xPowerBig, poly, invMod, modulus, tBrendKung);
+        int tBrentKung = (int) Math.sqrt(poly.degree);
+        ArrayList<MutableLongPoly> hPowers = hPowers(xPowerBig, poly, invMod, modulus, tBrentKung);
         for (int i = 0; i < m - 1; ++i)
-            giantSteps.add(xPowerBig = BrentKung(xPowerBig, poly, invMod, modulus, tBrendKung, hPowers));
+            giantSteps.add(xPowerBig = BrentKung(xPowerBig, poly, invMod, modulus, tBrentKung, hPowers));
 
         return new DDFSteps(B, l, m, babySteps, giantSteps, invMod);
     }
@@ -171,7 +346,6 @@ public class LargeDDFtest2 {
 
     private static ArrayList<MutableLongPoly> ShoupDDFFactorization(MutableLongPoly poly, long modulus, DDFSteps steps) {
         ArrayList<MutableLongPoly> iBases = new ArrayList<>();
-//        iBases.add(MutableLongPoly.zero());
         for (int j = 0; j <= steps.m; ++j) {
             MutableLongPoly iBase = MutableLongPoly.one();
             for (int i = 0; i <= steps.l - 1; ++i) {
@@ -271,19 +445,24 @@ public class LargeDDFtest2 {
     @Test
     public void testDDF3() throws Exception {
         long modulus = bigModulus;
+//        System.out.println(bigPoly);
 //        MutableLongPoly poly = RandomPolynomials.randomMonicPoly(12, bigModulus, new Well1024a()).multiply(RandomPolynomials.randomMonicPoly(250,modulus,new Well1024a()));
-        MutableLongPoly poly = bigPoly;
+        MutableLongPoly poly = bigPoly;//.clone().multiply(bigPoly, modulus).square(modulus).add(bigPoly.cut(10), modulus);
+//        poly = polyPowMod(poly, 10, modulus, false).add(poly.clone().cut(100), modulus).add(MutableLongPoly.one(), modulus);
+//        poly = poly.cut(3000);
         poly.modulus(modulus).monic(modulus);
+        System.out.println(poly);
+        System.out.println(poly.degree);
 
         DDFSteps ddfSteps = ShoupDDF(poly, modulus);
-        System.out.println(ddfSteps.l);
         ArrayList<MutableLongPoly> f = ShoupDDFFactorization(poly, modulus, ddfSteps);
         System.out.println(f.size());
-        System.out.println(f);
+//        System.out.println(f);
         MutableLongPoly e = MutableLongPoly.one();
-        for (MutableLongPoly factor : f)
+        for (MutableLongPoly factor : f) {
+            System.out.println(factor);
             e.multiply(factor, modulus);
-
+        }
         System.out.println(e.equals(poly));
     }
 }
