@@ -218,7 +218,7 @@ import static cc.r2.core.number.BigInteger.LONG_MASK;
  * @see java.util.SortedMap
  * @see java.util.SortedSet
  */
-public class BigDecimal extends Number implements FieldElement<BigDecimal> {
+public class BigDecimal extends Number {
     /**
      * The unscaled value of this BigDecimal, as returned by {@link
      * #unscaledValue}.
@@ -5255,20 +5255,5 @@ public class BigDecimal extends Number implements FieldElement<BigDecimal> {
             BigInteger scaledDivisor = bigMultiplyPowerTen(divisor, raise);
             return divideAndRound(dividend, scaledDivisor, scale, roundingMode, scale);
         }
-    }
-
-    @Override
-    public BigDecimal getZero() {
-        return ZERO;
-    }
-
-    @Override
-    public BigDecimal getOne() {
-        return ONE;
-    }
-
-    @Override
-    public Ring<BigDecimal> getRing() {
-        return BigDecimalField.BigDecimalField;
     }
 }
