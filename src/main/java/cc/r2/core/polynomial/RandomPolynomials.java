@@ -47,7 +47,7 @@ public final class RandomPolynomials {
             if (rnd.nextBoolean() && rnd.nextBoolean())
                 data[i] = data[i].negate();
         }
-        while (data[degree].isZero())
+        while (data[degree].equals(BigInteger.ZERO))
             data[degree] = BigInteger.valueOf(rndd.nextLong(0, bound));
         return data;
     }

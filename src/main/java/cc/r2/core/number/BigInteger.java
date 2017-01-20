@@ -122,7 +122,7 @@ import java.util.concurrent.*;
  * @since JDK1.1
  */
 
-public class BigInteger extends Number implements EuclideanRingElement<BigInteger> {
+public class BigInteger extends Number {
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
      * 1 for positive.  Note that the BigInteger zero <i>must</i> have
@@ -571,24 +571,24 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
     // Multiply x array times word y in place, and add word z
     private static void destructiveMulAdd(int[] x, int y, int z) {
         // Perform the multiplication word by word
-        long ylong = y & LONG_MASK;
-        long zlong = z & LONG_MASK;
+        long ylong = y&LONG_MASK;
+        long zlong = z&LONG_MASK;
         int len = x.length;
 
         long product = 0;
         long carry = 0;
         for (int i = len - 1; i >= 0; i--) {
-            product = ylong * (x[i] & LONG_MASK) + carry;
+            product = ylong * (x[i]&LONG_MASK) + carry;
             x[i] = (int) product;
             carry = product >>> 32;
         }
 
         // Perform the addition
-        long sum = (x[len - 1] & LONG_MASK) + zlong;
+        long sum = (x[len - 1]&LONG_MASK) + zlong;
         x[len - 1] = (int) sum;
         carry = sum >>> 32;
         for (int i = len - 2; i >= 0; i--) {
-            sum = (x[i] & LONG_MASK) + carry;
+            sum = (x[i]&LONG_MASK) + carry;
             x[i] = (int) sum;
             carry = sum >>> 32;
         }
@@ -746,14 +746,14 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
     private static BigInteger smallPrime(int bitLength, int certainty, Random rnd) {
         int magLen = (bitLength + 31) >>> 5;
         int temp[] = new int[magLen];
-        int highBit = 1 << ((bitLength + 31) & 0x1f);  // High bit of high int
+        int highBit = 1 << ((bitLength + 31)&0x1f);  // High bit of high int
         int highMask = (highBit << 1) - 1;  // Bits to keep in high int
 
         while (true) {
             // Construct a candidate
             for (int i = 0; i < magLen; i++)
                 temp[i] = rnd.nextInt();
-            temp[0] = (temp[0] & highMask) | highBit;  // Ensure exact length
+            temp[0] = (temp[0]&highMask)|highBit;  // Ensure exact length
             if (bitLength > 2)
                 temp[magLen - 1] |= 1;  // Make odd if bitlen > 2
 
@@ -967,34 +967,34 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         // Make p positive
         if (p < 0) {
             p = -p;
-            int n8 = u & 7;
+            int n8 = u&7;
             if ((n8 == 3) || (n8 == 7))
                 j = -j; // 3 (011) or 7 (111) mod 8
         }
 
         // Get rid of factors of 2 in p
-        while ((p & 3) == 0)
+        while ((p&3) == 0)
             p >>= 2;
-        if ((p & 1) == 0) {
+        if ((p&1) == 0) {
             p >>= 1;
-            if (((u ^ (u >> 1)) & 2) != 0)
+            if (((u^(u >> 1))&2) != 0)
                 j = -j; // 3 (011) or 5 (101) mod 8
         }
         if (p == 1)
             return j;
         // Then, apply quadratic reciprocity
-        if ((p & u & 2) != 0)   // p = u = 3 (mod 4)?
+        if ((p&u&2) != 0)   // p = u = 3 (mod 4)?
             j = -j;
         // And reduce u mod p
         u = n.mod(BigInteger.valueOf(p)).intValue();
 
         // Now compute Jacobi(u,p), u < p
         while (u != 0) {
-            while ((u & 3) == 0)
+            while ((u&3) == 0)
                 u >>= 2;
-            if ((u & 1) == 0) {
+            if ((u&1) == 0) {
                 u >>= 1;
-                if (((p ^ (p >> 1)) & 2) != 0)
+                if (((p^(p >> 1))&2) != 0)
                     j = -j;     // 3 (011) or 5 (101) mod 8
             }
             if (u == 1)
@@ -1004,7 +1004,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             int t = u;
             u = p;
             p = t;
-            if ((u & p & 2) != 0) // u = p = 3 (mod 4)?
+            if ((u&p&2) != 0) // u = p = 3 (mod 4)?
                 j = -j;
             // Now u >= p, so it can be reduced
             u %= p;
@@ -1382,20 +1382,20 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int highWord = (int) (val >>> 32);
         if (highWord == 0) {
             result = new int[xIndex];
-            sum = (x[--xIndex] & LONG_MASK) + val;
+            sum = (x[--xIndex]&LONG_MASK) + val;
             result[xIndex] = (int) sum;
         } else {
             if (xIndex == 1) {
                 result = new int[2];
-                sum = val + (x[0] & LONG_MASK);
+                sum = val + (x[0]&LONG_MASK);
                 result[1] = (int) sum;
                 result[0] = (int) (sum >>> 32);
                 return result;
             } else {
                 result = new int[xIndex];
-                sum = (x[--xIndex] & LONG_MASK) + (val & LONG_MASK);
+                sum = (x[--xIndex]&LONG_MASK) + (val&LONG_MASK);
                 result[xIndex] = (int) sum;
-                sum = (x[--xIndex] & LONG_MASK) + (highWord & LONG_MASK) + (sum >>> 32);
+                sum = (x[--xIndex]&LONG_MASK) + (highWord&LONG_MASK) + (sum >>> 32);
                 result[xIndex] = (int) sum;
             }
         }
@@ -1434,13 +1434,13 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int result[] = new int[xIndex];
         long sum = 0;
         if (yIndex == 1) {
-            sum = (x[--xIndex] & LONG_MASK) + (y[0] & LONG_MASK);
+            sum = (x[--xIndex]&LONG_MASK) + (y[0]&LONG_MASK);
             result[xIndex] = (int) sum;
         } else {
             // Add common parts of both numbers
             while (yIndex > 0) {
-                sum = (x[--xIndex] & LONG_MASK) +
-                        (y[--yIndex] & LONG_MASK) + (sum >>> 32);
+                sum = (x[--xIndex]&LONG_MASK) +
+                        (y[--yIndex]&LONG_MASK) + (sum >>> 32);
                 result[xIndex] = (int) sum;
             }
         }
@@ -1467,12 +1467,12 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int highWord = (int) (val >>> 32);
         if (highWord == 0) {
             int result[] = new int[1];
-            result[0] = (int) (val - (little[0] & LONG_MASK));
+            result[0] = (int) (val - (little[0]&LONG_MASK));
             return result;
         } else {
             int result[] = new int[2];
             if (little.length == 1) {
-                long difference = ((int) val & LONG_MASK) - (little[0] & LONG_MASK);
+                long difference = ((int) val&LONG_MASK) - (little[0]&LONG_MASK);
                 result[1] = (int) difference;
                 // Subtract remainder of longer number while borrow propagates
                 boolean borrow = (difference >> 32 != 0);
@@ -1483,9 +1483,9 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
                 }
                 return result;
             } else { // little.length == 2
-                long difference = ((int) val & LONG_MASK) - (little[1] & LONG_MASK);
+                long difference = ((int) val&LONG_MASK) - (little[1]&LONG_MASK);
                 result[1] = (int) difference;
-                difference = (highWord & LONG_MASK) - (little[0] & LONG_MASK) + (difference >> 32);
+                difference = (highWord&LONG_MASK) - (little[0]&LONG_MASK) + (difference >> 32);
                 result[0] = (int) difference;
                 return result;
             }
@@ -1506,12 +1506,12 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         long difference = 0;
 
         if (highWord == 0) {
-            difference = (big[--bigIndex] & LONG_MASK) - val;
+            difference = (big[--bigIndex]&LONG_MASK) - val;
             result[bigIndex] = (int) difference;
         } else {
-            difference = (big[--bigIndex] & LONG_MASK) - (val & LONG_MASK);
+            difference = (big[--bigIndex]&LONG_MASK) - (val&LONG_MASK);
             result[bigIndex] = (int) difference;
-            difference = (big[--bigIndex] & LONG_MASK) - (highWord & LONG_MASK) + (difference >> 32);
+            difference = (big[--bigIndex]&LONG_MASK) - (highWord&LONG_MASK) + (difference >> 32);
             result[bigIndex] = (int) difference;
         }
 
@@ -1564,8 +1564,8 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
 
         // Subtract common parts of both numbers
         while (littleIndex > 0) {
-            difference = (big[--bigIndex] & LONG_MASK) -
-                    (little[--littleIndex] & LONG_MASK) +
+            difference = (big[--bigIndex]&LONG_MASK) -
+                    (little[--littleIndex]&LONG_MASK) +
                     (difference >> 32);
             result[bigIndex] = (int) difference;
         }
@@ -1662,10 +1662,10 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int xlen = x.length;
         int[] rmag = new int[xlen + 1];
         long carry = 0;
-        long yl = y & LONG_MASK;
+        long yl = y&LONG_MASK;
         int rstart = rmag.length - 1;
         for (int i = xlen - 1; i >= 0; i--) {
-            long product = (x[i] & LONG_MASK) * yl + carry;
+            long product = (x[i]&LONG_MASK) * yl + carry;
             rmag[rstart--] = (int) product;
             carry = product >>> 32;
         }
@@ -1690,7 +1690,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         if (v < 0)
             v = -v;
         long dh = v >>> 32;      // higher order bits
-        long dl = v & LONG_MASK; // lower order bits
+        long dl = v&LONG_MASK; // lower order bits
 
         int xlen = mag.length;
         int[] value = mag;
@@ -1698,7 +1698,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         long carry = 0;
         int rstart = rmag.length - 1;
         for (int i = xlen - 1; i >= 0; i--) {
-            long product = (value[i] & LONG_MASK) * dl + carry;
+            long product = (value[i]&LONG_MASK) * dl + carry;
             rmag[rstart--] = (int) product;
             carry = product >>> 32;
         }
@@ -1707,8 +1707,8 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             carry = 0;
             rstart = rmag.length - 2;
             for (int i = xlen - 1; i >= 0; i--) {
-                long product = (value[i] & LONG_MASK) * dh +
-                        (rmag[rstart] & LONG_MASK) + carry;
+                long product = (value[i]&LONG_MASK) * dh +
+                        (rmag[rstart]&LONG_MASK) + carry;
                 rmag[rstart--] = (int) product;
                 carry = product >>> 32;
             }
@@ -1732,8 +1732,8 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
 
         long carry = 0;
         for (int j = ystart, k = ystart + 1 + xstart; j >= 0; j--, k--) {
-            long product = (y[j] & LONG_MASK) *
-                    (x[xstart] & LONG_MASK) + carry;
+            long product = (y[j]&LONG_MASK) *
+                    (x[xstart]&LONG_MASK) + carry;
             z[k] = (int) product;
             carry = product >>> 32;
         }
@@ -1742,9 +1742,9 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         for (int i = xstart - 1; i >= 0; i--) {
             carry = 0;
             for (int j = ystart, k = ystart + 1 + i; j >= 0; j--, k--) {
-                long product = (y[j] & LONG_MASK) *
-                        (x[i] & LONG_MASK) +
-                        (z[k] & LONG_MASK) + carry;
+                long product = (y[j]&LONG_MASK) *
+                        (x[i]&LONG_MASK) +
+                        (z[k]&LONG_MASK) + carry;
                 z[k] = (int) product;
                 carry = product >>> 32;
             }
@@ -1954,7 +1954,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         long x, w, q, borrow;
         borrow = 0L;
         for (int i = len - 1; i >= 0; i--) {
-            x = (mag[i] & LONG_MASK);
+            x = (mag[i]&LONG_MASK);
             w = x - borrow;
             if (borrow > x) {      // Did we make the number go negative?
                 borrow = 1L;
@@ -1965,7 +1965,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             // 0xAAAAAAAB is the modular inverse of 3 (mod 2^32).  Thus,
             // the effect of this is to divide by 3 (mod 2^32).
             // This is much faster than division on most architectures.
-            q = (w * 0xAAAAAAABL) & LONG_MASK;
+            q = (w * 0xAAAAAAABL)&LONG_MASK;
             result[i] = (int) q;
 
             // Now check the borrow. The second check can of course be
@@ -2251,7 +2251,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         if (numThreads > 1)
             try {
                 dftParallel(A, omega, numThreads);
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException|ExecutionException e) {
                 throw new ArithmeticException(e.getLocalizedMessage());
             }
         else
@@ -2491,7 +2491,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         if (numThreads > 1)
             try {
                 idftParallel(A, omega, numThreads);
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException|ExecutionException e) {
                 throw new ArithmeticException(e.getLocalizedMessage());
             }
         else
@@ -2713,7 +2713,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             try {
                 for (Future<?> future : pending)
                     future.get();
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException|ExecutionException e) {
                 throw new ArithmeticException(e.getLocalizedMessage());
             }
         } else
@@ -2749,7 +2749,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             try {
                 for (Future<?> future : pending)
                     future.get();
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException|ExecutionException e) {
                 throw new ArithmeticException(e.getLocalizedMessage());
             }
         } else
@@ -2948,7 +2948,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         while (aIdx >= 0) {
             long[] digits = new long[targetPieceSize];
             for (int i = 0; i < sourcePieceSize; i += 2)
-                digits[targetPieceSize - sourcePieceSize / 2 + i / 2] = (((long) a[aIdx + i]) << 32) | (a[aIdx + i + 1] & 0xFFFFFFFFL);
+                digits[targetPieceSize - sourcePieceSize / 2 + i / 2] = (((long) a[aIdx + i]) << 32)|(a[aIdx + i + 1]&0xFFFFFFFFL);
             ai[pieceIdx] = new MutableModFn(digits);
             aIdx -= sourcePieceSize;
             pieceIdx++;
@@ -2956,14 +2956,14 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         long[] digits = new long[targetPieceSize];
         if ((a.length % sourcePieceSize) % 2 == 0)
             for (int i = 0; i < a.length % sourcePieceSize; i += 2)
-                digits[targetPieceSize - (a.length % sourcePieceSize) / 2 + i / 2] = (((long) a[i]) << 32) | (a[i + 1] & 0xFFFFFFFFL);
+                digits[targetPieceSize - (a.length % sourcePieceSize) / 2 + i / 2] = (((long) a[i]) << 32)|(a[i + 1]&0xFFFFFFFFL);
         else {
             for (int i = 0; i < a.length % sourcePieceSize - 2; i += 2) {
                 digits[targetPieceSize - (a.length % sourcePieceSize) / 2 + i / 2] = ((long) a[i + 1]) << 32;
-                digits[targetPieceSize - (a.length % sourcePieceSize) / 2 + i / 2 - 1] |= a[i] & 0xFFFFFFFFL;
+                digits[targetPieceSize - (a.length % sourcePieceSize) / 2 + i / 2 - 1] |= a[i]&0xFFFFFFFFL;
             }
             // the remaining half-long
-            digits[targetPieceSize - 1] |= a[a.length % sourcePieceSize - 1] & 0xFFFFFFFFL;
+            digits[targetPieceSize - 1] |= a[a.length % sourcePieceSize - 1]&0xFFFFFFFFL;
         }
         ai[pieceIdx] = new MutableModFn(digits);
         while (++pieceIdx < numPieces)
@@ -3060,9 +3060,9 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         // Store the squares, right shifted one bit (i.e., divided by 2)
         int lastProductLowWord = 0;
         for (int j = 0, i = 0; j < len; j++) {
-            long piece = (x[j] & LONG_MASK);
+            long piece = (x[j]&LONG_MASK);
             long product = piece * piece;
-            z[i++] = (lastProductLowWord << 31) | (int) (product >>> 33);
+            z[i++] = (lastProductLowWord << 31)|(int) (product >>> 33);
             z[i++] = (int) (product >>> 1);
             lastProductLowWord = (int) product;
         }
@@ -3076,7 +3076,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
 
         // Shift back up and set low bit
         primitiveLeftShift(z, zlen, 1);
-        z[zlen - 1] |= x[len - 1] & 1;
+        z[zlen - 1] |= x[len - 1]&1;
 
         return z;
     }
@@ -3666,7 +3666,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             partToSquare = partToSquare.shiftRight(powersOfTwo);
             remainingBits = partToSquare.bitLength();
             if (remainingBits == 1) {  // Nothing left but +/- 1?
-                if (signum < 0 && (exponent & 1) == 1) {
+                if (signum < 0 && (exponent&1) == 1) {
                     return NEGATIVE_ONE.shiftLeft(powersOfTwo * exponent);
                 } else {
                     return ONE.shiftLeft(powersOfTwo * exponent);
@@ -3675,7 +3675,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         } else {
             remainingBits = partToSquare.bitLength();
             if (remainingBits == 1) { // Nothing left but +/- 1?
-                if (signum < 0 && (exponent & 1) == 1) {
+                if (signum < 0 && (exponent&1) == 1) {
                     return NEGATIVE_ONE;
                 } else {
                     return ONE;
@@ -3692,15 +3692,15 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         // See if the result will safely fit into a long. (Largest 2^63-1)
         if (partToSquare.mag.length == 1 && scaleFactor <= 62) {
             // Small number algorithm.  Everything fits into a long.
-            int newSign = (signum < 0 && (exponent & 1) == 1 ? -1 : 1);
+            int newSign = (signum < 0 && (exponent&1) == 1 ? -1 : 1);
             long result = 1;
-            long baseToPow2 = partToSquare.mag[0] & LONG_MASK;
+            long baseToPow2 = partToSquare.mag[0]&LONG_MASK;
 
             int workingExponent = exponent;
 
             // Perform exponentiation using repeated squaring trick
             while (workingExponent != 0) {
-                if ((workingExponent & 1) == 1) {
+                if ((workingExponent&1) == 1) {
                     result = result * baseToPow2;
                 }
 
@@ -3728,7 +3728,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             int workingExponent = exponent;
             // Perform exponentiation using repeated squaring trick
             while (workingExponent != 0) {
-                if ((workingExponent & 1) == 1) {
+                if ((workingExponent&1) == 1) {
                     answer = answer.multiply(partToSquare);
                 }
 
@@ -3742,39 +3742,12 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
                 answer = answer.shiftLeft(powersOfTwo * exponent);
             }
 
-            if (signum < 0 && (exponent & 1) == 1) {
+            if (signum < 0 && (exponent&1) == 1) {
                 return answer.negate();
             } else {
                 return answer;
             }
         }
-    }
-
-    @Override
-    public BigInteger[] gcdExtended(BigInteger b) {
-        BigInteger s = BigInteger.ZERO, old_s = BigInteger.ONE;
-        BigInteger t = BigInteger.ONE, old_t = BigInteger.ZERO;
-        BigInteger r = b, old_r = this;
-
-        BigInteger q;
-        BigInteger tmp;
-        while (!r.isZero()) {
-            q = old_r.divide(r);
-
-            tmp = old_r;
-            old_r = r;
-            r = tmp.subtract(q.multiply(r));
-
-            tmp = old_s;
-            old_s = s;
-            s = tmp.subtract(q.multiply(s));
-
-            tmp = old_t;
-            old_t = t;
-            t = tmp.subtract(q.multiply(t));
-        }
-        assert old_r.equals(this.multiply(old_s).add(b.multiply(old_t)));
-        return new BigInteger[]{old_r, old_s, old_t};
     }
 
     /**
@@ -3812,7 +3785,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
      */
     private static int[] leftShift(int[] a, int len, int n) {
         int nInts = n >>> 5;
-        int nBits = n & 0x1F;
+        int nBits = n&0x1F;
         int bitsInHighWord = bitLengthForInt(a[0]);
 
         // If shift can be done without recopy, do so
@@ -3840,7 +3813,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         for (int i = len - 1, c = a[i]; i > 0; i--) {
             int b = c;
             c = a[i - 1];
-            a[i] = (c << n2) | (b >>> n);
+            a[i] = (c << n2)|(b >>> n);
         }
         a[0] >>>= n;
     }
@@ -3854,7 +3827,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         for (int i = 0, c = a[i], m = i + len - 1; i < m; i++) {
             int b = c;
             c = a[i + 1];
-            a[i] = (b << n) | (c >>> n2);
+            a[i] = (b << n)|(c >>> n2);
         }
         a[len - 1] <<= n;
     }
@@ -4133,13 +4106,13 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         }
 
         // Pre load the window that slides over the exponent
-        int bitpos = 1 << ((ebits - 1) & (32 - 1));
+        int bitpos = 1 << ((ebits - 1)&(32 - 1));
 
         int buf = 0;
         int elen = exp.length;
         int eIndex = 0;
         for (int i = 0; i <= wbits; i++) {
-            buf = (buf << 1) | (((exp[eIndex] & bitpos) != 0) ? 1 : 0);
+            buf = (buf << 1)|(((exp[eIndex]&bitpos) != 0) ? 1 : 0);
             bitpos >>>= 1;
             if (bitpos == 0) {
                 eIndex++;
@@ -4155,7 +4128,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         boolean isone = true;
 
         multpos = ebits - wbits;
-        while ((buf & 1) == 0) {
+        while ((buf&1) == 0) {
             buf >>>= 1;
             multpos++;
         }
@@ -4173,7 +4146,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             buf <<= 1;
 
             if (elen != 0) {
-                buf |= ((exp[eIndex] & bitpos) != 0) ? 1 : 0;
+                buf |= ((exp[eIndex]&bitpos) != 0) ? 1 : 0;
                 bitpos >>>= 1;
                 if (bitpos == 0) {
                     eIndex++;
@@ -4183,9 +4156,9 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             }
 
             // Examine the window for pending multiplies
-            if ((buf & tblmask) != 0) {
+            if ((buf&tblmask) != 0) {
                 multpos = ebits - wbits;
-                while ((buf & 1) == 0) {
+                while ((buf&1) == 0) {
                     buf >>>= 1;
                     multpos++;
                 }
@@ -4266,8 +4239,8 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
      */
     private static int intArrayCmpToLen(int[] arg1, int[] arg2, int len) {
         for (int i = 0; i < len; i++) {
-            long b1 = arg1[i] & LONG_MASK;
-            long b2 = arg2[i] & LONG_MASK;
+            long b1 = arg1[i]&LONG_MASK;
+            long b2 = arg2[i]&LONG_MASK;
             if (b1 < b2)
                 return -1;
             if (b1 > b2)
@@ -4283,8 +4256,8 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         long sum = 0;
 
         while (--len >= 0) {
-            sum = (a[len] & LONG_MASK) -
-                    (b[len] & LONG_MASK) + (sum >> 32);
+            sum = (a[len]&LONG_MASK) -
+                    (b[len]&LONG_MASK) + (sum >> 32);
             a[len] = (int) sum;
         }
 
@@ -4295,13 +4268,13 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
      * Multiply an array by one word k and add to result, return the carry
      */
     static int mulAdd(int[] out, int[] in, int offset, int len, int k) {
-        long kLong = k & LONG_MASK;
+        long kLong = k&LONG_MASK;
         long carry = 0;
 
         offset = out.length - offset - 1;
         for (int j = len - 1; j >= 0; j--) {
-            long product = (in[j] & LONG_MASK) * kLong +
-                    (out[offset] & LONG_MASK) + carry;
+            long product = (in[j]&LONG_MASK) * kLong +
+                    (out[offset]&LONG_MASK) + carry;
             out[offset--] = (int) product;
             carry = product >>> 32;
         }
@@ -4314,7 +4287,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
      */
     static int addOne(int[] a, int offset, int mlen, int carry) {
         offset = a.length - 1 - mlen - offset;
-        long t = (a[offset] & LONG_MASK) + (carry & LONG_MASK);
+        long t = (a[offset]&LONG_MASK) + (carry&LONG_MASK);
 
         a[offset] = (int) t;
         if ((t >>> 32) == 0)
@@ -4447,7 +4420,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
      */
     private static int[] shiftLeft(int[] mag, int n) {
         int nInts = n >>> 5;
-        int nBits = n & 0x1f;
+        int nBits = n&0x1f;
         int magLen = mag.length;
         int newMag[] = null;
 
@@ -4466,7 +4439,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             }
             int j = 0;
             while (j < magLen - 1)
-                newMag[i++] = mag[j++] << nBits | mag[j] >>> nBits2;
+                newMag[i++] = mag[j++] << nBits|mag[j] >>> nBits2;
             newMag[i] = mag[j] << nBits;
         }
         return newMag;
@@ -4506,7 +4479,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
      */
     private BigInteger shiftRightImpl(int n) {
         int nInts = n >>> 5;
-        int nBits = n & 0x1f;
+        int nBits = n&0x1f;
         int magLen = mag.length;
         int newMag[] = null;
 
@@ -4530,7 +4503,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             int nBits2 = 32 - nBits;
             int j = 0;
             while (j < magLen - nInts - 1)
-                newMag[i++] = (mag[j++] << nBits2) | (mag[j] >>> nBits);
+                newMag[i++] = (mag[j++] << nBits2)|(mag[j] >>> nBits);
         }
 
         if (signum < 0) {
@@ -4573,7 +4546,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i = 0; i < result.length; i++)
             result[i] = (getInt(result.length - i - 1)
-                    & val.getInt(result.length - i - 1));
+                    &val.getInt(result.length - i - 1));
 
         return valueOf(result);
     }
@@ -4590,7 +4563,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i = 0; i < result.length; i++)
             result[i] = (getInt(result.length - i - 1)
-                    | val.getInt(result.length - i - 1));
+                    |val.getInt(result.length - i - 1));
 
         return valueOf(result);
     }
@@ -4607,7 +4580,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i = 0; i < result.length; i++)
             result[i] = (getInt(result.length - i - 1)
-                    ^ val.getInt(result.length - i - 1));
+                    ^val.getInt(result.length - i - 1));
 
         return valueOf(result);
     }
@@ -4641,7 +4614,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int[] result = new int[Math.max(intLength(), val.intLength())];
         for (int i = 0; i < result.length; i++)
             result[i] = (getInt(result.length - i - 1)
-                    & ~val.getInt(result.length - i - 1));
+                    &~val.getInt(result.length - i - 1));
 
         return valueOf(result);
     }
@@ -4661,7 +4634,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         if (n < 0)
             throw new ArithmeticException("Negative bit address");
 
-        return (getInt(n >>> 5) & (1 << (n & 31))) != 0;
+        return (getInt(n >>> 5)&(1 << (n&31))) != 0;
     }
 
     /**
@@ -4682,7 +4655,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         for (int i = 0; i < result.length; i++)
             result[result.length - i - 1] = getInt(i);
 
-        result[result.length - intNum - 1] |= (1 << (n & 31));
+        result[result.length - intNum - 1] |= (1 << (n&31));
 
         return valueOf(result);
     }
@@ -4706,7 +4679,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         for (int i = 0; i < result.length; i++)
             result[result.length - i - 1] = getInt(i);
 
-        result[result.length - intNum - 1] &= ~(1 << (n & 31));
+        result[result.length - intNum - 1] &= ~(1 << (n&31));
 
         return valueOf(result);
     }
@@ -4730,7 +4703,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         for (int i = 0; i < result.length; i++)
             result[result.length - i - 1] = getInt(i);
 
-        result[result.length - intNum - 1] ^= (1 << (n & 31));
+        result[result.length - intNum - 1] ^= (1 << (n&31));
 
         return valueOf(result);
     }
@@ -4906,7 +4879,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             int a = m1[i];
             int b = m2[i];
             if (a != b)
-                return ((a & LONG_MASK) < (b & LONG_MASK)) ? -1 : 1;
+                return ((a&LONG_MASK) < (b&LONG_MASK)) ? -1 : 1;
         }
         return 0;
     }
@@ -4934,7 +4907,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             int a = m1[0];
             int b = (int) val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK)) ? -1 : 1;
+                return ((a&LONG_MASK) < (b&LONG_MASK)) ? -1 : 1;
             }
             return 0;
         } else {
@@ -4943,12 +4916,12 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             int a = m1[0];
             int b = highWord;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK)) ? -1 : 1;
+                return ((a&LONG_MASK) < (b&LONG_MASK)) ? -1 : 1;
             }
             a = m1[1];
             b = (int) val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK)) ? -1 : 1;
+                return ((a&LONG_MASK) < (b&LONG_MASK)) ? -1 : 1;
             }
             return 0;
         }
@@ -5020,7 +4993,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int hashCode = 0;
 
         for (int i = 0; i < mag.length; i++)
-            hashCode = (int) (31 * hashCode + (mag[i] & LONG_MASK));
+            hashCode = (int) (31 * hashCode + (mag[i]&LONG_MASK));
 
         return hashCode * signum;
     }
@@ -5287,7 +5260,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         long result = 0;
 
         for (int i = 1; i >= 0; i--)
-            result = (result << 32) + (getInt(i) & LONG_MASK);
+            result = (result << 32) + (getInt(i)&LONG_MASK);
         return result;
     }
 
@@ -5336,7 +5309,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         // twiceSignifFloor will be == abs().shiftRight(shift).intValue()
         // We do the shift into an int directly to improve performance.
 
-        int nBits = shift & 0x1f;
+        int nBits = shift&0x1f;
         int nBits2 = 32 - nBits;
 
         if (nBits == 0) {
@@ -5344,7 +5317,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         } else {
             twiceSignifFloor = mag[0] >>> nBits;
             if (twiceSignifFloor == 0) {
-                twiceSignifFloor = (mag[0] << nBits2) | (mag[1] >>> nBits);
+                twiceSignifFloor = (mag[0] << nBits2)|(mag[1] >>> nBits);
             }
         }
 
@@ -5358,8 +5331,8 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
          * signifFloor is odd (which is true if both the 0.5 bit and the 1 bit
          * are set). This is equivalent to the desired HALF_EVEN rounding.
          */
-        boolean increment = (twiceSignifFloor & 1) != 0
-                && ((signifFloor & 1) != 0 || abs().getLowestSetBit() < shift);
+        boolean increment = (twiceSignifFloor&1) != 0
+                && ((signifFloor&1) != 0 || abs().getLowestSetBit() < shift);
         int signifRounded = increment ? signifFloor + 1 : signifFloor;
         int bits = ((exponent + FloatConsts.EXP_BIAS))
                 << (FloatConsts.SIGNIFICAND_WIDTH - 1);
@@ -5371,7 +5344,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
          * exponent is Float.MAX_EXPONENT, we round up (correctly) to
          * Float.POSITIVE_INFINITY.
          */
-        bits |= signum & FloatConsts.SIGN_BIT_MASK;
+        bits |= signum&FloatConsts.SIGN_BIT_MASK;
         return Float.intBitsToFloat(bits);
     }
 
@@ -5420,7 +5393,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         // twiceSignifFloor will be == abs().shiftRight(shift).longValue()
         // We do the shift into a long directly to improve performance.
 
-        int nBits = shift & 0x1f;
+        int nBits = shift&0x1f;
         int nBits2 = 32 - nBits;
 
         int highBits;
@@ -5430,15 +5403,15 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
             lowBits = mag[1];
         } else {
             highBits = mag[0] >>> nBits;
-            lowBits = (mag[0] << nBits2) | (mag[1] >>> nBits);
+            lowBits = (mag[0] << nBits2)|(mag[1] >>> nBits);
             if (highBits == 0) {
                 highBits = lowBits;
-                lowBits = (mag[1] << nBits2) | (mag[2] >>> nBits);
+                lowBits = (mag[1] << nBits2)|(mag[2] >>> nBits);
             }
         }
 
-        twiceSignifFloor = ((highBits & LONG_MASK) << 32)
-                | (lowBits & LONG_MASK);
+        twiceSignifFloor = ((highBits&LONG_MASK) << 32)
+                |(lowBits&LONG_MASK);
 
         long signifFloor = twiceSignifFloor >> 1;
         signifFloor &= DoubleConsts.SIGNIF_BIT_MASK; // remove the implied bit
@@ -5450,8 +5423,8 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
          * signifFloor is odd (which is true if both the 0.5 bit and the 1 bit
          * are set). This is equivalent to the desired HALF_EVEN rounding.
          */
-        boolean increment = (twiceSignifFloor & 1) != 0
-                && ((signifFloor & 1) != 0 || abs().getLowestSetBit() < shift);
+        boolean increment = (twiceSignifFloor&1) != 0
+                && ((signifFloor&1) != 0 || abs().getLowestSetBit() < shift);
         long signifRounded = increment ? signifFloor + 1 : signifFloor;
         long bits = (long) ((exponent + DoubleConsts.EXP_BIAS))
                 << (DoubleConsts.SIGNIFICAND_WIDTH - 1);
@@ -5463,7 +5436,7 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
          * exponent is Double.MAX_EXPONENT, we round up (correctly) to
          * Double.POSITIVE_INFINITY.
          */
-        bits |= signum & DoubleConsts.SIGN_BIT_MASK;
+        bits |= signum&DoubleConsts.SIGN_BIT_MASK;
         return Double.longBitsToDouble(bits);
     }
 
@@ -5510,11 +5483,11 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         int[] result = new int[intLength];
         int b = byteLength - 1;
         for (int i = intLength - 1; i >= 0; i--) {
-            result[i] = a[b--] & 0xff;
+            result[i] = a[b--]&0xff;
             int bytesRemaining = b - keep + 1;
             int bytesToTransfer = Math.min(3, bytesRemaining);
             for (int j = 8; j <= (bytesToTransfer << 3); j += 8)
-                result[i] |= ((a[b--] & 0xff) << j);
+                result[i] |= ((a[b--]&0xff) << j);
         }
         return result;
     }
@@ -5545,21 +5518,21 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
          * byte (if it exists) == 0x00 */
         int b = byteLength - 1;
         for (int i = intLength - 1; i >= 0; i--) {
-            result[i] = a[b--] & 0xff;
+            result[i] = a[b--]&0xff;
             int numBytesToTransfer = Math.min(3, b - keep + 1);
             if (numBytesToTransfer < 0)
                 numBytesToTransfer = 0;
             for (int j = 8; j <= 8 * numBytesToTransfer; j += 8)
-                result[i] |= ((a[b--] & 0xff) << j);
+                result[i] |= ((a[b--]&0xff) << j);
 
             // Mask indicates which bits must be complemented
             int mask = -1 >>> (8 * (3 - numBytesToTransfer));
-            result[i] = ~result[i] & mask;
+            result[i] = ~result[i]&mask;
         }
 
         // Add one to one's complement to generate two's complement
         for (int i = result.length - 1; i >= 0; i--) {
-            result[i] = (int) ((result[i] & LONG_MASK) + 1);
+            result[i] = (int) ((result[i]&LONG_MASK) + 1);
             if (result[i] != 0)
                 break;
         }
@@ -5972,28 +5945,46 @@ public class BigInteger extends Number implements EuclideanRingElement<BigIntege
         return mag.length <= 1 && bitLength() <= 31;
     }
 
-    @Override
-    public BigInteger getZero() {
-        return ZERO;
-    }
-
-    @Override
-    public BigInteger getOne() {
-        return ONE;
-    }
-
-    @Override
-    public BigIntegerRing getRing() {
-        return BigIntegerRing.IntegerRing;
-    }
-
-    @Override
     public boolean isZero() {
-        return signum() == 0;
+        return signum == 0;
     }
 
-    @Override
     public boolean isOne() {
-        return signum() > 0 && mag.length == 1 && mag[0] == 1;
+        return mag.length == 1 && mag[0] == 1 && signum == 1;
     }
+
+    public BigInteger increment(){
+        return add(ONE);
+    }
+
+    public BigInteger decrement(){
+        return subtract(ONE);
+    }
+//
+//    @Override
+//    public BigInteger[] gcdExtended(BigInteger b) {
+//        BigInteger s = BigInteger.ZERO, old_s = BigInteger.ONE;
+//        BigInteger t = BigInteger.ONE, old_t = BigInteger.ZERO;
+//        BigInteger r = b, old_r = this;
+//
+//        BigInteger q;
+//        BigInteger tmp;
+//        while (!r.isZero()) {
+//            q = old_r.divide(r);
+//
+//            tmp = old_r;
+//            old_r = r;
+//            r = tmp.subtract(q.multiply(r));
+//
+//            tmp = old_s;
+//            old_s = s;
+//            s = tmp.subtract(q.multiply(s));
+//
+//            tmp = old_t;
+//            old_t = t;
+//            t = tmp.subtract(q.multiply(t));
+//        }
+//        assert old_r.equals(this.multiply(old_s).add(b.multiply(old_t)));
+//        return new BigInteger[]{old_r, old_s, old_t};
+//    }
 }
