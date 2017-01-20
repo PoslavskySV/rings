@@ -435,6 +435,41 @@ final class MutableLongPoly implements Comparable<MutableLongPoly> {
     }
 
     /**
+     * Adds {@code coefficient*x^exponent} to {@code this}.
+     *
+     * @param coefficient monomial coefficient
+     * @param exponent    monomial exponent
+     * @return {@code this + coefficient*x^exponent}
+     */
+    MutableLongPoly addMonomial(long coefficient, int exponent) {
+        if (coefficient == 0)
+            return this;
+
+        ensureCapacity(exponent);
+        data[exponent] = LongArithmetics.add(data[exponent], coefficient);
+        fixDegree();
+        return this;
+    }
+
+    /**
+     * Adds {@code coefficient*x^exponent} to {@code this} modulo {@code modulus}.
+     *
+     * @param coefficient monomial coefficient
+     * @param exponent    monomial exponent
+     * @param modulus     the modulus
+     * @return {@code this + coefficient*x^exponent}
+     */
+    MutableLongPoly addMonomial(long coefficient, int exponent, long modulus) {
+        if (coefficient == 0)
+            return this;
+
+        ensureCapacity(exponent);
+        data[exponent] = LongArithmetics.addMod(data[exponent], coefficient, modulus);
+        fixDegree();
+        return this;
+    }
+
+    /**
      * Adds {@code oth} to {@code this} modulo {@code modulus}.
      *
      * @param oth     the polynomial

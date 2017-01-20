@@ -73,7 +73,7 @@ public final class RandomPolynomials {
      * @return random polynomial of specified {@code degree}
      */
     public static MutableLongPoly randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
-        MutableLongPoly r = randomPoly(degree, (int) modulus - 1, rnd);
+        MutableLongPoly r = randomPoly(degree, (int) modulus, rnd);
         while (r.data[degree] % modulus == 0) {r.data[r.degree] = rnd.nextLong();}
         r.modulus(modulus);
         r.monic(modulus);
