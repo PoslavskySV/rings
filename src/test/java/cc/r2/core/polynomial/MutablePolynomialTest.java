@@ -7,18 +7,20 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class MutableLongPolyTest {
+import java.util.Arrays;
+
+public class MutablePolynomialTest {
     @Test
     public void testShift1() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5, 6);
-        MutableLongPoly expected = MutableLongPoly.create(3, 4, 5, 6);
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3, 4, 5, 6);
+        MutablePolynomial expected = MutablePolynomial.create(3, 4, 5, 6);
         Assert.assertEquals(expected, a.clone().shiftLeft(2));
     }
 
     @Test
     public void testShift2() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5, 6);
-        MutableLongPoly expected = MutableLongPoly.create(0, 0, 1, 2, 3, 4, 5, 6);
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3, 4, 5, 6);
+        MutablePolynomial expected = MutablePolynomial.create(0, 0, 1, 2, 3, 4, 5, 6);
         Assert.assertEquals(expected, a.clone().shiftRight(2));
     }
 
@@ -98,23 +100,27 @@ public class MutableLongPolyTest {
             long[] classical;
             long start = System.nanoTime();
             if (modulus != -1)
-                classical = MutableLongPoly.multiplyModClassical(a, 0, a.length, b, 0, b.length, modulus);
+                classical = MutablePolynomial.multiplyModClassical(a, 0, a.length, b, 0, b.length, modulus);
             else
-                classical = MutableLongPoly.multiplyClassical(a, 0, a.length, b, 0, b.length);
+                classical = MutablePolynomial.multiplyClassical(a, 0, a.length, b, 0, b.length);
             classicalTimes.addValue(System.nanoTime() - start);
 
             long[] karatsuba;
             start = System.nanoTime();
             if (modulus != -1)
-                karatsuba = MutableLongPoly.multiplyModKaratsuba(a, 0, a.length, b, 0, b.length, modulus);
+                karatsuba = MutablePolynomial.multiplyModKaratsuba(a, 0, a.length, b, 0, b.length, modulus);
             else
-                karatsuba = MutableLongPoly.multiplyKaratsuba(a, 0, a.length, b, 0, b.length);
+                karatsuba = MutablePolynomial.multiplyKaratsuba(a, 0, a.length, b, 0, b.length);
             karatsubaTimes.addValue(System.nanoTime() - start);
 
-            MutableLongPoly polyA = MutableLongPoly.create(a.clone()), polyB = MutableLongPoly.create(b);
+            MutablePolynomial polyA = MutablePolynomial.create(a.clone()), polyB = MutablePolynomial.create(b);
             long[] asis = modulus != -1 ? polyA.multiply(polyB, modulus).data : polyA.multiply(polyB).data;
 
             Assert.assertArrayEquals(classical, karatsuba);
+            if(!Arrays.equals(classical,asis)) {
+                System.out.println(polyA);
+                System.out.println(polyB);
+            }
             Assert.assertArrayEquals(classical, asis);
             if (modulus != -1) {
                 for (int j = 0; j < classical.length; j++) {
@@ -165,35 +171,35 @@ public class MutableLongPolyTest {
             long[] classical;
             long start = System.nanoTime();
             if (modulus != -1)
-                classical = MutableLongPoly.squareModClassical(a, 0, a.length, modulus);
+                classical = MutablePolynomial.squareModClassical(a, 0, a.length, modulus);
             else
-                classical = MutableLongPoly.squareClassical(a, 0, a.length);
+                classical = MutablePolynomial.squareClassical(a, 0, a.length);
             classicalTimes.addValue(System.nanoTime() - start);
 
             long[] karatsuba;
             start = System.nanoTime();
             if (modulus != -1)
-                karatsuba = MutableLongPoly.squareModKaratsuba(a, 0, a.length, modulus);
+                karatsuba = MutablePolynomial.squareModKaratsuba(a, 0, a.length, modulus);
             else
-                karatsuba = MutableLongPoly.squareKaratsuba(a, 0, a.length);
+                karatsuba = MutablePolynomial.squareKaratsuba(a, 0, a.length);
             karatsubaTimes.addValue(System.nanoTime() - start);
 
 
             long[] multClassical;
             start = System.nanoTime();
             if (modulus != -1)
-                multClassical = MutableLongPoly.multiplyModClassical(a, 0, a.length, a, 0, a.length, modulus);
+                multClassical = MutablePolynomial.multiplyModClassical(a, 0, a.length, a, 0, a.length, modulus);
             else
-                multClassical = MutableLongPoly.multiplyClassical(a, 0, a.length, a, 0, a.length);
+                multClassical = MutablePolynomial.multiplyClassical(a, 0, a.length, a, 0, a.length);
             multClassicalTimes.addValue(System.nanoTime() - start);
 
 
             long[] multKaratsuba;
             start = System.nanoTime();
             if (modulus != -1)
-                multKaratsuba = MutableLongPoly.multiplyModKaratsuba(a, 0, a.length, a, 0, a.length, modulus);
+                multKaratsuba = MutablePolynomial.multiplyModKaratsuba(a, 0, a.length, a, 0, a.length, modulus);
             else
-                multKaratsuba = MutableLongPoly.multiplyKaratsuba(a, 0, a.length, a, 0, a.length);
+                multKaratsuba = MutablePolynomial.multiplyKaratsuba(a, 0, a.length, a, 0, a.length);
             multKaratsubaTimes.addValue(System.nanoTime() - start);
 
             Assert.assertArrayEquals(classical, karatsuba);
@@ -209,5 +215,11 @@ public class MutableLongPolyTest {
         System.out.println(multClassicalTimes);
         System.out.println("========== Karatsuba multiplication ===========");
         System.out.println(multKaratsubaTimes);
+    }
+
+    @Test
+    public void testDerivative1() throws Exception {
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3, 4, 0);
+        Assert.assertEquals(MutablePolynomial.create(2, 6, 12), MutablePolynomial.derivative(a));
     }
 }

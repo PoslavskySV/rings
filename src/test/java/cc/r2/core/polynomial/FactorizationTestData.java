@@ -8,11 +8,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 public final class FactorizationTestData {
-    public final MutableLongPoly poly;
-    public final SmallPolynomials.Factorization factorization;
+    public final MutablePolynomial poly;
+    public final Factorization factorization;
     public final long modulus;
 
-    public FactorizationTestData(MutableLongPoly poly, SmallPolynomials.Factorization factorization, long modulus) {
+    public FactorizationTestData(MutablePolynomial poly, Factorization factorization, long modulus) {
         this.poly = poly;
         this.factorization = factorization;
         this.modulus = modulus;
@@ -29,15 +29,15 @@ public final class FactorizationTestData {
     public static FactorizationTestData decode(String line) {
         String[] parts = line.split("\\|");
         long modulus = Long.parseLong(parts[0]);
-        MutableLongPoly poly = MutableLongPoly.create(parseArray(parts[1]));
-        MutableLongPoly[] factors = new MutableLongPoly[parts.length - 2];
+        MutablePolynomial poly = MutablePolynomial.create(parseArray(parts[1]));
+        MutablePolynomial[] factors = new MutablePolynomial[parts.length - 2];
         int[] exponents = new int[parts.length - 2];
         for (int i = 2; i < parts.length; i++) {
             long[] data = parseArray(parts[i].trim());
             exponents[i - 2] = (int) data[0];
-            factors[i - 2] = MutableLongPoly.create(Arrays.copyOfRange(data, 1, data.length));
+            factors[i - 2] = MutablePolynomial.create(Arrays.copyOfRange(data, 1, data.length));
         }
-        return new FactorizationTestData(poly, new SmallPolynomials.Factorization(factors, exponents, 1), modulus);
+        return new FactorizationTestData(poly, new Factorization(factors, exponents, 1), modulus);
     }
 
     public static Object[] decodePolynomial(String string) {
@@ -46,7 +46,7 @@ public final class FactorizationTestData {
         long[] data = new long[coefficients.length - 1];
         for (int i = 1; i < coefficients.length; i++)
             data[i - 1] = Long.parseLong(coefficients[i]);
-        return new Object[]{MutableLongPoly.create(data), exponent};
+        return new Object[]{MutablePolynomial.create(data), exponent};
     }
 
     public static FactorizationTestData decodeModFactorization(String string) {
@@ -54,15 +54,15 @@ public final class FactorizationTestData {
         long modulus = Long.parseLong(parts[0]);
         Object[] poly = decodePolynomial(parts[1]);
         int[] exponents = new int[parts.length - 2];
-        MutableLongPoly[] factors = new MutableLongPoly[parts.length - 2];
+        MutablePolynomial[] factors = new MutablePolynomial[parts.length - 2];
         for (int i = 2; i < parts.length; i++) {
             Object[] pe = decodePolynomial(parts[i]);
-            factors[i - 2] = (MutableLongPoly) pe[0];
+            factors[i - 2] = (MutablePolynomial) pe[0];
             exponents[i - 2] = (int) pe[1];
         }
         return new FactorizationTestData(
-                SmallPolynomialArithmetics.polyPowMod((MutableLongPoly) poly[0], (int) poly[1], modulus, false),
-                new SmallPolynomials.Factorization(factors, exponents, 1),
+                PolynomialArithmetics.polyPowMod((MutablePolynomial) poly[0], (int) poly[1], modulus, false),
+                new Factorization(factors, exponents, 1),
                 modulus);
     }
 

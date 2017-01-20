@@ -4,6 +4,7 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 /**
  * Created by poslavsky on 10/01/2017.
  */
+@Ignore
 public class KaratsubaBenchmarks {
 
     static long[] multiplyKaratsuba(
@@ -45,8 +47,8 @@ public class KaratsubaBenchmarks {
             return result;
         }
         //switch to classical
-        if ((fTo - fFrom) * (gTo - gFrom) < 1024 /* MutableLongPoly.KARATSUBA_THRESHOLD */)
-            return MutableLongPoly.multiplyClassical(g, gFrom, gTo, f, fFrom, fTo);
+        if ((fTo - fFrom) * (gTo - gFrom) < 1024 /* MutablePolynomial.KARATSUBA_THRESHOLD */)
+            return MutablePolynomial.multiplyClassical(g, gFrom, gTo, f, fFrom, fTo);
 
         if (fTo - fFrom < gTo - gFrom)
             return multiplyKaratsuba(g, gFrom, gTo, f, fFrom, fTo);
@@ -165,7 +167,7 @@ public class KaratsubaBenchmarks {
         }
         //classical
         if ((aTo - aFrom) * (bTo - bFrom) < 10)
-            return MutableLongPoly.multiplyClassical(a, aFrom, aTo, b, bFrom, bTo);
+            return MutablePolynomial.multiplyClassical(a, aFrom, aTo, b, bFrom, bTo);
         if (aTo - aFrom < bTo - bFrom)
             return multiplyKaratsuba4e(b, bFrom, bTo, a, aFrom, aTo, bCache, bCacheFrom, aCache, aCacheFrom);
 
@@ -478,7 +480,7 @@ public class KaratsubaBenchmarks {
     public void name() throws Exception {
         long[] a = {1, 1, 1, 1, 1, 1, 1};
 
-        long[] r1 = MutableLongPoly.multiplyClassical(a, 0, a.length, a, 0, a.length);
+        long[] r1 = MutablePolynomial.multiplyClassical(a, 0, a.length, a, 0, a.length);
         System.out.println(Arrays.toString(r1));
         long[] r2 = squareKaratsuba4e(a);
         System.out.println(Arrays.toString(r2));
@@ -507,7 +509,7 @@ public class KaratsubaBenchmarks {
             }
 
             long start = System.nanoTime();
-            long[] r1 = MutableLongPoly.multiplyClassical(a, 0, a.length, b, 0, b.length);
+            long[] r1 = MutablePolynomial.multiplyClassical(a, 0, a.length, b, 0, b.length);
             long cTime = System.nanoTime() - start;
             System.out.println(cTime);
             clas.addValue(cTime);
