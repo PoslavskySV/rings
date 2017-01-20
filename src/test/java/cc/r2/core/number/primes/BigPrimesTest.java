@@ -21,13 +21,6 @@ public class BigPrimesTest {
     }
 
     @Test
-    public void name() throws Exception {
-//        System.out.println(BigPrimes.nextPrime(new BigInteger("19837569384756932487563451")));
-        System.out.println(BigPrimes.primeFactors(new BigInteger("19837569384756932487563500")));
-        System.out.println(BigPrimes.isPrime(new BigInteger("19837569384756932487563501")));
-    }
-
-    @Test
     public void test2() throws Exception {
         int lucasK = 20;
         int dups = 0;

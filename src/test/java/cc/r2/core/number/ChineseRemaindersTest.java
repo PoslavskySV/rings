@@ -10,7 +10,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import static cc.r2.core.number.BigInteger.ONE;
+import static cc.r2.core.number.BigInteger.*;
 import static cc.r2.core.number.ChineseRemainders.CRT;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static java.lang.Math.floorMod;
@@ -41,12 +41,8 @@ public class ChineseRemaindersTest {
         BigInteger[] remainders = {BigInteger.valueOf(2123), BigInteger.valueOf(7213)};
         BigInteger crt = CRT(coprimes, remainders);
         BigInteger sup = Arrays.stream(coprimes).reduce(ONE, BigInteger::multiply);
-        System.out.println(crt);
-
         assertCRT(coprimes, remainders, crt);
-
         crt = toSymMod(crt, sup);
-        System.out.println(crt);
         assertCRT(coprimes, remainders, crt);
     }
 
@@ -122,10 +118,11 @@ public class ChineseRemaindersTest {
             Assert.assertEquals(rems[i].mod(coprimes[i]), crt.mod(coprimes[i]));
     }
 
-    static BigInteger toSymMod(BigInteger b, BigInteger prime) {
-        BigInteger t = prime.decrement().divide(BigInteger.TWO);
-        if (b.compareTo(t) <= 0)
-            return b;
-        else return t.subtract(b);
+    static BigInteger toSymMod(BigInteger value, BigInteger modulus) {
+        if (modulus.compareTo(ZERO) < 0)
+            throw new IllegalArgumentException("Negative modulus");
+        value = value.mod(modulus);
+        BigInteger mHalf = modulus.divide(TWO);
+        return value.compareTo(mHalf) <= 0 ? value : value.subtract(modulus);
     }
 }

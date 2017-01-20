@@ -61,7 +61,7 @@ public final class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static MutableLongPoly randomPoly(int degree, RandomGenerator rnd) {
+    public static MutablePolynomial randomPoly(int degree, RandomGenerator rnd) {
         return randomPoly(degree, DEFAULT_BOUND, rnd);
     }
 
@@ -72,8 +72,8 @@ public final class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static MutableLongPoly randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
-        MutableLongPoly r = randomPoly(degree, (int) modulus, rnd);
+    public static MutablePolynomial randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
+        MutablePolynomial r = randomPoly(degree, (int) modulus, rnd);
         while (r.data[degree] % modulus == 0) {r.data[r.degree] = rnd.nextLong();}
         r.modulus(modulus);
         r.monic(modulus);
@@ -88,7 +88,7 @@ public final class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
-    public static MutableLongPoly randomPoly(int degree, int bound, RandomGenerator rnd) {
-        return MutableLongPoly.create(randomLongArray(degree, bound, rnd));
+    public static MutablePolynomial randomPoly(int degree, int bound, RandomGenerator rnd) {
+        return MutablePolynomial.create(randomLongArray(degree, bound, rnd));
     }
 }

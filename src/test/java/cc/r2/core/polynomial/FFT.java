@@ -2,25 +2,27 @@ package cc.r2.core.polynomial;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
-import cc.r2.core.polynomial.SmallPolynomialsDivideAndRemainder.InverseModMonomial;
+import cc.r2.core.polynomial.DivideAndRemainder.InverseModMonomial;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import static cc.r2.core.polynomial.LongArithmetics.*;
-import static cc.r2.core.polynomial.MutableLongPoly.multiplyModClassical;
-import static cc.r2.core.polynomial.SmallPolynomialArithmetics.polyMod;
+import static cc.r2.core.polynomial.MutablePolynomial.multiplyModClassical;
+import static cc.r2.core.polynomial.PolynomialArithmetics.polyMod;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 /**
  * Created by poslavsky on 14/01/2017.
  */
+@Ignore
 public class FFT {
 
     static int revbin(int in, int bits) {
@@ -219,8 +221,8 @@ public class FFT {
             return coefficients;
         }
 
-        MutableLongPoly toPoly() {
-            return MutableLongPoly.create(polyCoefficients());
+        MutablePolynomial toPoly() {
+            return MutablePolynomial.create(polyCoefficients());
         }
 
         @Override
@@ -258,7 +260,7 @@ public class FFT {
         }
     }
 
-    static PolynomialFFT toFFT(MutableLongPoly a) {
+    static PolynomialFFT toFFT(MutablePolynomial a) {
         return new PolynomialFFT(nPower, rootPowers, rootInvPowers, a.degree, a.data, pModulus);
     }
 
@@ -291,7 +293,7 @@ public class FFT {
 
     @Test
     public void test_poly_cut() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 122, 3, 4, 5, 6, 6, 1, 2, 34);
+        MutablePolynomial a = MutablePolynomial.create(1, 122, 3, 4, 5, 6, 6, 1, 2, 34);
         PolynomialFFT aFFt = toFFT(a);
         System.out.println(aFFt.clone().cut(5).toPoly());
         System.out.println(cut1(aFFt.clone(), 5).toPoly());
@@ -299,8 +301,8 @@ public class FFT {
 
     @Test
     public void test_poly1() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 2, 3);
-        MutableLongPoly b = MutableLongPoly.create(1, 2, 3, 4, 5);
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3);
+        MutablePolynomial b = MutablePolynomial.create(1, 2, 3, 4, 5);
 
         PolynomialFFT fftA = toFFT(a);
         PolynomialFFT fftB = toFFT(b);
@@ -317,7 +319,7 @@ public class FFT {
 
     @Test
     public void test_poly2() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5), rev = a.clone().reverse();
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3, 4, 5), rev = a.clone().reverse();
         PolynomialFFT fft = toFFT(a);
         PolynomialFFT fftRev = toFFT(rev);
         Assert.assertEquals(fft.reverse(), fftRev);
@@ -325,7 +327,7 @@ public class FFT {
 
     @Test
     public void test_poly3() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5);
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3, 4, 5);
         PolynomialFFT fft = toFFT(a);
         for (int i = 0; i < 3; i++) {
             Assert.assertEquals(a.clone().cut(i), fft.clone().cut(i).toPoly());
@@ -335,7 +337,7 @@ public class FFT {
 
     @Test
     public void test_poly4() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5);
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3, 4, 5);
         PolynomialFFT fft = new PolynomialFFT(nPower, rootPowers, rootInvPowers, a.degree, a.data, pModulus);
         for (int i = 0; i < 10; i++) {
             Assert.assertEquals(a.clone().shiftRight(i), fft.clone().shiftRight(i).toPoly());
@@ -393,7 +395,7 @@ public class FFT {
 
     @Test
     public void test_poly6() throws Exception {
-        MutableLongPoly b = MutableLongPoly.create(1, 2, 3, 4, 5, 1);
+        MutablePolynomial b = MutablePolynomial.create(1, 2, 3, 4, 5, 1);
         PolynomialFFT fftB = toFFT(b);
         InverseModMonomialFFT inv = new InverseModMonomialFFT(fftB.clone().reverse());
         InverseModMonomial inv0 = new InverseModMonomial(b.clone().reverse(), pModulus);
@@ -404,7 +406,7 @@ public class FFT {
     }
 
     static void assertInverseModMonomial(PolynomialFFT poly, PolynomialFFT invMod, int monomialDegree, long modulus) {
-        Assert.assertTrue(SmallPolynomialArithmetics.polyMod(poly.clone().multiply(invMod).toPoly(), MutableLongPoly.createMonomial(1, monomialDegree), modulus, true).isOne());
+        Assert.assertTrue(PolynomialArithmetics.polyMod(poly.clone().multiply(invMod).toPoly(), MutablePolynomial.createMonomial(1, monomialDegree), modulus, true).isOne());
     }
 
     static PolynomialFFT[] divideAndRemainderFast0(PolynomialFFT dividend,
@@ -433,17 +435,17 @@ public class FFT {
 
     @Test
     public void test_poly5() throws Exception {
-        MutableLongPoly a = MutableLongPoly.create(1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 67, 7);
-        MutableLongPoly b = MutableLongPoly.create(1, 2, 3, 4, 1);
+        MutablePolynomial a = MutablePolynomial.create(1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 67, 7);
+        MutablePolynomial b = MutablePolynomial.create(1, 2, 3, 4, 1);
 
         PolynomialFFT fftA = new PolynomialFFT(nPower, rootPowers, rootInvPowers, a.degree, a.data, pModulus);
         PolynomialFFT fftB = new PolynomialFFT(nPower, rootPowers, rootInvPowers, b.degree, b.data, pModulus);
 
         InverseModMonomialFFT bInv = fastDivisionPreConditioning(fftB.clone());
         PolynomialFFT[] qd = divideAndRemainderFast0(fftA.clone(), fftB.clone(), bInv, true);
-        MutableLongPoly[] qdPoly = {qd[0].toPoly(), qd[1].toPoly()};
+        MutablePolynomial[] qdPoly = {qd[0].toPoly(), qd[1].toPoly()};
         System.out.println(Arrays.toString(qdPoly));
-        System.out.println(Arrays.toString(SmallPolynomialsDivideAndRemainder.divideAndRemainder(a, b, pModulus, true)));
+        System.out.println(Arrays.toString(DivideAndRemainder.divideAndRemainder(a, b, pModulus, true)));
     }
 
 
@@ -466,25 +468,25 @@ public class FFT {
     }
 
 
-    public static ArrayList<MutableLongPoly> ExponentsNaive(MutableLongPoly polyModulus, long modulus, int n) {
-        MutableLongPoly exponent = MutableLongPoly.create(0, 1);
-        ArrayList<MutableLongPoly> exps = new ArrayList<>();
-        InverseModMonomial invMod = SmallPolynomialsDivideAndRemainder.fastDivisionPreConditioning(polyModulus, modulus);
+    public static ArrayList<MutablePolynomial> ExponentsNaive(MutablePolynomial polyModulus, long modulus, int n) {
+        MutablePolynomial exponent = MutablePolynomial.create(0, 1);
+        ArrayList<MutablePolynomial> exps = new ArrayList<>();
+        InverseModMonomial invMod = DivideAndRemainder.fastDivisionPreConditioning(polyModulus, modulus);
         for (int j = 0; j < n; j++) {
             exps.add(exponent);
-            exponent = SmallPolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, invMod, modulus, true);
+            exponent = PolynomialArithmetics.polyPowMod(exponent, modulus, polyModulus, invMod, modulus, true);
         }
         return exps;
     }
 
-    public static ArrayList<PolynomialFFT> ExponentsNaiveFFT(MutableLongPoly polyModulus, long modulus, int n) {
+    public static ArrayList<PolynomialFFT> ExponentsNaiveFFT(MutablePolynomial polyModulus, long modulus, int n) {
         PolynomialFFT poly = toFFT(polyModulus);
         InverseModMonomialFFT invMod = fastDivisionPreConditioning(poly);
         return ExponentsNaiveFFT(poly, invMod, modulus, n);
     }
 
     public static ArrayList<PolynomialFFT> ExponentsNaiveFFT(PolynomialFFT poly, InverseModMonomialFFT invMod, long modulus, int n) {
-        PolynomialFFT exponent = toFFT(MutableLongPoly.create(0, 1));
+        PolynomialFFT exponent = toFFT(MutablePolynomial.create(0, 1));
         ArrayList<PolynomialFFT> exps = new ArrayList<>();
         for (int j = 0; j < n; j++) {
             exps.add(exponent);
@@ -495,13 +497,13 @@ public class FFT {
 
     @Test
     public void name() throws Exception {
-        MutableLongPoly poly = RandomPolynomials.randomMonicPoly(300, pModulus, new Well1024a());
+        MutablePolynomial poly = RandomPolynomials.randomMonicPoly(300, pModulus, new Well1024a());
 
         int nExps = 100;
         for (int i = 0; i < 1000; i++) {
             System.out.println(" ----- ");
             long start = System.nanoTime();
-            ArrayList<MutableLongPoly> a = ExponentsNaive(poly, pModulus, nExps);
+            ArrayList<MutablePolynomial> a = ExponentsNaive(poly, pModulus, nExps);
             System.out.println(System.nanoTime() - start);
 
             PolynomialFFT poly0 = toFFT(poly);
@@ -720,7 +722,7 @@ public class FFT {
     }
 
     static long[] fft0(long[] poly, long val, long modulus) {
-        MutableLongPoly p = MutableLongPoly.create(poly);
+        MutablePolynomial p = MutablePolynomial.create(poly);
         long[] res = new long[poly.length];
         for (int i = 0; i < poly.length; i++) {
             res[i] = p.evaluate(powMod(val, i, modulus), modulus);
@@ -785,9 +787,9 @@ public class FFT {
         a = Arrays.copyOf(a, n);
         b = Arrays.copyOf(b, n);
 
-//        long[] res = MutableLongPoly.multiplyModClassical(a, 0, aLen, b, 0, bLen, pModulus);
+//        long[] res = MutablePolynomial.multiplyModClassical(a, 0, aLen, b, 0, bLen, pModulus);
 //        return res;
-        return MutableLongPoly.create(a).clone().multiply(MutableLongPoly.create(b), pModulus).data;
+        return MutablePolynomial.create(a).clone().multiply(MutablePolynomial.create(b), pModulus).data;
     }
 
     @Test
