@@ -1,18 +1,21 @@
 package cc.r2.core.polynomial;
 
+import gnu.trove.list.array.TIntArrayList;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
 public final class FactorizationTestData {
     public final MutablePolynomial poly;
-    public final Factorization factorization;
+    public final FactorDecomposition factorization;
     public final long modulus;
 
-    public FactorizationTestData(MutablePolynomial poly, Factorization factorization, long modulus) {
+    public FactorizationTestData(MutablePolynomial poly, FactorDecomposition factorization, long modulus) {
         this.poly = poly;
         this.factorization = factorization;
         this.modulus = modulus;
@@ -37,7 +40,7 @@ public final class FactorizationTestData {
             exponents[i - 2] = (int) data[0];
             factors[i - 2] = MutablePolynomial.create(Arrays.copyOfRange(data, 1, data.length));
         }
-        return new FactorizationTestData(poly, new Factorization(factors, exponents, 1), modulus);
+        return new FactorizationTestData(poly, new FactorDecomposition(new ArrayList<>(Arrays.asList(factors)), new TIntArrayList(exponents), 1), modulus);
     }
 
     public static Object[] decodePolynomial(String string) {
@@ -62,7 +65,7 @@ public final class FactorizationTestData {
         }
         return new FactorizationTestData(
                 PolynomialArithmetics.polyPowMod((MutablePolynomial) poly[0], (int) poly[1], modulus, false),
-                new Factorization(factors, exponents, 1),
+                new FactorDecomposition(new ArrayList<>(Arrays.asList(factors)), new TIntArrayList(exponents), 1),
                 modulus);
     }
 

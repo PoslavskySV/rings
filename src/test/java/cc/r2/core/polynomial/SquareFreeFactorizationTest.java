@@ -1,5 +1,6 @@
 package cc.r2.core.polynomial;
 
+import cc.r2.core.polynomial.FactorizationTestUtil.RandomSource;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
@@ -12,6 +13,7 @@ import static cc.r2.core.polynomial.RandomPolynomials.randomPoly;
 import static cc.r2.core.polynomial.SquareFreeFactorization.SquareFreeFactorization;
 import static cc.r2.core.polynomial.SquareFreeFactorization.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by poslavsky on 20/01/2017.
@@ -58,14 +60,14 @@ public class SquareFreeFactorizationTest {
             }
             try {
                 long start = System.nanoTime();
-                Factorization yunFactorization = SquareFreeFactorizationYun(poly);
+                FactorDecomposition yunFactorization = SquareFreeFactorizationYun(poly);
                 yun.addValue(System.nanoTime() - start);
 
                 start = System.nanoTime();
-                Factorization musserFactorization = SquareFreeFactorizationMusser(poly);
+                FactorDecomposition musserFactorization = SquareFreeFactorizationMusser(poly);
                 musser.addValue(System.nanoTime() - start);
 
-                assertEquals(yunFactorization.factors.length, musserFactorization.factors.length);
+                assertEquals(yunFactorization.factors.size(), musserFactorization.factors.size());
                 assertFactorization(poly, musserFactorization);
                 assertFactorization(poly, yunFactorization);
             } catch (ArithmeticException exc) {
@@ -83,7 +85,7 @@ public class SquareFreeFactorizationTest {
     @Test
     public void test3() throws Exception {
         MutablePolynomial poly = MutablePolynomial.create(0, 0, -1458, 6561, -6561);
-        Factorization factorization = SquareFreeFactorizationYun(poly);
+        FactorDecomposition factorization = SquareFreeFactorizationYun(poly);
         assertFactorization(poly, factorization);
     }
 
@@ -129,7 +131,7 @@ public class SquareFreeFactorizationTest {
                         arithmetics.addValue(System.nanoTime() - start);
                         try {
                             start = System.nanoTime();
-                            Factorization factorization = SquareFreeFactorization(poly, modulus);
+                            FactorDecomposition factorization = SquareFreeFactorization(poly, modulus);
                             timings.addValue(System.nanoTime() - start);
                             assertFactorization(poly, factorization, modulus);
                         } catch (ArithmeticException exc) {
@@ -199,7 +201,17 @@ public class SquareFreeFactorizationTest {
 
     @Test
     public void test7() throws Exception {
-        assertEquals(1, SquareFreeFactorization(MutablePolynomial.create(0, 0, 0, 0, 1)).factors.length);
-        assertEquals(1, SquareFreeFactorization(MutablePolynomial.create(0, 0, 0, 0, 1), 31).factors.length);
+        assertEquals(1, SquareFreeFactorization(MutablePolynomial.create(0, 0, 0, 0, 1)).factors.size());
+        assertEquals(1, SquareFreeFactorization(MutablePolynomial.create(0, 0, 0, 0, 1), 31).factors.size());
+    }
+
+    @Test
+    public void test8() throws Exception {
+        RandomSource rnd = new RandomSource(new Well1024a(), 10, 20, false);
+        long modulus = 3;
+        for (int i = 0; i < 1000; i++) {
+            MutablePolynomial poly = rnd.take(modulus);
+            assertTrue(isSquareFree(SquareFreePart(poly, modulus), modulus));
+        }
     }
 }
