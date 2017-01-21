@@ -42,7 +42,7 @@ public final class ModularComposition {
     }
 
     /** writes poly^{i} mod polyModulus for i in [0...nIterations] to exponents */
-    private static void polyPowers(MutablePolynomial poly, MutablePolynomial polyModulus, InverseModMonomial invMod, long modulus, int nIterations, ArrayList<MutablePolynomial> exponents) {
+    static void polyPowers(MutablePolynomial poly, MutablePolynomial polyModulus, InverseModMonomial invMod, long modulus, int nIterations, ArrayList<MutablePolynomial> exponents) {
         exponents.add(MutablePolynomial.one());
         MutablePolynomial base = polyMod(poly, polyModulus, invMod, modulus, true);
         exponents.add(base);

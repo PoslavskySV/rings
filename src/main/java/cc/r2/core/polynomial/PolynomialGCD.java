@@ -13,6 +13,11 @@ import static cc.r2.core.polynomial.DivideAndRemainder.divideAndRemainder;
 import static cc.r2.core.polynomial.DivideAndRemainder.pseudoDivideAndRemainder;
 import static cc.r2.core.polynomial.LongArithmetics.*;
 
+/**
+ * Polynomial GCD and sub-resultant sequence computation for univariate polynomials with single-precision coefficients.
+ *
+ * @author Stanislav Poslavsky
+ */
 public final class PolynomialGCD {
     private PolynomialGCD() {}
 
@@ -319,7 +324,7 @@ public final class PolynomialGCD {
     }
 
     /**
-     * Computes GCD of two polynomials
+     * Computes GCD of two polynomials. Modular GCD algorithm is used.
      *
      * @param a the first polynomial
      * @param b the second polynomial
@@ -330,7 +335,7 @@ public final class PolynomialGCD {
     }
 
     /**
-     * Computes GCD of two polynomials modulo prime {@code modulus}
+     * Computes GCD of two polynomials modulo prime {@code modulus}. Plain Euclid algorithm is used.
      *
      * @param a       the first polynomial
      * @param b       the second polynomial

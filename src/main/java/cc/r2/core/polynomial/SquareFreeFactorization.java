@@ -6,13 +6,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static cc.r2.core.polynomial.DivideAndRemainder.divideAndRemainder;
-import static cc.r2.core.polynomial.Factorization.oneFactor;
+import static cc.r2.core.polynomial.FactorDecomposition.oneFactor;
 import static cc.r2.core.polynomial.MutablePolynomial.derivative;
 import static cc.r2.core.polynomial.PolynomialGCD.PolynomialGCD;
 
+/**
+ * Square-free factorization of univariate polynomials with single-precision coefficients.
+ *
+ * @author Stanislav Poslavsky
+ */
 public final class SquareFreeFactorization {
-    private SquareFreeFactorization() {
-    }
+    private SquareFreeFactorization() {}
 
     /**
      * Performs square-free factorization of a poly.
@@ -20,7 +24,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static Factorization SquareFreeFactorization(MutablePolynomial poly) {
+    public static FactorDecomposition SquareFreeFactorization(MutablePolynomial poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -41,7 +45,7 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static Factorization SquareFreeFactorizationYun(MutablePolynomial poly) {
+    public static FactorDecomposition SquareFreeFactorizationYun(MutablePolynomial poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -75,7 +79,7 @@ public final class SquareFreeFactorization {
                 exponents.add(i);
             }
         }
-        return new Factorization(factors, exponents, content);
+        return new FactorDecomposition(factors, exponents, content);
     }
 
     /**
@@ -85,7 +89,7 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static Factorization SquareFreeFactorizationMusser(MutablePolynomial poly) {
+    public static FactorDecomposition SquareFreeFactorizationMusser(MutablePolynomial poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -119,7 +123,7 @@ public final class SquareFreeFactorization {
                 break;
             quot = nextQuot;
         }
-        return new Factorization(factors, exponents, content);
+        return new FactorDecomposition(factors, exponents, content);
     }
 
     /**
@@ -129,7 +133,7 @@ public final class SquareFreeFactorization {
      * @param modulus prime modulus
      * @return square-free decomposition modulo {@code modulus}
      */
-    public static Factorization SquareFreeFactorization(MutablePolynomial poly, long modulus) {
+    public static FactorDecomposition SquareFreeFactorization(MutablePolynomial poly, long modulus) {
         if (modulus >= Integer.MAX_VALUE)// <- just to be on the safe side)
             throw new IllegalArgumentException();
 
@@ -144,7 +148,7 @@ public final class SquareFreeFactorization {
         if (poly.degree <= 1)
             return oneFactor(poly, lc);
 
-        Factorization factorization;
+        FactorDecomposition factorization;
         // x^2 + x^3 -> x^2 (1 + x)
         int exponent = 0;
         while (exponent <= poly.degree && poly.data[exponent] == 0) { ++exponent; }
@@ -160,7 +164,7 @@ public final class SquareFreeFactorization {
 
     /** {@code poly} will be destroyed */
     @SuppressWarnings("ConstantConditions")
-    private static Factorization SquareFreeFactorizationMusser0(MutablePolynomial poly, long modulus) {
+    private static FactorDecomposition SquareFreeFactorizationMusser0(MutablePolynomial poly, long modulus) {
         poly.monic(modulus);
         if (poly.isConstant())
             return oneFactor(poly.lc());
@@ -194,20 +198,19 @@ public final class SquareFreeFactorization {
             }
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd, modulus);
-                Factorization gcdFactorization = SquareFreeFactorizationMusser0(gcd, modulus);
-                gcdFactorization.raiseExponents((int) modulus);
-                MutablePolynomial[] newFactors = factors.toArray(new MutablePolynomial[gcdFactorization.factors.length + factors.size()]);
-                int[] newExponents = Arrays.copyOf(exponents.toArray(), gcdFactorization.factors.length + factors.size());
-                System.arraycopy(gcdFactorization.factors, 0, newFactors, factors.size(), gcdFactorization.factors.length);
-                System.arraycopy(gcdFactorization.exponents, 0, newExponents, exponents.size(), gcdFactorization.exponents.length);
-                return new Factorization(newFactors, newExponents, 1);
+                FactorDecomposition gcdFactorization =
+                        SquareFreeFactorizationMusser0(gcd, modulus)
+                                .raiseExponents(modulus);
+
+                factors.addAll(gcdFactorization.factors);
+                exponents.addAll(gcdFactorization.exponents);
+
+                return new FactorDecomposition(factors, exponents, 1);
             } else
-                return new Factorization(factors.toArray(new MutablePolynomial[factors.size()]), exponents.toArray(), 1);
+                return new FactorDecomposition(factors, exponents, 1);
         } else {
             MutablePolynomial pRoot = pRoot(poly, modulus);
-            Factorization factorization = SquareFreeFactorizationMusser0(pRoot, modulus);
-            factorization.raiseExponents((int) modulus);
-            return new Factorization(factorization.factors, factorization.exponents, 1);
+            return SquareFreeFactorizationMusser0(pRoot, modulus).raiseExponents(modulus).setFactor(1);
         }
     }
 
@@ -242,5 +245,26 @@ public final class SquareFreeFactorization {
      */
     public static boolean isSquareFree(MutablePolynomial poly, long modulus) {
         return PolynomialGCD(poly, derivative(poly, modulus), modulus).isConstant();
+    }
+
+    /**
+     * Returns square-free part of the {@code poly}
+     *
+     * @param poly the polynomial
+     * @return square free part
+     */
+    public static MutablePolynomial SquareFreePart(MutablePolynomial poly) {
+        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(MutablePolynomial.one(), MutablePolynomial::multiply);
+    }
+
+    /**
+     * Returns square-free part of the {@code poly} modulo {@code modulus}
+     *
+     * @param poly    the polynomial
+     * @param modulus the modulus
+     * @return square free part modulo {@code modulus}
+     */
+    public static MutablePolynomial SquareFreePart(MutablePolynomial poly, long modulus) {
+        return SquareFreeFactorization(poly, modulus).factors.stream().filter(x -> !x.isMonomial()).reduce(MutablePolynomial.one(), (a, b) -> a.multiply(b, modulus));
     }
 }

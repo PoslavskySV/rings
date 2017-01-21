@@ -15,7 +15,6 @@ import java.util.Arrays;
 
 import static cc.r2.core.polynomial.LongArithmetics.*;
 import static cc.r2.core.polynomial.MutablePolynomial.multiplyModClassical;
-import static cc.r2.core.polynomial.PolynomialArithmetics.polyMod;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
@@ -45,7 +44,6 @@ public class FFT {
         for (int s = 1; s <= bits; ++s) {
             int m = 1 << s;
             for (int k = 0; k <= n - 1; k += m) {
-                long o = rootPowers[0];
                 for (int j = 0; j <= m / 2 - 1; ++j) {
                     long t = multiplyMod(rootPowers[j * n / m], revbinData[k + j + m / 2], modulus);
                     long u = revbinData[k + j];
@@ -195,6 +193,8 @@ public class FFT {
                 return this;
 
             long[] newCoefficients = toPoly().cut(newDegree).data;
+//            long[] newCoefficients = new long[fft.length];
+//            Arrays.fill(newCoefficients, 3);
             revbin(fft, bits, newCoefficients);
             System.arraycopy(fft, 0, fftInverse, 0, fft.length);
             FastFourier0(bits, fft, rootPowers, modulus);
@@ -495,9 +495,33 @@ public class FFT {
         return exps;
     }
 
+//     -----
+//             1096502685
+//             5163977853
+//             -----
+//             1069429689
+//             5093414936
+//             -----
+//             1064802460
+//             5040595146
+
+
+    @Test
+    public void sad() throws Exception {
+        MutablePolynomial a = RandomPolynomials.randomMonicPoly(500, pModulus, new Well1024a());
+        MutablePolynomial b = RandomPolynomials.randomMonicPoly(500, pModulus, new Well1024a());
+        MutablePolynomial c = RandomPolynomials.randomMonicPoly(100, pModulus, new Well1024a());
+
+        PolynomialFFT dov = toFFT(c);
+        MutablePolynomial e = remainder(toFFT(a).multiply(toFFT(b)), dov, fastDivisionPreConditioning(dov), false).toPoly();
+        System.out.println(e);
+        System.out.println(DivideAndRemainder.remainder(a.multiply(b, pModulus), c, pModulus, true));
+
+    }
+
     @Test
     public void name() throws Exception {
-        MutablePolynomial poly = RandomPolynomials.randomMonicPoly(300, pModulus, new Well1024a());
+        MutablePolynomial poly = RandomPolynomials.randomMonicPoly(250, pModulus, new Well1024a());
 
         int nExps = 100;
         for (int i = 0; i < 1000; i++) {

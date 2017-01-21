@@ -443,7 +443,7 @@ public final class DivideAndRemainder {
      */
     public static InverseModMonomial fastDivisionPreConditioning(MutablePolynomial divider, long modulus) {
         if (divider.lc() != 1)
-            throw new IllegalArgumentException("Only monic polynomials allowed.");
+            throw new IllegalArgumentException("Only monic polynomials allowed. Input: " + divider);
         return new InverseModMonomial(divider.clone().reverse(), modulus);
     }
 

@@ -5,8 +5,8 @@ public final class LongArithmetics {
     private LongArithmetics() {
     }
 
-    public static int toInt(long v){
-        if(v > Integer.MAX_VALUE)
+    public static int toInt(long v) {
+        if (v > Integer.MAX_VALUE)
             throw new ArithmeticException("overflow");
         return (int) v;
     }
@@ -83,7 +83,9 @@ public final class LongArithmetics {
 
     /** Delegates to {@link Math#floorMod(long, long)} */
     public static long mod(long num, long modulus) {
-        return Math.floorMod(num, modulus);
+        if (num < 0)
+            num += modulus; //<- may help
+        return (num < 0 || num >= modulus) ? Math.floorMod(num, modulus) : num;
     }
 
     /**
