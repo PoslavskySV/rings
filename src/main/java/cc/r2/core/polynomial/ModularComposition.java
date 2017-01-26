@@ -90,7 +90,7 @@ public final class ModularComposition {
     /**
      * Returns modular composition {@code poly(point) mod polyModulus } calculated using Brent & Kung algorithm for modular composition.
      *
-     * @param main        the polynomial
+     * @param poly        the polynomial
      * @param pointPowers precomputed powers of evaluation point {@code point^{i} mod polyModulus}
      * @param polyModulus the monic polynomial modulus
      * @param invMod      precomputed inversed {@code rev[polyModulus]}
@@ -101,20 +101,20 @@ public final class ModularComposition {
      * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomial, long)
      */
     public static MutablePolynomial compositionBrentKung(
-            MutablePolynomial main,
+            MutablePolynomial poly,
             ArrayList<MutablePolynomial> pointPowers,
             MutablePolynomial polyModulus,
             InverseModMonomial invMod,
             long modulus,
             int tBrentKung) {
-        if (main.isConstant())
-            return main;
+        if (poly.isConstant())
+            return poly;
         ArrayList<MutablePolynomial> gj = new ArrayList<>();
-        for (int i = 0; i <= main.degree; ) {
+        for (int i = 0; i <= poly.degree; ) {
             int to = i + tBrentKung;
-            if (to > (main.degree + 1))
-                to = main.degree + 1;
-            MutablePolynomial g = MutablePolynomial.create(Arrays.copyOfRange(main.data, i, to));
+            if (to > (poly.degree + 1))
+                to = poly.degree + 1;
+            MutablePolynomial g = MutablePolynomial.create(Arrays.copyOfRange(poly.data, i, to));
             gj.add(powModulusMod0(g, polyModulus, invMod, modulus, pointPowers));
             i = to;
         }

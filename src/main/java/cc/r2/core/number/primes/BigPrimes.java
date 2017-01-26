@@ -104,6 +104,20 @@ public final class BigPrimes {
     }
 
     /**
+     * Return the smallest prime greater than or equal to n.
+     *
+     * @param n a positive number.
+     * @return the smallest prime greater than or equal to n.
+     * @throws IllegalArgumentException if n &lt; 0.
+     */
+    public static long nextPrime(long n) {
+        BigInteger nb = BigInteger.valueOf(n);
+        while (!isPrime(nb))
+            nb = nb.nextProbablePrime();
+        return nb.longValueExact();
+    }
+
+    /**
      * Fermat's factoring algorithm works like trial division, but walks in the opposite
      * direction. Thus, it can be used to factor a number that we know has a factor in the
      * interval [Sqrt(n) - upperBound, Sqrt(n) + upperBound].

@@ -24,6 +24,9 @@ public final class FactorizationTestUtil {
     }
 
     static void assertDistinctDegreeFactorization(MutablePolynomial poly, FactorDecomposition factorization, long modulus) {
+        for (int i = 0; i < factorization.factors.size(); i++)
+            assertEquals("Factor's degree is not divisible by d.d.f. exponent",
+                    0, factorization.factors.get(i).degree % factorization.exponents.get(i));
         assertEquals(poly.clone().modulus(modulus), factorization.toPolynomialIgnoringExponents(modulus));
     }
 
