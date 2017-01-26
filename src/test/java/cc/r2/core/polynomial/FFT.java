@@ -13,16 +13,261 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static cc.r2.core.polynomial.LongArithmetics.*;
-import static cc.r2.core.polynomial.MutablePolynomial.multiplyModClassical;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+
+//import static cc.r2.core.polynomial.LongArithmetics.*;
 
 /**
  * Created by poslavsky on 14/01/2017.
  */
 @Ignore
 public class FFT {
+
+    static int nBits(long v) {
+        return 64 - Long.numberOfLeadingZeros(v - 1);
+    }
+
+    static final class Magic {
+        final long divisor;
+        final long magic;
+        final int shift;
+        final int nBits;
+
+        public Magic(long divisor, long magic, int shift) {
+            this.divisor = divisor;
+            this.magic = magic;
+            this.shift = shift;
+            this.nBits = nBits(divisor);
+        }
+
+        @Override
+        public String toString() {
+            return "Magic{" + "magic=" + magic + ", shift=" + shift + '}';
+        }
+    }
+
+    static final Magic calculateMagics0(long d) {
+        assert d < Integer.MAX_VALUE;
+
+        long p;
+        long ad, anc, delta, q1, r1, q2, r2, t;
+        long two31 = 0x80000000L;     // 2**31.
+
+        ad = Math.abs(d);
+        t = two31 + (d >> 31);
+        anc = t - 1 - t % ad;     // Absolute value of nc.
+        p = 31;                   // Init. p.
+        q1 = two31 / anc;         // Init. q1 = 2**p/|nc|.
+        r1 = two31 - q1 * anc;    // Init. r1 = rem(2**p, |nc|).
+        q2 = two31 / ad;          // Init. q2 = 2**p/|d|.
+        r2 = two31 - q2 * ad;     // Init. r2 = rem(2**p, |d|).
+        do {
+            p = p + 1;
+            q1 = 2 * q1;           // Update q1 = 2**p/|nc|.
+            r1 = 2 * r1;           // Update r1 = rem(2**p, |nc|).
+            if (r1 >= anc) {       // (Must be an unsigned
+                q1 = q1 + 1;       // comparison here).
+                r1 = r1 - anc;
+            }
+            q2 = 2 * q2;           // Update q2 = 2**p/|d|.
+            r2 = 2 * r2;           // Update r2 = rem(2**p, |d|).
+            if (r2 >= ad) {        // (Must be an unsigned
+                q2 = q2 + 1;       // comparison here).
+                r2 = r2 - ad;
+            }
+            delta = ad - r2;
+        } while (q1 < delta || (q1 == delta && r1 == 0));
+
+        long magM = q2 + 1;
+        if (d < 0) magM = -magM; // Magic number and
+        int s = (int) (p - 32);  // shift amount to return.
+        //0xffffffff00000000L|
+        return new Magic(d, magM, s);
+    }
+
+    static long mulhigh(long x, long y) {
+        final long x_hi = x >>> 32;
+        final long y_hi = y >>> 32;
+        final long x_lo = x&0xFFFFFFFFL;
+        final long y_lo = y&0xFFFFFFFFL;
+        long result = x_lo * y_lo;
+        result >>>= 32;
+
+        result += x_hi * y_lo + x_lo * y_hi;
+        result >>>= 32;
+        result += x_hi * y_hi;
+        return result;
+    }
+
+    static long domul(long x, long y) {
+        if (x > Integer.MAX_VALUE)
+            return mulhigh(x, y);
+        else return x * y;
+    }
+
+    @Test
+    public void asdname() throws Exception {
+        System.out.println(Long.toBinaryString(0x7FFFFFFFL));
+
+    }
+
+    static final long remMagic(long a, Magic magic) {
+        if (a - 1 > Integer.MAX_VALUE) {
+            long lo = remMagic(0x7FFFFFFFL&a, magic);
+            return lo + (remMagic(1L << 31, magic) * remMagic(a >>> 31, magic));
+        }
+        if (magic.shift == 0) {
+            long q = (a * magic.magic) >>> 32;
+            return a - q * magic.divisor;
+        } else {
+            long mag = magic.magic - (1L << 32);
+            long q = (mag * a) >>> 32;
+            q += a;
+            q >>>= magic.shift;
+            return a - q * magic.divisor;
+        }
+    }
+
+    static final long remDouble(long a, long n) {
+        long q = (long) ((double) a / (double) n);
+        long r = a - q * n;
+        if (r >= n)
+            r -= n;
+        else if (r < 0)
+            r += n;
+
+        return r;
+    }
+
+
+    static long sp_SignMask(long a) {
+        return a >> (60 - 1);
+    }
+
+    static long sp_CorrectDeficit(long a, long n) {
+        return a + (sp_SignMask(a)&n);
+    }
+
+    static final long remMagicDouble(long a, long n, double nInv) {
+        long q = (long) (a * nInv);
+        long r = a - q * n;
+//        if (r >= n)
+//            r -= n;
+//        else if (r < 0)
+//            r += n;
+
+        r = sp_CorrectDeficit(r, n);
+
+        return r;
+    }
+
+    @Test
+    public void namedouble() throws Exception {
+        long a = 1423423414213234234L;
+        long n = 12312434L + Integer.MAX_VALUE;
+        System.out.println(remDouble(a, n));
+        System.out.println(a % n);
+    }
+
+    @Test
+    public void shlag() throws Exception {
+        long a = Integer.MAX_VALUE * 5L;
+
+        System.out.println(a);
+        System.out.println(0x7FFFFFFFL&a|(1L << 31) * (a >> 31));
+
+//        System.out.println(a);
+//        System.out.println(pModulus * 10000);
+        //2147483647
+        System.out.println(mod(a, pModulus));
+        System.out.println(mod(mod(a, pModulus), pModulus));
+//        System.out.println(mod(a - pModulus * 10000));
+        System.out.println(a % pModulus);
+
+    }
+
+
+    @Test
+    public void testmag1() throws Exception {
+        for (int i = 3; i < 100000; i++) {
+            if (calculateMagics0(i).shift == 0) {
+                System.out.println(i);
+                break;
+            }
+        }
+        long dividend = 123143143L;
+        long divisor = 33213L;
+        Magic magic = calculateMagics0(divisor);
+        System.out.println(magic);
+        System.out.println(remMagic(dividend, magic));
+        System.out.println(dividend % divisor);
+
+    }
+
+    static long[] reduceModBenchFast(long[] arr, Magic magic) {
+        long r = 0;
+        long timing = 0;
+        for (int i = 0; i < 10; i++) {
+            long[] tmp = arr.clone();
+            long start = System.nanoTime();
+            for (int j = 0; j < tmp.length; j++) {
+                tmp[j] = remMagic(tmp[j], magic);
+                r += tmp[j];
+            }
+            timing += System.nanoTime() - start;
+        }
+        return new long[]{timing, r};
+    }
+
+    static long[] reduceModBenchPlain(long[] arr, long modulus) {
+        long r = 0;
+        long timing = 0;
+        for (int i = 0; i < 10; i++) {
+            long[] tmp = arr.clone();
+            long start = System.nanoTime();
+            for (int j = 0; j < tmp.length; j++) {
+                tmp[j] = tmp[j] % modulus;
+                r += tmp[j];
+            }
+            timing += System.nanoTime() - start;
+        }
+        return new long[]{timing, r};
+    }
+
+    @Test
+    public void testd7_bench() throws Exception {
+//        long[] modulus = {3};
+        RandomGenerator rnd = new Well1024a();
+        DescriptiveStatistics plain = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
+        for (int i = 0; i < 100000; i++) {
+            if (i == 10000) {
+                fast.clear();
+                plain.clear();
+            }
+            long[] arr = new long[1000];
+            for (int j = 0; j < arr.length; j++) {
+                arr[j] = rnd.nextInt();
+                if (arr[j] < 0) arr[j] = -arr[j];
+            }
+
+            long modulus = rnd.nextInt();
+            if (modulus < 0)
+                modulus = -modulus;
+
+            long[] f = reduceModBenchFast(arr, calculateMagics0(modulus));
+            long[] p = reduceModBenchPlain(arr, modulus);
+
+            assertEquals(f[1], p[1]);
+
+            fast.addValue(f[0]);
+            plain.addValue(p[0]);
+        }
+
+        System.out.println("==== fast ====");
+        System.out.println(fast);
+        System.out.println("==== plain ====");
+        System.out.println(plain);
+    }
 
     static int revbin(int in, int bits) {
         return Integer.reverse(in) >>> (32 - bits);
@@ -39,16 +284,20 @@ public class FFT {
         return FastFourier0(bits, rev, rootPowers, modulus);
     }
 
+    static long mod(long a, long b) {
+        return remMagicDouble(a, b, pMagicDouble);
+    }
+
     static long[] FastFourier0(int bits, long[] revbinData, long[] rootPowers, long modulus) {
         int n = revbinData.length;
         for (int s = 1; s <= bits; ++s) {
             int m = 1 << s;
             for (int k = 0; k <= n - 1; k += m) {
                 for (int j = 0; j <= m / 2 - 1; ++j) {
-                    long t = multiplyMod(rootPowers[j * n / m], revbinData[k + j + m / 2], modulus);
+                    long t = mod(rootPowers[j * n / m] * revbinData[k + j + m / 2], modulus);
                     long u = revbinData[k + j];
-                    revbinData[k + j] = addMod(u, t, modulus);
-                    revbinData[k + j + m / 2] = addMod(u, -t, modulus);
+                    revbinData[k + j] = mod(u + t, modulus);
+                    revbinData[k + j + m / 2] = mod(u - t, modulus);
                 }
             }
         }
@@ -74,7 +323,7 @@ public class FFT {
             this.modulus = modulus;
             this.rootPowers = rootPowers;
             this.rootPowersInv = rootPowersInv;
-            this.nInversed = modInverse(rootPowers.length, modulus);
+            this.nInversed = LongArithmetics.modInverse(rootPowers.length, modulus);
 
             fft = new long[rootPowers.length];
             revbin(fft, bits, Arrays.copyOf(coefficients, rootPowers.length));
@@ -278,26 +527,6 @@ public class FFT {
         return poly;
     }
 
-    static PolynomialFFT cut1(PolynomialFFT poly, int newDegree) {
-        if (newDegree >= poly.degree)
-            return poly;
-
-        for (int i = 0; i < poly.fft.length; i++) {
-            int rootPower = ((newDegree) * i) % poly.rootPowers.length;
-            poly.fft[i] = mod(mod(poly.fft[i], poly.rootPowers[rootPower]), pModulus);
-            poly.fftInverse[i] = mod(mod(poly.fftInverse[i], poly.rootPowersInv[rootPower]), pModulus);
-        }
-        poly.degree = newDegree;
-        return poly;
-    }
-
-    @Test
-    public void test_poly_cut() throws Exception {
-        MutablePolynomial a = MutablePolynomial.create(1, 122, 3, 4, 5, 6, 6, 1, 2, 34);
-        PolynomialFFT aFFt = toFFT(a);
-        System.out.println(aFFt.clone().cut(5).toPoly());
-        System.out.println(cut1(aFFt.clone(), 5).toPoly());
-    }
 
     @Test
     public void test_poly1() throws Exception {
@@ -521,10 +750,12 @@ public class FFT {
 
     @Test
     public void name() throws Exception {
-        MutablePolynomial poly = RandomPolynomials.randomMonicPoly(250, pModulus, new Well1024a());
 
         int nExps = 100;
         for (int i = 0; i < 1000; i++) {
+            MutablePolynomial poly = RandomPolynomials.randomMonicPoly(250, pModulus, new Well1024a());
+            poly = poly.modulus(pModulus);
+
             System.out.println(" ----- ");
             long start = System.nanoTime();
             ArrayList<MutablePolynomial> a = ExponentsNaive(poly, pModulus, nExps);
@@ -537,106 +768,13 @@ public class FFT {
             ArrayList<PolynomialFFT> b = ExponentsNaiveFFT(poly0, invMod, pModulus, nExps);
             System.out.println(System.nanoTime() - start);
 
-//            for (int j = 0; j < nExps; j++) {
-//                assertEquals(a.get(j), b.get(j));
-//            }
-        }
-
-
-    }
-
-    static long[] fft_3(int r, long[] as, long val, long modulus) {
-        long[] w = new long[as.length];
-        long[] rev = new long[as.length];
-        for (int i = 0; i < as.length; i++) {
-            w[i] = powMod(val, i, modulus);
-            rev[revbin(i, r)] = as[i];
-        }
-        return fft_30(r, rev, w, modulus);
-    }
-
-    static long[] fft_3(final int r, final long[] as, final long[] rootPowers, final long modulus) {
-        long[] rev = new long[as.length];
-        for (int i = 0; i < as.length; i++) {
-            rev[revbin(i, r)] = as[i];
-        }
-        return fft_30(r, rev, rootPowers, modulus);
-    }
-
-    static long[] fft_3_mod(int n, int r, long[] as, long[] w, long modulus) {
-        for (int s = 1; s <= r; ++s) {
-            int m = 1 << s;
-            for (int k = 0; k <= n - 1; k += m) {
-                long o = w[0];
-                for (int j = 0; j <= m / 2 - 1; ++j) {
-                    long t = multiplyMod(w[j * n / m], as[k + j + m / 2], modulus);
-                    long u = as[k + j];
-                    as[k + j] = addMod(u, t, modulus);
-                    as[k + j + m / 2] = addMod(u, -t, modulus);
-                }
+            for (int j = 0; j < nExps; j++) {
+                assertEquals(a.get(j), b.get(j).toPoly());
             }
         }
-        return as;
+
+
     }
-
-    static int counter = 0;
-
-    @Test
-    public void asdasd() throws Exception {
-
-        System.out.println(124214L % pModulus);
-        System.out.println((124214L - pModulus) % pModulus);
-    }
-
-
-    static long[] fft_30(final int r, final long[] as, final long[] w, final long modulus) {
-        int n = as.length;
-        for (int s = 1; s <= r; ++s) {
-            int m = 1 << s;
-            int nm = n / m;
-            for (int k = 0; k < n; k += m) {
-                for (int j = k, jTo = k + m / 2; j < jTo; ++j) {
-                    ++counter;
-                    long t = (w[(j - k) * nm] * as[j + m / 2]);
-//                    if (t > modulus)
-//                        t -= modulus;
-                    t = t % modulus;
-                    long u = as[j];
-                    as[j] = u + t;
-                    as[j + m / 2] = u - t;
-                }
-            }
-        }
-        return as;
-    }
-
-
-    @Test
-    public void asdasdasdasd() throws Exception {
-        long[] a = RandomPolynomials.randomLongArray(500, 100, new Well1024a());
-        long[] b = RandomPolynomials.randomLongArray(500, 100, new Well1024a());
-        a = Arrays.copyOf(a, n);
-        b = Arrays.copyOf(b, n);
-
-        long[] a_fft = fft_3(nPower, a, rootPowers, pModulus);
-        counter += n;
-        long[] b_fft = fft_3(nPower, b, rootPowers, pModulus);
-        counter += n;
-        long[] res = new long[a.length];
-        for (int i = 0; i < res.length; i++)
-            res[i] = (a_fft[i] * b_fft[i]) % pModulus;
-        counter += n;
-
-        res = fft_3(nPower, res, rootInvPowers, pModulus);
-        counter += n;
-        for (int i = 0; i < res.length; i++)
-            res[i] = multiplyMod(res[i], nInv, pModulus);
-        counter += n;
-
-        System.out.println(500 * 500);
-        System.out.println(counter);
-    }
-
 
     //
 //    @Test
@@ -664,7 +802,7 @@ public class FFT {
     static final long rootInv = LongArithmetics.modInverse(root, pModulus);
     static final int n = 1024;
     static final int nPower = 10;
-    static final long nInv = modInverse(n, pModulus);
+    static final long nInv = LongArithmetics.modInverse(n, pModulus);
 
 
 //    static final long pModulus = 2021377;
@@ -682,6 +820,8 @@ public class FFT {
 //    static final long nInv = modInverse(n, pModulus);
 
 
+    static final Magic pMagic = calculateMagics0(pModulus);
+    static final double pMagicDouble = 1.0 / pModulus;
     static final long[] rootPowers;
     static final long[] rootInvPowers;
 
@@ -689,16 +829,16 @@ public class FFT {
         rootPowers = new long[n];
         rootInvPowers = new long[n];
         for (int i = 0; i < n; i++) {
-            rootPowers[i] = powMod(root, i, pModulus);
-            rootInvPowers[i] = powMod(rootInv, i, pModulus);
+            rootPowers[i] = LongArithmetics.powMod(root, i, pModulus);
+            rootInvPowers[i] = LongArithmetics.powMod(rootInv, i, pModulus);
         }
     }
 
     static boolean isPRoot(long root, int exp, long modulus) {
-        if (powMod(root, exp, modulus) != 1)
+        if (LongArithmetics.powMod(root, exp, modulus) != 1)
             return false;
         for (int i = 1; i < exp; i++)
-            if (powMod(root, i, modulus) == 1)
+            if (LongArithmetics.powMod(root, i, modulus) == 1)
                 return false;
         return true;
     }
@@ -707,13 +847,13 @@ public class FFT {
     public void asdasdas() throws Exception {
         System.out.println(isPRoot(root, (int) n, pModulus));
         for (int i = 1; i <= n; i++)
-            if (powMod(root, i, pModulus) == 1)
+            if (LongArithmetics.powMod(root, i, pModulus) == 1)
                 System.out.println("XXX");
     }
 
     @Test
     public void test2() throws Exception {
-        long n = pow(2, 11);
+        long n = LongArithmetics.pow(2, 11);
         System.out.println("n: " + n);
         int c = -1;
         out:
@@ -733,211 +873,5 @@ public class FFT {
                 break;
             }
         }
-    }
-
-    @Test
-    public void test3() throws Exception {
-        for (int i = 0; i <= 16; i++) {
-//            System.out.println(powMod(root, i, pModulus));
-            System.out.println(powMod(rootInv, i, pModulus));
-        }
-
-
-    }
-
-    static long[] fft0(long[] poly, long val, long modulus) {
-        MutablePolynomial p = MutablePolynomial.create(poly);
-        long[] res = new long[poly.length];
-        for (int i = 0; i < poly.length; i++) {
-            res[i] = p.evaluate(powMod(val, i, modulus), modulus);
-        }
-        return res;
-    }
-
-    @Test
-    public void test1() throws Exception {
-        long[] poly1 = {1, 1, 0, 0, 1, 2, 0, 0, 1, 1, 1};
-        long[] poly2 = {1, 0, 2, 0, 2, 0, 2, 1, 1, 0, 1};
-        poly1 = Arrays.copyOf(poly1, n);
-        poly2 = Arrays.copyOf(poly2, n);
-
-        long[] fft1 = fft_3(nPower, poly1, root, pModulus);
-        long[] fft2 = fft_3(nPower, poly2, root, pModulus);
-
-        long[] fftRes = new long[fft1.length];
-        for (int i = 0; i < fftRes.length; i++) {
-            fftRes[i] = LongArithmetics.multiplyMod(fft1[i], fft2[i], pModulus);
-        }
-
-
-        long[] res = fft_3(nPower, fftRes, rootInv, pModulus);
-        for (int i = 0; i < res.length; i++)
-            res[i] = multiplyMod(res[i], nInv, pModulus);
-
-
-        System.out.println(Arrays.toString(multiplyModClassical(poly1, 0, poly1.length, poly2, 0, poly2.length, pModulus)));
-//        System.out.println(Arrays.toString(fftRes));
-        System.out.println(Arrays.toString(res));
-    }
-
-
-    static long[] main_fft(long[] a) {
-        return fft_3(nPower, a, rootPowers, pModulus);
-    }
-
-    static long[] main_fft_inv(long[] a) {
-        return fft_3(nPower, a, rootInvPowers, pModulus);
-    }
-
-    static long[] fftMultiply(long[] a, long[] b) {
-        int len = a.length + b.length - 1;
-        a = Arrays.copyOf(a, n);
-        b = Arrays.copyOf(b, n);
-        long[] afft = main_fft(a);
-        long[] bfft = main_fft(b);
-        long[] fftRes = new long[n];
-
-        for (int i = 0; i < fftRes.length; i++)
-            fftRes[i] = LongArithmetics.multiplyMod(afft[i], bfft[i], pModulus);
-
-        long[] res = main_fft_inv(fftRes);
-        for (int i = 0; i < res.length; i++)
-            res[i] = multiplyMod(res[i], nInv, pModulus);
-        return Arrays.copyOf(res, len);
-    }
-
-    static long[] classicMultiply(long[] a, long[] b) {
-        int aLen = a.length, bLen = b.length;
-        a = Arrays.copyOf(a, n);
-        b = Arrays.copyOf(b, n);
-
-//        long[] res = MutablePolynomial.multiplyModClassical(a, 0, aLen, b, 0, bLen, pModulus);
-//        return res;
-        return MutablePolynomial.create(a).clone().multiply(MutablePolynomial.create(b), pModulus).data;
-    }
-
-    @Test
-    public void performance_test() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        DescriptiveStatistics c = new DescriptiveStatistics(), f = new DescriptiveStatistics();
-        for (int i = 0; i < 15000; i++) {
-            if (i == 10000) {
-                c.clear();
-                f.clear();
-            }
-            long[] a = RandomPolynomials.randomMonicPoly(n / 2 - 100, pModulus, rnd).data;
-            long[] b = RandomPolynomials.randomMonicPoly(n / 2 - 100, pModulus, rnd).data;
-
-            long start = System.nanoTime();
-            long[] classic = classicMultiply(a, b);
-            long classicTime = System.nanoTime() - start;
-            c.addValue(classicTime);
-
-            start = System.nanoTime();
-            long[] fft = fftMultiply(a, b);
-            long fftTime = System.nanoTime() - start;
-            f.addValue(fftTime);
-            if (!Arrays.equals(classic, fft)) {
-                System.out.println(Arrays.toString(a));
-                System.out.println(Arrays.toString(b));
-            }
-            Assert.assertEquals(classic.length, fft.length);
-            assertArrayEquals(classic, fft);
-        }
-
-        System.out.println("==== classic ==== ");
-        System.out.println(c);
-        System.out.println("==== fft ==== ");
-        System.out.println(f);
-
-
-    }
-
-
-    @Test
-    public void performance_test_2() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        DescriptiveStatistics mul_cl = new DescriptiveStatistics(),
-                fft1 = new DescriptiveStatistics(),
-                fft2 = new DescriptiveStatistics(),
-                product = new DescriptiveStatistics(),
-                fft3 = new DescriptiveStatistics(),
-                all_fft = new DescriptiveStatistics(),
-                mul_fft = new DescriptiveStatistics();
-        DescriptiveStatistics[] all_stats = {mul_cl, fft1, fft2, fft3, product, all_fft, mul_fft};
-        for (int i = 0; i < 15000; i++) {
-            if (i == 10000) {
-                for (DescriptiveStatistics ss : all_stats) {
-                    ss.clear();
-                }
-            }
-            long[] a = RandomPolynomials.randomMonicPoly(n / 2 - 100, pModulus, rnd).data;
-            long[] b = RandomPolynomials.randomMonicPoly(n / 2 - 100, pModulus, rnd).data;
-
-            long start = System.nanoTime();
-            long[] classic = classicMultiply(a, b);
-            long classicTime = System.nanoTime() - start;
-            mul_cl.addValue(classicTime);
-
-
-            int len = a.length + b.length - 1;
-            a = Arrays.copyOf(a, n);
-            b = Arrays.copyOf(b, n);
-
-            start = System.nanoTime();
-            long[] afft = main_fft(a);
-            long fft1time = System.nanoTime() - start;
-
-
-            start = System.nanoTime();
-            long[] bfft = main_fft(b);
-            long fft2time = System.nanoTime() - start;
-
-            start = System.nanoTime();
-            long[] fftRes = new long[n];
-            for (int k = 0; k < fftRes.length; k++)
-                fftRes[k] = LongArithmetics.multiplyMod(afft[k], bfft[k], pModulus);
-            long productTime = System.nanoTime() - start;
-
-
-            start = System.nanoTime();
-            long[] res = main_fft_inv(fftRes);
-            for (int k = 0; k < res.length; k++)
-                res[k] = multiplyMod(res[k], nInv, pModulus);
-            long[] fft = Arrays.copyOf(res, len);
-            long fft3time = System.nanoTime() - start;
-
-            fft1.addValue(fft1time);
-            fft2.addValue(fft2time);
-            product.addValue(productTime);
-            fft3.addValue(fft3time);
-            all_fft.addValue(fft1time + fft2time + fft3time);
-            mul_fft.addValue(fft1time + fft2time + fft3time + productTime);
-
-
-//            if (!Arrays.equals(classic, fft)) {
-//                System.out.println(Arrays.toString(a));
-//                System.out.println(Arrays.toString(b));
-//            }
-            Assert.assertEquals(classic.length, fft.length);
-            assertArrayEquals(classic, fft);
-        }
-
-        System.out.println("==== classic ==== ");
-        System.out.println(mul_cl);
-        System.out.println("==== fft1 ==== ");
-        System.out.println(fft1);
-        System.out.println("==== fft2 ==== ");
-        System.out.println(fft2);
-        System.out.println("==== fft3 ==== ");
-        System.out.println(fft3);
-        System.out.println("==== product ==== ");
-        System.out.println(product);
-        System.out.println("==== all_fft ==== ");
-        System.out.println(all_fft);
-        System.out.println("==== fft ==== ");
-        System.out.println(mul_fft);
-
-
     }
 }
