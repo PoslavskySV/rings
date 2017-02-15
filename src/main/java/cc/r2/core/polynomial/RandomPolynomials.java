@@ -19,15 +19,16 @@ public final class RandomPolynomials {
      * @param rnd    random source
      * @return array of length {@code degree + 1} with elements bounded by {@code bound} (by absolute value)
      */
-    public static long[] randomLongArray(int degree, int bound, RandomGenerator rnd) {
+    public static long[] randomLongArray(int degree, long bound, RandomGenerator rnd) {
         long[] data = new long[degree + 1];
+        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         for (int i = 0; i <= degree; ++i) {
-            data[i] = rnd.nextInt(bound);
+            data[i] = rndd.nextLong(0, bound - 1);
             if (rnd.nextBoolean() && rnd.nextBoolean())
                 data[i] = -data[i];
         }
         while (data[degree] == 0)
-            data[degree] = rnd.nextInt(bound);
+            data[degree] = rndd.nextLong(0, bound - 1);
         return data;
     }
 
