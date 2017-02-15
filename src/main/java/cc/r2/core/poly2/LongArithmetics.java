@@ -7,6 +7,66 @@ public final class LongArithmetics {
     private LongArithmetics() {}
 
     /**
+     * Delegates to {@link Math#multiplyExact(long, long)}
+     *
+     * @throws ArithmeticException if the result overflows a long
+     **/
+    public static long safeMultiply(long x, long y) {
+        return Math.multiplyExact(x, y);
+    }
+
+    /**
+     * Delegates to {@link Math#multiplyExact(long, long)}
+     *
+     * @throws ArithmeticException if the result overflows a long
+     **/
+    public static long safeMultiply(long x, long y, long z) {
+        return Math.multiplyExact(Math.multiplyExact(x, y), z);
+    }
+
+    /**
+     * Delegates to {@link Math#addExact(long, long)}
+     *
+     * @throws ArithmeticException if the result overflows a long
+     **/
+    public static long safeAdd(long x, long y) {
+        return Math.addExact(x, y);
+    }
+
+    /**
+     * Delegates to {@link Math#subtractExact(long, long)}
+     *
+     * @throws ArithmeticException if the result overflows a long
+     **/
+    public static long safeSubtract(long a, long b) {
+        return Math.subtractExact(a, b);
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative)
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code e} (non negative)
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static long safePow(final long base, long exponent) {
+        if (exponent < 0)
+            throw new IllegalArgumentException();
+
+        long result = 1L;
+        long k2p = base;
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result = safeMultiply(result, k2p);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = safeMultiply(k2p, k2p);
+        }
+    }
+
+    /**
      * Returns the greatest common divisor of two longs
      *
      * @param p a long
@@ -144,5 +204,61 @@ public final class LongArithmetics {
      */
     public static long gcd(final long... integers) {
         return gcd(integers, 0, integers.length);
+    }
+
+    /** Delegates to {@link Math#floorMod(long, long)} */
+    public static long mod(long num, long modulus) {
+        if (num < 0)
+            num += modulus; //<- may help
+        return (num >= modulus || num < 0) ? Math.floorMod(num, modulus) : num;
+    }
+
+    /**
+     * Returns {@code value mod modulus} in the symmetric representation ({@code -modulus/2 <= result <= modulus/2})
+     *
+     * @param value   a long
+     * @param modulus modulus
+     * @return {@code value mod modulus} in the symmetric representation ({@code -modulus/2 <= result <= modulus/2})
+     */
+    public static long symMod(long value, long modulus) {
+        if (modulus < 0)
+            throw new IllegalArgumentException("Negative modulus");
+        value = mod(value, modulus);
+        return value <= modulus / 2 ? value : value - modulus;
+    }
+
+    /**
+     * Returns a solution of congruence {@code num * x = 1 mod modulus}
+     *
+     * @param num     base
+     * @param modulus modulus
+     * @return {@code a^(-1) mod p}
+     * @throws IllegalArgumentException {@code a} and {@code modulus} are not coprime
+     */
+    public static long modInverse(long num, long modulus) {
+        if (num == 1)
+            return num;
+        if (num < 0)
+            num = mod(num, modulus);
+
+        long s = 0, old_s = 1;
+        long r = modulus, old_r = num;
+
+        long q;
+        long tmp;
+        while (r != 0) {
+            q = old_r / r;
+
+            tmp = old_r;
+            old_r = r;
+            r = tmp - q * r;
+
+            tmp = old_s;
+            old_s = s;
+            s = tmp - q * s;
+        }
+        if (old_r != 1)
+            throw new IllegalArgumentException("Not invertible: val = " + num + ", modulus = " + modulus + ", old_r = " + old_r);
+        return mod(old_s, modulus);
     }
 }

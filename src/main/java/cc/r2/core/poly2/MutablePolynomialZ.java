@@ -6,7 +6,7 @@ import java.util.Arrays;
  * Created by poslavsky on 15/02/2017.
  */
 final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomialZ> {
-    public MutablePolynomialZ(long[] data) {
+    private MutablePolynomialZ(long[] data) {
         this.data = data;
         this.degree = data.length - 1;
         fixDegree();
@@ -18,29 +18,71 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         this.degree = degree;
     }
 
+    static MutablePolynomialZ create(long... data) {
+        return new MutablePolynomialZ(data);
+    }
+
+    static MutablePolynomialZ zero() {
+        return create(0);
+    }
+
+    static MutablePolynomialZ one() {
+        return create(1);
+    }
+
+    MutablePolynomialMod modulus(long modulus, boolean copy) {
+        return MutablePolynomialMod.createSigned(modulus, copy ? data.clone() : data);
+    }
+
+    MutablePolynomialMod modulus(long modulus) {
+        return modulus(modulus, true);
+    }
+
+    /**
+     * Divides this polynomial by a {@code factor} or returns {@code null} if some of the elements can't be exactly
+     * divided by the {@code factor}
+     *
+     * @param factor the factor
+     * @return {@code this} divided by the {@code factor} or {@code null}
+     */
+    MutablePolynomialZ divideOrNull(long factor) {
+        if (factor == 0)
+            throw new ArithmeticException("Divide by zero");
+        if (factor == 1)
+            return this;
+        LongModularArithmetics.MagicDivider magic = LongModularArithmetics.magicSigned(factor);
+        for (int i = degree; i >= 0; --i) {
+            long l = LongModularArithmetics.divideSignedFast(data[i], magic);
+            if (l * factor != data[i])
+                return null;
+            data[i] = l;
+        }
+        return this;
+    }
+
     @Override
-    MutablePolynomialZ create(long[] data) {
+    MutablePolynomialZ createFromArray(long[] data) {
         return new MutablePolynomialZ(data);
     }
 
     @Override
-    MutablePolynomialZ zero() {
+    MutablePolynomialZ createZero() {
         return new MutablePolynomialZ(new long[]{0}, 0);
     }
 
     @Override
-    MutablePolynomialZ one() {
+    MutablePolynomialZ createOne() {
         return new MutablePolynomialZ(new long[]{1}, 0);
     }
 
     @Override
     MutablePolynomialZ derivative() {
         if (isConstant())
-            return zero();
+            return createZero();
         long[] newData = new long[degree];
         for (int i = degree; i > 0; --i)
-            newData[i - 1] = LongSafeArithmetics.multiply(data[i], i);
-        return create(newData);
+            newData[i - 1] = LongArithmetics.safeMultiply(data[i], i);
+        return createFromArray(newData);
     }
 
     @Override
@@ -49,7 +91,28 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             return cc();
         long res = 0;
         for (int i = degree; i >= 0; --i)
-            res = LongSafeArithmetics.add(LongSafeArithmetics.multiply(res, point), data[i]);
+            res = LongArithmetics.safeAdd(LongArithmetics.safeMultiply(res, point), data[i]);
+        return res;
+    }
+
+    /**
+     * Evaluates this poly at a give rational point {@code num/den}
+     *
+     * @param num point numerator
+     * @param den point denominator
+     * @return value at {@code num/den}
+     * @throws ArithmeticException if the result is not integer
+     */
+    long evaluateAtRational(long num, long den) {
+        if (num == 0)
+            return cc();
+        long res = 0;
+        for (int i = degree; i >= 0; --i) {
+            long x = LongArithmetics.safeMultiply(res, num);
+            if (x % den != 0)
+                throw new IllegalArgumentException("The answer is not integer");
+            res = LongArithmetics.safeAdd(x / den, data[i]);
+        }
         return res;
     }
 
@@ -60,7 +123,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
 
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
-            data[i] = LongSafeArithmetics.add(data[i], oth.data[i]);
+            data[i] = LongArithmetics.safeAdd(data[i], oth.data[i]);
         fixDegree();
         return this;
     }
@@ -71,7 +134,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             return this;
 
         ensureCapacity(exponent);
-        data[exponent] = LongSafeArithmetics.add(data[exponent], coefficient);
+        data[exponent] = LongArithmetics.safeAdd(data[exponent], coefficient);
         fixDegree();
         return this;
     }
@@ -83,7 +146,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
 
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
-            data[i] = LongSafeArithmetics.add(data[i], LongSafeArithmetics.multiply(factor, oth.data[i]));
+            data[i] = LongArithmetics.safeAdd(data[i], LongArithmetics.safeMultiply(factor, oth.data[i]));
         fixDegree();
         return this;
     }
@@ -95,19 +158,19 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
 
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
-            data[i] = LongSafeArithmetics.subtract(data[i], oth.data[i]);
+            data[i] = LongArithmetics.safeSubtract(data[i], oth.data[i]);
         fixDegree();
         return this;
     }
 
     @Override
-    MutablePolynomialZ subtract(MutablePolynomialMod oth, long factor, int exponent) {
+    MutablePolynomialZ subtract(MutablePolynomialZ oth, long factor, int exponent) {
         if (oth.isZero())
             return this;
 
         ensureCapacity(oth.degree + exponent);
         for (int i = oth.degree + exponent; i >= exponent; --i)
-            data[i] = LongSafeArithmetics.subtract(data[i], LongSafeArithmetics.multiply(factor, oth.data[i - exponent]));
+            data[i] = LongArithmetics.safeSubtract(data[i], LongArithmetics.safeMultiply(factor, oth.data[i - exponent]));
         fixDegree();
         return this;
     }
@@ -122,13 +185,13 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
     @Override
     MutablePolynomialZ multiply(long factor) {
         for (int i = degree; i >= 0; --i)
-            data[i] = LongSafeArithmetics.multiply(factor, data[i]);
+            data[i] = LongArithmetics.safeMultiply(factor, data[i]);
         return this;
     }
 
     @Override
     public MutablePolynomialZ clone() {
-        return new MutablePolynomialZ(data, degree);
+        return new MutablePolynomialZ(data.clone(), degree);
     }
 
     @Override
@@ -233,7 +296,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             long c = a[aFrom + i];
             if (c != 0)
                 for (int j = 0; j < bTo - bFrom; ++j)
-                    result[i + j] = LongSafeArithmetics.add(result[i + j], LongSafeArithmetics.multiply(c, b[bFrom + j]));
+                    result[i + j] = LongArithmetics.safeAdd(result[i + j], LongArithmetics.safeMultiply(c, b[bFrom + j]));
         }
     }
 
@@ -276,7 +339,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         if (fTo - fFrom == 1) {
             long[] result = new long[gTo - gFrom];
             for (int i = gFrom; i < gTo; ++i)
-                result[i - gFrom] = LongSafeArithmetics.multiply(f[fFrom], g[i]);
+                result[i - gFrom] = LongArithmetics.safeMultiply(f[fFrom], g[i]);
             return result;
         }
         // single element in g
@@ -284,20 +347,20 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             long[] result = new long[fTo - fFrom];
             //single element in b
             for (int i = fFrom; i < fTo; ++i)
-                result[i - fFrom] = LongSafeArithmetics.multiply(g[gFrom], f[i]);
+                result[i - fFrom] = LongArithmetics.safeMultiply(g[gFrom], f[i]);
             return result;
         }
         // linear factors
         if (fTo - fFrom == 2 && gTo - gFrom == 2) {
             long[] result = new long[3];
             //both a and b are linear
-            result[0] = LongSafeArithmetics.multiply(f[fFrom], g[gFrom]);
-            result[1] = LongSafeArithmetics.add(LongSafeArithmetics.multiply(f[fFrom], g[gFrom + 1]), LongSafeArithmetics.multiply(f[fFrom + 1], g[gFrom]));
-            result[2] = LongSafeArithmetics.multiply(f[fFrom + 1], g[gFrom + 1]);
+            result[0] = LongArithmetics.safeMultiply(f[fFrom], g[gFrom]);
+            result[1] = LongArithmetics.safeAdd(LongArithmetics.safeMultiply(f[fFrom], g[gFrom + 1]), LongArithmetics.safeMultiply(f[fFrom + 1], g[gFrom]));
+            result[2] = LongArithmetics.safeMultiply(f[fFrom + 1], g[gFrom + 1]);
             return result;
         }
         //switch to classical
-        if (LongSafeArithmetics.multiply(fTo - fFrom, gTo - gFrom) < KARATSUBA_THRESHOLD)
+        if (LongArithmetics.safeMultiply(fTo - fFrom, gTo - gFrom) < KARATSUBA_THRESHOLD)
             return multiplyClassical(g, gFrom, gTo, f, fFrom, fTo);
 
         if (fTo - fFrom < gTo - gFrom)
@@ -313,7 +376,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
 
             long[] result = Arrays.copyOf(f0g, fTo - fFrom + gTo - gFrom - 1);
             for (int i = 0; i < f1g.length; i++)
-                result[i + split] = LongSafeArithmetics.add(result[i + split], f1g[i]);
+                result[i + split] = LongArithmetics.safeAdd(result[i + split], f1g[i]);
             return result;
         }
 
@@ -325,13 +388,13 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         long[] f0_plus_f1 = new long[Math.max(fMid - fFrom, fTo - fMid)];
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = LongSafeArithmetics.add(f0_plus_f1[i - fMid], f[i]);
+            f0_plus_f1[i - fMid] = LongArithmetics.safeAdd(f0_plus_f1[i - fMid], f[i]);
 
         //g0 + g1
         long[] g0_plus_g1 = new long[Math.max(gMid - gFrom, gTo - gMid)];
         System.arraycopy(g, gFrom, g0_plus_g1, 0, gMid - gFrom);
         for (int i = gMid; i < gTo; ++i)
-            g0_plus_g1[i - gMid] = LongSafeArithmetics.add(g0_plus_g1[i - gMid], g[i]);
+            g0_plus_g1[i - gMid] = LongArithmetics.safeAdd(g0_plus_g1[i - gMid], g[i]);
 
         long[] mid = multiplyKaratsuba(f0_plus_f1, 0, f0_plus_f1.length, g0_plus_g1, 0, g0_plus_g1.length);
 
@@ -342,16 +405,16 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
 
         //subtract f0g0, f1g1
         for (int i = 0; i < f0g0.length; ++i)
-            mid[i] = LongSafeArithmetics.subtract(mid[i], f0g0[i]);
+            mid[i] = LongArithmetics.safeSubtract(mid[i], f0g0[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            mid[i] = LongSafeArithmetics.subtract(mid[i], f1g1[i]);
+            mid[i] = LongArithmetics.safeSubtract(mid[i], f1g1[i]);
 
 
         long[] result = Arrays.copyOf(f0g0, (fTo - fFrom) + (gTo - gFrom) - 1);
         for (int i = 0; i < mid.length; ++i)
-            result[i + split] = LongSafeArithmetics.add(result[i + split], mid[i]);
+            result[i + split] = LongArithmetics.safeAdd(result[i + split], mid[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            result[i + 2 * split] = LongSafeArithmetics.add(result[i + 2 * split], f1g1[i]);
+            result[i + 2 * split] = LongArithmetics.safeAdd(result[i + 2 * split], f1g1[i]);
 
         return result;
     }
@@ -377,7 +440,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             long c = data[from + i];
             if (c != 0)
                 for (int j = 0; j < len; ++j)
-                    result[i + j] = LongSafeArithmetics.add(result[i + j], LongSafeArithmetics.multiply(c, data[from + j]));
+                    result[i + j] = LongArithmetics.safeAdd(result[i + j], LongArithmetics.safeMultiply(c, data[from + j]));
         }
     }
 
@@ -393,16 +456,16 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         if (fFrom >= fTo)
             return new long[0];
         if (fTo - fFrom == 1)
-            return new long[]{LongSafeArithmetics.multiply(f[fFrom], f[fFrom])};
+            return new long[]{LongArithmetics.safeMultiply(f[fFrom], f[fFrom])};
         if (fTo - fFrom == 2) {
             long[] result = new long[3];
-            result[0] = LongSafeArithmetics.multiply(f[fFrom], f[fFrom]);
-            result[1] = LongSafeArithmetics.multiply(2L, f[fFrom], f[fFrom + 1]);
-            result[2] = LongSafeArithmetics.multiply(f[fFrom + 1], f[fFrom + 1]);
+            result[0] = LongArithmetics.safeMultiply(f[fFrom], f[fFrom]);
+            result[1] = LongArithmetics.safeMultiply(2L, f[fFrom], f[fFrom + 1]);
+            result[2] = LongArithmetics.safeMultiply(f[fFrom + 1], f[fFrom + 1]);
             return result;
         }
         //switch to classical
-        if (LongSafeArithmetics.multiply(fTo - fFrom, fTo - fFrom) < KARATSUBA_THRESHOLD)
+        if (LongArithmetics.safeMultiply(fTo - fFrom, fTo - fFrom) < KARATSUBA_THRESHOLD)
             return squareClassical(f, fFrom, fTo);
 
 
@@ -416,7 +479,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         long[] f0_plus_f1 = new long[Math.max(fMid - fFrom, fTo - fMid)];
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = LongSafeArithmetics.add(f0_plus_f1[i - fMid], f[i]);
+            f0_plus_f1[i - fMid] = LongArithmetics.safeAdd(f0_plus_f1[i - fMid], f[i]);
 
         long[] mid = squareKaratsuba(f0_plus_f1, 0, f0_plus_f1.length);
 
@@ -427,16 +490,16 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
 
         //subtract f0g0, f1g1
         for (int i = 0; i < f0g0.length; ++i)
-            mid[i] = LongSafeArithmetics.subtract(mid[i], f0g0[i]);
+            mid[i] = LongArithmetics.safeSubtract(mid[i], f0g0[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            mid[i] = LongSafeArithmetics.subtract(mid[i], f1g1[i]);
+            mid[i] = LongArithmetics.safeSubtract(mid[i], f1g1[i]);
 
 
         long[] result = Arrays.copyOf(f0g0, 2 * (fTo - fFrom) - 1);
         for (int i = 0; i < mid.length; ++i)
-            result[i + split] = LongSafeArithmetics.add(result[i + split], mid[i]);
+            result[i + split] = LongArithmetics.safeAdd(result[i + split], mid[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            result[i + 2 * split] = LongSafeArithmetics.add(result[i + 2 * split], f1g1[i]);
+            result[i + 2 * split] = LongArithmetics.safeAdd(result[i + 2 * split], f1g1[i]);
 
         return result;
     }
