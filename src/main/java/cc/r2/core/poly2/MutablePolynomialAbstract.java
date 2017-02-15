@@ -218,7 +218,21 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param data the data
      * @return polynomial
      */
-    abstract T create(long[] data);
+    abstract T createFromArray(long[] data);
+
+    /**
+     * Returns 0 (new instance)
+     *
+     * @return new instance of 0
+     */
+    abstract T createZero();
+
+    /**
+     * Returns 1 (new instance)
+     *
+     * @return new instance of 1
+     */
+    abstract T createOne();
 
     /**
      * Evaluates this poly at a given {@code point} (via Horner method).
@@ -270,7 +284,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param exponent the exponent
      * @return {@code this - factor * x^exponent * oth}
      */
-    abstract T subtract(MutablePolynomialMod oth, long factor, int exponent);
+    abstract T subtract(T oth, long factor, int exponent);
 
     /**
      * Negates this and returns
@@ -301,20 +315,6 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @return {@code this * this}
      */
     abstract T square();
-
-    /**
-     * Returns 0 (new instance)
-     *
-     * @return new instance of 0
-     */
-    abstract T zero();
-
-    /**
-     * Returns 1 (new instance)
-     *
-     * @return new instance of 1
-     */
-    abstract T one();
 
     /**
      * Returns the formal derivative of this poly
@@ -373,7 +373,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     public final boolean equals(Object obj) {
         if (obj.getClass() != this.getClass())
             return false;
-        MutablePolynomialMod oth = (MutablePolynomialMod) obj;
+        MutablePolynomialAbstract oth = (MutablePolynomialAbstract) obj;
         if (degree != oth.degree)
             return false;
         for (int i = 0; i <= degree; ++i)

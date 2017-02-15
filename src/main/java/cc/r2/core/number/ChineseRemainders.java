@@ -61,6 +61,7 @@ public final class ChineseRemainders {
         if (prime1 <= 0 || prime2 <= 0)
             throw new RuntimeException("Negative CRT input: " + prime1 + " " + prime2);
 
+        // !!! TODO rewrite using LongModularArithmetics magic !!!!!
         long modulus = multiplyExact(prime1, prime2);
         long result = 0;
 

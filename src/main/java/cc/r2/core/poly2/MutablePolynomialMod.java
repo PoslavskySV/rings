@@ -113,23 +113,33 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     }
 
     /** modulus operation */
-    private long mod(long val) { return modUnsignedFast(val, magic);}
+    long mod(long val) { return modUnsignedFast(val, magic);}
 
     /** mulMod operation */
-    private long mulMod(long a, long b) {
+    long mulMod(long a, long b) {
         return modulusFits32 ? mod(a * b) : multiplyMod128Unsigned(a, b, modulus, magic32MulMod);
     }
 
     /** addMod operation */
-    private long addMod(long a, long b) {
+    long addMod(long a, long b) {
         long r = a + b;
         return r - modulus >= 0 ? r - modulus : r;
     }
 
     /** subtractMod operation */
-    private long subtractMod(long a, long b) {
+    long subtractMod(long a, long b) {
         long r = a - b;
         return r + ((r >> 63)&modulus);
+    }
+
+    /** to symmetric modulus */
+    long symMod(long value) {
+        return value <= modulus / 2 ? value : value - modulus;
+    }
+
+    /** does not reduce and copy the data */
+    MutablePolynomialMod setModulusUnsafe(long newModulus) {
+        return new MutablePolynomialMod(newModulus, magicUnsigned(newModulus), data);
     }
 
     private void checkCompatibleModulus(MutablePolynomialMod oth) {
@@ -138,22 +148,29 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     }
 
     @Override
-    MutablePolynomialMod create(long[] data) {
+    MutablePolynomialMod createFromArray(long[] data) {
         return create(this.modulus, data);
     }
 
-    private MutablePolynomialMod constant(long val) {
+    public MutablePolynomialMod constant(long val) {
         return new MutablePolynomialMod(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
     }
 
     @Override
-    MutablePolynomialMod zero() {
+    MutablePolynomialMod createZero() {
         return constant(0);
     }
 
     @Override
-    MutablePolynomialMod one() {
+    MutablePolynomialMod createOne() {
         return constant(1);
+    }
+
+    MutablePolynomialZ symmetricZ() {
+        long[] newData = new long[degree + 1];
+        for (int i = degree; i >= 0; --i)
+            newData[i] = symMod(data[i]);
+        return MutablePolynomialZ.create(newData);
     }
 
     /**
@@ -170,6 +187,17 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             return this;
         }
         return multiply(modInverse(lc(), modulus));
+    }
+
+    /**
+     * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is
+     * {@code monic(modulus).multiply(factor, modulus)} ).
+     *
+     * @param factor the factor
+     * @return {@code this }
+     */
+    MutablePolynomialMod monic(long factor) {
+        return multiply(mulMod(mod(factor), modInverse(lc(), modulus)));
     }
 
     @Override
@@ -284,7 +312,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     @Override
     MutablePolynomialMod derivative() {
         if (isConstant())
-            return zero();
+            return createZero();
         long[] newData = new long[degree];
         if (degree < modulus)
             for (int i = degree; i > 0; --i)
@@ -296,7 +324,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             for (; i > 0; --i)
                 newData[i - 1] = mulMod(data[i], i);
         }
-        return create(newData);
+        return createFromArray(newData);
     }
 
     /**

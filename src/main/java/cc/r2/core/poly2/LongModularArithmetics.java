@@ -11,6 +11,9 @@ public final class LongModularArithmetics {
     /** Max supported modulus */
     public static final long MAX_SUPPORTED_MODULUS = (1L << 62) - 1;
 
+    /** 2^32 - 1 */
+    public static final long MAX_INT_32 = (1L << 32) - 1;
+
     /**
      * Returns highest 64 bits of (signed) long multiplication.
      *
@@ -158,6 +161,8 @@ public final class LongModularArithmetics {
      * @return the magic
      */
     public static MagicDivider magicUnsigned(long d, boolean branchfree) {
+        if(d == 0)
+            throw new ArithmeticException("divide by zero");
         // 1 is not supported with branchfree algorithm
         assert (!branchfree || d != 1);
 
@@ -248,7 +253,7 @@ public final class LongModularArithmetics {
      * @return the magic
      */
     public static MagicDivider magicSigned(long d) {
-        return magicSigned(d, true);
+        return magicSigned(d, false);
     }
 
     /**
@@ -261,9 +266,8 @@ public final class LongModularArithmetics {
      * @return the magic
      */
     public static MagicDivider magicSigned(long d, boolean branchfree) {
-        if (d < 0)
-            throw new IllegalArgumentException("Negative divider.");
-
+        if(d == 0)
+            throw new ArithmeticException("divide by zero");
         assert (!branchfree || (d != 1 && d != -1));
 
         long resultMagic;
@@ -282,7 +286,7 @@ public final class LongModularArithmetics {
         if ((absD&(absD - 1)) == 0) {
             // Branchfree and non-branchfree cases are the same
             resultMagic = 0;
-            resultMore = floor_log_2_d|(d < 0 ? 0x80 : 0);
+            resultMore = floor_log_2_d;//|(d < 0 ? 0x80 : 0);
         } else {
             // the dividend here is 2**(floor_log_2_d + 63), so the low 64 bit word
             // is 0 and the high word is floor_log_2_d - 1
@@ -317,10 +321,10 @@ public final class LongModularArithmetics {
 
             // Mark if we are negative
             if (d < 0) {
-                more |= 0x80;
-                if (!branchfree) {
-                    magic = -magic;
-                }
+//                more |= 0x80;
+//                if (!branchfree) {
+//                    magic = -magic;
+//                }
             }
 
             resultMore = more;
@@ -349,19 +353,19 @@ public final class LongModularArithmetics {
             // must be arithmetic shift and then sign-extend
             long shiftMask = more >> 7;
             q = (q^shiftMask) - shiftMask;
-            return q;
+            return divider.divider < 0 ? -q : q;
         } else {
             long uq = multiplyHighSigned(magic, dividend);
             if ((more&0x40) != 0) {
                 // must be arithmetic shift and then sign extend
-                long sign = more >> 7;
+                long sign = more >>> 7;
                 uq += (((long) dividend^sign) - sign);
             }
             long q = (long) uq;
             q >>= more&0x3F;
             if (q < 0)
                 q += 1;
-            return q;
+            return divider.divider < 0 ? -q : q;
         }
     }
 
@@ -589,5 +593,59 @@ public final class LongModularArithmetics {
      */
     static BigInteger valueOfSigned(long bits) {
         return BigInteger.valueOf(bits);
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative) modulo {@code modulus}
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @param modulus  the modulus < 2^32
+     * @return {@code base} in a power of {@code e} (non negative)
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static long powModUnsigned32(long base, long exponent, MagicDivider modulus) {
+        if (modulus.divider > MAX_INT_32)
+            throw new IllegalArgumentException();
+
+        if (Long.compareUnsigned(base, modulus.divider) >= 0)
+            base = modUnsignedFast(base, modulus);
+
+        long result = 1L;
+        long k2p = base;
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result = modUnsignedFast(result * k2p, modulus);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = modUnsignedFast(k2p * k2p, modulus);
+        }
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative) modulo {@code modulus}
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @param modulus  the modulus
+     * @return {@code base} in a power of {@code e} (non negative)
+     * @throws ArithmeticException if the result overflows a long
+     */
+    private static long powModUnsigned64(long base, long exponent, MagicDivider modulus, MagicDivider magic32) {
+        if (Long.compareUnsigned(base, modulus.divider) >= 0)
+            base = modUnsignedFast(base, modulus);
+
+        long result = 1L;
+        long k2p = base;
+
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result = multiplyMod128Unsigned(result, k2p, modulus.divider, magic32);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = multiplyMod128Unsigned(k2p, k2p, modulus.divider, magic32);
+        }
     }
 }

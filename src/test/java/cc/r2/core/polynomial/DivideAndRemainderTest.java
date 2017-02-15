@@ -7,8 +7,10 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.r2.core.polynomial.RandomPolynomials.randomPoly;
+import java.util.Arrays;
+
 import static cc.r2.core.polynomial.DivideAndRemainder.*;
+import static cc.r2.core.polynomial.RandomPolynomials.randomPoly;
 import static org.junit.Assert.*;
 
 public class DivideAndRemainderTest {
@@ -151,16 +153,15 @@ public class DivideAndRemainderTest {
                 fast = new DescriptiveStatistics(), fastPseudo = new DescriptiveStatistics(),
                 gen = new DescriptiveStatistics(), genPseudo = new DescriptiveStatistics();
 
-        for (int i = 0; i < 10_000; i++) {
+        for (int i = 0; i < 15_000; i++) {
             MutablePolynomial dividend = randomPoly(rndd.nextInt(1, 10), 10, rnd);
             MutablePolynomial divider;
             do {
                 divider = MutablePolynomial.create(rndd.nextInt(-10, 10), 1);
             } while (divider.degree == 0);
 
-            if (i == 100) {
-                fast.clear();
-                gen.clear();
+            if (i == 10000) {
+                Arrays.asList(fast, fastPseudo, gen, genPseudo).forEach(DescriptiveStatistics::clear);
             }
 
             long start = System.nanoTime();
@@ -227,15 +228,12 @@ public class DivideAndRemainderTest {
             assertArrayEquals(expected, actualNoCopy);
             assertArrayEquals(expected, expectedNoCopy);
         }
-        System.out.println("Fast:");
-        System.out.println(fast);
-        System.out.println("General:");
-        System.out.println(gen);
+        System.out.println("Fast:    " + fast.getMean());
+        System.out.println("General: " + gen.getMean());
 
-        System.out.println("Fast:");
-        System.out.println(fastPseudo);
-        System.out.println("General:");
-        System.out.println(genPseudo);
+        System.out.println("       pseudo ");
+        System.out.println("Fast:    " + fastPseudo.getMean());
+        System.out.println("General: " + genPseudo.getMean());
     }
 
 
@@ -455,7 +453,7 @@ public class DivideAndRemainderTest {
         int dividerDegree = 36;
         int dividendDegree = 56;
         for (int i = 0; i < nIterations; i++) {
-            if (i == 1000) {
+            if (i == 10000) {
                 classic.clear();
                 fast.clear();
             }
@@ -484,10 +482,10 @@ public class DivideAndRemainderTest {
         }
 
         System.out.println("==== Plain ====");
-        System.out.println(classic);
+        System.out.println(classic.getMean());
 
         System.out.println("==== Fast ====");
-        System.out.println(fast);
+        System.out.println(fast.getMean());
     }
 
     @Test
