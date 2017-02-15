@@ -241,7 +241,7 @@ public final class LongArithmetics {
     }
 
     /**
-     * Returns a solution of congruence {@code a * x = 1 mod p}
+     * Returns a solution of congruence {@code num * x = 1 mod modulus}
      *
      * @param num     base
      * @param modulus modulus

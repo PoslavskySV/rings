@@ -53,7 +53,8 @@ public class HackersDelight {
         return result;
     }
 
-    static long[] libdivide_128_div_64_to_64(long u1, long u0, long v) {
+
+    public static long[] libdivide_128_div_64_to_64(long u1, long u0, long v) {
         long b = (1L << 32); // Number base (16 bits).
         long un1, un0,  // Norm. dividend LSD's.
                 vn1, vn0,           // Norm. divisor digits.
@@ -285,14 +286,20 @@ public class HackersDelight {
                 fast.clear();
                 plain.clear();
             }
-            long[] arr = new long[1000];
+            long[] arr = new long[200];
             for (int j = 0; j < arr.length; j++) {
                 arr[j] = rnd.nextInt();
                 if (arr[j] < 0) arr[j] = -arr[j];
             }
 
-            long modulus = rnd.nextLong();
-            
+            long modulus;
+            do {
+                modulus = rnd.nextLong();
+                modulus = modulus % 100;
+                if (modulus < 0)
+                    modulus = -modulus;
+            } while (modulus == 0);
+
 
             long[] f = reduceModBenchFast(arr, libdivide_internal_s64_gen(modulus, false));
             long[] p = reduceModBenchPlain(arr, modulus);

@@ -12,11 +12,11 @@ import static cc.r2.core.polynomial.LongArithmetics.*;
  * overflow, so that in the case of overflow the {@link ArithmeticException} is always thrown. Thus, the results of all
  * math operations are garantied to be correct.
  */
-final class MutablePolynomial implements Comparable<MutablePolynomial> {
+public final class MutablePolynomial implements Comparable<MutablePolynomial> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
-    long[] data;
+    public  long[] data;
     /** points to the last non zero element in the data array */
-    int degree;
+    public  int degree;
 
     /** copy constructor */
     private MutablePolynomial(long[] data, int degree) {
@@ -37,7 +37,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
      * @param data coefficients
      * @return the polynomial
      */
-    static MutablePolynomial create(long... data) {
+    public static MutablePolynomial create(long... data) {
         return new MutablePolynomial(data);
     }
 
@@ -172,7 +172,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
      * @param modulus the modulus
      * @return value at {@code point} modulo {@code modulus}
      */
-    long evaluate(long point, long modulus) {
+    public long evaluate(long point, long modulus) {
         if (point == 0)
             return mod(cc(), modulus);
         long res = 0;
@@ -291,7 +291,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
         return this;
     }
 
-    MutablePolynomial shiftLeft(int d) {
+    public MutablePolynomial shiftLeft(int d) {
         if (d == 0)
             return this;
         if (d > degree)
@@ -313,7 +313,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
         return this;
     }
 
-    MutablePolynomial cut(int newDegree) {
+    public MutablePolynomial cut(int newDegree) {
         if (newDegree >= degree)
             return this;
         Arrays.fill(data, newDegree + 1, degree + 1, 0);
@@ -334,7 +334,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
      * @param modulus the modulus
      * @return {@code this} reduced modulo {@code modulus}
      */
-    MutablePolynomial modulus(long modulus) {
+    public  MutablePolynomial modulus(long modulus) {
         for (int i = degree; i >= 0; --i)
             data[i] = mod(data[i], modulus);
         fixDegree();
@@ -523,7 +523,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
      * @param modulus the modulus
      * @return {@code this + oth} modulo {@code modulus}
      */
-    MutablePolynomial add(MutablePolynomial oth, long modulus) {
+    public MutablePolynomial add(MutablePolynomial oth, long modulus) {
         if (oth.isZero())
             return modulus(modulus);
 
@@ -581,7 +581,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
      * @param modulus the modulus
      * @return {@code this - oth} modulo {@code modulus}
      */
-    MutablePolynomial subtract(MutablePolynomial oth, long modulus) {
+    public MutablePolynomial subtract(MutablePolynomial oth, long modulus) {
         if (oth.isZero())
             return modulus(modulus);
 
@@ -737,7 +737,7 @@ final class MutablePolynomial implements Comparable<MutablePolynomial> {
      * @param oth the polynomial
      * @return {@code this * oth}
      */
-    MutablePolynomial multiply(MutablePolynomial oth, long modulus) {
+    public MutablePolynomial multiply(MutablePolynomial oth, long modulus) {
         if (this == oth)
             return square(modulus);
         if (oth.degree == 0)

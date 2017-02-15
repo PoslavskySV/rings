@@ -405,7 +405,7 @@ public class DivideAndRemainderTest {
 
     @Test
     public void test19_FastDivisionPerformance() throws Exception {
-        long modulus = LargeDDFTest.bigModulus;
+        long modulus = DistinctDegreeFactorizationTest.bigModulus;
         RandomGenerator rnd = new Well1024a();
         MutablePolynomial divider = RandomPolynomials.randomMonicPoly(300, modulus, rnd);
 
@@ -447,7 +447,7 @@ public class DivideAndRemainderTest {
 
     @Test
     public void test20_FastDivisionPerformance() throws Exception {
-        long modulus = LargeDDFTest.bigModulus;
+        long modulus = DistinctDegreeFactorizationTest.bigModulus;
         RandomGenerator rnd = new Well1024a();
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
