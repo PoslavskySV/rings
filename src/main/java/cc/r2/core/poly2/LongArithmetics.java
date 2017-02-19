@@ -261,4 +261,10 @@ public final class LongArithmetics {
             throw new IllegalArgumentException("Not invertible: val = " + num + ", modulus = " + modulus + ", old_r = " + old_r);
         return mod(old_s, modulus);
     }
+
+    public static int toInt(long v) {
+        if (v > Integer.MAX_VALUE)
+            throw new ArithmeticException("overflow");
+        return (int) v;
+    }
 }

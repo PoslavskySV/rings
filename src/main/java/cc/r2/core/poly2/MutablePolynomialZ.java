@@ -1,5 +1,7 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.polynomial.MutablePolynomial;
+
 import java.util.Arrays;
 
 /**
@@ -19,6 +21,19 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
     }
 
     static MutablePolynomialZ create(long... data) {
+        return new MutablePolynomialZ(data);
+    }
+
+    /**
+     * Creates monomial {@code coefficient * x^exponent}
+     *
+     * @param coefficient monomial coefficient
+     * @param exponent    monomial exponent
+     * @return {@code coefficient * x^exponent}
+     */
+    static MutablePolynomialZ createMonomial(long coefficient, int exponent) {
+        long[] data = new long[exponent + 1];
+        data[exponent] = coefficient;
         return new MutablePolynomialZ(data);
     }
 
