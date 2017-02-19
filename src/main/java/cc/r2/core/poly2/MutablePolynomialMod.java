@@ -113,7 +113,9 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     }
 
     /** modulus operation */
-    long mod(long val) { return modUnsignedFast(val, magic);}
+    long mod(long val) {
+        return modUnsignedFast(val, magic);
+    }
 
     /** mulMod operation */
     long mulMod(long a, long b) {
@@ -135,6 +137,10 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     /** to symmetric modulus */
     long symMod(long value) {
         return value <= modulus / 2 ? value : value - modulus;
+    }
+
+    MutablePolynomialZ normalUnsafe(){
+        return MutablePolynomialZ.create(data);
     }
 
     /** does not reduce and copy the data */

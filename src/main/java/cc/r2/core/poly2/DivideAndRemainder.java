@@ -592,6 +592,7 @@ public final class DivideAndRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the remainder
      */
+    //TODO remove method!!!
     public static MutablePolynomialMod remainderFastWithSwitch(final MutablePolynomialMod dividend,
                                                                final MutablePolynomialMod divider,
                                                                final InverseModMonomial invMod,
@@ -600,8 +601,8 @@ public final class DivideAndRemainder {
         if (rem != null)
             return rem;
 
-        if (useClassicalDivision(dividend, divider))
-            return remainderClassical0(dividend, divider, copy);
+//        if (useClassicalDivision(dividend, divider))
+//            return remainderClassical0(dividend, divider, copy);
 
         return divideAndRemainderFast0(dividend, divider, invMod, copy)[1];
     }
