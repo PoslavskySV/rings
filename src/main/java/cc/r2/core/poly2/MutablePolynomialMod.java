@@ -1,7 +1,5 @@
 package cc.r2.core.poly2;
 
-//import cc.r2.core.polynomial.LongArithmetics;
-
 import cc.r2.core.poly2.LongModularArithmetics.*;
 
 import java.util.Arrays;
@@ -10,15 +8,19 @@ import static cc.r2.core.poly2.LongModularArithmetics.*;
 import static cc.r2.core.polynomial.LongArithmetics.modInverse;
 
 /**
- * Created by poslavsky on 26/01/2017.
+ * Univariate polynomial over Zp.
+ * All operations (except where it is specifically stated) changes the content of this.
+ *
+ * @author Stanislav Poslavsky
+ * @since 1.0
  */
 final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolynomialMod> {
     /** the modulus */
     final long modulus;
     /** magic **/
-    final MagicDivider magic, magic32MulMod;
-    /** whether modulus less then 2^32 **/
-    final boolean modulusFits32;
+    private final MagicDivider magic, magic32MulMod;
+    /** whether modulus less then 2^32 (if so, faster mulmod available) **/
+    private final boolean modulusFits32;
 
     /** copy constructor */
     private MutablePolynomialMod(long modulus, MagicDivider magic, MagicDivider magic32MulMod, long[] data, int degree, boolean modulusFits32) {
@@ -30,15 +32,19 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         this.modulusFits32 = modulusFits32;
     }
 
-    /** private constructor */
+    /** main constructor */
     private MutablePolynomialMod(long modulus, MagicDivider magic, long[] data) {
         this.modulus = modulus;
         this.magic = magic;
         this.magic32MulMod = magic32ForMultiplyMod(modulus);
         this.data = data;
         this.degree = data.length - 1;
-        this.modulusFits32 = Long.compareUnsigned(modulus, 1L << 32) < 0;
+        this.modulusFits32 = modulusFits32(modulus);
         fixDegree();
+    }
+
+    private static boolean modulusFits32(long modulus) {
+        return Long.compareUnsigned(modulus, LongModularArithmetics.MAX_UNSIGNED_INT32) <= 0;
     }
 
     private static void checkModulus(long modulus) {
@@ -46,35 +52,30 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             throw new IllegalArgumentException("Too large modulus. Max allowed is " + MAX_SUPPORTED_MODULUS);
     }
 
-    /**
-     * Creates poly with specified coefficients
-     *
-     * @param data coefficients
-     * @return the polynomial
-     */
-    static MutablePolynomialMod create(long modulus, long... data) {
-        MagicDivider magic = magicUnsigned(modulus);
-        reduce(data, magic);
-        return new MutablePolynomialMod(modulus, magic, data);
-    }
+    /* =========================== Factory methods =========================== */
 
     /**
-     * Creates poly with specified signed coefficients
+     * Creates poly with specified coefficients represented as signed integers reducing them modulo {@code modulus}
      *
-     * @param data coefficients
+     * @param modulus the modulus
+     * @param data    coefficients
      * @return the polynomial
      */
-    static MutablePolynomialMod createSigned(long modulus, long... data) {
-        MagicDivider magic = magicSigned(modulus);
-        for (int i = 0; i < data.length; ++i)
-            data[i] = modSignedFast(data[i], magic);
+    static MutablePolynomialMod createSigned(long modulus, long[] data) {
+        reduceSigned(data, magicSigned(modulus));
         return new MutablePolynomialMod(modulus, magicUnsigned(modulus), data);
     }
 
     /** reduce data mod modulus **/
-    private static void reduce(long[] data, MagicDivider magic) {
+    private static void reduceUnsigned(long[] data, MagicDivider magicUnsigned) {
         for (int i = 0; i < data.length; ++i)
-            data[i] = modUnsignedFast(data[i], magic);
+            data[i] = modUnsignedFast(data[i], magicUnsigned);
+    }
+
+    /** reduce data mod modulus **/
+    private static void reduceSigned(long[] data, MagicDivider magicSigned) {
+        for (int i = 0; i < data.length; ++i)
+            data[i] = modSignedFast(data[i], magicSigned);
     }
 
     /**
@@ -86,10 +87,32 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
      * @return {@code coefficient * x^exponent}
      */
     static MutablePolynomialMod createMonomial(long modulus, long coefficient, int exponent) {
-        long[] data = new long[exponent + 1];
         MagicDivider magic = magicUnsigned(modulus);
-        data[exponent] = modUnsignedFast(coefficient, magic);
+        if (coefficient >= modulus)
+            coefficient = modUnsignedFast(coefficient, magic);
+        else if (coefficient < 0)
+            coefficient = LongArithmetics.mod(coefficient, modulus);
+
+        long[] data = new long[exponent + 1];
+        data[exponent] = coefficient;
         return new MutablePolynomialMod(modulus, magic, data);
+    }
+
+    /**
+     * Creates constant polynomial with specified value
+     *
+     * @param modulus the modulus
+     * @param value   the value
+     * @return constant polynomial
+     */
+    static MutablePolynomialMod constant(long modulus, long value) {
+        MagicDivider magic = magicUnsigned(modulus);
+        if (value >= modulus)
+            value = modUnsignedFast(value, magic);
+        else if (value < 0)
+            value = LongArithmetics.mod(value, modulus);
+
+        return new MutablePolynomialMod(modulus, magic, new long[]{value});
     }
 
     /**
@@ -99,7 +122,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
      * @return polynomial 1
      */
     static MutablePolynomialMod one(long modulus) {
-        return create(modulus, 1);
+        return constant(modulus, 1);
     }
 
     /**
@@ -109,16 +132,21 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
      * @return polynomial 0
      */
     static MutablePolynomialMod zero(long modulus) {
-        return create(modulus, 0);
+        return constant(modulus, 0);
     }
+
+
+
+
+    /*=========================== Main methods ===========================*/
 
     /** modulus operation */
     long mod(long val) {
         return modUnsignedFast(val, magic);
     }
 
-    /** mulMod operation */
-    long mulMod(long a, long b) {
+    /** multiplyMod operation */
+    long multiplyMod(long a, long b) {
         return modulusFits32 ? mod(a * b) : multiplyMod128Unsigned(a, b, modulus, magic32MulMod);
     }
 
@@ -139,40 +167,65 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         return value <= modulus / 2 ? value : value - modulus;
     }
 
-    MutablePolynomialZ normalUnsafe(){
-        return MutablePolynomialZ.create(data);
+    @Override
+    MutablePolynomialMod createFromArray(long[] newData) {
+        reduceSigned(newData, magicSigned(modulus));
+        MutablePolynomialMod r = new MutablePolynomialMod(modulus, magic, magic32MulMod, newData, newData.length - 1, modulusFits32);
+        r.fixDegree();
+        return r;
     }
 
-    /** does not reduce and copy the data */
+    /**
+     * Creates constant polynomial with specified value
+     *
+     * @param val the value
+     * @return constant polynomial with specified value
+     */
+    @Override
+    MutablePolynomialMod createConstant(long val) {
+        if (val < 0)
+            val = LongArithmetics.mod(val, modulus);
+        else if (val >= modulus)
+            val = mod(val);
+        return new MutablePolynomialMod(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
+    }
+
+
+    /** does not copy the data and does not reduce the data with new modulus */
     MutablePolynomialMod setModulusUnsafe(long newModulus) {
         return new MutablePolynomialMod(newModulus, magicUnsigned(newModulus), data);
     }
 
-    private void checkCompatibleModulus(MutablePolynomialMod oth) {
-        if (modulus != oth.modulus)
-            throw new IllegalArgumentException();
+    /**
+     * Creates new Zp[x] polynomial with specified modulus.
+     *
+     * @param newModulus the new modulus
+     * @return the new Zp[x] polynomial with specified modulus
+     */
+    MutablePolynomialMod setModulus(long newModulus) {
+        long[] newData = data.clone();
+        MagicDivider newMagic = magicUnsigned(newModulus);
+        reduceUnsigned(newData, newMagic);
+        return new MutablePolynomialMod(newModulus, newMagic, newData);
     }
 
-    @Override
-    MutablePolynomialMod createFromArray(long[] data) {
-        return create(this.modulus, data);
+    /**
+     * Returns Z[x] polynomial formed from the coefficients of this.
+     *
+     * @param copy whether to copy the internal data
+     * @return Z[x] version of this
+     */
+    MutablePolynomialZ normalForm(boolean copy) {
+        return MutablePolynomialZ.create(copy ? data.clone() : data);
     }
 
-    public MutablePolynomialMod constant(long val) {
-        return new MutablePolynomialMod(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
-    }
-
-    @Override
-    MutablePolynomialMod createZero() {
-        return constant(0);
-    }
-
-    @Override
-    MutablePolynomialMod createOne() {
-        return constant(1);
-    }
-
-    MutablePolynomialZ symmetricZ() {
+    /**
+     * Returns Z[x] polynomial formed from the coefficients of this
+     * represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
+     *
+     * @return Z[x] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
+     */
+    MutablePolynomialZ normalSymmetricForm() {
         long[] newData = new long[degree + 1];
         for (int i = degree; i >= 0; --i)
             newData[i] = symMod(data[i]);
@@ -180,10 +233,9 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     }
 
     /**
-     * Reduces this polynomial and returns its monic part (that is {@code this} multiplied by
-     * its inversed leading coefficient).
+     * Sets {@code this} to its monic part (that is {@code this} multiplied by its inversed leading coefficient).
      *
-     * @return {@code this} as a monic polynomial
+     * @return {@code this}
      */
     MutablePolynomialMod monic() {
         if (data[degree] == 0) // isZero()
@@ -197,13 +249,13 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
 
     /**
      * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is
-     * {@code monic(modulus).multiply(factor, modulus)} ).
+     * {@code monic(modulus).multiply(factor)} ).
      *
      * @param factor the factor
-     * @return {@code this }
+     * @return {@code this}
      */
     MutablePolynomialMod monic(long factor) {
-        return multiply(mulMod(mod(factor), modInverse(lc(), modulus)));
+        return multiply(multiplyMod(mod(factor), modInverse(lc(), modulus)));
     }
 
     @Override
@@ -214,10 +266,14 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         point = mod(point);
         long res = 0;
         for (int i = degree; i >= 0; --i)
-            res = mod(mulMod(res, point) + data[i]);
+            res = addMod(multiplyMod(res, point), data[i]);
         return res;
     }
 
+    void checkCompatibleModulus(MutablePolynomialMod oth) {
+        if (modulus != oth.modulus)
+            throw new IllegalArgumentException();
+    }
 
     @Override
     MutablePolynomialMod add(MutablePolynomialMod oth) {
@@ -257,7 +313,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         checkCompatibleModulus(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
-            data[i] = addMod(data[i], mulMod(factor, oth.data[i]));
+            data[i] = addMod(data[i], multiplyMod(factor, oth.data[i]));
         fixDegree();
         return this;
     }
@@ -288,7 +344,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
 
         checkCompatibleModulus(oth);
         for (int i = oth.degree + exponent; i >= exponent; --i)
-            data[i] = subtractMod(data[i], mulMod(factor, oth.data[i - exponent]));
+            data[i] = subtractMod(data[i], multiplyMod(factor, oth.data[i - exponent]));
 
         fixDegree();
         return this;
@@ -311,7 +367,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             return toZero();
 
         for (int i = degree; i >= 0; --i)
-            data[i] = mulMod(data[i], factor);
+            data[i] = multiplyMod(data[i], factor);
         return this;
     }
 
@@ -322,13 +378,13 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         long[] newData = new long[degree];
         if (degree < modulus)
             for (int i = degree; i > 0; --i)
-                newData[i - 1] = mulMod(data[i], i);
+                newData[i - 1] = multiplyMod(data[i], i);
         else {
             int i = degree;
             for (; i >= modulus; --i)
-                newData[i - 1] = mulMod(data[i], mod(i));
+                newData[i - 1] = multiplyMod(data[i], mod(i));
             for (; i > 0; --i)
-                newData[i - 1] = mulMod(data[i], i);
+                newData[i - 1] = multiplyMod(data[i], i);
         }
         return createFromArray(newData);
     }
@@ -365,7 +421,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             // we can apply fast integer arithmetic and then reduce
             data = multiplyExact(oth);
             degree += oth.degree;
-            reduce(data, magic);
+            reduceUnsigned(data, magic);
             fixDegree();
         } else {
             data = multiplyMod(oth);
@@ -405,7 +461,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             // we can apply fast integer arithmetic and then reduce
             data = squareExact();
             degree += degree;
-            reduce(data, magic);
+            reduceUnsigned(data, magic);
             fixDegree();
         } else {
             data = squareMod();
@@ -431,11 +487,11 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             return squareModKaratsuba(data, 0, degree + 1);
     }
 
-    /* *
-    *
-    * Multiplication with safe modular arithmetic
-    *
-    * */
+    /**
+     *
+     * Multiplication with safe modular arithmetic
+     *
+     * */
 
     /**
      * Classical n*m multiplication algorithm
@@ -474,7 +530,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             long c = a[aFrom + i];
             if (c != 0)
                 for (int j = 0; j < bTo - bFrom; ++j)
-                    result[i + j] = addMod(result[i + j], mulMod(c, b[bFrom + j]));
+                    result[i + j] = addMod(result[i + j], multiplyMod(c, b[bFrom + j]));
         }
     }
 
@@ -500,7 +556,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         if (fTo - fFrom == 1) {
             long[] result = new long[gTo - gFrom];
             for (int i = gFrom; i < gTo; ++i)
-                result[i - gFrom] = mulMod(f[fFrom], g[i]);
+                result[i - gFrom] = multiplyMod(f[fFrom], g[i]);
             return result;
         }
         // single element in g
@@ -508,16 +564,16 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             long[] result = new long[fTo - fFrom];
             //single element in b
             for (int i = fFrom; i < fTo; ++i)
-                result[i - fFrom] = mulMod(g[gFrom], f[i]);
+                result[i - fFrom] = multiplyMod(g[gFrom], f[i]);
             return result;
         }
         // linear factors
         if (fTo - fFrom == 2 && gTo - gFrom == 2) {
             long[] result = new long[3];
             //both a and b are linear
-            result[0] = mulMod(f[fFrom], g[gFrom]);
-            result[1] = addMod(mulMod(f[fFrom], g[gFrom + 1]), mulMod(f[fFrom + 1], g[gFrom]));
-            result[2] = mulMod(f[fFrom + 1], g[gFrom + 1]);
+            result[0] = multiplyMod(f[fFrom], g[gFrom]);
+            result[1] = addMod(multiplyMod(f[fFrom], g[gFrom + 1]), multiplyMod(f[fFrom + 1], g[gFrom]));
+            result[2] = multiplyMod(f[fFrom + 1], g[gFrom + 1]);
             return result;
         }
         //switch to classical
@@ -601,7 +657,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             long c = data[from + i];
             if (c != 0)
                 for (int j = 0; j < len; ++j)
-                    result[i + j] = addMod(result[i + j], mulMod(c, data[from + j]));
+                    result[i + j] = addMod(result[i + j], multiplyMod(c, data[from + j]));
         }
     }
 
@@ -617,12 +673,12 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         if (fFrom >= fTo)
             return new long[0];
         if (fTo - fFrom == 1)
-            return new long[]{mulMod(f[fFrom], f[fFrom])};
+            return new long[]{multiplyMod(f[fFrom], f[fFrom])};
         if (fTo - fFrom == 2) {
             long[] result = new long[3];
-            result[0] = mulMod(f[fFrom], f[fFrom]);
-            result[1] = mulMod(mulMod(2L, f[fFrom]), f[fFrom + 1]);
-            result[2] = mulMod(f[fFrom + 1], f[fFrom + 1]);
+            result[0] = multiplyMod(f[fFrom], f[fFrom]);
+            result[1] = multiplyMod(multiplyMod(2L, f[fFrom]), f[fFrom + 1]);
+            result[2] = multiplyMod(f[fFrom + 1], f[fFrom + 1]);
             return result;
         }
         //switch to classical

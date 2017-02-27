@@ -5960,6 +5960,32 @@ public class BigInteger extends Number {
     public BigInteger decrement(){
         return subtract(ONE);
     }
+
+    /**
+     * Converts unsigned long to BigInteger
+     *
+     * @param bits unsigned bits
+     * @return BigInteger value of unsigned long
+     */
+    public static BigInteger valueOfUnsigned(long bits) {
+        if (bits >= 0)
+            return valueOfSigned(bits);
+        BigInteger r = valueOf(~bits);
+        for (int i = 0; i < 64; ++i)
+            r = r.flipBit(i);
+        return r;
+    }
+
+    /**
+     * Converts signed long to BigInteger
+     *
+     * @param bits signed bits
+     * @return BigInteger value of signed long
+     */
+    public static BigInteger valueOfSigned(long bits) {
+        return valueOf(bits);
+    }
+
 //
 //    @Override
 //    public BigInteger[] gcdExtended(BigInteger b) {

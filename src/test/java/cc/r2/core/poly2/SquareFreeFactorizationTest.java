@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.poly2.FactorizationTestUtil.RandomSource;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -92,14 +93,14 @@ public class SquareFreeFactorizationTest {
 
     @Test
     public void test4() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(2, 1, 0, 1, 0, 2);
-        poly = poly.multiply(MutablePolynomialMod.create(2, 1, 0, 1, 0, 2));
+        MutablePolynomialMod poly = MutablePolynomialZ.create(1, 0, 1, 0, 2).modulus(2);
+        poly = poly.multiply(MutablePolynomialZ.create(1, 0, 1, 0, 2).modulus(2));
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
     @Test
     public void test5() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(2, 1, 0, 0, 0, 1);
+        MutablePolynomialMod poly = MutablePolynomialZ.create(1, 0, 0, 0, 1).modulus(2);
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
@@ -122,7 +123,7 @@ public class SquareFreeFactorizationTest {
                     for (long modulus : primes) {
                         MutablePolynomialMod poly;
                         start = System.nanoTime();
-                        poly = MutablePolynomialMod.create(modulus, rndd.nextLong(1, 1000));
+                        poly = MutablePolynomialZ.create(rndd.nextLong(1, 1000)).modulus(modulus, false);
                         for (int j = 0; j < nbase; j++) {
                             MutablePolynomialMod f = randomPoly(rndd.nextInt(1, maxDegree), bound, rnd).modulus(modulus);
                             poly = poly.multiply(PolynomialArithmetics.polyPow(f, rndd.nextInt(1, maxExponent), true));
@@ -159,50 +160,52 @@ public class SquareFreeFactorizationTest {
 
     @Test
     public void test6a() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(5, 0, 0, 1, 3, 4, 3, 3, 2, 3);
+        MutablePolynomialMod poly = MutablePolynomialZ.create(0, 0, 1, 3, 4, 3, 3, 2, 3).modulus(5);
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6b() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(3, 0, 0, 0, 2);
+        MutablePolynomialMod poly = MutablePolynomialZ.create(0, 0, 0, 2).modulus(3);
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6c() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(2, 0, 0, 0, 1, 1);
+        MutablePolynomialMod poly = MutablePolynomialZ.create(0, 0, 0, 1, 1).modulus(2);
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6d() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2);
+        MutablePolynomialMod poly = MutablePolynomialZ.create(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2).modulus(3);
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6e() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(5, 2, 3, 2, 1, 3, 3, 3);
+        MutablePolynomialMod poly = MutablePolynomialZ.create(2, 3, 2, 1, 3, 3, 3).modulus(5);
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6f() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(3, 1, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0, 1);
+        MutablePolynomialMod poly = MutablePolynomialZ.create(1, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0, 1).modulus(3);
         assertFactorization(poly, SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6g() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialMod.create(101, 0, 0, 0, 8, 20, 67, 55);
-        assertFactorization(poly, SquareFreeFactorization(poly));
+        for (long modulus : new long[]{101, BigPrimes.nextPrime(1L << 50)}) {
+            MutablePolynomialMod poly = MutablePolynomialZ.create(0, 0, 0, 8, 20, 67, 55).modulus(modulus);
+            assertFactorization(poly, SquareFreeFactorization(poly));
+        }
     }
 
     @Test
     public void test7() throws Exception {
         assertEquals(1, SquareFreeFactorization(MutablePolynomialZ.create(0, 0, 0, 0, 1)).factors.size());
-        assertEquals(1, SquareFreeFactorization(MutablePolynomialMod.create(31, 0, 0, 0, 0, 1)).factors.size());
+        assertEquals(1, SquareFreeFactorization(MutablePolynomialZ.create(0, 0, 0, 0, 1).modulus(31)).factors.size());
     }
 
     @Test

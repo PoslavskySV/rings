@@ -62,10 +62,10 @@ public final class FactorizationTestUtil {
             long[] data = new long[degree + 1];
             data[0] = 1;
             for (int i = 1; i <= degree; i++)
-                data[i] = algebra.addMod(algebra.mulMod(data[i - 1], data[i - 1]), 1);
+                data[i] = algebra.addMod(algebra.multiplyMod(data[i - 1], data[i - 1]), 1);
             ArraysUtil.reverse(data, 0, data.length);
 
-            return MutablePolynomialMod.create(modulus, data);
+            return MutablePolynomialZ.create(data).modulus(modulus, false);
         }
     }
 
@@ -103,7 +103,7 @@ public final class FactorizationTestUtil {
         @Override
         public MutablePolynomialMod take(long modulus) {
             MutablePolynomialMod poly;
-            poly = MutablePolynomialMod.create(modulus, rndd.nextLong(1, modulus));
+            poly = MutablePolynomialZ.create(rndd.nextLong(1, modulus)).modulus(modulus, false);
             int nBases = rndd.nextInt(minNBase, maxNBase);
             for (int j = 1; j <= nBases; ++j)
                 poly = poly.multiply(RandomPolynomials.randomMonicPoly(j, modulus, rnd));

@@ -8,6 +8,8 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static cc.r2.core.number.BigInteger.valueOfSigned;
+import static cc.r2.core.number.BigInteger.valueOfUnsigned;
 import static cc.r2.core.poly2.LongModularArithmetics.*;
 import static org.junit.Assert.assertEquals;
 
@@ -15,7 +17,6 @@ import static org.junit.Assert.assertEquals;
  * Created by poslavsky on 26/01/2017.
  */
 public class LongModularArithmeticsTest {
-
     static long lowBits(BigInteger num) {
         return num.and(BigInteger.valueOf(0xFFFFFFFFFFFFFFFFL)).longValue();
     }
@@ -254,47 +255,49 @@ public class LongModularArithmeticsTest {
 
     @Test
     public void fastDivisionBenchmark1() throws Exception {
-        boolean small = true;
-        RandomGenerator rnd = new Well1024a();
-        DescriptiveStatistics plain = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
-        for (int i = 0; i < 100000; i++) {
-            if (i == 10000) {
-                fast.clear();
-                plain.clear();
-            }
-            long[] arr = new long[1000];
-            for (int j = 0; j < arr.length; j++)
-                arr[j] = rnd.nextLong();
+        for (boolean small : new boolean[]{true, false}) {
 
-            long modulus;
-            if (small)
-                do {
+            RandomGenerator rnd = new Well1024a();
+            DescriptiveStatistics plain = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
+            for (int i = 0; i < 20000; i++) {
+                if (i == 10000) {
+                    fast.clear();
+                    plain.clear();
+                }
+                long[] arr = new long[1000];
+                for (int j = 0; j < arr.length; j++)
+                    arr[j] = rnd.nextLong();
+
+                long modulus;
+                if (small)
+                    do {
+                        modulus = rnd.nextLong();
+                        modulus = modulus % 100;
+                        if (modulus < 0)
+                            modulus = -modulus;
+                    } while (modulus == 0);
+                else {
                     modulus = rnd.nextLong();
-                    modulus = modulus % 100;
                     if (modulus < 0)
                         modulus = -modulus;
-                } while (modulus == 0);
-            else {
-                modulus = rnd.nextLong();
-                if (modulus < 0)
-                    modulus = -modulus;
+                }
+                if (modulus == 0 || modulus == 1)
+                    modulus = 123;
+
+
+                long[] f = modulusBenchmarkFast(arr, magicSigned(modulus));
+                long[] p = modulusBenchmarkPlain(arr, modulus);
+
+                assertEquals(f[1], p[1]);
+
+                fast.addValue(f[0]);
+                plain.addValue(p[0]);
             }
-            if (modulus == 0 || modulus == 1)
-                modulus = 123;
 
-
-            long[] f = modulusBenchmarkFast(arr, magicSigned(modulus));
-            long[] p = modulusBenchmarkPlain(arr, modulus);
-
-            assertEquals(f[1], p[1]);
-
-            fast.addValue(f[0]);
-            plain.addValue(p[0]);
+            System.out.println("==== Fast long modulus ====");
+            System.out.println(fast.getPercentile(50));
+            System.out.println("==== Plain long modulus ====");
+            System.out.println(plain.getPercentile(50));
         }
-
-        System.out.println("==== Fast long modulus ====");
-        System.out.println(fast);
-        System.out.println("==== Plain long modulus ====");
-        System.out.println(plain);
     }
 }

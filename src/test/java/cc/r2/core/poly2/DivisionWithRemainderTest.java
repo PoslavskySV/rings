@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.primes.BigPrimes;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
@@ -8,7 +9,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static cc.r2.core.poly2.DivideAndRemainder.*;
+import static cc.r2.core.poly2.DivisionWithRemainder.*;
 import static cc.r2.core.poly2.RandomPolynomials.randomPoly;
 import static org.junit.Assert.*;
 
@@ -17,20 +18,20 @@ import static org.junit.Assert.*;
 /**
  * Created by poslavsky on 15/02/2017.
  */
-public class DivideAndRemainderTest {
-//    @SuppressWarnings("ConstantConditions")
-//    @Test
-//    public void test1() throws Exception {
-//        MutablePolynomial a = MutablePolynomial.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950);
-//        MutablePolynomial b = MutablePolynomial.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216);
-//
-//        long modulus = 11;
-//        PolynomialGCD.PolynomialRemainders prs = PolynomialGCD.Euclid(a, b, modulus);
-//        MutablePolynomial gcd = prs.gcd();
-//        assertEquals(3, gcd.degree);
-//        assertTrue(divideAndRemainder(a, gcd, modulus, true)[1].isZero());
-//        assertTrue(divideAndRemainder(b, gcd, modulus, true)[1].isZero());
-//    }
+public class DivisionWithRemainderTest {
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void test1() throws Exception {
+        long modulus = 11;
+        MutablePolynomialMod a = MutablePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
+        MutablePolynomialMod b = MutablePolynomialZ.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
+
+        PolynomialGCD.PolynomialRemainders<MutablePolynomialMod> prs = PolynomialGCD.Euclid(a, b);
+        MutablePolynomialMod gcd = prs.gcd();
+        assertEquals(3, gcd.degree);
+        assertTrue(divideAndRemainder(a, gcd, true)[1].isZero());
+        assertTrue(divideAndRemainder(b, gcd, true)[1].isZero());
+    }
 
     @Test(expected = ArithmeticException.class)
     public void test2() throws Exception {
@@ -51,6 +52,7 @@ public class DivideAndRemainderTest {
 
     @Test
     public void test4_ModularSmallPolynomialsRandom() throws Exception {
+        int DIVIDEND_DEGREE_FAST_DIVISION_THRESHOLD_MONIC = 81;
         // polynomials
         RandomGenerator rnd = new Well1024a();
         MutablePolynomialMod[] qd;
@@ -387,8 +389,8 @@ public class DivideAndRemainderTest {
     @Test
     public void test13() throws Exception {
         long modulus = 7;
-        MutablePolynomialMod a = MutablePolynomialMod.create(modulus, 5, 1, 4, 6, 4, 3, 5, 5, 3, 4, 2, 2, 5, 2, 5, 6, 1, 1, 2, 5, 1, 0, 0, 6, 6, 5, 5, 1, 0, 1, 4, 1, 1);
-        MutablePolynomialMod b = MutablePolynomialMod.create(modulus, 2, 5, 3, 1, 1, 5, 6, 3, 4, 0, 0, 5, 4, 0, 2, 1);
+        MutablePolynomialMod a = MutablePolynomialZ.create(5, 1, 4, 6, 4, 3, 5, 5, 3, 4, 2, 2, 5, 2, 5, 6, 1, 1, 2, 5, 1, 0, 0, 6, 6, 5, 5, 1, 0, 1, 4, 1, 1).modulus(modulus);
+        MutablePolynomialMod b = MutablePolynomialZ.create(2, 5, 3, 1, 1, 5, 6, 3, 4, 0, 0, 5, 4, 0, 2, 1).modulus(modulus);
         InverseModMonomial invMod = fastDivisionPreConditioning(b);
         MutablePolynomialMod[] fast = divideAndRemainderFast(a, b, invMod, true);
         MutablePolynomialMod[] plain = divideAndRemainderClassic(a, b, true);
@@ -398,8 +400,8 @@ public class DivideAndRemainderTest {
     @Test
     public void test14() throws Exception {
         long modulus = 7;
-        MutablePolynomialMod a = MutablePolynomialMod.create(modulus, 5, 3, 3, 3, 5, 3, 1, 4, -3, 1, 4, 5, 0, 2, 2, -5, 1);
-        MutablePolynomialMod b = MutablePolynomialMod.create(modulus, 0, 4, 6, 1, 2, 4, 0, 0, 6, 5, 2, 3, 1, 4, 0, 1);
+        MutablePolynomialMod a = MutablePolynomialZ.create(5, 3, 3, 3, 5, 3, 1, 4, -3, 1, 4, 5, 0, 2, 2, -5, 1).modulus(modulus);
+        MutablePolynomialMod b = MutablePolynomialZ.create(0, 4, 6, 1, 2, 4, 0, 0, 6, 5, 2, 3, 1, 4, 0, 1).modulus(modulus);
         InverseModMonomial invMod = fastDivisionPreConditioning(b);
         MutablePolynomialMod[] fast = divideAndRemainderFast(a, b, invMod, true);
         MutablePolynomialMod[] plain = divideAndRemainderClassic(a, b, true);
@@ -409,8 +411,8 @@ public class DivideAndRemainderTest {
     @Test
     public void test15() throws Exception {
         long modulus = 17;
-        MutablePolynomialMod a = MutablePolynomialMod.create(modulus, 0, 6, 2, 1, 10, 15, 16, 15, 2, 11, 13, 0, 1, 15, 5, 13, 8, 14, 13, 14, 15, 1, 1);
-        MutablePolynomialMod b = MutablePolynomialMod.create(modulus, 7, 12, 12, 12, 13, 2, 7, 10, 7, 15, 13, 1, 10, 16, 6, 1);
+        MutablePolynomialMod a = MutablePolynomialZ.create(0, 6, 2, 1, 10, 15, 16, 15, 2, 11, 13, 0, 1, 15, 5, 13, 8, 14, 13, 14, 15, 1, 1).modulus(modulus);
+        MutablePolynomialMod b = MutablePolynomialZ.create(7, 12, 12, 12, 13, 2, 7, 10, 7, 15, 13, 1, 10, 16, 6, 1).modulus(modulus);
         InverseModMonomial invMod = fastDivisionPreConditioning(b);
         MutablePolynomialMod[] fast = divideAndRemainderFast(a, b, invMod, true);
         MutablePolynomialMod[] plain = divideAndRemainderClassic(a, b, true);
@@ -420,8 +422,8 @@ public class DivideAndRemainderTest {
     @Test
     public void test16() throws Exception {
         long modulus = 17;
-        MutablePolynomialMod a = MutablePolynomialMod.create(modulus, 5, 9, 4, 9, 8, 12, 11, 9, 1, 6, 15, 7, 11, 2, 11, 13, 11, 10, 5, 1);
-        MutablePolynomialMod b = MutablePolynomialMod.create(modulus, 11, 15, 9, 5, 11, 5, 14, 9, 1, 0, 16, 12, 11, 5, 15, 10, 15, 2, 14, 3, 1, 16, 16, 12, 13, 1, 12, 11, 1, 15, 1);
+        MutablePolynomialMod a = MutablePolynomialZ.create(5, 9, 4, 9, 8, 12, 11, 9, 1, 6, 15, 7, 11, 2, 11, 13, 11, 10, 5, 1).modulus(modulus);
+        MutablePolynomialMod b = MutablePolynomialZ.create(11, 15, 9, 5, 11, 5, 14, 9, 1, 0, 16, 12, 11, 5, 15, 10, 15, 2, 14, 3, 1, 16, 16, 12, 13, 1, 12, 11, 1, 15, 1).modulus(modulus);
         InverseModMonomial invMod = fastDivisionPreConditioning(b);
         MutablePolynomialMod[] fast = divideAndRemainderFast(a, b, invMod, true);
         MutablePolynomialMod[] plain = divideAndRemainderClassic(a, b, true);
@@ -431,7 +433,7 @@ public class DivideAndRemainderTest {
     @Test
     public void test17() throws Exception {
         long modulus = 7;
-        MutablePolynomialMod f = MutablePolynomialMod.create(modulus, 0, 2, 3, 4, -5, 1).reverse();
+        MutablePolynomialMod f = MutablePolynomialZ.create(0, 2, 3, 4, -5, 1).modulus(modulus).reverse();
         int modDegree = f.degree;
         MutablePolynomialMod invmod = inverseModMonomial0(f, modDegree);
         MutablePolynomialMod r = PolynomialArithmetics.polyMultiplyMod(f, invmod, MutablePolynomialMod.createMonomial(modulus, 1, modDegree), true);
@@ -441,7 +443,7 @@ public class DivideAndRemainderTest {
     @Test
     public void test18() throws Exception {
         long modulus = 17;
-        MutablePolynomialMod f = MutablePolynomialMod.create(modulus, 7, 12, 12, 12, 13, 2, 7, 10, 7, 15, 13, 1, 10, 16, 6, 1).reverse();
+        MutablePolynomialMod f = MutablePolynomialZ.create(7, 12, 12, 12, 13, 2, 7, 10, 7, 15, 13, 1, 10, 16, 6, 1).modulus(modulus).reverse();
         int modDegree = 9;
         MutablePolynomialMod invmod = inverseModMonomial0(f, modDegree);
         MutablePolynomialMod r = PolynomialArithmetics.polyMultiplyMod(f, invmod, MutablePolynomialMod.createMonomial(modulus, 1, modDegree), true);
@@ -452,11 +454,11 @@ public class DivideAndRemainderTest {
     public void test19_FastDivisionPerformance() throws Exception {
         long modulus = 5659;
         RandomGenerator rnd = new Well1024a();
-        MutablePolynomialMod divider = RandomPolynomials.randomMonicPoly(81, modulus, rnd);
+        MutablePolynomialMod divider = RandomPolynomials.randomMonicPoly(118, modulus, rnd);
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
         InverseModMonomial invRev = fastDivisionPreConditioning(divider);
-        int nIterations = 1500;
+        int nIterations = 15000;
         for (int i = 0; i < nIterations; i++) {
             if (i == 1000) {
                 classic.clear();
@@ -475,30 +477,30 @@ public class DivideAndRemainderTest {
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
-            if (i > nIterations - 10) {
-                System.out.println("====");
-                System.out.println(plain);
-                System.out.println(newton);
-            }
+//            if (i > nIterations - 10) {
+//                System.out.println("====");
+//                System.out.println(plain);
+//                System.out.println(newton);
+//            }
             assertArrayEquals(qdPlain, qdNewton);
         }
 
         System.out.println("==== Plain ====");
-        System.out.println(classic);
+        System.out.println(classic.getPercentile(50));
 
         System.out.println("==== Fast ====");
-        System.out.println(fast);
+        System.out.println(fast.getPercentile(50));
     }
 
     @Test
     public void test20_FastDivisionPerformance() throws Exception {
-        long modulus = 59;
+        long modulus = BigPrimes.nextPrime(124987324L);
         RandomGenerator rnd = new Well1024a(123);
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
         int nIterations = 15000;
-        int dividerDegree = 36;
-        int dividendDegree = 56;
+        int dividerDegree = 156;
+        int dividendDegree = 256;
         for (int i = 0; i < nIterations; i++) {
             if (i == 10000) {
                 classic.clear();
@@ -539,8 +541,8 @@ public class DivideAndRemainderTest {
     @Test
     public void test21() throws Exception {
         long modulus = 17;
-        MutablePolynomialMod a = MutablePolynomialMod.create(modulus, 5, 9, 4, 9, 8, 12, 11, 9, 1, 6, 15, 7, 11, 2, 11, 13, 11, 10, 5, 1);
-        MutablePolynomialMod b = MutablePolynomialMod.create(modulus, 11, 15, 9, 5, 11, 5, 14, 9, 1, 0, 16, 12, 11, 5, 15, 10, 15, 2, 14, 3, 1, 16, 16, 12, 13, 1, 12, 11, 1, 15, 13);
+        MutablePolynomialMod a = MutablePolynomialZ.create(5, 9, 4, 9, 8, 12, 11, 9, 1, 6, 15, 7, 11, 2, 11, 13, 11, 10, 5, 1).modulus(modulus);
+        MutablePolynomialMod b = MutablePolynomialZ.create(11, 15, 9, 5, 11, 5, 14, 9, 1, 0, 16, 12, 11, 5, 15, 10, 15, 2, 14, 3, 1, 16, 16, 12, 13, 1, 12, 11, 1, 15, 13).modulus(modulus);
         MutablePolynomialMod[] fast = divideAndRemainderFast(a, b, true);
         MutablePolynomialMod[] plain = divideAndRemainderClassic(a, b, true);
         assertArrayEquals(fast, plain);

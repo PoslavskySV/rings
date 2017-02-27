@@ -5,21 +5,22 @@ import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static cc.r2.core.poly2.DivideAndRemainder.divideAndRemainder;
+import static cc.r2.core.poly2.DivisionWithRemainder.divideAndRemainder;
 import static cc.r2.core.poly2.FactorDecomposition.oneFactor;
 import static cc.r2.core.poly2.PolynomialGCD.PolynomialGCD;
 
 
 /**
- * Square-free factorization of univariate polynomials with single-precision coefficients.
+ * Square-free factorization of univariate polynomials over Z and Zp with single-precision coefficients.
  *
  * @author Stanislav Poslavsky
+ * @since 1.0
  */
 public final class SquareFreeFactorization {
     private SquareFreeFactorization() {}
 
     /**
-     * Performs square-free factorization of a poly.
+     * Performs square-free factorization of a {@code poly} in Z[x].
      *
      * @param poly the polynomial
      * @return square-free decomposition
@@ -39,7 +40,7 @@ public final class SquareFreeFactorization {
     }
 
     /**
-     * Performs square-free factorization of a poly using Yun's algorithm.
+     * Performs square-free factorization of a poly using Yun's algorithm in Z[x].
      *
      * @param poly the polynomial
      * @return square-free decomposition
@@ -83,7 +84,7 @@ public final class SquareFreeFactorization {
     }
 
     /**
-     * Performs square-free factorization of a poly using Musser's algorithm
+     * Performs square-free factorization of a poly using Musser's algorithm in Z[x].
      *
      * @param poly the polynomial
      * @return square-free decomposition
@@ -127,10 +128,10 @@ public final class SquareFreeFactorization {
     }
 
     /**
-     * Performs square-free factorization of a {@code poly} modulo {@code modulus}.
+     * Performs square-free factorization of a {@code poly} in Zp[x].
      *
      * @param poly the polynomial
-     * @return square-free decomposition modulo {@code modulus}
+     * @return square-free decomposition
      */
     public static FactorDecomposition<MutablePolynomialMod> SquareFreeFactorization(MutablePolynomialMod poly) {
 //        if (modulus >= Integer.MAX_VALUE)// <- just to be on the safe side)
@@ -154,7 +155,9 @@ public final class SquareFreeFactorization {
         if (exponent == 0)
             factorization = SquareFreeFactorizationMusser0(poly);
         else {
-            MutablePolynomialMod expFree = MutablePolynomialMod.create(poly.modulus, Arrays.copyOfRange(poly.data, exponent, poly.degree + 1));
+            MutablePolynomialMod expFree = MutablePolynomialZ
+                    .create(Arrays.copyOfRange(poly.data, exponent, poly.degree + 1))
+                    .modulus(poly.modulus, false);
             factorization = SquareFreeFactorizationMusser0(expFree).addFactor(MutablePolynomialMod.createMonomial(poly.modulus, 1, exponent), 1);
         }
 
@@ -217,7 +220,7 @@ public final class SquareFreeFactorization {
     private static MutablePolynomialMod pRoot(MutablePolynomialMod poly) {
         long modulus = poly.modulus;
         assert poly.degree % modulus == 0;
-        long[] rootData = new long[poly.degree / (int) modulus + 1];
+        long[] rootData = new long[poly.degree / LongArithmetics.safeToInt(modulus + 1)];
         Arrays.fill(rootData, 0);
         for (int i = poly.degree; i >= 0; --i)
             if (poly.data[i] != 0) {
@@ -228,15 +231,21 @@ public final class SquareFreeFactorization {
     }
 
     /**
-     * Returns {@code true} if and only if {@code poly} is square-free and {@code false} otherwise
+     * Returns {@code true} if {@code poly} is square-free and {@code false} otherwise
      *
      * @param poly the polynomial
-     * @return {@code true} if and only if {@code poly} is square-free and {@code false} otherwise
+     * @return {@code true} if {@code poly} is square-free and {@code false} otherwise
      */
     public static <T extends MutablePolynomialAbstract<T>> boolean isSquareFree(T poly) {
         return PolynomialGCD(poly, poly.derivative()).isConstant();
     }
 
+    /**
+     * Performs square-free factorization of a {@code poly}.
+     *
+     * @param poly the polynomial
+     * @return square-free decomposition
+     */
     @SuppressWarnings("unchecked")
     public static <T extends MutablePolynomialAbstract<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
         if (poly instanceof MutablePolynomialZ)

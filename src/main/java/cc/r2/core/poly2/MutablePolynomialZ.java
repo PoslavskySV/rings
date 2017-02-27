@@ -1,13 +1,22 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.polynomial.MutablePolynomial;
+import cc.r2.core.poly2.LongModularArithmetics.MagicDivider;
 
 import java.util.Arrays;
 
+import static cc.r2.core.poly2.LongModularArithmetics.divideSignedFast;
+import static cc.r2.core.poly2.LongModularArithmetics.magicSigned;
+
 /**
- * Created by poslavsky on 15/02/2017.
+ * Univariate polynomial over Z.
+ * All operations (except where it is specifically stated) changes the content of this.
+ *
+ * @author Stanislav Poslavsky
+ * @since 1.0
  */
 final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomialZ> {
+
+    /** main constructor */
     private MutablePolynomialZ(long[] data) {
         this.data = data;
         this.degree = data.length - 1;
@@ -20,6 +29,12 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         this.degree = degree;
     }
 
+    /**
+     * Creates Z[x] polynomial from the specified coefficients
+     *
+     * @param data coefficients
+     * @return Z[x] polynomial
+     */
     static MutablePolynomialZ create(long... data) {
         return new MutablePolynomialZ(data);
     }
@@ -37,25 +52,48 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         return new MutablePolynomialZ(data);
     }
 
+    /**
+     * Returns polynomial corresponding to math 0
+     *
+     * @return polynomial 0
+     */
     static MutablePolynomialZ zero() {
-        return create(0);
+        return new MutablePolynomialZ(new long[]{0}, 0);
     }
 
+    /**
+     * Returns polynomial corresponding to math 1
+     *
+     * @return polynomial 1
+     */
     static MutablePolynomialZ one() {
-        return create(1);
+        return new MutablePolynomialZ(new long[]{1}, 0);
     }
 
+    /**
+     * Reduces polynomial modulo {@code modulus} and returns Zp[x] result.
+     *
+     * @param modulus the modulus
+     * @param copy    whether to copy the internal data or reduce inplace
+     * @return Zp[x] polynomial from this
+     */
     MutablePolynomialMod modulus(long modulus, boolean copy) {
         return MutablePolynomialMod.createSigned(modulus, copy ? data.clone() : data);
     }
 
+    /**
+     * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
+     *
+     * @param modulus the modulus
+     * @return Zp[x] polynomial from this
+     */
     MutablePolynomialMod modulus(long modulus) {
         return modulus(modulus, true);
     }
 
     /**
-     * Divides this polynomial by a {@code factor} or returns {@code null} if some of the elements can't be exactly
-     * divided by the {@code factor}
+     * Divides this polynomial by a {@code factor} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
+     * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
      *
      * @param factor the factor
      * @return {@code this} divided by the {@code factor} or {@code null}
@@ -65,9 +103,9 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             throw new ArithmeticException("Divide by zero");
         if (factor == 1)
             return this;
-        LongModularArithmetics.MagicDivider magic = LongModularArithmetics.magicSigned(factor);
+        MagicDivider magic = magicSigned(factor);
         for (int i = degree; i >= 0; --i) {
-            long l = LongModularArithmetics.divideSignedFast(data[i], magic);
+            long l = divideSignedFast(data[i], magic);
             if (l * factor != data[i])
                 return null;
             data[i] = l;
@@ -81,13 +119,8 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
     }
 
     @Override
-    MutablePolynomialZ createZero() {
-        return new MutablePolynomialZ(new long[]{0}, 0);
-    }
-
-    @Override
-    MutablePolynomialZ createOne() {
-        return new MutablePolynomialZ(new long[]{1}, 0);
+    MutablePolynomialZ createConstant(long val) {
+        return new MutablePolynomialZ(new long[]{val}, 0);
     }
 
     @Override
