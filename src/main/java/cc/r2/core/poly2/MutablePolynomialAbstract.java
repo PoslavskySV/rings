@@ -233,6 +233,24 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     }
 
     /**
+     * Adds 1 to this
+     *
+     * @return {@code this + 1}
+     */
+    final T increment() {
+        return add(createOne());
+    }
+
+    /**
+     * Subtracts 1 from this
+     *
+     * @return {@code this - 1}
+     */
+    final T decrement() {
+        return subtract(createOne());
+    }
+
+    /**
      * Factory
      *
      * @param data the data
@@ -247,6 +265,15 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @return constant polynomial with specified value
      */
     abstract T createConstant(long val);
+
+    /**
+     * Creates monomial {@code coefficient * x^degree}
+     *
+     * @param coefficient monomial coefficient
+     * @param degree      monomial degree
+     * @return {@code coefficient * x^degree}
+     */
+    abstract T createMonomial(long coefficient,int degree);
 
     /**
      * Returns 0 (new instance)

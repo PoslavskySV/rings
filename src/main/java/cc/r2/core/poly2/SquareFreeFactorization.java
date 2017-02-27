@@ -1,8 +1,5 @@
 package cc.r2.core.poly2;
 
-import gnu.trove.list.array.TIntArrayList;
-
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static cc.r2.core.poly2.DivisionWithRemainder.divideAndRemainder;
@@ -36,7 +33,7 @@ public final class SquareFreeFactorization {
             return SquareFreeFactorizationYun(poly);
 
         MutablePolynomialZ expFree = MutablePolynomialZ.create(Arrays.copyOfRange(poly.data, exponent, poly.degree + 1));
-        return SquareFreeFactorizationYun(expFree).addFactor(MutablePolynomialZ.createMonomial(1, exponent), 1);
+        return SquareFreeFactorizationYun(expFree).addFactor(MutablePolynomialZ.monomial(1, exponent), 1);
     }
 
     /**
@@ -66,21 +63,18 @@ public final class SquareFreeFactorization {
                 quot = divideAndRemainder(poly, gcd, false)[0], // safely destroy (cloned) poly (not used further)
                 dQuot = divideAndRemainder(derivative, gcd, false)[0]; // safely destroy (cloned) derivative (not used further)
 
-        ArrayList<MutablePolynomialZ> factors = new ArrayList<>();
-        TIntArrayList exponents = new TIntArrayList();
         int i = 0;
+        FactorDecomposition<MutablePolynomialZ> result = new FactorDecomposition<>();
         while (!quot.isConstant()) {
             ++i;
             dQuot = dQuot.subtract(quot.derivative());
             MutablePolynomialZ factor = PolynomialGCD(quot, dQuot);
             quot = divideAndRemainder(quot, factor, false)[0]; // can destroy quot in divideAndRemainder
             dQuot = divideAndRemainder(dQuot, factor, false)[0]; // can destroy dQuot in divideAndRemainder
-            if (!factor.isOne()) {
-                factors.add(factor);
-                exponents.add(i);
-            }
+            if (!factor.isOne())
+                result.addFactor(factor, i);
         }
-        return new FactorDecomposition<>(factors, exponents, content);
+        return result.setNumericFactor(content);
     }
 
     /**
@@ -108,23 +102,20 @@ public final class SquareFreeFactorization {
 
         MutablePolynomialZ quot = divideAndRemainder(poly, gcd, false)[0]; // safely destroy (cloned) poly
 
-        ArrayList<MutablePolynomialZ> factors = new ArrayList<>();
-        TIntArrayList exponents = new TIntArrayList();
+        FactorDecomposition<MutablePolynomialZ> result = new FactorDecomposition<>();
         int i = 0;
         while (true) {
             ++i;
             MutablePolynomialZ nextQuot = PolynomialGCD(gcd, quot);
             gcd = divideAndRemainder(gcd, nextQuot, false)[0]; // safely destroy gcd (reassigned)
             MutablePolynomialZ factor = divideAndRemainder(quot, nextQuot, false)[0]; // safely destroy quot (reassigned further)
-            if (!factor.isConstant()) {
-                factors.add(factor);
-                exponents.add(i);
-            }
+            if (!factor.isConstant())
+                result.addFactor(factor, i);
             if (nextQuot.isConstant())
                 break;
             quot = nextQuot;
         }
-        return new FactorDecomposition<>(factors, exponents, content);
+        return result.setNumericFactor(content);
     }
 
     /**
@@ -161,7 +152,7 @@ public final class SquareFreeFactorization {
             factorization = SquareFreeFactorizationMusser0(expFree).addFactor(MutablePolynomialMod.createMonomial(poly.modulus, 1, exponent), 1);
         }
 
-        return factorization.setFactor(lc);
+        return factorization.setNumericFactor(lc);
     }
 
     /** {@code poly} will be destroyed */
@@ -181,18 +172,16 @@ public final class SquareFreeFactorization {
                 return oneFactor(poly, 1);
             MutablePolynomialMod quot = divideAndRemainder(poly, gcd, false)[0]; // can safely destroy poly (not used further)
 
-            ArrayList<MutablePolynomialMod> factors = new ArrayList<>();
-            TIntArrayList exponents = new TIntArrayList();
+            FactorDecomposition<MutablePolynomialMod> result = new FactorDecomposition<>();
             int i = 0;
             //if (!quot.isConstant())
             while (true) {
                 ++i;
                 MutablePolynomialMod nextQuot = PolynomialGCD(gcd, quot);
                 MutablePolynomialMod factor = divideAndRemainder(quot, nextQuot, false)[0]; // can safely destroy quot (reassigned further)
-                if (!factor.isConstant()) {
-                    factors.add(factor.monic());
-                    exponents.add(i);
-                }
+                if (!factor.isConstant())
+                    result.addFactor(factor.monic(), i);
+
                 gcd = divideAndRemainder(gcd, nextQuot, false)[0]; // can safely destroy gcd
                 if (nextQuot.isConstant())
                     break;
@@ -204,15 +193,13 @@ public final class SquareFreeFactorization {
                         SquareFreeFactorizationMusser0(gcd)
                                 .raiseExponents(poly.modulus);
 
-                factors.addAll(gcdFactorization.factors);
-                exponents.addAll(gcdFactorization.exponents);
-
-                return new FactorDecomposition<>(factors, exponents, 1);
+                result.addAll(gcdFactorization);
+                return result;
             } else
-                return new FactorDecomposition<>(factors, exponents, 1);
+                return result;
         } else {
             MutablePolynomialMod pRoot = pRoot(poly);
-            return SquareFreeFactorizationMusser0(pRoot).raiseExponents(poly.modulus).setFactor(1);
+            return SquareFreeFactorizationMusser0(pRoot).raiseExponents(poly.modulus).setNumericFactor(1);
         }
     }
 
@@ -220,7 +207,7 @@ public final class SquareFreeFactorization {
     private static MutablePolynomialMod pRoot(MutablePolynomialMod poly) {
         long modulus = poly.modulus;
         assert poly.degree % modulus == 0;
-        long[] rootData = new long[poly.degree / LongArithmetics.safeToInt(modulus + 1)];
+        long[] rootData = new long[poly.degree / LongArithmetics.safeToInt(modulus) + 1];
         Arrays.fill(rootData, 0);
         for (int i = poly.degree; i >= 0; --i)
             if (poly.data[i] != 0) {

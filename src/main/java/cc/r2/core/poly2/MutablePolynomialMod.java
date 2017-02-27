@@ -190,6 +190,18 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         return new MutablePolynomialMod(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
     }
 
+    @Override
+    MutablePolynomialMod createMonomial(long coefficient, int newDegree) {
+        if (coefficient < 0)
+            coefficient = LongArithmetics.mod(coefficient, modulus);
+        else if (coefficient >= modulus)
+            coefficient = mod(coefficient);
+
+        long[] newData = new long[newDegree + 1];
+        newData[newDegree] = coefficient;
+
+        return new MutablePolynomialMod(modulus, magic, magic32MulMod, newData, newDegree, modulusFits32);
+    }
 
     /** does not copy the data and does not reduce the data with new modulus */
     MutablePolynomialMod setModulusUnsafe(long newModulus) {

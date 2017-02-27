@@ -122,7 +122,7 @@ import java.util.concurrent.*;
  * @since JDK1.1
  */
 
-public class BigInteger extends Number {
+public final class BigInteger extends Number {
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
      * 1 for positive.  Note that the BigInteger zero <i>must</i> have
