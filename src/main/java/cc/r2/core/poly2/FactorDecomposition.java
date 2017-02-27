@@ -16,11 +16,15 @@ import java.util.List;
  */
 public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
     /** Overall integer factor (polynomial content) */
-    final long factor;
+    long factor;
     /** Factors */
     final List<T> factors;
     /** Either exponents or distinct-degree powers */
     final TIntArrayList exponents;
+
+    public FactorDecomposition() {
+        this(new ArrayList<T>(), new TIntArrayList(), 1L);
+    }
 
     FactorDecomposition(List<T> factors, TIntArrayList exponents, long factor) {
         this.factors = factors;
@@ -33,9 +37,9 @@ public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
     }
 
     /** Set the content to the specified value */
-    FactorDecomposition<T> setFactor(long factor) {
-        if (factor == this.factor) return this;
-        return new FactorDecomposition<>(factors, exponents, factor);
+    FactorDecomposition<T> setNumericFactor(long factor) {
+        this.factor = factor;
+        return this;
     }
 
     /** multiply each exponent by a given factor */
@@ -47,7 +51,7 @@ public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
 
     /** canonical form of factor list */
     @SuppressWarnings("unchecked")
-    FactorDecomposition<T> canonical() {
+    FactorDecomposition<T> canonicalForm() {
         if (factors.size() == 0)
             return this;
         T[] fTmp = factors.toArray((T[]) Array.newInstance(factors.get(0).getClass(), factors.size())); //<- this is ok here, however shitty java generics...
@@ -70,8 +74,20 @@ public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
 
     /** add another factor */
     FactorDecomposition<T> addFactor(T poly, int exponent) {
+        if (poly.isConstant()) {
+            if (exponent != 1)
+                throw new IllegalArgumentException("exponent != 1");
+            return setNumericFactor(poly.lc());
+        }
         factors.add(poly);
         exponents.add(exponent);
+        return this;
+    }
+
+    /** add another factor */
+    FactorDecomposition<T> addAll(FactorDecomposition<T> other) {
+        factors.addAll(other.factors);
+        exponents.addAll(other.exponents);
         return this;
     }
 
@@ -138,14 +154,11 @@ public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
 
     /** decomposition with single numeric factor */
     static <T extends MutablePolynomialAbstract<T>> FactorDecomposition<T> oneFactor(long factor) {
-        return new FactorDecomposition<>(new ArrayList<T>(), new TIntArrayList(), factor);
+        return new FactorDecomposition<T>().setNumericFactor(factor);
     }
 
     /** decomposition with single factor */
     static <T extends MutablePolynomialAbstract<T>> FactorDecomposition<T> oneFactor(T poly, long factor) {
-        ArrayList<T> fs = new ArrayList<>();
-        fs.add(poly);
-        TIntArrayList exs = new TIntArrayList(new int[]{1});
-        return new FactorDecomposition<>(fs, exs, factor);
+        return new FactorDecomposition<T>().addFactor(poly, 1).setNumericFactor(factor);
     }
 }

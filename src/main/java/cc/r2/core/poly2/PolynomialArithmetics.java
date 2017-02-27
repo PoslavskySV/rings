@@ -1,6 +1,7 @@
 package cc.r2.core.poly2;
 
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly2.DivisionWithRemainder.*;
 
 import static cc.r2.core.poly2.DivisionWithRemainder.*;
@@ -150,6 +151,37 @@ public final class PolynomialArithmetics {
         }
     }
 
+    /**
+     * Returns {@code base} in a power of non-negative {@code e} modulo {@code polyModulus}
+     *
+     * @param base        the base
+     * @param exponent    the non-negative exponent
+     * @param polyModulus the modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)} )})
+     * @param copy        whether to clone {@code base}; if not the data of {@code base} will be lost
+     * @return {@code base} in a power of {@code e} modulo {@code polyModulus}
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     */
+    public static MutablePolynomialMod polyPowMod(final MutablePolynomialMod base, BigInteger exponent,
+                                                  MutablePolynomialMod polyModulus, InverseModMonomial invMod,
+                                                  boolean copy) {
+        if (exponent.signum() < 0)
+            throw new IllegalArgumentException();
+        if (exponent.isZero())
+            return base.createOne();
+
+
+        MutablePolynomialMod result = base.createOne();
+        MutablePolynomialMod k2p = polyMod(base, polyModulus, invMod, copy); // this will copy the base
+        for (; ; ) {
+            if (exponent.testBit(0))
+                result = polyMod(result.multiply(k2p), polyModulus, invMod, false);
+            exponent = exponent.shiftRight(1);
+            if (exponent.isZero())
+                return result;
+            k2p = polyMod(k2p.multiply(k2p), polyModulus, invMod, false);
+        }
+    }
 
     /** switch between plain and log2 algorithms */
     private static final long MONOMIAL_MOD_EXPONENT_THRESHOLD = 64;

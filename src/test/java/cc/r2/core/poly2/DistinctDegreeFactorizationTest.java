@@ -1,6 +1,5 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly2.FactorizationTestUtil.PolynomialSource;
 import cc.r2.core.poly2.FactorizationTestUtil.RandomSource;
@@ -95,8 +94,8 @@ public class DistinctDegreeFactorizationTest {
     public void test2_benchmark_random_small_polys() throws Exception {
         new Benchmark()
                 .setAlgorithms(EnumSet.allOf(DDFAlgorithm.class))
-//                .setPrimes(new long[]{SmallPrimes.nextPrime(10), SmallPrimes.nextPrime(100), SmallPrimes.nextPrime(200)})
-                .setPrimes(new long[]{BigPrimes.nextPrime(1L << 4)})
+                .setPrimes(new long[]{SmallPrimes.nextPrime(10), SmallPrimes.nextPrime(100), SmallPrimes.nextPrime(200)})
+//                .setPrimes(new long[]{BigPrimes.nextPrime(1L << 4)})
                 .setSource(new RandomSource(new Well1024a(), 5, 15, true))
                 .setnIterations(1000)
                 .setPrintProgress(false)
@@ -419,7 +418,7 @@ public class DistinctDegreeFactorizationTest {
 //            System.out.println(Arrays.toString(fct.poly.data));
             FactorDecomposition<MutablePolynomialMod> actual = DistinctDegreeFactorizationComplete(fct.poly);
             stats.addValue(System.nanoTime() - start);
-            Assert.assertEquals("Modulus: " + fct.modulus, expected.canonical(), actual.canonical());
+            Assert.assertEquals("Modulus: " + fct.modulus, expected.canonicalForm(), actual.canonicalForm());
             ++nEntries;
         }
         assertTrue(nEntries > 0);

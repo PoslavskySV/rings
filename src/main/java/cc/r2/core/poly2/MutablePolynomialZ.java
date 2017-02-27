@@ -46,10 +46,15 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
      * @param exponent    monomial exponent
      * @return {@code coefficient * x^exponent}
      */
-    static MutablePolynomialZ createMonomial(long coefficient, int exponent) {
+    static MutablePolynomialZ monomial(long coefficient, int exponent) {
         long[] data = new long[exponent + 1];
         data[exponent] = coefficient;
         return new MutablePolynomialZ(data);
+    }
+
+    @Override
+    MutablePolynomialZ createMonomial(long coefficient, int degree) {
+        return monomial(coefficient, degree);
     }
 
     /**
