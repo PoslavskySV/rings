@@ -1,28 +1,33 @@
 package cc.r2.core.poly2;
 
 
-import cc.r2.core.poly2.DivideAndRemainder.InverseModMonomial;
+import cc.r2.core.poly2.DivisionWithRemainder.InverseModMonomial;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import static cc.r2.core.poly2.PolynomialArithmetics.polyMod;
 
-
+/**
+ * Polynomial composition.
+ *
+ * @author Stanislav Poslavsky
+ * @since 1.0
+ */
 public final class ModularComposition {
-    private ModularComposition() {
-    }
+    private ModularComposition() {}
+
 
     /**
      * Returns {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree]}, where {@code degree} is {@code polyModulus} degree.
      *
-     * @param polyModulus the monic polynomial modulus
-     * @param invMod      precomputed inversed {@code rev[polyModulus]}
+     * @param polyModulus the monic modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)} )})
      * @return {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree]}, where {@code degree} is {@code polyModulus} degree
-     * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
      */
     public static ArrayList<MutablePolynomialMod> xPowers(MutablePolynomialMod polyModulus, InverseModMonomial invMod) {
-        return polyPowers(MutablePolynomialMod.createMonomial(polyModulus.modulus, 1, (int) polyModulus.modulus), polyModulus, invMod, polyModulus.degree);
+        return polyPowers(PolynomialArithmetics.createMonomialMod(polyModulus.modulus, polyModulus, invMod), polyModulus, invMod, polyModulus.degree);
     }
 
     /**
@@ -30,20 +35,21 @@ public final class ModularComposition {
      *
      * @param poly        the polynomial
      * @param polyModulus the monic polynomial modulus
-     * @param invMod      precomputed inversed {@code rev[polyModulus]}
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)} )})
      * @return {@code poly^{i} mod polyModulus} for i in {@code [0...nIterations]}
-     * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
      */
     public static ArrayList<MutablePolynomialMod> polyPowers(MutablePolynomialMod poly, MutablePolynomialMod polyModulus, InverseModMonomial invMod, int nIterations) {
         ArrayList<MutablePolynomialMod> exponents = new ArrayList<>();
-        polyPowers(poly, polyModulus, invMod, nIterations, exponents);
+        polyPowers(polyMod(poly, polyModulus, invMod, true), polyModulus, invMod, nIterations, exponents);
         return exponents;
     }
 
     /** writes poly^{i} mod polyModulus for i in [0...nIterations] to exponents */
-    static void polyPowers(MutablePolynomialMod poly, MutablePolynomialMod polyModulus, InverseModMonomial invMod, int nIterations, ArrayList<MutablePolynomialMod> exponents) {
-        exponents.add(poly.createOne());
-        MutablePolynomialMod base = polyMod(poly, polyModulus, invMod, true);
+    private static void polyPowers(MutablePolynomialMod polyReduced, MutablePolynomialMod polyModulus, InverseModMonomial invMod, int nIterations, ArrayList<MutablePolynomialMod> exponents) {
+        exponents.add(polyReduced.createOne());
+        // polyReduced must be reduced!
+        MutablePolynomialMod base = polyReduced.clone();//polyMod(poly, polyModulus, invMod, true);
         exponents.add(base);
         MutablePolynomialMod prev = base;
         for (int i = 0; i < nIterations; i++)
@@ -55,11 +61,11 @@ public final class ModularComposition {
      *
      * @param poly        the polynomial
      * @param polyModulus the monic polynomial modulus
-     * @param invMod      precomputed inversed {@code rev[polyModulus]}
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)} )})
      * @param xPowers     precomputed monomial powers {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree(poly)]}
      * @return {@code poly^modulus mod polyModulus}
      * @see #xPowers(MutablePolynomialMod, InverseModMonomial)
-     * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
      **/
     public static MutablePolynomialMod powModulusMod(MutablePolynomialMod poly,
                                                      MutablePolynomialMod polyModulus,
@@ -89,11 +95,11 @@ public final class ModularComposition {
      * @param poly        the polynomial
      * @param pointPowers precomputed powers of evaluation point {@code point^{i} mod polyModulus}
      * @param polyModulus the monic polynomial modulus
-     * @param invMod      precomputed inversed {@code rev[polyModulus]}
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)} )})
      * @param tBrentKung  Brent-Kung splitting parameter (optimal choice is ~sqrt(main.degree))
      * @return modular composition {@code poly(point) mod polyModulus }
      * @see #polyPowers(MutablePolynomialMod, MutablePolynomialMod, InverseModMonomial, int)
-     * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
      */
     public static MutablePolynomialMod compositionBrentKung(
             MutablePolynomialMod poly,
@@ -125,16 +131,22 @@ public final class ModularComposition {
      * @param poly        the polynomial
      * @param point       the evaluation point
      * @param polyModulus the monic polynomial modulus
-     * @param invMod      precomputed inversed {@code rev[polyModulus]}
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)} )})
      * @return modular composition {@code poly(point) mod polyModulus }
-     * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
      */
     public static MutablePolynomialMod compositionBrentKung(MutablePolynomialMod poly, MutablePolynomialMod point, MutablePolynomialMod polyModulus, InverseModMonomial invMod) {
         if (poly.isConstant())
             return poly;
-        int t = (int) Math.sqrt(poly.degree);
+        int t = safeToInt(Math.sqrt(poly.degree));
         ArrayList<MutablePolynomialMod> hPowers = polyPowers(point, polyModulus, invMod, t);
         return compositionBrentKung(poly, hPowers, polyModulus, invMod, t);
+    }
+
+    private static int safeToInt(double dbl) {
+        if (dbl > Integer.MAX_VALUE || dbl < Integer.MIN_VALUE)
+            throw new ArithmeticException("int overflow");
+        return (int) dbl;
     }
 
     /**
@@ -143,9 +155,9 @@ public final class ModularComposition {
      * @param poly        the polynomial
      * @param point       the evaluation point
      * @param polyModulus the monic polynomial modulus
-     * @param invMod      precomputed inversed {@code rev[polyModulus]}
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)} )})
      * @return modular composition {@code poly(point) mod polyModulus }
-     * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
      */
     public static MutablePolynomialMod compositionHorner(MutablePolynomialMod poly, MutablePolynomialMod point, MutablePolynomialMod polyModulus, InverseModMonomial invMod) {
         if (poly.isConstant())
@@ -165,9 +177,9 @@ public final class ModularComposition {
      * @param polyModulus the monic polynomial modulus
      * @return modular composition {@code poly(point) mod polyModulus }
      * @see #polyPowers(MutablePolynomialMod, MutablePolynomialMod, InverseModMonomial, int)
-     * @see DivideAndRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(MutablePolynomialMod)
      */
     public static MutablePolynomialMod composition(MutablePolynomialMod poly, MutablePolynomialMod point, MutablePolynomialMod polyModulus) {
-        return compositionBrentKung(poly, point, polyModulus, DivideAndRemainder.fastDivisionPreConditioning(point));
+        return compositionBrentKung(poly, point, polyModulus, DivisionWithRemainder.fastDivisionPreConditioning(point));
     }
 }

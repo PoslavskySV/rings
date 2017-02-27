@@ -1,18 +1,21 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.number.BigInteger;
-
 /**
- * Created by poslavsky on 26/01/2017.
+ * Fast modular arithmetics for 64-bit integers (both signed and unsigned).
+ * <p>
+ * The code for fast division with preconditioning is adapted from C libdivide library ({@literal http://github.com/ridiculousfish/libdivide})
+ *
+ * @author Stanislav Poslavsky
+ * @since 1.0
  */
 public final class LongModularArithmetics {
     private LongModularArithmetics() {}
 
     /** Max supported modulus */
-    public static final long MAX_SUPPORTED_MODULUS = (1L << 62) - 1;
+    public static final long MAX_SUPPORTED_MODULUS = (1L << 62) - 1L;
 
     /** 2^32 - 1 */
-    public static final long MAX_INT_32 = (1L << 32) - 1;
+    public static final long MAX_UNSIGNED_INT32 = (1L << 32) - 1;
 
     /**
      * Returns highest 64 bits of (signed) long multiplication.
@@ -161,7 +164,7 @@ public final class LongModularArithmetics {
      * @return the magic
      */
     public static MagicDivider magicUnsigned(long d, boolean branchfree) {
-        if(d == 0)
+        if (d == 0)
             throw new ArithmeticException("divide by zero");
         // 1 is not supported with branchfree algorithm
         assert (!branchfree || d != 1);
@@ -266,7 +269,7 @@ public final class LongModularArithmetics {
      * @return the magic
      */
     public static MagicDivider magicSigned(long d, boolean branchfree) {
-        if(d == 0)
+        if (d == 0)
             throw new ArithmeticException("divide by zero");
         assert (!branchfree || (d != 1 && d != -1));
 
@@ -571,31 +574,6 @@ public final class LongModularArithmetics {
     }
 
     /**
-     * Converts unsigned long to BigInteger
-     *
-     * @param bits unsigned bits
-     * @return BigInteger value of unsigned long
-     */
-    static BigInteger valueOfUnsigned(long bits) {
-        if (bits >= 0)
-            return valueOfSigned(bits);
-        BigInteger r = BigInteger.valueOf(~bits);
-        for (int i = 0; i < 64; ++i)
-            r = r.flipBit(i);
-        return r;
-    }
-
-    /**
-     * Converts signed long to BigInteger
-     *
-     * @param bits signed bits
-     * @return BigInteger value of signed long
-     */
-    static BigInteger valueOfSigned(long bits) {
-        return BigInteger.valueOf(bits);
-    }
-
-    /**
      * Returns {@code base} in a power of {@code e} (non negative) modulo {@code modulus}
      *
      * @param base     base
@@ -605,7 +583,7 @@ public final class LongModularArithmetics {
      * @throws ArithmeticException if the result overflows a long
      */
     public static long powModUnsigned32(long base, long exponent, MagicDivider modulus) {
-        if (modulus.divider > MAX_INT_32)
+        if (modulus.divider > MAX_UNSIGNED_INT32)
             throw new IllegalArgumentException();
 
         if (Long.compareUnsigned(base, modulus.divider) >= 0)

@@ -5,7 +5,8 @@ import cc.r2.core.util.ArraysUtil;
 import java.util.Arrays;
 
 /**
- * Created by poslavsky on 26/01/2017.
+ * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
+ * All operations (except where it is specifically stated) changes the content of this.
  */
 abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements Comparable<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
@@ -153,35 +154,49 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         return self;
     }
 
-    final T shiftLeft(int d) {
-        if (d == 0)
+    /**
+     * Returns the quotient {@code this / x^offset}, it is polynomial with coefficient list formed by shifting coefficients
+     * of {@code this} to the left by {@code offset}.
+     *
+     * @param offset shift amount
+     * @return the quotient {@code this / x^offset}
+     */
+    final T shiftLeft(int offset) {
+        if (offset == 0)
             return self;
-        if (d > degree)
+        if (offset > degree)
             return toZero();
 
-        System.arraycopy(data, d, data, 0, degree - d + 1);
-        Arrays.fill(data, degree - d + 1, degree + 1, 0);
-        degree = degree - d;
+        System.arraycopy(data, offset, data, 0, degree - offset + 1);
+        Arrays.fill(data, degree - offset + 1, degree + 1, 0);
+        degree = degree - offset;
         return self;
     }
 
     /**
-     * Multiplies {@code this} by the monomial with the specified {@code exponent}.
+     * Multiplies {@code this} by the {@code x^offset}.
      *
-     * @param n monomial exponent
-     * @return {@code this * x^exponent}
+     * @param offset monomial exponent
+     * @return {@code this * x^offset}
      */
-    final T shiftRight(int n) {
-        if (n == 0)
+    final T shiftRight(int offset) {
+        if (offset == 0)
             return self;
         int degree = this.degree;
-        ensureCapacity(n + degree);
-        System.arraycopy(data, 0, data, n, degree + 1);
-        Arrays.fill(data, 0, n, 0);
+        ensureCapacity(offset + degree);
+        System.arraycopy(data, 0, data, offset, degree + 1);
+        Arrays.fill(data, 0, offset, 0);
         return self;
     }
 
-    final T cut(int newDegree) {
+    /**
+     * Returns the remainder {@code this rem x^(newDegree + 1)}, it is polynomial with the coefficient list truncated
+     * to the new degree {@code newDegree}.
+     *
+     * @param newDegree new degree
+     * @return remainder {@code this rem x^(newDegree + 1)}
+     */
+    final T truncate(int newDegree) {
         if (newDegree >= degree)
             return self;
         Arrays.fill(data, newDegree + 1, degree + 1, 0);
@@ -190,6 +205,11 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         return self;
     }
 
+    /**
+     * Reverses the coefficients of this
+     *
+     * @return reversed polynomial
+     */
     final T reverse() {
         ArraysUtil.reverse(data, 0, degree + 1);
         fixDegree();
@@ -221,18 +241,26 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     abstract T createFromArray(long[] data);
 
     /**
+     * Creates constant polynomial with specified value
+     *
+     * @param val the value
+     * @return constant polynomial with specified value
+     */
+    abstract T createConstant(long val);
+
+    /**
      * Returns 0 (new instance)
      *
      * @return new instance of 0
      */
-    abstract T createZero();
+    final T createZero() {return createConstant(0);}
 
     /**
      * Returns 1 (new instance)
      *
      * @return new instance of 1
      */
-    abstract T createOne();
+    final T createOne() {return createConstant(1);}
 
     /**
      * Evaluates this poly at a given {@code point} (via Horner method).
@@ -393,7 +421,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         return result;
     }
 
-     /* *
+    /* *
     *
     * Exact multiplication with unsafe arithmetic
     *

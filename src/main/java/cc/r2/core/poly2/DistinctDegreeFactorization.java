@@ -1,12 +1,12 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.poly2.DivideAndRemainder.InverseModMonomial;
+import cc.r2.core.poly2.DivisionWithRemainder.InverseModMonomial;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.ArrayList;
 
-import static cc.r2.core.poly2.DivideAndRemainder.fastDivisionPreConditioning;
-import static cc.r2.core.poly2.DivideAndRemainder.quotient;
+import static cc.r2.core.poly2.DivisionWithRemainder.fastDivisionPreConditioning;
+import static cc.r2.core.poly2.DivisionWithRemainder.quotient;
 import static cc.r2.core.poly2.FactorDecomposition.oneFactor;
 import static cc.r2.core.poly2.ModularComposition.*;
 import static cc.r2.core.poly2.PolynomialArithmetics.polyMultiplyMod;
@@ -18,21 +18,21 @@ import static cc.r2.core.poly2.SquareFreeFactorization.SquareFreeFactorization;
  * Distinct-free factorization of univariate polynomials over finite fields with single-precision coefficients.
  *
  * @author Stanislav Poslavsky
+ * @since 1.0
  */
-public final class DistinctDegreeFactorization {
+final class DistinctDegreeFactorization {
     private DistinctDegreeFactorization() {}
 
     /**
-     * Performs distinct-degree factorization for square-free polynomial {@code poly} modulo {@code modulus} using
-     * plain incremental exponents algorithm.
+     * Performs distinct-degree factorization for square-free polynomial {@code poly} using plain incremental exponents
+     * algorithm.
      * <p>
-     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may not be complete.
+     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
      *
      * @param poly the polynomial
-     * @return distinct-degree decomposition of {@code poly} modulo {@code modulus}
+     * @return distinct-degree decomposition of {@code poly}
      */
-    public static FactorDecomposition<MutablePolynomialMod> DistinctDegreeFactorizationPlain(
-            MutablePolynomialMod poly) {
+    public static FactorDecomposition<MutablePolynomialMod> DistinctDegreeFactorizationPlain(MutablePolynomialMod poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -47,7 +47,7 @@ public final class DistinctDegreeFactorization {
             return oneFactor(base, factor);
 
         InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus);
-        MutablePolynomialMod exponent = MutablePolynomialMod.create(poly.modulus, 0, 1);
+        MutablePolynomialMod exponent = MutablePolynomialMod.createMonomial(poly.modulus, 1, 1);
         ArrayList<MutablePolynomialMod> factors = new ArrayList<>();
         TIntArrayList degrees = new TIntArrayList();
         int i = 0;
@@ -76,16 +76,15 @@ public final class DistinctDegreeFactorization {
     }
 
     /**
-     * Performs distinct-degree factorization for square-free polynomial {@code poly} modulo {@code modulus} using
+     * Performs distinct-degree factorization for square-free polynomial {@code poly} using
      * plain incremental exponents algorithm.
      * <p>
-     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may not be complete.
+     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
      *
      * @param poly the polynomial
-     * @return distinct-degree decomposition of {@code poly} modulo {@code modulus}
+     * @return distinct-degree decomposition of {@code poly}
      */
-    public static FactorDecomposition<MutablePolynomialMod> DistinctDegreeFactorizationPrecomputedExponents(
-            MutablePolynomialMod poly) {
+    public static FactorDecomposition<MutablePolynomialMod> DistinctDegreeFactorizationPrecomputedExponents(MutablePolynomialMod poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -100,7 +99,7 @@ public final class DistinctDegreeFactorization {
             return oneFactor(base, factor);
 
         InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus);
-        MutablePolynomialMod exponent = MutablePolynomialMod.create(poly.modulus, 0, 1);
+        MutablePolynomialMod exponent = MutablePolynomialMod.createMonomial(poly.modulus, 1, 1);
         ArrayList<MutablePolynomialMod> factors = new ArrayList<>();
         TIntArrayList degrees = new TIntArrayList();
 
@@ -204,13 +203,13 @@ public final class DistinctDegreeFactorization {
     }
 
     /**
-     * Performs distinct-degree factorization for square-free polynomial {@code poly} modulo {@code modulus} using
-     * Victor Shoup's baby step / giant step algorithm.
+     * Performs distinct-degree factorization for square-free polynomial {@code poly} using Victor Shoup's baby
+     * step / giant step algorithm.
      * <p>
-     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may not be complete.
+     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
      *
      * @param poly the polynomial
-     * @return distinct-degree decomposition of {@code poly} modulo {@code modulus}
+     * @return distinct-degree decomposition of {@code poly}
      */
     public static FactorDecomposition<MutablePolynomialMod> DistinctDegreeFactorizationShoup(MutablePolynomialMod poly) {
         long factor = poly.lc();
@@ -235,6 +234,14 @@ public final class DistinctDegreeFactorization {
         }
     }
 
+    /**
+     * Performs distinct-degree factorization for square-free polynomial {@code poly}.
+     * <p>
+     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
+     *
+     * @param poly the polynomial
+     * @return distinct-degree decomposition of {@code poly}
+     */
     public static FactorDecomposition<MutablePolynomialMod> DistinctDegreeFactorization(MutablePolynomialMod poly) {
         if (poly.degree < 50)
             return DistinctDegreeFactorizationPlain(poly);
@@ -244,16 +251,16 @@ public final class DistinctDegreeFactorization {
             return DistinctDegreeFactorizationShoup(poly);
     }
 
-    static FactorDecomposition<MutablePolynomialMod> fixDistinctDegreeDecomposition(FactorDecomposition<MutablePolynomialMod> f) {
-        for (int i = f.factors.size() - 1; i >= 0; --i) {
-            int exponent = f.exponents.get(i);
-            int degree = f.factors.get(i).degree;
-
-            if (degree % exponent != 0)
-                f.exponents.set(i, degree);
-        }
-        return f;
-    }
+//    static FactorDecomposition<MutablePolynomialMod> fixDistinctDegreeDecomposition(FactorDecomposition<MutablePolynomialMod> f) {
+//        for (int i = f.factors.size() - 1; i >= 0; --i) {
+//            int exponent = f.exponents.get(i);
+//            int degree = f.factors.get(i).degree;
+//
+//            if (degree % exponent != 0)
+//                f.exponents.set(i, degree);
+//        }
+//        return f;
+//    }
 
     /**
      * Performs square-free factorization followed by distinct-degree factorization modulo {@code modulus}.
@@ -276,7 +283,7 @@ public final class DistinctDegreeFactorization {
                 finalFactors.add(dd.factors.get(j));
                 finalExponents.add(squareFree.exponents.get(i));
             }
-            overallFactor = poly.mulMod(overallFactor, dd.factor);
+            overallFactor = poly.multiplyMod(overallFactor, dd.factor);
         }
 
         return new FactorDecomposition<>(finalFactors, finalExponents, overallFactor);

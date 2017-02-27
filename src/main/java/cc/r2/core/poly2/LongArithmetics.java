@@ -1,7 +1,10 @@
 package cc.r2.core.poly2;
 
 /**
- * Created by poslavsky on 15/02/2017.
+ * Helper methods for arithmetics with {@code longs}.
+ *
+ * @author Stanislav Poslavsky
+ * @since 1.0
  */
 public final class LongArithmetics {
     private LongArithmetics() {}
@@ -47,7 +50,7 @@ public final class LongArithmetics {
      *
      * @param base     base
      * @param exponent exponent (non negative)
-     * @return {@code base} in a power of {@code e} (non negative)
+     * @return {@code base} in a power of {@code e}
      * @throws ArithmeticException if the result overflows a long
      */
     public static long safePow(final long base, long exponent) {
@@ -67,7 +70,7 @@ public final class LongArithmetics {
     }
 
     /**
-     * Returns the greatest common divisor of two longs
+     * Returns the greatest common divisor of two longs.
      *
      * @param p a long
      * @param q a long
@@ -167,11 +170,12 @@ public final class LongArithmetics {
      * @param a a long
      * @param b a long
      * @return least common multiple of {@code a} and {@code b}
+     * @throws ArithmeticException if the result overflows a long
      */
     public static long lcm(long a, long b) {
         if (a == 0 || b == 0)
             return 0;
-        return a / gcd(a, b) * b;
+        return safeMultiply(a / gcd(a, b), b);
     }
 
     /**
@@ -221,8 +225,6 @@ public final class LongArithmetics {
      * @return {@code value mod modulus} in the symmetric representation ({@code -modulus/2 <= result <= modulus/2})
      */
     public static long symMod(long value, long modulus) {
-        if (modulus < 0)
-            throw new IllegalArgumentException("Negative modulus");
         value = mod(value, modulus);
         return value <= modulus / 2 ? value : value - modulus;
     }
@@ -262,9 +264,17 @@ public final class LongArithmetics {
         return mod(old_s, modulus);
     }
 
-    public static int toInt(long v) {
-        if (v > Integer.MAX_VALUE)
-            throw new ArithmeticException("overflow");
-        return (int) v;
+    /**
+     * Casts {@code long} to signed {@code int} throwing exception in case of overflow.
+     *
+     * @param v the long
+     * @return int value
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static int safeToInt(long value) {
+        if ((int)value != value) {
+            throw new ArithmeticException("integer overflow: " + value);
+        }
+        return (int)value;
     }
 }

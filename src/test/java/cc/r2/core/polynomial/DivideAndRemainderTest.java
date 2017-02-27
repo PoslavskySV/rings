@@ -14,6 +14,13 @@ import static cc.r2.core.polynomial.RandomPolynomials.randomPoly;
 import static org.junit.Assert.*;
 
 public class DivideAndRemainderTest {
+    @Test
+    public void sdfsdfds() throws Exception {
+        long a = 0xabc7abcL;
+        System.out.println(a^0x1F);
+        System.out.println(a^0x1FL);
+    }
+
     @SuppressWarnings("ConstantConditions")
     @Test
     public void test1() throws Exception {

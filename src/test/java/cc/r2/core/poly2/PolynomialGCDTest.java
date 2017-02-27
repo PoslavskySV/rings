@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static cc.r2.core.poly2.DivideAndRemainder.divideAndRemainder;
+import static cc.r2.core.poly2.DivisionWithRemainder.divideAndRemainder;
 import static cc.r2.core.poly2.PolynomialGCD.*;
 import static cc.r2.core.poly2.RandomPolynomials.randomPoly;
 import static org.junit.Assert.*;
@@ -23,8 +23,8 @@ public class PolynomialGCDTest {
     @Test
     public void test1() throws Exception {
         long modulus = 11;
-        MutablePolynomialMod a = MutablePolynomialMod.create(modulus, 3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950);
-        MutablePolynomialMod b = MutablePolynomialMod.create(modulus, 2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216);
+        MutablePolynomialMod a = MutablePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
+        MutablePolynomialMod b = MutablePolynomialZ.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
 
         PolynomialRemainders<MutablePolynomialMod> prs = PolynomialGCD.Euclid(a, b);
         MutablePolynomialMod gcd = prs.gcd();
@@ -283,10 +283,10 @@ public class PolynomialGCDTest {
 
                     assertFalse(mgcd.isConstant());
 
-                    MutablePolynomialZ[] qr = DivideAndRemainder.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
+                    MutablePolynomialZ[] qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
                     assertNotNull(qr);
                     assertTrue(qr[1].isZero());
-                    MutablePolynomialZ[] qr1 = DivideAndRemainder.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
+                    MutablePolynomialZ[] qr1 = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
                     assertArrayEquals(qr, qr1);
                     if (!qr[0].isConstant()) ++larger;
 
@@ -373,7 +373,7 @@ public class PolynomialGCDTest {
     private static void assertGCD(MutablePolynomialZ a, MutablePolynomialZ b, MutablePolynomialZ gcd) {
         MutablePolynomialZ[] qr;
         for (MutablePolynomialZ dividend : Arrays.asList(a, b)) {
-            qr = DivideAndRemainder.pseudoDivideAndRemainderAdaptive(dividend, gcd, true);
+            qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(dividend, gcd, true);
             assertNotNull(qr);
             assertTrue(qr[1].isZero());
         }
@@ -390,8 +390,8 @@ public class PolynomialGCDTest {
         assertEquals(b, prs.remainders.get(1));
 
         MutablePolynomialZ gcd = prs.gcd().clone().primitivePart();
-        assertTrue(DivideAndRemainder.pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
-        assertTrue(DivideAndRemainder.pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
+        assertTrue(DivisionWithRemainder.pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
+        assertTrue(DivisionWithRemainder.pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -403,8 +403,8 @@ public class PolynomialGCDTest {
         assertEquals(b, prs.remainders.get(1));
 
         MutablePolynomialMod gcd = prs.gcd().clone();
-        assertTrue(DivideAndRemainder.divideAndRemainder(a, gcd, true)[1].isZero());
-        assertTrue(DivideAndRemainder.divideAndRemainder(b, gcd, true)[1].isZero());
+        assertTrue(DivisionWithRemainder.divideAndRemainder(a, gcd, true)[1].isZero());
+        assertTrue(DivisionWithRemainder.divideAndRemainder(b, gcd, true)[1].isZero());
     }
 
 

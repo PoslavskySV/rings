@@ -13,43 +13,6 @@ import org.junit.Test;
  * Created by poslavsky on 27/01/2017.
  */
 public class MutablePolynomialModTest {
-    private static long subtractMod(long a, long b, long modulus) {
-        long r = a - b;
-        return r + ((r >> 63)&modulus);
-    }
-
-    @Test
-    public void name() throws Exception {
-        long a = 1345, b = 142445, m = 12314324L;
-
-        System.out.println(subtractMod(a, b, m));
-        System.out.println(Math.floorMod(a - b, m));
-
-    }
-
-    //
-//    @Test
-//    public void asdasd() throws Exception {
-//        System.out.println(Long.toBinaryString(1L << 63));
-//        System.out.println(Long.numberOfTrailingZeros(1L << 63));
-//
-//    }
-//
-//    @Test
-//    public void test1() throws Exception {
-//        long[] data = {66, 513, 304, -894, 1000, 163, 796, 219, 319, -919, 396};
-//        long modulus = SmallPrimes.nextPrime(1000);
-//        MutablePolynomial oldPoly = MutablePolynomial.create(data.clone()).modulus(modulus);
-//        MutablePolynomialMod newPoly = MutablePolynomialMod.create(modulus, data.clone());
-//
-//        System.out.println(oldBench(oldPoly, modulus));
-//        System.out.println(newBench(newPoly));
-//
-//        System.out.println(oldPoly);
-//        System.out.println(newPoly);
-//
-//    }
-//
     static long oldBench(MutablePolynomial m, long modulus) {
         MutablePolynomial old = m.clone();
         int deg = m.degree;
@@ -70,7 +33,7 @@ public class MutablePolynomialModTest {
         for (int i = 0; i < 5; i++) {
             MutablePolynomialMod oldM = m.clone();
             m = m.multiply(m.add(m.shiftLeft(m.degree / 3))).subtract(oldM);
-            m = m.cut(deg);
+            m = m.truncate(deg);
             m = m.subtract(m.derivative());
             m = m.multiply(old);
         }

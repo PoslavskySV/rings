@@ -5,7 +5,10 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
 /**
- * Created by poslavsky on 15/02/2017.
+ * Util to generate random polynomials.
+ *
+ * @author Stanislav Poslavsky
+ * @since 1.0
  */
 public class RandomPolynomials {
     private RandomPolynomials() {}

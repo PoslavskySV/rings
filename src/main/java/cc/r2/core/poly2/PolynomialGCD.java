@@ -9,13 +9,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
-import static cc.r2.core.poly2.DivideAndRemainder.*;
+import static cc.r2.core.poly2.DivisionWithRemainder.*;
 import static cc.r2.core.poly2.LongArithmetics.*;
 
 /**
- * Polynomial GCD and sub-resultant sequence computation for univariate polynomials with single-precision coefficients.
+ * Polynomial GCD and sub-resultant sequence for univariate polynomials with single-precision coefficients.
  *
  * @author Stanislav Poslavsky
+ * @since 1.0
  */
 public final class PolynomialGCD {
     private PolynomialGCD() {}
@@ -25,10 +26,9 @@ public final class PolynomialGCD {
      *
      * @param a poly
      * @param b poly
-     * @return a list of polynomial remainders where the last element is GCD
+     * @return polynomial remainder sequence (the last element is GCD)
      */
-    public static <T extends MutablePolynomialAbstract<T>>
-    PolynomialRemainders<T> Euclid(final T a, final T b) {
+    public static <T extends MutablePolynomialAbstract<T>> PolynomialRemainders<T> Euclid(final T a, final T b) {
         if (a.degree < b.degree)
             return Euclid(b, a);
 
@@ -53,12 +53,12 @@ public final class PolynomialGCD {
     }
 
     /**
-     * Euclidean algorithm for polynomials that uses pseudo division
+     * Euclidean algorithm for polynomials over Z that uses pseudo division
      *
      * @param a            poly
      * @param b            poly
-     * @param primitivePRS whether to use primitive polynomial remainders
-     * @return a list of polynomial remainders where the last element is GCD
+     * @param primitivePRS whether to build primitive polynomial remainders or not
+     * @return polynomial remainder sequence (the last element is GCD)
      */
     public static PolynomialRemainders<MutablePolynomialZ> PolynomialEuclid(final MutablePolynomialZ a,
                                                                             final MutablePolynomialZ b,
@@ -96,11 +96,11 @@ public final class PolynomialGCD {
     }
 
     /**
-     * Euclidean algorithm for polynomials which produces subresultants sequence
+     * Euclidean algorithm for polynomials over Z that builds subresultants sequence
      *
      * @param a poly
      * @param b poly
-     * @return subresultant sequence where the last element is GCD
+     * @return subresultant sequence (the last element is GCD)
      */
     public static PolynomialRemainders<MutablePolynomialZ> SubresultantEuclid(final MutablePolynomialZ a,
                                                                               final MutablePolynomialZ b) {
@@ -158,9 +158,10 @@ public final class PolynomialGCD {
 
 
     /**
-     * Representation for polynomial remainders sequence produced by the Euclidean algorithm
+     * Polynomial remainder sequence produced by the Euclidean algorithm
      */
     public static final class PolynomialRemainders<T extends MutablePolynomialAbstract<T>> {
+        /** actual data */
         public final ArrayList<T> remainders;
 
         @SuppressWarnings("unchecked")
@@ -180,7 +181,7 @@ public final class PolynomialGCD {
     }
 
     /**
-     * Modular GCD algorithm for polynomials
+     * Modular GCD algorithm for polynomials over Z.
      *
      * @param a the first polynomial
      * @param b the second polynomial
@@ -263,7 +264,7 @@ public final class PolynomialGCD {
                 //this is monic modularGCD multiplied by lcGCD mod prime
                 //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
 
-                long oth = modularGCD.mulMod(modularGCD.mulMod(modularGCD.data[i], monicFactor), lcMod);
+                long oth = modularGCD.multiplyMod(modularGCD.multiplyMod(modularGCD.data[i], monicFactor), lcMod);
                 base.data[i] = ChineseRemainders(basePrime, prime, base.data[i], oth);
             }
             base = base.setModulusUnsafe(newBasePrime);
@@ -271,7 +272,7 @@ public final class PolynomialGCD {
 
             //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
             if ((double) basePrime >= 2 * bound || base.equals(previousBase)) {
-                MutablePolynomialZ candidate = base.symmetricZ().primitivePart();
+                MutablePolynomialZ candidate = base.normalSymmetricForm().primitivePart();
                 //first check b since b is less degree
                 MutablePolynomialZ[] div;
                 div = divideAndRemainder(b, candidate, true);
@@ -288,7 +289,7 @@ public final class PolynomialGCD {
     }
 
     /**
-     * Computes GCD of two polynomials. Modular GCD algorithm is used for polynomials in Z and plain Euclid is used for Zp.
+     * Returns GCD of two polynomials. Modular GCD algorithm is used for Z[x] and plain Euclid is used for Zp[x].
      *
      * @param a the first polynomial
      * @param b the second polynomial
