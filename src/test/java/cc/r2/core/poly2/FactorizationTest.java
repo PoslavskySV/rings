@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -29,6 +30,7 @@ public class FactorizationTest {
     }
 
     @Test
+    @Ignore
     public void name() throws Exception {
 
         for (int i = 0; i < 19999; i++) {

@@ -79,5 +79,6 @@ public class AbstractTest {
         Assert.assertEquals(10, its(10, 100));
         System.setProperty("runLongTests", "");
         Assert.assertEquals(100, its(10, 100));
+        System.clearProperty("runLongTests");
     }
 }

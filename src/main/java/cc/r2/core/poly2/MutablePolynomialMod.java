@@ -4,8 +4,8 @@ import cc.r2.core.poly2.LongModularArithmetics.*;
 
 import java.util.Arrays;
 
+import static cc.r2.core.poly2.LongArithmetics.modInverse;
 import static cc.r2.core.poly2.LongModularArithmetics.*;
-import static cc.r2.core.polynomial.LongArithmetics.modInverse;
 
 /**
  * Univariate polynomial over Zp.

@@ -1,9 +1,9 @@
 package cc.r2.core.number.primes;
 
 import cc.r2.core.number.BigInteger;
-import org.apache.commons.math3.primes.Primes;
+import cc.r2.core.test.AbstractTest;
+import cc.r2.core.test.TimeConsuming;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +13,7 @@ import static cc.r2.core.number.BigInteger.ZERO;
 import static cc.r2.core.number.primes.BigPrimes.LucasPrimalityTest;
 import static org.junit.Assert.*;
 
-public class BigPrimesTest {
+public class BigPrimesTest extends AbstractTest {
     @Test
     public void test1() throws Exception {
         assertFalse(BigPrimes.isPrime(ZERO));
@@ -21,10 +21,11 @@ public class BigPrimesTest {
     }
 
     @Test
+    @TimeConsuming
     public void test2() throws Exception {
         int lucasK = 20;
         int dups = 0;
-        Well1024a rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         long[] somePrimes = {15722669197L, 72062552321653L, 41543465813L, 10707835013L, 1631650208641L, 490247130077L, 32726648113L};
         for (int i = 0; i < 1000; i++) {
             for (long prime : somePrimes) {
@@ -45,8 +46,8 @@ public class BigPrimesTest {
 
     @Test
     public void randomTest1() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (int i = 0; i < 1000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 500); i++) {
             BigInteger n = new BigInteger(1 + rnd.nextInt(60), rnd);
 
             boolean isPrime = BigPrimes.isPrime(n);
@@ -59,8 +60,9 @@ public class BigPrimesTest {
     }
 
     @Test
+    @TimeConsuming
     public void randomTest2() throws Exception {
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         for (int i = 0; i < 10; i++) {
             BigInteger n = BigInteger.valueOf(1 + rnd.nextInt(30));
             int its = 3;
