@@ -1,8 +1,8 @@
 package cc.r2.core.poly2;
 
 import cc.r2.core.poly2.PolynomialGCD.*;
+import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
 
@@ -12,13 +12,14 @@ import java.util.List;
 
 import static cc.r2.core.poly2.DivisionWithRemainder.divideAndRemainder;
 import static cc.r2.core.poly2.PolynomialGCD.*;
+import static cc.r2.core.poly2.PolynomialGCD.PolynomialGCD;
 import static cc.r2.core.poly2.RandomPolynomials.randomPoly;
 import static org.junit.Assert.*;
 
 /**
  * Created by poslavsky on 15/02/2017.
  */
-public class PolynomialGCDTest {
+public class PolynomialGCDTest extends AbstractPolynomialTest {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void test1() throws Exception {
@@ -177,8 +178,8 @@ public class PolynomialGCDTest {
 
     @Test
     public void testRandom1() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (int i = 0; i < 100; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 1000); i++) {
             MutablePolynomialZ dividend = randomPoly(5, rnd);
             MutablePolynomialZ divider = randomPoly(0, rnd);
             for (PolynomialGCD.PolynomialRemainders prs : runAlgorithms(dividend, divider)) {
@@ -189,8 +190,8 @@ public class PolynomialGCDTest {
 
     @Test
     public void testRandom2() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (int i = 0; i < 10000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(10000, 10000); i++) {
             MutablePolynomialZ dividend = randomPoly(5, 5, rnd);
             MutablePolynomialZ divider = randomPoly(5, 5, rnd);
             for (PolynomialGCD.PolynomialRemainders prs :
@@ -204,17 +205,16 @@ public class PolynomialGCDTest {
 
     @Test
     public void testRandom3() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        long[] primes = {3, 5, 7, 11, 13, 67, 97, 113, 127};
-        for (int i = 0; i < 1000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(500, 3000); i++) {
             MutablePolynomialZ dividend = randomPoly(10, 500, rnd);
             MutablePolynomialZ divider = randomPoly(10, 500, rnd);
-            for (long prime : primes) {
+            for (long prime : getModulusArray(9, 1, 40)) {
                 if (dividend.lc() % prime == 0 || divider.lc() % prime == 0)
                     continue;
                 MutablePolynomialMod a = dividend.modulus(prime);
                 MutablePolynomialMod b = divider.modulus(prime);
-                PolynomialRemainders euclid = Euclid(a, b);
+                PolynomialRemainders<MutablePolynomialMod> euclid = Euclid(a, b);
                 assertPolynomialRemainders(a, b, euclid);
             }
         }
@@ -262,14 +262,15 @@ public class PolynomialGCDTest {
     }
 
     @Test
+    @Benchmark(runAnyway = true)
     public void testRandom5() throws Exception {
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         int overflow = 0;
         int larger = 0;
         DescriptiveStatistics timings = null;
         for (int k = 0; k < 2; k++) {
             timings = new DescriptiveStatistics();
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < its(5000, 10000); i++) {
                 try {
                     MutablePolynomialZ a = randomPoly(1 + rnd.nextInt(7), 100, rnd);
                     MutablePolynomialZ b = randomPoly(1 + rnd.nextInt(6), 100, rnd);

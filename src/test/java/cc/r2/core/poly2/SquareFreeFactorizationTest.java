@@ -1,10 +1,9 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.poly2.FactorizationTestUtil.RandomSource;
+import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
 
@@ -19,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by poslavsky on 20/01/2017.
  */
-public class SquareFreeFactorizationTest {
+public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         MutablePolynomialZ poly = polyPow(MutablePolynomialZ.create(1, 3).multiply(2), 3, false).multiply(polyPow(MutablePolynomialZ.create(-3, -5, 7), 2, false));
@@ -35,13 +34,14 @@ public class SquareFreeFactorizationTest {
     }
 
     @Test
+    @Benchmark(runAnyway = true)
     public void testRandom2() throws Exception {
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         DescriptiveStatistics yun = new DescriptiveStatistics(), musser = new DescriptiveStatistics();
 
         long overflows = 0;
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < its(1000, 5000); i++) {
             if (i == 100) {
                 yun.clear();
                 musser.clear();
@@ -105,6 +105,7 @@ public class SquareFreeFactorizationTest {
     }
 
     @Test
+    @Benchmark(runAnyway = true)
     public void testRandom6() throws Exception {
         final class test {
             long overflows = 0;
@@ -112,15 +113,14 @@ public class SquareFreeFactorizationTest {
             final DescriptiveStatistics timings = new DescriptiveStatistics();
 
             void run(int bound, int maxDegree, int maxNBase, int maxExponent, int nIterations) {
-                RandomGenerator rnd = new Well1024a();
+                RandomGenerator rnd = getRandom();
                 RandomDataGenerator rndd = new RandomDataGenerator(rnd);
-                long[] primes = {2, 3, 5, 7, 11, 13, 101};
                 long start;
                 for (int i = 0; i < nIterations; i++) {
                     if (i == 100)
                         timings.clear();
                     int nbase = rndd.nextInt(1, maxNBase);
-                    for (long modulus : primes) {
+                    for (long modulus : getModulusArray(9, 1, 35)) {
                         MutablePolynomialMod poly;
                         start = System.nanoTime();
                         poly = MutablePolynomialZ.create(rndd.nextLong(1, 1000)).modulus(modulus, false);
@@ -145,14 +145,14 @@ public class SquareFreeFactorizationTest {
             }
         }
         test smallPolys = new test();
-        smallPolys.run(10, 3, 5, 5, 1000);
+        smallPolys.run(10, 3, 5, 5, (int) its(100, 1000));
         System.out.println("Overflows: " + smallPolys.overflows);
         System.out.println("Timings:\n" + smallPolys.timings.getPercentile(50));
         System.out.println("Arithmetics:\n" + smallPolys.arithmetics.getPercentile(50));
 
-        System.out.println("\n ==== \n");
+        System.out.println("\n================== \n");
         test largePolys = new test();
-        largePolys.run(1000, 15, 10, 20, 10);
+        largePolys.run(1000, 15, 10, 20, (int) its(10, 10));
         System.out.println("Overflows: " + largePolys.overflows);
         System.out.println("Timings:\n" + largePolys.timings.getPercentile(50));
         System.out.println("Arithmetics:\n" + largePolys.arithmetics.getPercentile(50));
@@ -196,7 +196,7 @@ public class SquareFreeFactorizationTest {
 
     @Test
     public void test6g() throws Exception {
-        for (long modulus : new long[]{101, BigPrimes.nextPrime(1L << 50)}) {
+        for (long modulus : getModulusArray(1, 1, 50)) {
             MutablePolynomialMod poly = MutablePolynomialZ.create(0, 0, 0, 8, 20, 67, 55).modulus(modulus);
             assertFactorization(poly, SquareFreeFactorization(poly));
         }
@@ -210,7 +210,7 @@ public class SquareFreeFactorizationTest {
 
     @Test
     public void test8() throws Exception {
-        RandomSource rnd = new RandomSource(new Well1024a(), 10, 20, false);
+        RandomSource rnd = new RandomSource(getRandom(), 10, 20, false);
         long modulus = 3;
         for (int i = 0; i < 1000; i++) {
             MutablePolynomialMod poly = rnd.take(modulus);

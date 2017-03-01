@@ -2,8 +2,8 @@ package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly2.LongModularArithmetics.*;
+import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by poslavsky on 26/01/2017.
  */
-public class LongModularArithmeticsTest {
+public class LongModularArithmeticsTest extends AbstractPolynomialTest {
     static long lowBits(BigInteger num) {
         return num.and(BigInteger.valueOf(0xFFFFFFFFFFFFFFFFL)).longValue();
     }
@@ -27,7 +27,7 @@ public class LongModularArithmeticsTest {
 
     @Test
     public void testMulHighRandom1_unsigned() throws Exception {
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         for (int i = 0; i < 10000; i++) {
 
             long x = rnd.nextLong();
@@ -48,7 +48,7 @@ public class LongModularArithmeticsTest {
 
     @Test
     public void testMulHighRandom1_signed() throws Exception {
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         for (int i = 0; i < 10000; i++) {
 
             long x = rnd.nextLong();
@@ -99,8 +99,8 @@ public class LongModularArithmeticsTest {
 
     @Test
     public void testDivideFastRandom1() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (int i = 0; i < 1000_000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(10_000, 1_000_000); i++) {
             long dividend = rnd.nextLong();
             long divider = rnd.nextLong();
 
@@ -168,8 +168,8 @@ public class LongModularArithmeticsTest {
 
     @Test
     public void testDivideFast6() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (int i = 0; i < 10_000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 10_000); i++) {
             long dividend = rnd.nextLong();
             for (long sign : new long[]{-1, 1})
                 for (int p = 1; p < 55; p++) {
@@ -207,8 +207,8 @@ public class LongModularArithmeticsTest {
 
     @Test
     public void testMulMod128() {
-        RandomGenerator rnd = new Well1024a();
-        for (int i = 0; i < 1000_000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(10_000, 1_000_000); i++) {
             long a = rnd.nextLong(), b = rnd.nextLong(), modulus;
             do {
                 modulus = rnd.nextLong();
@@ -254,10 +254,11 @@ public class LongModularArithmeticsTest {
     }
 
     @Test
+    @Benchmark
     public void fastDivisionBenchmark1() throws Exception {
         for (boolean small : new boolean[]{true, false}) {
 
-            RandomGenerator rnd = new Well1024a();
+            RandomGenerator rnd = getRandom();
             DescriptiveStatistics plain = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
             for (int i = 0; i < 20000; i++) {
                 if (i == 10000) {

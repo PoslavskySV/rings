@@ -1,12 +1,10 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly2.DivisionWithRemainder.InverseModMonomial;
+import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -18,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by poslavsky on 26/02/2017.
  */
-public class ModularCompositionTest {
+public class ModularCompositionTest extends AbstractPolynomialTest {
     @Test
     public void testXPowers1() throws Exception {
         long modulus = 43;
@@ -35,10 +33,9 @@ public class ModularCompositionTest {
 
     @Test
     public void testXPowers3Random() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        long modulus = 7;
-        for (int i = 0; i < 100; i++)
-            assertXPowers(RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd));
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 300); i++)
+            assertXPowers(RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), getModulusRandom(getRandomData().nextInt(2, 6)), rnd));
     }
 
     static void assertXPowers(MutablePolynomialMod polyModulus) {
@@ -69,9 +66,9 @@ public class ModularCompositionTest {
 
     @Test
     public void testPolyPowers3Random() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (long modulus : new long[]{2, 3, 7, 43, BigPrimes.nextPrime(1L << 50), BigPrimes.nextPrime(1L << 59)}) {
-            for (int i = 0; i < 100; i++) {
+        RandomGenerator rnd = getRandom();
+        for (long modulus : getModulusArray(3, 2, 45)) {
+            for (int i = 0; i < its(100, 300); i++) {
                 MutablePolynomialMod poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 MutablePolynomialMod polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 assertPolyPowers(poly, polyModulus, 10);
@@ -98,15 +95,14 @@ public class ModularCompositionTest {
     @Test
     public void testPowModulusMod2() throws Exception {
         long modulus = 43;
-//        assertPowModulusMod(MutablePolynomial.create(1), MutablePolynomial.create(1, 2, 3, 4, 1), modulus);
         assertPowModulusMod(MutablePolynomialZ.create(1, 2, 3, 4, 1).modulus(modulus), MutablePolynomialZ.create(1).modulus(modulus));
     }
 
     @Test
     public void testPowModulusMod3Random() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (long modulus : new long[]{2, 3, 7, 43, BigPrimes.nextPrime(1L << 50), BigPrimes.nextPrime(1L << 59)}) {
-            for (int i = 0; i < 100; i++) {
+        RandomGenerator rnd = getRandom();
+        for (long modulus : getModulusArray(3, 2, 45)) {
+            for (int i = 0; i < its(50, 300); i++) {
                 MutablePolynomialMod poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 MutablePolynomialMod polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 assertPowModulusMod(poly, polyModulus);
@@ -121,7 +117,7 @@ public class ModularCompositionTest {
 
     @Test
     public void testComposition1() throws Exception {
-        for (long modulus : new long[]{43, BigPrimes.nextPrime(1L << 50)}) {
+        for (long modulus : getModulusArray(1, 1, 50)) {
             MutablePolynomialMod poly = MutablePolynomialZ.create(1, 2, 3, 4, 45, 2, 1).modulus(modulus);
             MutablePolynomialMod point = MutablePolynomialZ.create(1, 2, 3).modulus(modulus);
             MutablePolynomialMod polyModulus = MutablePolynomialZ.create(1, 2, 3, 1).modulus(modulus);
@@ -131,7 +127,7 @@ public class ModularCompositionTest {
 
     @Test
     public void testComposition2() throws Exception {
-        for (long modulus : new long[]{43, BigPrimes.nextPrime(1L << 50)}) {
+        for (long modulus : getModulusArray(1, 1, 50)) {
             MutablePolynomialMod poly = MutablePolynomialZ.create(1).modulus(modulus);
             MutablePolynomialMod point = MutablePolynomialZ.create(1, 2, 1).modulus(modulus);
             MutablePolynomialMod polyModulus = MutablePolynomialZ.create(1, 2, 3, 1).modulus(modulus);
@@ -146,8 +142,8 @@ public class ModularCompositionTest {
 
     @Test
     public void testComposition3Random() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        for (long modulus : new long[]{2, 3, 7, 43}) {
+        RandomGenerator rnd = getRandom();
+        for (long modulus : getSmallModulusArray(5)) {
             for (int i = 0; i < 100; i++) {
                 MutablePolynomialMod poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 MutablePolynomialMod point = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
@@ -166,11 +162,11 @@ public class ModularCompositionTest {
         assertComposition(poly, point, polyModulus);
     }
 
-    @Ignore
     @Test
-    public void testComposition4Random_performace() throws Exception {
+    @Benchmark
+    public void testComposition4Random_performance() throws Exception {
         DescriptiveStatistics hornerStats = new DescriptiveStatistics(), brenKungStats = new DescriptiveStatistics();
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         long modulus = SmallPrimes.nextPrime(10000);
         for (int i = 0; i < 15000; i++) {
             if (i == 10000) {
@@ -194,10 +190,10 @@ public class ModularCompositionTest {
         }
 
         System.out.println("Horner");
-        System.out.println(hornerStats);
+        System.out.println(hornerStats.getMean());
 
         System.out.println("BrentKung");
-        System.out.println(brenKungStats);
+        System.out.println(brenKungStats.getMean());
     }
 
     static void assertComposition(MutablePolynomialMod poly, MutablePolynomialMod point, MutablePolynomialMod polyModulus) {
