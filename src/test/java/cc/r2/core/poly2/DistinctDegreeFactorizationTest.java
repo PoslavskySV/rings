@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly2.FactorizationTestUtil.PolynomialSource;
 import cc.r2.core.poly2.FactorizationTestUtil.RandomSource;
@@ -75,18 +76,34 @@ public class DistinctDegreeFactorizationTest {
     @Ignore
     @Test
     public void test2a() throws Exception {
+//        MutablePolynomialMod bigPoly = this.bigPoly.clone().multiply(this.bigPoly.clone().truncate(199)).setModulusUnsafe(BigPrimes.nextPrime(1L << 50));
+//        bigPoly = bigPoly.multiply(bigPoly.shiftLeft(50));
+//        bigPoly = bigPoly.increment();
+        System.out.println(bigPoly.degree);
+
         for (int i = 0; i < 1000; i++) {
             System.out.println("----");
             long start;
+//            start = System.nanoTime();
+//            FactorDecomposition<MutablePolynomialMod> f1 = DistinctDegreeFactorizationPlain(bigPoly);
+//            System.out.println("plain: "  + (System.nanoTime() - start));
+
             start = System.nanoTime();
-            FactorDecomposition<MutablePolynomialMod> f1 = DistinctDegreeFactorizationPlain(bigPoly);
-            System.out.println(System.nanoTime() - start);
+            FactorDecomposition<MutablePolynomialMod> f1a = DistinctDegreeFactorizationPrecomputedExponents(bigPoly);
+            System.out.println("power: " + (System.nanoTime() - start));
 
             start = System.nanoTime();
             FactorDecomposition<MutablePolynomialMod> f2 = DistinctDegreeFactorizationShoup(bigPoly);
-            System.out.println(System.nanoTime() - start);
+            System.out.println("shoup: " + (System.nanoTime() - start));
 
-            assertEquals(f1, f2);
+//            assertEquals(f1, f2);
+//            System.out.println(f1a);
+//            System.out.println(f2);
+//            System.out.println("----");
+//            System.out.println(f1a.canonicalForm());
+//            System.out.println(f2.canonicalForm());
+//            System.out.println("==");
+            assertEquals(f1a, f2);
         }
     }
 
@@ -95,9 +112,9 @@ public class DistinctDegreeFactorizationTest {
         new Benchmark()
                 .setAlgorithms(EnumSet.allOf(DDFAlgorithm.class))
                 .setPrimes(new long[]{SmallPrimes.nextPrime(10), SmallPrimes.nextPrime(100), SmallPrimes.nextPrime(200)})
-//                .setPrimes(new long[]{BigPrimes.nextPrime(1L << 4)})
+//                .setPrimes(new long[]{BigPrimes.nextPrime(1L << 40)})
                 .setSource(new RandomSource(new Well1024a(), 5, 15, true))
-                .setnIterations(1000)
+                .setnIterations(1100)
                 .setPrintProgress(false)
                 .setName("Small random polynomials")
                 .run();
@@ -121,7 +138,7 @@ public class DistinctDegreeFactorizationTest {
                 .setAlgorithms(EnumSet.allOf(DDFAlgorithm.class))
                 .setPrimes(new long[]{SmallPrimes.nextPrime(10), SmallPrimes.nextPrime(100), SmallPrimes.nextPrime(200)})
                 .setSource(new RandomSource(new Well1024a(), 15, 30, true))
-                .setnIterations(10000)
+                .setnIterations(1100)
                 .setPrintProgress(false)
                 .setName("Medium 15-30 random polynomials")
                 .run();
@@ -133,7 +150,7 @@ public class DistinctDegreeFactorizationTest {
                 .setAlgorithms(EnumSet.allOf(DDFAlgorithm.class))
                 .setPrimes(new long[]{SmallPrimes.nextPrime(10), SmallPrimes.nextPrime(100), SmallPrimes.nextPrime(200)})
                 .setSource(new RandomSource(new Well1024a(), 30, 60, true))
-                .setnIterations(10000)
+                .setnIterations(1100)
                 .setPrintProgress(false)
                 .setName("Medium 30-60 random polynomials")
                 .run();
@@ -145,9 +162,23 @@ public class DistinctDegreeFactorizationTest {
                 .setAlgorithms(EnumSet.allOf(DDFAlgorithm.class))
                 .setPrimes(new long[]{SmallPrimes.nextPrime(10), SmallPrimes.nextPrime(100), SmallPrimes.nextPrime(200)})
                 .setSource(new RandomSource(new Well1024a(), 60, 120, true))
-                .setnIterations(10000)
+                .setnIterations(110)
                 .setPrintProgress(false)
                 .setName("Medium 60-120 random polynomials")
+                .run();
+    }
+
+    @Test
+    public void test2_benchmark_random_large_polys() throws Exception {
+        new Benchmark()
+                .setAlgorithms(EnumSet.allOf(DDFAlgorithm.class))
+                .setPrimes(new long[]{BigPrimes.nextPrime(1L << 4)})
+//                .setSource(new RandomSource(new Well1024a(), 256, 257, true))
+                .setSource(new RandomSource(new Well1024a(), 456, 457, true))
+//                .setSource(new FactorizationTestUtil.RandomFactorableSource(2, new Well1024a(), 200, 210, true))
+                .setnIterations(110)
+                .setPrintProgress(true)
+                .setName("Large 256-528 random polynomials")
                 .run();
     }
 

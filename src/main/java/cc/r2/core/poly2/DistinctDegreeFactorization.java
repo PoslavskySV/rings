@@ -121,12 +121,14 @@ final class DistinctDegreeFactorization {
         return result.setNumericFactor(factor);
     }
 
+    /** Shoup's parameter */
+    private static final double SHOUP_BETA = 0.5;
+
     /** Baby step / giant step components for d.d.f. in Shoup's algorithm */
     static BabyGiantSteps generateBabyGiantSteps(MutablePolynomialMod poly) {
         int n = poly.degree;
-        int B = (int) Math.floor(n / 2.);
-        int l = (int) Math.floor(Math.sqrt(B));
-        int m = (int) Math.ceil(1.0 * B / l);
+        int l = (int) Math.ceil(Math.pow(1.0 * n, SHOUP_BETA));
+        int m = (int) Math.ceil(1.0 * n / 2 / l);
 
         InverseModMonomial invMod = fastDivisionPreConditioning(poly);
         ArrayList<MutablePolynomialMod> xPowers = xPowers(poly, invMod);
@@ -151,7 +153,7 @@ final class DistinctDegreeFactorization {
         for (int i = 0; i < m - 1; ++i)
             giantSteps.add(xPowerBig = compositionBrentKung(xPowerBig, hPowers, poly, invMod, tBrentKung));
 
-        return new BabyGiantSteps(B, l, m, babySteps, giantSteps, invMod);
+        return new BabyGiantSteps(l, m, babySteps, giantSteps, invMod);
     }
 
     /** Shoup's main gcd loop */
@@ -207,13 +209,12 @@ final class DistinctDegreeFactorization {
 
     /** baby/giant steps for Shoup's d.d.f. algorithm */
     static final class BabyGiantSteps {
-        final int B, l, m;
+        final int l, m;
         final ArrayList<MutablePolynomialMod> babySteps;
         final ArrayList<MutablePolynomialMod> giantSteps;
         final InverseModMonomial invMod;
 
-        public BabyGiantSteps(int b, int l, int m, ArrayList<MutablePolynomialMod> babySteps, ArrayList<MutablePolynomialMod> giantSteps, InverseModMonomial invMod) {
-            this.B = b;
+        public BabyGiantSteps(int l, int m, ArrayList<MutablePolynomialMod> babySteps, ArrayList<MutablePolynomialMod> giantSteps, InverseModMonomial invMod) {
             this.l = l;
             this.m = m;
             this.babySteps = babySteps;
@@ -221,6 +222,9 @@ final class DistinctDegreeFactorization {
             this.invMod = invMod;
         }
     }
+
+    /** when to switch to Shoup's algorithm */
+    private static final int DEGREE_SWITCH_TO_SHOUP = 256;
 
     /**
      * Performs distinct-degree factorization for square-free polynomial {@code poly}.
@@ -231,9 +235,7 @@ final class DistinctDegreeFactorization {
      * @return distinct-degree decomposition of {@code poly}
      */
     public static FactorDecomposition<MutablePolynomialMod> DistinctDegreeFactorization(MutablePolynomialMod poly) {
-        if (poly.degree < 50)
-            return DistinctDegreeFactorizationPlain(poly);
-        else if (poly.degree < 200)
+        if (poly.degree < DEGREE_SWITCH_TO_SHOUP)
             return DistinctDegreeFactorizationPrecomputedExponents(poly);
         else
             return DistinctDegreeFactorizationShoup(poly);
