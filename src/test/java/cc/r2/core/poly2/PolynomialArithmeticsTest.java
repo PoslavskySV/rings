@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by poslavsky on 27/02/2017.
  */
-public class PolynomialArithmeticsTest {
+public class PolynomialArithmeticsTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         long modulus = 5;
@@ -52,16 +52,15 @@ public class PolynomialArithmeticsTest {
 
     @Test
     public void test6() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
-        long[] primes = {2, 3, 5, 7, 11, 17, 67, 29, 31, 89, 101, 107, 139, 223};
-        for (int i = 0; i < 100; i++) {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        for (int i = 0; i < its(100, 1000); i++) {
             MutablePolynomialZ poly = RandomPolynomials.randomPoly(rndd.nextInt(1, 5), 100, rnd);
             MutablePolynomialZ polyModulus = RandomPolynomials.randomPoly(rndd.nextInt(poly.degree == 1 ? 0 : 1, poly.degree), 100, rnd);
             poly.data[poly.degree] = 1;
             polyModulus.data[polyModulus.degree] = 1;
             int exponent = 2 + rnd.nextInt(20);
-            for (long prime : primes) {
+            for (long prime : getModulusArray(9, 1, 40)) {
                 MutablePolynomialMod base = poly.modulus(prime).monic();
                 MutablePolynomialMod modulus = polyModulus.modulus(prime).monic();
                 assertEquals(polyMod(polyPow(base, exponent, true), modulus, false), polyPowMod(base, exponent, modulus, true));

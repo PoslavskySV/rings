@@ -11,8 +11,11 @@ package cc.r2.core.poly2;
 public final class LongModularArithmetics {
     private LongModularArithmetics() {}
 
+    /** Max supported modulus bits */
+    public static final int MAX_SUPPORTED_MODULUS_BITS = 62;
+
     /** Max supported modulus */
-    public static final long MAX_SUPPORTED_MODULUS = (1L << 62) - 1L;
+    public static final long MAX_SUPPORTED_MODULUS = (1L << MAX_SUPPORTED_MODULUS_BITS) - 1L;
 
     /** 2^32 - 1 */
     public static final long MAX_UNSIGNED_INT32 = (1L << 32) - 1;

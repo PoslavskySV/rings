@@ -76,7 +76,7 @@ public class RandomPolynomials {
      * @return random polynomial of specified {@code degree}
      */
     public static MutablePolynomialMod randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
-        MutablePolynomialZ r = randomPoly(degree, (int) modulus, rnd);
+        MutablePolynomialZ r = randomPoly(degree, modulus, rnd);
         while (r.data[degree] % modulus == 0) {r.data[r.degree] = rnd.nextLong();}
         return r.modulus(modulus, false).monic();
     }
@@ -89,7 +89,7 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
-    public static MutablePolynomialZ randomPoly(int degree, int bound, RandomGenerator rnd) {
+    public static MutablePolynomialZ randomPoly(int degree, long bound, RandomGenerator rnd) {
         return MutablePolynomialZ.create(randomLongArray(degree, bound, rnd));
     }
 }

@@ -1,9 +1,9 @@
 package cc.r2.core.poly2;
 
 import cc.r2.core.number.primes.BigPrimes;
+import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
 
@@ -13,14 +13,13 @@ import static cc.r2.core.poly2.DivisionWithRemainder.*;
 import static cc.r2.core.poly2.RandomPolynomials.randomPoly;
 import static org.junit.Assert.*;
 
-;
 
 /**
  * Created by poslavsky on 15/02/2017.
  */
-public class DivisionWithRemainderTest {
-    @SuppressWarnings("ConstantConditions")
+public class DivisionWithRemainderTest extends AbstractPolynomialTest {
     @Test
+    @SuppressWarnings("ConstantConditions")
     public void test1() throws Exception {
         long modulus = 11;
         MutablePolynomialMod a = MutablePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
@@ -52,17 +51,15 @@ public class DivisionWithRemainderTest {
 
     @Test
     public void test4_ModularSmallPolynomialsRandom() throws Exception {
-        int DIVIDEND_DEGREE_FAST_DIVISION_THRESHOLD_MONIC = 81;
+        int thr = 81;
         // polynomials
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         MutablePolynomialMod[] qd;
-        long[] primes = {3, 5, 7, 11, 13, 67, 97, 113, 127};
-        for (int i = 0; i < 1000; i++) {
-            MutablePolynomialZ dividend = randomPoly(rnd.nextInt(DIVIDEND_DEGREE_FAST_DIVISION_THRESHOLD_MONIC), rnd);
-            MutablePolynomialZ divider = randomPoly(rnd.nextInt(DIVIDEND_DEGREE_FAST_DIVISION_THRESHOLD_MONIC), rnd);
+        for (int i = 0; i < its(1000, 10_000); i++) {
+            MutablePolynomialZ dividend = randomPoly(rnd.nextInt(thr), rnd);
+            MutablePolynomialZ divider = randomPoly(rnd.nextInt(thr), rnd);
 
-
-            for (long prime : primes) {
+            for (long prime : getModulusArray(9, 1, 40)) {
                 if (dividend.lc() % prime == 0 || divider.lc() % prime == 0)
                     continue;
 
@@ -96,10 +93,10 @@ public class DivisionWithRemainderTest {
 
     @Test
     public void test5_SmallPolynomialsRandom() throws Exception {
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         int passed = 0;
         int wins = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < its(1000, 10_000); i++) {
             MutablePolynomialZ dividend = randomPoly(15, 1000, rnd);
             MutablePolynomialZ divider = randomPoly(10, 1000, rnd);
             double norm = -1;
@@ -135,7 +132,6 @@ public class DivisionWithRemainderTest {
                 System.out.println(divider.toStringForCopy());
                 throw e;
             }
-
         }
         System.out.println(passed);
         System.out.println(wins);
@@ -154,7 +150,6 @@ public class DivisionWithRemainderTest {
         MutablePolynomialZ dividend = MutablePolynomialZ.create(6, 9, 9, 3, 2, 6, -6, 7, -2, 8, 4, -8, 7, 3, 3, -6);
         MutablePolynomialZ divider = MutablePolynomialZ.create(0, 0, 0, 3, 1, 8, 8, -5, 6, -7, 9);
         MutablePolynomialZ[] qr = pseudoDivideAndRemainder(dividend, divider, true);
-        MutablePolynomialZ d = divider.clone().multiply(qr[0]).add(qr[1]);
         assertPseudoQuotientRemainder(dividend, divider, qr);
     }
 
@@ -169,9 +164,8 @@ public class DivisionWithRemainderTest {
 
     @Test
     public void test6_ModularSmallPolynomialsRemainderRandom() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        long[] primes = {2, 3, 5, 7, 11, 17, 41, 43, 101};
-        for (int i = 0; i < 1000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(1000, 10_000); i++) {
             MutablePolynomialZ dividend = randomPoly(5 + rnd.nextInt(20), 100, rnd);
             MutablePolynomialZ divider = randomPoly(rnd.nextInt(20), 100, rnd);
             if (dividend.degree < divider.degree) {
@@ -179,7 +173,7 @@ public class DivisionWithRemainderTest {
                 dividend = divider;
                 divider = tmp;
             }
-            for (long prime : primes) {
+            for (long prime : getModulusArray(9, 1, 40)) {
                 if (dividend.lc() % prime == 0 || divider.lc() % prime == 0)
                     continue;
                 MutablePolynomialMod a = dividend.clone().modulus(prime);
@@ -193,23 +187,23 @@ public class DivisionWithRemainderTest {
 
     @Test
     public void test7_LinearDividerRandom() throws Exception {
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         DescriptiveStatistics
                 fast = new DescriptiveStatistics(), fastPseudo = new DescriptiveStatistics(),
                 gen = new DescriptiveStatistics(), genPseudo = new DescriptiveStatistics();
 
+        long nIterations = its(1000, 15_000);
         out:
-        for (int i = 0; i < 15_000; i++) {
+        for (int i = 0; i < nIterations; i++) {
             MutablePolynomialZ dividend = randomPoly(rndd.nextInt(1, 10), 10, rnd);
             MutablePolynomialZ divider;
             do {
                 divider = MutablePolynomialZ.create(rndd.nextInt(-10, 10), 1);
             } while (divider.degree == 0);
 
-            if (i == 10000) {
+            if (i == nIterations / 10)
                 Arrays.asList(fast, fastPseudo, gen, genPseudo).forEach(DescriptiveStatistics::clear);
-            }
 
             long start = System.nanoTime();
             MutablePolynomialZ[] actual = divideAndRemainderLinearDivider(dividend, divider, true);
@@ -224,7 +218,7 @@ public class DivisionWithRemainderTest {
             assertArrayEquals(expected, expectedNoCopy);
 
 
-            for (long modulus : new long[]{2, 3, 5, 7, 11, 13, 19, 101}) {
+            for (long modulus : getSmallModulusArray(10)) {
                 do {
                     divider = MutablePolynomialZ.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
                 } while (divider.degree == 0 || LongArithmetics.gcd(divider.lc(), modulus) != 1);
@@ -340,14 +334,14 @@ public class DivisionWithRemainderTest {
 
     @Test
     public void test10_InverseModRandom() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        int modulus = 17;
-        for (int i = 0; i < 1000; i++) {
+        RandomGenerator rnd = getRandom();
+        long modulus = getModulusRandom(10);
+        for (int i = 0; i < its(100, 1000); i++) {
             MutablePolynomialMod f = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(100), modulus, rnd);
             f.data[0] = 1;
             int modDegree = 1 + rnd.nextInt(2 * f.degree);
-            MutablePolynomialMod invmod = inverseModMonomial0(f, modDegree);
-            assertInverseModMonomial(f, invmod, modDegree);
+            MutablePolynomialMod invMod = inverseModMonomial0(f, modDegree);
+            assertInverseModMonomial(f, invMod, modDegree);
         }
     }
 
@@ -357,9 +351,9 @@ public class DivisionWithRemainderTest {
 
     @Test
     public void test11_InverseModStructureRandom() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        long modulus = 101;
-        for (int i = 0; i < 1000; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 1000); i++) {
+            long modulus = getModulusRandom(20);
             MutablePolynomialMod p = RandomPolynomials.randomMonicPoly(2 + rnd.nextInt(100), modulus, rnd);
             p.data[0] = 1;
 
@@ -373,9 +367,9 @@ public class DivisionWithRemainderTest {
 
     @Test
     public void test12_FastDivisionRandom() throws Exception {
-        RandomGenerator rnd = new Well1024a();
-        long modulus = 17;
-        for (int i = 0; i < 300; i++) {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 500); i++) {
+            long modulus = getModulusRandom(getRandomData().nextInt(30, 33));
             MutablePolynomialMod b = RandomPolynomials.randomMonicPoly(30, modulus, rnd);
             MutablePolynomialMod a = RandomPolynomials.randomMonicPoly(rnd.nextInt(30), modulus, rnd);
 
@@ -451,16 +445,17 @@ public class DivisionWithRemainderTest {
     }
 
     @Test
+    @Benchmark(runAnyway = true)
     public void test19_FastDivisionPerformance() throws Exception {
         long modulus = 5659;
-        RandomGenerator rnd = new Well1024a();
+        RandomGenerator rnd = getRandom();
         MutablePolynomialMod divider = RandomPolynomials.randomMonicPoly(118, modulus, rnd);
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
         InverseModMonomial invRev = fastDivisionPreConditioning(divider);
-        int nIterations = 15000;
+        long nIterations = its(1000, 15000);
         for (int i = 0; i < nIterations; i++) {
-            if (i == 1000) {
+            if (i * 10 == nIterations) {
                 classic.clear();
                 fast.clear();
             }
@@ -477,11 +472,6 @@ public class DivisionWithRemainderTest {
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
-//            if (i > nIterations - 10) {
-//                System.out.println("====");
-//                System.out.println(plain);
-//                System.out.println(newton);
-//            }
             assertArrayEquals(qdPlain, qdNewton);
         }
 
@@ -493,16 +483,17 @@ public class DivisionWithRemainderTest {
     }
 
     @Test
+    @Benchmark(runAnyway = true)
     public void test20_FastDivisionPerformance() throws Exception {
         long modulus = BigPrimes.nextPrime(124987324L);
-        RandomGenerator rnd = new Well1024a(123);
+        RandomGenerator rnd = getRandom();
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
-        int nIterations = 15000;
+        long nIterations = its(1000, 15000);
         int dividerDegree = 156;
         int dividendDegree = 256;
         for (int i = 0; i < nIterations; i++) {
-            if (i == 10000) {
+            if (i * 10 == nIterations) {
                 classic.clear();
                 fast.clear();
             }
@@ -522,11 +513,6 @@ public class DivisionWithRemainderTest {
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
-//            if (i > nIterations - 10) {
-//                System.out.println("====");
-//                System.out.println(plain);
-//                System.out.println(newton);
-//            }
             assertArrayEquals(qdPlain, qdNewton);
         }
 
