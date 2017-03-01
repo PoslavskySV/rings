@@ -120,18 +120,24 @@ public final class FactorizationTestUtil {
         }
     }
 
-    static final class RandomSource implements PolynomialSource {
+    private static abstract class AbstarctRandomSource implements PolynomialSource {
         final RandomGenerator rnd;
         final int minDegree, maxDegree;
         final boolean ensureSquareFree;
         final RandomDataGenerator rndd;
 
-        public RandomSource(RandomGenerator rnd, int minDegree, int maxDegree, boolean ensureSquareFree) {
+        public AbstarctRandomSource(RandomGenerator rnd, int minDegree, int maxDegree, boolean ensureSquareFree) {
             this.rnd = rnd;
             this.minDegree = minDegree;
             this.maxDegree = maxDegree;
             this.ensureSquareFree = ensureSquareFree;
             this.rndd = new RandomDataGenerator(rnd);
+        }
+    }
+
+    static final class RandomSource extends AbstarctRandomSource {
+        public RandomSource(RandomGenerator rnd, int minDegree, int maxDegree, boolean ensureSquareFree) {
+            super(rnd, minDegree, maxDegree, ensureSquareFree);
         }
 
         @Override
@@ -146,6 +152,31 @@ public final class FactorizationTestUtil {
             if (poly.isConstant())
                 return take(modulus);
 
+            return poly;
+        }
+    }
+
+    static final class RandomFactorableSource implements PolynomialSource {
+        final int nFactors;
+        final PolynomialSource pSource;
+        final boolean ensureSquareFree;
+
+        public RandomFactorableSource(int nFactors, RandomGenerator rnd, int minDegree, int maxDegree, boolean ensureSquareFree) {
+            this.nFactors = nFactors;
+            this.ensureSquareFree = ensureSquareFree;
+            this.pSource = new RandomSource(rnd, minDegree, maxDegree, ensureSquareFree);
+        }
+
+        @Override
+        public MutablePolynomialMod take(long modulus) {
+            MutablePolynomialMod poly = MutablePolynomialMod.one(modulus);
+            for (int i = 0; i < nFactors; i++)
+                poly = poly.multiply(pSource.take(modulus));
+
+            if (ensureSquareFree) {
+                poly = SquareFreePart(poly);
+                assert isSquareFree(poly);
+            }
             return poly;
         }
     }

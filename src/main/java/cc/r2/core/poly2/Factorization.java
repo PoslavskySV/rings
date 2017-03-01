@@ -14,16 +14,17 @@ public final class Factorization {
     private Factorization() {}
 
 
+    /** x^n * poly */
     private static final class FactorMonomial<T extends MutablePolynomialAbstract<T>> {
-        final T theRest;
-        final T monomial;
+        final T theRest, monomial;
 
-        public FactorMonomial(T theRest, T monomial) {
+        FactorMonomial(T theRest, T monomial) {
             this.theRest = theRest;
             this.monomial = monomial;
         }
     }
 
+    /** factor out common monomial term (x^n) */
     private static <T extends MutablePolynomialAbstract<T>> FactorMonomial<T> factorOutMonomial(T poly) {
         int i = 0;
         while (poly.data[i] == 0) ++i;
@@ -43,6 +44,12 @@ public final class Factorization {
         return null;
     }
 
+    /**
+     * Factors polynomial in Zp[x].
+     *
+     * @param poly the polynomial
+     * @return factor decomposition
+     */
     public static FactorDecomposition<MutablePolynomialMod> factor(MutablePolynomialMod poly) {
         FactorDecomposition<MutablePolynomialMod> result = earlyFactorizationChecks(poly);
         if (result != null)
@@ -52,8 +59,6 @@ public final class Factorization {
 
         result = new FactorDecomposition<>();
         result.addFactor(base.monomial, 1);
-
-        long overallFactor = poly.lc();
 
         //do square-free factorization
         FactorDecomposition<MutablePolynomialMod> sqf = SquareFreeFactorization(base.theRest);
@@ -77,6 +82,6 @@ public final class Factorization {
             }
         }
 
-        return result.setNumericFactor(overallFactor);
+        return result.setNumericFactor(poly.lc());
     }
 }
