@@ -83,11 +83,23 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     }
 
     /**
+     * Returns L1 norm of this polynomial, i.e. sum of abs coefficients
+     *
+     * @return L1 norm of {@code this}
+     */
+    final double norm1() {
+        double norm = 0;
+        for (int i = 0; i <= degree; ++i)
+            norm += Math.abs(data[0]);
+        return norm;
+    }
+
+    /**
      * Returns L2 norm of this polynomial, i.e. a square root of a sum of coefficient squares.
      *
      * @return L2 norm of {@code this}
      */
-    final double norm() {
+    final double norm2() {
         double norm = 0;
         for (int i = 0; i <= degree; ++i)
             norm += ((double) data[i]) * data[i];
@@ -95,15 +107,24 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     }
 
     /**
-     * Returns L1 norm of this polynomial, i.e. the maximal absolute coefficient of {@code this}
+     * Returns max coefficient (by absolute value) of this poly
      *
-     * @return L1 norm of {@code this}
+     * @return max coefficient (by absolute value)
      */
-    final double norm1() {
-        double norm = Math.abs(data[0]);
+    final double normMax() {
+        return (double) maxAbsCoefficient();
+    }
+
+    /**
+     * Returns max coefficient (by absolute value) of this poly
+     *
+     * @return max coefficient (by absolute value)
+     */
+    final long maxAbsCoefficient() {
+        long max = data[0];
         for (int i = 1; i <= degree; ++i)
-            norm = Math.max((double) Math.abs(data[i]), norm);
-        return norm;
+            max = Math.max(Math.abs(data[i]), max);
+        return max;
     }
 
     /**
@@ -273,7 +294,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param degree      monomial degree
      * @return {@code coefficient * x^degree}
      */
-    abstract T createMonomial(long coefficient,int degree);
+    abstract T createMonomial(long coefficient, int degree);
 
     /**
      * Returns 0 (new instance)

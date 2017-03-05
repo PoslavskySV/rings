@@ -264,11 +264,11 @@ final class DistinctDegreeFactorization {
         long overallFactor = squareFree.factor;
 
         FactorDecomposition<MutablePolynomialMod> result = new FactorDecomposition<>();
-        for (int i = squareFree.factors.size() - 1; i >= 0; --i) {
-            FactorDecomposition<MutablePolynomialMod> dd = DistinctDegreeFactorization(squareFree.factors.get(i));
-            int nFactors = dd.factors.size();
+        for (int i = squareFree.size() - 1; i >= 0; --i) {
+            FactorDecomposition<MutablePolynomialMod> dd = DistinctDegreeFactorization(squareFree.get(i));
+            int nFactors = dd.size();
             for (int j = nFactors - 1; j >= 0; --j)
-                result.addFactor(dd.factors.get(j), squareFree.exponents.get(i));
+                result.addFactor(dd.get(j), squareFree.getExponent(i));
             overallFactor = poly.multiplyMod(overallFactor, dd.factor);
         }
 

@@ -6,6 +6,7 @@ import gnu.trove.list.array.TIntArrayList;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -14,7 +15,7 @@ import java.util.List;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
+public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> implements Iterable<T> {
     /** Overall integer factor (polynomial content) */
     long factor;
     /** Factors */
@@ -30,6 +31,21 @@ public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
         this.factors = factors;
         this.exponents = exponents;
         this.factor = factor;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return factors.iterator();
+    }
+
+    T get(int i) { return factors.get(i); }
+
+    int getExponent(int i) { return exponents.get(i); }
+
+    int size() { return factors.size(); }
+
+    boolean isTrivial() {
+        return factors.size() == 1;
     }
 
     protected String toString(boolean infoAsExponents) {
@@ -117,6 +133,9 @@ public final class FactorDecomposition<T extends MutablePolynomialAbstract<T>> {
 
     /** pretty print for factorization */
     private static String toStringFactorization(List factors, TIntArrayList exponents, long factor, boolean infoAsExponents) {
+        if (factors.isEmpty())
+            return Long.toString(factor);
+
         StringBuilder sb = new StringBuilder();
         if (factor != 1) {
             sb.append(factor);

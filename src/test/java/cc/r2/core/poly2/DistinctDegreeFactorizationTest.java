@@ -8,6 +8,7 @@ import cc.r2.core.poly2.FactorizationTestUtil.ShoupSource;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.test.TimeConsuming;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;

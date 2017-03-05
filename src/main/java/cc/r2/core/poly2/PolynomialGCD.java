@@ -210,7 +210,7 @@ public final class PolynomialGCD {
         assert a.degree >= b.degree;
 
         long lcGCD = LongArithmetics.gcd(a.lc(), b.lc());
-        double bound = Math.sqrt(a.degree + 1) * (1L << a.degree) * Math.max(a.norm(), b.norm()) * lcGCD;
+        double bound = Math.sqrt(a.degree + 1) * (1L << a.degree) * Math.max(a.norm2(), b.norm2()) * lcGCD;
 
         MutablePolynomialMod previousBase, base = null;
         long basePrime = -1;
