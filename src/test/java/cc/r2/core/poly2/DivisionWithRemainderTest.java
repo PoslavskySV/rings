@@ -106,7 +106,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                     assertPseudoQuotientRemainder(dividend, divider, qr);
                     qr = pseudoDivideAndRemainder(dividend.clone(), divider, false);
                     assertPseudoQuotientRemainder(dividend, divider, qr);
-                    norm = qr[0].norm();
+                    norm = qr[0].norm2();
                     ++passed;
                 } catch (ArithmeticException e) {}
 
@@ -116,7 +116,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                     assertPseudoQuotientRemainder(dividend, divider, qr);
                     qr = pseudoDivideAndRemainderAdaptive(dividend.clone(), divider, false);
                     assertPseudoQuotientRemainder(dividend, divider, qr);
-                    normAdaptive = qr[0].norm();
+                    normAdaptive = qr[0].norm2();
                     ++passed;
                 } catch (ArithmeticException e) {}
 

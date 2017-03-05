@@ -45,6 +45,5 @@
  * @author Dmitry Bolotin
  * @author Stanislav Poslavsky
  * @since 1.0
- * @see cc.r2.core.groups.permutations
  */
 package cc.r2.core.combinatorics;

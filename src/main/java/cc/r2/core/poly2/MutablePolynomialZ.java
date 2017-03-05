@@ -76,6 +76,15 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
     }
 
     /**
+     * Returns Mignotte's bound (sqrt(n+1) * 2^n max |this|)
+     *
+     * @return Mignotte's bound
+     */
+    double mignotteBound() {
+        return Math.pow(2.0, degree) * norm2();
+    }
+
+    /**
      * Reduces polynomial modulo {@code modulus} and returns Zp[x] result.
      *
      * @param modulus the modulus
@@ -265,7 +274,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             return multiply(factor);
         }
 
-        double rBound = norm1() * oth.norm1() * Math.max(degree + 1, oth.degree + 1);
+        double rBound = normMax() * oth.normMax() * Math.max(degree + 1, oth.degree + 1);
         if (rBound < Long.MAX_VALUE)
             // we can apply fast integer arithmetic
             data = multiplyUnsafe(oth);
@@ -300,7 +309,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         if (degree == 0)
             return multiply(data[0]);
 
-        double norm1 = norm1();
+        double norm1 = normMax();
         double rBound = norm1 * norm1 * (degree + 1);
         if (rBound < Long.MAX_VALUE)
             // we can apply fast integer arithmetic

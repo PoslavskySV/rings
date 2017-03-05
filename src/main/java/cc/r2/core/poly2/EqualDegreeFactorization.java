@@ -81,7 +81,10 @@ public final class EqualDegreeFactorization {
                 factor = CantorZassenhaus0(poly, d);
             } while (factor == null);
 
-            result.addFactor(factor.monic(), 1);
+            if (factor.degree != d)
+                result.addAll(CantorZassenhaus(factor, d));
+            else
+                result.addFactor(factor.monic(), 1);
             poly = DivisionWithRemainder.quotient(poly, factor, false);
         }
 

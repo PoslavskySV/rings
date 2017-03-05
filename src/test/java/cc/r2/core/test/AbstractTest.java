@@ -73,12 +73,12 @@ public class AbstractTest {
         return runTimeConsumingTests() ? nLarge : nSmall;
     }
 
-    @Test
-    public void testLT() throws Exception {
-        System.clearProperty("runLongTests");
-        Assert.assertEquals(10, its(10, 100));
-        System.setProperty("runLongTests", "");
-        Assert.assertEquals(100, its(10, 100));
-        System.clearProperty("runLongTests");
-    }
+//    @Test
+//    public void testLT() throws Exception {
+//        System.clearProperty("runLongTests");
+//        Assert.assertEquals(10, its(10, 100));
+//        System.setProperty("runLongTests", "");
+//        Assert.assertEquals(100, its(10, 100));
+//        System.clearProperty("runLongTests");
+//    }
 }

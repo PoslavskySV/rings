@@ -428,7 +428,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
             return multiply(factor);
         }
 
-        double rBound = norm1() * oth.norm1() * Math.max(degree + 1, oth.degree + 1);
+        double rBound = normMax() * oth.normMax() * Math.max(degree + 1, oth.degree + 1);
         if (rBound < Long.MAX_VALUE) {
             // we can apply fast integer arithmetic and then reduce
             data = multiplyExact(oth);
@@ -467,7 +467,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         if (degree == 0)
             return multiply(data[0]);
 
-        double norm1 = norm1();
+        double norm1 = normMax();
         double rBound = norm1 * norm1 * (degree + 1);
         if (rBound < Long.MAX_VALUE) {
             // we can apply fast integer arithmetic and then reduce

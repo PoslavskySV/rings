@@ -59,6 +59,113 @@ public final class ArraysUtil {
         }
     }
 
+    /**
+     * Sort array & return array with removed repetitive values.
+     *
+     * @param values input array (this method will quickSort this array)
+     * @return sorted array of distinct values
+     */
+    public static int[] getSortedDistinct(int[] values) {
+        if (values.length == 0)
+            return values;
+        Arrays.sort(values);
+        int shift = 0;
+        int i = 0;
+        while (i + shift + 1 < values.length)
+            if (values[i + shift] == values[i + shift + 1])
+                ++shift;
+            else {
+                values[i] = values[i + shift];
+                ++i;
+            }
+        values[i] = values[i + shift];
+        return Arrays.copyOf(values, i + 1);
+    }
+
+    /**
+     * Return the set difference B - A for int sets A and B.<br/> Sets A and B
+     * must be represented as two sorted int arrays.<br/> Repetitive values in A
+     * or B not allowed.
+     *
+     * @param main   sorted array of distinct values (set B)
+     * @param delete sorted array of distinct values (set A)
+     * @return the set of elements in B but not in A
+     */
+    public static int[] intSetDifference(int[] main, int[] delete) {
+        int bPointer = 0, aPointer = 0;
+        int counter = 0;
+        while (aPointer < delete.length && bPointer < main.length)
+            if (delete[aPointer] == main[bPointer]) {
+                aPointer++;
+                bPointer++;
+            } else if (delete[aPointer] < main[bPointer])
+                aPointer++;
+            else if (delete[aPointer] > main[bPointer]) {
+                counter++;
+                bPointer++;
+            }
+        counter += main.length - bPointer;
+        int[] result = new int[counter];
+        counter = 0;
+        aPointer = 0;
+        bPointer = 0;
+        while (aPointer < delete.length && bPointer < main.length)
+            if (delete[aPointer] == main[bPointer]) {
+                aPointer++;
+                bPointer++;
+            } else if (delete[aPointer] < main[bPointer])
+                aPointer++;
+            else if (delete[aPointer] > main[bPointer])
+                result[counter++] = main[bPointer++];
+        System.arraycopy(main, bPointer, result, counter, main.length - bPointer);
+        return result;
+    }
+
+    /**
+     * Return the union B + A for integer sets A and B.<br/> Sets A and B must
+     * be represented as two sorted integer arrays.<br/> Repetitive values in A
+     * or B not allowed.
+     *
+     * @param a sorted array of distinct values. (set A)
+     * @param b sorted array of distinct values. (set B)
+     * @return the set of elements from B and from A
+     */
+    public static int[] intSetUnion(int[] a, int[] b) {
+        int bPointer = 0, aPointer = 0;
+        int counter = 0;
+        while (aPointer < a.length && bPointer < b.length)
+            if (a[aPointer] == b[bPointer]) {
+                aPointer++;
+                bPointer++;
+                counter++;
+            } else if (a[aPointer] < b[bPointer]) {
+                aPointer++;
+                counter++;
+            } else if (a[aPointer] > b[bPointer]) {
+                counter++;
+                bPointer++;
+            }
+        counter += (a.length - aPointer) + (b.length - bPointer); //Assert aPoiner==a.length || bPointer==b.length
+        int[] result = new int[counter];
+        counter = 0;
+        aPointer = 0;
+        bPointer = 0;
+        while (aPointer < a.length && bPointer < b.length)
+            if (a[aPointer] == b[bPointer]) {
+                result[counter++] = b[bPointer];
+                aPointer++;
+                bPointer++;
+            } else if (a[aPointer] < b[bPointer])
+                result[counter++] = a[aPointer++];
+            else if (a[aPointer] > b[bPointer])
+                result[counter++] = b[bPointer++];
+        if (aPointer == a.length)
+            System.arraycopy(b, bPointer, result, counter, b.length - bPointer);
+        else
+            System.arraycopy(a, aPointer, result, counter, a.length - aPointer);
+        return result;
+    }
+
     public static void reverse(long[] array, int from, int to) {
         for (int i = 0; i < (to - from) / 2; ++i)
             swap(array, from + i, to - 1 - i);
