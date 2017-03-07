@@ -53,6 +53,56 @@ public final class PolynomialGCD {
     }
 
     /**
+     * Runs extended Euclidean algorithm to compute {@code [gcd(a,b), x, y]} such that {@code x * a + y * b = gcd(a, b)}
+     *
+     * @param a the polynomial
+     * @param b the polynomial
+     * @return array of {@code [gcd(a,b), x, y]} such that {@code x * a + y * b = gcd(a, b)}
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends MutablePolynomialAbstract<T>> T[] ExtendedEuclid(final T a, final T b) {
+        T factory = a;
+        T s = factory.createZero(), old_s = factory.createOne();
+        T t = factory.createOne(), old_t = factory.createZero();
+        T r = b, old_r = a;
+
+        T q;
+        T tmp;
+        while (!r.isZero()) {
+            q = quotient(old_r, r, true);
+            if (q == null)
+                throw new IllegalArgumentException("Not divisible: (" + old_r + ") / (" + r + ")");
+
+            tmp = old_r;
+            old_r = r;
+            r = tmp.clone().subtract(q.clone().multiply(r));
+
+            tmp = old_s;
+            old_s = s;
+            s = tmp.clone().subtract(q.clone().multiply(s));
+
+            tmp = old_t;
+            old_t = t;
+            t = tmp.clone().subtract(q.clone().multiply(t));
+        }
+        assert old_r.equals(a.clone().multiply(old_s).add(b.clone().multiply(old_t)));
+
+        T[] result = arrayNewInstance(a, 3);
+        result[0] = old_r;
+        result[1] = old_s;
+        result[2] = old_t;
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends MutablePolynomialAbstract<T>> T[] arrayNewInstance(T a, int len) {
+        if (a instanceof MutablePolynomialZ)
+            return (T[]) new MutablePolynomialZ[len];
+        else
+            return (T[]) new MutablePolynomialMod[len];
+    }
+
+    /**
      * Euclidean algorithm for polynomials over Z that uses pseudo division
      *
      * @param a            poly

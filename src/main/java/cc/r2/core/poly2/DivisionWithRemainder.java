@@ -74,6 +74,8 @@ public final class DivisionWithRemainder {
                                                            final long dividendRaiseFactor,
                                                            final boolean copy) {
         assert dividend.degree >= divider.degree;
+        if (divider.lc() == 1 && dividendRaiseFactor == 1)
+            return divideAndRemainderGeneralMonic(dividend, divider, copy);
 
         MutablePolynomialZ
                 remainder = (copy ? dividend.clone() : dividend).multiply(dividendRaiseFactor);
@@ -93,6 +95,24 @@ public final class DivisionWithRemainder {
             } else quotient[i] = 0;
         }
 
+        return new MutablePolynomialZ[]{MutablePolynomialZ.create(quotient), remainder};
+    }
+
+    /** Plain school implementation */
+    private static MutablePolynomialZ[] divideAndRemainderGeneralMonic(final MutablePolynomialZ dividend,
+                                                                       final MutablePolynomialZ divider,
+                                                                       final boolean copy) {
+        assert divider.lc() == 1;
+
+        MutablePolynomialZ
+                remainder = (copy ? dividend.clone() : dividend);
+        long[] quotient = new long[dividend.degree - divider.degree + 1];
+        for (int i = dividend.degree - divider.degree; i >= 0; --i) {
+            if (remainder.degree == divider.degree + i) {
+                quotient[i] = remainder.lc();
+                remainder.subtract(divider, quotient[i], i);
+            } else quotient[i] = 0;
+        }
         return new MutablePolynomialZ[]{MutablePolynomialZ.create(quotient), remainder};
     }
 
@@ -645,5 +665,13 @@ public final class DivisionWithRemainder {
             return (T) remainder((MutablePolynomialZ) dividend, (MutablePolynomialZ) divider, copy);
         else
             return (T) remainder((MutablePolynomialMod) dividend, (MutablePolynomialMod) divider, copy);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends MutablePolynomialAbstract<T>> T quotient(T dividend, T divider, boolean copy) {
+        if (dividend instanceof MutablePolynomialZ)
+            return (T) quotient((MutablePolynomialZ) dividend, (MutablePolynomialZ) divider, copy);
+        else
+            return (T) quotient((MutablePolynomialMod) dividend, (MutablePolynomialMod) divider, copy);
     }
 }

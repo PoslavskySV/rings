@@ -26,14 +26,18 @@ public class AbstractPolynomialTest extends AbstractTest {
         return getModulusArray(0, n, maxModulusBits);
     }
 
-    protected long[] getModulusArray(int nSmall, int nLarge, int maxModulusBits) {
+    protected long[] getModulusArray(int nSmall, int nLarge, int smallModulusBits, int maxModulusBits) {
         long[] res = new long[nSmall + nLarge];
         int i = 0;
         for (; i < nSmall; i++)
-            res[i] = getModulusRandom(getRandomData().nextInt(2, 31));
+            res[i] = getModulusRandom(getRandomData().nextInt(2, smallModulusBits));
         for (; i < res.length; i++)
             res[i] = getModulusRandom(getRandomData().nextInt(32, maxModulusBits));
         return res;
+    }
+
+    protected long[] getModulusArray(int nSmall, int nLarge, int maxModulusBits) {
+        return getModulusArray(nSmall, nLarge, 31, maxModulusBits);
     }
 
     protected long[] getOneSmallOneLargeModulus(int maxModulusBits) {

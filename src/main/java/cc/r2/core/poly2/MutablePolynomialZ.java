@@ -169,11 +169,13 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         if (num == 0)
             return cc();
         long res = 0;
+        MagicDivider magic = magicSigned(den);
         for (int i = degree; i >= 0; --i) {
             long x = LongArithmetics.safeMultiply(res, num);
-            if (x % den != 0)
+            long q = divideSignedFast(x, magic);
+            if (q * den != x)
                 throw new IllegalArgumentException("The answer is not integer");
-            res = LongArithmetics.safeAdd(x / den, data[i]);
+            res = LongArithmetics.safeAdd(q, data[i]);
         }
         return res;
     }
@@ -251,6 +253,12 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         return this;
     }
 
+    MutablePolynomialZ multiplyUnsafe(long factor) {
+        for (int i = degree; i >= 0; --i)
+            data[i] *= factor;
+        return this;
+    }
+
     @Override
     public MutablePolynomialZ clone() {
         return new MutablePolynomialZ(data.clone(), degree);
@@ -277,7 +285,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         double rBound = normMax() * oth.normMax() * Math.max(degree + 1, oth.degree + 1);
         if (rBound < Long.MAX_VALUE)
             // we can apply fast integer arithmetic
-            data = multiplyUnsafe(oth);
+            data = multiplyUnsafe0(oth);
         else
             data = multiplySafe(oth);
 
@@ -286,8 +294,31 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         return this;
     }
 
+    MutablePolynomialZ multiplyUnsafe(MutablePolynomialZ oth) {
+        if (isZero())
+            return this;
+        if (oth.isZero())
+            return toZero();
+        if (this == oth)
+            return square();
+
+        if (oth.degree == 0)
+            return multiply(oth.data[0]);
+        if (degree == 0) {
+            long factor = data[0];
+            data = oth.data.clone();
+            degree = oth.degree;
+            return multiplyUnsafe(factor);
+        }
+
+        data = multiplyUnsafe0(oth);
+        degree += oth.degree;
+        fixDegree();
+        return this;
+    }
+
     /** switch algorithms */
-    private long[] multiplyUnsafe(MutablePolynomialZ oth) {
+    private long[] multiplyUnsafe0(MutablePolynomialZ oth) {
         if (1L * (degree + 1) * (degree + 1) <= MUL_CLASSICAL_THRESHOLD)
             return multiplyClassicalUnsafe(data, 0, degree + 1, oth.data, 0, oth.degree + 1);
         else

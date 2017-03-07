@@ -59,6 +59,23 @@ public final class ArraysUtil {
         }
     }
 
+    public static <T> String toString(T[] a, int from, int to) {
+        if (a == null)
+            return "null";
+        int iMax = to - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = from; ; i++) {
+            b.append(a[i]);
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(", ");
+        }
+    }
+
     /**
      * Sort array & return array with removed repetitive values.
      *
@@ -167,6 +184,11 @@ public final class ArraysUtil {
     }
 
     public static void reverse(long[] array, int from, int to) {
+        for (int i = 0; i < (to - from) / 2; ++i)
+            swap(array, from + i, to - 1 - i);
+    }
+
+    public static <T> void reverse(T[] array, int from, int to) {
         for (int i = 0; i < (to - from) / 2; ++i)
             swap(array, from + i, to - 1 - i);
     }

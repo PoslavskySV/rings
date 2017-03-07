@@ -217,4 +217,9 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             assertTrue(isSquareFree(SquareFreePart(poly)));
         }
     }
+
+    @Test
+    public void test9() throws Exception {
+        assertTrue(SquareFreeFactorization(MutablePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
+    }
 }

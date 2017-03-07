@@ -8,17 +8,18 @@ import cc.r2.core.poly2.FactorizationTestUtil.ShoupSource;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.test.TimeConsuming;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static cc.r2.core.poly2.DistinctDegreeFactorization.DistinctDegreeFactorization;
 import static cc.r2.core.poly2.DistinctDegreeFactorization.*;
 import static cc.r2.core.poly2.FactorizationTestUtil.assertDistinctDegreeFactorization;
 import static cc.r2.core.poly2.FactorizationTestUtil.assertFactorization;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by poslavsky on 19/02/2017.
@@ -405,5 +406,10 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
         FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
         assertDistinctDegreeFactorization(bigPoly, ddf);
         assertEquals(2, ddf.factors.size());
+    }
+
+    @Test
+    public void test6() throws Exception {
+        assertTrue(DistinctDegreeFactorization(MutablePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
     }
 }
