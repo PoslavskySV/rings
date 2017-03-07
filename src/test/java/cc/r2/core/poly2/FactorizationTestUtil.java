@@ -4,6 +4,8 @@ import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import java.util.List;
+
 import static cc.r2.core.poly2.SquareFreeFactorization.SquareFreePart;
 import static cc.r2.core.poly2.SquareFreeFactorization.isSquareFree;
 import static org.junit.Assert.assertEquals;
@@ -16,6 +18,10 @@ public final class FactorizationTestUtil {
 
     static <T extends MutablePolynomialAbstract<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {
         assertEquals(poly, factorization.toPolynomial(poly));
+    }
+
+    static <T extends MutablePolynomialAbstract<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
+        assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
     }
 
     static void assertDistinctDegreeFactorization(MutablePolynomialMod poly, FactorDecomposition<MutablePolynomialMod> factorization) {

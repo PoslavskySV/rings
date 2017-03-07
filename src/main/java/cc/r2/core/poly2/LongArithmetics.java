@@ -259,22 +259,24 @@ public final class LongArithmetics {
             old_s = s;
             s = tmp - q * s;
         }
+
         if (old_r != 1)
-            throw new IllegalArgumentException("Not invertible: val = " + num + ", modulus = " + modulus + ", old_r = " + old_r);
+            throw new IllegalArgumentException(
+                    String.format("modInverse(%s, %s) : not invertible (old_r = %s)", num, modulus, old_r));
         return mod(old_s, modulus);
     }
 
     /**
      * Casts {@code long} to signed {@code int} throwing exception in case of overflow.
      *
-     * @param v the long
+     * @param value the long
      * @return int value
      * @throws ArithmeticException if the result overflows a long
      */
     public static int safeToInt(long value) {
-        if ((int)value != value) {
+        if ((int) value != value) {
             throw new ArithmeticException("integer overflow: " + value);
         }
-        return (int)value;
+        return (int) value;
     }
 }

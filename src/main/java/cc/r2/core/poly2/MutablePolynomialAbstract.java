@@ -90,7 +90,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     final double norm1() {
         double norm = 0;
         for (int i = 0; i <= degree; ++i)
-            norm += Math.abs(data[0]);
+            norm += Math.abs(data[i]);
         return norm;
     }
 
@@ -121,7 +121,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @return max coefficient (by absolute value)
      */
     final long maxAbsCoefficient() {
-        long max = data[0];
+        long max = Math.abs(data[0]);
         for (int i = 1; i <= degree; ++i)
             max = Math.max(Math.abs(data[i]), max);
         return max;

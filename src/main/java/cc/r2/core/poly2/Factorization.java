@@ -4,8 +4,15 @@ import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.util.ArraysUtil;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import static cc.r2.core.poly2.DistinctDegreeFactorization.DistinctDegreeFactorization;
+import static cc.r2.core.poly2.DivisionWithRemainder.divideAndRemainder;
 import static cc.r2.core.poly2.EqualDegreeFactorization.CantorZassenhaus;
+import static cc.r2.core.poly2.PolynomialGCD.ExtendedEuclid;
 import static cc.r2.core.poly2.SquareFreeFactorization.SquareFreeFactorization;
 
 /**
@@ -41,9 +48,9 @@ public final class Factorization {
 
 
     /** early check for trivial cases */
-    private static <T extends MutablePolynomialAbstract<T>> FactorDecomposition<T> earlyFactorizationChecks(T poly) {
+    private static FactorDecomposition<MutablePolynomialMod> earlyFactorizationChecks(MutablePolynomialMod poly) {
         if (poly.degree <= 1 || poly.isMonomial())
-            return FactorDecomposition.oneFactor(poly, 1);
+            return FactorDecomposition.oneFactor(poly.isMonic() ? poly : poly.clone().monic(), poly.lc());
 
         return null;
     }
@@ -89,6 +96,183 @@ public final class Factorization {
         return result.setNumericFactor(poly.lc());
     }
 
+
+    /* ************************** Factorization in Z[x] ************************** */
+
+
+    /**
+     * Applies Hensel lifting to factorization. As result factorization in Z/p[x] will be lifted to factorization
+     * in Z/p^(2^k)[x] where k is {@code nIterations}.
+     *
+     * @param modulus        the initial modulus
+     * @param nIterations    number of single step Hensel iterations (so the resulting modulus is {@code modulus^{2^nIterations}}
+     * @param basePoly       initial polynomial in Z[x]
+     * @param modularFactors modular factorization of {@code basePoly}
+     * @return factorization modulo {@code modulus^(2^nIterations)}
+     */
+    static List<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
+                                                        MutablePolynomialZ basePoly,
+                                                        List<MutablePolynomialMod> modularFactors) {
+        assert modularFactors.size() > 0 : String.format("no factors: %s  mod %s", basePoly.toStringForCopy(), modulus);
+        return liftFactorization0(modulus, LongArithmetics.safePow(modulus, 1L << nIterations),
+                nIterations, basePoly, modularFactors);
+    }
+
+    /** actual multifactor Hensel lifting implementation **/
+    static List<MutablePolynomialMod> liftFactorization0(long modulus, long newModulus, int nIterations,
+                                                         MutablePolynomialZ poly,
+                                                         List<MutablePolynomialMod> modularFactors) {
+        // for the future:
+        // recursion may be replaced with precomputed binary tree
+        // for now the major part of execution time (~99%) is spent in actual lifting step, so irrelevant
+
+        if (modularFactors.size() == 1)
+            return Collections.singletonList(poly.modulus(newModulus, true).monic());
+
+        MutablePolynomialMod factory = modularFactors.get(0);
+        MutablePolynomialMod
+                aFactor = factory.createConstant(poly.lc()),
+                bFactor = factory.createOne();
+
+        int nHalf = modularFactors.size() / 2, i = 0;
+        for (; i < nHalf; ++i)
+            aFactor = aFactor.multiply(modularFactors.get(i));
+        for (; i < modularFactors.size(); ++i)
+            bFactor = bFactor.multiply(modularFactors.get(i));
+
+        HenselData hensel = createHenselInput(modulus, poly, aFactor, bFactor);
+        assertHenselLift(hensel);
+
+        for (i = 0; i < nIterations; ++i) {
+            hensel = hensel.liftQuadratic();
+            assertHenselLift(hensel);
+        }
+
+        aFactor = hensel.aFactor;
+        bFactor = hensel.bFactor;
+
+        ArrayList<MutablePolynomialMod> result = new ArrayList<>();
+        result.addAll(liftFactorization0(modulus, newModulus, nIterations, aFactor.normalSymmetricForm(), modularFactors.subList(0, nHalf)));
+        result.addAll(liftFactorization0(modulus, newModulus, nIterations, bFactor.normalSymmetricForm(), modularFactors.subList(nHalf, modularFactors.size())));
+        return result;
+    }
+
+    /** runs xgcd for coprime polynomials ensuring that gcd is 1 (not another constant) */
+    static MutablePolynomialMod[] monicExtendedEuclid(MutablePolynomialMod a, MutablePolynomialMod b) {
+        MutablePolynomialMod[] xgcd = ExtendedEuclid(a, b);
+        if (xgcd[0].isOne())
+            return xgcd;
+
+        assert xgcd[0].isConstant() : "bad xgcd: " + Arrays.toString(xgcd) + " for xgcd(" + a + ", " + b + ")";
+        long inv = LongArithmetics.modInverse(xgcd[0].lc(), xgcd[0].modulus);
+        for (MutablePolynomialMod e : xgcd)
+            e.multiply(inv);
+
+        return xgcd;
+    }
+
+    /** creates liftable quintet */
+    static HenselData createHenselInput(long modulus,
+                                        MutablePolynomialZ poly,
+                                        MutablePolynomialMod aFactor,
+                                        MutablePolynomialMod bFactor) {
+        MutablePolynomialMod[] xgcd = monicExtendedEuclid(aFactor, bFactor);
+        return new HenselData(modulus, poly, aFactor, bFactor, xgcd[1], xgcd[2]);
+    }
+
+    /** assertion for correct Hensel structure */
+    private static void assertHenselLift(HenselData lift) {
+        assert lift.base.modulus(lift.modulus, true).equals(lift.aFactor.clone().multiply(lift.bFactor))
+                : lift.base + " != (" + lift.aFactor + ") * ( " + lift.bFactor + ")" + " mod " + lift.modulus;
+        assert lift.aFactor.clone().multiply(lift.aCoFactor)
+                .add(lift.bFactor.clone().multiply(lift.bCoFactor)).isOne();
+    }
+
+    /** data used in Hensel lifting **/
+    static final class HenselData {
+        /** the modulus */
+        final long modulus;
+        /** initial Z[x] poly **/
+        final MutablePolynomialZ base;
+        /** it's two factors **/
+        final MutablePolynomialMod aFactor, bFactor;
+        /** xgcd coefficients **/
+        final MutablePolynomialMod aCoFactor, bCoFactor;
+
+        private HenselData(long modulus,
+                           MutablePolynomialZ base,
+                           MutablePolynomialMod aFactor, MutablePolynomialMod bFactor,
+                           MutablePolynomialMod aCoFactor, MutablePolynomialMod bCoFactor) {
+
+            assert base.lc() % modulus != 0
+                    && base.degree == aFactor.degree + bFactor.degree
+                    && bCoFactor.degree < aFactor.degree
+                    && aCoFactor.degree < bFactor.degree
+                    : "Bad Hensel input: " + base + " = (" + aFactor + ") (" + bFactor + ") " +
+                    "xgcd: " + aCoFactor + ", " + bCoFactor;
+
+            this.modulus = modulus;
+            this.base = base;
+            this.aFactor = aFactor;
+            this.bFactor = bFactor;
+            this.aCoFactor = aCoFactor;
+            this.bCoFactor = bCoFactor;
+        }
+
+        /** single-step quadratic Hensel lifting */
+        HenselData liftQuadratic() {
+            //switch modulus
+            long newModulus = LongArithmetics.safeMultiply(modulus, modulus);
+            MutablePolynomialMod
+                    aFactor = this.aFactor.setModulusUnsafe(newModulus),
+                    bFactor = this.bFactor.setModulusUnsafe(newModulus),
+                    aCoFactor = this.aCoFactor.setModulusUnsafe(newModulus),
+                    bCoFactor = this.bCoFactor.setModulusUnsafe(newModulus);
+
+            MutablePolynomialMod e = base.modulus(newModulus, true)
+                    .subtract(aFactor.clone().multiply(bFactor));
+
+            MutablePolynomialMod[] qr = divideAndRemainder(
+                    aCoFactor.clone().multiply(e),
+                    bFactor, false);
+            MutablePolynomialMod q = qr[0], r = qr[1];
+
+            MutablePolynomialMod aFactorNew = aFactor.clone()
+                    .add(bCoFactor.clone().multiply(e))
+                    .add(aFactor.clone().multiply(q));
+
+            MutablePolynomialMod bFactorNew = bFactor.clone()
+                    .add(r);
+
+            MutablePolynomialMod b = aCoFactor.clone().multiply(aFactorNew)
+                    .add(bCoFactor.clone().multiply(bFactorNew))
+                    .decrement();
+
+            MutablePolynomialMod[] cd = divideAndRemainder(
+                    aCoFactor.clone().multiply(b),
+                    bFactorNew, false);
+            MutablePolynomialMod c = cd[0], d = cd[1];
+
+            MutablePolynomialMod aCoFactorNew = aCoFactor.clone().subtract(d);
+            MutablePolynomialMod bCoFactorNew = bCoFactor.clone()
+                    .subtract(bCoFactor.clone().multiply(b))
+                    .subtract(c.clone().multiply(aFactorNew));
+
+            return new HenselData(newModulus, base, aFactorNew, bFactorNew, aCoFactorNew, bCoFactorNew);
+        }
+
+        @Override
+        public String toString() {
+            return "modulus=" + modulus +
+                    "\n poly=" + base +
+                    "\n aFactor=" + aFactor +
+                    "\n bFactor=" + bFactor +
+                    "\n aCoFactor=" + aCoFactor +
+                    "\n bCoFactor=" + bCoFactor;
+        }
+    }
+
+
     /** cache of references **/
     private static int[][] naturalSequenceRefCache = new int[32][];
 
@@ -102,6 +286,7 @@ public final class Factorization {
         return naturalSequenceRefCache[n] = r;
     }
 
+    /** select elements by their positions */
     private static int[] select(int[] data, int[] positions) {
         int[] r = new int[positions.length];
         int i = 0;
@@ -141,6 +326,7 @@ public final class Factorization {
             for (int[] combination : combinations) {
                 int[] indexes = select(modIndexes, combination);
 
+                //todo add check for lc !!!
                 MutablePolynomialMod mFactor = factory.createConstant(fRest.lc());
                 for (int i : indexes)
                     mFactor = mFactor.multiply(modularFactors.get(i));
@@ -154,20 +340,13 @@ public final class Factorization {
                 for (int i : restIndexes)
                     mRest = mRest.multiply(modularFactors.get(i));
                 MutablePolynomialZ rest = mRest.normalSymmetricForm().primitivePart();
-                boolean fac;
-                try {
-                    fac = rest.clone().multiply(factor).equals(fRest);
-                } catch (ArithmeticException e) {
-                    continue;
-                }
 
-                if (fac) {
+                if (rest.clone().multiplyUnsafe(factor).equals(fRest)) {
                     modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
                     trueFactors.addFactor(factor, 1);
                     fRest = rest.primitivePart();
                     continue factor_combinations;
                 }
-
             }
             ++s;
         }

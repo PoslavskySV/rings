@@ -4,6 +4,7 @@ import cc.r2.core.poly2.PolynomialGCD.*;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -440,4 +441,21 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         MutablePolynomialZ b = MutablePolynomialZ.create(1, -9, -5, -21);
         assertTrue(ModularGCD(a, b).isOne());
     }
+
+    @Test
+    public void test22() throws Exception {
+        MutablePolynomialMod a = MutablePolynomialZ.create(1, 2, 3, 4, 3, 2, 1).modulus(25);
+        MutablePolynomialMod b = MutablePolynomialZ.create(1, 2, 3, 1, 3, 2, 1).modulus(25);
+        assertExtendedGCD(a, b);
+    }
+
+    static <T extends MutablePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {
+        assertExtendedGCD(ExtendedEuclid(a, b), a, b);
+    }
+
+    static <T extends MutablePolynomialAbstract<T>> void assertExtendedGCD(T[] eea, T a, T b) {
+        Assert.assertEquals(eea[0], a.clone().multiply(eea[1]).add(b.clone().multiply(eea[2])));
+        assertEquals(eea[0].degree, PolynomialGCD(a, b).degree);
+    }
+
 }
