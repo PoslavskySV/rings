@@ -74,24 +74,24 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <!--<repositories>-->
-        <!--<repository>-->
-            <!--<id>amelentev</id>-->
-            <!--<url>http://amelentev.github.io/mvnrepo/</url>-->
-        <!--</repository>-->
-    <!--</repositories>-->
+    <repositories>
+        <repository>
+            <id>amelentev</id>
+            <url>http://amelentev.github.io/mvnrepo/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
-        <!--<dependency>-->
-            <!--<groupId>java-oo</groupId>-->
-            <!--&lt;!&ndash; javac 7:-->
-            <!--<artifactId>javac-oo-plugin</artifactId>-->
-            <!--<version>0.5</version>&ndash;&gt;-->
-            <!--&lt;!&ndash; javac 8: &ndash;&gt;-->
-            <!--<artifactId>javac8-oo-plugin</artifactId>-->
-            <!--<version>LATEST</version>-->
-            <!--<scope>provided</scope> &lt;!&ndash; compile-only dep &ndash;&gt;-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>java-oo</groupId>
+            <!-- javac 7:
+            <artifactId>javac-oo-plugin</artifactId>
+            <version>0.5</version>-->
+            <!-- javac 8: -->
+            <artifactId>javac8-oo-plugin</artifactId>
+            <version>LATEST</version>
+            <scope>provided</scope> <!-- compile-only dep -->
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
