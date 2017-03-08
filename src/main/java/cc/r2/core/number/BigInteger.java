@@ -1323,6 +1323,13 @@ public final class BigInteger extends Number {
      */
     public static final BigInteger TEN = valueOf(10);
 
+    /**
+     * The BigInteger constant Long.MAX_VALUE.
+     *
+     * @since 1.2
+     */
+    public static final BigInteger LONG_MAX_VALUE = valueOf(Long.MAX_VALUE);
+
     // Arithmetic Operations
 
     /**
@@ -5986,6 +5993,45 @@ public final class BigInteger extends Number {
         return valueOf(bits);
     }
 
+//    //todo improve and comment
+//    public BigInteger sqrtFloor() {
+//        long c;
+//        BigInteger medium;
+//        BigInteger high = this;
+//        BigInteger low = BigInteger.ONE;
+//        while (high.subtract(low).compareTo(BigInteger.ONE) > 0) {
+//            medium = high.add(low).divide(BigInteger.ONE.add(BigInteger.ONE));
+//            c = medium.multiply(medium).compareTo(this);
+//            if (c > 0) high = medium;
+//            if (c < 0) low = medium;
+//            if (c == 0)
+//                return medium;
+//        }
+//        if (high.multiply(high).compareTo(this) == 0)
+//            return high;
+//        else
+//            return low;
+//    }
+//
+//    //todo improve and comment
+//    public BigInteger sqrtCeil() {
+//        long c;
+//        BigInteger medium;
+//        BigInteger high = this;
+//        BigInteger low = BigInteger.ONE;
+//        while (high.subtract(low).compareTo(BigInteger.ONE) > 0) {
+//            medium = high.add(low).divide(BigInteger.ONE.add(BigInteger.ONE));
+//            c = medium.multiply(medium).compareTo(this);
+//            if (c > 0) high = medium;
+//            if (c < 0) low = medium;
+//            if (c == 0)
+//                return medium;
+//        }
+//        if (high.multiply(high).compareTo(this) == 0)
+//            return high;
+//        else
+//            return low.increment();
+//    }
 //
 //    @Override
 //    public BigInteger[] gcdExtended(BigInteger b) {
