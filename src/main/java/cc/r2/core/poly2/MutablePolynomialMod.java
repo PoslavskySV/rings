@@ -4,6 +4,7 @@ import cc.r2.core.poly2.LongModularArithmetics.*;
 
 import java.util.Arrays;
 
+import static cc.r2.core.poly2.LongArithmetics.fits32bitWord;
 import static cc.r2.core.poly2.LongArithmetics.modInverse;
 import static cc.r2.core.poly2.LongModularArithmetics.*;
 
@@ -39,13 +40,10 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         this.magic32MulMod = magic32ForMultiplyMod(modulus);
         this.data = data;
         this.degree = data.length - 1;
-        this.modulusFits32 = modulusFits32(modulus);
+        this.modulusFits32 = fits32bitWord(modulus);
         fixDegree();
     }
 
-    private static boolean modulusFits32(long modulus) {
-        return Long.compareUnsigned(modulus, LongModularArithmetics.MAX_UNSIGNED_INT32) <= 0;
-    }
 
     private static void checkModulus(long modulus) {
         if (Long.compareUnsigned(modulus, LongModularArithmetics.MAX_SUPPORTED_MODULUS) > 0)
@@ -163,7 +161,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     }
 
     /** to symmetric modulus */
-    long symMod(long value) {
+    long symmetricForm(long value) {
         return value <= modulus / 2 ? value : value - modulus;
     }
 
@@ -240,7 +238,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     MutablePolynomialZ normalSymmetricForm() {
         long[] newData = new long[degree + 1];
         for (int i = degree; i >= 0; --i)
-            newData[i] = symMod(data[i]);
+            newData[i] = symmetricForm(data[i]);
         return MutablePolynomialZ.create(newData);
     }
 

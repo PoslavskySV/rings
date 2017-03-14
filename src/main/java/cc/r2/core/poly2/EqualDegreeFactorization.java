@@ -16,10 +16,6 @@ import static cc.r2.core.poly2.DivisionWithRemainder.fastDivisionPreConditioning
 public final class EqualDegreeFactorization {
     private EqualDegreeFactorization() {}
 
-    /** thread local instance of random */
-    private static final ThreadLocal<RandomGenerator> CZ_ThreadLocalRandom
-            = ThreadLocal.withInitial(() -> new Well1024a(0x7f67fcad528cfae9L));
-
     /**
      * Plain Cantor-Zassenhaus algorithm
      *
@@ -30,7 +26,7 @@ public final class EqualDegreeFactorization {
     static MutablePolynomialMod CantorZassenhaus0(MutablePolynomialMod poly, int d) {
         assert poly.lc() == 1;
 
-        MutablePolynomialMod a = RandomPolynomials.randomMonicPoly(poly.degree - 1, poly.modulus, CZ_ThreadLocalRandom.get());
+        MutablePolynomialMod a = RandomPolynomials.randomMonicPoly(poly.degree - 1, poly.modulus, GlobalRandom.getRandom());
         if (a.isConstant())
             return null;
 

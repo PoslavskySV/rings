@@ -223,10 +223,10 @@ public class LongModularArithmeticsTest extends AbstractPolynomialTest {
         }
     }
 
-    static long[] modulusBenchmarkFast(long[] arr, MagicDivider magic) {
+    static long[] modulusBenchmarkFast(int n, long[] arr, MagicDivider magic) {
         long r = 0;
         long timing = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < n; i++) {
             long[] tmp = arr.clone();
             long start = System.nanoTime();
             for (int j = 0; j < tmp.length; j++) {
@@ -238,10 +238,26 @@ public class LongModularArithmeticsTest extends AbstractPolynomialTest {
         return new long[]{timing, r};
     }
 
-    static long[] modulusBenchmarkPlain(long[] arr, long modulus) {
+    static long[] modulusBenchmarkFast(int n, long[] arr, long divider) {
         long r = 0;
         long timing = 0;
-        for (int i = 0; i < 10; i++) {
+        MagicDivider magic = magicSigned(divider);
+        for (int i = 0; i < n; i++) {
+            long[] tmp = arr.clone();
+            long start = System.nanoTime();
+            for (int j = 0; j < tmp.length; j++) {
+                tmp[j] = modSignedFast(tmp[j], magic);
+                r += tmp[j];
+            }
+            timing += System.nanoTime() - start;
+        }
+        return new long[]{timing, r};
+    }
+
+    static long[] modulusBenchmarkPlain(int n, long[] arr, long modulus) {
+        long r = 0;
+        long timing = 0;
+        for (int i = 0; i < n; i++) {
             long[] tmp = arr.clone();
             long start = System.nanoTime();
             for (int j = 0; j < tmp.length; j++) {
@@ -286,8 +302,8 @@ public class LongModularArithmeticsTest extends AbstractPolynomialTest {
                     modulus = 123;
 
 
-                long[] f = modulusBenchmarkFast(arr, magicSigned(modulus));
-                long[] p = modulusBenchmarkPlain(arr, modulus);
+                long[] f = modulusBenchmarkFast(10, arr, modulus);
+                long[] p = modulusBenchmarkPlain(10, arr, modulus);
 
                 assertEquals(f[1], p[1]);
 

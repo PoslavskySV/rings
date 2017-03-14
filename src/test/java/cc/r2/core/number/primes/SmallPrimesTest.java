@@ -3,6 +3,7 @@ package cc.r2.core.number.primes;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well512a;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -87,5 +88,10 @@ public class SmallPrimesTest {
             }
             System.out.print("\n");
         }
+    }
+
+    @Test
+    public void test6() throws Exception {
+        Assert.assertEquals(Integer.MAX_VALUE, SmallPrimes.nextPrime(Integer.MAX_VALUE));
     }
 }

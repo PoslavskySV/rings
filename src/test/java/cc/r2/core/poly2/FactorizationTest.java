@@ -5,7 +5,6 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 import static cc.r2.core.poly2.Factorization.factor;
@@ -139,23 +138,33 @@ public class FactorizationTest extends AbstractPolynomialTest {
         }
     }
 
-
     @Test
-    public void testHensel5() throws Exception {
-        MutablePolynomialZ base = MutablePolynomialZ.create(69, 30);
-        long modulus = 29;
+    public void testFactorization1() throws Exception {
+        MutablePolynomialZ a = MutablePolynomialZ.create(1, 11, 121, 1, 1, 1, 1, 123);
+        MutablePolynomialZ b = MutablePolynomialZ.create(1, 1, 1, 3, 1, 1, 2, 3, 4, 5, 6);
+        MutablePolynomialZ poly = a.multiply(b).primitivePart();
+        Assert.assertTrue(SquareFreeFactorization.isSquareFree(poly));
 
-        MutablePolynomialMod baseMod = base.modulus(modulus);
-        System.out.println(factor(baseMod));
-        List<MutablePolynomialMod> fact = liftFactorization(modulus, 1, base, Collections.singletonList(baseMod.monic()));
-        MutablePolynomialMod sin = fact.get(0);
-        System.out.println(sin.multiply(base.lc()));
-
-
-        System.out.println(factor(base.modulus(modulus)));
-        testMultiFactorHenselLifting(base, modulus, 1);
-
+        GlobalRandom.getRandom().setSeed(685922130507849253L);
     }
+
+    //
+//    @Test
+//    public void testHensel5() throws Exception {
+//        MutablePolynomialZ base = MutablePolynomialZ.create(69, 30);
+//        long modulus = 29;
+//
+//        MutablePolynomialMod baseMod = base.modulus(modulus);
+//        System.out.println(factor(baseMod));
+//        List<MutablePolynomialMod> fact = liftFactorization(modulus, 1, base, Collections.singletonList(baseMod.monic()));
+//        MutablePolynomialMod sin = fact.get(0);
+//        System.out.println(sin.multiply(base.lc()));
+//
+//
+//        System.out.println(factor(base.modulus(modulus)));
+//        testMultiFactorHenselLifting(base, modulus, 1);
+//
+//    }
 
 //
 //    @Test
@@ -179,37 +188,64 @@ public class FactorizationTest extends AbstractPolynomialTest {
 //
 //    }
 //
+
+    @Test
+    public void name() throws Exception {
+//        System.out.println(factorBigPrime(MutablePolynomialZ.create(-1, 0, 1)));
+//        System.out.println(factorBigPrime(MutablePolynomialZ.create(-4, 0, 1)));
+
+        MutablePolynomialZ a = MutablePolynomialZ.create(1, 11, 121, 1, 1, 1, 1, 123);
+        MutablePolynomialZ b = MutablePolynomialZ.create(1, 1, 1, 3, 1, 1, 2, 3, 4, 5, 6);
+        MutablePolynomialZ poly = a.multiply(b).primitivePart();
+        Assert.assertTrue(SquareFreeFactorization.isSquareFree(poly));
+
+//        MutablePolynomialMod moduloImage = poly.modulus(6101).monic();
+//        System.out.println(moduloImage);
+////        System.out.println(poly);
+//        System.out.println(factor(moduloImage));
+//        FactorDecomposition<MutablePolynomialMod> modFact = factor(moduloImage.monic());
+//        System.out.println(modFact);
+
+//        System.out.println(modFact.get(0).clone().multiply(modFact.get(1)).multiply(poly.lc()).normalSymmetricForm());
+//        System.out.println(modFact.get(0).clone().multiply(modFact.get(3)).multiply(poly.lc()).normalSymmetricForm());
+//        System.out.println(modFact.get(2).clone().multiply(modFact.get(1)).multiply(poly.lc()).normalSymmetricForm());
+//        System.out.println(modFact.get(2).clone().multiply(modFact.get(3)).multiply(poly.lc()).normalSymmetricForm());
 //
-//    @Test
-//    public void name() throws Exception {
-////        System.out.println(factorBigPrime(MutablePolynomialZ.create(-1, 0, 1)));
-////        System.out.println(factorBigPrime(MutablePolynomialZ.create(-4, 0, 1)));
-//
-//        MutablePolynomialZ a = MutablePolynomialZ.create(1, 11, 121, 1, 1, 1, 1, 123);
-//        MutablePolynomialZ b = MutablePolynomialZ.create(1, 1, 1, 3, 1, 1, 2, 3, 4, 5, 6);
-//        MutablePolynomialZ poly = a.multiply(b).primitivePart();
-//        Assert.assertTrue(SquareFreeFactorization.isSquareFree(poly));
-//
-////        MutablePolynomialMod moduloImage = poly.modulus(6101).monic();
-////        System.out.println(moduloImage);
-//////        System.out.println(poly);
-////        System.out.println(factor(moduloImage));
-////        FactorDecomposition<MutablePolynomialMod> modFact = factor(moduloImage.monic());
-////        System.out.println(modFact);
-//
-////        System.out.println(modFact.get(0).clone().multiply(modFact.get(1)).multiply(poly.lc()).normalSymmetricForm());
-////        System.out.println(modFact.get(0).clone().multiply(modFact.get(3)).multiply(poly.lc()).normalSymmetricForm());
-////        System.out.println(modFact.get(2).clone().multiply(modFact.get(1)).multiply(poly.lc()).normalSymmetricForm());
-////        System.out.println(modFact.get(2).clone().multiply(modFact.get(3)).multiply(poly.lc()).normalSymmetricForm());
-////
-////        System.out.println(modFact);
-//
+//        System.out.println(modFact);
+
 //        poly = MutablePolynomialZ.create(46225, 0, -5596840, 0, 13950764, 0, -7453176, 0, 1513334, 0, -141912, 0, 6476, 0, -136, 0, 1);
-//        for (int i = 0; i < 1000; i++) {
-//            long start = System.nanoTime();
-//            System.out.println(factorBigPrime(poly));
-//            System.out.println(System.nanoTime() - start);
-//        }
+        System.out.println(poly);
+
+        System.out.println(Factorization.factorSquareFree(poly));
+
+//        if(true)
+//            return;
+        int k = 0;
+        for (int i = 0; i < 10000; i++) {
+            if (i % 100 == 0)
+                System.out.println(i);
+            long seed = GlobalRandom.getRandom().nextLong();
+            GlobalRandom.getRandom().setSeed(seed);
+            long start = System.nanoTime();
+            Assert.assertEquals(2, Factorization.factorSquareFree(poly).size());
+            double time = ((System.nanoTime() - start) / 1000. / 1000.);
+            if (time > 1000) {
+                System.out.println("======   " + time);
+                System.out.println(seed);
+                break;
+            }
+            if (i > 1000)
+                System.out.println(time);
+        }
+        System.out.println(k);
+    }
+
+    @Test
+    public void asdasd() throws Exception {
+        System.out.println(Long.bitCount((1L << 32) - 1));
+//        System.out.println((long) (1.5 * Integer.MAX_VALUE));
 //
-//    }
+//        long a = 3221225470L;
+//        System.out.println((int) a);
+    }
 }
