@@ -458,7 +458,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         if (degree != oth.degree)
             return false;
         for (int i = 0; i <= degree; ++i)
-            if (data[i] != oth.data[i])
+            if (!data[i].equals(oth.data[i]))
                 return false;
         return true;
     }

@@ -2,7 +2,9 @@ package cc.r2.core.poly2;
 
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.primes.BigPrimes;
+import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.util.ArraysUtil;
+import org.apache.commons.math3.random.RandomDataGenerator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +14,8 @@ import java.util.List;
 import static cc.r2.core.poly2.DistinctDegreeFactorization.DistinctDegreeFactorization;
 import static cc.r2.core.poly2.DivisionWithRemainder.divideAndRemainder;
 import static cc.r2.core.poly2.EqualDegreeFactorization.CantorZassenhaus;
+import static cc.r2.core.poly2.LongArithmetics.fits32bitWord;
+import static cc.r2.core.poly2.LongArithmetics.safeMultiply;
 import static cc.r2.core.poly2.PolynomialGCD.ExtendedEuclid;
 import static cc.r2.core.poly2.SquareFreeFactorization.SquareFreeFactorization;
 
@@ -24,6 +28,7 @@ import static cc.r2.core.poly2.SquareFreeFactorization.SquareFreeFactorization;
 public final class Factorization {
     private Factorization() {}
 
+    /* ************************** Factorization in Zp[x] ************************** */
 
     /** x^n * poly */
     private static final class FactorMonomial<T extends MutablePolynomialAbstract<T>> {
@@ -110,6 +115,24 @@ public final class Factorization {
      * @param modularFactors modular factorization of {@code basePoly}
      * @return factorization modulo {@code modulus^(2^nIterations)}
      */
+    public static FactorDecomposition<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
+                                                                              MutablePolynomialZ basePoly,
+                                                                              FactorDecomposition<MutablePolynomialMod> modularFactors) {
+        return new FactorDecomposition<>(
+                liftFactorization(modulus, nIterations, basePoly, modularFactors.factors),
+                modularFactors.exponents, modularFactors.factor);
+    }
+
+    /**
+     * Applies Hensel lifting to factorization. As result factorization in Z/p[x] will be lifted to factorization
+     * in Z/p^(2^k)[x] where k is {@code nIterations}.
+     *
+     * @param modulus        the initial modulus
+     * @param nIterations    number of single step Hensel iterations (so the resulting modulus is {@code modulus^{2^nIterations}}
+     * @param basePoly       initial polynomial in Z[x]
+     * @param modularFactors modular factorization of {@code basePoly}
+     * @return factorization modulo {@code modulus^(2^nIterations)}
+     */
     static List<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
                                                         MutablePolynomialZ basePoly,
                                                         List<MutablePolynomialMod> modularFactors) {
@@ -125,6 +148,8 @@ public final class Factorization {
         // for the future:
         // recursion may be replaced with precomputed binary tree
         // for now the major part of execution time (~99%) is spent in actual lifting step, so irrelevant
+
+        assert nIterations > 0;
 
         if (modularFactors.size() == 1)
             return Collections.singletonList(poly.modulus(newModulus, true).monic());
@@ -157,8 +182,17 @@ public final class Factorization {
         return result;
     }
 
+    /** creates liftable quintet */
+    static HenselData createHenselInput(long modulus,
+                                        MutablePolynomialZ poly,
+                                        MutablePolynomialMod aFactor,
+                                        MutablePolynomialMod bFactor) {
+        MutablePolynomialMod[] xgcd = monicExtendedEuclid(aFactor, bFactor);
+        return new HenselData(modulus, poly, aFactor, bFactor, xgcd[1], xgcd[2]);
+    }
+
     /** runs xgcd for coprime polynomials ensuring that gcd is 1 (not another constant) */
-    static MutablePolynomialMod[] monicExtendedEuclid(MutablePolynomialMod a, MutablePolynomialMod b) {
+    private static MutablePolynomialMod[] monicExtendedEuclid(MutablePolynomialMod a, MutablePolynomialMod b) {
         MutablePolynomialMod[] xgcd = ExtendedEuclid(a, b);
         if (xgcd[0].isOne())
             return xgcd;
@@ -171,21 +205,12 @@ public final class Factorization {
         return xgcd;
     }
 
-    /** creates liftable quintet */
-    static HenselData createHenselInput(long modulus,
-                                        MutablePolynomialZ poly,
-                                        MutablePolynomialMod aFactor,
-                                        MutablePolynomialMod bFactor) {
-        MutablePolynomialMod[] xgcd = monicExtendedEuclid(aFactor, bFactor);
-        return new HenselData(modulus, poly, aFactor, bFactor, xgcd[1], xgcd[2]);
-    }
-
     /** assertion for correct Hensel structure */
     private static void assertHenselLift(HenselData lift) {
         assert lift.base.modulus(lift.modulus, true).equals(lift.aFactor.clone().multiply(lift.bFactor))
                 : lift.base + " != (" + lift.aFactor + ") * ( " + lift.bFactor + ")" + " mod " + lift.modulus;
-        assert lift.aFactor.clone().multiply(lift.aCoFactor)
-                .add(lift.bFactor.clone().multiply(lift.bCoFactor)).isOne();
+        assert (lift.aCoFactor == null && lift.bCoFactor == null)
+                || lift.aFactor.clone().multiply(lift.aCoFactor).add(lift.bFactor.clone().multiply(lift.bCoFactor)).isOne();
     }
 
     /** data used in Hensel lifting **/
@@ -206,8 +231,8 @@ public final class Factorization {
 
             assert base.lc() % modulus != 0
                     && base.degree == aFactor.degree + bFactor.degree
-                    && bCoFactor.degree < aFactor.degree
-                    && aCoFactor.degree < bFactor.degree
+                    && (bCoFactor == null || bCoFactor.degree < aFactor.degree)
+                    && (aCoFactor == null || aCoFactor.degree < bFactor.degree)
                     : "Bad Hensel input: " + base + " = (" + aFactor + ") (" + bFactor + ") " +
                     "xgcd: " + aCoFactor + ", " + bCoFactor;
 
@@ -222,7 +247,7 @@ public final class Factorization {
         /** single-step quadratic Hensel lifting */
         HenselData liftQuadratic() {
             //switch modulus
-            long newModulus = LongArithmetics.safeMultiply(modulus, modulus);
+            long newModulus = safeMultiply(modulus, modulus);
             MutablePolynomialMod
                     aFactor = this.aFactor.setModulusUnsafe(newModulus),
                     bFactor = this.bFactor.setModulusUnsafe(newModulus),
@@ -295,17 +320,6 @@ public final class Factorization {
         return r;
     }
 
-    private static long lcMultiply(FactorDecomposition<MutablePolynomialMod> factors, int[] indexes) {
-        long factor = 1;
-        for (int i : indexes)
-            factor = LongArithmetics.safeMultiply(factor, factors.get(i).symMod(factors.get(i).lc()));
-        long overall = 1;
-        for (MutablePolynomialMod f : factors)
-            overall = LongArithmetics.safeMultiply(overall, f.symMod(f.lc()));
-
-        return 0;
-    }
-
     static FactorDecomposition<MutablePolynomialZ> reconstructFactorsZ(
             MutablePolynomialZ poly,
             FactorDecomposition<MutablePolynomialMod> modularFactors) {
@@ -326,13 +340,12 @@ public final class Factorization {
             for (int[] combination : combinations) {
                 int[] indexes = select(modIndexes, combination);
 
-                //todo add check for lc !!!
                 MutablePolynomialMod mFactor = factory.createConstant(fRest.lc());
                 for (int i : indexes)
                     mFactor = mFactor.multiply(modularFactors.get(i));
                 MutablePolynomialZ factor = mFactor.normalSymmetricForm().primitivePart();
 
-                if (fRest.lc() % factor.lc() != 0)
+                if (fRest.lc() % factor.lc() != 0 || fRest.cc() % factor.cc() != 0)
                     continue;
 
                 MutablePolynomialMod mRest = factory.createConstant(fRest.lc() / factor.lc());
@@ -341,8 +354,11 @@ public final class Factorization {
                     mRest = mRest.multiply(modularFactors.get(i));
                 MutablePolynomialZ rest = mRest.normalSymmetricForm().primitivePart();
 
+                if (safeMultiply(factor.lc(), rest.lc()) != fRest.lc()
+                        || safeMultiply(factor.cc(), rest.cc()) != fRest.cc())
+                    continue;
                 if (rest.clone().multiplyUnsafe(factor).equals(fRest)) {
-                    modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
+                    modIndexes = restIndexes;
                     trueFactors.addFactor(factor, 1);
                     fRest = rest.primitivePart();
                     continue factor_combinations;
@@ -355,6 +371,87 @@ public final class Factorization {
             trueFactors.addFactor(fRest, 1);
 
         return trueFactors;
+    }
+
+    private static final double
+            MAX_PRIME_GAP = 382,
+            MIGNOTTE_MAX_DOUBLE_32 = (2.0 * Integer.MAX_VALUE) - 10 * MAX_PRIME_GAP,
+            MIGNOTTE_MAX_DOUBLE_64 = MIGNOTTE_MAX_DOUBLE_32 * MIGNOTTE_MAX_DOUBLE_32;
+
+    private static final int
+            LOWER_RND_MODULUS_BOUND = 1 << 24,
+            UPPER_RND_MODULUS_BOUND = 1 << 30;
+
+    /** determines the lower bound for the possible modulus for Zp trials */
+    private static int findModulusLowerBound(double bound) {
+        double bound2 = 2.0 * bound;
+
+        long infinum;
+        if (bound2 < MIGNOTTE_MAX_DOUBLE_32) {
+            // we can use single 32-bit modulus
+            infinum = (long) bound2;
+        } else if (bound2 < MIGNOTTE_MAX_DOUBLE_64) {
+            // we still can use machine-size words
+            // two options possible:
+            // 1) use 64-bit "(long) bound2" as modulus (which is more than 32-bit and thus slow)
+            // 2) use 32-bit modulus and perform a single Hensel step
+            // we use 2) option
+
+            infinum = (long) Math.sqrt(bound);
+        } else {
+            // coefficient bound is large -> we anyway need several Hensel steps
+            // so we just pick 32-bit prime at random
+            infinum = new RandomDataGenerator(GlobalRandom.getRandom())
+                    .nextLong(LOWER_RND_MODULUS_BOUND, UPPER_RND_MODULUS_BOUND);
+        }
+
+        assert infinum < MIGNOTTE_MAX_DOUBLE_32;
+        return (int) infinum;
+    }
+
+    private static int next32BitPrime(int val) {
+        if (val < 0) {
+            long l = BigPrimes.nextPrime(Integer.toUnsignedLong(val));
+            assert fits32bitWord(l);
+            return (int) l;
+        } else
+            return SmallPrimes.nextPrime(val);
+    }
+
+    static FactorDecomposition<MutablePolynomialZ> factorSquareFree(MutablePolynomialZ poly) {
+        assert poly.content() == 1;
+        assert poly.lc() > 0;
+
+        long lc = poly.lc();
+        double bound = Math.sqrt(poly.degree + 1) * Math.pow(2.0, poly.degree) * poly.normMax() * Math.abs(lc);
+
+        // choose prime at random
+        int trial32Modulus = findModulusLowerBound(bound) - 1;
+        long modulus;
+        MutablePolynomialMod moduloImage;
+        do {
+            trial32Modulus = next32BitPrime(trial32Modulus + 1);
+            modulus = Integer.toUnsignedLong(trial32Modulus);
+            moduloImage = poly.modulus(modulus, true);
+        } while (!SquareFreeFactorization.isSquareFree(moduloImage));
+
+        // do modular factorization
+        FactorDecomposition<MutablePolynomialMod> modularFactors = factor(moduloImage.monic());
+
+        // do Hensel lifting
+        // determine number of Hensel steps
+        int henselIterations = 0;
+        long liftedModulus = modulus;
+        while (liftedModulus < bound) {
+            liftedModulus = LongArithmetics.safeMultiply(liftedModulus, liftedModulus);
+            ++henselIterations;
+        }
+        // actual lift
+        if (henselIterations > 0)
+            modularFactors = liftFactorization(modulus, henselIterations, poly, modularFactors);
+
+        //reconstruct true factors
+        return reconstructFactorsZ(poly, modularFactors);
     }
 
     static FactorDecomposition<MutablePolynomialZ> factorBigPrime(MutablePolynomialZ poly) {

@@ -1,8 +1,12 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.poly2.LongModularArithmetics.MagicDivider;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.Arrays;
+
+import static cc.r2.core.poly2.LongModularArithmetics.divideSignedFast;
+import static cc.r2.core.poly2.LongModularArithmetics.magicSigned;
 
 /**
  * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
@@ -248,8 +252,9 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
             return self;
         if (lc() < 0)
             content = -content;
+        MagicDivider magic = magicSigned(content);
         for (int i = degree; i >= 0; --i)
-            data[i] = data[i] / content;
+            data[i] = divideSignedFast(data[i], magic);
         return self;
     }
 

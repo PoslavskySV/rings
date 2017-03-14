@@ -10,6 +10,16 @@ public final class LongArithmetics {
     private LongArithmetics() {}
 
     /**
+     * Returns true if {@code val} fits into 32-bit machine word (unsigned) and false otherwise
+     *
+     * @param val the value
+     * @return true if {@code val} fits into 32-bit machine word (unsigned) and false otherwise
+     */
+    public static boolean fits32bitWord(long val) {
+        return Long.compareUnsigned(val, (1L << 32) - 1) <= 0;
+    }
+
+    /**
      * Delegates to {@link Math#multiplyExact(long, long)}
      *
      * @throws ArithmeticException if the result overflows a long
