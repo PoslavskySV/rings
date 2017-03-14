@@ -114,7 +114,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** multiplyMod operation */
     BigInteger multiplyMod(BigInteger a, BigInteger b) {
-        return mod(a * b);
+        return mod(a.multiply(b));
     }
 
     /** addMod operation */
@@ -126,7 +126,10 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     /** subtractMod operation */
     BigInteger subtractMod(BigInteger a, BigInteger b) {
         BigInteger r = a - b;
-        return r + ((r >> 63)&modulus);
+        if (r.signum() < 0)
+            r = r.add(modulus);
+        assert r.compareTo(modulus) < 0;
+        return r;
     }
 
     /** to symmetric modulus */
@@ -246,7 +249,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     void checkCompatibleModulus(bMutablePolynomialMod oth) {
-        if (modulus != oth.modulus)
+        if (!modulus.equals(oth.modulus))
             throw new IllegalArgumentException();
     }
 
@@ -328,7 +331,8 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     @Override
     bMutablePolynomialMod negate() {
         for (int i = degree; i >= 0; --i)
-            data[i] = modulus - data[i];
+            if (!data[i].isZero())
+                data[i] = modulus.subtract(data[i]);
         return this;
     }
 

@@ -363,7 +363,8 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     @Override
     MutablePolynomialMod negate() {
         for (int i = degree; i >= 0; --i)
-            data[i] = modulus - data[i];
+            if (data[i] != 0)
+                data[i] = modulus - data[i];
         return this;
     }
 
