@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 import static cc.r2.core.number.BigInteger.ONE;
 import static cc.r2.core.number.BigInteger.ZERO;
-import static cc.r2.core.number.BigIntegerMath.*;
+import static cc.r2.core.number.BigIntegerArithmetics.*;
 
 /**
  * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
@@ -29,8 +29,11 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         if (degree < desiredDegree)
             degree = desiredDegree;
 
-        if (data.length < (desiredDegree + 1))
+        if (data.length < (desiredDegree + 1)) {
+            int oldLen = data.length;
             data = Arrays.copyOf(data, desiredDegree + 1);
+            Arrays.fill(data, oldLen, data.length, ZERO);
+        }
     }
 
     /**
@@ -163,7 +166,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
 
     /** fill content with zeroes */
     final T toZero() {
-        Arrays.fill(data, 0, degree + 1, 0);
+        Arrays.fill(data, 0, degree + 1, ZERO);
         degree = 0;
         return self;
     }
@@ -194,7 +197,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
             return toZero();
 
         System.arraycopy(data, offset, data, 0, degree - offset + 1);
-        Arrays.fill(data, degree - offset + 1, degree + 1, 0);
+        Arrays.fill(data, degree - offset + 1, degree + 1, ZERO);
         degree = degree - offset;
         return self;
     }
@@ -211,7 +214,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         int degree = this.degree;
         ensureCapacity(offset + degree);
         System.arraycopy(data, 0, data, offset, degree + 1);
-        Arrays.fill(data, 0, offset, 0);
+        Arrays.fill(data, 0, offset, ZERO);
         return self;
     }
 
@@ -225,7 +228,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
     final T truncate(int newDegree) {
         if (newDegree >= degree)
             return self;
-        Arrays.fill(data, newDegree + 1, degree + 1, 0);
+        Arrays.fill(data, newDegree + 1, degree + 1, ZERO);
         degree = newDegree;
         fixDegree();
         return self;

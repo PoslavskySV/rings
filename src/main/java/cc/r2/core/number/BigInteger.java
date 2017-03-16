@@ -5960,11 +5960,11 @@ public final class BigInteger extends Number {
         return mag.length == 1 && mag[0] == 1 && signum == 1;
     }
 
-    public BigInteger increment(){
+    public BigInteger increment() {
         return add(ONE);
     }
 
-    public BigInteger decrement(){
+    public BigInteger decrement() {
         return subtract(ONE);
     }
 
@@ -5977,10 +5977,12 @@ public final class BigInteger extends Number {
     public static BigInteger valueOfUnsigned(long bits) {
         if (bits >= 0)
             return valueOfSigned(bits);
-        BigInteger r = valueOf(~bits);
-        for (int i = 0; i < 64; ++i)
-            r = r.flipBit(i);
-        return r;
+        int upper = (int) (bits >>> 32);
+        int lower = (int) bits;
+
+        // return (upper << 32) + lower
+        return (valueOf(Integer.toUnsignedLong(upper))).shiftLeft(32).
+                add(valueOf(Integer.toUnsignedLong(lower)));
     }
 
     /**
