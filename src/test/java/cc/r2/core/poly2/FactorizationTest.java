@@ -3,6 +3,7 @@ package cc.r2.core.poly2;
 import cc.r2.core.poly2.Factorization.HenselData;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -189,6 +190,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
 //    }
 //
 
+    @Ignore
     @Test
     public void name() throws Exception {
 //        System.out.println(factorBigPrime(MutablePolynomialZ.create(-1, 0, 1)));
