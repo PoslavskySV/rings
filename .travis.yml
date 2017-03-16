@@ -4,4 +4,4 @@ jdk:
 sudo: false
 
 script:
-  - mvn test -DrunLongTests=true -B
+  - mvn test -B
