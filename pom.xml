@@ -35,15 +35,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.12</version>
-                <!--<configuration>-->
-                    <!--<properties>-->
-                        <!--<property>-->
-                            <!--<name>listener</name>-->
-                            <!--&lt;!&ndash; Resets the context before running each test &ndash;&gt;-->
-                            <!--<value>cc.redberry.core.GlobalRunListener</value>-->
-                        <!--</property>-->
-                    <!--</properties>-->
-                <!--</configuration>-->
+                <configuration>
+                    <argLine>-Xmx512m</argLine>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
