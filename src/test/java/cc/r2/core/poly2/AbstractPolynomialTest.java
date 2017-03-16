@@ -6,6 +6,8 @@ import cc.r2.core.test.TimeConsuming;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static cc.r2.core.poly2.MutablePolynomialMod.MAX_SUPPORTED_MODULUS_BITS;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -13,7 +15,7 @@ import org.junit.Test;
 public class AbstractPolynomialTest extends AbstractTest {
 
     protected long getModulusRandom(int nBits) {
-        if (nBits <= 1 && nBits > LongModularArithmetics.MAX_SUPPORTED_MODULUS_BITS)
+        if (nBits <= 1 || nBits > MAX_SUPPORTED_MODULUS_BITS)
             throw new IllegalArgumentException();
         return BigPrimes.nextPrime(getRandomData().nextLong(1L << (nBits - 1), (1L << nBits) - 1));
     }

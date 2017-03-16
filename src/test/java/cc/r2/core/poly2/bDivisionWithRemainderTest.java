@@ -45,7 +45,7 @@ public class bDivisionWithRemainderTest extends AbstractPolynomialTest {
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
         bDivisionWithRemainder.InverseModMonomial invRev = bDivisionWithRemainder.fastDivisionPreConditioning(divider);
-        long nIterations = its(1000, 15000);
+        long nIterations = its(1000, 5000);
         for (int i = 0; i < nIterations; i++) {
             if (i == nIterations / 10) {
                 classic.clear();
@@ -82,7 +82,7 @@ public class bDivisionWithRemainderTest extends AbstractPolynomialTest {
         BigInteger modulus = new BigInteger("1247842098624308285367648396697");//BigPrimes.nextPrime(new BigInteger(100, rnd));
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
-        long nIterations = its(1000, 15000);
+        long nIterations = its(1000, 5000);
         int dividerDegree = 126;
         int dividendDegree = 256;
         for (int i = 0; i < nIterations; i++) {

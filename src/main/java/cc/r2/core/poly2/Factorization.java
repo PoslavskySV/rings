@@ -460,7 +460,7 @@ public final class Factorization {
 
         long lc = poly.lc();
         double bound = Math.sqrt(poly.degree + 1) * Math.pow(2.0, poly.degree) * poly.normMax() * Math.abs(lc);
-        assert 4 * bound < LongModularArithmetics.MAX_SUPPORTED_MODULUS;
+        assert 4 * bound < MutablePolynomialMod.MAX_SUPPORTED_MODULUS;
 
         long modulus = (long) (2 * bound);
         MutablePolynomialMod moduloImage;

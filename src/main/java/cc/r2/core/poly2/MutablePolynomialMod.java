@@ -1,12 +1,12 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.poly2.LongModularArithmetics.*;
+import cc.redberry.libdivide4j.FastDivision.*;
 
 import java.util.Arrays;
 
 import static cc.r2.core.poly2.LongArithmetics.fits32bitWord;
 import static cc.r2.core.poly2.LongArithmetics.modInverse;
-import static cc.r2.core.poly2.LongModularArithmetics.*;
+import static cc.redberry.libdivide4j.FastDivision.*;
 
 /**
  * Univariate polynomial over Zp.
@@ -19,12 +19,12 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     /** the modulus */
     final long modulus;
     /** magic **/
-    private final MagicDivider magic, magic32MulMod;
+    private final Magic magic, magic32MulMod;
     /** whether modulus less then 2^32 (if so, faster mulmod available) **/
     private final boolean modulusFits32;
 
     /** copy constructor */
-    private MutablePolynomialMod(long modulus, MagicDivider magic, MagicDivider magic32MulMod, long[] data, int degree, boolean modulusFits32) {
+    private MutablePolynomialMod(long modulus, Magic magic, Magic magic32MulMod, long[] data, int degree, boolean modulusFits32) {
         this.modulus = modulus;
         this.magic = magic;
         this.magic32MulMod = magic32MulMod;
@@ -34,7 +34,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     }
 
     /** main constructor */
-    private MutablePolynomialMod(long modulus, MagicDivider magic, long[] data) {
+    private MutablePolynomialMod(long modulus, Magic magic, long[] data) {
         this.modulus = modulus;
         this.magic = magic;
         this.magic32MulMod = magic32ForMultiplyMod(modulus);
@@ -44,9 +44,14 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
         fixDegree();
     }
 
+    /** Max supported modulus bits */
+    public static final int MAX_SUPPORTED_MODULUS_BITS = 62;
+
+    /** Max supported modulus */
+    public static final long MAX_SUPPORTED_MODULUS = (1L << MAX_SUPPORTED_MODULUS_BITS) - 1L;
 
     private static void checkModulus(long modulus) {
-        if (Long.compareUnsigned(modulus, LongModularArithmetics.MAX_SUPPORTED_MODULUS) > 0)
+        if (Long.compareUnsigned(modulus, MAX_SUPPORTED_MODULUS) > 0)
             throw new IllegalArgumentException("Too large modulus. Max allowed is " + MAX_SUPPORTED_MODULUS);
     }
 
@@ -65,13 +70,13 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
     }
 
     /** reduce data mod modulus **/
-    private static void reduceUnsigned(long[] data, MagicDivider magicUnsigned) {
+    private static void reduceUnsigned(long[] data, Magic magicUnsigned) {
         for (int i = 0; i < data.length; ++i)
             data[i] = modUnsignedFast(data[i], magicUnsigned);
     }
 
     /** reduce data mod modulus **/
-    private static void reduceSigned(long[] data, MagicDivider magicSigned) {
+    private static void reduceSigned(long[] data, Magic magicSigned) {
         for (int i = 0; i < data.length; ++i)
             data[i] = modSignedFast(data[i], magicSigned);
     }
@@ -85,7 +90,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
      * @return {@code coefficient * x^exponent}
      */
     static MutablePolynomialMod createMonomial(long modulus, long coefficient, int exponent) {
-        MagicDivider magic = magicUnsigned(modulus);
+        Magic magic = magicUnsigned(modulus);
         if (coefficient >= modulus)
             coefficient = modUnsignedFast(coefficient, magic);
         else if (coefficient < 0)
@@ -104,7 +109,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
      * @return constant polynomial
      */
     static MutablePolynomialMod constant(long modulus, long value) {
-        MagicDivider magic = magicUnsigned(modulus);
+        Magic magic = magicUnsigned(modulus);
         if (value >= modulus)
             value = modUnsignedFast(value, magic);
         else if (value < 0)
@@ -214,7 +219,7 @@ final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolyno
      */
     MutablePolynomialMod setModulus(long newModulus) {
         long[] newData = data.clone();
-        MagicDivider newMagic = magicUnsigned(newModulus);
+        Magic newMagic = magicUnsigned(newModulus);
         reduceUnsigned(newData, newMagic);
         return new MutablePolynomialMod(newModulus, newMagic, newData);
     }

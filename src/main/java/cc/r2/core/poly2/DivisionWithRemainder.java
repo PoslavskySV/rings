@@ -1,12 +1,13 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.poly2.LongModularArithmetics.MagicDivider;
+
+import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.ArrayList;
 
 import static cc.r2.core.poly2.LongArithmetics.*;
-import static cc.r2.core.poly2.LongModularArithmetics.divideSignedFast;
-import static cc.r2.core.poly2.LongModularArithmetics.magicSigned;
+import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
+import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
 /**
  * Algorithms for division with remainder.
@@ -82,7 +83,7 @@ public final class DivisionWithRemainder {
         long[] quotient = new long[dividend.degree - divider.degree + 1];
 
 
-        MagicDivider magic = magicSigned(divider.lc());
+        Magic magic = magicSigned(divider.lc());
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
             if (remainder.degree == divider.degree + i) {
                 long quot = divideSignedFast(remainder.lc(), magic);
@@ -148,7 +149,7 @@ public final class DivisionWithRemainder {
         MutablePolynomialZ remainder = copy ? dividend.clone() : dividend;
         long[] quotient = new long[dividend.degree - divider.degree + 1];
 
-        MagicDivider magic = magicSigned(divider.lc());
+        Magic magic = magicSigned(divider.lc());
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
             if (remainder.degree == divider.degree + i) {
                 long quot = divideSignedFast(remainder.lc(), magic);
@@ -179,7 +180,7 @@ public final class DivisionWithRemainder {
         long cc = -divider.cc(), lc = divider.lc(), factor = 1;
         long[] quotient = copy ? new long[dividend.degree] : dividend.data;
         long res = 0;
-        MagicDivider magic = magicSigned(lc);
+        Magic magic = magicSigned(lc);
         for (int i = dividend.degree; ; --i) {
             long tmp = dividend.data[i];
             if (i != dividend.degree)
@@ -221,7 +222,7 @@ public final class DivisionWithRemainder {
         long cc = -divider.cc(), lc = divider.lc();
         long[] quotient = copy ? new long[dividend.degree] : dividend.data;
         long res = 0;
-        MagicDivider magic = magicSigned(lc);
+        Magic magic = magicSigned(lc);
         for (int i = dividend.degree; ; --i) {
             long tmp = dividend.data[i];
             if (i != dividend.degree)
@@ -269,7 +270,7 @@ public final class DivisionWithRemainder {
         assert dividend.degree >= divider.degree;
 
         MutablePolynomialZ remainder = copy ? dividend.clone() : dividend;
-        MagicDivider magic = magicSigned(remainder.lc());
+        Magic magic = magicSigned(remainder.lc());
         for (int i = dividend.degree - divider.degree; i >= 0; --i)
             if (remainder.degree == divider.degree + i) {
                 long quot = divideSignedFast(remainder.lc(), magic);

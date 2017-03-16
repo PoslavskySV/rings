@@ -1,11 +1,11 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.poly2.LongModularArithmetics.MagicDivider;
+import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.Arrays;
 
-import static cc.r2.core.poly2.LongModularArithmetics.divideSignedFast;
-import static cc.r2.core.poly2.LongModularArithmetics.magicSigned;
+import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
+import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
 /**
  * Univariate polynomial over Z.
@@ -117,7 +117,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
             throw new ArithmeticException("Divide by zero");
         if (factor == 1)
             return this;
-        MagicDivider magic = magicSigned(factor);
+        Magic magic = magicSigned(factor);
         for (int i = degree; i >= 0; --i) {
             long l = divideSignedFast(data[i], magic);
             if (l * factor != data[i])
@@ -169,7 +169,7 @@ final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomi
         if (num == 0)
             return cc();
         long res = 0;
-        MagicDivider magic = magicSigned(den);
+        Magic magic = magicSigned(den);
         for (int i = degree; i >= 0; --i) {
             long x = LongArithmetics.safeMultiply(res, num);
             long q = divideSignedFast(x, magic);
