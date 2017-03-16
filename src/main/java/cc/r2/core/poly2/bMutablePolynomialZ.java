@@ -119,8 +119,18 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param modulus the modulus
      * @return Zp[x] polynomial from this
      */
-   bMutablePolynomialMod modulus(BigInteger modulus) {
+    bMutablePolynomialMod modulus(BigInteger modulus) {
         return modulus(modulus, true);
+    }
+
+    /**
+     * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
+     *
+     * @param modulus the modulus
+     * @return Zp[x] polynomial from this
+     */
+    bMutablePolynomialMod modulus(long modulus) {
+        return modulus(BigInteger.valueOf(modulus));
     }
 
     /**
@@ -258,7 +268,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
     @Override
     bMutablePolynomialZ negate() {
         for (int i = degree; i >= 0; --i)
-            data[i] = -data[i];
+            data[i] = data[i].negate();
         return this;
     }
 
@@ -332,5 +342,38 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
             return squareClassicalUnsafe(data, 0, degree + 1);
         else
             return squareKaratsubaUnsafe(data, 0, degree + 1);
+    }
+
+
+    public static bMutablePolynomialZ parse(String string) {
+        String[] terms = string.split("\\+");
+        Object[][] data = new Object[terms.length][];
+        int maxDegree = 0;
+        for (int i = 0; i < terms.length; i++) {
+            data[i] = parseTerm(terms[i]);
+            maxDegree = Integer.max(maxDegree, (int) data[i][1]);
+        }
+        BigInteger[] bdata = new BigInteger[maxDegree + 1];
+        Arrays.fill(bdata, ZERO);
+        for (Object[] datum : data)
+            bdata[(int) datum[1]] = (BigInteger) datum[0];
+
+        return create(bdata);
+    }
+
+    private static Object[] parseTerm(String term) {
+        if (!term.contains("x"))
+            return new Object[]{new BigInteger(term.trim()), 0};
+
+        term = term.replace("x", "").trim();
+        if (term.isEmpty())
+            return new Object[]{ONE, 1};
+        String[] be = term.split("\\^");
+        String cf = be[0].trim();
+        if (cf.isEmpty()) cf = "1";
+        if (be.length == 1)
+            return new Object[]{new BigInteger(cf), 0};
+        else
+            return new Object[]{new BigInteger(cf), Integer.parseInt(be[1].trim())};
     }
 }

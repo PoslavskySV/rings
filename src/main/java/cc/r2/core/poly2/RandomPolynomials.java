@@ -42,16 +42,17 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return array of length {@code degree + 1} with elements bounded by {@code bound} (by absolute value)
      */
-    public static BigInteger[] randomBigArray(int degree, long bound, RandomGenerator rnd) {
+    public static BigInteger[] randomBigArray(int degree, BigInteger bound, RandomGenerator rnd) {
+        long lBound = bound.isLong() ? bound.longValue() : Long.MAX_VALUE;
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         BigInteger[] data = new BigInteger[degree + 1];
         for (int i = 0; i <= degree; ++i) {
-            data[i] = BigInteger.valueOf(rndd.nextLong(0, bound));
+            data[i] = BigInteger.valueOf(rndd.nextLong(0, lBound));
             if (rnd.nextBoolean() && rnd.nextBoolean())
                 data[i] = data[i].negate();
         }
         while (data[degree].equals(BigInteger.ZERO))
-            data[degree] = BigInteger.valueOf(rndd.nextLong(0, bound));
+            data[degree] = BigInteger.valueOf(rndd.nextLong(0, lBound));
         return data;
     }
 
@@ -82,6 +83,19 @@ public class RandomPolynomials {
     }
 
     /**
+     * Creates random polynomial of specified {@code degree}.
+     *
+     * @param degree polynomial degree
+     * @param rnd    random source
+     * @return random polynomial of specified {@code degree}
+     */
+    public static bMutablePolynomialMod randomMonicPoly(int degree, BigInteger modulus, RandomGenerator rnd) {
+        bMutablePolynomialZ r = randomPoly(degree, modulus, rnd);
+        while ((r.data[degree].mod(modulus)).isZero()) {r.data[r.degree] = rnd.nextLong();}
+        return r.modulus(modulus, false).monic();
+    }
+
+    /**
      * Creates random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value).
      *
      * @param degree polynomial degree
@@ -91,5 +105,17 @@ public class RandomPolynomials {
      */
     public static MutablePolynomialZ randomPoly(int degree, long bound, RandomGenerator rnd) {
         return MutablePolynomialZ.create(randomLongArray(degree, bound, rnd));
+    }
+
+    /**
+     * Creates random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value).
+     *
+     * @param degree polynomial degree
+     * @param bound  absolute bound for coefficients
+     * @param rnd    random source
+     * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
+     */
+    public static bMutablePolynomialZ randomPoly(int degree, BigInteger bound, RandomGenerator rnd) {
+        return bMutablePolynomialZ.create(randomBigArray(degree, bound, rnd));
     }
 }

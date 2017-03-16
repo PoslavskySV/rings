@@ -134,7 +134,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** to symmetric modulus */
     BigInteger symMod(BigInteger value) {
-        return value <= (modulus >> 1) ? value : value - modulus;
+        return value <= (modulus >> 1) ? value : value.subtract(modulus);
     }
 
     @Override
