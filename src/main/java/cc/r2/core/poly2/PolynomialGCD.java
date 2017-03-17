@@ -28,8 +28,8 @@ public final class PolynomialGCD {
      * @param b poly
      * @return polynomial remainder sequence (the last element is GCD)
      */
-    public static <T extends MutablePolynomialAbstract<T>> PolynomialRemainders<T> Euclid(final T a, final T b) {
-        if (a.degree < b.degree)
+    public static <T extends IMutablePolynomial<T>> PolynomialRemainders<T> Euclid(final T a, final T b) {
+        if (a.degree() < b.degree())
             return Euclid(b, a);
 
         ArrayList<T> prs = new ArrayList<>();
@@ -60,7 +60,7 @@ public final class PolynomialGCD {
      * @return array of {@code [gcd(a,b), x, y]} such that {@code x * a + y * b = gcd(a, b)}
      */
     @SuppressWarnings("unchecked")
-    public static <T extends MutablePolynomialAbstract<T>> T[] ExtendedEuclid(final T a, final T b) {
+    public static <T extends IMutablePolynomial<T>> T[] ExtendedEuclid(final T a, final T b) {
         T factory = a;
         T s = factory.createZero(), old_s = factory.createOne();
         T t = factory.createOne(), old_t = factory.createZero();
@@ -87,19 +87,11 @@ public final class PolynomialGCD {
         }
         assert old_r.equals(a.clone().multiply(old_s).add(b.clone().multiply(old_t)));
 
-        T[] result = arrayNewInstance(a, 3);
+        T[] result = a.arrayNewInstance(3);
         result[0] = old_r;
         result[1] = old_s;
         result[2] = old_t;
         return result;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends MutablePolynomialAbstract<T>> T[] arrayNewInstance(T a, int len) {
-        if (a instanceof MutablePolynomialZ)
-            return (T[]) new MutablePolynomialZ[len];
-        else
-            return (T[]) new MutablePolynomialMod[len];
     }
 
     /**
@@ -210,7 +202,7 @@ public final class PolynomialGCD {
     /**
      * Polynomial remainder sequence produced by the Euclidean algorithm
      */
-    public static final class PolynomialRemainders<T extends MutablePolynomialAbstract<T>> {
+    public static final class PolynomialRemainders<T extends IMutablePolynomial<T>> {
         /** actual data */
         public final ArrayList<T> remainders;
 

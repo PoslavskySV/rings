@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.util.ArraysUtil;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
@@ -12,7 +13,7 @@ import static cc.redberry.libdivide4j.FastDivision.magicSigned;
  * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements MutablePolynomial<T> {
+public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements IMutablePolynomial<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     long[] data;
     /** points to the last non zero element in the data array */
@@ -60,6 +61,10 @@ public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstr
     /** {@inheritDoc} */
     @Override
     public final boolean isMonic() {return lc() == 1;}
+
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isUnitCC() {return cc() == 1;}
 
     /** {@inheritDoc} */
     @Override
@@ -308,16 +313,15 @@ public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstr
      */
     public abstract T subtract(T oth, long factor, int exponent);
 
-    /**
-     * Raises {@code this} by the {@code factor}
-     *
-     * @param factor the factor
-     * @return {@code} this multiplied by the {@code factor}
-     */
-    public abstract T multiply(long factor);
-
     @Override
     public abstract T clone();
+
+    final BigInteger[] dataToBigIntegers(){
+        BigInteger[] bData = new BigInteger[degree + 1];
+        for (int i = degree; i >= 0 ; --i)
+            bData[i] = BigInteger.valueOf(data[i]);
+        return bData;
+    }
 
     @Override
     public final int compareTo(T o) {

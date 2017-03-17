@@ -14,7 +14,7 @@ import static cc.r2.core.number.BigInteger.ZERO;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolynomialZ> {
+final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolynomialZ> implements IMutablePolynomialZ<bMutablePolynomialZ> {
 
     static BigInteger safeAdd(BigInteger a, BigInteger b) {return a.add(b);}
 
@@ -154,6 +154,12 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
         return this;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public bMutablePolynomialZ divideOrNullByLC(bMutablePolynomialZ other) {
+        return divideOrNull(other.lc());
+    }
+
     @Override
     public bMutablePolynomialZ createFromArray(BigInteger[] data) {
         return new bMutablePolynomialZ(data);
@@ -162,6 +168,11 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
     @Override
     public bMutablePolynomialZ createConstant(BigInteger val) {
         return new bMutablePolynomialZ(new BigInteger[]{val}, 0);
+    }
+
+    @Override
+    public bMutablePolynomialZ[] arrayNewInstance(int length) {
+        return new bMutablePolynomialZ[length];
     }
 
     /** {@inheritDoc} */

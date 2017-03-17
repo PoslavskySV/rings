@@ -4,7 +4,7 @@ package cc.r2.core.poly2;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-interface MutablePolynomial<T extends MutablePolynomial> extends Comparable<T> {
+interface IMutablePolynomial<T extends IMutablePolynomial> extends Comparable<T> {
     /**
      * Return the degree of this
      *
@@ -32,6 +32,13 @@ interface MutablePolynomial<T extends MutablePolynomial> extends Comparable<T> {
      * @return whether {@code this} is monic
      */
     boolean isMonic();
+
+    /**
+     * Returns true if constant term is a unit
+     *
+     * @return whether constant term is unit
+     */
+    boolean isUnitCC();
 
     /**
      * Returns {@code true} if this polynomial has only constant term
@@ -138,6 +145,16 @@ interface MutablePolynomial<T extends MutablePolynomial> extends Comparable<T> {
      */
     T createMonomial(int degree);
 
+    /** overcome Java generics... */
+    T[] arrayNewInstance(int length);
+
+    /** overcome Java generics... */
+    default T[] arrayNewInstance(T a, T b) {
+        T[] r = arrayNewInstance(2);
+        r[0] = a; r[1] = b;
+        return r;
+    }
+
     /**
      * Adds {@code oth} to {@code this}.
      *
@@ -169,6 +186,14 @@ interface MutablePolynomial<T extends MutablePolynomial> extends Comparable<T> {
      * @return {@code this * oth }
      */
     T multiply(T oth);
+
+    /**
+     * Raises {@code this} by the {@code factor}
+     *
+     * @param factor the factor
+     * @return {@code} this multiplied by the {@code factor}
+     */
+    T multiply(long factor);
 
     /**
      * Square of {@code this}

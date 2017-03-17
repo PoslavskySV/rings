@@ -190,7 +190,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
 //    }
 //
 
-    @Ignore
+//    @Ignore
     @Test
     public void name() throws Exception {
 //        System.out.println(factorBigPrime(MutablePolynomialZ.create(-1, 0, 1)));
@@ -240,6 +240,18 @@ public class FactorizationTest extends AbstractPolynomialTest {
                 System.out.println(time);
         }
         System.out.println(k);
+
+//
+//        0.31519400000000003
+//        0.37378500000000003
+//        0.419362
+//        0.358527
+//        0.415434
+//        0.520177
+//        0.534273
+//        0.401569
+//        0.376355
+
     }
 
     @Test

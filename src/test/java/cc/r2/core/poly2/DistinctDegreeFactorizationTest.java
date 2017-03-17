@@ -75,7 +75,7 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
                 .setAlgorithms(EnumSet.allOf(DDFAlgorithm.class))
                 .setPrimes(new long[]{SmallPrimes.nextPrime(10), SmallPrimes.nextPrime(100), SmallPrimes.nextPrime(200)})
                 .setSource(new RandomSource(getRandom(), 5, 15, true))
-                .setnIterations(1100)
+                .setnIterations(11100)
                 .setPrintProgress(false)
                 .setName("Small random polynomials")
                 .run();
@@ -417,6 +417,20 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
             FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);
             System.out.println("Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.modulus + "): " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    @Benchmark
+    public void test5b() throws Exception {
+        for (int i = 0; i < its(100, 50); i++) {
+            MutablePolynomialMod bigPoly = this.bigPoly.setModulus(getModulusRandom(20));//.truncate(15);
+            long start = System.nanoTime();
+            FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            assertDistinctDegreeFactorization(bigPoly, ddf);
+            long time = System.nanoTime() - start;
+            boolean b = PolynomialGCD.Euclid(bigPoly.toBigPoly().square(), bigPoly.toBigPoly().square().derivative()).gcd().isConstant();
+            System.out.println(i + "" + b + " Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.modulus + "): " + TimeUnits.nanosecondsToString(time));
         }
     }
 

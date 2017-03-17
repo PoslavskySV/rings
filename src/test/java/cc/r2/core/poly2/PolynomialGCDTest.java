@@ -165,7 +165,7 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         MutablePolynomialZ dividend = MutablePolynomialZ.create(1, 1, 1, 1).multiply(2);
         MutablePolynomialZ divider = MutablePolynomialZ.create(1, 0, 2);
 
-        for (PolynomialGCD.PolynomialRemainders prs : runAlgorithms(dividend, divider))
+        for (PolynomialGCD.PolynomialRemainders<MutablePolynomialZ> prs : runAlgorithms(dividend, divider))
             assertEquals(0, prs.gcd().degree);
     }
 
@@ -183,7 +183,7 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(100, 1000); i++) {
             MutablePolynomialZ dividend = randomPoly(5, rnd);
             MutablePolynomialZ divider = randomPoly(0, rnd);
-            for (PolynomialGCD.PolynomialRemainders prs : runAlgorithms(dividend, divider)) {
+            for (PolynomialGCD.PolynomialRemainders<MutablePolynomialZ> prs : runAlgorithms(dividend, divider)) {
                 assertEquals(0, prs.gcd().degree);
             }
         }
@@ -410,8 +410,8 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     }
 
 
-    private static List<PolynomialRemainders> runAlgorithms(MutablePolynomialZ dividend, MutablePolynomialZ divider, GCDAlgorithm... algorithms) {
-        ArrayList<PolynomialRemainders> r = new ArrayList<>();
+    private static List<PolynomialRemainders<MutablePolynomialZ>> runAlgorithms(MutablePolynomialZ dividend, MutablePolynomialZ divider, GCDAlgorithm... algorithms) {
+        ArrayList<PolynomialRemainders<MutablePolynomialZ>> r = new ArrayList<>();
         for (GCDAlgorithm algorithm : algorithms)
             r.add(algorithm.gcd(dividend, divider));
         return r;

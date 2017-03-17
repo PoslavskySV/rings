@@ -14,7 +14,7 @@ import static cc.redberry.libdivide4j.FastDivision.magicSigned;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomialZ> {
+public final class MutablePolynomialZ extends MutablePolynomialAbstract<MutablePolynomialZ> implements IMutablePolynomialZ<MutablePolynomialZ>{
 
     /** main constructor */
     private MutablePolynomialZ(long[] data) {
@@ -130,6 +130,12 @@ public final class MutablePolynomialZ extends MutablePolynomialAbstract<MutableP
 
     /** {@inheritDoc} */
     @Override
+    public MutablePolynomialZ divideOrNullByLC(MutablePolynomialZ other) {
+        return divideOrNull(other.lc());
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public MutablePolynomialZ createFromArray(long[] data) {
         return new MutablePolynomialZ(data);
     }
@@ -138,6 +144,11 @@ public final class MutablePolynomialZ extends MutablePolynomialAbstract<MutableP
     @Override
     public MutablePolynomialZ createConstant(long val) {
         return new MutablePolynomialZ(new long[]{val}, 0);
+    }
+
+    @Override
+    public MutablePolynomialZ[] arrayNewInstance(int length) {
+        return new MutablePolynomialZ[length];
     }
 
     /** {@inheritDoc} */

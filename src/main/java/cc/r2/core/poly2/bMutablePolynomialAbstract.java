@@ -13,7 +13,7 @@ import static cc.r2.core.number.BigIntegerArithmetics.*;
  * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> implements MutablePolynomial<T> {
+public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> implements IMutablePolynomial<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     BigInteger[] data;
     /** points to the last non zero element in the data array */
@@ -65,6 +65,10 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
     /** {@inheritDoc} */
     @Override
     public final boolean isMonic() {return lc().isOne();}
+
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isUnitCC() {return cc().isOne();}
 
     /** {@inheritDoc} */
     @Override
@@ -311,6 +315,10 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
      * @return {@code this - factor * x^exponent * oth}
      */
     public abstract T subtract(T oth, BigInteger factor, int exponent);
+
+    /** {@inheritDoc} */
+    @Override
+    public final T multiply(long factor) {return multiply(BigInteger.valueOf(factor));}
 
     /**
      * Raises {@code this} by the {@code factor}

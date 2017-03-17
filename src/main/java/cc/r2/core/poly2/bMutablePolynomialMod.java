@@ -12,7 +12,8 @@ import static cc.r2.core.number.BigInteger.ZERO;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePolynomialMod> {
+final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePolynomialMod>
+        implements IMutablePolynomialZp<bMutablePolynomialMod> {
     /** the modulus */
     final BigInteger modulus;
 
@@ -42,6 +43,10 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      */
     static bMutablePolynomialMod create(BigInteger modulus, BigInteger[] data) {
         reduce(data, modulus);
+        return new bMutablePolynomialMod(modulus, data);
+    }
+
+    static bMutablePolynomialMod createUnsafe(BigInteger modulus, BigInteger[] data) {
         return new bMutablePolynomialMod(modulus, data);
     }
 
@@ -163,6 +168,16 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return new bMutablePolynomialMod(modulus, newData, newDegree);
     }
 
+    @Override
+    public bMutablePolynomialMod[] arrayNewInstance(int length) {
+        return new bMutablePolynomialMod[length];
+    }
+
+    @Override
+    public bMutablePolynomialMod[] arrayNewInstance(bMutablePolynomialMod a, bMutablePolynomialMod b) {
+        return new bMutablePolynomialMod[]{a, b};
+    }
+
     /** does not copy the data and does not reduce the data with new modulus */
     bMutablePolynomialMod setModulusUnsafe(BigInteger newModulus) {
         return new bMutablePolynomialMod(newModulus, data, degree);
@@ -210,12 +225,8 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return MutablePolynomialZ.create(lData).modulus(modulus.longValueExact(), false);
     }
 
-    /**
-     * Sets {@code this} to its monic part (that is {@code this} multiplied by its inversed leading coefficient).
-     *
-     * @return {@code this}
-     */
-    bMutablePolynomialMod monic() {
+    /** {@inheritDoc} */
+    public bMutablePolynomialMod monic() {
         if (data[degree].isZero()) // isZero()
             return this;
         if (degree == 0) {
@@ -223,6 +234,11 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
             return this;
         }
         return multiply(lc().modInverse(modulus));
+    }
+
+    @Override
+    public bMutablePolynomialMod divideByLC(bMutablePolynomialMod other) {
+        return multiply(other.lc().modInverse(modulus));
     }
 
     /**
@@ -249,7 +265,8 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return res;
     }
 
-    void checkCompatibleModulus(bMutablePolynomialMod oth) {
+    /** {@inheritDoc} */
+    public void checkCompatibleModulus(bMutablePolynomialMod oth) {
         if (!modulus.equals(oth.modulus))
             throw new IllegalArgumentException();
     }

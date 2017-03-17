@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.redberry.libdivide4j.FastDivision.*;
 
 import java.util.Arrays;
@@ -15,7 +16,7 @@ import static cc.redberry.libdivide4j.FastDivision.*;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolynomialMod> {
+public final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolynomialMod> implements IMutablePolynomialZp<MutablePolynomialMod> {
     /** the modulus */
     final long modulus;
     /** magic **/
@@ -201,6 +202,16 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return new MutablePolynomialMod(modulus, magic, magic32MulMod, newData, newDegree, modulusFits32);
     }
 
+    @Override
+    public MutablePolynomialMod[] arrayNewInstance(int length) {
+        return new MutablePolynomialMod[length];
+    }
+
+    @Override
+    public MutablePolynomialMod[] arrayNewInstance(MutablePolynomialMod a, MutablePolynomialMod b) {
+        return new MutablePolynomialMod[]{a, b};
+    }
+
     /** does not copy the data and does not reduce the data with new modulus */
     public MutablePolynomialMod setModulusUnsafe(long newModulus) {
         return new MutablePolynomialMod(newModulus, magicUnsigned(newModulus), data);
@@ -242,11 +253,8 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return MutablePolynomialZ.create(newData);
     }
 
-    /**
-     * Sets {@code this} to its monic part (that is {@code this} multiplied by its inversed leading coefficient).
-     *
-     * @return {@code this}
-     */
+    /** {@inheritDoc} */
+    @Override
     public MutablePolynomialMod monic() {
         if (data[degree] == 0) // isZero()
             return this;
@@ -255,6 +263,11 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
             return this;
         }
         return multiply(modInverse(lc(), modulus));
+    }
+
+    @Override
+    public MutablePolynomialMod divideByLC(MutablePolynomialMod other) {
+        return multiply(modInverse(other.lc(), modulus));
     }
 
     /**
@@ -281,7 +294,8 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return res;
     }
 
-    void checkCompatibleModulus(MutablePolynomialMod oth) {
+    @Override
+    public void checkCompatibleModulus(MutablePolynomialMod oth) {
         if (modulus != oth.modulus)
             throw new IllegalArgumentException();
     }
@@ -409,9 +423,11 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return createFromArray(newData);
     }
 
-    /**
-     * Deep copy
-     */
+    public bMutablePolynomialMod toBigPoly(){
+        return bMutablePolynomialMod.createUnsafe(BigInteger.valueOf(modulus), dataToBigIntegers());
+    }
+
+    /** Deep copy */
     @Override
     public MutablePolynomialMod clone() {
         return new MutablePolynomialMod(modulus, magic, magic32MulMod, data.clone(), degree, modulusFits32);
