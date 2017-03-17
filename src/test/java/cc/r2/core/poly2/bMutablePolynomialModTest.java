@@ -20,17 +20,17 @@ public class bMutablePolynomialModTest {
         for (int i = 0; i < 5; i++) {
             a = (a.clone() * a.clone().decrement() - a.clone().derivative() + (a.clone().square())) * a.clone();
             a = a.truncate(a.degree * 3 / 2).shiftRight(2).shiftLeft(2).increment().negate();
-            a = a.add(a.derivative()).decrement();
+            a = a.subtract(a.derivative()).decrement();
 //            a = a.multiply(a.derivative().increment().truncate(10));
 
             aZ = (aZ.clone() * aZ.clone().decrement() - aZ.clone().derivative() + (aZ.clone().square())) * aZ.clone();
             aZ = aZ.truncate(aZ.degree * 3 / 2).shiftRight(2).shiftLeft(2).increment().negate();
-            aZ = aZ.add(aZ.derivative()).decrement();
+            aZ = aZ.subtract(aZ.derivative()).decrement();
 //            aZ = aZ.multiply(aZ.derivative().increment().truncate(10));
 
             aL = (aL.clone() * aL.clone().decrement() - aL.clone().derivative() + (aL.clone().square())) * aL.clone();
             aL = aL.truncate(aL.degree * 3 / 2).shiftRight(2).shiftLeft(2).increment().negate();
-            aL = aL.add(aL.derivative()).decrement();
+            aL = aL.subtract(aL.derivative()).decrement();
 //            aL = aL.multiply(aL.derivative().increment().truncate(10));
         }
 

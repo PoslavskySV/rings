@@ -4,7 +4,13 @@ package cc.r2.core.poly2;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-interface MutablePolynomial<T extends MutablePolynomial> {
+interface MutablePolynomial<T extends MutablePolynomial> extends Comparable<T> {
+    /**
+     * Return the degree of this
+     *
+     * @return the degree
+     */
+    int degree();
 
     /**
      * Returns {@code true} if this is zero
@@ -41,7 +47,11 @@ interface MutablePolynomial<T extends MutablePolynomial> {
      */
     boolean isMonomial();
 
-    /** fill content with zeroes */
+    /**
+     * Sets this to zero
+     *
+     * @return this := zero
+     */
     T toZero();
 
     /**
@@ -120,6 +130,13 @@ interface MutablePolynomial<T extends MutablePolynomial> {
      */
     T createOne();
 
+    /**
+     * Creates monomial {@code x^degree}
+     *
+     * @param degree monomial degree
+     * @return {@code coefficient * x^degree}
+     */
+    T createMonomial(int degree);
 
     /**
      * Adds {@code oth} to {@code this}.

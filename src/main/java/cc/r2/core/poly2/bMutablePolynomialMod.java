@@ -138,7 +138,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     @Override
-    bMutablePolynomialMod createFromArray(BigInteger[] newData) {
+    public bMutablePolynomialMod createFromArray(BigInteger[] newData) {
         reduce(newData, modulus);
         bMutablePolynomialMod r = new bMutablePolynomialMod(modulus, newData, newData.length - 1);
         r.fixDegree();
@@ -152,12 +152,12 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @return constant polynomial with specified value
      */
     @Override
-    bMutablePolynomialMod createConstant(BigInteger val) {
+    public bMutablePolynomialMod createConstant(BigInteger val) {
         return new bMutablePolynomialMod(modulus, new BigInteger[]{reduce(val, modulus)}, 0);
     }
 
     @Override
-    bMutablePolynomialMod createMonomial(BigInteger coefficient, int newDegree) {
+    public bMutablePolynomialMod createMonomial(BigInteger coefficient, int newDegree) {
         BigInteger[] newData = new BigInteger[newDegree + 1];
         newData[newDegree] = reduce(coefficient, modulus);
         return new bMutablePolynomialMod(modulus, newData, newDegree);
@@ -236,8 +236,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return multiply(multiplyMod(mod(factor), lc().modInverse(modulus)));
     }
 
+    /** {@inheritDoc} */
     @Override
-    BigInteger evaluate(BigInteger point) {
+    public BigInteger evaluate(BigInteger point) {
         if (point.isZero())
             return cc();
 
@@ -253,8 +254,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
             throw new IllegalArgumentException();
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod add(bMutablePolynomialMod oth) {
+    public bMutablePolynomialMod add(bMutablePolynomialMod oth) {
         if (oth.isZero())
             return this;
         if (isZero())
@@ -268,8 +270,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod addMonomial(BigInteger coefficient, int exponent) {
+    public bMutablePolynomialMod addMonomial(BigInteger coefficient, int exponent) {
         if (coefficient.isZero())
             return this;
 
@@ -279,8 +282,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod addMul(bMutablePolynomialMod oth, BigInteger factor) {
+    public bMutablePolynomialMod addMul(bMutablePolynomialMod oth, BigInteger factor) {
         if (oth.isZero())
             return this;
 
@@ -296,8 +300,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod subtract(bMutablePolynomialMod oth) {
+    public bMutablePolynomialMod subtract(bMutablePolynomialMod oth) {
         if (oth.isZero())
             return this;
         if (isZero())
@@ -311,8 +316,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod subtract(bMutablePolynomialMod oth, BigInteger factor, int exponent) {
+    public bMutablePolynomialMod subtract(bMutablePolynomialMod oth, BigInteger factor, int exponent) {
         if (oth.isZero())
             return this;
 
@@ -328,16 +334,18 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod negate() {
+    public bMutablePolynomialMod negate() {
         for (int i = degree; i >= 0; --i)
             if (!data[i].isZero())
                 data[i] = modulus.subtract(data[i]);
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod multiply(BigInteger factor) {
+    public bMutablePolynomialMod multiply(BigInteger factor) {
         factor = mod(factor);
         if (factor.isOne())
             return this;
@@ -350,8 +358,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod derivative() {
+    public bMutablePolynomialMod derivative() {
         if (isConstant())
             return createZero();
         BigInteger[] newData = new BigInteger[degree];
@@ -369,8 +378,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return new bMutablePolynomialMod(modulus, data.clone(), degree);
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod multiply(bMutablePolynomialMod oth) {
+    public bMutablePolynomialMod multiply(bMutablePolynomialMod oth) {
         if (isZero())
             return this;
         if (oth.isZero())
@@ -406,8 +416,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
             return multiplyKaratsubaUnsafe(data, 0, degree + 1, oth.data, 0, oth.degree + 1);
     }
 
+    /** {@inheritDoc} */
     @Override
-    bMutablePolynomialMod square() {
+    public bMutablePolynomialMod square() {
         if (isZero())
             return this;
         if (degree == 0)

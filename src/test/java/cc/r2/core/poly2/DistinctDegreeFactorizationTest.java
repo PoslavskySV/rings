@@ -7,6 +7,7 @@ import cc.r2.core.poly2.FactorizationTestUtil.RandomSource;
 import cc.r2.core.poly2.FactorizationTestUtil.ShoupSource;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.test.TimeConsuming;
+import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
 
@@ -406,6 +407,17 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
         FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
         assertDistinctDegreeFactorization(bigPoly, ddf);
         assertEquals(2, ddf.factors.size());
+    }
+
+    @Test
+    public void test5a() throws Exception {
+        for (int i = 0; i < its(10, 50); i++) {
+            MutablePolynomialMod bigPoly = this.bigPoly.setModulus(getModulusRandom(20));
+            long start = System.nanoTime();
+            FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            assertDistinctDegreeFactorization(bigPoly, ddf);
+            System.out.println("Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.modulus + "): " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
     }
 
     @Test

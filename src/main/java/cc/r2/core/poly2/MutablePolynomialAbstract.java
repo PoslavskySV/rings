@@ -12,11 +12,14 @@ import static cc.redberry.libdivide4j.FastDivision.magicSigned;
  * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements Comparable<T> {
+public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements MutablePolynomial<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     long[] data;
     /** points to the last non zero element in the data array */
     int degree;
+
+    @Override
+    public final int degree() {return degree;}
 
     /**
      * Ensures that the capacity of internal storage is enough for storing polynomial of the {@code desiredDegree}.
@@ -46,40 +49,25 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         }
     }
 
-    /**
-     * Returns {@code true} if this is zero
-     *
-     * @return whether {@code this} is zero
-     */
-    final boolean isZero() {return data[degree] == 0;}
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isZero() {return data[degree] == 0;}
 
-    /**
-     * Returns {@code true} if this is one
-     *
-     * @return whether {@code this} is one
-     */
-    final boolean isOne() {return degree == 0 && data[0] == 1;}
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isOne() {return degree == 0 && data[0] == 1;}
 
-    /**
-     * Returns {@code true} if this polynomial is monic
-     *
-     * @return whether {@code this} is monic
-     */
-    final boolean isMonic() {return lc() == 1;}
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isMonic() {return lc() == 1;}
 
-    /**
-     * Returns {@code true} if this polynomial has only constant term
-     *
-     * @return whether {@code this} is constant
-     */
-    final boolean isConstant() {return degree == 0;}
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isConstant() {return degree == 0;}
 
-    /**
-     * Returns {@code true} if this polynomial has only one monomial term
-     *
-     * @return whether {@code this} has the form {@code c*x^i} (one term)
-     */
-    final boolean isMonomial() {
+    /** {@inheritDoc} */
+    @Override
+    public final boolean isMonomial() {
         for (int i = degree - 1; i >= 0; --i)
             if (data[i] != 0)
                 return false;
@@ -91,7 +79,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      *
      * @return L1 norm of {@code this}
      */
-    final double norm1() {
+    public final double norm1() {
         double norm = 0;
         for (int i = 0; i <= degree; ++i)
             norm += Math.abs(data[i]);
@@ -103,7 +91,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      *
      * @return L2 norm of {@code this}
      */
-    final double norm2() {
+    public final double norm2() {
         double norm = 0;
         for (int i = 0; i <= degree; ++i)
             norm += ((double) data[i]) * data[i];
@@ -115,7 +103,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      *
      * @return max coefficient (by absolute value)
      */
-    final double normMax() {
+    public final double normMax() {
         return (double) maxAbsCoefficient();
     }
 
@@ -124,7 +112,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      *
      * @return max coefficient (by absolute value)
      */
-    final long maxAbsCoefficient() {
+    public final long maxAbsCoefficient() {
         long max = Math.abs(data[0]);
         for (int i = 1; i <= degree; ++i)
             max = Math.max(Math.abs(data[i]), max);
@@ -136,21 +124,21 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      *
      * @return leading coefficient
      */
-    final long lc() {return data[degree];}
+    public final long lc() {return data[degree];}
 
     /**
      * Returns the constant coefficient of the poly
      *
      * @return constant coefficient
      */
-    final long cc() {return data[0];}
+    public final long cc() {return data[0];}
 
     /**
      * Returns the content of the poly
      *
      * @return polynomial content
      */
-    final long content() {
+    public final long content() {
         if (degree == 0)
             return data[0];
         return LongArithmetics.gcd(data, 0, degree + 1);
@@ -160,33 +148,25 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     @SuppressWarnings("unchecked")
     private final T self = (T) this;
 
-    /** fill content with zeroes */
-    final T toZero() {
+    /** {@inheritDoc} */
+    @Override
+    public final T toZero() {
         Arrays.fill(data, 0, degree + 1, 0);
         degree = 0;
         return self;
     }
 
-    /**
-     * Sets the content of this to {@code oth}
-     *
-     * @param oth the polynomial
-     * @return this := oth
-     */
-    final T set(T oth) {
+    /** {@inheritDoc} */
+    @Override
+    public final T set(T oth) {
         this.data = oth.data.clone();
         this.degree = oth.degree;
         return self;
     }
 
-    /**
-     * Returns the quotient {@code this / x^offset}, it is polynomial with coefficient list formed by shifting coefficients
-     * of {@code this} to the left by {@code offset}.
-     *
-     * @param offset shift amount
-     * @return the quotient {@code this / x^offset}
-     */
-    final T shiftLeft(int offset) {
+    /** {@inheritDoc} */
+    @Override
+    public final T shiftLeft(int offset) {
         if (offset == 0)
             return self;
         if (offset > degree)
@@ -198,13 +178,9 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         return self;
     }
 
-    /**
-     * Multiplies {@code this} by the {@code x^offset}.
-     *
-     * @param offset monomial exponent
-     * @return {@code this * x^offset}
-     */
-    final T shiftRight(int offset) {
+    /** {@inheritDoc} */
+    @Override
+    public final T shiftRight(int offset) {
         if (offset == 0)
             return self;
         int degree = this.degree;
@@ -214,14 +190,9 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         return self;
     }
 
-    /**
-     * Returns the remainder {@code this rem x^(newDegree + 1)}, it is polynomial with the coefficient list truncated
-     * to the new degree {@code newDegree}.
-     *
-     * @param newDegree new degree
-     * @return remainder {@code this rem x^(newDegree + 1)}
-     */
-    final T truncate(int newDegree) {
+    /** {@inheritDoc} */
+    @Override
+    public final T truncate(int newDegree) {
         if (newDegree >= degree)
             return self;
         Arrays.fill(data, newDegree + 1, degree + 1, 0);
@@ -230,23 +201,17 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         return self;
     }
 
-    /**
-     * Reverses the coefficients of this
-     *
-     * @return reversed polynomial
-     */
-    final T reverse() {
+    /** {@inheritDoc} */
+    @Override
+    public final T reverse() {
         ArraysUtil.reverse(data, 0, degree + 1);
         fixDegree();
         return self;
     }
 
-    /**
-     * Reduces poly to its primitive part
-     *
-     * @return primitive part (poly will be modified)
-     */
-    final T primitivePart() {
+    /** {@inheritDoc} */
+    @Override
+    public final T primitivePart() {
         long content = content();
         if (content == 1)
             return self;
@@ -258,23 +223,21 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         return self;
     }
 
-    /**
-     * Adds 1 to this
-     *
-     * @return {@code this + 1}
-     */
-    final T increment() {
+    /** {@inheritDoc} */
+    @Override
+    public final T increment() {
         return add(createOne());
     }
 
-    /**
-     * Subtracts 1 from this
-     *
-     * @return {@code this - 1}
-     */
-    final T decrement() {
+    /** {@inheritDoc} */
+    @Override
+    public final T decrement() {
         return subtract(createOne());
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public final T createMonomial(int degree) {return createMonomial(1L, degree);}
 
     /**
      * Factory
@@ -282,7 +245,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param data the data
      * @return polynomial
      */
-    abstract T createFromArray(long[] data);
+    public abstract T createFromArray(long[] data);
 
     /**
      * Creates constant polynomial with specified value
@@ -290,7 +253,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param val the value
      * @return constant polynomial with specified value
      */
-    abstract T createConstant(long val);
+    public abstract T createConstant(long val);
 
     /**
      * Creates monomial {@code coefficient * x^degree}
@@ -299,21 +262,15 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param degree      monomial degree
      * @return {@code coefficient * x^degree}
      */
-    abstract T createMonomial(long coefficient, int degree);
+    public abstract T createMonomial(long coefficient, int degree);
 
-    /**
-     * Returns 0 (new instance)
-     *
-     * @return new instance of 0
-     */
-    final T createZero() {return createConstant(0);}
+    /** {@inheritDoc} */
+    @Override
+    public final T createZero() {return createConstant(0);}
 
-    /**
-     * Returns 1 (new instance)
-     *
-     * @return new instance of 1
-     */
-    final T createOne() {return createConstant(1);}
+    /** {@inheritDoc} */
+    @Override
+    public final T createOne() {return createConstant(1);}
 
     /**
      * Evaluates this poly at a given {@code point} (via Horner method).
@@ -321,15 +278,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param point {@code point}
      * @return value at {@code point}
      */
-    abstract long evaluate(long point);
-
-    /**
-     * Adds {@code oth} to {@code this}.
-     *
-     * @param oth the polynomial
-     * @return {@code this + oth}
-     */
-    abstract T add(T oth);
+    public abstract long evaluate(long point);
 
     /**
      * Adds {@code coefficient*x^exponent} to {@code this}
@@ -338,7 +287,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param exponent    monomial exponent
      * @return {@code this + coefficient*x^exponent}
      */
-    abstract T addMonomial(long coefficient, int exponent);
+    public abstract T addMonomial(long coefficient, int exponent);
 
     /**
      * Adds {@code oth * factor} to {@code this}
@@ -347,15 +296,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param factor the factor
      * @return {@code this + oth * factor} modulo {@code modulus}
      */
-    abstract T addMul(T oth, long factor);
-
-    /**
-     * Subtracts {@code oth} from {@code this}.
-     *
-     * @param oth the polynomial
-     * @return {@code this - oth}
-     */
-    abstract T subtract(T oth);
+    public abstract T addMul(T oth, long factor);
 
     /**
      * Subtracts {@code factor * x^exponent * oth} from {@code this}
@@ -365,14 +306,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param exponent the exponent
      * @return {@code this - factor * x^exponent * oth}
      */
-    abstract T subtract(T oth, long factor, int exponent);
-
-    /**
-     * Negates this and returns
-     *
-     * @return this negated
-     */
-    abstract T negate();
+    public abstract T subtract(T oth, long factor, int exponent);
 
     /**
      * Raises {@code this} by the {@code factor}
@@ -380,29 +314,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
      * @param factor the factor
      * @return {@code} this multiplied by the {@code factor}
      */
-    abstract T multiply(long factor);
-
-    /**
-     * Sets this to {@code this * oth }
-     *
-     * @param oth the polynomial
-     * @return {@code this * oth }
-     */
-    abstract T multiply(T oth);
-
-    /**
-     * Square of {@code this}
-     *
-     * @return {@code this * this}
-     */
-    abstract T square();
-
-    /**
-     * Returns the formal derivative of this poly
-     *
-     * @return the formal derivative
-     */
-    abstract T derivative();
+    public abstract T multiply(long factor);
 
     @Override
     public abstract T clone();
