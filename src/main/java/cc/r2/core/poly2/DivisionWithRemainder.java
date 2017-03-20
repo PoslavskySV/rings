@@ -698,15 +698,7 @@ public final class DivisionWithRemainder {
     }
 
 
-    /* ********************************** Fast division in Zp[x] ********************************** */
-
-//    @SuppressWarnings("unchecked")
-//    private static <T extends IMutablePolynomialZp<T>> T[] earlyDivideAndRemainderChecks(T dividend, T divider, boolean copy) {
-//        if (dividend instanceof MutablePolynomialMod)
-//            return (T[]) earlyDivideAndRemainderChecks((MutablePolynomialMod) dividend, (MutablePolynomialMod) divider, copy);
-//        else
-//            return (T[]) earlyDivideAndRemainderChecks((bMutablePolynomialMod) dividend, (bMutablePolynomialMod) divider, copy);
-//    }
+    /* ********************************** Fast division algorithm ********************************** */
 
     /* that is [log2] */
     static int log2(int l) {
@@ -762,11 +754,9 @@ public final class DivisionWithRemainder {
     }
 
     /** fast division implementation */
-    static <T extends IMutablePolynomialZp<T>> T[] divideAndRemainderFast0(T dividend,
-                                                                           T divider,
-                                                                           InverseModMonomial<T> invRevMod,
-                                                                           boolean copy) {
-        dividend.checkCompatibleModulus(divider);
+    public static <T extends IMutablePolynomial<T>> T[] divideAndRemainderFast0(T dividend, T divider,
+                                                                                InverseModMonomial<T> invRevMod,
+                                                                                boolean copy) {
         int m = dividend.degree() - divider.degree();
         T q = remainderMonomial(dividend.clone().reverse().multiply(invRevMod.getInverse(m + 1)), m + 1, false).reverse();
         if (q.degree() < m)
@@ -1136,6 +1126,14 @@ public final class DivisionWithRemainder {
 
 
     /* ********************************** Common conversion ********************************** */
+
+    @SuppressWarnings("unchecked")
+    public static <T extends IMutablePolynomialZ<T>> T[] pseudoDivideAndRemainder(T dividend, T divider, boolean copy) {
+        if (dividend instanceof MutablePolynomialZ)
+            return (T[]) pseudoDivideAndRemainder((MutablePolynomialZ) dividend, (MutablePolynomialZ) divider, copy);
+        else
+            return (T[]) pseudoDivideAndRemainder((bMutablePolynomialZ) dividend, (bMutablePolynomialZ) divider, copy);
+    }
 
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomial<T>> T[] divideAndRemainder(T dividend, T divider, boolean copy) {

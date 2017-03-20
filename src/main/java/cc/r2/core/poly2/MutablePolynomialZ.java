@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.Arrays;
@@ -74,6 +75,10 @@ public final class MutablePolynomialZ extends MutablePolynomialAbstract<MutableP
      */
     public static MutablePolynomialZ one() {
         return new MutablePolynomialZ(new long[]{1}, 0);
+    }
+
+    public bMutablePolynomialZ toBigPoly(){
+        return bMutablePolynomialZ.create(dataToBigIntegers());
     }
 
     /**

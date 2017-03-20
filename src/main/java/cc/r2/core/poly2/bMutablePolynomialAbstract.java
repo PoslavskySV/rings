@@ -83,6 +83,11 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
         return true;
     }
 
+    @Override
+    public int signum() {
+        return lc().signum();
+    }
+
     /**
      * Returns L1 norm of this polynomial, i.e. sum of abs coefficients
      *
@@ -222,12 +227,23 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
     @Override
     public final T primitivePart() {
         BigInteger content = content();
+        if (lc().signum() < 0)
+            content = content.negate();
+        if (content.isMinusOne())
+            return negate();
+        return primitivePart0(content);
+    }
+
+    @Override
+    public T primitivePartSameSign() {
+        return primitivePart0(content());
+    }
+
+    private T primitivePart0(BigInteger content) {
         if (content.isOne())
             return self;
-        if (lc().signum() < 0)
-            content = -content;
         for (int i = degree; i >= 0; --i)
-            data[i] = data[i] / content;
+            data[i] = data[i].divide(content);
         return self;
     }
 
@@ -371,7 +387,7 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
 
     String toStringForCopy() {
         String s = ArraysUtil.toString(data, 0, degree + 1);
-        return "create(" + s.substring(1, s.length() - 1) + ")";
+        return "create(" + s.substring(1, s.length() - 1).replace(",", "L,") + ")";
     }
 
     @Override

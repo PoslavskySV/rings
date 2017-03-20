@@ -1,6 +1,8 @@
 package cc.r2.core.poly2;
 
 
+import cc.r2.core.number.BigInteger;
+import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.number.primes.PrimesIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -10,7 +12,6 @@ import java.util.Arrays;
 
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.poly2.DivisionWithRemainder.*;
-import static cc.r2.core.poly2.LongArithmetics.*;
 
 /**
  * Polynomial GCD and sub-resultant sequence for univariate polynomials with single-precision coefficients.
@@ -102,6 +103,24 @@ public final class PolynomialGCD {
      * @param primitivePRS whether to build primitive polynomial remainders or not
      * @return polynomial remainder sequence (the last element is GCD)
      */
+    @SuppressWarnings("unchecked")
+    public static <T extends IMutablePolynomialZ<T>> PolynomialRemainders<T> PolynomialEuclid(final T a,
+                                                                                              final T b,
+                                                                                              boolean primitivePRS) {
+        if (a instanceof MutablePolynomialZ)
+            return (PolynomialRemainders<T>) PolynomialEuclid((MutablePolynomialZ) a, (MutablePolynomialZ) b, primitivePRS);
+        else
+            return (PolynomialRemainders<T>) PolynomialEuclid((bMutablePolynomialZ) a, (bMutablePolynomialZ) b, primitivePRS);
+    }
+
+    /**
+     * Euclidean algorithm for polynomials over Z that uses pseudo division
+     *
+     * @param a            poly
+     * @param b            poly
+     * @param primitivePRS whether to build primitive polynomial remainders or not
+     * @return polynomial remainder sequence (the last element is GCD)
+     */
     public static PolynomialRemainders<MutablePolynomialZ> PolynomialEuclid(final MutablePolynomialZ a,
                                                                             final MutablePolynomialZ b,
                                                                             boolean primitivePRS) {
@@ -114,15 +133,45 @@ public final class PolynomialGCD {
         long aContent = a.content(), bContent = b.content();
         long contentGCD = LongArithmetics.gcd(aContent, bContent);
         MutablePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
+        PolynomialRemainders<MutablePolynomialZ> res = PolynomialEuclid0(aPP, bPP, primitivePRS);
+        res.gcd().primitivePart().multiply(contentGCD);
+        return res;
+    }
 
-        ArrayList<MutablePolynomialZ> prs = new ArrayList<>();
+    /**
+     * Euclidean algorithm for polynomials over Z that uses pseudo division
+     *
+     * @param a            poly
+     * @param b            poly
+     * @param primitivePRS whether to build primitive polynomial remainders or not
+     * @return polynomial remainder sequence (the last element is GCD)
+     */
+    public static PolynomialRemainders<bMutablePolynomialZ> PolynomialEuclid(final bMutablePolynomialZ a,
+                                                                             final bMutablePolynomialZ b,
+                                                                             boolean primitivePRS) {
+        if (a.degree < b.degree)
+            return PolynomialEuclid(b, a, primitivePRS);
+
+        if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
+
+        BigInteger aContent = a.content(), bContent = b.content();
+        BigInteger contentGCD = BigIntegerArithmetics.gcd(aContent, bContent);
+        bMutablePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
+        PolynomialRemainders<bMutablePolynomialZ> res = PolynomialEuclid0(aPP, bPP, primitivePRS);
+        res.gcd().primitivePart().multiply(contentGCD);
+        return res;
+    }
+
+    private static <T extends IMutablePolynomialZ<T>> PolynomialRemainders<T> PolynomialEuclid0(final T aPP,
+                                                                                                final T bPP,
+                                                                                                boolean primitivePRS) {
+        ArrayList<T> prs = new ArrayList<>();
         prs.add(aPP); prs.add(bPP);
 
-        MutablePolynomialZ x = aPP, y = bPP, r;
+        T x = aPP, y = bPP, r;
         while (true) {
-
-            MutablePolynomialZ[] tmp = pseudoDivideAndRemainder(x, y, true);
-            assert tmp != null;
+            T[] tmp = pseudoDivideAndRemainder(x, y, true);
+            assert tmp != null && tmp[0] != null && tmp[1] != null;
             r = tmp[1];
             if (r.isZero())
                 break;
@@ -132,9 +181,24 @@ public final class PolynomialGCD {
             x = y;
             y = r;
         }
-        PolynomialRemainders<MutablePolynomialZ> res = new PolynomialRemainders<>(prs);
-        res.gcd().primitivePart().multiply(contentGCD);
+        PolynomialRemainders<T> res = new PolynomialRemainders<>(prs);
         return res;
+    }
+
+    /**
+     * Euclidean algorithm for polynomials over Z that builds subresultants sequence
+     *
+     * @param a poly
+     * @param b poly
+     * @return subresultant sequence (the last element is GCD)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IMutablePolynomialZ<T>> PolynomialRemainders<T> SubresultantEuclid(final T a,
+                                                                                                final T b) {
+        if (a instanceof MutablePolynomialZ)
+            return (PolynomialRemainders<T>) SubresultantEuclid((MutablePolynomialZ) a, (MutablePolynomialZ) b);
+        else
+            return (PolynomialRemainders<T>) SubresultantEuclid((bMutablePolynomialZ) a, (bMutablePolynomialZ) b);
     }
 
     /**
@@ -171,15 +235,15 @@ public final class PolynomialGCD {
                 cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
                 cPsi = -1;
             } else {
-                cPsi = safePow(-curr.lc(), deltas.get(i - 1));
+                cPsi = LongArithmetics.safePow(-curr.lc(), deltas.get(i - 1));
                 if (deltas.get(i - 1) < 1) {
-                    cPsi = safeMultiply(cPsi, safePow(psi.get(i - 1), -deltas.get(i - 1) + 1));
+                    cPsi = LongArithmetics.safeMultiply(cPsi, LongArithmetics.safePow(psi.get(i - 1), -deltas.get(i - 1) + 1));
                 } else {
-                    long tmp = safePow(psi.get(i - 1), deltas.get(i - 1) - 1);
+                    long tmp = LongArithmetics.safePow(psi.get(i - 1), deltas.get(i - 1) - 1);
                     assert cPsi % tmp == 0;
                     cPsi /= tmp;
                 }
-                cBeta = safeMultiply(-curr.lc(), safePow(cPsi, delta));
+                cBeta = LongArithmetics.safeMultiply(-curr.lc(), LongArithmetics.safePow(cPsi, delta));
             }
 
             MutablePolynomialZ q = pseudoDivideAndRemainder(curr, next, true)[1];
@@ -198,6 +262,66 @@ public final class PolynomialGCD {
         return res;
     }
 
+    /**
+     * Euclidean algorithm for polynomials over Z that builds subresultants sequence
+     *
+     * @param a poly
+     * @param b poly
+     * @return subresultant sequence (the last element is GCD)
+     */
+    public static PolynomialRemainders<bMutablePolynomialZ> SubresultantEuclid(final bMutablePolynomialZ a,
+                                                                               final bMutablePolynomialZ b) {
+        if (b.degree > a.degree)
+            return SubresultantEuclid(b, a);
+
+        if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
+
+
+        BigInteger aContent = a.content(), bContent = b.content();
+        BigInteger contentGCD = BigIntegerArithmetics.gcd(aContent, bContent);
+        bMutablePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
+
+        ArrayList<bMutablePolynomialZ> prs = new ArrayList<>();
+        prs.add(aPP); prs.add(bPP);
+
+        ArrayList<BigInteger> beta = new ArrayList<>(), psi = new ArrayList<>();
+        TIntArrayList deltas = new TIntArrayList();
+
+        BigInteger cBeta, cPsi;
+        for (int i = 0; ; i++) {
+            bMutablePolynomialZ curr = prs.get(i);
+            bMutablePolynomialZ next = prs.get(i + 1);
+            int delta = curr.degree - next.degree;
+            if (i == 0) {
+                cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
+                cPsi = -1;
+            } else {
+                cPsi = BigIntegerArithmetics.safePow(-curr.lc(), deltas.get(i - 1));
+                if (deltas.get(i - 1) < 1) {
+                    cPsi = BigIntegerArithmetics.safeMultiply(cPsi, BigIntegerArithmetics.safePow(psi.get(i - 1), -deltas.get(i - 1) + 1));
+                } else {
+                    BigInteger tmp = BigIntegerArithmetics.pow(psi.get(i - 1), deltas.get(i - 1) - 1);
+                    assert cPsi.remainder(tmp).isZero();
+                    cPsi = cPsi.divide(tmp);
+                }
+                cBeta = BigIntegerArithmetics.safeMultiply(-curr.lc(), BigIntegerArithmetics.safePow(cPsi, delta));
+            }
+
+            bMutablePolynomialZ q = pseudoDivideAndRemainder(curr, next, true)[1];
+            if (q.isZero())
+                break;
+
+            q = q.divideOrNull(cBeta);
+            prs.add(q);
+
+            deltas.add(delta);
+            beta.add(cBeta);
+            psi.add(cPsi);
+        }
+        PolynomialRemainders<bMutablePolynomialZ> res = new PolynomialRemainders<>(prs);
+        res.gcd().multiply(contentGCD);
+        return res;
+    }
 
     /**
      * Polynomial remainder sequence produced by the Euclidean algorithm
@@ -238,7 +362,7 @@ public final class PolynomialGCD {
         if (a.degree < b.degree)
             return ModularGCD(b, a);
         long aContent = a.content(), bContent = b.content();
-        long contentGCD = gcd(aContent, bContent);
+        long contentGCD = LongArithmetics.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
             return MutablePolynomialZ.create(contentGCD);
 
@@ -299,9 +423,9 @@ public final class PolynomialGCD {
             previousBase = base.clone();
 
             //lifting
-            long newBasePrime = safeMultiply(basePrime, prime);
-            long monicFactor = modInverse(modularGCD.lc(), prime);
-            long lcMod = mod(lcGCD, prime);
+            long newBasePrime = LongArithmetics.safeMultiply(basePrime, prime);
+            long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
+            long lcMod = LongArithmetics.mod(lcGCD, prime);
             for (int i = 0; i <= base.degree; ++i) {
                 //this is monic modularGCD multiplied by lcGCD mod prime
                 //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);

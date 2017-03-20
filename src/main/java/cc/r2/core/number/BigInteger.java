@@ -5960,6 +5960,10 @@ public final class BigInteger extends Number {
         return mag.length == 1 && mag[0] == 1 && signum == 1;
     }
 
+    public boolean isMinusOne() {
+        return mag.length == 1 && mag[0] == 1 && signum == -1;
+    }
+
     public BigInteger increment() {
         return add(ONE);
     }

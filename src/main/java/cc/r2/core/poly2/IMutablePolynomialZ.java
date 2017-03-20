@@ -13,4 +13,7 @@ public interface IMutablePolynomialZ<T extends IMutablePolynomialZ> extends IMut
      * @return {@code this} divided by the {@code other.lc()} or {@code null}
      */
     T divideOrNullByLC(T other);
+
+    @Override
+    T clone();
 }

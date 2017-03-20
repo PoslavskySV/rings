@@ -55,6 +55,13 @@ interface IMutablePolynomial<T extends IMutablePolynomial> extends Comparable<T>
     boolean isMonomial();
 
     /**
+     * Gives signum of leading coefficient
+     *
+     * @return signum of leading coefficient
+     */
+    int signum();
+
+    /**
      * Sets this to zero
      *
      * @return this := zero
@@ -103,11 +110,18 @@ interface IMutablePolynomial<T extends IMutablePolynomial> extends Comparable<T>
     T reverse();
 
     /**
-     * Reduces poly to its primitive part
+     * Reduces poly to its primitive part (primitive part will always have positive l.c.)
      *
      * @return primitive part (poly will be modified)
      */
     T primitivePart();
+
+    /**
+     * Reduces poly to its primitive part preserving signum of l.c.
+     *
+     * @return primitive part (poly will be modified)
+     */
+    T primitivePartSameSign();
 
     /**
      * Adds 1 to this

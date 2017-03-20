@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.test.AbstractTest;
 import cc.r2.core.test.TimeConsuming;
@@ -40,6 +41,14 @@ public class AbstractPolynomialTest extends AbstractTest {
 
     protected long[] getModulusArray(int nSmall, int nLarge, int maxModulusBits) {
         return getModulusArray(nSmall, nLarge, 31, maxModulusBits);
+    }
+
+    protected static BigInteger[] getProbablePrimesArray(BigInteger from, int n) {
+        BigInteger[] res = new BigInteger[n];
+        res[0] = from.nextProbablePrime();
+        for (int i = 1; i < n; i++)
+            res[i] = res[i - 1].nextProbablePrime();
+        return res;
     }
 
     protected long[] getOneSmallOneLargeModulus(int maxModulusBits) {

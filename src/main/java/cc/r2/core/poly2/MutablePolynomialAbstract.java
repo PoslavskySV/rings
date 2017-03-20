@@ -79,6 +79,11 @@ public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstr
         return true;
     }
 
+    @Override
+    public int signum() {
+        return Long.signum(lc());
+    }
+
     /**
      * Returns L1 norm of this polynomial, i.e. sum of abs coefficients
      *
@@ -218,10 +223,21 @@ public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstr
     @Override
     public final T primitivePart() {
         long content = content();
-        if (content == 1)
-            return self;
         if (lc() < 0)
             content = -content;
+        if (content == -1)
+            return negate();
+        return primitivePart0(content);
+    }
+
+    @Override
+    public T primitivePartSameSign() {
+        return primitivePart0(content());
+    }
+
+    private T primitivePart0(long content) {
+        if (content == 1)
+            return self;
         Magic magic = magicSigned(content);
         for (int i = degree; i >= 0; --i)
             data[i] = divideSignedFast(data[i], magic);
@@ -316,9 +332,9 @@ public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstr
     @Override
     public abstract T clone();
 
-    final BigInteger[] dataToBigIntegers(){
+    final BigInteger[] dataToBigIntegers() {
         BigInteger[] bData = new BigInteger[degree + 1];
-        for (int i = degree; i >= 0 ; --i)
+        for (int i = degree; i >= 0; --i)
             bData[i] = BigInteger.valueOf(data[i]);
         return bData;
     }

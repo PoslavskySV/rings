@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly2.PolynomialGCD.*;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -372,46 +373,50 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         assertEquals(gcd, PolynomialEuclid(a, b, false).gcd());
     }
 
-    private static void assertGCD(MutablePolynomialZ a, MutablePolynomialZ b, MutablePolynomialZ gcd) {
-        MutablePolynomialZ[] qr;
-        for (MutablePolynomialZ dividend : Arrays.asList(a, b)) {
-            qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(dividend, gcd, true);
+    @SuppressWarnings("unchecked")
+    private static void assertGCD(IMutablePolynomialZ a, IMutablePolynomialZ b, IMutablePolynomialZ gcd) {
+        IMutablePolynomial[] qr;
+        for (IMutablePolynomialZ dividend : Arrays.asList(a, b)) {
+            qr = DivisionWithRemainder.pseudoDivideAndRemainder(dividend, gcd, true);
             assertNotNull(qr);
             assertTrue(qr[1].isZero());
         }
     }
 
     @SuppressWarnings("ConstantConditions")
-    private static void assertPolynomialRemainders(MutablePolynomialZ a, MutablePolynomialZ b, PolynomialRemainders<MutablePolynomialZ> prs) {
-        if (a.degree < b.degree)
+    private static <T extends IMutablePolynomialZ<T>> void assertPolynomialRemainders(T a, T b, PolynomialRemainders<T> prs) {
+        if (a.degree() < b.degree()) {
             assertPolynomialRemainders(b, a, prs);
+            return;
+        }
 
-        a = a.clone().divideOrNull(a.content());
-        b = b.clone().divideOrNull(b.content());
+        a = a.clone().primitivePartSameSign();
+        b = b.clone().primitivePartSameSign();
         assertEquals(a, prs.remainders.get(0));
         assertEquals(b, prs.remainders.get(1));
 
-        MutablePolynomialZ gcd = prs.gcd().clone().primitivePart();
+        T gcd = prs.gcd().clone().primitivePart();
         assertTrue(DivisionWithRemainder.pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
         assertTrue(DivisionWithRemainder.pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
     }
 
     @SuppressWarnings("ConstantConditions")
-    private static void assertPolynomialRemainders(MutablePolynomialMod a, MutablePolynomialMod b, PolynomialRemainders<MutablePolynomialMod> prs) {
-        if (a.degree < b.degree)
+    private static <T extends IMutablePolynomialZp<T>> void assertPolynomialRemainders(T a, T b, PolynomialRemainders<T> prs) {
+        if (a.degree() < b.degree()) {
             assertPolynomialRemainders(b, a, prs);
+            return;
+        }
 
         assertEquals(a, prs.remainders.get(0));
         assertEquals(b, prs.remainders.get(1));
 
-        MutablePolynomialMod gcd = prs.gcd().clone();
+        T gcd = prs.gcd().clone();
         assertTrue(DivisionWithRemainder.divideAndRemainder(a, gcd, true)[1].isZero());
         assertTrue(DivisionWithRemainder.divideAndRemainder(b, gcd, true)[1].isZero());
     }
 
-
-    private static List<PolynomialRemainders<MutablePolynomialZ>> runAlgorithms(MutablePolynomialZ dividend, MutablePolynomialZ divider, GCDAlgorithm... algorithms) {
-        ArrayList<PolynomialRemainders<MutablePolynomialZ>> r = new ArrayList<>();
+    private static <T extends IMutablePolynomialZ<T>> List<PolynomialRemainders<T>> runAlgorithms(T dividend, T divider, GCDAlgorithm... algorithms) {
+        ArrayList<PolynomialRemainders<T>> r = new ArrayList<>();
         for (GCDAlgorithm algorithm : algorithms)
             r.add(algorithm.gcd(dividend, divider));
         return r;
@@ -422,14 +427,14 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         PolynomialPrimitiveEuclid,
         SubresultantEuclid;
 
-        PolynomialRemainders<MutablePolynomialZ> gcd(MutablePolynomialZ dividend, MutablePolynomialZ divider) {
+        <T extends IMutablePolynomialZ<T>> PolynomialRemainders<T> gcd(T dividend, T divider) {
             switch (this) {
                 case PolynomialEuclid:
-                    return PolynomialEuclid(dividend.clone(), divider.clone(), false);
+                    return PolynomialEuclid(dividend, divider, false);
                 case PolynomialPrimitiveEuclid:
-                    return PolynomialEuclid(dividend.clone(), divider.clone(), true);
+                    return PolynomialEuclid(dividend, divider, true);
                 case SubresultantEuclid:
-                    return SubresultantEuclid(dividend.clone(), divider.clone());
+                    return SubresultantEuclid(dividend, divider);
             }
             throw new IllegalArgumentException();
         }
@@ -448,6 +453,76 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         MutablePolynomialMod b = MutablePolynomialZ.create(1, 2, 3, 1, 3, 2, 1).modulus(25);
         assertExtendedGCD(a, b);
     }
+
+    @Test
+    public void test23() throws Exception {
+        //test long overflow
+        bMutablePolynomialZ a = bMutablePolynomialZ.create(0, 14, 50, 11233219232222L, 108, 130, 70);
+        bMutablePolynomialZ b = bMutablePolynomialZ.create(63, 92, 143, 1245222, 146, 120, 90);
+        bMutablePolynomialZ gcd1 = bMutablePolynomialZ.create(1, 2, 3, 4, 5, 4, 3, 2, 1, -1, -2, -3, -4, -5, -4, -3, -2, -1, 999);
+        bMutablePolynomialZ gcd2 = bMutablePolynomialZ.create(999999L, 123L, 123L, 342425L, 312L, -12312432423L, 13212123123123L, -123124342345L);
+        bMutablePolynomialZ gcd3 = bMutablePolynomialZ.create(991999L, 123L, 123L, 342425L, 312L, -12312432423L, 13212123123123L, 123124342345L);
+        bMutablePolynomialZ gcd4 = bMutablePolynomialZ.create(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2, Long.MAX_VALUE - 3, Long.MAX_VALUE - 4, Long.MAX_VALUE - 5);
+        bMutablePolynomialZ gcd = gcd1.multiply(gcd2).multiply(gcd3).multiply(gcd4);
+
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+
+        bMutablePolynomialZ gcdActual = PolynomialEuclid(a, b, false).gcd();
+        assertGCD(a, b, gcdActual);
+
+        PolynomialRemainders<bMutablePolynomialZ> prs = SubresultantEuclid(a, b);
+        assertPolynomialRemainders(a, b, prs);
+
+        bMutablePolynomialZ gcdSubresultant = prs.gcd();
+        assertEquals(gcdActual.degree, gcdSubresultant.degree);
+
+        System.out.println(gcdActual.normMax().bitLength());
+    }
+
+    @Test
+    public void testRandom1_bigPoly() throws Exception {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 1000); i++) {
+            bMutablePolynomialZ dividend = randomPoly(5, BigInteger.LONG_MAX_VALUE, rnd);
+            bMutablePolynomialZ divider = randomPoly(0, BigInteger.LONG_MAX_VALUE, rnd);
+            for (PolynomialGCD.PolynomialRemainders<bMutablePolynomialZ> prs : runAlgorithms(dividend, divider)) {
+                assertEquals(0, prs.gcd().degree);
+            }
+        }
+    }
+
+    @Test
+    public void testRandom2_bigPoly() throws Exception {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(20, 100); i++) {
+            bMutablePolynomialZ dividend = randomPoly(getRandomData().nextInt(10, 50), BigInteger.LONG_MAX_VALUE.shiftRight(1), rnd);
+            bMutablePolynomialZ divider = randomPoly(getRandomData().nextInt(10, 50), BigInteger.LONG_MAX_VALUE.shiftRight(1), rnd);
+            for (PolynomialGCD.PolynomialRemainders prs : runAlgorithms(dividend, divider, GCDAlgorithm.SubresultantEuclid, GCDAlgorithm.PolynomialPrimitiveEuclid)) {
+                assertPolynomialRemainders(dividend, divider, prs);
+            }
+        }
+    }
+
+
+    @Test
+    public void testRandom3_bigPoly() throws Exception {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(50, 500); i++) {
+            System.out.println(i);
+            bMutablePolynomialZ dividend = randomPoly(getRandomData().nextInt(10, 30), BigInteger.LONG_MAX_VALUE, rnd);
+            bMutablePolynomialZ divider = randomPoly(getRandomData().nextInt(10, 30), BigInteger.LONG_MAX_VALUE, rnd);
+            for (BigInteger prime : getProbablePrimesArray(BigInteger.LONG_MAX_VALUE.shiftLeft(10), 10)) {
+                if (dividend.lc().mod(prime).isZero() || divider.lc().mod(prime).isZero())
+                    continue;
+                bMutablePolynomialMod a = dividend.modulus(prime);
+                bMutablePolynomialMod b = divider.modulus(prime);
+                PolynomialRemainders<bMutablePolynomialMod> euclid = Euclid(a, b);
+                assertPolynomialRemainders(a, b, euclid);
+            }
+        }
+    }
+
 
     static <T extends MutablePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {
         assertExtendedGCD(ExtendedEuclid(a, b), a, b);

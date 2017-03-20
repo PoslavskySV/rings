@@ -67,6 +67,30 @@ public final class BigIntegerArithmetics {
         }
     }
 
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative)
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code e}
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static BigInteger pow(final BigInteger base, BigInteger exponent) {
+        if (exponent.signum() < 0)
+            throw new IllegalArgumentException();
+
+        BigInteger result = ONE;
+        BigInteger k2p = base;
+        for (; ; ) {
+            if (exponent.testBit(0))
+                result = result.multiply(k2p);
+            exponent = exponent.shiftRight(1);
+            if (exponent.isZero())
+                return result;
+            k2p = k2p.multiply(k2p);
+        }
+    }
+
     /* ************************ mock methods for @Specialization ************************ */
 
     public static BigInteger safeAdd(BigInteger a, BigInteger b) {
@@ -85,11 +109,11 @@ public final class BigIntegerArithmetics {
         return pow(a, exp);
     }
 
-    public static BigInteger modInverse(BigInteger a, BigInteger mod){
+    public static BigInteger modInverse(BigInteger a, BigInteger mod) {
         return a.modInverse(mod);
     }
 
-    public static BigInteger mod(BigInteger a, BigInteger mod){
+    public static BigInteger mod(BigInteger a, BigInteger mod) {
         return a.mod(mod);
     }
 }
