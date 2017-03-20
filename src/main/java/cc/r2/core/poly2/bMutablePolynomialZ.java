@@ -147,7 +147,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
             return this;
         for (int i = degree; i >= 0; --i) {
             BigInteger[] qr = data[i].divideAndRemainder(factor);
-            if (qr[1].isZero())
+            if (!qr[1].isZero())
                 return null;
             data[i] = qr[0];
         }
