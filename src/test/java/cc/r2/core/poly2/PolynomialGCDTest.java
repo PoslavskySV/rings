@@ -477,6 +477,9 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         bMutablePolynomialZ gcdSubresultant = prs.gcd();
         assertEquals(gcdActual.degree, gcdSubresultant.degree);
 
+        bMutablePolynomialZ gcdModular = ModularGCD(a, b);
+        assertEquals(gcdActual.degree, gcdModular.degree);
+
         System.out.println(gcdActual.normMax().bitLength());
     }
 
@@ -498,7 +501,7 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(20, 100); i++) {
             bMutablePolynomialZ dividend = randomPoly(getRandomData().nextInt(10, 50), BigInteger.LONG_MAX_VALUE.shiftRight(1), rnd);
             bMutablePolynomialZ divider = randomPoly(getRandomData().nextInt(10, 50), BigInteger.LONG_MAX_VALUE.shiftRight(1), rnd);
-            for (PolynomialGCD.PolynomialRemainders prs : runAlgorithms(dividend, divider, GCDAlgorithm.SubresultantEuclid, GCDAlgorithm.PolynomialPrimitiveEuclid)) {
+            for (PolynomialGCD.PolynomialRemainders<bMutablePolynomialZ> prs : runAlgorithms(dividend, divider, GCDAlgorithm.SubresultantEuclid, GCDAlgorithm.PolynomialPrimitiveEuclid)) {
                 assertPolynomialRemainders(dividend, divider, prs);
             }
         }
@@ -509,7 +512,6 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     public void testRandom3_bigPoly() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(50, 500); i++) {
-            System.out.println(i);
             bMutablePolynomialZ dividend = randomPoly(getRandomData().nextInt(10, 30), BigInteger.LONG_MAX_VALUE, rnd);
             bMutablePolynomialZ divider = randomPoly(getRandomData().nextInt(10, 30), BigInteger.LONG_MAX_VALUE, rnd);
             for (BigInteger prime : getProbablePrimesArray(BigInteger.LONG_MAX_VALUE.shiftLeft(10), 10)) {
@@ -523,6 +525,44 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         }
     }
 
+    @Test
+    @Benchmark(runAnyway = true)
+    public void testRandom5_bigPoly() throws Exception {
+        RandomGenerator rnd = getRandom();
+        int overflow = 0;
+        int larger = 0;
+        DescriptiveStatistics timings = null;
+        for (int kk = 0; kk < 2; kk++) {
+            timings = new DescriptiveStatistics();
+            for (int i = 0; i < its(300, 1000); i++) {
+                try {
+                    bMutablePolynomialZ a = randomPoly(1 + rnd.nextInt(30), BigInteger.LONG_MAX_VALUE, rnd);
+                    bMutablePolynomialZ b = randomPoly(1 + rnd.nextInt(30), BigInteger.LONG_MAX_VALUE, rnd);
+                    bMutablePolynomialZ gcd = randomPoly(2 + rnd.nextInt(30), BigInteger.LONG_MAX_VALUE, rnd);
+                    a = a.multiply(gcd);
+                    b = b.multiply(gcd);
+
+                    long start = System.nanoTime();
+                    bMutablePolynomialZ mgcd = ModularGCD(a, b);
+                    timings.addValue(System.nanoTime() - start);
+
+                    assertFalse(mgcd.isConstant());
+
+                    bMutablePolynomialZ[] qr = DivisionWithRemainder.pseudoDivideAndRemainder(mgcd, gcd, true);
+                    assertNotNull(qr);
+                    assertTrue(qr[1].isZero());
+                    bMutablePolynomialZ[] qr1 = DivisionWithRemainder.pseudoDivideAndRemainder(mgcd.clone(), gcd, false);
+                    assertArrayEquals(qr, qr1);
+                    if (!qr[0].isConstant()) ++larger;
+
+                    assertGCD(a, b, mgcd);
+                } catch (ArithmeticException e) {++overflow;}
+            }
+        }
+        System.out.println("Overflows: " + overflow);
+        System.out.println("Larger gcd: " + larger);
+        System.out.println("\nTiming statistics:\n" + timings);
+    }
 
     static <T extends MutablePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {
         assertExtendedGCD(ExtendedEuclid(a, b), a, b);
@@ -532,5 +572,4 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         Assert.assertEquals(eea[0], a.clone().multiply(eea[1]).add(b.clone().multiply(eea[2])));
         assertEquals(eea[0].degree, PolynomialGCD(a, b).degree);
     }
-
 }

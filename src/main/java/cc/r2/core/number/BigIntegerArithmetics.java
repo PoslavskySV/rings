@@ -91,6 +91,54 @@ public final class BigIntegerArithmetics {
         }
     }
 
+    /**
+     * Returns floor square root of {@code val}
+     *
+     * @param val the number
+     * @return floor square root
+     */
+    public static BigInteger sqrtFloor(BigInteger val)
+            throws IllegalArgumentException {
+        if (val.signum() < 0)
+            throw new IllegalArgumentException("Negative argument.");
+        if (val.isZero() || val.isOne())
+            return val;
+
+        BigInteger y;
+        // starting with y = x / 2 avoids magnitude issues with x squared
+        for (y = val.shiftRight(1);
+             y.compareTo(val.divide(y)) > 0;
+             y = ((val.divide(y)).add(y)).shiftRight(1)) {}
+
+        return y;
+    }
+
+    /**
+     * Returns ceil square root of {@code val}
+     *
+     * @param val the number
+     * @return floor square root
+     */
+    public static BigInteger sqrtCeil(BigInteger val)
+            throws IllegalArgumentException {
+        if (val.signum() < 0)
+            throw new IllegalArgumentException("Negative argument.");
+        if (val.isZero() || val.isOne())
+            return val;
+
+        BigInteger y;
+        // starting with y = x / 2 avoids magnitude issues with x squared
+        for (y = val.shiftRight(1);
+             y.compareTo(val.divide(y)) > 0;
+             y = ((val.divide(y)).add(y)).shiftRight(1)) {}
+
+        if (val.compareTo(y.multiply(y)) == 0)
+            return y;
+        else
+            return y.add(BigInteger.ONE);
+
+    }
+
     /* ************************ mock methods for @Specialization ************************ */
 
     public static BigInteger safeAdd(BigInteger a, BigInteger b) {

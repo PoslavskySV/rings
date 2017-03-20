@@ -70,6 +70,10 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
         return new bMutablePolynomialZ(data);
     }
 
+    public MutablePolynomialZ toLong() {
+        return MutablePolynomialZ.create(toLong0());
+    }
+
     @Override
     public bMutablePolynomialZ createMonomial(BigInteger coefficient, int degree) {
         return monomial(coefficient, degree);
@@ -80,7 +84,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      *
      * @return polynomial 0
      */
-    static bMutablePolynomialZ zero() {
+    public static bMutablePolynomialZ zero() {
         return new bMutablePolynomialZ(new BigInteger[]{ZERO}, 0);
     }
 
@@ -89,18 +93,18 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      *
      * @return polynomial 1
      */
-    static bMutablePolynomialZ one() {
+    public static bMutablePolynomialZ one() {
         return new bMutablePolynomialZ(new BigInteger[]{ONE}, 0);
     }
 
-//    /**
-//     * Returns Mignotte's bound (sqrt(n+1) * 2^n max |this|)
-//     *
-//     * @return Mignotte's bound
-//     */
-//    double mignotteBound() {
-//        return Math.pow(2.0, degree) * norm2();
-//    }
+    /**
+     * Returns Mignotte's bound (sqrt(n+1) * 2^n max |this|)
+     *
+     * @return Mignotte's bound
+     */
+    public BigInteger mignotteBound() {
+        return ONE.shiftLeft(degree).multiply(norm2());
+    }
 
     /**
      * Reduces polynomial modulo {@code modulus} and returns Zp[x] result.

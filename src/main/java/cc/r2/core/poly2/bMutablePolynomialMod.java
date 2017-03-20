@@ -219,10 +219,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     MutablePolynomialMod toLong() {
-        long[] lData = new long[degree + 1];
-        for (int i = degree; i >= 0; --i)
-            lData[i] = data[i].longValueExact();
-        return MutablePolynomialZ.create(lData).modulus(modulus.longValueExact(), false);
+        return MutablePolynomialZ.create(toLong0()).modulus(modulus.longValueExact(), false);
     }
 
     /** {@inheritDoc} */

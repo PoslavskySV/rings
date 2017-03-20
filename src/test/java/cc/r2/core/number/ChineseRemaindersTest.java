@@ -2,8 +2,11 @@ package cc.r2.core.number;
 
 import cc.r2.core.number.primes.SieveOfAtkin;
 import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.poly2.LongArithmetics;
+import cc.r2.core.test.AbstractTest;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -11,19 +14,19 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import static cc.r2.core.number.BigInteger.*;
-import static cc.r2.core.number.ChineseRemainders.CRT;
+import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static java.lang.Math.floorMod;
 
 /**
  * Created by poslavsky on 06/12/2016.
  */
-public class ChineseRemaindersTest {
+public class ChineseRemaindersTest extends AbstractTest {
     @Test
     public void test1() throws Exception {
         BigInteger[] coprimes = {BigInteger.valueOf(11), BigInteger.valueOf(13)};
         BigInteger[] remainders = {BigInteger.valueOf(2123), BigInteger.valueOf(7213)};
-        BigInteger crt = CRT(coprimes, remainders);
+        BigInteger crt = ChineseRemainders.ChineseRemainders(coprimes, remainders);
         BigInteger sup = Arrays.stream(coprimes).reduce(ONE, BigInteger::multiply);
         System.out.println(crt);
 
@@ -39,7 +42,7 @@ public class ChineseRemaindersTest {
     public void test2() throws Exception {
         BigInteger[] coprimes = {BigInteger.valueOf(121), BigInteger.valueOf(13)};
         BigInteger[] remainders = {BigInteger.valueOf(2123), BigInteger.valueOf(7213)};
-        BigInteger crt = CRT(coprimes, remainders);
+        BigInteger crt = ChineseRemainders.ChineseRemainders(coprimes, remainders);
         BigInteger sup = Arrays.stream(coprimes).reduce(ONE, BigInteger::multiply);
         assertCRT(coprimes, remainders, crt);
         crt = toSymMod(crt, sup);
@@ -48,7 +51,7 @@ public class ChineseRemaindersTest {
 
     @Test
     public void testRandom1() throws Exception {
-        RandomGenerator rnd = new Well1024a(System.currentTimeMillis());
+        RandomGenerator rnd = getRandom();
         int bound = 100;
         SieveOfAtkin sieve = SieveOfAtkin.createSieve(bound);
         for (int i = 0; i < 1000; i++) {
@@ -75,7 +78,6 @@ public class ChineseRemaindersTest {
         }
     }
 
-
     @Test
     public void test3() throws Exception {
         long crt;
@@ -88,8 +90,84 @@ public class ChineseRemaindersTest {
     }
 
     @Test
+    public void test4() throws Exception {
+        BigInteger crt;
+        crt = ChineseRemainders.ChineseRemainders(BigInteger.valueOf(284407855036305L), BigInteger.valueOf(47), ONE, BigInteger.valueOf(-15));
+        Assert.assertEquals(BigInteger.valueOf(8532235651089151L), crt);
+        crt = ChineseRemainders.ChineseRemainders(BigInteger.valueOf(284407855036305L), BigInteger.valueOf(47), BigInteger.valueOf(-2), BigInteger.valueOf(-17));
+        Assert.assertEquals(BigInteger.valueOf(9669867071234368L), crt);
+        crt = ChineseRemainders.ChineseRemainders(BigInteger.valueOf(284407855036305L), BigInteger.valueOf(47), BigInteger.valueOf(2), BigInteger.valueOf(17));
+        Assert.assertEquals(BigInteger.valueOf(3697302115471967L), crt);
+    }
+
+    @Test
+    public void testRandom5() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        DescriptiveStatistics fast = new DescriptiveStatistics(), gen = new DescriptiveStatistics();
+        long nIterations = its(1000, 10000);
+        int nSmallIterations = 100;
+        for (int i = 0; i < nIterations; i++) {
+            if (i == nIterations / 10) {
+                fast.clear();
+                gen.clear();
+            }
+
+            BigInteger base = new BigInteger(rndd.nextInt(3, 48), rnd);
+            BigInteger bPrime1 = (base = base.nextProbablePrime());
+            BigInteger bPrime2 = (base = base.nextProbablePrime());
+            long prime1 = bPrime1.longValueExact();
+            long prime2 = bPrime2.longValueExact();
+
+            if (LongArithmetics.isOverflowMultiply(prime1, prime2)) {
+                --i;
+                continue;
+            }
+
+            if (prime1 < 10 && prime2 < 10) {
+                --i;
+                continue;
+            }
+
+
+            long start = System.nanoTime();
+            ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(prime1, prime2);
+            fast.addValue(System.nanoTime() - start);
+            for (int j = 0; j < nSmallIterations; j++) {
+                long remainder1 = rndd.nextLong(1, prime1 - 1);
+                long remainder2 = rndd.nextLong(1, prime2 - 1);
+                //System.out.println(String.format("%s %s %s %s", prime1, prime2, remainder1, remainder2));
+
+                start = System.nanoTime();
+                long cdrt = ChineseRemainders.ChineseRemainders(magic, remainder1, remainder2);
+                fast.addValue(System.nanoTime() - start);
+                if (bPrime1.isInt() && bPrime2.isInt()) {
+                    start = System.nanoTime();
+                    long crt1 = ChineseRemainders.ChineseRemainders(prime1, prime2, remainder1, remainder2);
+                    gen.addValue(System.nanoTime() - start);
+                    Assert.assertEquals(crt1, cdrt);
+                }
+                Assert.assertEquals(
+                        ChineseRemainders.ChineseRemainders(bPrime1, bPrime2, BigInteger.valueOf(remainder1), BigInteger.valueOf(remainder2)).longValue(),
+                        cdrt);
+            }
+        }
+        System.out.println("Fast: " + fast.getPercentile(50));
+        System.out.println("Gene: " + gen.getPercentile(50));
+    }
+
+    @Test
+    public void test5() throws Exception {
+        long prime1 = 30223, prime2 = 30241, remainder1 = 21175, remainder2 = 29739;
+        ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(prime1, prime2);
+        Assert.assertEquals(
+                ChineseRemainders.ChineseRemainders(prime1, prime2, remainder1, remainder2),
+                ChineseRemainders.ChineseRemainders(magic, remainder1, remainder2));
+    }
+
+    @Test
     public void testRandomXXX() throws Exception {
-        RandomGenerator rnd = new Well1024a(System.currentTimeMillis());
+        RandomGenerator rnd = getRandom();
         int bound = 10000;
         SieveOfAtkin primes = SieveOfAtkin.createSieve(bound);
         for (int i = 0; i < 100; i++) {
@@ -106,7 +184,7 @@ public class ChineseRemaindersTest {
                 remainders[j] = BigInteger.valueOf(rnd.nextInt(prime));
             }
 
-            BigInteger crt = CRT(comprimes, remainders);
+            BigInteger crt = ChineseRemainders.ChineseRemainders(comprimes, remainders);
             for (int j = 0; j < n; j++) {
                 Assert.assertEquals(crt.mod(comprimes[j]), remainders[j]);
             }

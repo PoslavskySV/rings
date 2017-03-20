@@ -1,6 +1,7 @@
 package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.Arrays;
@@ -88,6 +89,13 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
         return lc().signum();
     }
 
+    protected long[] toLong0() {
+        long[] lData = new long[degree + 1];
+        for (int i = degree; i >= 0; --i)
+            lData[i] = data[i].longValueExact();
+        return lData;
+    }
+
     /**
      * Returns L1 norm of this polynomial, i.e. sum of abs coefficients
      *
@@ -100,17 +108,17 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
         return norm;
     }
 
-//    /**
-//     * Returns L2 norm of this polynomial, i.e. a square root of a sum of coefficient squares.
-//     *
-//     * @return L2 norm of {@code this}
-//     */
-//    final BigInteger norm2() {
-//        BigInteger norm = 0;
-//        for (int i = 0; i <= degree; ++i)
-//            norm = norm + data[i] * data[i];
-//        return norm.sqrtCeil();
-//    }
+    /**
+     * Returns L2 norm of this polynomial, i.e. a square root of a sum of coefficient squares.
+     *
+     * @return L2 norm of {@code this}
+     */
+    final BigInteger norm2() {
+        BigInteger norm = 0;
+        for (int i = 0; i <= degree; ++i)
+            norm = norm + data[i] * data[i];
+        return BigIntegerArithmetics.sqrtCeil(norm);
+    }
 
     /**
      * Returns max coefficient (by absolute value) of this poly

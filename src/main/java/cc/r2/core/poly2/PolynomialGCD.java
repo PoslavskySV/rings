@@ -3,6 +3,7 @@ package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
+import cc.r2.core.number.ChineseRemainders;
 import cc.r2.core.number.primes.PrimesIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -367,7 +368,6 @@ public final class PolynomialGCD {
             return MutablePolynomialZ.create(contentGCD);
 
         return ModularGCD0(a.clone().divideOrNull(aContent), b.clone().divideOrNull(bContent)).multiply(contentGCD);
-
     }
 
     /** modular GCD for primitive polynomials */
@@ -376,7 +376,7 @@ public final class PolynomialGCD {
         assert a.degree >= b.degree;
 
         long lcGCD = LongArithmetics.gcd(a.lc(), b.lc());
-        double bound = Math.sqrt(a.degree + 1) * (1L << a.degree) * Math.max(a.norm2(), b.norm2()) * lcGCD;
+        double bound = Math.max(a.mignotteBound(), b.mignotteBound()) * lcGCD;
 
         MutablePolynomialMod previousBase, base = null;
         long basePrime = -1;
@@ -426,12 +426,13 @@ public final class PolynomialGCD {
             long newBasePrime = LongArithmetics.safeMultiply(basePrime, prime);
             long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
             long lcMod = LongArithmetics.mod(lcGCD, prime);
+            ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
             for (int i = 0; i <= base.degree; ++i) {
                 //this is monic modularGCD multiplied by lcGCD mod prime
                 //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
 
                 long oth = modularGCD.multiplyMod(modularGCD.multiplyMod(modularGCD.data[i], monicFactor), lcMod);
-                base.data[i] = ChineseRemainders(basePrime, prime, base.data[i], oth);
+                base.data[i] = ChineseRemainders(magic, base.data[i], oth);
             }
             base = base.setModulusUnsafe(newBasePrime);
             basePrime = newBasePrime;
@@ -441,6 +442,196 @@ public final class PolynomialGCD {
                 MutablePolynomialZ candidate = base.normalSymmetricForm().primitivePart();
                 //first check b since b is less degree
                 MutablePolynomialZ[] div;
+                div = divideAndRemainder(b, candidate, true);
+                if (div == null || !div[1].isZero())
+                    continue;
+
+                div = divideAndRemainder(a, candidate, true);
+                if (div == null || !div[1].isZero())
+                    continue;
+
+                return candidate;
+            }
+        }
+    }
+
+    /** modular GCD for primitive polynomials */
+    @SuppressWarnings("ConstantConditions")
+    public static bMutablePolynomialZ ModularGCD(bMutablePolynomialZ a, bMutablePolynomialZ b) {
+        if (a == b)
+            return a.clone();
+        if (a.isZero()) return b.clone();
+        if (b.isZero()) return a.clone();
+
+        if (a.degree < b.degree)
+            return ModularGCD(b, a);
+        BigInteger aContent = a.content(), bContent = b.content();
+        BigInteger contentGCD = BigIntegerArithmetics.gcd(aContent, bContent);
+        if (a.isConstant() || b.isConstant())
+            return bMutablePolynomialZ.create(contentGCD);
+
+        return ModularGCD0(a.clone().divideOrNull(aContent), b.clone().divideOrNull(bContent)).multiply(contentGCD);
+    }
+
+    /** modular GCD for primitive polynomials */
+    @SuppressWarnings("ConstantConditions")
+    private static bMutablePolynomialZ ModularGCD0(bMutablePolynomialZ a, bMutablePolynomialZ b) {
+        assert a.degree >= b.degree;
+
+        BigInteger lcGCD = BigIntegerArithmetics.gcd(a.lc(), b.lc());
+        BigInteger bound2 = BigIntegerArithmetics.max(a.mignotteBound(), b.mignotteBound()).multiply(lcGCD).shiftLeft(1);
+        if (bound2.isLong()
+                && a.maxAbsCoefficient().isLong()
+                && b.maxAbsCoefficient().isLong())
+            return ModularGCD(a.toLong(), b.toLong()).toBigPoly();
+
+        MutablePolynomialMod previousBase, base = null;
+        long basePrime = -1;
+
+        PrimesIterator primesLoop = new PrimesIterator(3);
+        while (true) {
+            long prime = primesLoop.take();
+            assert prime != -1 : "long overflow";
+
+            BigInteger bPrime = BigInteger.valueOf(prime);
+            if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
+                continue;
+
+            MutablePolynomialMod aMod = a.modulus(bPrime).toLong(), bMod = b.modulus(bPrime).toLong();
+            MutablePolynomialMod modularGCD = Euclid(aMod, bMod).gcd();
+            //clone if necessary
+            if (modularGCD == aMod || modularGCD == bMod)
+                modularGCD = modularGCD.clone();
+
+            //coprime polynomials
+            if (modularGCD.degree == 0)
+                return bMutablePolynomialZ.one();
+
+            //save the base
+            if (base == null) {
+                //make base monic and multiply lcGCD
+                long lLcGCD = lcGCD.mod(bPrime).longValueExact();
+                modularGCD.monic(lLcGCD);
+                base = modularGCD;
+                basePrime = prime;
+                continue;
+            }
+
+            //unlucky base => start over
+            if (base.degree > modularGCD.degree) {
+                base = null;
+                basePrime = -1;
+                continue;
+            }
+
+            //skip unlucky prime
+            if (base.degree < modularGCD.degree)
+                continue;
+
+            //cache current base
+            previousBase = base.clone();
+
+            if (!LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > MutablePolynomialMod.MAX_SUPPORTED_MODULUS)
+                break;
+
+            //lifting
+            long newBasePrime = LongArithmetics.safeMultiply(basePrime, prime);
+            long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
+            long lcMod = lcGCD.mod(bPrime).longValueExact();
+            ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
+            for (int i = 0; i <= base.degree; ++i) {
+                //this is monic modularGCD multiplied by lcGCD mod prime
+                //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
+
+                long oth = modularGCD.multiplyMod(modularGCD.multiplyMod(modularGCD.data[i], monicFactor), lcMod);
+                base.data[i] = ChineseRemainders(magic, base.data[i], oth);
+            }
+            base = base.setModulusUnsafe(newBasePrime);
+            basePrime = newBasePrime;
+
+            //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
+            if (BigInteger.valueOf(basePrime).compareTo(bound2) >= 0 || base.equals(previousBase)) {
+                bMutablePolynomialZ candidate = base.normalSymmetricForm().primitivePart().toBigPoly();
+                //first check b since b is less degree
+                bMutablePolynomialZ[] div;
+                div = divideAndRemainder(b, candidate, true);
+                if (div == null || !div[1].isZero())
+                    continue;
+
+                div = divideAndRemainder(a, candidate, true);
+                if (div == null || !div[1].isZero())
+                    continue;
+
+                return candidate;
+            }
+        }
+
+        //continue lifting with multi-precision integers
+        bMutablePolynomialMod bPreviousBase, bBase = base.toBigPoly();
+        BigInteger bBasePrime = BigInteger.valueOf(basePrime);
+
+        while (true) {
+            long prime = primesLoop.take();
+            assert prime != -1 : "long overflow";
+
+            BigInteger bPrime = BigInteger.valueOf(prime);
+            if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
+                continue;
+
+            MutablePolynomialMod aMod = a.modulus(bPrime).toLong(), bMod = b.modulus(bPrime).toLong();
+            MutablePolynomialMod modularGCD = Euclid(aMod, bMod).gcd();
+            //clone if necessary
+            if (modularGCD == aMod || modularGCD == bMod)
+                modularGCD = modularGCD.clone();
+
+            //coprime polynomials
+            if (modularGCD.degree == 0)
+                return bMutablePolynomialZ.one();
+
+            //save the base
+            if (bBase == null) {
+                //make base monic and multiply lcGCD
+                long lLcGCD = lcGCD.mod(bPrime).longValueExact();
+                modularGCD.monic(lLcGCD);
+                bBase = modularGCD.toBigPoly();
+                bBasePrime = bPrime;
+                continue;
+            }
+
+            //unlucky base => start over
+            if (bBase.degree > modularGCD.degree) {
+                bBase = null;
+                bBasePrime = BigInteger.NEGATIVE_ONE;
+                continue;
+            }
+
+            //skip unlucky prime
+            if (bBase.degree < modularGCD.degree)
+                continue;
+
+            //cache current base
+            bPreviousBase = bBase.clone();
+
+
+            //lifting
+            BigInteger newBasePrime = bBasePrime.multiply(bPrime);
+            long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
+            long lcMod = lcGCD.mod(bPrime).longValueExact();
+            for (int i = 0; i <= bBase.degree; ++i) {
+                //this is monic modularGCD multiplied by lcGCD mod prime
+                //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
+
+                long oth = modularGCD.multiplyMod(modularGCD.multiplyMod(modularGCD.data[i], monicFactor), lcMod);
+                bBase.data[i] = ChineseRemainders(bBasePrime, bPrime, bBase.data[i], BigInteger.valueOf(oth));
+            }
+            bBase = bBase.setModulusUnsafe(newBasePrime);
+            bBasePrime = newBasePrime;
+
+            //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
+            if (bBasePrime.compareTo(bound2) >= 0 || bBase.equals(bPreviousBase)) {
+                bMutablePolynomialZ candidate = bBase.normalSymmetricForm().primitivePart();
+                //first check b since b is less degree
+                bMutablePolynomialZ[] div;
                 div = divideAndRemainder(b, candidate, true);
                 if (div == null || !div[1].isZero())
                     continue;
