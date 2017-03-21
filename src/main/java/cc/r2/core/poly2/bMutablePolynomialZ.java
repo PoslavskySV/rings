@@ -175,6 +175,11 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
     }
 
     @Override
+    public bMutablePolynomialZ getRange(int from, int to) {
+        return createFromArray(Arrays.copyOfRange(data, from, to));
+    }
+
+    @Override
     public bMutablePolynomialZ[] arrayNewInstance(int length) {
         return new bMutablePolynomialZ[length];
     }

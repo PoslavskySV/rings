@@ -207,6 +207,29 @@ public final class PolynomialArithmetics {
             return largeMonomial(exponent, polyModulus, invMod);
     }
 
+    /**
+     * Creates {@code x^exponent mod polyModulus}.
+     *
+     * @param exponent    the monomial exponent
+     * @param polyModulus the modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
+     * @return {@code x^exponent mod polyModulus}
+     */
+    public static <T extends IMutablePolynomialZp<T>> T createMonomialMod(BigInteger exponent,
+                                                                          T polyModulus,
+                                                                          InverseModMonomial<T> invMod) {
+        if (exponent.signum() < 0)
+            throw new IllegalArgumentException("Negative exponent: " + exponent);
+
+        if (exponent.isZero())
+            return polyModulus.createOne();
+
+        if (exponent.isLong())
+            return createMonomialMod(exponent.longValueExact(), polyModulus, invMod);
+        else
+            return largeMonomial(exponent, polyModulus, invMod);
+    }
+
     /** plain create and reduce */
     static <T extends IMutablePolynomialZp<T>> T smallMonomial(long exponent, T polyModulus, InverseModMonomial<T> invMod) {
         return PolynomialArithmetics.polyMod(polyModulus.createMonomial(LongArithmetics.safeToInt(exponent)), polyModulus, invMod, false);
@@ -225,6 +248,25 @@ public final class PolynomialArithmetics {
                 break;
             result = PolynomialArithmetics.polyMultiplyMod(result, result, polyModulus, invMod, false);
             exp += exp;
+        }
+
+        T rest = createMonomialMod(exponent - exp, polyModulus, invMod);
+        return PolynomialArithmetics.polyMultiplyMod(result, rest, polyModulus, invMod, false);
+    }
+
+    /** repeated squaring */
+    static <T extends IMutablePolynomialZp<T>> T largeMonomial(BigInteger exponent, T polyModulus, InverseModMonomial<T> invMod) {
+        T base = PolynomialArithmetics.polyMod(
+                polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
+                polyModulus, invMod, false);
+
+        T result = base.clone();
+        BigInteger exp = BigInteger.valueOf(MONOMIAL_MOD_EXPONENT_THRESHOLD);
+        for (; ; ) {
+            if (exp.shiftLeft(1).compareTo(exponent) > 0)
+                break;
+            result = PolynomialArithmetics.polyMultiplyMod(result, result, polyModulus, invMod, false);
+            exp = exp.shiftLeft(1);
         }
 
         T rest = createMonomialMod(exponent - exp, polyModulus, invMod);

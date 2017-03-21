@@ -653,9 +653,11 @@ public final class PolynomialGCD {
      * @return GCD of two polynomials
      */
     @SuppressWarnings("unchecked")
-    public static <T extends MutablePolynomialAbstract<T>> T PolynomialGCD(T a, T b) {
+    public static <T extends IMutablePolynomial<T>> T PolynomialGCD(T a, T b) {
         if (a instanceof MutablePolynomialZ)
             return (T) ModularGCD((MutablePolynomialZ) a, (MutablePolynomialZ) b);
+        else if (a instanceof bMutablePolynomialZ)
+            return (T) ModularGCD((bMutablePolynomialZ) a, (bMutablePolynomialZ) b);
         else
             return Euclid(a, b).gcd();
     }

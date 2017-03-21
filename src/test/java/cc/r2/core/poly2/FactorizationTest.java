@@ -2,6 +2,7 @@ package cc.r2.core.poly2;
 
 import cc.r2.core.poly2.Factorization.HenselData;
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -117,16 +118,17 @@ public class FactorizationTest extends AbstractPolynomialTest {
 
     @Test
     public void testHensel5_random() throws Exception {
-        RandomDataGenerator rnd = getRandomData();
-        for (int i = 0; i < its(10000, 1000); ++i) {
-            MutablePolynomialZ poly = RandomPolynomials.randomPoly(rnd.nextInt(1, 20), 1000, rnd.getRandomGenerator());
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        for (int i = 0; i < its(1000000, 10000); ++i) {
+            MutablePolynomialZ poly = RandomPolynomials.randomPoly(rndd.nextInt(1, 20), 1000, rnd);
             for (long modulus : getModulusArray((int) its(5, 15), 0, 5, 0)) {
                 MutablePolynomialMod polyMod = poly.modulus(modulus);
                 if (polyMod.isConstant() || polyMod.isMonomial())
                     continue;
 
                 while (poly.lc() % modulus == 0)
-                    poly.data[poly.degree] = rnd.nextInt(0, 100);
+                    poly.data[poly.degree] = rndd.nextInt(0, 100);
 
                 try {
                     testMultiFactorHenselLifting(poly, modulus, 10, false);
@@ -190,7 +192,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
 //    }
 //
 
-//    @Ignore
+    @Ignore
     @Test
     public void name() throws Exception {
 //        System.out.println(factorBigPrime(MutablePolynomialZ.create(-1, 0, 1)));

@@ -2,6 +2,8 @@ package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
 
+import java.util.Arrays;
+
 import static cc.r2.core.number.BigInteger.ONE;
 import static cc.r2.core.number.BigInteger.ZERO;
 
@@ -159,6 +161,11 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     @Override
     public bMutablePolynomialMod createConstant(BigInteger val) {
         return new bMutablePolynomialMod(modulus, new BigInteger[]{reduce(val, modulus)}, 0);
+    }
+
+    @Override
+    public bMutablePolynomialMod getRange(int from, int to) {
+        return new bMutablePolynomialMod(modulus, Arrays.copyOfRange(data, from, to));
     }
 
     @Override

@@ -223,8 +223,8 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return {@code true} if {@code poly} is square-free and {@code false} otherwise
      */
-    public static <T extends MutablePolynomialAbstract<T>> boolean isSquareFree(T poly) {
-        return PolynomialGCD(poly, poly.derivative()).isConstant();
+    public static <T extends IMutablePolynomial<T>> boolean isSquareFree(T poly) {
+        return PolynomialGCD.PolynomialGCD(poly, poly.derivative()).isConstant();
     }
 
     /**

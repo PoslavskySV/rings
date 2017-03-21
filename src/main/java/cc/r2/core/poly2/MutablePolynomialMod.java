@@ -188,6 +188,13 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return new MutablePolynomialMod(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
     }
 
+    @Override
+    public MutablePolynomialMod getRange(int from, int to) {
+        MutablePolynomialMod r = new MutablePolynomialMod(modulus, magic, magic32MulMod, Arrays.copyOfRange(data, from, to), to - from - 1, modulusFits32);
+        r.fixDegree();
+        return r;
+    }
+
     /** {@inheritDoc} */
     @Override
     public MutablePolynomialMod createMonomial(long coefficient, int newDegree) {
@@ -423,7 +430,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return createFromArray(newData);
     }
 
-    public bMutablePolynomialMod toBigPoly(){
+    public bMutablePolynomialMod toBigPoly() {
         return bMutablePolynomialMod.createUnsafe(BigInteger.valueOf(modulus), dataToBigIntegers());
     }
 

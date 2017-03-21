@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly2.DivisionWithRemainder.InverseModMonomial;
 import cc.r2.core.test.Benchmark;
@@ -194,6 +195,23 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
 
         System.out.println("BrentKung");
         System.out.println(brenKungStats.getMean());
+    }
+
+    @Test
+    public void testComposition3Random_big_poly() throws Exception {
+        RandomGenerator rnd = getRandom();
+        for (long modulus : getSmallModulusArray(50)) {
+            BigInteger bModulus = BigInteger.valueOf(modulus);
+            for (int i = 0; i < 5; i++) {
+                bMutablePolynomialMod poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
+                bMutablePolynomialMod point = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
+                bMutablePolynomialMod polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
+                bMutablePolynomialMod bComp = compositionBrentKung(poly, point, polyModulus, fastDivisionPreConditioning(polyModulus));
+                MutablePolynomialMod lPolyModulus = polyModulus.toLong();
+                MutablePolynomialMod lComp = compositionBrentKung(poly.toLong(), point.toLong(), lPolyModulus, fastDivisionPreConditioning(lPolyModulus));
+                assertEquals(lComp, bComp.toLong());
+            }
+        }
     }
 
     static void assertComposition(MutablePolynomialMod poly, MutablePolynomialMod point, MutablePolynomialMod polyModulus) {

@@ -103,6 +103,15 @@ interface IMutablePolynomial<T extends IMutablePolynomial> extends Comparable<T>
     T truncate(int newDegree);
 
     /**
+     * Creates polynomial formed from the coefficients of this starting from {@code from} (inclusive) to {@code to} (exclusive)
+     *
+     * @param from the initial index of the range to be copied, inclusive
+     * @param to   the final index of the range to be copied, exclusive.
+     * @return polynomial formed from the range of coefficients
+     */
+    T getRange(int from, int to);
+
+    /**
      * Reverses the coefficients of this
      *
      * @return reversed polynomial
