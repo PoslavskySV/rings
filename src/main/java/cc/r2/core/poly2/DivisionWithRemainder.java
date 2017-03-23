@@ -379,7 +379,7 @@ public final class DivisionWithRemainder {
                 quotient[i] = quot;
                 remainder.subtract(divider, quotient[i], i);
 
-            } else quotient[i] = 0;
+            } else quotient[i] = ZERO;
         }
 
         return new bMutablePolynomialZ[]{bMutablePolynomialZ.create(quotient), remainder};
@@ -398,7 +398,7 @@ public final class DivisionWithRemainder {
             if (remainder.degree == divider.degree + i) {
                 quotient[i] = remainder.lc();
                 remainder.subtract(divider, quotient[i], i);
-            } else quotient[i] = 0;
+            } else quotient[i] = ZERO;
         }
         return new bMutablePolynomialZ[]{bMutablePolynomialZ.create(quotient), remainder};
     }
@@ -419,7 +419,7 @@ public final class DivisionWithRemainder {
 
         //apply Horner's method
 
-        BigInteger cc = -divider.cc(), lc = divider.lc();
+        BigInteger cc = divider.cc().negate(), lc = divider.lc();
         BigInteger[] quotient = copy ? new BigInteger[dividend.degree] : dividend.data;
         BigInteger res = ZERO;
         for (int i = dividend.degree; ; --i) {
@@ -665,7 +665,7 @@ public final class DivisionWithRemainder {
             if (remainder.degree == divider.degree + i) {
                 quotient[i] = remainder.multiplyMod(remainder.lc(), lcInverse);
                 remainder.subtract(divider, quotient[i], i);
-            } else quotient[i] = 0;
+            } else quotient[i] = ZERO;
         }
 
         return new bMutablePolynomialMod[]{dividend.createFromArray(quotient), remainder};

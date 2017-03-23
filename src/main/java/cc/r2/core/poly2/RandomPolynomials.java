@@ -99,7 +99,7 @@ public class RandomPolynomials {
      */
     public static bMutablePolynomialMod randomMonicPoly(int degree, BigInteger modulus, RandomGenerator rnd) {
         bMutablePolynomialZ r = randomPoly(degree, modulus, rnd);
-        while ((r.data[degree].mod(modulus)).isZero()) {r.data[r.degree] = rnd.nextLong();}
+        while ((r.data[degree].mod(modulus)).isZero()) {r.data[r.degree] = randomInt(modulus, rnd);}
         return r.modulus(modulus, false).monic();
     }
 

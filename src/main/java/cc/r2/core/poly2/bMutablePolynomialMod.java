@@ -59,7 +59,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     private static BigInteger reduce(BigInteger val, BigInteger modulus) {
-        return (val.signum() < 0 || val >= modulus) ? val.mod(modulus) : val;
+        return (val.signum() < 0 || val.compareTo(modulus) >= 0) ? val.mod(modulus) : val;
     }
 
     /**
@@ -126,13 +126,13 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** addMod operation */
     BigInteger addMod(BigInteger a, BigInteger b) {
-        BigInteger r = a + b, rm = r - modulus;
+        BigInteger r = a.add(b), rm = r.subtract(modulus);
         return rm.signum() >= 0 ? rm : r;
     }
 
     /** subtractMod operation */
     BigInteger subtractMod(BigInteger a, BigInteger b) {
-        BigInteger r = a - b;
+        BigInteger r = a.subtract(b);
         if (r.signum() < 0)
             r = r.add(modulus);
         assert r.compareTo(modulus) < 0;
@@ -141,7 +141,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** to symmetric modulus */
     BigInteger symMod(BigInteger value) {
-        return value <= (modulus >> 1) ? value : value.subtract(modulus);
+        return value.compareTo(modulus.shiftRight(1)) <= 0 ? value : value.subtract(modulus);
     }
 
     @Override
@@ -153,7 +153,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     /** Whether this BigInteger polynomial can be converted to machine-precision polynomial (long) */
-    public boolean isLong(){ return modulus.compareTo(MutablePolynomialMod.b_MAX_SUPPORTED_MODULUS) <= 0;}
+    public boolean isLong() { return modulus.compareTo(MutablePolynomialMod.b_MAX_SUPPORTED_MODULUS) <= 0;}
 
     /**
      * Creates constant polynomial with specified value
@@ -243,7 +243,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         if (data[degree].isZero()) // isZero()
             return this;
         if (degree == 0) {
-            data[0] = 1;
+            data[0] = ONE;
             return this;
         }
         return multiply(lc().modInverse(modulus));
@@ -272,7 +272,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
             return cc();
 
         point = mod(point);
-        BigInteger res = 0;
+        BigInteger res = ZERO;
         for (int i = degree; i >= 0; --i)
             res = addMod(multiplyMod(res, point), data[i]);
         return res;

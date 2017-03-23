@@ -110,9 +110,9 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
      * @return L1 norm of {@code this}
      */
     public final BigInteger norm1() {
-        BigInteger norm = 0;
+        BigInteger norm = ZERO;
         for (int i = 0; i <= degree; ++i)
-            norm = norm + abs(data[i]);
+            norm = norm.add(abs(data[i]));
         return norm;
     }
 
@@ -122,9 +122,9 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
      * @return L2 norm of {@code this}
      */
     final BigInteger norm2() {
-        BigInteger norm = 0;
+        BigInteger norm = ZERO;
         for (int i = 0; i <= degree; ++i)
-            norm = norm + data[i] * data[i];
+            norm = norm.add(data[i].multiply(data[i]));
         return BigIntegerArithmetics.sqrtCeil(norm);
     }
 
@@ -483,7 +483,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
             BigInteger c = a[aFrom + i];
             if (!c.isZero())
                 for (int j = 0; j < bTo - bFrom; ++j)
-                    result[i + j] = result[i + j] + c * b[bFrom + j];
+                    result[i + j] = result[i + j].add(c.multiply(b[bFrom + j]));
         }
     }
 
@@ -527,7 +527,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         if (fTo - fFrom == 1) {
             BigInteger[] result = new BigInteger[gTo - gFrom];
             for (int i = gFrom; i < gTo; ++i)
-                result[i - gFrom] = f[fFrom] * g[i];
+                result[i - gFrom] = f[fFrom].multiply(g[i]);
             return result;
         }
         // single element in g
@@ -535,16 +535,16 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
             BigInteger[] result = new BigInteger[fTo - fFrom];
             //single element in b
             for (int i = fFrom; i < fTo; ++i)
-                result[i - fFrom] = g[gFrom] * f[i];
+                result[i - fFrom] = g[gFrom].multiply(f[i]);
             return result;
         }
         // linear factors
         if (fTo - fFrom == 2 && gTo - gFrom == 2) {
             BigInteger[] result = new BigInteger[3];
             //both a and b are linear
-            result[0] = f[fFrom] * g[gFrom];
-            result[1] = f[fFrom] * g[gFrom + 1] + f[fFrom + 1] * g[gFrom];
-            result[2] = f[fFrom + 1] * g[gFrom + 1];
+            result[0] = f[fFrom].multiply(g[gFrom]);
+            result[1] = f[fFrom].multiply(g[gFrom + 1]).add(f[fFrom + 1].multiply(g[gFrom]));
+            result[2] = f[fFrom + 1].multiply(g[gFrom + 1]);
             return result;
         }
         //switch to classical
@@ -566,7 +566,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
             BigInteger[] result = Arrays.copyOf(f0g, newLen);
             Arrays.fill(result, oldLen, newLen, ZERO);
             for (int i = 0; i < f1g.length; i++)
-                result[i + split] = result[i + split] + f1g[i];
+                result[i + split] = result[i + split].add(f1g[i]);
             return result;
         }
 
@@ -579,14 +579,14 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         Arrays.fill(f0_plus_f1, fMid - fFrom, f0_plus_f1.length, ZERO);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = f0_plus_f1[i - fMid] + f[i];
+            f0_plus_f1[i - fMid] = f0_plus_f1[i - fMid].add(f[i]);
 
         //g0 + g1
         BigInteger[] g0_plus_g1 = new BigInteger[Math.max(gMid - gFrom, gTo - gMid)];
         System.arraycopy(g, gFrom, g0_plus_g1, 0, gMid - gFrom);
         Arrays.fill(g0_plus_g1, gMid - gFrom, g0_plus_g1.length, ZERO);
         for (int i = gMid; i < gTo; ++i)
-            g0_plus_g1[i - gMid] = g0_plus_g1[i - gMid] + g[i];
+            g0_plus_g1[i - gMid] = g0_plus_g1[i - gMid].add(g[i]);
 
         BigInteger[] mid = multiplyKaratsubaUnsafe(f0_plus_f1, 0, f0_plus_f1.length, g0_plus_g1, 0, g0_plus_g1.length);
 
@@ -603,18 +603,18 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
 
         //subtract f0g0, f1g1
         for (int i = 0; i < f0g0.length; ++i)
-            mid[i] = mid[i] - f0g0[i];
+            mid[i] = mid[i].subtract(f0g0[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            mid[i] = mid[i] - f1g1[i];
+            mid[i] = mid[i].subtract(f1g1[i]);
 
 
         int oldLen = f0g0.length;
         BigInteger[] result = Arrays.copyOf(f0g0, (fTo - fFrom) + (gTo - gFrom) - 1);
         Arrays.fill(result, oldLen, result.length, ZERO);
         for (int i = 0; i < mid.length; ++i)
-            result[i + split] = result[i + split] + mid[i];
+            result[i + split] = result[i + split].add(mid[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            result[i + 2 * split] = result[i + 2 * split] + f1g1[i];
+            result[i + 2 * split] = result[i + 2 * split].add(f1g1[i]);
 
         return result;
     }
@@ -641,7 +641,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
             BigInteger c = data[from + i];
             if (!c.isZero())
                 for (int j = 0; j < len; ++j)
-                    result[i + j] = result[i + j] + c * data[from + j];
+                    result[i + j] = result[i + j].add(c.multiply(data[from + j]));
         }
     }
 
@@ -657,12 +657,12 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         if (fFrom >= fTo)
             return new BigInteger[0];
         if (fTo - fFrom == 1)
-            return new BigInteger[]{f[fFrom] * f[fFrom]};
+            return new BigInteger[]{f[fFrom].multiply(f[fFrom])};
         if (fTo - fFrom == 2) {
             BigInteger[] result = new BigInteger[3];
-            result[0] = f[fFrom] * f[fFrom];
-            result[1] = BigInteger.TWO * f[fFrom] * f[fFrom + 1];
-            result[2] = f[fFrom + 1] * f[fFrom + 1];
+            result[0] = f[fFrom].multiply(f[fFrom]);
+            result[1] = BigInteger.TWO.multiply(f[fFrom]).multiply(f[fFrom + 1]);
+            result[2] = f[fFrom + 1].multiply(f[fFrom + 1]);
             return result;
         }
         //switch to classical
@@ -681,7 +681,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         Arrays.fill(f0_plus_f1, fMid - fFrom, f0_plus_f1.length, ZERO);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = f0_plus_f1[i - fMid] + f[i];
+            f0_plus_f1[i - fMid] = f0_plus_f1[i - fMid].add(f[i]);
 
         BigInteger[] mid = squareKaratsubaUnsafe(f0_plus_f1, 0, f0_plus_f1.length);
 
@@ -699,18 +699,18 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
 
         //subtract f0g0, f1g1
         for (int i = 0; i < f0g0.length; ++i)
-            mid[i] = mid[i] - f0g0[i];
+            mid[i] = mid[i].subtract(f0g0[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            mid[i] = mid[i] - f1g1[i];
+            mid[i] = mid[i].subtract(f1g1[i]);
 
 
         int oldLen = f0g0.length;
         BigInteger[] result = Arrays.copyOf(f0g0, 2 * (fTo - fFrom) - 1);
         Arrays.fill(result, oldLen, result.length, ZERO);
         for (int i = 0; i < mid.length; ++i)
-            result[i + split] = result[i + split] + mid[i];
+            result[i + split] = result[i + split].add(mid[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            result[i + 2 * split] = result[i + 2 * split] + f1g1[i];
+            result[i + 2 * split] = result[i + 2 * split].add(f1g1[i]);
 
         return result;
     }

@@ -294,10 +294,10 @@ public final class PolynomialGCD {
             bMutablePolynomialZ next = prs.get(i + 1);
             int delta = curr.degree - next.degree;
             if (i == 0) {
-                cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
-                cPsi = -1;
+                cBeta = (delta + 1) % 2 == 0 ? BigInteger.ONE : BigInteger.NEGATIVE_ONE;
+                cPsi = BigInteger.NEGATIVE_ONE;
             } else {
-                cPsi = BigIntegerArithmetics.safePow(-curr.lc(), deltas.get(i - 1));
+                cPsi = BigIntegerArithmetics.safePow(curr.lc().negate(), deltas.get(i - 1));
                 if (deltas.get(i - 1) < 1) {
                     cPsi = BigIntegerArithmetics.safeMultiply(cPsi, BigIntegerArithmetics.safePow(psi.get(i - 1), -deltas.get(i - 1) + 1));
                 } else {
@@ -305,7 +305,7 @@ public final class PolynomialGCD {
                     assert cPsi.remainder(tmp).isZero();
                     cPsi = cPsi.divide(tmp);
                 }
-                cBeta = BigIntegerArithmetics.safeMultiply(-curr.lc(), BigIntegerArithmetics.safePow(cPsi, delta));
+                cBeta = BigIntegerArithmetics.safeMultiply(curr.lc().negate(), BigIntegerArithmetics.safePow(cPsi, delta));
             }
 
             bMutablePolynomialZ q = pseudoDivideAndRemainder(curr, next, true)[1];

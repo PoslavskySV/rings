@@ -8,13 +8,11 @@ import org.junit.Test;
  * @since 1.0
  */
 public class MutablePolynomialModTest {
-
-
     @Test
     public void test1() throws Exception {
         MutablePolynomialMod aL = MutablePolynomialZ.create(1, 2, 3, 4, 5, 6).modulus(59);
         for (int i = 0; i < 5; i++) {
-            aL = (aL.clone() * aL.clone().decrement() - aL.clone().derivative() + (aL.clone().square())) * aL.clone();
+            aL = (aL.clone().multiply(aL.clone().decrement()).subtract(aL.clone().derivative()).add(aL.clone().square())).multiply(aL.clone());
             aL = aL.truncate(aL.degree * 3 / 2).shiftRight(2).shiftLeft(2).increment().negate();
             Assert.assertTrue(check(aL));
         }

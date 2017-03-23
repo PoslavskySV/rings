@@ -201,7 +201,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
     public BigInteger evaluate(BigInteger point) {
         if (point.isZero())
             return cc();
-        BigInteger res = 0;
+        BigInteger res = ZERO;
         for (int i = degree; i >= 0; --i)
             res = safeAdd(safeMultiply(res, point), data[i]);
         return res;
@@ -218,7 +218,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
     BigInteger evaluateAtRational(BigInteger num, BigInteger den) {
         if (num.isZero())
             return cc();
-        BigInteger res = 0;
+        BigInteger res = ZERO;
         for (int i = degree; i >= 0; --i) {
             BigInteger x = safeMultiply(res, num);
             BigInteger[] qr = x.divideAndRemainder(den);

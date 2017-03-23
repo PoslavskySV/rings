@@ -269,7 +269,7 @@ public final class PolynomialArithmetics {
             exp = exp.shiftLeft(1);
         }
 
-        T rest = createMonomialMod(exponent - exp, polyModulus, invMod);
+        T rest = createMonomialMod(exponent.subtract(exp), polyModulus, invMod);
         return PolynomialArithmetics.polyMultiplyMod(result, rest, polyModulus, invMod, false);
     }
 }
