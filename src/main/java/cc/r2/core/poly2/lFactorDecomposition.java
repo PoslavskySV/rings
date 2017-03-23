@@ -11,7 +11,7 @@ import java.util.List;
  */
 public final class lFactorDecomposition<T extends MutablePolynomialAbstract<T>> extends FactorDecomposition<T> {
     /** overall factor */
-    long factor;
+    long factor = 1;
 
     public lFactorDecomposition() {super();}
 

@@ -2,8 +2,10 @@ package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly2.Factorization.HenselData;
+import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,6 +40,13 @@ public class FactorizationTest extends AbstractPolynomialTest {
         bFactorDecomposition<bMutablePolynomialMod> fct = factor(poly);
         Assert.assertEquals(7, fct.size());
         assertFactorization(poly, fct);
+    }
+
+    @Test
+    public void test3() throws Exception {
+        long modulus = 13;
+        MutablePolynomialMod poly = MutablePolynomialZ.create(5, 8, 1, 5, 7, 0, 0, 1, 5, 7, 0, 9, 3, 2).modulus(modulus);
+        assertFactorization(poly, factor(poly));
     }
 
     static void assertHenselLift(HenselData lift) {
@@ -273,11 +282,43 @@ public class FactorizationTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void asdasd() throws Exception {
-        System.out.println(Long.bitCount((1L << 32) - 1));
-//        System.out.println((long) (1.5 * Integer.MAX_VALUE));
-//
-//        long a = 3221225470L;
-//        System.out.println((int) a);
+//    @Benchmark
+    public void tmpcompare() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        rnd.setSeed(123);
+        long modulus = getModulusRandom(15);
+        BigInteger bigModulus = BigInteger.LONG_MAX_VALUE;
+        bigModulus = bigModulus.multiply(bigModulus).nextProbablePrime();
+
+        DescriptiveStatistics modT = new DescriptiveStatistics(), bT = new DescriptiveStatistics();
+        int nIterations = 10000;
+        for (int i = 0; i < nIterations; i++) {
+            if (i % 100 == 0)
+                System.out.println(i);
+            if (i == nIterations / 10) {
+                modT.clear();
+                bT.clear();
+            }
+            MutablePolynomialMod poly = RandomPolynomials.randomMonicPoly(rndd.nextInt(10, 15), modulus, rnd);
+            long start = System.nanoTime();
+            lFactorDecomposition<MutablePolynomialMod> fct = factor(poly);
+            modT.addValue(System.nanoTime() - start);
+            assertFactorization(poly, fct);
+
+
+            if (i % 100 == 0) {
+                bMutablePolynomialMod bPoly = poly.toBigPoly().setModulusUnsafe(bigModulus);
+                start = System.nanoTime();
+                bFactorDecomposition<bMutablePolynomialMod> bfct = factor(bPoly);
+                bT.addValue(System.nanoTime() - start);
+                assertFactorization(bPoly, bfct);
+            }
+        }
+
+        System.out.println("Machine-size:");
+        System.out.println(modT);
+        System.out.println("BigInteger:");
+        System.out.println(bT);
     }
 }

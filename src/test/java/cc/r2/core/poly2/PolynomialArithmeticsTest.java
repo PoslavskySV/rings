@@ -1,6 +1,5 @@
 package cc.r2.core.poly2;
 
-import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import org.apache.commons.math3.random.RandomDataGenerator;

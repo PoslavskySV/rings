@@ -11,7 +11,7 @@ import java.util.List;
  */
 public final class bFactorDecomposition<T extends bMutablePolynomialAbstract<T>> extends FactorDecomposition<T> {
     /** overall factor */
-    BigInteger factor;
+    BigInteger factor = BigInteger.ONE;
 
     public bFactorDecomposition() {super();}
 
