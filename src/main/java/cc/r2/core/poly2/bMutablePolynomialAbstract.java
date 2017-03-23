@@ -394,8 +394,29 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
     }
 
     String toStringForCopy() {
-        String s = ArraysUtil.toString(data, 0, degree + 1);
-        return "create(" + s.substring(1, s.length() - 1).replace(",", "L,") + ")";
+        String s = toStringForCopy(data, 0, degree + 1);
+        return "create(" + s.substring(1, s.length() - 1) + ")";
+    }
+
+    private static String toStringForCopy(BigInteger[] a, int from, int to) {
+        if (a == null)
+            return "null";
+        int iMax = to - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = from; ; i++) {
+            b.append(toStringForCopy(a[i]));
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(", ");
+        }
+    }
+
+    private static String toStringForCopy(BigInteger b) {
+        return "new BigInteger(\"" + b + "\")";
     }
 
     @Override

@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly2.FactorizationTestUtil.RandomSource;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -9,6 +10,7 @@ import org.junit.Test;
 
 import static cc.r2.core.poly2.FactorizationTestUtil.assertFactorization;
 import static cc.r2.core.poly2.PolynomialArithmetics.polyPow;
+import static cc.r2.core.poly2.RandomPolynomials.randomInt;
 import static cc.r2.core.poly2.RandomPolynomials.randomPoly;
 import static cc.r2.core.poly2.SquareFreeFactorization.SquareFreeFactorization;
 import static cc.r2.core.poly2.SquareFreeFactorization.*;
@@ -221,5 +223,51 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test9() throws Exception {
         assertTrue(SquareFreeFactorization(MutablePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
+    }
+
+    @Test
+    public void test10() throws Exception {
+        bMutablePolynomialZ poly = bMutablePolynomialZ.create(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2, Long.MAX_VALUE - 3);
+        bMutablePolynomialZ original = poly.add(poly.derivative());
+        bMutablePolynomialZ squared = original.clone().square();
+
+        bFactorDecomposition<bMutablePolynomialZ> f = SquareFreeFactorization(squared);
+        assertEquals(1, f.size());
+        assertEquals(2, f.getExponent(0));
+        assertEquals(original, f.get(0));
+
+        bMutablePolynomialMod squaredMod = squared.modulus(BigInteger.LONG_MAX_VALUE.multiply(BigInteger.TWO).nextProbablePrime());
+        squaredMod = squaredMod.square();
+
+        bFactorDecomposition<bMutablePolynomialMod> fMod = SquareFreeFactorization(squaredMod);
+        assertEquals(1, fMod.size());
+        assertEquals(4, fMod.getExponent(0));
+        assertFactorization(squaredMod, fMod);
+    }
+
+    @Test
+    @Benchmark(runAnyway = true)
+    public void testRandom11() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
+        long start;
+        BigInteger bound = BigInteger.LONG_MAX_VALUE;
+        bound = bound.multiply(bound).increment();
+        int nIterations = (int) its(20, 50);
+        for (int i = 0; i < nIterations; i++) {
+            bMutablePolynomialZ poly;
+            poly = randomPoly(rndd.nextInt(2, 30), bound, rnd);
+            int exponent = rndd.nextInt(2, 4);
+            poly = PolynomialArithmetics.polyPow(poly, exponent, false);
+
+            bFactorDecomposition<bMutablePolynomialZ> zf = SquareFreeFactorization(poly);
+            assertTrue(zf.sumExpoentns() >= exponent);
+            assertFactorization(poly, zf);
+
+            bMutablePolynomialMod polyMod = poly.modulus(randomInt(bound, rnd).nextProbablePrime());
+            bFactorDecomposition<bMutablePolynomialMod> zpf = SquareFreeFactorization(polyMod);
+            assertTrue(zpf.sumExpoentns() >= exponent);
+            assertFactorization(polyMod, zpf);
+        }
     }
 }

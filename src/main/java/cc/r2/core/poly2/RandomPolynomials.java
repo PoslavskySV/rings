@@ -47,13 +47,21 @@ public class RandomPolynomials {
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         BigInteger[] data = new BigInteger[degree + 1];
         for (int i = 0; i <= degree; ++i) {
-            data[i] = BigInteger.valueOf(rndd.nextLong(0, lBound));
+            data[i] = randomInt(bound, rnd);
             if (rnd.nextBoolean() && rnd.nextBoolean())
                 data[i] = data[i].negate();
         }
         while (data[degree].equals(BigInteger.ZERO))
             data[degree] = BigInteger.valueOf(rndd.nextLong(0, lBound));
         return data;
+    }
+
+    public static BigInteger randomInt(BigInteger bound, RandomGenerator rnd) {
+        BigInteger r;
+        do {
+            r = new BigInteger(bound.bitLength(), rnd);
+        } while (r.compareTo(bound) >= 0);
+        return r;
     }
 
     private static final int DEFAULT_BOUND = 100;

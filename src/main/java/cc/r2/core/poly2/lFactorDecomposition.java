@@ -65,4 +65,12 @@ public final class lFactorDecomposition<T extends MutablePolynomialAbstract<T>> 
         ts.addFactor(poly, 1);
         return ts;
     }
+
+    static bFactorDecomposition<bMutablePolynomialMod> convert(lFactorDecomposition<MutablePolynomialMod> decomposition) {
+        bFactorDecomposition<bMutablePolynomialMod> r = new bFactorDecomposition<>();
+        decomposition.factors.forEach(t -> r.factors.add(t.toBigPoly()));
+        r.exponents.addAll(decomposition.exponents);
+        r.setNumericFactor(decomposition.factorAsBigInt());
+        return r;
+    }
 }

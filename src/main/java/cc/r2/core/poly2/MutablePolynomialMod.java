@@ -50,6 +50,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** Max supported modulus */
     public static final long MAX_SUPPORTED_MODULUS = (1L << MAX_SUPPORTED_MODULUS_BITS) - 1L;
+    public static final BigInteger b_MAX_SUPPORTED_MODULUS = BigInteger.valueOf(MAX_SUPPORTED_MODULUS);
 
     private static void checkModulus(long modulus) {
         if (Long.compareUnsigned(modulus, MAX_SUPPORTED_MODULUS) > 0)

@@ -13,6 +13,8 @@ public final class bFactorDecomposition<T extends bMutablePolynomialAbstract<T>>
     /** overall factor */
     BigInteger factor;
 
+    public bFactorDecomposition() {super();}
+
     public bFactorDecomposition(BigInteger factor) {
         super();
         this.factor = factor;
@@ -39,6 +41,10 @@ public final class bFactorDecomposition<T extends bMutablePolynomialAbstract<T>>
             factors.add(poly);
             exponents.add(exponent);
         }
+    }
+
+    public int sumExpoentns() {
+        return exponents.sum();
     }
 
     @Override
