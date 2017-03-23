@@ -52,15 +52,15 @@ public final class EqualDegreeFactorization {
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    static FactorDecomposition<MutablePolynomialMod> CantorZassenhaus(MutablePolynomialMod input, int d) {
+    static lFactorDecomposition<MutablePolynomialMod> CantorZassenhaus(MutablePolynomialMod input, int d) {
         assert input.degree % d == 0;
         int nFactors = input.degree / d;
         if (input.degree == 1 || nFactors == 1)
-            return FactorDecomposition.oneFactor(input, 1);
+            return lFactorDecomposition.oneFactor(input, 1);
 
         assert input.degree != d;
 
-        FactorDecomposition<MutablePolynomialMod> result = new FactorDecomposition<>();
+        lFactorDecomposition<MutablePolynomialMod> result = new lFactorDecomposition<>();
 
         long overallFactor = input.lc();
         MutablePolynomialMod poly = input.clone();

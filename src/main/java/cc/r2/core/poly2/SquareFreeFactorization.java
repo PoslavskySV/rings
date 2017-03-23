@@ -3,7 +3,7 @@ package cc.r2.core.poly2;
 import java.util.Arrays;
 
 import static cc.r2.core.poly2.DivisionWithRemainder.divideAndRemainder;
-import static cc.r2.core.poly2.FactorDecomposition.oneFactor;
+import static cc.r2.core.poly2.lFactorDecomposition.oneFactor;
 import static cc.r2.core.poly2.PolynomialGCD.PolynomialGCD;
 
 
@@ -22,7 +22,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static FactorDecomposition<MutablePolynomialZ> SquareFreeFactorization(MutablePolynomialZ poly) {
+    public static lFactorDecomposition<MutablePolynomialZ> SquareFreeFactorization(MutablePolynomialZ poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -33,7 +33,9 @@ public final class SquareFreeFactorization {
             return SquareFreeFactorizationYun(poly);
 
         MutablePolynomialZ expFree = MutablePolynomialZ.create(Arrays.copyOfRange(poly.data, exponent, poly.degree + 1));
-        return SquareFreeFactorizationYun(expFree).addFactor(MutablePolynomialZ.monomial(1, exponent), 1);
+        lFactorDecomposition<MutablePolynomialZ> fd = SquareFreeFactorizationYun(expFree);
+        fd.addFactor(MutablePolynomialZ.monomial(1, exponent), 1);
+        return fd;
     }
 
     /**
@@ -43,7 +45,7 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static FactorDecomposition<MutablePolynomialZ> SquareFreeFactorizationYun(MutablePolynomialZ poly) {
+    public static lFactorDecomposition<MutablePolynomialZ> SquareFreeFactorizationYun(MutablePolynomialZ poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -64,7 +66,7 @@ public final class SquareFreeFactorization {
                 dQuot = divideAndRemainder(derivative, gcd, false)[0]; // safely destroy (cloned) derivative (not used further)
 
         int i = 0;
-        FactorDecomposition<MutablePolynomialZ> result = new FactorDecomposition<>();
+        lFactorDecomposition<MutablePolynomialZ> result = new lFactorDecomposition<>();
         while (!quot.isConstant()) {
             ++i;
             dQuot = dQuot.subtract(quot.derivative());
@@ -84,7 +86,7 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static FactorDecomposition<MutablePolynomialZ> SquareFreeFactorizationMusser(MutablePolynomialZ poly) {
+    public static lFactorDecomposition<MutablePolynomialZ> SquareFreeFactorizationMusser(MutablePolynomialZ poly) {
         if (poly.isConstant())
             return oneFactor(poly.lc());
 
@@ -102,7 +104,7 @@ public final class SquareFreeFactorization {
 
         MutablePolynomialZ quot = divideAndRemainder(poly, gcd, false)[0]; // safely destroy (cloned) poly
 
-        FactorDecomposition<MutablePolynomialZ> result = new FactorDecomposition<>();
+        lFactorDecomposition<MutablePolynomialZ> result = new lFactorDecomposition<>();
         int i = 0;
         while (true) {
             ++i;
@@ -124,7 +126,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static FactorDecomposition<MutablePolynomialMod> SquareFreeFactorization(MutablePolynomialMod poly) {
+    public static lFactorDecomposition<MutablePolynomialMod> SquareFreeFactorization(MutablePolynomialMod poly) {
 //        if (modulus >= Integer.MAX_VALUE)// <- just to be on the safe side)
 //            throw new IllegalArgumentException();
 
@@ -139,7 +141,7 @@ public final class SquareFreeFactorization {
         if (poly.degree <= 1)
             return oneFactor(poly, lc);
 
-        FactorDecomposition<MutablePolynomialMod> factorization;
+        lFactorDecomposition<MutablePolynomialMod> factorization;
         // x^2 + x^3 -> x^2 (1 + x)
         int exponent = 0;
         while (exponent <= poly.degree && poly.data[exponent] == 0) { ++exponent; }
@@ -149,7 +151,8 @@ public final class SquareFreeFactorization {
             MutablePolynomialMod expFree = MutablePolynomialZ
                     .create(Arrays.copyOfRange(poly.data, exponent, poly.degree + 1))
                     .modulus(poly.modulus, false);
-            factorization = SquareFreeFactorizationMusser0(expFree).addFactor(MutablePolynomialMod.createMonomial(poly.modulus, 1, exponent), 1);
+            factorization = SquareFreeFactorizationMusser0(expFree);
+            factorization.addFactor(MutablePolynomialMod.createMonomial(poly.modulus, 1, exponent), 1);
         }
 
         return factorization.setNumericFactor(lc);
@@ -157,7 +160,7 @@ public final class SquareFreeFactorization {
 
     /** {@code poly} will be destroyed */
     @SuppressWarnings("ConstantConditions")
-    private static FactorDecomposition<MutablePolynomialMod> SquareFreeFactorizationMusser0(MutablePolynomialMod poly) {
+    private static lFactorDecomposition<MutablePolynomialMod> SquareFreeFactorizationMusser0(MutablePolynomialMod poly) {
         poly.monic();
         if (poly.isConstant())
             return oneFactor(poly.lc());
@@ -172,7 +175,7 @@ public final class SquareFreeFactorization {
                 return oneFactor(poly, 1);
             MutablePolynomialMod quot = divideAndRemainder(poly, gcd, false)[0]; // can safely destroy poly (not used further)
 
-            FactorDecomposition<MutablePolynomialMod> result = new FactorDecomposition<>();
+            lFactorDecomposition<MutablePolynomialMod> result = new lFactorDecomposition<>();
             int i = 0;
             //if (!quot.isConstant())
             while (true) {
@@ -189,17 +192,17 @@ public final class SquareFreeFactorization {
             }
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd);
-                FactorDecomposition<MutablePolynomialMod> gcdFactorization =
-                        SquareFreeFactorizationMusser0(gcd)
-                                .raiseExponents(poly.modulus);
-
+                lFactorDecomposition<MutablePolynomialMod> gcdFactorization = SquareFreeFactorizationMusser0(gcd);
+                gcdFactorization.raiseExponents(poly.modulus);
                 result.addAll(gcdFactorization);
                 return result;
             } else
                 return result;
         } else {
             MutablePolynomialMod pRoot = pRoot(poly);
-            return SquareFreeFactorizationMusser0(pRoot).raiseExponents(poly.modulus).setNumericFactor(1);
+            lFactorDecomposition<MutablePolynomialMod> fd = SquareFreeFactorizationMusser0(pRoot);
+            fd.raiseExponents(poly.modulus);
+            return fd.setNumericFactor(1);
         }
     }
 
@@ -234,11 +237,11 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("unchecked")
-    public static <T extends MutablePolynomialAbstract<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
+    public static <T extends MutablePolynomialAbstract<T>> lFactorDecomposition<T> SquareFreeFactorization(T poly) {
         if (poly instanceof MutablePolynomialZ)
-            return (FactorDecomposition<T>) SquareFreeFactorization((MutablePolynomialZ) poly);
+            return (lFactorDecomposition<T>) SquareFreeFactorization((MutablePolynomialZ) poly);
         else
-            return (FactorDecomposition<T>) SquareFreeFactorization((MutablePolynomialMod) poly);
+            return (lFactorDecomposition<T>) SquareFreeFactorization((MutablePolynomialMod) poly);
     }
 
     /**

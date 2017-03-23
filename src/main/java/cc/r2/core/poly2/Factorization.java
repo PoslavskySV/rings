@@ -53,9 +53,9 @@ public final class Factorization {
 
 
     /** early check for trivial cases */
-    private static FactorDecomposition<MutablePolynomialMod> earlyFactorizationChecks(MutablePolynomialMod poly) {
+    private static lFactorDecomposition<MutablePolynomialMod> earlyFactorizationChecks(MutablePolynomialMod poly) {
         if (poly.degree <= 1 || poly.isMonomial())
-            return FactorDecomposition.oneFactor(poly.isMonic() ? poly : poly.clone().monic(), poly.lc());
+            return lFactorDecomposition.oneFactor(poly.isMonic() ? poly : poly.clone().monic(), poly.lc());
 
         return null;
     }
@@ -66,32 +66,32 @@ public final class Factorization {
      * @param poly the polynomial
      * @return factor decomposition
      */
-    public static FactorDecomposition<MutablePolynomialMod> factor(MutablePolynomialMod poly) {
-        FactorDecomposition<MutablePolynomialMod> result = earlyFactorizationChecks(poly);
+    public static lFactorDecomposition<MutablePolynomialMod> factor(MutablePolynomialMod poly) {
+        lFactorDecomposition<MutablePolynomialMod> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
 
         FactorMonomial<MutablePolynomialMod> base = factorOutMonomial(poly);
 
-        result = new FactorDecomposition<>();
+        result = new lFactorDecomposition<>();
         result.addFactor(base.monomial, 1);
 
         //do square-free factorization
-        FactorDecomposition<MutablePolynomialMod> sqf = SquareFreeFactorization(base.theRest);
+        lFactorDecomposition<MutablePolynomialMod> sqf = SquareFreeFactorization(base.theRest);
         for (int i = 0; i < sqf.size(); ++i) {
             //for each square-free factor
             MutablePolynomialMod sqfFactor = sqf.get(i);
             int sqfExponent = sqf.getExponent(i);
 
             //do distinct-degree factorization
-            FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization(sqfFactor);
+            lFactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization(sqfFactor);
             for (int j = 0; j < ddf.size(); ++j) {
                 //for each distinct-degree factor
                 MutablePolynomialMod ddfFactor = ddf.get(j);
                 int ddfExponent = ddf.getExponent(j);
 
                 //do equal-degree factorization
-                FactorDecomposition<MutablePolynomialMod> edf = CantorZassenhaus(ddfFactor, ddfExponent);
+                lFactorDecomposition<MutablePolynomialMod> edf = CantorZassenhaus(ddfFactor, ddfExponent);
                 for (MutablePolynomialMod irreducibleFactor : edf.factors)
                     //put final irreducible factor into the result
                     result.addFactor(irreducibleFactor.monic(), sqfExponent);
@@ -115,10 +115,10 @@ public final class Factorization {
      * @param modularFactors modular factorization of {@code basePoly}
      * @return factorization modulo {@code modulus^(2^nIterations)}
      */
-    public static FactorDecomposition<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
+    public static lFactorDecomposition<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
                                                                               MutablePolynomialZ basePoly,
-                                                                              FactorDecomposition<MutablePolynomialMod> modularFactors) {
-        return new FactorDecomposition<>(
+                                                                              lFactorDecomposition<MutablePolynomialMod> modularFactors) {
+        return new lFactorDecomposition<>(
                 liftFactorization(modulus, nIterations, basePoly, modularFactors.factors),
                 modularFactors.exponents, modularFactors.factor);
     }
@@ -320,17 +320,17 @@ public final class Factorization {
         return r;
     }
 
-    static FactorDecomposition<MutablePolynomialZ> reconstructFactorsZ(
+    static lFactorDecomposition<MutablePolynomialZ> reconstructFactorsZ(
             MutablePolynomialZ poly,
-            FactorDecomposition<MutablePolynomialMod> modularFactors) {
+            lFactorDecomposition<MutablePolynomialMod> modularFactors) {
 
         if (modularFactors.isTrivial())
-            return FactorDecomposition.oneFactor(poly, 1);
+            return lFactorDecomposition.oneFactor(poly, 1);
 
         MutablePolynomialMod factory = modularFactors.get(0);
 
         int[] modIndexes = naturalSequenceRef(modularFactors.size());
-        FactorDecomposition<MutablePolynomialZ> trueFactors = new FactorDecomposition<>();
+        lFactorDecomposition<MutablePolynomialZ> trueFactors = new lFactorDecomposition<>();
         MutablePolynomialZ fRest = poly;
         int s = 1;
 
@@ -418,7 +418,7 @@ public final class Factorization {
             return SmallPrimes.nextPrime(val);
     }
 
-    static FactorDecomposition<MutablePolynomialZ> factorSquareFree(MutablePolynomialZ poly) {
+    static lFactorDecomposition<MutablePolynomialZ> factorSquareFree(MutablePolynomialZ poly) {
         assert poly.content() == 1;
         assert poly.lc() > 0;
 
@@ -436,7 +436,7 @@ public final class Factorization {
         } while (!SquareFreeFactorization.isSquareFree(moduloImage));
 
         // do modular factorization
-        FactorDecomposition<MutablePolynomialMod> modularFactors = factor(moduloImage.monic());
+        lFactorDecomposition<MutablePolynomialMod> modularFactors = factor(moduloImage.monic());
 
         // do Hensel lifting
         // determine number of Hensel steps
@@ -454,7 +454,7 @@ public final class Factorization {
         return reconstructFactorsZ(poly, modularFactors);
     }
 
-    static FactorDecomposition<MutablePolynomialZ> factorBigPrime(MutablePolynomialZ poly) {
+    static lFactorDecomposition<MutablePolynomialZ> factorBigPrime(MutablePolynomialZ poly) {
         assert poly.content() == 1;
         assert poly.lc() > 0;
 
@@ -469,7 +469,7 @@ public final class Factorization {
             moduloImage = poly.modulus(modulus, true);
         } while (!SquareFreeFactorization.isSquareFree(moduloImage));
 
-        FactorDecomposition<MutablePolynomialMod> modularFactors = factor(moduloImage.monic());
+        lFactorDecomposition<MutablePolynomialMod> modularFactors = factor(moduloImage.monic());
         return reconstructFactorsZ(poly, modularFactors);
     }
 }

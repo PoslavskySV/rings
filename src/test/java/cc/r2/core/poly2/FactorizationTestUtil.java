@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 public final class FactorizationTestUtil {
     public FactorizationTestUtil() {}
 
-    static <T extends MutablePolynomialAbstract<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {
+    static <T extends IMutablePolynomial<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {
         assertEquals(poly, factorization.toPolynomial(poly));
     }
 

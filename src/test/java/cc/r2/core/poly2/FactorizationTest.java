@@ -120,7 +120,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
     public void testHensel5_random() throws Exception {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
-        for (int i = 0; i < its(1000000, 10000); ++i) {
+        for (int i = 0; i < its(1000, 10000); ++i) {
             MutablePolynomialZ poly = RandomPolynomials.randomPoly(rndd.nextInt(1, 20), 1000, rnd);
             for (long modulus : getModulusArray((int) its(5, 15), 0, 5, 0)) {
                 MutablePolynomialMod polyMod = poly.modulus(modulus);

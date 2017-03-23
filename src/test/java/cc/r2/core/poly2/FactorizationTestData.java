@@ -40,7 +40,7 @@ public final class FactorizationTestData {
             exponents[i - 2] = (int) data[0];
             factors[i - 2] = MutablePolynomialZ.create(Arrays.copyOfRange(data, 1, data.length)).modulus(modulus);
         }
-        return new FactorizationTestData(poly, new FactorDecomposition(new ArrayList<>(Arrays.asList(factors)), new TIntArrayList(exponents), 1), modulus);
+        return new FactorizationTestData(poly, new lFactorDecomposition(new ArrayList<>(Arrays.asList(factors)), new TIntArrayList(exponents), 1), modulus);
     }
 
     public static Object[] decodePolynomial(String string) {
@@ -65,7 +65,7 @@ public final class FactorizationTestData {
         }
         return new FactorizationTestData(
                 PolynomialArithmetics.polyPow(((MutablePolynomialZ) poly[0]).modulus(modulus), (int) poly[1], false),
-                new FactorDecomposition(new ArrayList<>(Arrays.asList(factors)), new TIntArrayList(exponents), 1),
+                new lFactorDecomposition(new ArrayList<>(Arrays.asList(factors)), new TIntArrayList(exponents), 1),
                 modulus);
     }
 
