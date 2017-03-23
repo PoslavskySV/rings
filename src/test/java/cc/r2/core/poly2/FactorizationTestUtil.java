@@ -24,10 +24,10 @@ public final class FactorizationTestUtil {
         assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
     }
 
-    static void assertDistinctDegreeFactorization(MutablePolynomialMod poly, FactorDecomposition<MutablePolynomialMod> factorization) {
+    static <T extends IMutablePolynomialZp<T>> void assertDistinctDegreeFactorization(T poly, FactorDecomposition<T> factorization) {
         for (int i = 0; i < factorization.factors.size(); i++)
             assertEquals("Factor's degree is not divisible by d.d.f. exponent",
-                    0, factorization.factors.get(i).degree % factorization.exponents.get(i));
+                    0, factorization.factors.get(i).degree() % factorization.exponents.get(i));
         assertEquals(poly, factorization.toPolynomialIgnoringExponents(poly));
     }
 

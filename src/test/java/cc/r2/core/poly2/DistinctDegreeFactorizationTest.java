@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly2.FactorizationTestUtil.PolynomialSource;
@@ -437,5 +438,17 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test6() throws Exception {
         assertTrue(DistinctDegreeFactorization(MutablePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
+    }
+
+    @Test
+    public void test7() throws Exception {
+        bMutablePolynomialZ poly = bMutablePolynomialZ.create(Long.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE - 2, Long.MAX_VALUE - 3);
+        poly = poly.add(poly.derivative()).square().increment();
+        poly = poly.multiply(poly.clone().increment());
+        BigInteger modulus = BigInteger.LONG_MAX_VALUE;
+        modulus = modulus.multiply(modulus).nextProbablePrime();
+        bMutablePolynomialMod polyMod = poly.modulus(modulus);
+        bFactorDecomposition<bMutablePolynomialMod> f = DistinctDegreeFactorization(polyMod);
+        assertDistinctDegreeFactorization(polyMod, f);
     }
 }

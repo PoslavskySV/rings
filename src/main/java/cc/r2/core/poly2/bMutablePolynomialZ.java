@@ -66,6 +66,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      */
     static bMutablePolynomialZ monomial(BigInteger coefficient, int exponent) {
         BigInteger[] data = new BigInteger[exponent + 1];
+        Arrays.fill(data, ZERO);
         data[exponent] = coefficient;
         return new bMutablePolynomialZ(data);
     }

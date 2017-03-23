@@ -1,10 +1,12 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IMutablePolynomialZp<T extends IMutablePolynomialZp> extends IMutablePolynomial<T> {
+interface IMutablePolynomialZp<T extends IMutablePolynomialZp> extends IMutablePolynomial<T> {
     void checkCompatibleModulus(T oth);
 
     /**
@@ -21,4 +23,11 @@ public interface IMutablePolynomialZp<T extends IMutablePolynomialZp> extends IM
      * @return {@code this} multiplied by {@code modInverse(other.lc())}
      */
     T divideByLC(T other);
+
+    /**
+     * Returns BigInteger value of the modulus.
+     *
+     * @return BigInteger value of the modulus
+     */
+    BigInteger modulusAsBigInt();
 }

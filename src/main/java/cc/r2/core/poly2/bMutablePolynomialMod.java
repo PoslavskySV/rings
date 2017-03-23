@@ -174,6 +174,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     @Override
     public bMutablePolynomialMod createMonomial(BigInteger coefficient, int newDegree) {
         BigInteger[] newData = new BigInteger[newDegree + 1];
+        Arrays.fill(newData, ZERO);
         newData[newDegree] = reduce(coefficient, modulus);
         return new bMutablePolynomialMod(modulus, newData, newDegree);
     }
@@ -203,6 +204,11 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         BigInteger[] newData = data.clone();
         reduce(newData, newModulus);
         return new bMutablePolynomialMod(newModulus, newData);
+    }
+
+    @Override
+    public BigInteger modulusAsBigInt() {
+        return modulus;
     }
 
     /**

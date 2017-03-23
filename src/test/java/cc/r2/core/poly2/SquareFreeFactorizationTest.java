@@ -246,11 +246,9 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     }
 
     @Test
-    @Benchmark(runAnyway = true)
     public void testRandom11() throws Exception {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
-        long start;
         BigInteger bound = BigInteger.LONG_MAX_VALUE;
         bound = bound.multiply(bound).increment();
         int nIterations = (int) its(20, 50);

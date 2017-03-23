@@ -1,8 +1,6 @@
 package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
-import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well1024a;
 
 import static cc.r2.core.poly2.DivisionWithRemainder.fastDivisionPreConditioning;
 
@@ -13,8 +11,19 @@ import static cc.r2.core.poly2.DivisionWithRemainder.fastDivisionPreConditioning
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class EqualDegreeFactorization {
+final class EqualDegreeFactorization {
     private EqualDegreeFactorization() {}
+
+    @SuppressWarnings("unchecked")
+    private static <T extends IMutablePolynomialZp<T>> T randomMonicPoly(T factory) {
+        if (factory instanceof MutablePolynomialMod) {
+            MutablePolynomialMod fm = (MutablePolynomialMod) factory;
+            return (T) RandomPolynomials.randomMonicPoly(fm.degree, fm.modulus, GlobalRandom.getRandom());
+        } else {
+            bMutablePolynomialMod fm = (bMutablePolynomialMod) factory;
+            return (T) RandomPolynomials.randomMonicPoly(fm.degree, fm.modulus, GlobalRandom.getRandom());
+        }
+    }
 
     /**
      * Plain Cantor-Zassenhaus algorithm
@@ -23,22 +32,22 @@ public final class EqualDegreeFactorization {
      * @param d    distinct degree
      * @return irreducible factor of {@code poly}
      */
-    static MutablePolynomialMod CantorZassenhaus0(MutablePolynomialMod poly, int d) {
-        assert poly.lc() == 1;
+    static <T extends IMutablePolynomialZp<T>> T CantorZassenhaus0(T poly, int d) {
+        assert poly.isMonic();
 
-        MutablePolynomialMod a = RandomPolynomials.randomMonicPoly(poly.degree - 1, poly.modulus, GlobalRandom.getRandom());
+        T a = randomMonicPoly(poly);
         if (a.isConstant())
             return null;
 
-        MutablePolynomialMod gcd1 = PolynomialGCD.PolynomialGCD(a, poly);
+        T gcd1 = PolynomialGCD.PolynomialGCD(a, poly);
         if (!gcd1.isConstant())
             return gcd1;
 
         // (modulus^d - 1) / 2
-        BigInteger exponent = BigInteger.valueOfUnsigned(poly.modulus).pow(d).decrement().shiftRight(1);
-        MutablePolynomialMod b = PolynomialArithmetics.polyPowMod(a, exponent, poly, fastDivisionPreConditioning(poly), true);
+        BigInteger exponent = poly.modulusAsBigInt().pow(d).decrement().shiftRight(1);
+        T b = PolynomialArithmetics.polyPowMod(a, exponent, poly, fastDivisionPreConditioning(poly), true);
 
-        MutablePolynomialMod gcd2 = PolynomialGCD.PolynomialGCD(b.decrement(), poly);
+        T gcd2 = PolynomialGCD.PolynomialGCD(b.decrement(), poly);
         if (!gcd2.isConstant() && !gcd2.equals(poly))
             return gcd2;
 
@@ -53,37 +62,75 @@ public final class EqualDegreeFactorization {
      * @return irreducible factor of {@code poly}
      */
     static lFactorDecomposition<MutablePolynomialMod> CantorZassenhaus(MutablePolynomialMod input, int d) {
-        assert input.degree % d == 0;
-        int nFactors = input.degree / d;
-        if (input.degree == 1 || nFactors == 1)
-            return lFactorDecomposition.oneFactor(input, 1);
-
-        assert input.degree != d;
-
         lFactorDecomposition<MutablePolynomialMod> result = new lFactorDecomposition<>();
+        CantorZassenhaus(input, d, result);
+        return result.setNumericFactor(input.lc());
+    }
 
-        long overallFactor = input.lc();
-        MutablePolynomialMod poly = input.clone();
+    /**
+     * Plain Cantor-Zassenhaus algorithm implementation
+     *
+     * @param input the polynomial
+     * @param d     distinct degree
+     * @return irreducible factor of {@code poly}
+     */
+    static bFactorDecomposition<bMutablePolynomialMod> CantorZassenhaus(bMutablePolynomialMod input, int d) {
+        bFactorDecomposition<bMutablePolynomialMod> result = new bFactorDecomposition<>();
+        CantorZassenhaus(input, d, result);
+        return result.setNumericFactor(input.lc());
+    }
+
+    /**
+     * Plain Cantor-Zassenhaus algorithm implementation
+     *
+     * @param input the polynomial
+     * @param d     distinct degree
+     * @return irreducible factor of {@code poly}
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends IMutablePolynomialZp<T>> FactorDecomposition<T> CantorZassenhaus(T input, int d) {
+        if (input instanceof MutablePolynomialMod)
+            return (FactorDecomposition<T>) CantorZassenhaus((MutablePolynomialMod) input, d);
+        else
+            return (FactorDecomposition<T>) CantorZassenhaus((bMutablePolynomialMod) input, d);
+    }
+
+    /**
+     * Plain Cantor-Zassenhaus algorithm implementation
+     *
+     * @param input the polynomial
+     * @param d     distinct degree
+     * @return irreducible factor of {@code poly}
+     */
+    private static <T extends IMutablePolynomialZp<T>> void CantorZassenhaus(T input, int d, FactorDecomposition<T> result) {
+        assert input.degree() % d == 0;
+        int nFactors = input.degree() / d;
+        if (input.degree() == 1 || nFactors == 1) {
+            result.addFactor(input, 1);
+            return;
+        }
+
+        assert input.degree() != d;
+
+        T poly = input.clone();
         while (true) {
 
             poly = poly.monic();
-            if (poly.degree == d) {
+            if (poly.degree() == d) {
                 result.addFactor(poly, 1);
                 break;
             }
 
-            MutablePolynomialMod factor;
+            T factor;
             do {
                 factor = CantorZassenhaus0(poly, d);
             } while (factor == null);
 
-            if (factor.degree != d)
-                result.addAll(CantorZassenhaus(factor, d));
+            if (factor.degree() != d)
+                CantorZassenhaus(factor, d, result);
             else
                 result.addFactor(factor.monic(), 1);
             poly = DivisionWithRemainder.quotient(poly, factor, false);
         }
-
-        return result.setNumericFactor(overallFactor);
     }
 }

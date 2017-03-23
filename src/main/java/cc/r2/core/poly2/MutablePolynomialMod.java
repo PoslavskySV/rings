@@ -238,6 +238,11 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return new MutablePolynomialMod(newModulus, newMagic, newData);
     }
 
+    @Override
+    public BigInteger modulusAsBigInt() {
+        return BigInteger.valueOfUnsigned(modulus);
+    }
+
     /**
      * Returns Z[x] polynomial formed from the coefficients of this.
      *

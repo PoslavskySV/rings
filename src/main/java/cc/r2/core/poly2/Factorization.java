@@ -31,7 +31,7 @@ public final class Factorization {
     /* ************************** Factorization in Zp[x] ************************** */
 
     /** x^n * poly */
-    private static final class FactorMonomial<T extends MutablePolynomialAbstract<T>> {
+    private static final class FactorMonomial<T extends IMutablePolynomial<T>> {
         final T theRest, monomial;
 
         FactorMonomial(T theRest, T monomial) {
@@ -41,21 +41,26 @@ public final class Factorization {
     }
 
     /** factor out common monomial term (x^n) */
-    private static <T extends MutablePolynomialAbstract<T>> FactorMonomial<T> factorOutMonomial(T poly) {
-        int i = 0;
-        while (poly.data[i] == 0) ++i;
-        assert i < poly.data.length;
+    private static <T extends IMutablePolynomial<T>> FactorMonomial<T> factorOutMonomial(T poly) {
+        int i = poly.firstNonZeroCoefficientPosition();
 
         if (i == 0)
             return new FactorMonomial<>(poly, poly.createOne());
-        return new FactorMonomial<>(poly.clone().shiftLeft(i), poly.createMonomial(1, i));
+        return new FactorMonomial<>(poly.clone().shiftLeft(i), poly.createMonomial(i));
     }
-
 
     /** early check for trivial cases */
     private static lFactorDecomposition<MutablePolynomialMod> earlyFactorizationChecks(MutablePolynomialMod poly) {
         if (poly.degree <= 1 || poly.isMonomial())
             return lFactorDecomposition.oneFactor(poly.isMonic() ? poly : poly.clone().monic(), poly.lc());
+
+        return null;
+    }
+
+    /** early check for trivial cases */
+    private static bFactorDecomposition<bMutablePolynomialMod> earlyFactorizationChecks(bMutablePolynomialMod poly) {
+        if (poly.degree <= 1 || poly.isMonomial())
+            return bFactorDecomposition.oneFactor(poly.isMonic() ? poly : poly.clone().monic(), poly.lc());
 
         return null;
     }
@@ -70,37 +75,52 @@ public final class Factorization {
         lFactorDecomposition<MutablePolynomialMod> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
-
-        FactorMonomial<MutablePolynomialMod> base = factorOutMonomial(poly);
-
         result = new lFactorDecomposition<>();
+        factor(poly, result);
+        return result.setNumericFactor(poly.lc());
+    }
+
+    /**
+     * Factors polynomial in Zp[x].
+     *
+     * @param poly the polynomial
+     * @return factor decomposition
+     */
+    public static bFactorDecomposition<bMutablePolynomialMod> factor(bMutablePolynomialMod poly) {
+        bFactorDecomposition<bMutablePolynomialMod> result = earlyFactorizationChecks(poly);
+        if (result != null)
+            return result;
+        result = new bFactorDecomposition<>();
+        factor(poly, result);
+        return result.setNumericFactor(poly.lc());
+    }
+
+    private static <T extends IMutablePolynomialZp<T>> void factor(T poly, FactorDecomposition<T> result) {
+        FactorMonomial<T> base = factorOutMonomial(poly);
         result.addFactor(base.monomial, 1);
 
         //do square-free factorization
-        lFactorDecomposition<MutablePolynomialMod> sqf = SquareFreeFactorization(base.theRest);
+        FactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
         for (int i = 0; i < sqf.size(); ++i) {
             //for each square-free factor
-            MutablePolynomialMod sqfFactor = sqf.get(i);
+            T sqfFactor = sqf.get(i);
             int sqfExponent = sqf.getExponent(i);
 
             //do distinct-degree factorization
-            lFactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization(sqfFactor);
+            FactorDecomposition<T> ddf = DistinctDegreeFactorization(sqfFactor);
             for (int j = 0; j < ddf.size(); ++j) {
                 //for each distinct-degree factor
-                MutablePolynomialMod ddfFactor = ddf.get(j);
+                T ddfFactor = ddf.get(j);
                 int ddfExponent = ddf.getExponent(j);
 
                 //do equal-degree factorization
-                lFactorDecomposition<MutablePolynomialMod> edf = CantorZassenhaus(ddfFactor, ddfExponent);
-                for (MutablePolynomialMod irreducibleFactor : edf.factors)
+                FactorDecomposition<T> edf = CantorZassenhaus(ddfFactor, ddfExponent);
+                for (T irreducibleFactor : edf.factors)
                     //put final irreducible factor into the result
                     result.addFactor(irreducibleFactor.monic(), sqfExponent);
             }
         }
-
-        return result.setNumericFactor(poly.lc());
     }
-
 
     /* ************************** Factorization in Z[x] ************************** */
 
@@ -116,8 +136,8 @@ public final class Factorization {
      * @return factorization modulo {@code modulus^(2^nIterations)}
      */
     public static lFactorDecomposition<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
-                                                                              MutablePolynomialZ basePoly,
-                                                                              lFactorDecomposition<MutablePolynomialMod> modularFactors) {
+                                                                               MutablePolynomialZ basePoly,
+                                                                               lFactorDecomposition<MutablePolynomialMod> modularFactors) {
         return new lFactorDecomposition<>(
                 liftFactorization(modulus, nIterations, basePoly, modularFactors.factors),
                 modularFactors.exponents, modularFactors.factor);

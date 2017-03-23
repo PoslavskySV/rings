@@ -399,6 +399,24 @@ public final class SquareFreeFactorization {
     }
 
     /**
+     * Performs square-free factorization of a {@code poly}.
+     *
+     * @param poly the polynomial
+     * @return square-free decomposition
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IMutablePolynomial<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
+        if (poly instanceof MutablePolynomialZ)
+            return (FactorDecomposition<T>) SquareFreeFactorization((MutablePolynomialZ) poly);
+        else if (poly instanceof MutablePolynomialMod)
+            return (FactorDecomposition<T>) SquareFreeFactorization((MutablePolynomialMod) poly);
+        else if (poly instanceof bMutablePolynomialZ)
+            return (FactorDecomposition<T>) SquareFreeFactorization((bMutablePolynomialZ) poly);
+        else
+            return (FactorDecomposition<T>) SquareFreeFactorization((bMutablePolynomialMod) poly);
+    }
+
+    /**
      * Returns square-free part of the {@code poly}
      *
      * @param poly the polynomial

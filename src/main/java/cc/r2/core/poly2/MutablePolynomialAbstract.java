@@ -13,7 +13,7 @@ import static cc.redberry.libdivide4j.FastDivision.magicSigned;
  * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements IMutablePolynomial<T> {
+abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements IMutablePolynomial<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     long[] data;
     /** points to the last non zero element in the data array */
@@ -82,6 +82,14 @@ public abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstr
     @Override
     public int signum() {
         return Long.signum(lc());
+    }
+
+    @Override
+    public int firstNonZeroCoefficientPosition() {
+        int i = 0;
+        while (data[i] == 0) ++i;
+        assert i < data.length;
+        return i;
     }
 
     /**

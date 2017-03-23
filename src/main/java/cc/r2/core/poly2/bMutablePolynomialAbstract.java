@@ -14,7 +14,7 @@ import static cc.r2.core.number.BigIntegerArithmetics.*;
  * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> implements IMutablePolynomial<T> {
+abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> implements IMutablePolynomial<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     BigInteger[] data;
     /** points to the last non zero element in the data array */
@@ -87,6 +87,14 @@ public abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbs
     @Override
     public int signum() {
         return lc().signum();
+    }
+
+    @Override
+    public int firstNonZeroCoefficientPosition() {
+        int i = 0;
+        while (data[i].isZero()) ++i;
+        assert i < data.length;
+        return i;
     }
 
     protected long[] toLong0() {

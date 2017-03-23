@@ -62,6 +62,13 @@ interface IMutablePolynomial<T extends IMutablePolynomial> extends Comparable<T>
     int signum();
 
     /**
+     * Returns position of the first non-zero coefficient, that is common monomial exponent (e.g. 2 for x^2 + x^3 + ...)
+     *
+     * @return position of the first non-zero coefficient
+     */
+    int firstNonZeroCoefficientPosition();
+
+    /**
      * Sets this to zero
      *
      * @return this := zero

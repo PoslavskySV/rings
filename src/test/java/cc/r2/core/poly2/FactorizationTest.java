@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly2.Factorization.HenselData;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -22,6 +23,21 @@ public class FactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         Assert.assertTrue(factor(MutablePolynomialZ.create(3, 7).modulus(19)).get(0).isMonic());
+    }
+
+    @Test
+    public void test2() throws Exception {
+        BigInteger modulus = BigInteger.LONG_MAX_VALUE;
+        modulus = modulus.multiply(modulus).increment().nextProbablePrime();
+        bMutablePolynomialMod poly = bMutablePolynomialZ.create(
+                BigInteger.valueOf(Long.MAX_VALUE),
+                BigInteger.valueOf(Long.MAX_VALUE - 1),
+                BigInteger.valueOf(Long.MAX_VALUE - 2)).modulus(modulus);
+        for (int i = 0; i < 5; i++)
+            poly = poly.square().add(poly.derivative()).increment();
+        bFactorDecomposition<bMutablePolynomialMod> fct = factor(poly);
+        Assert.assertEquals(7, fct.size());
+        assertFactorization(poly, fct);
     }
 
     static void assertHenselLift(HenselData lift) {
