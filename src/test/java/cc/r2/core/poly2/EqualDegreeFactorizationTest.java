@@ -16,4 +16,11 @@ public class EqualDegreeFactorizationTest {
         for (int i = 0; i < 10; i++)
             Assert.assertEquals(4, EqualDegreeFactorization.CantorZassenhaus(a, 1).size());
     }
+
+    @Test
+    public void test2() throws Exception {
+        int modulus = 13;
+        MutablePolynomialMod poly = MutablePolynomialZ.create(9, 0, 1).modulus(modulus);
+        Assert.assertEquals(2, EqualDegreeFactorization.CantorZassenhaus(poly, 1).size());
+    }
 }
