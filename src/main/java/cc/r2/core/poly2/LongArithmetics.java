@@ -1,5 +1,7 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
+
 /**
  * Helper methods for arithmetics with {@code longs}.
  *
@@ -7,6 +9,12 @@ package cc.r2.core.poly2;
  * @since 1.0
  */
 public final class LongArithmetics {
+    /** Max supported modulus bits */
+    public static final int MAX_SUPPORTED_MODULUS_BITS = 62;
+    /** Max supported modulus */
+    public static final long MAX_SUPPORTED_MODULUS = (1L << MAX_SUPPORTED_MODULUS_BITS) - 1L;
+    public static final BigInteger b_MAX_SUPPORTED_MODULUS = BigInteger.valueOf(MAX_SUPPORTED_MODULUS);
+
     private LongArithmetics() {}
 
     /**

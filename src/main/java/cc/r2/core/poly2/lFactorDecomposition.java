@@ -66,8 +66,22 @@ public final class lFactorDecomposition<T extends MutablePolynomialAbstract<T>> 
         return ts;
     }
 
-    static bFactorDecomposition<bMutablePolynomialMod> convert(lFactorDecomposition<MutablePolynomialMod> decomposition) {
-        bFactorDecomposition<bMutablePolynomialMod> r = new bFactorDecomposition<>();
+//    static bFactorDecomposition<bMutablePolynomialMod> convertZp(lFactorDecomposition<MutablePolynomialMod> decomposition) {
+//        bFactorDecomposition<bMutablePolynomialMod> r = new bFactorDecomposition<>();
+//        decomposition.factors.forEach(t -> r.factors.add(t.toBigPoly()));
+//        r.exponents.addAll(decomposition.exponents);
+//        r.setNumericFactor(decomposition.factorAsBigInt());
+//        return r;
+//    }
+//
+//    static bFactorDecomposition<bMutablePolynomialZ> convertZ(lFactorDecomposition<MutablePolynomialZ> decomposition) {
+//        return convert(decomposition);
+//    }
+
+    @SuppressWarnings("unchecked")
+    public static <bPoly extends bMutablePolynomialAbstract<bPoly>, lPoly extends MutablePolynomialAbstract<lPoly>>
+    bFactorDecomposition<bPoly> convert(lFactorDecomposition<lPoly> decomposition) {
+        bFactorDecomposition r = new bFactorDecomposition<bPoly>();
         decomposition.factors.forEach(t -> r.factors.add(t.toBigPoly()));
         r.exponents.addAll(decomposition.exponents);
         r.setNumericFactor(decomposition.factorAsBigInt());

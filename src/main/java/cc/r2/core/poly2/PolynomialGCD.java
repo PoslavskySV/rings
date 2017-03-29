@@ -531,7 +531,7 @@ public final class PolynomialGCD {
             //cache current base
             previousBase = base.clone();
 
-            if (!LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > MutablePolynomialMod.MAX_SUPPORTED_MODULUS)
+            if (!LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > LongArithmetics.MAX_SUPPORTED_MODULUS)
                 break;
 
             //lifting

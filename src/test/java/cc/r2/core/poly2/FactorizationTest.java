@@ -1,7 +1,7 @@
 package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly2.Factorization.HenselData;
+import cc.r2.core.poly2.Factorization.lHenselData;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -9,8 +9,6 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.util.List;
 
 import static cc.r2.core.poly2.Factorization.factor;
 import static cc.r2.core.poly2.Factorization.liftFactorization;
@@ -49,7 +47,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
         assertFactorization(poly, factor(poly));
     }
 
-    static void assertHenselLift(HenselData lift) {
+    static void assertHenselLift(lHenselData lift) {
         Assert.assertEquals(lift.base.modulus(lift.modulus), lift.aFactor.clone().multiply(lift.bFactor));
         Assert.assertEquals(lift.base.modulus(lift.modulus).createOne(),
                 lift.aFactor.clone().multiply(lift.aCoFactor)
@@ -67,13 +65,13 @@ public class FactorizationTest extends AbstractPolynomialTest {
             MutablePolynomialMod bMod = bFactor.modulus(modulus);
             if (!PolynomialGCD.PolynomialGCD(aMod, bMod).isConstant())
                 continue;
-            HenselData hensel = Factorization.createHenselInput(modulus,
+            lHenselData hensel = Factorization.createHenselInput(modulus,
                     poly, aMod, bMod);
             assertHenselLift(hensel);
 
             for (int i = 0; i < 10; i++) {
                 try {
-                    hensel = hensel.liftQuadratic();
+                    hensel.liftQuadratic();
                 } catch (ArithmeticException ex) {
                     if (!"long overflow".equals(ex.getMessage()))
                         throw ex;
@@ -112,15 +110,15 @@ public class FactorizationTest extends AbstractPolynomialTest {
         if (!isSquareFree(baseMod))
             return;
 
-        List<MutablePolynomialMod> modularFactors = factor(baseMod).factors;
-        assertFactorization(baseMod, baseMod.lc(), modularFactors);
+        lFactorDecomposition<MutablePolynomialMod> modularFactors = factor(baseMod);
+        assertFactorization(baseMod, modularFactors);
 
         long liftedModulus = modulus;
         for (int i = 1; i < nIterations; i++) {
             try {
-                List<MutablePolynomialMod> tmp = liftFactorization(modulus, i, base, modularFactors);
+                lFactorDecomposition<MutablePolynomialMod> tmp = liftFactorization(modulus, i, base, modularFactors);
                 MutablePolynomialMod bm = base.modulus(liftedModulus = liftedModulus * liftedModulus);
-                assertFactorization(bm, bm.lc(), tmp);
+                assertFactorization(bm, bm.lc(), tmp.factors);
             } catch (ArithmeticException ex) {
                 if (rethrow || !"long overflow".equals(ex.getMessage()))
                     throw ex;
@@ -282,7 +280,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
     }
 
     @Test
-//    @Benchmark
+    @Benchmark
     public void tmpcompare() throws Exception {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
@@ -320,5 +318,31 @@ public class FactorizationTest extends AbstractPolynomialTest {
         System.out.println(modT);
         System.out.println("BigInteger:");
         System.out.println(bT);
+    }
+
+    @Test
+    @Ignore
+    public void test12133() throws Exception {
+        bMutablePolynomialZ a = bMutablePolynomialZ.create(1, 2, 3, 5, 3, 2, 1),
+                b = bMutablePolynomialZ.create(1, 2, -12443241213L, 412312, 3, 2, 123423554351L),
+                c = bMutablePolynomialZ.create(-1, -2, -12443241213L, 412312, 3, 2, 123423554351L),
+                d = bMutablePolynomialZ.create(-1, -2, -12441213L, 412312, 3, 2, 1234235543L),
+                e = bMutablePolynomialZ.create(-11111111, -2, -12441213L, 412312, 3, 2, 1234235543L),
+                f = bMutablePolynomialZ.create(-1, -2222121, -12441213L, 412312, 3, 2, 1234235543L),
+                g = bMutablePolynomialZ.create(-1, -2, -12441213L, 412312, 3, 2, 1234235543L, -12441213L, 412312, 3, 2, 1234235543L, -1, -2, -12441213L, 412312, 3, 2, 1234235543L, -12441213L, 412312, 3, 2, 1234235543L);
+        bMutablePolynomialZ poly = a.clone().multiply(b).multiply(c).multiply(d).multiply(e).multiply(f).multiply(g);
+        for (int i = 0; i < 1000; i++) {
+            long start = System.nanoTime();
+            bFactorDecomposition<bMutablePolynomialZ> fct = factor(poly);
+            System.out.println(System.nanoTime() - start);
+            Assert.assertEquals(9, fct.size());
+            assertFactorization(poly, fct);
+        }
+    }
+
+    @Test
+    public void azzzname() throws Exception {
+        int[] set = {1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3};
+
     }
 }

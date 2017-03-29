@@ -81,6 +81,7 @@ public final class MutablePolynomialZ extends MutablePolynomialAbstract<MutableP
         return new MutablePolynomialZ(new long[]{1}, 0);
     }
 
+    @Override
     public bMutablePolynomialZ toBigPoly() {
         return bMutablePolynomialZ.create(dataToBigIntegers());
     }

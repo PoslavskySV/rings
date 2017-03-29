@@ -7,7 +7,7 @@ import cc.r2.core.test.TimeConsuming;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.r2.core.poly2.MutablePolynomialMod.MAX_SUPPORTED_MODULUS_BITS;
+import static cc.r2.core.poly2.LongArithmetics.MAX_SUPPORTED_MODULUS_BITS;
 
 /**
  * @author Stanislav Poslavsky

@@ -45,16 +45,9 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         fixDegree();
     }
 
-    /** Max supported modulus bits */
-    public static final int MAX_SUPPORTED_MODULUS_BITS = 62;
-
-    /** Max supported modulus */
-    public static final long MAX_SUPPORTED_MODULUS = (1L << MAX_SUPPORTED_MODULUS_BITS) - 1L;
-    public static final BigInteger b_MAX_SUPPORTED_MODULUS = BigInteger.valueOf(MAX_SUPPORTED_MODULUS);
-
     private static void checkModulus(long modulus) {
-        if (Long.compareUnsigned(modulus, MAX_SUPPORTED_MODULUS) > 0)
-            throw new IllegalArgumentException("Too large modulus. Max allowed is " + MAX_SUPPORTED_MODULUS);
+        if (Long.compareUnsigned(modulus, LongArithmetics.MAX_SUPPORTED_MODULUS) > 0)
+            throw new IllegalArgumentException("Too large modulus. Max allowed is " + LongArithmetics.MAX_SUPPORTED_MODULUS);
     }
 
     /* =========================== Factory methods =========================== */
@@ -436,6 +429,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         return createFromArray(newData);
     }
 
+    @Override
     public bMutablePolynomialMod toBigPoly() {
         return bMutablePolynomialMod.createUnsafe(BigInteger.valueOf(modulus), dataToBigIntegers());
     }

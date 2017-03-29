@@ -6,6 +6,7 @@ import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.Arrays;
 
+import static cc.redberry.libdivide4j.FastDivision.divideAndRemainder128;
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
@@ -268,6 +269,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     @Override
     public final T createMonomial(int degree) {return createMonomial(1L, degree);}
 
+    public abstract bMutablePolynomialAbstract toBigPoly();
     /**
      * Factory
      *

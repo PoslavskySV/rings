@@ -153,7 +153,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     /** Whether this BigInteger polynomial can be converted to machine-precision polynomial (long) */
-    public boolean isLong() { return modulus.compareTo(MutablePolynomialMod.b_MAX_SUPPORTED_MODULUS) <= 0;}
+    public boolean isLong() { return modulus.compareTo(LongArithmetics.b_MAX_SUPPORTED_MODULUS) <= 0;}
 
     /**
      * Creates constant polynomial with specified value
@@ -235,6 +235,8 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     MutablePolynomialMod toLong() {
+        if (modulus.compareTo(LongArithmetics.b_MAX_SUPPORTED_MODULUS) > 0)
+            throw new ArithmeticException("modulus out of supported range");
         return MutablePolynomialZ.create(toLong0()).modulus(modulus.longValueExact(), false);
     }
 
