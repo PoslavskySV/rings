@@ -115,7 +115,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** modulus operation */
     BigInteger mod(BigInteger val) {
-        return val.mod(modulus);
+        return val.compareTo(modulus) < 0 ? val : val.mod(modulus);
     }
 
 
@@ -133,10 +133,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     /** subtractMod operation */
     BigInteger subtractMod(BigInteger a, BigInteger b) {
         BigInteger r = a.subtract(b);
-        if (r.signum() < 0)
-            r = r.add(modulus);
-        assert r.compareTo(modulus) < 0;
-        return r;
+        return r.signum() < 0 ? r.add(modulus) : r;
     }
 
     /** to symmetric modulus */

@@ -129,6 +129,20 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
     }
 
     /**
+     * Returns L2 norm of this polynomial, i.e. a square root of a sum of coefficient squares.
+     *
+     * @return L2 norm of {@code this}
+     */
+    final double norm2Double() {
+        double norm = 0;
+        for (int i = 0; i <= degree; ++i) {
+            double d = data[i].doubleValue();
+            norm += d * d;
+        }
+        return Math.sqrt(norm);
+    }
+
+    /**
      * Returns max coefficient (by absolute value) of this poly
      *
      * @return max coefficient (by absolute value)

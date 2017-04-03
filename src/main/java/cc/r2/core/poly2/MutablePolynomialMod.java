@@ -426,7 +426,9 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
             for (; i > 0; --i)
                 newData[i - 1] = multiplyMod(data[i], i);
         }
-        return createFromArray(newData);
+        MutablePolynomialMod r = new MutablePolynomialMod(modulus, magic, magic32MulMod, newData, newData.length - 1, modulusFits32);
+        r.fixDegree();
+        return r;
     }
 
     @Override

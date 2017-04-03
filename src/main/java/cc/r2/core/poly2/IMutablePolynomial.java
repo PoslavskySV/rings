@@ -217,6 +217,13 @@ interface IMutablePolynomial<T extends IMutablePolynomial> extends Comparable<T>
      */
     T multiply(T oth);
 
+    @SuppressWarnings("unchecked")
+    default T multiply(T... oth) {
+        for (T t : oth)
+            multiply(t);
+        return (T) this;
+    }
+
     /**
      * Raises {@code this} by the {@code factor}
      *

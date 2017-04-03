@@ -601,7 +601,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         int dividerDegree = 126;
         int dividendDegree = 256;
         for (int i = 0; i < nIterations; i++) {
-            if (i * 10 == nIterations) {
+            if (nIterations / 10 == i) {
                 classic.clear();
                 fast.clear();
             }

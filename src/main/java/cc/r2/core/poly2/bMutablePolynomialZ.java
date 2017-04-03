@@ -118,6 +118,10 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
         return bMutablePolynomialMod.create(modulus, copy ? data.clone() : data);
     }
 
+    bMutablePolynomialMod modulusUnsafe(BigInteger modulus) {
+        return bMutablePolynomialMod.createUnsafe(modulus, data);
+    }
+
     /**
      * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
      *

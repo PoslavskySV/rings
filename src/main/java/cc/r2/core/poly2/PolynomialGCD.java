@@ -89,7 +89,7 @@ public final class PolynomialGCD {
         }
         assert old_r.equals(a.clone().multiply(old_s).add(b.clone().multiply(old_t)));
 
-        T[] result = a.arrayNewInstance(3);
+        T[] result = factory.arrayNewInstance(3);
         result[0] = old_r;
         result[1] = old_s;
         result[2] = old_t;
