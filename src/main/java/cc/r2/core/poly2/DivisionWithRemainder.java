@@ -49,18 +49,18 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder} or {@code null} if the division is not possible
      */
-    public static MutablePolynomialZ[] divideAndRemainder(final MutablePolynomialZ dividend,
-                                                          final MutablePolynomialZ divider,
-                                                          boolean copy) {
+    public static lMutablePolynomialZ[] divideAndRemainder(final lMutablePolynomialZ dividend,
+                                                           final lMutablePolynomialZ divider,
+                                                           boolean copy) {
         if (dividend.isZero())
-            return new MutablePolynomialZ[]{MutablePolynomialZ.zero(), MutablePolynomialZ.zero()};
+            return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), lMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
-            return new MutablePolynomialZ[]{MutablePolynomialZ.zero(), copy ? dividend.clone() : dividend};
+            return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), copy ? dividend.clone() : dividend};
         if (divider.degree == 0) {
-            MutablePolynomialZ div = copy ? dividend.clone() : dividend;
+            lMutablePolynomialZ div = copy ? dividend.clone() : dividend;
             div = div.divideOrNull(divider.lc());
             if (div == null) return null;
-            return new MutablePolynomialZ[]{div, MutablePolynomialZ.zero()};
+            return new lMutablePolynomialZ[]{div, lMutablePolynomialZ.zero()};
         }
         if (divider.degree == 1)
             return divideAndRemainderLinearDivider(dividend, divider, copy);
@@ -76,31 +76,31 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static MutablePolynomialZ[] pseudoDivideAndRemainder(final MutablePolynomialZ dividend,
-                                                                final MutablePolynomialZ divider,
-                                                                final boolean copy) {
+    public static lMutablePolynomialZ[] pseudoDivideAndRemainder(final lMutablePolynomialZ dividend,
+                                                                 final lMutablePolynomialZ divider,
+                                                                 final boolean copy) {
         if (dividend.isZero())
-            return new MutablePolynomialZ[]{MutablePolynomialZ.zero(), MutablePolynomialZ.zero()};
+            return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), lMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
-            return new MutablePolynomialZ[]{MutablePolynomialZ.zero(), copy ? dividend.clone() : dividend};
+            return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), copy ? dividend.clone() : dividend};
         long factor = LongArithmetics.safePow(divider.lc(), dividend.degree - divider.degree + 1);
         if (divider.degree == 0)
-            return new MutablePolynomialZ[]{(copy ? dividend.clone() : dividend).multiply(factor / dividend.lc()), MutablePolynomialZ.zero()};
+            return new lMutablePolynomialZ[]{(copy ? dividend.clone() : dividend).multiply(factor / dividend.lc()), lMutablePolynomialZ.zero()};
         if (divider.degree == 1)
             return divideAndRemainderLinearDivider0(dividend, divider, factor, copy);
         return divideAndRemainderGeneral0(dividend, divider, factor, copy);
     }
 
     /** Plain school implementation */
-    static MutablePolynomialZ[] divideAndRemainderGeneral0(final MutablePolynomialZ dividend,
-                                                           final MutablePolynomialZ divider,
-                                                           final long dividendRaiseFactor,
-                                                           final boolean copy) {
+    static lMutablePolynomialZ[] divideAndRemainderGeneral0(final lMutablePolynomialZ dividend,
+                                                            final lMutablePolynomialZ divider,
+                                                            final long dividendRaiseFactor,
+                                                            final boolean copy) {
         assert dividend.degree >= divider.degree;
         if (divider.lc() == 1 && dividendRaiseFactor == 1)
             return divideAndRemainderGeneralMonic(dividend, divider, copy);
 
-        MutablePolynomialZ
+        lMutablePolynomialZ
                 remainder = (copy ? dividend.clone() : dividend).multiply(dividendRaiseFactor);
         long[] quotient = new long[dividend.degree - divider.degree + 1];
 
@@ -118,16 +118,16 @@ public final class DivisionWithRemainder {
             } else quotient[i] = 0;
         }
 
-        return new MutablePolynomialZ[]{MutablePolynomialZ.create(quotient), remainder};
+        return new lMutablePolynomialZ[]{lMutablePolynomialZ.create(quotient), remainder};
     }
 
     /** Plain school implementation */
-    private static MutablePolynomialZ[] divideAndRemainderGeneralMonic(final MutablePolynomialZ dividend,
-                                                                       final MutablePolynomialZ divider,
-                                                                       final boolean copy) {
+    private static lMutablePolynomialZ[] divideAndRemainderGeneralMonic(final lMutablePolynomialZ dividend,
+                                                                        final lMutablePolynomialZ divider,
+                                                                        final boolean copy) {
         assert divider.lc() == 1;
 
-        MutablePolynomialZ
+        lMutablePolynomialZ
                 remainder = (copy ? dividend.clone() : dividend);
         long[] quotient = new long[dividend.degree - divider.degree + 1];
         for (int i = dividend.degree - divider.degree; i >= 0; --i) {
@@ -136,7 +136,7 @@ public final class DivisionWithRemainder {
                 remainder.subtract(divider, quotient[i], i);
             } else quotient[i] = 0;
         }
-        return new MutablePolynomialZ[]{MutablePolynomialZ.create(quotient), remainder};
+        return new lMutablePolynomialZ[]{lMutablePolynomialZ.create(quotient), remainder};
     }
 
     /**
@@ -148,27 +148,27 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    static MutablePolynomialZ[] pseudoDivideAndRemainderAdaptive(final MutablePolynomialZ dividend,
-                                                                 final MutablePolynomialZ divider,
-                                                                 final boolean copy) {
+    static lMutablePolynomialZ[] pseudoDivideAndRemainderAdaptive(final lMutablePolynomialZ dividend,
+                                                                  final lMutablePolynomialZ divider,
+                                                                  final boolean copy) {
         if (dividend.isZero())
-            return new MutablePolynomialZ[]{MutablePolynomialZ.zero(), MutablePolynomialZ.zero()};
+            return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), lMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
-            return new MutablePolynomialZ[]{MutablePolynomialZ.zero(), copy ? dividend.clone() : dividend};
+            return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), copy ? dividend.clone() : dividend};
         if (divider.degree == 0)
-            return new MutablePolynomialZ[]{copy ? dividend.clone() : dividend, MutablePolynomialZ.zero()};
+            return new lMutablePolynomialZ[]{copy ? dividend.clone() : dividend, lMutablePolynomialZ.zero()};
         if (divider.degree == 1)
             return pseudoDivideAndRemainderLinearDividerAdaptive(dividend, divider, copy);
         return pseudoDivideAndRemainderAdaptive0(dividend, divider, copy);
     }
 
     /** general implementation */
-    static MutablePolynomialZ[] pseudoDivideAndRemainderAdaptive0(final MutablePolynomialZ dividend,
-                                                                  final MutablePolynomialZ divider,
-                                                                  final boolean copy) {
+    static lMutablePolynomialZ[] pseudoDivideAndRemainderAdaptive0(final lMutablePolynomialZ dividend,
+                                                                   final lMutablePolynomialZ divider,
+                                                                   final boolean copy) {
         assert dividend.degree >= divider.degree;
 
-        MutablePolynomialZ remainder = copy ? dividend.clone() : dividend;
+        lMutablePolynomialZ remainder = copy ? dividend.clone() : dividend;
         long[] quotient = new long[dividend.degree - divider.degree + 1];
 
         Magic magic = magicSigned(divider.lc());
@@ -190,11 +190,11 @@ public final class DivisionWithRemainder {
             } else quotient[i] = 0;
         }
 
-        return new MutablePolynomialZ[]{MutablePolynomialZ.create(quotient), remainder};
+        return new lMutablePolynomialZ[]{lMutablePolynomialZ.create(quotient), remainder};
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
-    static MutablePolynomialZ[] pseudoDivideAndRemainderLinearDividerAdaptive(MutablePolynomialZ dividend, MutablePolynomialZ divider, boolean copy) {
+    static lMutablePolynomialZ[] pseudoDivideAndRemainderLinearDividerAdaptive(lMutablePolynomialZ dividend, lMutablePolynomialZ divider, boolean copy) {
         assert divider.degree == 1;
 
         //apply Horner's method
@@ -222,21 +222,21 @@ public final class DivisionWithRemainder {
             res = quot;
         }
         if (!copy) quotient[dividend.degree] = 0;
-        return new MutablePolynomialZ[]{MutablePolynomialZ.create(quotient), MutablePolynomialZ.create(res)};
+        return new lMutablePolynomialZ[]{lMutablePolynomialZ.create(quotient), lMutablePolynomialZ.create(res)};
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
-    static MutablePolynomialZ[] divideAndRemainderLinearDivider(MutablePolynomialZ dividend, MutablePolynomialZ divider, boolean copy) {
+    static lMutablePolynomialZ[] divideAndRemainderLinearDivider(lMutablePolynomialZ dividend, lMutablePolynomialZ divider, boolean copy) {
         return divideAndRemainderLinearDivider0(dividend, divider, 1, copy);
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
-    static MutablePolynomialZ[] pseudoDivideAndRemainderLinearDivider(MutablePolynomialZ dividend, MutablePolynomialZ divider, boolean copy) {
+    static lMutablePolynomialZ[] pseudoDivideAndRemainderLinearDivider(lMutablePolynomialZ dividend, lMutablePolynomialZ divider, boolean copy) {
         return divideAndRemainderLinearDivider0(dividend, divider, LongArithmetics.safePow(divider.lc(), dividend.degree), copy);
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
-    static MutablePolynomialZ[] divideAndRemainderLinearDivider0(MutablePolynomialZ dividend, MutablePolynomialZ divider, long raiseFactor, boolean copy) {
+    static lMutablePolynomialZ[] divideAndRemainderLinearDivider0(lMutablePolynomialZ dividend, lMutablePolynomialZ divider, long raiseFactor, boolean copy) {
         assert divider.degree == 1;
 
         //apply Horner's method
@@ -258,7 +258,7 @@ public final class DivisionWithRemainder {
             res = quot;
         }
         if (!copy) quotient[dividend.degree] = 0;
-        return new MutablePolynomialZ[]{MutablePolynomialZ.create(quotient), MutablePolynomialZ.create(res)};
+        return new lMutablePolynomialZ[]{lMutablePolynomialZ.create(quotient), lMutablePolynomialZ.create(res)};
     }
 
     /**
@@ -270,28 +270,28 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the remainder or {@code null} if division is not possible
      */
-    public static MutablePolynomialZ remainder(final MutablePolynomialZ dividend,
-                                               final MutablePolynomialZ divider,
-                                               final boolean copy) {
+    public static lMutablePolynomialZ remainder(final lMutablePolynomialZ dividend,
+                                                final lMutablePolynomialZ divider,
+                                                final boolean copy) {
         if (dividend.degree < divider.degree)
             return dividend;
         if (divider.degree == 0)
-            return MutablePolynomialZ.zero();
+            return lMutablePolynomialZ.zero();
         if (divider.degree == 1) {
             if (divider.cc() % divider.lc() != 0)
                 return null;
-            return MutablePolynomialZ.create(dividend.evaluate(-divider.cc() / divider.lc()));
+            return lMutablePolynomialZ.create(dividend.evaluate(-divider.cc() / divider.lc()));
         }
         return remainder0(dividend, divider, copy);
     }
 
     /** Plain school implementation */
-    static MutablePolynomialZ remainder0(final MutablePolynomialZ dividend,
-                                         final MutablePolynomialZ divider,
-                                         final boolean copy) {
+    static lMutablePolynomialZ remainder0(final lMutablePolynomialZ dividend,
+                                          final lMutablePolynomialZ divider,
+                                          final boolean copy) {
         assert dividend.degree >= divider.degree;
 
-        MutablePolynomialZ remainder = copy ? dividend.clone() : dividend;
+        lMutablePolynomialZ remainder = copy ? dividend.clone() : dividend;
         Magic magic = magicSigned(remainder.lc());
         for (int i = dividend.degree - divider.degree; i >= 0; --i)
             if (remainder.degree == divider.degree + i) {
@@ -492,15 +492,15 @@ public final class DivisionWithRemainder {
     }
 
     /** early checks for division */
-    private static MutablePolynomialMod[] earlyDivideAndRemainderChecks(final MutablePolynomialMod dividend,
-                                                                        final MutablePolynomialMod divider,
+    private static lMutablePolynomialZp[] earlyDivideAndRemainderChecks(final lMutablePolynomialZp dividend,
+                                                                        final lMutablePolynomialZp divider,
                                                                         final boolean copy) {
         if (dividend.isZero())
-            return new MutablePolynomialMod[]{dividend.createZero(), dividend.createZero()};
+            return new lMutablePolynomialZp[]{dividend.createZero(), dividend.createZero()};
         if (dividend.degree < divider.degree)
-            return new MutablePolynomialMod[]{dividend.createZero(), copy ? dividend.clone() : dividend};
+            return new lMutablePolynomialZp[]{dividend.createZero(), copy ? dividend.clone() : dividend};
         if (divider.degree == 0)
-            return new MutablePolynomialMod[]{(copy ? dividend.clone() : dividend).multiply(LongArithmetics.modInverse(divider.lc(), dividend.modulus)), dividend.createZero()};
+            return new lMutablePolynomialZp[]{(copy ? dividend.clone() : dividend).multiply(LongArithmetics.modInverse(divider.lc(), dividend.modulus)), dividend.createZero()};
         if (divider.degree == 1)
             return divideAndRemainderLinearDividerModulus(dividend, divider, copy);
         return null;
@@ -515,10 +515,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static MutablePolynomialMod[] divideAndRemainder(final MutablePolynomialMod dividend,
-                                                            final MutablePolynomialMod divider,
+    public static lMutablePolynomialZp[] divideAndRemainder(final lMutablePolynomialZp dividend,
+                                                            final lMutablePolynomialZp divider,
                                                             final boolean copy) {
-        MutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
 
@@ -537,23 +537,23 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static MutablePolynomialMod[] divideAndRemainderClassic(final MutablePolynomialMod dividend,
-                                                                   final MutablePolynomialMod divider,
+    public static lMutablePolynomialZp[] divideAndRemainderClassic(final lMutablePolynomialZp dividend,
+                                                                   final lMutablePolynomialZp divider,
                                                                    final boolean copy) {
-        MutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
         return divideAndRemainderClassic0(dividend, divider, copy);
     }
 
     /** Plain school implementation */
-    static MutablePolynomialMod[] divideAndRemainderClassic0(final MutablePolynomialMod dividend,
-                                                             final MutablePolynomialMod divider,
+    static lMutablePolynomialZp[] divideAndRemainderClassic0(final lMutablePolynomialZp dividend,
+                                                             final lMutablePolynomialZp divider,
                                                              final boolean copy) {
         assert dividend.degree >= divider.degree;
         dividend.checkCompatibleModulus(divider);
 
-        MutablePolynomialMod remainder = copy ? dividend.clone() : dividend;
+        lMutablePolynomialZp remainder = copy ? dividend.clone() : dividend;
         long[] quotient = new long[dividend.degree - divider.degree + 1];
 
         long lcInverse = LongArithmetics.modInverse(divider.lc(), dividend.modulus);
@@ -564,11 +564,11 @@ public final class DivisionWithRemainder {
             } else quotient[i] = 0;
         }
 
-        return new MutablePolynomialMod[]{dividend.createFromArray(quotient), remainder};
+        return new lMutablePolynomialZp[]{dividend.createFromArray(quotient), remainder};
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
-    static MutablePolynomialMod[] divideAndRemainderLinearDividerModulus(MutablePolynomialMod dividend, MutablePolynomialMod divider, boolean copy) {
+    static lMutablePolynomialZp[] divideAndRemainderLinearDividerModulus(lMutablePolynomialZp dividend, lMutablePolynomialZp divider, boolean copy) {
         assert divider.degree == 1;
         assert dividend.degree > 0;
         dividend.checkCompatibleModulus(divider);
@@ -590,21 +590,21 @@ public final class DivisionWithRemainder {
             res = dividend.addMod(dividend.multiplyMod(res, cc), tmp);
         }
         if (!copy) quotient[dividend.degree] = 0;
-        return new MutablePolynomialMod[]{dividend.createFromArray(quotient), dividend.createFromArray(new long[]{res})};
+        return new lMutablePolynomialZp[]{dividend.createFromArray(quotient), dividend.createFromArray(new long[]{res})};
     }
 
     /* ************************************ Multi-precision division in Zp[x]  ************************************ */
 
     /** early checks for division */
-    private static bMutablePolynomialMod[] earlyDivideAndRemainderChecks(final bMutablePolynomialMod dividend,
-                                                                         final bMutablePolynomialMod divider,
-                                                                         final boolean copy) {
+    private static bMutablePolynomialZp[] earlyDivideAndRemainderChecks(final bMutablePolynomialZp dividend,
+                                                                        final bMutablePolynomialZp divider,
+                                                                        final boolean copy) {
         if (dividend.isZero())
-            return new bMutablePolynomialMod[]{dividend.createZero(), dividend.createZero()};
+            return new bMutablePolynomialZp[]{dividend.createZero(), dividend.createZero()};
         if (dividend.degree < divider.degree)
-            return new bMutablePolynomialMod[]{dividend.createZero(), copy ? dividend.clone() : dividend};
+            return new bMutablePolynomialZp[]{dividend.createZero(), copy ? dividend.clone() : dividend};
         if (divider.degree == 0)
-            return new bMutablePolynomialMod[]{(copy ? dividend.clone() : dividend).multiply(BigIntegerArithmetics.modInverse(divider.lc(), dividend.modulus)), dividend.createZero()};
+            return new bMutablePolynomialZp[]{(copy ? dividend.clone() : dividend).multiply(BigIntegerArithmetics.modInverse(divider.lc(), dividend.modulus)), dividend.createZero()};
         if (divider.degree == 1)
             return divideAndRemainderLinearDividerModulus(dividend, divider, copy);
         return null;
@@ -619,10 +619,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static bMutablePolynomialMod[] divideAndRemainder(final bMutablePolynomialMod dividend,
-                                                             final bMutablePolynomialMod divider,
-                                                             final boolean copy) {
-        bMutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp[] divideAndRemainder(final bMutablePolynomialZp dividend,
+                                                            final bMutablePolynomialZp divider,
+                                                            final boolean copy) {
+        bMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
 
@@ -641,23 +641,23 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static bMutablePolynomialMod[] divideAndRemainderClassic(final bMutablePolynomialMod dividend,
-                                                                    final bMutablePolynomialMod divider,
-                                                                    final boolean copy) {
-        bMutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp[] divideAndRemainderClassic(final bMutablePolynomialZp dividend,
+                                                                   final bMutablePolynomialZp divider,
+                                                                   final boolean copy) {
+        bMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
         return divideAndRemainderClassic0(dividend, divider, copy);
     }
 
     /** Plain school implementation */
-    static bMutablePolynomialMod[] divideAndRemainderClassic0(final bMutablePolynomialMod dividend,
-                                                              final bMutablePolynomialMod divider,
-                                                              final boolean copy) {
+    static bMutablePolynomialZp[] divideAndRemainderClassic0(final bMutablePolynomialZp dividend,
+                                                             final bMutablePolynomialZp divider,
+                                                             final boolean copy) {
         assert dividend.degree >= divider.degree;
         dividend.checkCompatibleModulus(divider);
 
-        bMutablePolynomialMod remainder = copy ? dividend.clone() : dividend;
+        bMutablePolynomialZp remainder = copy ? dividend.clone() : dividend;
         BigInteger[] quotient = new BigInteger[dividend.degree - divider.degree + 1];
 
         BigInteger lcInverse = BigIntegerArithmetics.modInverse(divider.lc(), dividend.modulus);
@@ -668,11 +668,11 @@ public final class DivisionWithRemainder {
             } else quotient[i] = ZERO;
         }
 
-        return new bMutablePolynomialMod[]{dividend.createFromArray(quotient), remainder};
+        return new bMutablePolynomialZp[]{dividend.createFromArray(quotient), remainder};
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
-    static bMutablePolynomialMod[] divideAndRemainderLinearDividerModulus(bMutablePolynomialMod dividend, bMutablePolynomialMod divider, boolean copy) {
+    static bMutablePolynomialZp[] divideAndRemainderLinearDividerModulus(bMutablePolynomialZp dividend, bMutablePolynomialZp divider, boolean copy) {
         assert divider.degree == 1;
         assert dividend.degree > 0;
         dividend.checkCompatibleModulus(divider);
@@ -694,7 +694,7 @@ public final class DivisionWithRemainder {
             res = dividend.addMod(dividend.multiplyMod(res, cc), tmp);
         }
         if (!copy) quotient[dividend.degree] = ZERO;
-        return new bMutablePolynomialMod[]{dividend.createFromArray(quotient), dividend.createFromArray(new BigInteger[]{res})};
+        return new bMutablePolynomialZp[]{dividend.createFromArray(quotient), dividend.createFromArray(new BigInteger[]{res})};
     }
 
 
@@ -776,10 +776,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static MutablePolynomialMod[] divideAndRemainderFast(MutablePolynomialMod dividend,
-                                                                MutablePolynomialMod divider,
+    public static lMutablePolynomialZp[] divideAndRemainderFast(lMutablePolynomialZp dividend,
+                                                                lMutablePolynomialZp divider,
                                                                 boolean copy) {
-        MutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
         return divideAndRemainderFast0(dividend, divider, copy);
@@ -795,18 +795,18 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static MutablePolynomialMod[] divideAndRemainderFast(MutablePolynomialMod dividend,
-                                                                MutablePolynomialMod divider,
-                                                                InverseModMonomial<MutablePolynomialMod> invMod,
+    public static lMutablePolynomialZp[] divideAndRemainderFast(lMutablePolynomialZp dividend,
+                                                                lMutablePolynomialZp divider,
+                                                                InverseModMonomial<lMutablePolynomialZp> invMod,
                                                                 boolean copy) {
-        MutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
         return divideAndRemainderFast0(dividend, divider, invMod, copy);
     }
 
-    static MutablePolynomialMod[] divideAndRemainderFast0(MutablePolynomialMod dividend,
-                                                          MutablePolynomialMod divider,
+    static lMutablePolynomialZp[] divideAndRemainderFast0(lMutablePolynomialZp dividend,
+                                                          lMutablePolynomialZp divider,
                                                           boolean copy) {
         // if the divider can be directly inverted modulo x^i
         if (divider.isMonic())
@@ -817,7 +817,7 @@ public final class DivisionWithRemainder {
         // make the divisor monic
         divider.multiply(lcInv);
         // perform fast arithmetic with monic divisor
-        MutablePolynomialMod[] result = divideAndRemainderFast0(dividend, divider, fastDivisionPreConditioning(divider), copy);
+        lMutablePolynomialZp[] result = divideAndRemainderFast0(dividend, divider, fastDivisionPreConditioning(divider), copy);
         // reconstruct divisor's lc
         divider.multiply(lc);
         // reconstruct actual quotient
@@ -836,10 +836,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static bMutablePolynomialMod[] divideAndRemainderFast(bMutablePolynomialMod dividend,
-                                                                 bMutablePolynomialMod divider,
-                                                                 boolean copy) {
-        bMutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp[] divideAndRemainderFast(bMutablePolynomialZp dividend,
+                                                                bMutablePolynomialZp divider,
+                                                                boolean copy) {
+        bMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
         return divideAndRemainderFast0(dividend, divider, copy);
@@ -855,19 +855,19 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return {quotient, remainder}
      */
-    public static bMutablePolynomialMod[] divideAndRemainderFast(bMutablePolynomialMod dividend,
-                                                                 bMutablePolynomialMod divider,
-                                                                 InverseModMonomial<bMutablePolynomialMod> invMod,
-                                                                 boolean copy) {
-        bMutablePolynomialMod[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp[] divideAndRemainderFast(bMutablePolynomialZp dividend,
+                                                                bMutablePolynomialZp divider,
+                                                                InverseModMonomial<bMutablePolynomialZp> invMod,
+                                                                boolean copy) {
+        bMutablePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
         return divideAndRemainderFast0(dividend, divider, invMod, copy);
     }
 
-    static bMutablePolynomialMod[] divideAndRemainderFast0(bMutablePolynomialMod dividend,
-                                                           bMutablePolynomialMod divider,
-                                                           boolean copy) {
+    static bMutablePolynomialZp[] divideAndRemainderFast0(bMutablePolynomialZp dividend,
+                                                          bMutablePolynomialZp divider,
+                                                          boolean copy) {
         // if the divider can be directly inverted modulo x^i
         if (divider.lc().isOne())
             return divideAndRemainderFast0(dividend, divider, fastDivisionPreConditioning(divider), copy);
@@ -877,7 +877,7 @@ public final class DivisionWithRemainder {
         // make the divisor monic
         divider.multiply(lcInv);
         // perform fast arithmetic with monic divisor
-        bMutablePolynomialMod[] result = divideAndRemainderFast0(dividend, divider, fastDivisionPreConditioning(divider), copy);
+        bMutablePolynomialZp[] result = divideAndRemainderFast0(dividend, divider, fastDivisionPreConditioning(divider), copy);
         // reconstruct divisor's lc
         divider.multiply(lc);
         // reconstruct actual quotient
@@ -888,8 +888,8 @@ public final class DivisionWithRemainder {
     /* ********************************* Remainder in Zp[x]  ******************************** */
 
     /** fast division checks */
-    private static MutablePolynomialMod earlyRemainderChecks(final MutablePolynomialMod dividend,
-                                                             final MutablePolynomialMod divider,
+    private static lMutablePolynomialZp earlyRemainderChecks(final lMutablePolynomialZp dividend,
+                                                             final lMutablePolynomialZp divider,
                                                              final boolean copy) {
         if (dividend.degree < divider.degree)
             return (copy ? dividend.clone() : dividend);
@@ -912,10 +912,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the remainder
      */
-    public static MutablePolynomialMod remainder(final MutablePolynomialMod dividend,
-                                                 final MutablePolynomialMod divider,
+    public static lMutablePolynomialZp remainder(final lMutablePolynomialZp dividend,
+                                                 final lMutablePolynomialZp divider,
                                                  final boolean copy) {
-        MutablePolynomialMod rem = earlyRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp rem = earlyRemainderChecks(dividend, divider, copy);
         if (rem != null)
             return rem;
 
@@ -926,13 +926,13 @@ public final class DivisionWithRemainder {
     }
 
     /** Plain school implementation */
-    static MutablePolynomialMod remainderClassical0(final MutablePolynomialMod dividend,
-                                                    final MutablePolynomialMod divider,
+    static lMutablePolynomialZp remainderClassical0(final lMutablePolynomialZp dividend,
+                                                    final lMutablePolynomialZp divider,
                                                     final boolean copy) {
         assert dividend.degree >= divider.degree;
         dividend.checkCompatibleModulus(divider);
 
-        MutablePolynomialMod remainder = copy ? dividend.clone() : dividend;
+        lMutablePolynomialZp remainder = copy ? dividend.clone() : dividend;
         long lcInverse = LongArithmetics.modInverse(divider.lc(), dividend.modulus);
         for (int i = dividend.degree - divider.degree; i >= 0; --i)
             if (remainder.degree == divider.degree + i)
@@ -951,11 +951,11 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the remainder
      */
-    public static MutablePolynomialMod remainderFast(final MutablePolynomialMod dividend,
-                                                     final MutablePolynomialMod divider,
-                                                     final InverseModMonomial<MutablePolynomialMod> invMod,
+    public static lMutablePolynomialZp remainderFast(final lMutablePolynomialZp dividend,
+                                                     final lMutablePolynomialZp divider,
+                                                     final InverseModMonomial<lMutablePolynomialZp> invMod,
                                                      final boolean copy) {
-        MutablePolynomialMod rem = earlyRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp rem = earlyRemainderChecks(dividend, divider, copy);
         if (rem != null)
             return rem;
 
@@ -971,10 +971,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the quotient
      */
-    public static MutablePolynomialMod quotient(final MutablePolynomialMod dividend,
-                                                final MutablePolynomialMod divider,
+    public static lMutablePolynomialZp quotient(final lMutablePolynomialZp dividend,
+                                                final lMutablePolynomialZp divider,
                                                 final boolean copy) {
-        MutablePolynomialMod[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (qd != null)
             return qd[0];
 
@@ -994,11 +994,11 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the quotient
      */
-    public static MutablePolynomialMod quotientFast(final MutablePolynomialMod dividend,
-                                                    final MutablePolynomialMod divider,
-                                                    final InverseModMonomial<MutablePolynomialMod> invMod,
+    public static lMutablePolynomialZp quotientFast(final lMutablePolynomialZp dividend,
+                                                    final lMutablePolynomialZp divider,
+                                                    final InverseModMonomial<lMutablePolynomialZp> invMod,
                                                     final boolean copy) {
-        MutablePolynomialMod[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
+        lMutablePolynomialZp[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (qd != null)
             return qd[0];
 
@@ -1007,9 +1007,9 @@ public final class DivisionWithRemainder {
 
 
     /** fast division checks */
-    private static bMutablePolynomialMod earlyRemainderChecks(final bMutablePolynomialMod dividend,
-                                                              final bMutablePolynomialMod divider,
-                                                              final boolean copy) {
+    private static bMutablePolynomialZp earlyRemainderChecks(final bMutablePolynomialZp dividend,
+                                                             final bMutablePolynomialZp divider,
+                                                             final boolean copy) {
         if (dividend.degree < divider.degree)
             return (copy ? dividend.clone() : dividend);
         if (divider.degree == 0)
@@ -1031,10 +1031,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the remainder
      */
-    public static bMutablePolynomialMod remainder(final bMutablePolynomialMod dividend,
-                                                  final bMutablePolynomialMod divider,
-                                                  final boolean copy) {
-        bMutablePolynomialMod rem = earlyRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp remainder(final bMutablePolynomialZp dividend,
+                                                 final bMutablePolynomialZp divider,
+                                                 final boolean copy) {
+        bMutablePolynomialZp rem = earlyRemainderChecks(dividend, divider, copy);
         if (rem != null)
             return rem;
 
@@ -1045,13 +1045,13 @@ public final class DivisionWithRemainder {
     }
 
     /** Plain school implementation */
-    static bMutablePolynomialMod remainderClassical0(final bMutablePolynomialMod dividend,
-                                                     final bMutablePolynomialMod divider,
-                                                     final boolean copy) {
+    static bMutablePolynomialZp remainderClassical0(final bMutablePolynomialZp dividend,
+                                                    final bMutablePolynomialZp divider,
+                                                    final boolean copy) {
         assert dividend.degree >= divider.degree;
         dividend.checkCompatibleModulus(divider);
 
-        bMutablePolynomialMod remainder = copy ? dividend.clone() : dividend;
+        bMutablePolynomialZp remainder = copy ? dividend.clone() : dividend;
         BigInteger lcInverse = BigIntegerArithmetics.modInverse(divider.lc(), dividend.modulus);
         for (int i = dividend.degree - divider.degree; i >= 0; --i)
             if (remainder.degree == divider.degree + i)
@@ -1070,11 +1070,11 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the remainder
      */
-    public static bMutablePolynomialMod remainderFast(final bMutablePolynomialMod dividend,
-                                                      final bMutablePolynomialMod divider,
-                                                      final InverseModMonomial<bMutablePolynomialMod> invMod,
-                                                      final boolean copy) {
-        bMutablePolynomialMod rem = earlyRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp remainderFast(final bMutablePolynomialZp dividend,
+                                                     final bMutablePolynomialZp divider,
+                                                     final InverseModMonomial<bMutablePolynomialZp> invMod,
+                                                     final boolean copy) {
+        bMutablePolynomialZp rem = earlyRemainderChecks(dividend, divider, copy);
         if (rem != null)
             return rem;
 
@@ -1090,10 +1090,10 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the quotient
      */
-    public static bMutablePolynomialMod quotient(final bMutablePolynomialMod dividend,
-                                                 final bMutablePolynomialMod divider,
-                                                 final boolean copy) {
-        bMutablePolynomialMod[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp quotient(final bMutablePolynomialZp dividend,
+                                                final bMutablePolynomialZp divider,
+                                                final boolean copy) {
+        bMutablePolynomialZp[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (qd != null)
             return qd[0];
 
@@ -1113,11 +1113,11 @@ public final class DivisionWithRemainder {
      *                 {@code dividend} and {@code dividend} data will be lost
      * @return the quotient
      */
-    public static bMutablePolynomialMod quotientFast(final bMutablePolynomialMod dividend,
-                                                     final bMutablePolynomialMod divider,
-                                                     final InverseModMonomial<bMutablePolynomialMod> invMod,
-                                                     final boolean copy) {
-        bMutablePolynomialMod[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
+    public static bMutablePolynomialZp quotientFast(final bMutablePolynomialZp dividend,
+                                                    final bMutablePolynomialZp divider,
+                                                    final InverseModMonomial<bMutablePolynomialZp> invMod,
+                                                    final boolean copy) {
+        bMutablePolynomialZp[] qd = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (qd != null)
             return qd[0];
 
@@ -1129,46 +1129,46 @@ public final class DivisionWithRemainder {
 
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomialZ<T>> T[] pseudoDivideAndRemainder(T dividend, T divider, boolean copy) {
-        if (dividend instanceof MutablePolynomialZ)
-            return (T[]) pseudoDivideAndRemainder((MutablePolynomialZ) dividend, (MutablePolynomialZ) divider, copy);
+        if (dividend instanceof lMutablePolynomialZ)
+            return (T[]) pseudoDivideAndRemainder((lMutablePolynomialZ) dividend, (lMutablePolynomialZ) divider, copy);
         else
             return (T[]) pseudoDivideAndRemainder((bMutablePolynomialZ) dividend, (bMutablePolynomialZ) divider, copy);
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomial<T>> T[] divideAndRemainder(T dividend, T divider, boolean copy) {
-        if (dividend instanceof MutablePolynomialZ)
-            return (T[]) divideAndRemainder((MutablePolynomialZ) dividend, (MutablePolynomialZ) divider, copy);
-        else if (dividend instanceof MutablePolynomialMod)
-            return (T[]) divideAndRemainder((MutablePolynomialMod) dividend, (MutablePolynomialMod) divider, copy);
+        if (dividend instanceof lMutablePolynomialZ)
+            return (T[]) divideAndRemainder((lMutablePolynomialZ) dividend, (lMutablePolynomialZ) divider, copy);
+        else if (dividend instanceof lMutablePolynomialZp)
+            return (T[]) divideAndRemainder((lMutablePolynomialZp) dividend, (lMutablePolynomialZp) divider, copy);
         else if (dividend instanceof bMutablePolynomialZ)
             return (T[]) divideAndRemainder((bMutablePolynomialZ) dividend, (bMutablePolynomialZ) divider, copy);
         else
-            return (T[]) divideAndRemainder((bMutablePolynomialMod) dividend, (bMutablePolynomialMod) divider, copy);
+            return (T[]) divideAndRemainder((bMutablePolynomialZp) dividend, (bMutablePolynomialZp) divider, copy);
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomial<T>> T remainder(T dividend, T divider, boolean copy) {
-        if (dividend instanceof MutablePolynomialZ)
-            return (T) remainder((MutablePolynomialZ) dividend, (MutablePolynomialZ) divider, copy);
-        else if (dividend instanceof MutablePolynomialMod)
-            return (T) remainder((MutablePolynomialMod) dividend, (MutablePolynomialMod) divider, copy);
+        if (dividend instanceof lMutablePolynomialZ)
+            return (T) remainder((lMutablePolynomialZ) dividend, (lMutablePolynomialZ) divider, copy);
+        else if (dividend instanceof lMutablePolynomialZp)
+            return (T) remainder((lMutablePolynomialZp) dividend, (lMutablePolynomialZp) divider, copy);
         else if (dividend instanceof bMutablePolynomialZ)
             return (T) remainder((bMutablePolynomialZ) dividend, (bMutablePolynomialZ) divider, copy);
         else
-            return (T) remainder((bMutablePolynomialMod) dividend, (bMutablePolynomialMod) divider, copy);
+            return (T) remainder((bMutablePolynomialZp) dividend, (bMutablePolynomialZp) divider, copy);
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomial<T>> T quotient(T dividend, T divider, boolean copy) {
-        if (dividend instanceof MutablePolynomialZ)
-            return (T) quotient((MutablePolynomialZ) dividend, (MutablePolynomialZ) divider, copy);
-        else if (dividend instanceof MutablePolynomialMod)
-            return (T) quotient((MutablePolynomialMod) dividend, (MutablePolynomialMod) divider, copy);
+        if (dividend instanceof lMutablePolynomialZ)
+            return (T) quotient((lMutablePolynomialZ) dividend, (lMutablePolynomialZ) divider, copy);
+        else if (dividend instanceof lMutablePolynomialZp)
+            return (T) quotient((lMutablePolynomialZp) dividend, (lMutablePolynomialZp) divider, copy);
         else if (dividend instanceof bMutablePolynomialZ)
             return (T) quotient((bMutablePolynomialZ) dividend, (bMutablePolynomialZ) divider, copy);
         else
-            return (T) quotient((bMutablePolynomialMod) dividend, (bMutablePolynomialMod) divider, copy);
+            return (T) quotient((bMutablePolynomialZp) dividend, (bMutablePolynomialZp) divider, copy);
     }
 
     @SuppressWarnings("unchecked")
@@ -1176,9 +1176,9 @@ public final class DivisionWithRemainder {
                                                                       final T divider,
                                                                       final InverseModMonomial<T> invMod,
                                                                       final boolean copy) {
-        if (dividend instanceof MutablePolynomialMod)
-            return (T) remainderFast((MutablePolynomialMod) dividend, (MutablePolynomialMod) divider, (InverseModMonomial<MutablePolynomialMod>) invMod, copy);
+        if (dividend instanceof lMutablePolynomialZp)
+            return (T) remainderFast((lMutablePolynomialZp) dividend, (lMutablePolynomialZp) divider, (InverseModMonomial<lMutablePolynomialZp>) invMod, copy);
         else
-            return (T) remainderFast((bMutablePolynomialMod) dividend, (bMutablePolynomialMod) divider, (InverseModMonomial<bMutablePolynomialMod>) invMod, copy);
+            return (T) remainderFast((bMutablePolynomialZp) dividend, (bMutablePolynomialZp) divider, (InverseModMonomial<bMutablePolynomialZp>) invMod, copy);
     }
 }

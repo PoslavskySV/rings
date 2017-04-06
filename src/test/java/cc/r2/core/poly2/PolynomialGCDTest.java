@@ -26,11 +26,11 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         long modulus = 11;
-        MutablePolynomialMod a = MutablePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
-        MutablePolynomialMod b = MutablePolynomialZ.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
+        lMutablePolynomialZp a = lMutablePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
+        lMutablePolynomialZp b = lMutablePolynomialZ.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
 
-        PolynomialRemainders<MutablePolynomialMod> prs = PolynomialGCD.Euclid(a, b);
-        MutablePolynomialMod gcd = prs.gcd();
+        PolynomialRemainders<lMutablePolynomialZp> prs = PolynomialGCD.Euclid(a, b);
+        lMutablePolynomialZp gcd = prs.gcd();
         assertEquals(3, gcd.degree);
         assertTrue(divideAndRemainder(a, gcd, true)[1].isZero());
         assertTrue(divideAndRemainder(b, gcd, true)[1].isZero());
@@ -39,56 +39,56 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     @Test
     public void test2() throws Exception {
         //test long overflow
-        MutablePolynomialZ dividend = MutablePolynomialZ.create(0, 14, 50, 93, 108, 130, 70);
-        MutablePolynomialZ divider = MutablePolynomialZ.create(63, 92, 143, 245, 146, 120, 90);
-        MutablePolynomialZ gcd = PolynomialEuclid(dividend, divider, true).gcd();
-        MutablePolynomialZ expected = MutablePolynomialZ.create(7, 4, 10, 10);
+        lMutablePolynomialZ dividend = lMutablePolynomialZ.create(0, 14, 50, 93, 108, 130, 70);
+        lMutablePolynomialZ divider = lMutablePolynomialZ.create(63, 92, 143, 245, 146, 120, 90);
+        lMutablePolynomialZ gcd = PolynomialEuclid(dividend, divider, true).gcd();
+        lMutablePolynomialZ expected = lMutablePolynomialZ.create(7, 4, 10, 10);
         assertEquals(expected, gcd);
     }
 
     @Test
     public void test3() throws Exception {
         //test long overflow
-        MutablePolynomialZ dividend = MutablePolynomialZ.create(7, -7, 0, 1);
-        MutablePolynomialZ divider = MutablePolynomialZ.create(-7, 0, 3);
-        PolynomialRemainders<MutablePolynomialZ> naive = PolynomialEuclid(dividend.clone(), divider.clone(), false);
-        List<MutablePolynomialZ> expectedNaive = new ArrayList<>();
+        lMutablePolynomialZ dividend = lMutablePolynomialZ.create(7, -7, 0, 1);
+        lMutablePolynomialZ divider = lMutablePolynomialZ.create(-7, 0, 3);
+        PolynomialRemainders<lMutablePolynomialZ> naive = PolynomialEuclid(dividend.clone(), divider.clone(), false);
+        List<lMutablePolynomialZ> expectedNaive = new ArrayList<>();
         expectedNaive.add(dividend);
         expectedNaive.add(divider);
-        expectedNaive.add(MutablePolynomialZ.create(63, -42));
-        expectedNaive.add(MutablePolynomialZ.create(-1L));
+        expectedNaive.add(lMutablePolynomialZ.create(63, -42));
+        expectedNaive.add(lMutablePolynomialZ.create(-1L));
         assertEquals(expectedNaive, naive.remainders);
 
-        PolynomialRemainders<MutablePolynomialZ> primitive = PolynomialEuclid(dividend.clone(), divider.clone(), true);
-        List<MutablePolynomialZ> expectedPrimitive = new ArrayList<>();
+        PolynomialRemainders<lMutablePolynomialZ> primitive = PolynomialEuclid(dividend.clone(), divider.clone(), true);
+        List<lMutablePolynomialZ> expectedPrimitive = new ArrayList<>();
         expectedPrimitive.add(dividend);
         expectedPrimitive.add(divider);
-        expectedPrimitive.add(MutablePolynomialZ.create(-3, 2));
-        expectedPrimitive.add(MutablePolynomialZ.create(-1L));
+        expectedPrimitive.add(lMutablePolynomialZ.create(-3, 2));
+        expectedPrimitive.add(lMutablePolynomialZ.create(-1L));
         assertEquals(expectedPrimitive, primitive.remainders);
 
-        PolynomialRemainders<MutablePolynomialZ> subresultant = SubresultantEuclid(dividend.clone(), divider.clone());
-        List<MutablePolynomialZ> expectedSubresultant = new ArrayList<>();
+        PolynomialRemainders<lMutablePolynomialZ> subresultant = SubresultantEuclid(dividend.clone(), divider.clone());
+        List<lMutablePolynomialZ> expectedSubresultant = new ArrayList<>();
         expectedSubresultant.add(dividend);
         expectedSubresultant.add(divider);
-        expectedSubresultant.add(MutablePolynomialZ.create(63, -42));
-        expectedSubresultant.add(MutablePolynomialZ.create(-49L));
+        expectedSubresultant.add(lMutablePolynomialZ.create(63, -42));
+        expectedSubresultant.add(lMutablePolynomialZ.create(-49L));
         assertEquals(expectedSubresultant, subresultant.remainders);
     }
 
     @Test
     public void test4() throws Exception {
         for (long sign = -1; sign <= 2; sign += 2) {
-            MutablePolynomialZ dividend = MutablePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(sign);
-            MutablePolynomialZ divider = MutablePolynomialZ.create(6, 7, 9, 8, 3).multiply(sign);
-            PolynomialRemainders<MutablePolynomialZ> subresultant = SubresultantEuclid(dividend, divider);
-            List<MutablePolynomialZ> expectedSubresultant = new ArrayList<>();
+            lMutablePolynomialZ dividend = lMutablePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(sign);
+            lMutablePolynomialZ divider = lMutablePolynomialZ.create(6, 7, 9, 8, 3).multiply(sign);
+            PolynomialRemainders<lMutablePolynomialZ> subresultant = SubresultantEuclid(dividend, divider);
+            List<lMutablePolynomialZ> expectedSubresultant = new ArrayList<>();
             expectedSubresultant.add(dividend);
             expectedSubresultant.add(divider);
-            expectedSubresultant.add(MutablePolynomialZ.create(159, 112, 192, 164).multiply(sign));
-            expectedSubresultant.add(MutablePolynomialZ.create(4928, 3068, 5072).multiply(sign));
-            expectedSubresultant.add(MutablePolynomialZ.create(65840, -98972).multiply(sign));
-            expectedSubresultant.add(MutablePolynomialZ.create(3508263).multiply(sign));
+            expectedSubresultant.add(lMutablePolynomialZ.create(159, 112, 192, 164).multiply(sign));
+            expectedSubresultant.add(lMutablePolynomialZ.create(4928, 3068, 5072).multiply(sign));
+            expectedSubresultant.add(lMutablePolynomialZ.create(65840, -98972).multiply(sign));
+            expectedSubresultant.add(lMutablePolynomialZ.create(3508263).multiply(sign));
             assertEquals(expectedSubresultant, subresultant.remainders);
         }
     }
@@ -97,16 +97,16 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     public void test4a() throws Exception {
         for (long sign1 = -1; sign1 <= 2; sign1 += 2)
             for (long sign2 = -1; sign2 <= 2; sign2 += 2) {
-                MutablePolynomialZ dividend = MutablePolynomialZ.create(1, 1, 6, -3, 5).multiply(sign1);
-                MutablePolynomialZ divider = MutablePolynomialZ.create(-9, -3, -10, 2, 8).multiply(sign2);
-                PolynomialRemainders<MutablePolynomialZ> subresultant = SubresultantEuclid(dividend, divider);
-                List<MutablePolynomialZ> expectedSubresultant = new ArrayList<>();
+                lMutablePolynomialZ dividend = lMutablePolynomialZ.create(1, 1, 6, -3, 5).multiply(sign1);
+                lMutablePolynomialZ divider = lMutablePolynomialZ.create(-9, -3, -10, 2, 8).multiply(sign2);
+                PolynomialRemainders<lMutablePolynomialZ> subresultant = SubresultantEuclid(dividend, divider);
+                List<lMutablePolynomialZ> expectedSubresultant = new ArrayList<>();
                 expectedSubresultant.add(dividend);
                 expectedSubresultant.add(divider);
-                expectedSubresultant.add(MutablePolynomialZ.create(-53, -23, -98, 34).multiply(sign1 * sign2));
-                expectedSubresultant.add(MutablePolynomialZ.create(4344, 3818, 9774));
-                expectedSubresultant.add(MutablePolynomialZ.create(-292677, 442825).multiply(sign1 * sign2));
-                expectedSubresultant.add(MutablePolynomialZ.create(22860646));
+                expectedSubresultant.add(lMutablePolynomialZ.create(-53, -23, -98, 34).multiply(sign1 * sign2));
+                expectedSubresultant.add(lMutablePolynomialZ.create(4344, 3818, 9774));
+                expectedSubresultant.add(lMutablePolynomialZ.create(-292677, 442825).multiply(sign1 * sign2));
+                expectedSubresultant.add(lMutablePolynomialZ.create(22860646));
                 assertEquals(expectedSubresultant, subresultant.remainders);
             }
     }
@@ -114,7 +114,7 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     @Test
     public void test5() throws Exception {
         //test long overflow
-        MutablePolynomialZ dividend = MutablePolynomialZ.create(7, 4, 10, 10, 0, 2);
+        lMutablePolynomialZ dividend = lMutablePolynomialZ.create(7, 4, 10, 10, 0, 2);
         PolynomialGCD.PolynomialRemainders prs = PolynomialEuclid(dividend.clone(), dividend.clone(), false);
 
         assertEquals(2, prs.remainders.size());
@@ -124,9 +124,9 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     @Test
     public void test6() throws Exception {
         //test long overflow
-        MutablePolynomialZ dividend = MutablePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(2);
-        MutablePolynomialZ divider = MutablePolynomialZ.create(7, 4, 10, 10, 0, 2);
-        PolynomialRemainders<MutablePolynomialZ> prs;
+        lMutablePolynomialZ dividend = lMutablePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(2);
+        lMutablePolynomialZ divider = lMutablePolynomialZ.create(7, 4, 10, 10, 0, 2);
+        PolynomialRemainders<lMutablePolynomialZ> prs;
 
         for (boolean prim : new boolean[]{true, false}) {
             prs = PolynomialEuclid(dividend.clone(), divider.clone(), prim);
@@ -146,8 +146,8 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     @Test
     public void test7() throws Exception {
         //test long overflow
-        MutablePolynomialZ dividend = MutablePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(2);
-        MutablePolynomialZ divider = MutablePolynomialZ.create(7, 4, 10, 10, 0, 2);
+        lMutablePolynomialZ dividend = lMutablePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(2);
+        lMutablePolynomialZ divider = lMutablePolynomialZ.create(7, 4, 10, 10, 0, 2);
 
         for (PolynomialGCD.PolynomialRemainders prs : runAlgorithms(dividend, divider)) {
             assertEquals(2, prs.remainders.size());
@@ -163,18 +163,18 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     @Test
     public void test8() throws Exception {
         //test long overflow
-        MutablePolynomialZ dividend = MutablePolynomialZ.create(1, 1, 1, 1).multiply(2);
-        MutablePolynomialZ divider = MutablePolynomialZ.create(1, 0, 2);
+        lMutablePolynomialZ dividend = lMutablePolynomialZ.create(1, 1, 1, 1).multiply(2);
+        lMutablePolynomialZ divider = lMutablePolynomialZ.create(1, 0, 2);
 
-        for (PolynomialGCD.PolynomialRemainders<MutablePolynomialZ> prs : runAlgorithms(dividend, divider))
+        for (PolynomialGCD.PolynomialRemainders<lMutablePolynomialZ> prs : runAlgorithms(dividend, divider))
             assertEquals(0, prs.gcd().degree);
     }
 
     @Test
     public void test9() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(-58, 81, -29, -77, 81, 42, -38, 48, 94, 6, 55);
-        MutablePolynomialZ b = MutablePolynomialZ.create(1, 2, 1);
-        MutablePolynomialZ expected = MutablePolynomialZ.create(-58, -35, 75, -54, -102, 127, 127, 14, 152, 242, 161, 116, 55);
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(-58, 81, -29, -77, 81, 42, -38, 48, 94, 6, 55);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(1, 2, 1);
+        lMutablePolynomialZ expected = lMutablePolynomialZ.create(-58, -35, 75, -54, -102, 127, 127, 14, 152, 242, 161, 116, 55);
         assertEquals(expected, a.multiply(b));
     }
 
@@ -182,9 +182,9 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     public void testRandom1() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(100, 1000); i++) {
-            MutablePolynomialZ dividend = randomPoly(5, rnd);
-            MutablePolynomialZ divider = randomPoly(0, rnd);
-            for (PolynomialGCD.PolynomialRemainders<MutablePolynomialZ> prs : runAlgorithms(dividend, divider)) {
+            lMutablePolynomialZ dividend = randomPoly(5, rnd);
+            lMutablePolynomialZ divider = randomPoly(0, rnd);
+            for (PolynomialGCD.PolynomialRemainders<lMutablePolynomialZ> prs : runAlgorithms(dividend, divider)) {
                 assertEquals(0, prs.gcd().degree);
             }
         }
@@ -194,8 +194,8 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     public void testRandom2() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(10000, 10000); i++) {
-            MutablePolynomialZ dividend = randomPoly(5, 5, rnd);
-            MutablePolynomialZ divider = randomPoly(5, 5, rnd);
+            lMutablePolynomialZ dividend = randomPoly(5, 5, rnd);
+            lMutablePolynomialZ divider = randomPoly(5, 5, rnd);
             for (PolynomialGCD.PolynomialRemainders prs :
                     runAlgorithms(dividend, divider,
                             GCDAlgorithm.PolynomialPrimitiveEuclid,
@@ -209,14 +209,14 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
     public void testRandom3() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(500, 3000); i++) {
-            MutablePolynomialZ dividend = randomPoly(10, 500, rnd);
-            MutablePolynomialZ divider = randomPoly(10, 500, rnd);
+            lMutablePolynomialZ dividend = randomPoly(10, 500, rnd);
+            lMutablePolynomialZ divider = randomPoly(10, 500, rnd);
             for (long prime : getModulusArray(9, 1, 40)) {
                 if (dividend.lc() % prime == 0 || divider.lc() % prime == 0)
                     continue;
-                MutablePolynomialMod a = dividend.modulus(prime);
-                MutablePolynomialMod b = divider.modulus(prime);
-                PolynomialRemainders<MutablePolynomialMod> euclid = Euclid(a, b);
+                lMutablePolynomialZp a = dividend.modulus(prime);
+                lMutablePolynomialZp b = divider.modulus(prime);
+                PolynomialRemainders<lMutablePolynomialZp> euclid = Euclid(a, b);
                 assertPolynomialRemainders(a, b, euclid);
             }
         }
@@ -224,43 +224,43 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void test10() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(1740, 4044, 4371, 6905, 6201, 5209, 4483, 2225, 475);
-        MutablePolynomialZ b = MutablePolynomialZ.create(1102, 1349, 1847, 1759, 2517, 2607, 2731, 2145, 608);
-        assertEquals(MutablePolynomialZ.create(29, 21, 32, 19), ModularGCD(a, b));
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(1740, 4044, 4371, 6905, 6201, 5209, 4483, 2225, 475);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(1102, 1349, 1847, 1759, 2517, 2607, 2731, 2145, 608);
+        assertEquals(lMutablePolynomialZ.create(29, 21, 32, 19), ModularGCD(a, b));
     }
 
     @Test
     public void test11() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(0, 1, 1, -6, 17, -18, 14);
-        MutablePolynomialZ b = MutablePolynomialZ.create(0, 4, -3, 0, 8, 0, 4);
-        assertEquals(MutablePolynomialZ.create(0, 1, -2, 2), ModularGCD(a, b));
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(0, 1, 1, -6, 17, -18, 14);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(0, 4, -3, 0, 8, 0, 4);
+        assertEquals(lMutablePolynomialZ.create(0, 1, -2, 2), ModularGCD(a, b));
     }
 
     @Test
     public void test12() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(1, 2, 3, 3, 6, 9);
-        MutablePolynomialZ b = MutablePolynomialZ.create(1, 3, 6, 5, 3);
-        assertEquals(MutablePolynomialZ.create(1, 2, 3), ModularGCD(a, b));
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(1, 2, 3, 3, 6, 9);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(1, 3, 6, 5, 3);
+        assertEquals(lMutablePolynomialZ.create(1, 2, 3), ModularGCD(a, b));
 
-        a = MutablePolynomialZ.create(0, 0, 1, 2);
-        b = MutablePolynomialZ.create(-1, 0, 4);
-        assertEquals(MutablePolynomialZ.create(1, 2), ModularGCD(a, b));
+        a = lMutablePolynomialZ.create(0, 0, 1, 2);
+        b = lMutablePolynomialZ.create(-1, 0, 4);
+        assertEquals(lMutablePolynomialZ.create(1, 2), ModularGCD(a, b));
     }
 
     @Test
     public void test13() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(-1, 0, 4);
-        MutablePolynomialZ b = MutablePolynomialZ.create(-1, 0, 0, 0, 16);
-        MutablePolynomialZ gcd = ModularGCD(a, b);
-        assertEquals(MutablePolynomialZ.create(-1, 0, 4), gcd);
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(-1, 0, 4);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(-1, 0, 0, 0, 16);
+        lMutablePolynomialZ gcd = ModularGCD(a, b);
+        assertEquals(lMutablePolynomialZ.create(-1, 0, 4), gcd);
     }
 
     @Test
     public void test14() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(-1, 0, 4);
-        MutablePolynomialZ b = MutablePolynomialZ.create(1, -5, 6);
-        MutablePolynomialZ gcd = ModularGCD(a, b);
-        assertEquals(MutablePolynomialZ.create(-1, 2), gcd);
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(-1, 0, 4);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(1, -5, 6);
+        lMutablePolynomialZ gcd = ModularGCD(a, b);
+        assertEquals(lMutablePolynomialZ.create(-1, 2), gcd);
     }
 
     @Test
@@ -274,22 +274,22 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
             timings = new DescriptiveStatistics();
             for (int i = 0; i < its(5000, 10000); i++) {
                 try {
-                    MutablePolynomialZ a = randomPoly(1 + rnd.nextInt(7), 100, rnd);
-                    MutablePolynomialZ b = randomPoly(1 + rnd.nextInt(6), 100, rnd);
-                    MutablePolynomialZ gcd = randomPoly(2 + rnd.nextInt(5), 30, rnd);
+                    lMutablePolynomialZ a = randomPoly(1 + rnd.nextInt(7), 100, rnd);
+                    lMutablePolynomialZ b = randomPoly(1 + rnd.nextInt(6), 100, rnd);
+                    lMutablePolynomialZ gcd = randomPoly(2 + rnd.nextInt(5), 30, rnd);
                     a = a.multiply(gcd);
                     b = b.multiply(gcd);
 
                     long start = System.nanoTime();
-                    MutablePolynomialZ mgcd = ModularGCD(a, b);
+                    lMutablePolynomialZ mgcd = ModularGCD(a, b);
                     timings.addValue(System.nanoTime() - start);
 
                     assertFalse(mgcd.isConstant());
 
-                    MutablePolynomialZ[] qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
+                    lMutablePolynomialZ[] qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
                     assertNotNull(qr);
                     assertTrue(qr[1].isZero());
-                    MutablePolynomialZ[] qr1 = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
+                    lMutablePolynomialZ[] qr1 = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
                     assertArrayEquals(qr, qr1);
                     if (!qr[0].isConstant()) ++larger;
 
@@ -305,7 +305,7 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void test15() throws Exception {
-        MutablePolynomialZ poly = MutablePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        lMutablePolynomialZ poly = lMutablePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
         assertEquals(0, poly.evaluate(1));
         assertEquals(-3999, poly.evaluate(2));
         assertEquals(1881, poly.evaluate(-2));
@@ -314,7 +314,7 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void test16() throws Exception {
-        MutablePolynomialZ poly = MutablePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        lMutablePolynomialZ poly = lMutablePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
         poly.multiply(LongArithmetics.safePow(5, poly.degree));
 
         assertEquals(3045900, poly.evaluateAtRational(1, 5));
@@ -328,14 +328,14 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void test17() throws Exception {
-        MutablePolynomialZ poly = MutablePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        lMutablePolynomialZ poly = lMutablePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
         poly.evaluateAtRational(1, 5);
     }
 
     @Test
     public void test18() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
-        MutablePolynomialZ b = MutablePolynomialZ.zero();
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
+        lMutablePolynomialZ b = lMutablePolynomialZ.zero();
         assertEquals(a, SubresultantEuclid(a, b).gcd());
         assertEquals(a, SubresultantEuclid(b, a).gcd());
         assertEquals(a, PolynomialEuclid(a, b, true).gcd());
@@ -348,8 +348,8 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void test19() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
-        MutablePolynomialZ b = MutablePolynomialZ.create(2);
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(2);
         assertEquals(b, SubresultantEuclid(a, b).gcd());
         assertEquals(b, SubresultantEuclid(b, a).gcd());
         assertEquals(b, PolynomialEuclid(a, b, true).gcd());
@@ -364,9 +364,9 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void test20() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(32);
-        MutablePolynomialZ b = MutablePolynomialZ.create(24);
-        MutablePolynomialZ gcd = MutablePolynomialZ.create(8);
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(32);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(24);
+        lMutablePolynomialZ gcd = lMutablePolynomialZ.create(8);
         assertEquals(gcd, PolynomialGCD(a, b));
         assertEquals(gcd, SubresultantEuclid(a, b).gcd());
         assertEquals(gcd, PolynomialEuclid(a, b, true).gcd());
@@ -442,15 +442,15 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void test21() throws Exception {
-        MutablePolynomialZ a = MutablePolynomialZ.create(8, 2, -1, -2, -7);
-        MutablePolynomialZ b = MutablePolynomialZ.create(1, -9, -5, -21);
+        lMutablePolynomialZ a = lMutablePolynomialZ.create(8, 2, -1, -2, -7);
+        lMutablePolynomialZ b = lMutablePolynomialZ.create(1, -9, -5, -21);
         assertTrue(ModularGCD(a, b).isOne());
     }
 
     @Test
     public void test22() throws Exception {
-        MutablePolynomialMod a = MutablePolynomialZ.create(1, 2, 3, 4, 3, 2, 1).modulus(25);
-        MutablePolynomialMod b = MutablePolynomialZ.create(1, 2, 3, 1, 3, 2, 1).modulus(25);
+        lMutablePolynomialZp a = lMutablePolynomialZ.create(1, 2, 3, 4, 3, 2, 1).modulus(25);
+        lMutablePolynomialZp b = lMutablePolynomialZ.create(1, 2, 3, 1, 3, 2, 1).modulus(25);
         assertExtendedGCD(a, b);
     }
 
@@ -517,9 +517,9 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
             for (BigInteger prime : getProbablePrimesArray(BigInteger.LONG_MAX_VALUE.shiftLeft(10), 10)) {
                 if (dividend.lc().mod(prime).isZero() || divider.lc().mod(prime).isZero())
                     continue;
-                bMutablePolynomialMod a = dividend.modulus(prime);
-                bMutablePolynomialMod b = divider.modulus(prime);
-                PolynomialRemainders<bMutablePolynomialMod> euclid = Euclid(a, b);
+                bMutablePolynomialZp a = dividend.modulus(prime);
+                bMutablePolynomialZp b = divider.modulus(prime);
+                PolynomialRemainders<bMutablePolynomialZp> euclid = Euclid(a, b);
                 assertPolynomialRemainders(a, b, euclid);
             }
         }
@@ -572,20 +572,20 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         bMutablePolynomialZ a = bMutablePolynomialZ.create(new BigInteger("419563715"), new BigInteger("419566193"), new BigInteger("3612"), new BigInteger("3444"), new BigInteger("419563127"), new BigInteger("419564681"), new BigInteger("419565017"), new BigInteger("419564387"), new BigInteger("419563463"), new BigInteger("3192"), new BigInteger("419563841"), new BigInteger("419563001"));
         bMutablePolynomialZ b = bMutablePolynomialZ.create(new BigInteger("209783497"), new BigInteger("9989688"), new BigInteger("379608231"), new BigInteger("399587609"), new BigInteger("59938143"), new BigInteger("29969072"), new BigInteger("99896901"), new BigInteger("359628849"), new BigInteger("329659781"), new BigInteger("239752567"), new BigInteger("19979379"), new BigInteger("179814423"), new BigInteger("1"));
 
-        bMutablePolynomialMod aMod = a.modulus(modulus).monic(poly.lc());
-        bMutablePolynomialMod bMod = b.modulus(modulus).monic();
-        bMutablePolynomialMod[] xgcd = PolynomialGCD.ExtendedEuclid(aMod, bMod);
-        MutablePolynomialMod[] lxgcd = PolynomialGCD.ExtendedEuclid(aMod.toLong(), bMod.toLong());
+        bMutablePolynomialZp aMod = a.modulus(modulus).monic(poly.lc());
+        bMutablePolynomialZp bMod = b.modulus(modulus).monic();
+        bMutablePolynomialZp[] xgcd = PolynomialGCD.ExtendedEuclid(aMod, bMod);
+        lMutablePolynomialZp[] lxgcd = PolynomialGCD.ExtendedEuclid(aMod.toLong(), bMod.toLong());
         Assert.assertEquals(xgcd[0].toLong(), lxgcd[0]);
         Assert.assertEquals(xgcd[1].toLong(), lxgcd[1]);
         Assert.assertEquals(xgcd[2].toLong(), lxgcd[2]);
     }
 
-    static <T extends MutablePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {
+    static <T extends lMutablePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {
         assertExtendedGCD(ExtendedEuclid(a, b), a, b);
     }
 
-    static <T extends MutablePolynomialAbstract<T>> void assertExtendedGCD(T[] eea, T a, T b) {
+    static <T extends lMutablePolynomialAbstract<T>> void assertExtendedGCD(T[] eea, T a, T b) {
         Assert.assertEquals(eea[0], a.clone().multiply(eea[1]).add(b.clone().multiply(eea[2])));
         assertEquals(eea[0].degree, PolynomialGCD(a, b).degree);
     }

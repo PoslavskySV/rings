@@ -6,15 +6,14 @@ import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.Arrays;
 
-import static cc.redberry.libdivide4j.FastDivision.divideAndRemainder128;
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
 /**
- * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
+ * Univariate polynomials over Z ({@link lMutablePolynomialZ}) or Zp ({@link lMutablePolynomialZp}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> implements IMutablePolynomial<T> {
+abstract class lMutablePolynomialAbstract<T extends lMutablePolynomialAbstract> implements IMutablePolynomial<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     long[] data;
     /** points to the last non zero element in the data array */
@@ -396,7 +395,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
     public final boolean equals(Object obj) {
         if (obj.getClass() != this.getClass())
             return false;
-        MutablePolynomialAbstract oth = (MutablePolynomialAbstract) obj;
+        lMutablePolynomialAbstract oth = (lMutablePolynomialAbstract) obj;
         if (degree != oth.degree)
             return false;
         for (int i = 0; i <= degree; ++i)
@@ -619,7 +618,7 @@ abstract class MutablePolynomialAbstract<T extends MutablePolynomialAbstract> im
         }
         //switch to classical
         if (1L * (fTo - fFrom) * (fTo - fFrom) < KARATSUBA_THRESHOLD)
-            return MutablePolynomialMod.squareClassicalUnsafe(f, fFrom, fTo);
+            return lMutablePolynomialZp.squareClassicalUnsafe(f, fFrom, fTo);
 
 
         //we now split a and b into 2 parts:

@@ -16,7 +16,7 @@ import static cc.redberry.libdivide4j.FastDivision.*;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class MutablePolynomialMod extends MutablePolynomialAbstract<MutablePolynomialMod> implements IMutablePolynomialZp<MutablePolynomialMod> {
+public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMutablePolynomialZp> implements IMutablePolynomialZp<lMutablePolynomialZp> {
     /** the modulus */
     final long modulus;
     /** magic **/
@@ -25,7 +25,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
     private final boolean modulusFits32;
 
     /** copy constructor */
-    private MutablePolynomialMod(long modulus, Magic magic, Magic magic32MulMod, long[] data, int degree, boolean modulusFits32) {
+    private lMutablePolynomialZp(long modulus, Magic magic, Magic magic32MulMod, long[] data, int degree, boolean modulusFits32) {
         this.modulus = modulus;
         this.magic = magic;
         this.magic32MulMod = magic32MulMod;
@@ -35,7 +35,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
     }
 
     /** main constructor */
-    private MutablePolynomialMod(long modulus, Magic magic, long[] data) {
+    private lMutablePolynomialZp(long modulus, Magic magic, long[] data) {
         this.modulus = modulus;
         this.magic = magic;
         this.magic32MulMod = magic32ForMultiplyMod(modulus);
@@ -59,9 +59,9 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param data    coefficients
      * @return the polynomial
      */
-    public static MutablePolynomialMod createSigned(long modulus, long[] data) {
+    public static lMutablePolynomialZp createSigned(long modulus, long[] data) {
         reduceSigned(data, magicSigned(modulus));
-        return new MutablePolynomialMod(modulus, magicUnsigned(modulus), data);
+        return new lMutablePolynomialZp(modulus, magicUnsigned(modulus), data);
     }
 
     /** reduce data mod modulus **/
@@ -76,8 +76,8 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
             data[i] = modSignedFast(data[i], magicSigned);
     }
 
-    static MutablePolynomialMod createUnsafe(long modulus, long[] data) {
-        return new MutablePolynomialMod(modulus, magicUnsigned(modulus), data);
+    static lMutablePolynomialZp createUnsafe(long modulus, long[] data) {
+        return new lMutablePolynomialZp(modulus, magicUnsigned(modulus), data);
     }
 
     /**
@@ -88,7 +88,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param exponent    monomial exponent
      * @return {@code coefficient * x^exponent}
      */
-    public static MutablePolynomialMod createMonomial(long modulus, long coefficient, int exponent) {
+    public static lMutablePolynomialZp createMonomial(long modulus, long coefficient, int exponent) {
         Magic magic = magicUnsigned(modulus);
         if (coefficient >= modulus)
             coefficient = modUnsignedFast(coefficient, magic);
@@ -97,7 +97,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
         long[] data = new long[exponent + 1];
         data[exponent] = coefficient;
-        return new MutablePolynomialMod(modulus, magic, data);
+        return new lMutablePolynomialZp(modulus, magic, data);
     }
 
     /**
@@ -107,14 +107,14 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param value   the value
      * @return constant polynomial
      */
-    public static MutablePolynomialMod constant(long modulus, long value) {
+    public static lMutablePolynomialZp constant(long modulus, long value) {
         Magic magic = magicUnsigned(modulus);
         if (value >= modulus)
             value = modUnsignedFast(value, magic);
         else if (value < 0)
             value = LongArithmetics.mod(value, modulus);
 
-        return new MutablePolynomialMod(modulus, magic, new long[]{value});
+        return new lMutablePolynomialZp(modulus, magic, new long[]{value});
     }
 
     /**
@@ -123,7 +123,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param modulus the modulus
      * @return polynomial 1
      */
-    public static MutablePolynomialMod one(long modulus) {
+    public static lMutablePolynomialZp one(long modulus) {
         return constant(modulus, 1);
     }
 
@@ -133,7 +133,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param modulus the modulus
      * @return polynomial 0
      */
-    public static MutablePolynomialMod zero(long modulus) {
+    public static lMutablePolynomialZp zero(long modulus) {
         return constant(modulus, 0);
     }
 
@@ -169,33 +169,33 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod createFromArray(long[] newData) {
+    public lMutablePolynomialZp createFromArray(long[] newData) {
         reduceSigned(newData, magicSigned(modulus));
-        MutablePolynomialMod r = new MutablePolynomialMod(modulus, magic, magic32MulMod, newData, newData.length - 1, modulusFits32);
+        lMutablePolynomialZp r = new lMutablePolynomialZp(modulus, magic, magic32MulMod, newData, newData.length - 1, modulusFits32);
         r.fixDegree();
         return r;
     }
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod createConstant(long val) {
+    public lMutablePolynomialZp createConstant(long val) {
         if (val < 0)
             val = LongArithmetics.mod(val, modulus);
         else if (val >= modulus)
             val = mod(val);
-        return new MutablePolynomialMod(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
+        return new lMutablePolynomialZp(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
     }
 
     @Override
-    public MutablePolynomialMod getRange(int from, int to) {
-        MutablePolynomialMod r = new MutablePolynomialMod(modulus, magic, magic32MulMod, Arrays.copyOfRange(data, from, to), to - from - 1, modulusFits32);
+    public lMutablePolynomialZp getRange(int from, int to) {
+        lMutablePolynomialZp r = new lMutablePolynomialZp(modulus, magic, magic32MulMod, Arrays.copyOfRange(data, from, to), to - from - 1, modulusFits32);
         r.fixDegree();
         return r;
     }
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod createMonomial(long coefficient, int newDegree) {
+    public lMutablePolynomialZp createMonomial(long coefficient, int newDegree) {
         if (coefficient < 0)
             coefficient = LongArithmetics.mod(coefficient, modulus);
         else if (coefficient >= modulus)
@@ -204,22 +204,22 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
         long[] newData = new long[newDegree + 1];
         newData[newDegree] = coefficient;
 
-        return new MutablePolynomialMod(modulus, magic, magic32MulMod, newData, newDegree, modulusFits32);
+        return new lMutablePolynomialZp(modulus, magic, magic32MulMod, newData, newDegree, modulusFits32);
     }
 
     @Override
-    public MutablePolynomialMod[] arrayNewInstance(int length) {
-        return new MutablePolynomialMod[length];
+    public lMutablePolynomialZp[] arrayNewInstance(int length) {
+        return new lMutablePolynomialZp[length];
     }
 
     @Override
-    public MutablePolynomialMod[] arrayNewInstance(MutablePolynomialMod a, MutablePolynomialMod b) {
-        return new MutablePolynomialMod[]{a, b};
+    public lMutablePolynomialZp[] arrayNewInstance(lMutablePolynomialZp a, lMutablePolynomialZp b) {
+        return new lMutablePolynomialZp[]{a, b};
     }
 
     /** does not copy the data and does not reduce the data with new modulus */
-    public MutablePolynomialMod setModulusUnsafe(long newModulus) {
-        return new MutablePolynomialMod(newModulus, magicUnsigned(newModulus), data);
+    public lMutablePolynomialZp setModulusUnsafe(long newModulus) {
+        return new lMutablePolynomialZp(newModulus, magicUnsigned(newModulus), data);
     }
 
     /**
@@ -228,11 +228,11 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param newModulus the new modulus
      * @return the new Zp[x] polynomial with specified modulus
      */
-    public MutablePolynomialMod setModulus(long newModulus) {
+    public lMutablePolynomialZp setModulus(long newModulus) {
         long[] newData = data.clone();
         Magic newMagic = magicUnsigned(newModulus);
         reduceUnsigned(newData, newMagic);
-        return new MutablePolynomialMod(newModulus, newMagic, newData);
+        return new lMutablePolynomialZp(newModulus, newMagic, newData);
     }
 
     @Override
@@ -248,8 +248,8 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      */
     @Override
     @SuppressWarnings("unchecked")
-    public MutablePolynomialZ normalForm(boolean copy) {
-        return MutablePolynomialZ.create(copy ? data.clone() : data);
+    public lMutablePolynomialZ normalForm(boolean copy) {
+        return lMutablePolynomialZ.create(copy ? data.clone() : data);
     }
 
     /**
@@ -260,16 +260,16 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      */
     @Override
     @SuppressWarnings("unchecked")
-    public MutablePolynomialZ normalSymmetricForm() {
+    public lMutablePolynomialZ normalSymmetricForm() {
         long[] newData = new long[degree + 1];
         for (int i = degree; i >= 0; --i)
             newData[i] = symmetricForm(data[i]);
-        return MutablePolynomialZ.create(newData);
+        return lMutablePolynomialZ.create(newData);
     }
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod monic() {
+    public lMutablePolynomialZp monic() {
         if (data[degree] == 0) // isZero()
             return this;
         if (degree == 0) {
@@ -280,7 +280,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
     }
 
     @Override
-    public MutablePolynomialMod divideByLC(MutablePolynomialMod other) {
+    public lMutablePolynomialZp divideByLC(lMutablePolynomialZp other) {
         return multiply(modInverse(other.lc(), modulus));
     }
 
@@ -291,7 +291,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param factor the factor
      * @return {@code this}
      */
-    public MutablePolynomialMod monic(long factor) {
+    public lMutablePolynomialZp monic(long factor) {
         return multiply(multiplyMod(mod(factor), modInverse(lc(), modulus)));
     }
 
@@ -309,14 +309,14 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
     }
 
     @Override
-    public void checkCompatibleModulus(MutablePolynomialMod oth) {
+    public void checkCompatibleModulus(lMutablePolynomialZp oth) {
         if (modulus != oth.modulus)
             throw new IllegalArgumentException();
     }
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod add(MutablePolynomialMod oth) {
+    public lMutablePolynomialZp add(lMutablePolynomialZp oth) {
         if (oth.isZero())
             return this;
         if (isZero())
@@ -332,7 +332,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod addMonomial(long coefficient, int exponent) {
+    public lMutablePolynomialZp addMonomial(long coefficient, int exponent) {
         if (coefficient == 0)
             return this;
 
@@ -344,7 +344,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod addMul(MutablePolynomialMod oth, long factor) {
+    public lMutablePolynomialZp addMul(lMutablePolynomialZp oth, long factor) {
         if (oth.isZero())
             return this;
 
@@ -362,7 +362,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod subtract(MutablePolynomialMod oth) {
+    public lMutablePolynomialZp subtract(lMutablePolynomialZp oth) {
         if (oth.isZero())
             return this;
         if (isZero())
@@ -378,7 +378,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod subtract(MutablePolynomialMod oth, long factor, int exponent) {
+    public lMutablePolynomialZp subtract(lMutablePolynomialZp oth, long factor, int exponent) {
         if (oth.isZero())
             return this;
 
@@ -396,7 +396,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod negate() {
+    public lMutablePolynomialZp negate() {
         for (int i = degree; i >= 0; --i)
             if (data[i] != 0)
                 data[i] = modulus - data[i];
@@ -405,7 +405,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod multiply(long factor) {
+    public lMutablePolynomialZp multiply(long factor) {
         factor = mod(factor);
         if (factor == 1)
             return this;
@@ -420,7 +420,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod derivative() {
+    public lMutablePolynomialZp derivative() {
         if (isConstant())
             return createZero();
         long[] newData = new long[degree];
@@ -434,25 +434,25 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
             for (; i > 0; --i)
                 newData[i - 1] = multiplyMod(data[i], i);
         }
-        MutablePolynomialMod r = new MutablePolynomialMod(modulus, magic, magic32MulMod, newData, newData.length - 1, modulusFits32);
+        lMutablePolynomialZp r = new lMutablePolynomialZp(modulus, magic, magic32MulMod, newData, newData.length - 1, modulusFits32);
         r.fixDegree();
         return r;
     }
 
     @Override
-    public bMutablePolynomialMod toBigPoly() {
-        return bMutablePolynomialMod.createUnsafe(BigInteger.valueOf(modulus), dataToBigIntegers());
+    public bMutablePolynomialZp toBigPoly() {
+        return bMutablePolynomialZp.createUnsafe(BigInteger.valueOf(modulus), dataToBigIntegers());
     }
 
     /** Deep copy */
     @Override
-    public MutablePolynomialMod clone() {
-        return new MutablePolynomialMod(modulus, magic, magic32MulMod, data.clone(), degree, modulusFits32);
+    public lMutablePolynomialZp clone() {
+        return new lMutablePolynomialZp(modulus, magic, magic32MulMod, data.clone(), degree, modulusFits32);
     }
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod multiply(MutablePolynomialMod oth) {
+    public lMutablePolynomialZp multiply(lMutablePolynomialZp oth) {
         if (isZero())
             return this;
         if (oth.isZero())
@@ -487,7 +487,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
 
     /** switch algorithms */
-    private long[] multiplyExact(MutablePolynomialMod oth) {
+    private long[] multiplyExact(lMutablePolynomialZp oth) {
         if (1L * (degree + 1) * (degree + 1) <= MUL_CLASSICAL_THRESHOLD)
             return multiplyClassicalUnsafe(data, 0, degree + 1, oth.data, 0, oth.degree + 1);
         else
@@ -495,7 +495,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
     }
 
     /** switch algorithms */
-    private long[] multiplyMod(MutablePolynomialMod oth) {
+    private long[] multiplyMod(lMutablePolynomialZp oth) {
         if (1L * (degree + 1) * (degree + 1) <= MUL_CLASSICAL_THRESHOLD)
             return multiplyModClassical(data, 0, degree + 1, oth.data, 0, oth.degree + 1);
         else
@@ -504,7 +504,7 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
 
     /** {@inheritDoc} */
     @Override
-    public MutablePolynomialMod square() {
+    public lMutablePolynomialZp square() {
         if (isZero())
             return this;
         if (degree == 0)

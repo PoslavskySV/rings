@@ -108,8 +108,8 @@ public final class PolynomialGCD {
     public static <T extends IMutablePolynomialZ<T>> PolynomialRemainders<T> PolynomialEuclid(final T a,
                                                                                               final T b,
                                                                                               boolean primitivePRS) {
-        if (a instanceof MutablePolynomialZ)
-            return (PolynomialRemainders<T>) PolynomialEuclid((MutablePolynomialZ) a, (MutablePolynomialZ) b, primitivePRS);
+        if (a instanceof lMutablePolynomialZ)
+            return (PolynomialRemainders<T>) PolynomialEuclid((lMutablePolynomialZ) a, (lMutablePolynomialZ) b, primitivePRS);
         else
             return (PolynomialRemainders<T>) PolynomialEuclid((bMutablePolynomialZ) a, (bMutablePolynomialZ) b, primitivePRS);
     }
@@ -122,9 +122,9 @@ public final class PolynomialGCD {
      * @param primitivePRS whether to build primitive polynomial remainders or not
      * @return polynomial remainder sequence (the last element is GCD)
      */
-    public static PolynomialRemainders<MutablePolynomialZ> PolynomialEuclid(final MutablePolynomialZ a,
-                                                                            final MutablePolynomialZ b,
-                                                                            boolean primitivePRS) {
+    public static PolynomialRemainders<lMutablePolynomialZ> PolynomialEuclid(final lMutablePolynomialZ a,
+                                                                             final lMutablePolynomialZ b,
+                                                                             boolean primitivePRS) {
         if (a.degree < b.degree)
             return PolynomialEuclid(b, a, primitivePRS);
 
@@ -133,8 +133,8 @@ public final class PolynomialGCD {
 
         long aContent = a.content(), bContent = b.content();
         long contentGCD = LongArithmetics.gcd(aContent, bContent);
-        MutablePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
-        PolynomialRemainders<MutablePolynomialZ> res = PolynomialEuclid0(aPP, bPP, primitivePRS);
+        lMutablePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
+        PolynomialRemainders<lMutablePolynomialZ> res = PolynomialEuclid0(aPP, bPP, primitivePRS);
         res.gcd().primitivePart().multiply(contentGCD);
         return res;
     }
@@ -196,8 +196,8 @@ public final class PolynomialGCD {
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomialZ<T>> PolynomialRemainders<T> SubresultantEuclid(final T a,
                                                                                                 final T b) {
-        if (a instanceof MutablePolynomialZ)
-            return (PolynomialRemainders<T>) SubresultantEuclid((MutablePolynomialZ) a, (MutablePolynomialZ) b);
+        if (a instanceof lMutablePolynomialZ)
+            return (PolynomialRemainders<T>) SubresultantEuclid((lMutablePolynomialZ) a, (lMutablePolynomialZ) b);
         else
             return (PolynomialRemainders<T>) SubresultantEuclid((bMutablePolynomialZ) a, (bMutablePolynomialZ) b);
     }
@@ -209,8 +209,8 @@ public final class PolynomialGCD {
      * @param b poly
      * @return subresultant sequence (the last element is GCD)
      */
-    public static PolynomialRemainders<MutablePolynomialZ> SubresultantEuclid(final MutablePolynomialZ a,
-                                                                              final MutablePolynomialZ b) {
+    public static PolynomialRemainders<lMutablePolynomialZ> SubresultantEuclid(final lMutablePolynomialZ a,
+                                                                               final lMutablePolynomialZ b) {
         if (b.degree > a.degree)
             return SubresultantEuclid(b, a);
 
@@ -219,9 +219,9 @@ public final class PolynomialGCD {
 
         long aContent = a.content(), bContent = b.content();
         long contentGCD = LongArithmetics.gcd(aContent, bContent);
-        MutablePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
+        lMutablePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
 
-        ArrayList<MutablePolynomialZ> prs = new ArrayList<>();
+        ArrayList<lMutablePolynomialZ> prs = new ArrayList<>();
         prs.add(aPP); prs.add(bPP);
 
         TLongArrayList beta = new TLongArrayList(), psi = new TLongArrayList();
@@ -229,8 +229,8 @@ public final class PolynomialGCD {
 
         long cBeta, cPsi;
         for (int i = 0; ; i++) {
-            MutablePolynomialZ curr = prs.get(i);
-            MutablePolynomialZ next = prs.get(i + 1);
+            lMutablePolynomialZ curr = prs.get(i);
+            lMutablePolynomialZ next = prs.get(i + 1);
             int delta = curr.degree - next.degree;
             if (i == 0) {
                 cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
@@ -247,7 +247,7 @@ public final class PolynomialGCD {
                 cBeta = LongArithmetics.safeMultiply(-curr.lc(), LongArithmetics.safePow(cPsi, delta));
             }
 
-            MutablePolynomialZ q = pseudoDivideAndRemainder(curr, next, true)[1];
+            lMutablePolynomialZ q = pseudoDivideAndRemainder(curr, next, true)[1];
             if (q.isZero())
                 break;
 
@@ -258,7 +258,7 @@ public final class PolynomialGCD {
             beta.add(cBeta);
             psi.add(cPsi);
         }
-        PolynomialRemainders<MutablePolynomialZ> res = new PolynomialRemainders<>(prs);
+        PolynomialRemainders<lMutablePolynomialZ> res = new PolynomialRemainders<>(prs);
         res.gcd().multiply(contentGCD);
         return res;
     }
@@ -354,7 +354,7 @@ public final class PolynomialGCD {
      * @param b the second polynomial
      * @return GCD of two polynomials
      */
-    public static MutablePolynomialZ ModularGCD(MutablePolynomialZ a, MutablePolynomialZ b) {
+    public static lMutablePolynomialZ ModularGCD(lMutablePolynomialZ a, lMutablePolynomialZ b) {
         if (a == b)
             return a.clone();
         if (a.isZero()) return b.clone();
@@ -365,20 +365,20 @@ public final class PolynomialGCD {
         long aContent = a.content(), bContent = b.content();
         long contentGCD = LongArithmetics.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
-            return MutablePolynomialZ.create(contentGCD);
+            return lMutablePolynomialZ.create(contentGCD);
 
         return ModularGCD0(a.clone().divideOrNull(aContent), b.clone().divideOrNull(bContent)).multiply(contentGCD);
     }
 
     /** modular GCD for primitive polynomials */
     @SuppressWarnings("ConstantConditions")
-    private static MutablePolynomialZ ModularGCD0(MutablePolynomialZ a, MutablePolynomialZ b) {
+    private static lMutablePolynomialZ ModularGCD0(lMutablePolynomialZ a, lMutablePolynomialZ b) {
         assert a.degree >= b.degree;
 
         long lcGCD = LongArithmetics.gcd(a.lc(), b.lc());
         double bound = Math.max(a.mignotteBound(), b.mignotteBound()) * lcGCD;
 
-        MutablePolynomialMod previousBase, base = null;
+        lMutablePolynomialZp previousBase, base = null;
         long basePrime = -1;
 
         PrimesIterator primesLoop = new PrimesIterator(3);
@@ -389,15 +389,15 @@ public final class PolynomialGCD {
             if (a.lc() % prime == 0 || b.lc() % prime == 0)
                 continue;
 
-            MutablePolynomialMod aMod = a.modulus(prime), bMod = b.modulus(prime);
-            MutablePolynomialMod modularGCD = Euclid(aMod, bMod).gcd();
+            lMutablePolynomialZp aMod = a.modulus(prime), bMod = b.modulus(prime);
+            lMutablePolynomialZp modularGCD = Euclid(aMod, bMod).gcd();
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
 
             //coprime polynomials
             if (modularGCD.degree == 0)
-                return MutablePolynomialZ.one();
+                return lMutablePolynomialZ.one();
 
             //save the base
             if (base == null) {
@@ -439,9 +439,9 @@ public final class PolynomialGCD {
 
             //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
             if ((double) basePrime >= 2 * bound || base.equals(previousBase)) {
-                MutablePolynomialZ candidate = base.normalSymmetricForm().primitivePart();
+                lMutablePolynomialZ candidate = base.normalSymmetricForm().primitivePart();
                 //first check b since b is less degree
-                MutablePolynomialZ[] div;
+                lMutablePolynomialZ[] div;
                 div = divideAndRemainder(b, candidate, true);
                 if (div == null || !div[1].isZero())
                     continue;
@@ -485,7 +485,7 @@ public final class PolynomialGCD {
                 && b.maxAbsCoefficient().isLong())
             return ModularGCD(a.toLong(), b.toLong()).toBigPoly();
 
-        MutablePolynomialMod previousBase, base = null;
+        lMutablePolynomialZp previousBase, base = null;
         long basePrime = -1;
 
         PrimesIterator primesLoop = new PrimesIterator(3);
@@ -497,8 +497,8 @@ public final class PolynomialGCD {
             if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
                 continue;
 
-            MutablePolynomialMod aMod = a.modulus(bPrime).toLong(), bMod = b.modulus(bPrime).toLong();
-            MutablePolynomialMod modularGCD = Euclid(aMod, bMod).gcd();
+            lMutablePolynomialZp aMod = a.modulus(bPrime).toLong(), bMod = b.modulus(bPrime).toLong();
+            lMutablePolynomialZp modularGCD = Euclid(aMod, bMod).gcd();
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -567,7 +567,7 @@ public final class PolynomialGCD {
         }
 
         //continue lifting with multi-precision integers
-        bMutablePolynomialMod bPreviousBase, bBase = base.toBigPoly();
+        bMutablePolynomialZp bPreviousBase, bBase = base.toBigPoly();
         BigInteger bBasePrime = BigInteger.valueOf(basePrime);
 
         while (true) {
@@ -578,8 +578,8 @@ public final class PolynomialGCD {
             if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
                 continue;
 
-            MutablePolynomialMod aMod = a.modulus(bPrime).toLong(), bMod = b.modulus(bPrime).toLong();
-            MutablePolynomialMod modularGCD = Euclid(aMod, bMod).gcd();
+            lMutablePolynomialZp aMod = a.modulus(bPrime).toLong(), bMod = b.modulus(bPrime).toLong();
+            lMutablePolynomialZp modularGCD = Euclid(aMod, bMod).gcd();
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -654,8 +654,8 @@ public final class PolynomialGCD {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomial<T>> T PolynomialGCD(T a, T b) {
-        if (a instanceof MutablePolynomialZ)
-            return (T) ModularGCD((MutablePolynomialZ) a, (MutablePolynomialZ) b);
+        if (a instanceof lMutablePolynomialZ)
+            return (T) ModularGCD((lMutablePolynomialZ) a, (lMutablePolynomialZ) b);
         else if (a instanceof bMutablePolynomialZ)
             return (T) ModularGCD((bMutablePolynomialZ) a, (bMutablePolynomialZ) b);
         else

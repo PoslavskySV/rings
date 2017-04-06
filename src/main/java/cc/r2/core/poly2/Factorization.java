@@ -46,7 +46,7 @@ public final class Factorization {
     }
 
     /** early check for trivial cases */
-    private static lFactorDecomposition<MutablePolynomialMod> earlyFactorizationChecks(MutablePolynomialMod poly) {
+    private static lFactorDecomposition<lMutablePolynomialZp> earlyFactorizationChecks(lMutablePolynomialZp poly) {
         if (poly.degree <= 1 || poly.isMonomial())
             return lFactorDecomposition.oneFactor(poly.isMonic() ? poly : poly.clone().monic(), poly.lc());
 
@@ -54,7 +54,7 @@ public final class Factorization {
     }
 
     /** early check for trivial cases */
-    private static bFactorDecomposition<bMutablePolynomialMod> earlyFactorizationChecks(bMutablePolynomialMod poly) {
+    private static bFactorDecomposition<bMutablePolynomialZp> earlyFactorizationChecks(bMutablePolynomialZp poly) {
         if (poly.degree <= 1 || poly.isMonomial())
             return bFactorDecomposition.oneFactor(poly.isMonic() ? poly : poly.clone().monic(), poly.lc());
 
@@ -67,8 +67,8 @@ public final class Factorization {
      * @param poly the polynomial
      * @return factor decomposition
      */
-    public static lFactorDecomposition<MutablePolynomialMod> factor(MutablePolynomialMod poly) {
-        lFactorDecomposition<MutablePolynomialMod> result = earlyFactorizationChecks(poly);
+    public static lFactorDecomposition<lMutablePolynomialZp> factor(lMutablePolynomialZp poly) {
+        lFactorDecomposition<lMutablePolynomialZp> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
         result = new lFactorDecomposition<>();
@@ -82,8 +82,8 @@ public final class Factorization {
      * @param poly the polynomial
      * @return factor decomposition
      */
-    public static bFactorDecomposition<bMutablePolynomialMod> factor(bMutablePolynomialMod poly) {
-        bFactorDecomposition<bMutablePolynomialMod> result = earlyFactorizationChecks(poly);
+    public static bFactorDecomposition<bMutablePolynomialZp> factor(bMutablePolynomialZp poly) {
+        bFactorDecomposition<bMutablePolynomialZp> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
         result = new bFactorDecomposition<>();
@@ -99,10 +99,10 @@ public final class Factorization {
      */
     @SuppressWarnings("unchecked")
     public static <PolyZp extends IMutablePolynomialZp<PolyZp>> FactorDecomposition<PolyZp> factor(PolyZp poly) {
-        if (poly instanceof MutablePolynomialMod)
-            return (FactorDecomposition<PolyZp>) factor((MutablePolynomialMod) poly);
+        if (poly instanceof lMutablePolynomialZp)
+            return (FactorDecomposition<PolyZp>) factor((lMutablePolynomialZp) poly);
         else
-            return (FactorDecomposition<PolyZp>) factor((bMutablePolynomialMod) poly);
+            return (FactorDecomposition<PolyZp>) factor((bMutablePolynomialZp) poly);
     }
 
     private static <T extends IMutablePolynomialZp<T>> void factor(T poly, FactorDecomposition<T> result) {
@@ -171,18 +171,18 @@ public final class Factorization {
     }
 
     /** reconstruct true factors by enumerating all combinations */
-    static lFactorDecomposition<MutablePolynomialZ> reconstructFactorsZ(
-            MutablePolynomialZ poly,
-            lFactorDecomposition<MutablePolynomialMod> modularFactors) {
+    static lFactorDecomposition<lMutablePolynomialZ> reconstructFactorsZ(
+            lMutablePolynomialZ poly,
+            lFactorDecomposition<lMutablePolynomialZp> modularFactors) {
 
         if (modularFactors.isTrivial())
             return lFactorDecomposition.oneFactor(poly, 1);
 
-        MutablePolynomialMod factory = modularFactors.get(0);
+        lMutablePolynomialZp factory = modularFactors.get(0);
 
         int[] modIndexes = naturalSequenceRef(modularFactors.size());
-        lFactorDecomposition<MutablePolynomialZ> trueFactors = new lFactorDecomposition<>();
-        MutablePolynomialZ fRest = poly;
+        lFactorDecomposition<lMutablePolynomialZ> trueFactors = new lFactorDecomposition<>();
+        lMutablePolynomialZ fRest = poly;
         int s = 1;
 
         factor_combinations:
@@ -191,19 +191,19 @@ public final class Factorization {
             for (int[] combination : combinations) {
                 int[] indexes = select(modIndexes, combination);
 
-                MutablePolynomialMod mFactor = factory.createConstant(fRest.lc());
+                lMutablePolynomialZp mFactor = factory.createConstant(fRest.lc());
                 for (int i : indexes)
                     mFactor = mFactor.multiply(modularFactors.get(i));
-                MutablePolynomialZ factor = mFactor.normalSymmetricForm().primitivePart();
+                lMutablePolynomialZ factor = mFactor.normalSymmetricForm().primitivePart();
 
                 if (fRest.lc() % factor.lc() != 0 || fRest.cc() % factor.cc() != 0)
                     continue;
 
-                MutablePolynomialMod mRest = factory.createConstant(fRest.lc() / factor.lc());
+                lMutablePolynomialZp mRest = factory.createConstant(fRest.lc() / factor.lc());
                 int[] restIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
                 for (int i : restIndexes)
                     mRest = mRest.multiply(modularFactors.get(i));
-                MutablePolynomialZ rest = mRest.normalSymmetricForm().primitivePart();
+                lMutablePolynomialZ rest = mRest.normalSymmetricForm().primitivePart();
 
                 if (safeMultiply(factor.lc(), rest.lc()) != fRest.lc()
                         || safeMultiply(factor.cc(), rest.cc()) != fRest.cc())
@@ -228,12 +228,12 @@ public final class Factorization {
     /** reconstruct true factors by enumerating all combinations */
     static bFactorDecomposition<bMutablePolynomialZ> reconstructFactorsZ(
             bMutablePolynomialZ poly,
-            bFactorDecomposition<bMutablePolynomialMod> modularFactors) {
+            bFactorDecomposition<bMutablePolynomialZp> modularFactors) {
 
         if (modularFactors.isTrivial())
             return bFactorDecomposition.oneFactor(poly, BigInteger.ONE);
 
-        bMutablePolynomialMod factory = modularFactors.get(0);
+        bMutablePolynomialZp factory = modularFactors.get(0);
 
         int[] modIndexes = naturalSequenceRef(modularFactors.size());
         bFactorDecomposition<bMutablePolynomialZ> trueFactors = new bFactorDecomposition<>();
@@ -246,7 +246,7 @@ public final class Factorization {
             for (int[] combination : combinations) {
                 int[] indexes = select(modIndexes, combination);
 
-                bMutablePolynomialMod mFactor = factory.createConstant(fRest.lc());
+                bMutablePolynomialZp mFactor = factory.createConstant(fRest.lc());
                 for (int i : indexes)
                     mFactor = mFactor.multiply(modularFactors.get(i));
                 bMutablePolynomialZ factor = mFactor.normalSymmetricForm().primitivePart();
@@ -254,7 +254,7 @@ public final class Factorization {
                 if (!fRest.lc().remainder(factor.lc()).isZero() || !fRest.cc().remainder(factor.cc()).isZero())
                     continue;
 
-                bMutablePolynomialMod mRest = factory.createConstant(fRest.lc().divide(factor.lc()));
+                bMutablePolynomialZp mRest = factory.createConstant(fRest.lc().divide(factor.lc()));
                 int[] restIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
                 for (int i : restIndexes)
                     mRest = mRest.multiply(modularFactors.get(i));
@@ -319,8 +319,8 @@ public final class Factorization {
 
         // choose prime at random
         long modulus = -1;
-        MutablePolynomialMod moduloImage;
-        lFactorDecomposition<MutablePolynomialMod> lModularFactors = null;
+        lMutablePolynomialZp moduloImage;
+        lFactorDecomposition<lMutablePolynomialZp> lModularFactors = null;
 
         for (int attempt = 0; attempt < N_MODULAR_FACTORIZATION_TRIALS; attempt++) {
             long tmpModulus;
@@ -331,7 +331,7 @@ public final class Factorization {
             while (moduloImage.cc() == 0 || moduloImage.degree() != poly.degree() || !SquareFreeFactorization.isSquareFree(moduloImage));
 
             // do modular factorization
-            lFactorDecomposition<MutablePolynomialMod> tmpFactors = factor(moduloImage.monic());
+            lFactorDecomposition<lMutablePolynomialZp> tmpFactors = factor(moduloImage.monic());
             if (tmpFactors.size() == 1)
                 return bFactorDecomposition.oneFactor(poly, BigInteger.ONE);
 
@@ -344,7 +344,7 @@ public final class Factorization {
                 break;
         }
 
-        List<bMutablePolynomialMod> modularFactors = HenselLifting.liftFactorizationAdaptive(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors);
+        List<bMutablePolynomialZp> modularFactors = HenselLifting.liftFactorizationAdaptive(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors);
         assert modularFactors.get(0).modulus.compareTo(bound2) >= 0;
         bFactorDecomposition<bMutablePolynomialZ> res = reconstructFactorsZ(poly, new bFactorDecomposition<>(modularFactors, BigInteger.ONE));
         return res;
@@ -381,7 +381,7 @@ public final class Factorization {
      *
      * @param poly Z[x] square-free polynomial
      */
-    static lFactorDecomposition<MutablePolynomialZ> factorSquareFree(MutablePolynomialZ poly) {
+    static lFactorDecomposition<lMutablePolynomialZ> factorSquareFree(lMutablePolynomialZ poly) {
         assert poly.content() == 1;
         assert poly.lc() > 0;
 
@@ -390,7 +390,7 @@ public final class Factorization {
         // choose prime at random
         int trial32Modulus = chooseModulusLowerBound(bound2) - 1;
         long modulus;
-        MutablePolynomialMod moduloImage;
+        lMutablePolynomialZp moduloImage;
         do {
             trial32Modulus = next32BitPrime(trial32Modulus + 1);
             modulus = Integer.toUnsignedLong(trial32Modulus);
@@ -398,7 +398,7 @@ public final class Factorization {
         } while (!SquareFreeFactorization.isSquareFree(moduloImage));
 
         // do modular factorization
-        lFactorDecomposition<MutablePolynomialMod> modularFactors = factor(moduloImage.monic());
+        lFactorDecomposition<lMutablePolynomialZp> modularFactors = factor(moduloImage.monic());
 
         // do Hensel lifting
         // determine number of Hensel steps
@@ -418,8 +418,8 @@ public final class Factorization {
 
     @SuppressWarnings("unchecked")
     private static <PolyZ extends IMutablePolynomialZ<PolyZ>> FactorDecomposition<PolyZ> factorSquareFree(PolyZ poly) {
-        if (poly instanceof MutablePolynomialZ)
-            return (FactorDecomposition<PolyZ>) factorSquareFree((MutablePolynomialZ) poly);
+        if (poly instanceof lMutablePolynomialZ)
+            return (FactorDecomposition<PolyZ>) factorSquareFree((lMutablePolynomialZ) poly);
         else
             return (FactorDecomposition<PolyZ>) factorSquareFree((bMutablePolynomialZ) poly);
     }
@@ -430,13 +430,13 @@ public final class Factorization {
      * @param poly the polynomial
      * @return factor decomposition
      */
-    public static lFactorDecomposition<MutablePolynomialZ> factor(MutablePolynomialZ poly) {
+    public static lFactorDecomposition<lMutablePolynomialZ> factor(lMutablePolynomialZ poly) {
         if (poly.degree <= 1 || poly.isMonomial())
             return lFactorDecomposition.oneFactor(
                     poly.isMonic() ? poly : poly.clone().primitivePart(),
                     poly.isMonic() ? 1 : poly.content());
 
-        lFactorDecomposition<MutablePolynomialZ> result = new lFactorDecomposition<>();
+        lFactorDecomposition<lMutablePolynomialZ> result = new lFactorDecomposition<>();
         long content = poly.content();
         factor(poly.clone().divideOrNull(content), result);
         return result.setNumericFactor(content);

@@ -73,7 +73,7 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static MutablePolynomialZ randomPoly(int degree, RandomGenerator rnd) {
+    public static lMutablePolynomialZ randomPoly(int degree, RandomGenerator rnd) {
         return randomPoly(degree, DEFAULT_BOUND, rnd);
     }
 
@@ -84,8 +84,8 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static MutablePolynomialMod randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
-        MutablePolynomialZ r = randomPoly(degree, modulus, rnd);
+    public static lMutablePolynomialZp randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
+        lMutablePolynomialZ r = randomPoly(degree, modulus, rnd);
         while (r.data[degree] % modulus == 0) {r.data[r.degree] = rnd.nextLong();}
         return r.modulus(modulus, false).monic();
     }
@@ -97,7 +97,7 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static bMutablePolynomialMod randomMonicPoly(int degree, BigInteger modulus, RandomGenerator rnd) {
+    public static bMutablePolynomialZp randomMonicPoly(int degree, BigInteger modulus, RandomGenerator rnd) {
         bMutablePolynomialZ r = randomPoly(degree, modulus, rnd);
         while ((r.data[degree].mod(modulus)).isZero()) {r.data[r.degree] = randomInt(modulus, rnd);}
         return r.modulus(modulus, false).monic();
@@ -111,8 +111,8 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
-    public static MutablePolynomialZ randomPoly(int degree, long bound, RandomGenerator rnd) {
-        return MutablePolynomialZ.create(randomLongArray(degree, bound, rnd));
+    public static lMutablePolynomialZ randomPoly(int degree, long bound, RandomGenerator rnd) {
+        return lMutablePolynomialZ.create(randomLongArray(degree, bound, rnd));
     }
 
     /**

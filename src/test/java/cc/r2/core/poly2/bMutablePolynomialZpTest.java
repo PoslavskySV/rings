@@ -8,14 +8,14 @@ import org.junit.Test;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class bMutablePolynomialModTest {
+public class bMutablePolynomialZpTest {
 
     @Test
     public void test1() throws Exception {
         bMutablePolynomialZ aZ = bMutablePolynomialZ.create(1, 2, 3, 4, 5, 6);
         BigInteger modulus = BigInteger.valueOf(59);
-        bMutablePolynomialMod a = aZ.modulus(modulus);
-        MutablePolynomialMod aL = a.toLong();
+        bMutablePolynomialZp a = aZ.modulus(modulus);
+        lMutablePolynomialZp aL = a.toLong();
 
         for (int i = 0; i < 5; i++) {
 //            a = (a.clone() * a.clone().decrement() - a.clone().derivative() + (a.clone().square())) * a.clone();
@@ -50,7 +50,7 @@ public class bMutablePolynomialModTest {
     @Test
     public void test3() throws Exception {
         BigInteger modulus = new BigInteger("998427238390739620139");
-        bMutablePolynomialMod factory = bMutablePolynomialMod.one(modulus);
+        bMutablePolynomialZp factory = bMutablePolynomialZp.one(modulus);
 
         BigInteger a = new BigInteger("213471654376351273471236215473").mod(modulus);
         BigInteger b = new BigInteger("41982734698213476213918476921834").mod(modulus);

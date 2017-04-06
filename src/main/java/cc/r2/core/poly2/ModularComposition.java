@@ -25,7 +25,7 @@ public final class ModularComposition {
      * @return {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree]}, where {@code degree} is {@code polyModulus} degree
      * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
      */
-    public static ArrayList<MutablePolynomialMod> xPowers(MutablePolynomialMod polyModulus, InverseModMonomial<MutablePolynomialMod> invMod) {
+    public static ArrayList<lMutablePolynomialZp> xPowers(lMutablePolynomialZp polyModulus, InverseModMonomial<lMutablePolynomialZp> invMod) {
         return polyPowers(PolynomialArithmetics.createMonomialMod(polyModulus.modulus, polyModulus, invMod), polyModulus, invMod, polyModulus.degree);
     }
 
@@ -37,7 +37,7 @@ public final class ModularComposition {
      * @return {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree]}, where {@code degree} is {@code polyModulus} degree
      * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
      */
-    public static ArrayList<bMutablePolynomialMod> xPowers(bMutablePolynomialMod polyModulus, InverseModMonomial<bMutablePolynomialMod> invMod) {
+    public static ArrayList<bMutablePolynomialZp> xPowers(bMutablePolynomialZp polyModulus, InverseModMonomial<bMutablePolynomialZp> invMod) {
         return polyPowers(PolynomialArithmetics.createMonomialMod(polyModulus.modulus, polyModulus, invMod), polyModulus, invMod, polyModulus.degree);
     }
 
@@ -52,13 +52,13 @@ public final class ModularComposition {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IMutablePolynomialZp<T>> ArrayList<T> xPowers(T polyModulus, InverseModMonomial<T> invMod) {
-        if (polyModulus instanceof MutablePolynomialMod) {
-            MutablePolynomialMod pm = (MutablePolynomialMod) polyModulus;
-            InverseModMonomial<MutablePolynomialMod> im = (InverseModMonomial<MutablePolynomialMod>) invMod;
+        if (polyModulus instanceof lMutablePolynomialZp) {
+            lMutablePolynomialZp pm = (lMutablePolynomialZp) polyModulus;
+            InverseModMonomial<lMutablePolynomialZp> im = (InverseModMonomial<lMutablePolynomialZp>) invMod;
             return (ArrayList<T>) polyPowers(PolynomialArithmetics.createMonomialMod(pm.modulus, pm, im), pm, im, pm.degree);
         } else {
-            bMutablePolynomialMod pm = (bMutablePolynomialMod) polyModulus;
-            InverseModMonomial<bMutablePolynomialMod> im = (InverseModMonomial<bMutablePolynomialMod>) invMod;
+            bMutablePolynomialZp pm = (bMutablePolynomialZp) polyModulus;
+            InverseModMonomial<bMutablePolynomialZp> im = (InverseModMonomial<bMutablePolynomialZp>) invMod;
             return (ArrayList<T>) polyPowers(PolynomialArithmetics.createMonomialMod(pm.modulus, pm, im), pm, im, pm.degree);
         }
     }
@@ -97,23 +97,23 @@ public final class ModularComposition {
      * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
      * @param xPowers     precomputed monomial powers {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree(poly)]}
      * @return {@code poly^modulus mod polyModulus}
-     * @see #xPowers(MutablePolynomialMod, InverseModMonomial)
+     * @see #xPowers(lMutablePolynomialZp, InverseModMonomial)
      * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
      **/
-    public static MutablePolynomialMod powModulusMod(MutablePolynomialMod poly,
-                                                     MutablePolynomialMod polyModulus,
-                                                     InverseModMonomial<MutablePolynomialMod> invMod,
-                                                     ArrayList<MutablePolynomialMod> xPowers) {
+    public static lMutablePolynomialZp powModulusMod(lMutablePolynomialZp poly,
+                                                     lMutablePolynomialZp polyModulus,
+                                                     InverseModMonomial<lMutablePolynomialZp> invMod,
+                                                     ArrayList<lMutablePolynomialZp> xPowers) {
         poly = polyMod(poly, polyModulus, invMod, true);
         return powModulusMod0(poly, polyModulus, invMod, xPowers);
     }
 
     /** doesn't do poly mod polyModulus first */
-    private static MutablePolynomialMod powModulusMod0(MutablePolynomialMod poly,
-                                                       MutablePolynomialMod polyModulus,
-                                                       InverseModMonomial<MutablePolynomialMod> invMod,
-                                                       ArrayList<MutablePolynomialMod> xPowers) {
-        MutablePolynomialMod res = poly.createZero();
+    private static lMutablePolynomialZp powModulusMod0(lMutablePolynomialZp poly,
+                                                       lMutablePolynomialZp polyModulus,
+                                                       InverseModMonomial<lMutablePolynomialZp> invMod,
+                                                       ArrayList<lMutablePolynomialZp> xPowers) {
+        lMutablePolynomialZp res = poly.createZero();
         for (int i = poly.degree; i >= 0; --i) {
             if (poly.data[i] == 0)
                 continue;
@@ -130,23 +130,23 @@ public final class ModularComposition {
      * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
      * @param xPowers     precomputed monomial powers {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree(poly)]}
      * @return {@code poly^modulus mod polyModulus}
-     * @see #xPowers(MutablePolynomialMod, InverseModMonomial)
+     * @see #xPowers(lMutablePolynomialZp, InverseModMonomial)
      * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
      **/
-    public static bMutablePolynomialMod powModulusMod(bMutablePolynomialMod poly,
-                                                      bMutablePolynomialMod polyModulus,
-                                                      InverseModMonomial<bMutablePolynomialMod> invMod,
-                                                      ArrayList<bMutablePolynomialMod> xPowers) {
+    public static bMutablePolynomialZp powModulusMod(bMutablePolynomialZp poly,
+                                                     bMutablePolynomialZp polyModulus,
+                                                     InverseModMonomial<bMutablePolynomialZp> invMod,
+                                                     ArrayList<bMutablePolynomialZp> xPowers) {
         poly = polyMod(poly, polyModulus, invMod, true);
         return powModulusMod0(poly, polyModulus, invMod, xPowers);
     }
 
     /** doesn't do poly mod polyModulus first */
-    private static bMutablePolynomialMod powModulusMod0(bMutablePolynomialMod poly,
-                                                        bMutablePolynomialMod polyModulus,
-                                                        InverseModMonomial<bMutablePolynomialMod> invMod,
-                                                        ArrayList<bMutablePolynomialMod> xPowers) {
-        bMutablePolynomialMod res = poly.createZero();
+    private static bMutablePolynomialZp powModulusMod0(bMutablePolynomialZp poly,
+                                                       bMutablePolynomialZp polyModulus,
+                                                       InverseModMonomial<bMutablePolynomialZp> invMod,
+                                                       ArrayList<bMutablePolynomialZp> xPowers) {
+        bMutablePolynomialZp res = poly.createZero();
         for (int i = poly.degree; i >= 0; --i) {
             if (poly.data[i].isZero())
                 continue;
@@ -163,7 +163,7 @@ public final class ModularComposition {
      * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
      * @param xPowers     precomputed monomial powers {@code x^{i*modulus} mod polyModulus} for i in {@code [0...degree(poly)]}
      * @return {@code poly^modulus mod polyModulus}
-     * @see #xPowers(MutablePolynomialMod, InverseModMonomial)
+     * @see #xPowers(lMutablePolynomialZp, InverseModMonomial)
      * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
      **/
     @SuppressWarnings("unchecked")
@@ -171,12 +171,12 @@ public final class ModularComposition {
                                                                       T polyModulus,
                                                                       InverseModMonomial<T> invMod,
                                                                       ArrayList<T> xPowers) {
-        if (poly instanceof MutablePolynomialMod)
-            return (T) powModulusMod((MutablePolynomialMod) poly, (MutablePolynomialMod) polyModulus,
-                    (InverseModMonomial<MutablePolynomialMod>) invMod, (ArrayList<MutablePolynomialMod>) xPowers);
+        if (poly instanceof lMutablePolynomialZp)
+            return (T) powModulusMod((lMutablePolynomialZp) poly, (lMutablePolynomialZp) polyModulus,
+                    (InverseModMonomial<lMutablePolynomialZp>) invMod, (ArrayList<lMutablePolynomialZp>) xPowers);
         else
-            return (T) powModulusMod((bMutablePolynomialMod) poly, (bMutablePolynomialMod) polyModulus,
-                    (InverseModMonomial<bMutablePolynomialMod>) invMod, (ArrayList<bMutablePolynomialMod>) xPowers);
+            return (T) powModulusMod((bMutablePolynomialZp) poly, (bMutablePolynomialZp) polyModulus,
+                    (InverseModMonomial<bMutablePolynomialZp>) invMod, (ArrayList<bMutablePolynomialZp>) xPowers);
     }
 
 
@@ -185,10 +185,10 @@ public final class ModularComposition {
                                                                         T polyModulus,
                                                                         InverseModMonomial<T> invMod,
                                                                         ArrayList<T> xPowers) {
-        if (poly instanceof MutablePolynomialMod)
-            return (T) powModulusMod0((MutablePolynomialMod) poly, (MutablePolynomialMod) polyModulus, (InverseModMonomial<MutablePolynomialMod>) invMod, (ArrayList<MutablePolynomialMod>) xPowers);
+        if (poly instanceof lMutablePolynomialZp)
+            return (T) powModulusMod0((lMutablePolynomialZp) poly, (lMutablePolynomialZp) polyModulus, (InverseModMonomial<lMutablePolynomialZp>) invMod, (ArrayList<lMutablePolynomialZp>) xPowers);
         else
-            return (T) powModulusMod0((bMutablePolynomialMod) poly, (bMutablePolynomialMod) polyModulus, (InverseModMonomial<bMutablePolynomialMod>) invMod, (ArrayList<bMutablePolynomialMod>) xPowers);
+            return (T) powModulusMod0((bMutablePolynomialZp) poly, (bMutablePolynomialZp) polyModulus, (InverseModMonomial<bMutablePolynomialZp>) invMod, (ArrayList<bMutablePolynomialZp>) xPowers);
     }
 
     /**
@@ -262,10 +262,10 @@ public final class ModularComposition {
      * @return modular composition {@code poly(point) mod polyModulus }
      * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
      */
-    public static MutablePolynomialMod compositionHorner(MutablePolynomialMod poly, MutablePolynomialMod point, MutablePolynomialMod polyModulus, InverseModMonomial<MutablePolynomialMod> invMod) {
+    public static lMutablePolynomialZp compositionHorner(lMutablePolynomialZp poly, lMutablePolynomialZp point, lMutablePolynomialZp polyModulus, InverseModMonomial<lMutablePolynomialZp> invMod) {
         if (poly.isConstant())
             return poly;
-        MutablePolynomialMod res = poly.createZero();
+        lMutablePolynomialZp res = poly.createZero();
         for (int i = poly.degree; i >= 0; --i)
             res = polyMod(res.multiply(point).addMonomial(poly.data[i], 0), polyModulus, invMod, false);
         return res;

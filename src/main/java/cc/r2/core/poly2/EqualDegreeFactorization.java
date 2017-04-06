@@ -16,11 +16,11 @@ final class EqualDegreeFactorization {
 
     @SuppressWarnings("unchecked")
     private static <T extends IMutablePolynomialZp<T>> T randomMonicPoly(T factory) {
-        if (factory instanceof MutablePolynomialMod) {
-            MutablePolynomialMod fm = (MutablePolynomialMod) factory;
+        if (factory instanceof lMutablePolynomialZp) {
+            lMutablePolynomialZp fm = (lMutablePolynomialZp) factory;
             return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, GlobalRandom.getRandom());
         } else {
-            bMutablePolynomialMod fm = (bMutablePolynomialMod) factory;
+            bMutablePolynomialZp fm = (bMutablePolynomialZp) factory;
             return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, GlobalRandom.getRandom());
         }
     }
@@ -61,8 +61,8 @@ final class EqualDegreeFactorization {
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    static lFactorDecomposition<MutablePolynomialMod> CantorZassenhaus(MutablePolynomialMod input, int d) {
-        lFactorDecomposition<MutablePolynomialMod> result = new lFactorDecomposition<>();
+    static lFactorDecomposition<lMutablePolynomialZp> CantorZassenhaus(lMutablePolynomialZp input, int d) {
+        lFactorDecomposition<lMutablePolynomialZp> result = new lFactorDecomposition<>();
         CantorZassenhaus(input, d, result);
         return result.setNumericFactor(input.lc());
     }
@@ -74,8 +74,8 @@ final class EqualDegreeFactorization {
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    static bFactorDecomposition<bMutablePolynomialMod> CantorZassenhaus(bMutablePolynomialMod input, int d) {
-        bFactorDecomposition<bMutablePolynomialMod> result = new bFactorDecomposition<>();
+    static bFactorDecomposition<bMutablePolynomialZp> CantorZassenhaus(bMutablePolynomialZp input, int d) {
+        bFactorDecomposition<bMutablePolynomialZp> result = new bFactorDecomposition<>();
         CantorZassenhaus(input, d, result);
         return result.setNumericFactor(input.lc());
     }
@@ -89,10 +89,10 @@ final class EqualDegreeFactorization {
      */
     @SuppressWarnings("unchecked")
     static <T extends IMutablePolynomialZp<T>> FactorDecomposition<T> CantorZassenhaus(T input, int d) {
-        if (input instanceof MutablePolynomialMod)
-            return (FactorDecomposition<T>) CantorZassenhaus((MutablePolynomialMod) input, d);
+        if (input instanceof lMutablePolynomialZp)
+            return (FactorDecomposition<T>) CantorZassenhaus((lMutablePolynomialZp) input, d);
         else
-            return (FactorDecomposition<T>) CantorZassenhaus((bMutablePolynomialMod) input, d);
+            return (FactorDecomposition<T>) CantorZassenhaus((bMutablePolynomialZp) input, d);
     }
 
     /**

@@ -11,7 +11,7 @@ import static cc.r2.core.number.BigInteger.ZERO;
 import static cc.r2.core.number.BigIntegerArithmetics.*;
 
 /**
- * Univariate polynomials over Z ({@link MutablePolynomialZ}) or Zp ({@link MutablePolynomialMod}).
+ * Univariate polynomials over Z ({@link lMutablePolynomialZ}) or Zp ({@link lMutablePolynomialZp}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
 abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> implements IMutablePolynomial<T> {

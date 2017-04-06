@@ -71,8 +71,8 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
         return new bMutablePolynomialZ(data);
     }
 
-    public MutablePolynomialZ toLong() {
-        return MutablePolynomialZ.create(toLong0());
+    public lMutablePolynomialZ toLong() {
+        return lMutablePolynomialZ.create(toLong0());
     }
 
     @Override
@@ -114,12 +114,12 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param copy    whether to copy the internal data or reduce inplace
      * @return Zp[x] polynomial from this
      */
-    bMutablePolynomialMod modulus(BigInteger modulus, boolean copy) {
-        return bMutablePolynomialMod.create(modulus, copy ? data.clone() : data);
+    bMutablePolynomialZp modulus(BigInteger modulus, boolean copy) {
+        return bMutablePolynomialZp.create(modulus, copy ? data.clone() : data);
     }
 
-    bMutablePolynomialMod modulusUnsafe(BigInteger modulus) {
-        return bMutablePolynomialMod.createUnsafe(modulus, data);
+    bMutablePolynomialZp modulusUnsafe(BigInteger modulus) {
+        return bMutablePolynomialZp.createUnsafe(modulus, data);
     }
 
     /**
@@ -128,7 +128,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param modulus the modulus
      * @return Zp[x] polynomial from this
      */
-    bMutablePolynomialMod modulus(BigInteger modulus) {
+    bMutablePolynomialZp modulus(BigInteger modulus) {
         return modulus(modulus, true);
     }
 
@@ -138,7 +138,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param modulus the modulus
      * @return Zp[x] polynomial from this
      */
-    bMutablePolynomialMod modulus(long modulus) {
+    bMutablePolynomialZp modulus(long modulus) {
         return modulus(BigInteger.valueOf(modulus));
     }
 

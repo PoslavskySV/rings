@@ -21,7 +21,7 @@ public final class FactorizationTestUtil {
         assertEquals(poly, factorization.toPolynomial(poly));
     }
 
-    static <T extends MutablePolynomialAbstract<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
+    static <T extends lMutablePolynomialAbstract<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
         assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
     }
 
@@ -37,7 +37,7 @@ public final class FactorizationTestUtil {
     }
 
     interface PolynomialSource {
-        MutablePolynomialMod take(long modulus);
+        lMutablePolynomialZp take(long modulus);
     }
 
     static final class WithTiming<T> {
@@ -66,17 +66,17 @@ public final class FactorizationTestUtil {
         }
 
         @Override
-        public MutablePolynomialMod take(long modulus) {
+        public lMutablePolynomialZp take(long modulus) {
             int degree = minDegree + rnd.nextInt(maxDegree - minDegree + 1);
 
-            MutablePolynomialMod algebra = MutablePolynomialMod.zero(modulus);
+            lMutablePolynomialZp algebra = lMutablePolynomialZp.zero(modulus);
             long[] data = new long[degree + 1];
             data[0] = 1;
             for (int i = 1; i <= degree; i++)
                 data[i] = algebra.addMod(algebra.multiplyMod(data[i - 1], data[i - 1]), 1);
             ArraysUtil.reverse(data, 0, data.length);
 
-            return MutablePolynomialZ.create(data).modulus(modulus, false);
+            return lMutablePolynomialZ.create(data).modulus(modulus, false);
         }
     }
 
@@ -91,9 +91,9 @@ public final class FactorizationTestUtil {
         }
 
         @Override
-        public MutablePolynomialMod take(long modulus) {
+        public lMutablePolynomialZp take(long modulus) {
             int degree = minDegree + rnd.nextInt(maxDegree - minDegree + 1);
-            return MutablePolynomialMod.createMonomial(modulus, 1, degree).addMonomial(1, 1).addMonomial(1, 0);
+            return lMutablePolynomialZp.createMonomial(modulus, 1, degree).addMonomial(1, 1).addMonomial(1, 0);
         }
     }
 
@@ -112,9 +112,9 @@ public final class FactorizationTestUtil {
         }
 
         @Override
-        public MutablePolynomialMod take(long modulus) {
-            MutablePolynomialMod poly;
-            poly = MutablePolynomialZ.create(rndd.nextLong(1, modulus)).modulus(modulus, false);
+        public lMutablePolynomialZp take(long modulus) {
+            lMutablePolynomialZp poly;
+            poly = lMutablePolynomialZ.create(rndd.nextLong(1, modulus)).modulus(modulus, false);
             int nBases = rndd.nextInt(minNBase, maxNBase);
             for (int j = 1; j <= nBases; ++j)
                 poly = poly.multiply(RandomPolynomials.randomMonicPoly(j, modulus, rnd));
@@ -152,8 +152,8 @@ public final class FactorizationTestUtil {
         }
 
         @Override
-        public MutablePolynomialMod take(long modulus) {
-            MutablePolynomialMod poly = RandomPolynomials.randomMonicPoly(minDegree + rnd.nextInt(maxDegree - minDegree + 1), modulus, rnd).multiply(rndd.nextLong(1, modulus - 1));
+        public lMutablePolynomialZp take(long modulus) {
+            lMutablePolynomialZp poly = RandomPolynomials.randomMonicPoly(minDegree + rnd.nextInt(maxDegree - minDegree + 1), modulus, rnd).multiply(rndd.nextLong(1, modulus - 1));
 
             if (ensureSquareFree) {
                 poly = SquareFreePart(poly);
@@ -179,8 +179,8 @@ public final class FactorizationTestUtil {
         }
 
         @Override
-        public MutablePolynomialMod take(long modulus) {
-            MutablePolynomialMod poly = MutablePolynomialMod.one(modulus);
+        public lMutablePolynomialZp take(long modulus) {
+            lMutablePolynomialZp poly = lMutablePolynomialZp.one(modulus);
             for (int i = 0; i < nFactors; i++)
                 poly = poly.multiply(pSource.take(modulus));
 

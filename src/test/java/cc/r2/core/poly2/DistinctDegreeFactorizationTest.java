@@ -28,26 +28,26 @@ import static org.junit.Assert.assertTrue;
  */
 public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
     static final int bigModulus = 5659;
-    static final MutablePolynomialMod bigPoly = MutablePolynomialZ.create(6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1).modulus(bigModulus);
+    static final lMutablePolynomialZp bigPoly = lMutablePolynomialZ.create(6650, 68859, 22275, 45078, 86304, 9759, 77160, 70073, 41899, 52881, 62889, 58468, 35826, 60356, 67213, 66957, 48370, 17669, 9933, 85458, 3134, 76771, 30441, 33067, 35939, 15710, 2403, 8585, 55218, 72652, 23952, 85278, 92366, 81522, 47437, 32453, 19760, 5051, 84527, 55625, 38211, 18165, 38887, 94661, 4046, 88205, 91932, 42789, 41182, 33497, 57403, 82501, 35133, 2346, 35376, 92459, 69637, 50572, 31966, 5279, 33814, 11215, 30244, 39497, 82716, 36040, 25972, 16361, 88885, 89514, 66641, 78008, 88470, 51393, 5626, 54147, 24953, 48299, 77990, 74869, 22067, 94204, 11658, 30396, 61221, 28882, 24978, 11737, 79083, 52379, 45547, 7482, 89156, 84783, 13140, 38412, 10110, 72974, 74516, 75284, 25327, 66808, 54726, 3462, 53452, 56885, 5921, 68793, 33047, 39883, 49840, 67584, 13360, 43291, 19317, 39530, 5922, 39463, 86786, 15846, 21785, 40463, 83277, 74177, 41218, 14196, 51191, 43599, 23830, 87613, 1414, 27672, 32990, 81745, 52957, 27855, 71616, 93334, 65928, 8242, 92984, 8345, 17228, 59512, 35349, 28330, 19021, 39366, 85001, 22699, 10186, 27312, 42484, 62155, 65370, 14172, 68282, 61633, 10726, 84239, 66430, 15752, 90164, 81410, 79784, 5751, 45762, 78313, 27020, 37809, 2897, 15129, 14970, 24014, 81092, 53643, 88663, 42889, 84295, 18189, 59806, 91795, 88777, 50017, 38189, 41721, 50622, 89687, 54431, 54986, 20530, 68806, 44449, 62479, 34149, 55409, 59757, 54592, 3636, 22578, 36217, 22896, 38901, 38573, 68767, 38291, 13457, 64421, 28767, 16589, 51589, 12948, 45939, 26680, 48003, 43471, 7013, 37294, 25587, 51820, 65336, 25703, 93341, 59022, 76069, 48653, 41795, 41392, 48562, 26240, 76813, 76274, 3876, 56383, 57752, 24556, 76413, 87271, 84231, 67364, 49656, 59996, 20438, 66506, 43313, 57650, 80206, 36887, 17852, 77602, 81316, 61562, 33687, 78752, 43969, 73349, 65202, 10234, 10062, 51956, 87369, 66206, 82705, 70217, 74172, 34581, 94543, 7664, 24364, 18110, 66448, 1).modulus(bigModulus);
 
     @Test
     public void test1() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialZ.create(0, -1, -1, -1, 0, 1, -1, 1, 1).modulus(3);
-        FactorDecomposition<MutablePolynomialMod> f = DistinctDegreeFactorizationPlain(poly);
+        lMutablePolynomialZp poly = lMutablePolynomialZ.create(0, -1, -1, -1, 0, 1, -1, 1, 1).modulus(3);
+        FactorDecomposition<lMutablePolynomialZp> f = DistinctDegreeFactorizationPlain(poly);
         assertDistinctDegreeFactorization(poly, f);
     }
 
     @Test
     public void test2() throws Exception {
         long modulus = 11;
-        MutablePolynomialMod poly = MutablePolynomialZ
+        lMutablePolynomialZp poly = lMutablePolynomialZ
                 .create(32, 1, 4)
                 .modulus(modulus)
-                .multiply(MutablePolynomialZ
+                .multiply(lMutablePolynomialZ
                         .create(3, 3, 1)
                         .modulus(modulus));
-        FactorDecomposition<MutablePolynomialMod> plain = DistinctDegreeFactorizationPlain(poly);
-        FactorDecomposition<MutablePolynomialMod> shoup = DistinctDegreeFactorizationShoup(poly);
+        FactorDecomposition<lMutablePolynomialZp> plain = DistinctDegreeFactorizationPlain(poly);
+        FactorDecomposition<lMutablePolynomialZp> shoup = DistinctDegreeFactorizationShoup(poly);
         assertDistinctDegreeFactorization(poly, plain);
         assertDistinctDegreeFactorization(poly, shoup);
         assertEquals(plain, shoup);
@@ -56,14 +56,14 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test3() throws Exception {
         long modulus = 11;
-        MutablePolynomialMod poly = MutablePolynomialZ
+        lMutablePolynomialZp poly = lMutablePolynomialZ
                 .create(1, 1)
                 .modulus(modulus)
-                .multiply(MutablePolynomialZ
+                .multiply(lMutablePolynomialZ
                         .create(4, 9, 1)
                         .modulus(modulus));
-        FactorDecomposition<MutablePolynomialMod> plain = DistinctDegreeFactorizationPlain(poly);
-        FactorDecomposition<MutablePolynomialMod> shoup = DistinctDegreeFactorizationShoup(poly);
+        FactorDecomposition<lMutablePolynomialZp> plain = DistinctDegreeFactorizationPlain(poly);
+        FactorDecomposition<lMutablePolynomialZp> shoup = DistinctDegreeFactorizationShoup(poly);
         assertDistinctDegreeFactorization(poly, plain);
         assertDistinctDegreeFactorization(poly, shoup);
         assertEquals(plain, shoup);
@@ -186,40 +186,31 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
 
     enum DDFAlgorithm {
         Plain {
-            FactorizationTestUtil.WithTiming<FactorDecomposition<MutablePolynomialMod>> factor(MutablePolynomialMod poly) {
+            FactorizationTestUtil.WithTiming<FactorDecomposition<lMutablePolynomialZp>> factor(lMutablePolynomialZp poly) {
                 long start = System.nanoTime();
-                FactorDecomposition<MutablePolynomialMod> r = DistinctDegreeFactorizationPlain(poly);
+                FactorDecomposition<lMutablePolynomialZp> r = DistinctDegreeFactorizationPlain(poly);
                 long timing = System.nanoTime() - start;
                 return new FactorizationTestUtil.WithTiming<>(r, timing);
             }
         },
         XPowers {
-            FactorizationTestUtil.WithTiming<FactorDecomposition<MutablePolynomialMod>> factor(MutablePolynomialMod poly) {
+            FactorizationTestUtil.WithTiming<FactorDecomposition<lMutablePolynomialZp>> factor(lMutablePolynomialZp poly) {
                 long start = System.nanoTime();
-                FactorDecomposition<MutablePolynomialMod> r = DistinctDegreeFactorizationPrecomputedExponents(poly);
+                FactorDecomposition<lMutablePolynomialZp> r = DistinctDegreeFactorizationPrecomputedExponents(poly);
                 long timing = System.nanoTime() - start;
                 return new FactorizationTestUtil.WithTiming<>(r, timing);
             }
         },
         Shoup {
-            FactorizationTestUtil.WithTiming<FactorDecomposition<MutablePolynomialMod>> factor(MutablePolynomialMod poly) {
+            FactorizationTestUtil.WithTiming<FactorDecomposition<lMutablePolynomialZp>> factor(lMutablePolynomialZp poly) {
                 long start = System.nanoTime();
-                FactorDecomposition<MutablePolynomialMod> r = DistinctDegreeFactorizationShoup(poly);
+                FactorDecomposition<lMutablePolynomialZp> r = DistinctDegreeFactorizationShoup(poly);
                 long timing = System.nanoTime() - start;
                 return new FactorizationTestUtil.WithTiming<>(r, timing);
             }
         };
-//        ,
-//        Shoup2 {
-//            WithTiming<FactorDecomposition<MutablePolynomialMod>> factor(MutablePolynomialMod poly, long modulus) {
-//                long start = System.nanoTime();
-//                FactorDecomposition<MutablePolynomialMod> r = ShoupDDFFactorization2(poly, modulus);
-//                long timing = System.nanoTime() - start;
-//                return new WithTiming<>(r, timing);
-//            }
-//        };
 
-        abstract FactorizationTestUtil.WithTiming<FactorDecomposition<MutablePolynomialMod>> factor(MutablePolynomialMod poly);
+        abstract FactorizationTestUtil.WithTiming<FactorDecomposition<lMutablePolynomialZp>> factor(lMutablePolynomialZp poly);
     }
 
     final class BenchmarkRunner {
@@ -283,17 +274,17 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
                 }
 
                 for (long modulus : primes) {
-                    MutablePolynomialMod poly = source.take(modulus);
+                    lMutablePolynomialZp poly = source.take(modulus);
                     degrees.addValue(poly.degree);
                     try {
-                        Map<DDFAlgorithm, FactorizationTestUtil.WithTiming<FactorDecomposition<MutablePolynomialMod>>> results = algorithms.stream().collect(Collectors.toMap(al -> al, al -> al.factor(poly)));
+                        Map<DDFAlgorithm, FactorizationTestUtil.WithTiming<FactorDecomposition<lMutablePolynomialZp>>> results = algorithms.stream().collect(Collectors.toMap(al -> al, al -> al.factor(poly)));
                         DDFAlgorithm baseAlgorithm = algorithms.stream().findFirst().get();
-                        FactorDecomposition<MutablePolynomialMod> baseDecomposition = results.get(baseAlgorithm).val;
+                        FactorDecomposition<lMutablePolynomialZp> baseDecomposition = results.get(baseAlgorithm).val;
                         factors.addValue(baseDecomposition.factors.size());
                         results.forEach((alg, res) -> {
                             performance.get(alg).addValue(res.nanoSeconds);
 
-                            FactorDecomposition<MutablePolynomialMod> c = res.val;
+                            FactorDecomposition<lMutablePolynomialZp> c = res.val;
                             try {
                                 assertDistinctDegreeFactorization(poly, c);
                                 assertEquals(baseDecomposition.factors.size(), c.factors.size());
@@ -377,35 +368,35 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
 
     @Test
     public void test35a() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialZ
+        lMutablePolynomialZp poly = lMutablePolynomialZ
                 .create(19, 20, 13, 10, 26, 19, 6, 29, 13, 20, 10, 12, 20, 3, 21, 16, 25, 10, 26, 22, 25, 2, 23, 29, 21, 14, 8, 26, 16, 7, 7, 1)
                 .modulus(31);
-        FactorDecomposition<MutablePolynomialMod> factorization = DistinctDegreeFactorizationPlain(poly);
+        FactorDecomposition<lMutablePolynomialZp> factorization = DistinctDegreeFactorizationPlain(poly);
         assertEquals(5, factorization.factors.size());
         assertDistinctDegreeFactorization(poly, factorization);
     }
 
     @Test
     public void test37a() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialZ
+        lMutablePolynomialZp poly = lMutablePolynomialZ
                 .create(9, 7, 2, 3, 10, 1, 1)
                 .modulus(11);
-        FactorDecomposition<MutablePolynomialMod> factorization = DistinctDegreeFactorizationPlain(poly);
+        FactorDecomposition<lMutablePolynomialZp> factorization = DistinctDegreeFactorizationPlain(poly);
         assertDistinctDegreeFactorization(poly, factorization);
     }
 
     @Test
     public void test38() throws Exception {
-        MutablePolynomialMod poly = MutablePolynomialZ
+        lMutablePolynomialZp poly = lMutablePolynomialZ
                 .create(172, 85, 84, 151, 122, 53, 107, 117, 82, 152, 133, 151, 178, 1)
                 .modulus(181);
-        FactorDecomposition<MutablePolynomialMod> fct = DistinctDegreeFactorizationComplete(poly);
+        FactorDecomposition<lMutablePolynomialZp> fct = DistinctDegreeFactorizationComplete(poly);
         assertFactorization(poly, fct);
     }
 
     @Test
     public void test5() throws Exception {
-        FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+        FactorDecomposition<lMutablePolynomialZp> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
         assertDistinctDegreeFactorization(bigPoly, ddf);
         assertEquals(2, ddf.factors.size());
     }
@@ -413,9 +404,9 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test5a() throws Exception {
         for (int i = 0; i < its(10, 50); i++) {
-            MutablePolynomialMod bigPoly = this.bigPoly.setModulus(getModulusRandom(20));
+            lMutablePolynomialZp bigPoly = this.bigPoly.setModulus(getModulusRandom(20));
             long start = System.nanoTime();
-            FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            FactorDecomposition<lMutablePolynomialZp> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);
             System.out.println("Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.modulus + "): " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -425,9 +416,9 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
     @Benchmark
     public void test5b() throws Exception {
         for (int i = 0; i < its(100, 50); i++) {
-            MutablePolynomialMod bigPoly = this.bigPoly.setModulus(getModulusRandom(20));//.truncate(15);
+            lMutablePolynomialZp bigPoly = this.bigPoly.setModulus(getModulusRandom(20));//.truncate(15);
             long start = System.nanoTime();
-            FactorDecomposition<MutablePolynomialMod> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            FactorDecomposition<lMutablePolynomialZp> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);
             long time = System.nanoTime() - start;
             boolean b = PolynomialGCD.Euclid(bigPoly.toBigPoly().square(), bigPoly.toBigPoly().square().derivative()).gcd().isConstant();
@@ -437,7 +428,7 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
 
     @Test
     public void test6() throws Exception {
-        assertTrue(DistinctDegreeFactorization(MutablePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
+        assertTrue(DistinctDegreeFactorization(lMutablePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
     }
 
     @Test
@@ -447,8 +438,8 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
         poly = poly.multiply(poly.clone().increment());
         BigInteger modulus = BigInteger.LONG_MAX_VALUE;
         modulus = modulus.multiply(modulus).nextProbablePrime();
-        bMutablePolynomialMod polyMod = poly.modulus(modulus);
-        bFactorDecomposition<bMutablePolynomialMod> f = DistinctDegreeFactorization(polyMod);
+        bMutablePolynomialZp polyMod = poly.modulus(modulus);
+        bFactorDecomposition<bMutablePolynomialZp> f = DistinctDegreeFactorization(polyMod);
         assertDistinctDegreeFactorization(polyMod, f);
     }
 }

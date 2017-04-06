@@ -15,7 +15,7 @@ import java.util.List;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FactorDecompositionOLD<T extends MutablePolynomialAbstract<T>> implements Iterable<T> {
+public final class FactorDecompositionOLD<T extends lMutablePolynomialAbstract<T>> implements Iterable<T> {
     /** Overall integer factor (polynomial content) */
     long factor;
     /** Factors */
@@ -170,12 +170,12 @@ public final class FactorDecompositionOLD<T extends MutablePolynomialAbstract<T>
     }
 
     /** decomposition with single numeric factor */
-    static <T extends MutablePolynomialAbstract<T>> FactorDecompositionOLD<T> oneFactor(long factor) {
+    static <T extends lMutablePolynomialAbstract<T>> FactorDecompositionOLD<T> oneFactor(long factor) {
         return new FactorDecompositionOLD<T>().setNumericFactor(factor);
     }
 
     /** decomposition with single factor */
-    static <T extends MutablePolynomialAbstract<T>> FactorDecompositionOLD<T> oneFactor(T poly, long factor) {
+    static <T extends lMutablePolynomialAbstract<T>> FactorDecompositionOLD<T> oneFactor(T poly, long factor) {
         FactorDecompositionOLD<T> ts = new FactorDecompositionOLD<>();
         ts.addFactor(poly, 1);
         ts.setNumericFactor(factor);

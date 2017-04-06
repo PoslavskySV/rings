@@ -14,20 +14,20 @@ import static cc.r2.core.number.BigInteger.ZERO;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePolynomialMod>
-        implements IMutablePolynomialZp<bMutablePolynomialMod> {
+final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePolynomialZp>
+        implements IMutablePolynomialZp<bMutablePolynomialZp> {
     /** the modulus */
     final BigInteger modulus;
 
     /** copy constructor */
-    private bMutablePolynomialMod(BigInteger modulus, BigInteger[] data, int degree) {
+    private bMutablePolynomialZp(BigInteger modulus, BigInteger[] data, int degree) {
         this.modulus = modulus;
         this.data = data;
         this.degree = degree;
     }
 
     /** main constructor */
-    private bMutablePolynomialMod(BigInteger modulus, BigInteger[] data) {
+    private bMutablePolynomialZp(BigInteger modulus, BigInteger[] data) {
         this.modulus = modulus;
         this.data = data;
         this.degree = data.length - 1;
@@ -43,13 +43,13 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param data    coefficients
      * @return the polynomial
      */
-    static bMutablePolynomialMod create(BigInteger modulus, BigInteger[] data) {
+    static bMutablePolynomialZp create(BigInteger modulus, BigInteger[] data) {
         reduce(data, modulus);
-        return new bMutablePolynomialMod(modulus, data);
+        return new bMutablePolynomialZp(modulus, data);
     }
 
-    static bMutablePolynomialMod createUnsafe(BigInteger modulus, BigInteger[] data) {
-        return new bMutablePolynomialMod(modulus, data);
+    static bMutablePolynomialZp createUnsafe(BigInteger modulus, BigInteger[] data) {
+        return new bMutablePolynomialZp(modulus, data);
     }
 
     /** reduce data mod modulus **/
@@ -70,10 +70,10 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param exponent    monomial exponent
      * @return {@code coefficient * x^exponent}
      */
-    static bMutablePolynomialMod createMonomial(BigInteger modulus, BigInteger coefficient, int exponent) {
+    static bMutablePolynomialZp createMonomial(BigInteger modulus, BigInteger coefficient, int exponent) {
         BigInteger[] data = new BigInteger[exponent + 1];
         data[exponent] = reduce(coefficient, modulus);
-        return new bMutablePolynomialMod(modulus, data);
+        return new bMutablePolynomialZp(modulus, data);
     }
 
     /**
@@ -83,8 +83,8 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param value   the value
      * @return constant polynomial
      */
-    static bMutablePolynomialMod constant(BigInteger modulus, BigInteger value) {
-        return new bMutablePolynomialMod(modulus, new BigInteger[]{reduce(value, modulus)});
+    static bMutablePolynomialZp constant(BigInteger modulus, BigInteger value) {
+        return new bMutablePolynomialZp(modulus, new BigInteger[]{reduce(value, modulus)});
     }
 
     /**
@@ -93,7 +93,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param modulus the modulus
      * @return polynomial 1
      */
-    static bMutablePolynomialMod one(BigInteger modulus) {
+    static bMutablePolynomialZp one(BigInteger modulus) {
         return constant(modulus, ONE);
     }
 
@@ -103,7 +103,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param modulus the modulus
      * @return polynomial 0
      */
-    static bMutablePolynomialMod zero(BigInteger modulus) {
+    static bMutablePolynomialZp zero(BigInteger modulus) {
         return constant(modulus, ZERO);
     }
 
@@ -142,9 +142,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     @Override
-    public bMutablePolynomialMod createFromArray(BigInteger[] newData) {
+    public bMutablePolynomialZp createFromArray(BigInteger[] newData) {
         reduce(newData, modulus);
-        bMutablePolynomialMod r = new bMutablePolynomialMod(modulus, newData, newData.length - 1);
+        bMutablePolynomialZp r = new bMutablePolynomialZp(modulus, newData, newData.length - 1);
         r.fixDegree();
         return r;
     }
@@ -159,36 +159,36 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @return constant polynomial with specified value
      */
     @Override
-    public bMutablePolynomialMod createConstant(BigInteger val) {
-        return new bMutablePolynomialMod(modulus, new BigInteger[]{reduce(val, modulus)}, 0);
+    public bMutablePolynomialZp createConstant(BigInteger val) {
+        return new bMutablePolynomialZp(modulus, new BigInteger[]{reduce(val, modulus)}, 0);
     }
 
     @Override
-    public bMutablePolynomialMod getRange(int from, int to) {
-        return new bMutablePolynomialMod(modulus, Arrays.copyOfRange(data, from, to));
+    public bMutablePolynomialZp getRange(int from, int to) {
+        return new bMutablePolynomialZp(modulus, Arrays.copyOfRange(data, from, to));
     }
 
     @Override
-    public bMutablePolynomialMod createMonomial(BigInteger coefficient, int newDegree) {
+    public bMutablePolynomialZp createMonomial(BigInteger coefficient, int newDegree) {
         BigInteger[] newData = new BigInteger[newDegree + 1];
         Arrays.fill(newData, ZERO);
         newData[newDegree] = reduce(coefficient, modulus);
-        return new bMutablePolynomialMod(modulus, newData, newDegree);
+        return new bMutablePolynomialZp(modulus, newData, newDegree);
     }
 
     @Override
-    public bMutablePolynomialMod[] arrayNewInstance(int length) {
-        return new bMutablePolynomialMod[length];
+    public bMutablePolynomialZp[] arrayNewInstance(int length) {
+        return new bMutablePolynomialZp[length];
     }
 
     @Override
-    public bMutablePolynomialMod[] arrayNewInstance(bMutablePolynomialMod a, bMutablePolynomialMod b) {
-        return new bMutablePolynomialMod[]{a, b};
+    public bMutablePolynomialZp[] arrayNewInstance(bMutablePolynomialZp a, bMutablePolynomialZp b) {
+        return new bMutablePolynomialZp[]{a, b};
     }
 
     /** does not copy the data and does not reduce the data with new modulus */
-    bMutablePolynomialMod setModulusUnsafe(BigInteger newModulus) {
-        return new bMutablePolynomialMod(newModulus, data, degree);
+    bMutablePolynomialZp setModulusUnsafe(BigInteger newModulus) {
+        return new bMutablePolynomialZp(newModulus, data, degree);
     }
 
     /**
@@ -197,10 +197,10 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param newModulus the new modulus
      * @return the new Zp[x] polynomial with specified modulus
      */
-    bMutablePolynomialMod setModulus(BigInteger newModulus) {
+    bMutablePolynomialZp setModulus(BigInteger newModulus) {
         BigInteger[] newData = data.clone();
         reduce(newData, newModulus);
-        return new bMutablePolynomialMod(newModulus, newData);
+        return new bMutablePolynomialZp(newModulus, newData);
     }
 
     @Override
@@ -235,14 +235,14 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
         return bMutablePolynomialZ.create(newData);
     }
 
-    MutablePolynomialMod toLong() {
+    lMutablePolynomialZp toLong() {
         if (modulus.compareTo(LongArithmetics.b_MAX_SUPPORTED_MODULUS) > 0)
             throw new ArithmeticException("modulus out of supported range");
-        return MutablePolynomialZ.create(toLong0()).modulus(modulus.longValueExact(), false);
+        return lMutablePolynomialZ.create(toLong0()).modulus(modulus.longValueExact(), false);
     }
 
     /** {@inheritDoc} */
-    public bMutablePolynomialMod monic() {
+    public bMutablePolynomialZp monic() {
         if (data[degree].isZero()) // isZero()
             return this;
         if (degree == 0) {
@@ -253,7 +253,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     @Override
-    public bMutablePolynomialMod divideByLC(bMutablePolynomialMod other) {
+    public bMutablePolynomialZp divideByLC(bMutablePolynomialZp other) {
         return multiply(other.lc().modInverse(modulus));
     }
 
@@ -264,7 +264,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param factor the factor
      * @return {@code this}
      */
-    bMutablePolynomialMod monic(BigInteger factor) {
+    bMutablePolynomialZp monic(BigInteger factor) {
         return multiply(multiplyMod(mod(factor), lc().modInverse(modulus)));
     }
 
@@ -282,14 +282,14 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
     }
 
     /** {@inheritDoc} */
-    public void checkCompatibleModulus(bMutablePolynomialMod oth) {
+    public void checkCompatibleModulus(bMutablePolynomialZp oth) {
         if (!modulus.equals(oth.modulus))
             throw new IllegalArgumentException();
     }
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod add(bMutablePolynomialMod oth) {
+    public bMutablePolynomialZp add(bMutablePolynomialZp oth) {
         if (oth.isZero())
             return this;
         if (isZero())
@@ -305,7 +305,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod addMonomial(BigInteger coefficient, int exponent) {
+    public bMutablePolynomialZp addMonomial(BigInteger coefficient, int exponent) {
         if (coefficient.isZero())
             return this;
 
@@ -317,7 +317,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod addMul(bMutablePolynomialMod oth, BigInteger factor) {
+    public bMutablePolynomialZp addMul(bMutablePolynomialZp oth, BigInteger factor) {
         if (oth.isZero())
             return this;
 
@@ -335,7 +335,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod subtract(bMutablePolynomialMod oth) {
+    public bMutablePolynomialZp subtract(bMutablePolynomialZp oth) {
         if (oth.isZero())
             return this;
         if (isZero())
@@ -351,7 +351,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod subtract(bMutablePolynomialMod oth, BigInteger factor, int exponent) {
+    public bMutablePolynomialZp subtract(bMutablePolynomialZp oth, BigInteger factor, int exponent) {
         if (oth.isZero())
             return this;
 
@@ -369,7 +369,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod negate() {
+    public bMutablePolynomialZp negate() {
         for (int i = degree; i >= 0; --i)
             if (!data[i].isZero())
                 data[i] = modulus.subtract(data[i]);
@@ -378,7 +378,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod multiply(BigInteger factor) {
+    public bMutablePolynomialZp multiply(BigInteger factor) {
         factor = mod(factor);
         if (factor.isOne())
             return this;
@@ -393,7 +393,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod derivative() {
+    public bMutablePolynomialZp derivative() {
         if (isConstant())
             return createZero();
         BigInteger[] newData = new BigInteger[degree];
@@ -407,13 +407,13 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * Deep copy
      */
     @Override
-    public bMutablePolynomialMod clone() {
-        return new bMutablePolynomialMod(modulus, data.clone(), degree);
+    public bMutablePolynomialZp clone() {
+        return new bMutablePolynomialZp(modulus, data.clone(), degree);
     }
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod multiply(bMutablePolynomialMod oth) {
+    public bMutablePolynomialZp multiply(bMutablePolynomialZp oth) {
         if (isZero())
             return this;
         if (oth.isZero())
@@ -442,7 +442,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
 
     /** switch algorithms */
-    private BigInteger[] multiplyExact(bMutablePolynomialMod oth) {
+    private BigInteger[] multiplyExact(bMutablePolynomialZp oth) {
         if (1L * (degree + 1) * (degree + 1) <= MUL_CLASSICAL_THRESHOLD)
             return multiplyClassicalUnsafe(data, 0, degree + 1, oth.data, 0, oth.degree + 1);
         else
@@ -451,7 +451,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** {@inheritDoc} */
     @Override
-    public bMutablePolynomialMod square() {
+    public bMutablePolynomialZp square() {
         if (isZero())
             return this;
         if (degree == 0)

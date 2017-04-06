@@ -10,7 +10,7 @@ import java.util.List;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class lFactorDecomposition<T extends MutablePolynomialAbstract<T>> extends FactorDecomposition<T> {
+public final class lFactorDecomposition<T extends lMutablePolynomialAbstract<T>> extends FactorDecomposition<T> {
     /** overall factor */
     long factor = 1;
 
@@ -77,31 +77,19 @@ public final class lFactorDecomposition<T extends MutablePolynomialAbstract<T>> 
     }
 
     /** decomposition with single numeric factor */
-    static <T extends MutablePolynomialAbstract<T>> lFactorDecomposition<T> oneFactor(long factor) {
+    static <T extends lMutablePolynomialAbstract<T>> lFactorDecomposition<T> oneFactor(long factor) {
         return new lFactorDecomposition<>(factor);
     }
 
     /** decomposition with single factor */
-    static <T extends MutablePolynomialAbstract<T>> lFactorDecomposition<T> oneFactor(T poly, long factor) {
+    static <T extends lMutablePolynomialAbstract<T>> lFactorDecomposition<T> oneFactor(T poly, long factor) {
         lFactorDecomposition<T> ts = new lFactorDecomposition<>(factor);
         ts.addFactor(poly, 1);
         return ts;
     }
 
-//    static bFactorDecomposition<bMutablePolynomialMod> convertZp(lFactorDecomposition<MutablePolynomialMod> decomposition) {
-//        bFactorDecomposition<bMutablePolynomialMod> r = new bFactorDecomposition<>();
-//        decomposition.factors.forEach(t -> r.factors.add(t.toBigPoly()));
-//        r.exponents.addAll(decomposition.exponents);
-//        r.setNumericFactor(decomposition.factorAsBigInt());
-//        return r;
-//    }
-//
-//    static bFactorDecomposition<bMutablePolynomialZ> convertZ(lFactorDecomposition<MutablePolynomialZ> decomposition) {
-//        return convert(decomposition);
-//    }
-
     @SuppressWarnings("unchecked")
-    public static <bPoly extends bMutablePolynomialAbstract<bPoly>, lPoly extends MutablePolynomialAbstract<lPoly>>
+    public static <bPoly extends bMutablePolynomialAbstract<bPoly>, lPoly extends lMutablePolynomialAbstract<lPoly>>
     bFactorDecomposition<bPoly> convert(lFactorDecomposition<lPoly> decomposition) {
         bFactorDecomposition r = new bFactorDecomposition<bPoly>();
         decomposition.factors.forEach(t -> r.factors.add(t.toBigPoly()));

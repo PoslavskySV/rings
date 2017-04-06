@@ -33,7 +33,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         if (poly instanceof bMutablePolynomialZ)
             return (PolyZp) ((bMutablePolynomialZ) poly).modulus(modulus);
         else
-            return (PolyZp) ((MutablePolynomialZ) poly).modulus(modulus);
+            return (PolyZp) ((lMutablePolynomialZ) poly).modulus(modulus);
     }
 
     @SuppressWarnings("unchecked")
@@ -42,7 +42,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         if (poly instanceof bMutablePolynomialZ)
             return (PolyZp) ((bMutablePolynomialZ) poly).modulus(modulus);
         else
-            return (PolyZp) ((MutablePolynomialZ) poly).modulus(modulus.longValueExact());
+            return (PolyZp) ((lMutablePolynomialZ) poly).modulus(modulus.longValueExact());
     }
 
     @SuppressWarnings("unchecked")
@@ -50,10 +50,10 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
     HenselLifting.QuadraticLiftAbstract<PolyZp> createQuadraticLift(long modulus, PolyZ poly, PolyZp aFactor, PolyZp bFactor) {
         if (poly instanceof bMutablePolynomialZ)
             return (HenselLifting.QuadraticLiftAbstract<PolyZp>) HenselLifting.createQuadraticLift(BigInteger.valueOf(modulus),
-                    (bMutablePolynomialZ) poly, (bMutablePolynomialMod) aFactor, (bMutablePolynomialMod) bFactor);
+                    (bMutablePolynomialZ) poly, (bMutablePolynomialZp) aFactor, (bMutablePolynomialZp) bFactor);
         else
             return (HenselLifting.QuadraticLiftAbstract<PolyZp>) HenselLifting.createQuadraticLift(modulus,
-                    (MutablePolynomialZ) poly, (MutablePolynomialMod) aFactor, (MutablePolynomialMod) bFactor);
+                    (lMutablePolynomialZ) poly, (lMutablePolynomialZp) aFactor, (lMutablePolynomialZp) bFactor);
     }
 
     @SuppressWarnings("unchecked")
@@ -61,10 +61,10 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
     LiftableQuintet<PolyZp> createLinearLift(long modulus, PolyZ poly, PolyZp aFactor, PolyZp bFactor) {
         if (poly instanceof bMutablePolynomialZ)
             return (LiftableQuintet<PolyZp>) HenselLifting.createLinearLift(modulus,
-                    (bMutablePolynomialZ) poly, ((bMutablePolynomialMod) aFactor).toLong(), ((bMutablePolynomialMod) bFactor).toLong());
+                    (bMutablePolynomialZ) poly, ((bMutablePolynomialZp) aFactor).toLong(), ((bMutablePolynomialZp) bFactor).toLong());
         else
             return (LiftableQuintet<PolyZp>) HenselLifting.createLinearLift(modulus,
-                    (MutablePolynomialZ) poly, (MutablePolynomialMod) aFactor, (MutablePolynomialMod) bFactor);
+                    (lMutablePolynomialZ) poly, (lMutablePolynomialZp) aFactor, (lMutablePolynomialZp) bFactor);
     }
 
     <PolyZ extends IMutablePolynomialZ<PolyZ>, PolyZp extends IMutablePolynomialZp<PolyZp>>
@@ -106,27 +106,27 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
 
     @Test
     public void testHensel1() throws Exception {
-        MutablePolynomialZ aFactor = MutablePolynomialZ.create(-2, -1, 2, 1);
-        MutablePolynomialZ bFactor = MutablePolynomialZ.create(-2, 1);
-        MutablePolynomialZ poly = aFactor.clone().multiply(bFactor);
+        lMutablePolynomialZ aFactor = lMutablePolynomialZ.create(-2, -1, 2, 1);
+        lMutablePolynomialZ bFactor = lMutablePolynomialZ.create(-2, 1);
+        lMutablePolynomialZ poly = aFactor.clone().multiply(bFactor);
         testHenselStepRandomModulus(poly, aFactor, bFactor, true, 10, 20);
         testHenselStepRandomModulus(poly, aFactor, bFactor, false, 10, 20);
     }
 
     @Test
     public void testHensel2() throws Exception {
-        MutablePolynomialZ aFactor = MutablePolynomialZ.create(3, 1);
-        MutablePolynomialZ bFactor = MutablePolynomialZ.create(4, 1);
-        MutablePolynomialZ poly = aFactor.clone().multiply(bFactor);
+        lMutablePolynomialZ aFactor = lMutablePolynomialZ.create(3, 1);
+        lMutablePolynomialZ bFactor = lMutablePolynomialZ.create(4, 1);
+        lMutablePolynomialZ poly = aFactor.clone().multiply(bFactor);
         testHenselStepRandomModulus(poly, aFactor, bFactor, true, 10, 20);
         testHenselStepRandomModulus(poly, aFactor, bFactor, false, 10, 20);
     }
 
     @Test
     public void testHensel3() throws Exception {
-        MutablePolynomialZ aFactor = MutablePolynomialZ.create(12, 13112, 1112, 31, 112);
-        MutablePolynomialZ bFactor = MutablePolynomialZ.create(22, 112311, 12);
-        MutablePolynomialZ poly = aFactor.clone().multiply(bFactor);
+        lMutablePolynomialZ aFactor = lMutablePolynomialZ.create(12, 13112, 1112, 31, 112);
+        lMutablePolynomialZ bFactor = lMutablePolynomialZ.create(22, 112311, 12);
+        lMutablePolynomialZ poly = aFactor.clone().multiply(bFactor);
 
         testHenselStepRandomModulus(poly, aFactor, bFactor, true, 10, 20);
         testHenselStepRandomModulus(poly, aFactor, bFactor, false, 10, 20);
@@ -149,20 +149,20 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
     static void testMultiFactorHenselLifting(bMutablePolynomialZ base, long modulus, int nIterations, boolean quadratic) {
         base = SquareFreePart(base);
 
-        MutablePolynomialMod baseMod = base.modulus(modulus).toLong();
+        lMutablePolynomialZp baseMod = base.modulus(modulus).toLong();
         if (baseMod.degree() != base.degree())
             return;
 
         if (!isSquareFree(baseMod))
             return;
 
-        FactorDecomposition<MutablePolynomialMod> modularFactors = factor(baseMod);
+        FactorDecomposition<lMutablePolynomialZp> modularFactors = factor(baseMod);
         assertFactorization(baseMod, modularFactors);
 
-        HenselLifting.LiftFactory<MutablePolynomialMod> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
+        HenselLifting.LiftFactory<lMutablePolynomialZp> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
         BigInteger newModulus = newModulus(modulus, nIterations, quadratic);
-        List<bMutablePolynomialMod> tmp = HenselLifting.liftFactorization0(BigInteger.valueOf(modulus), newModulus, nIterations, base, modularFactors.factors, factory);
-        bMutablePolynomialMod bm = base.modulus(newModulus);
+        List<bMutablePolynomialZp> tmp = HenselLifting.liftFactorization0(BigInteger.valueOf(modulus), newModulus, nIterations, base, modularFactors.factors, factory);
+        bMutablePolynomialZp bm = base.modulus(newModulus);
         assertFactorization(bm, bm.lc(), tmp);
     }
 
@@ -203,7 +203,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(100, 1000); ++i) {
             bMutablePolynomialZ poly = RandomPolynomials.randomPoly(rndd.nextInt(5, 15), BigInteger.LONG_MAX_VALUE, rnd);
             for (long modulus : getModulusArray((int) its(5, 15), 0, 5, 0)) {
-                MutablePolynomialMod polyMod = poly.modulus(modulus).toLong();
+                lMutablePolynomialZp polyMod = poly.modulus(modulus).toLong();
                 if (polyMod.isConstant() || polyMod.isMonomial())
                     continue;
 
@@ -236,7 +236,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
 
         int nTrials = 20;
         int maxIterations;
-        LiftableQuintet<bMutablePolynomialMod> linearLift, quadraticLift;
+        LiftableQuintet<bMutablePolynomialZp> linearLift, quadraticLift;
         DescriptiveStatistics acc = new DescriptiveStatistics();
 
         List<double[]> linear = new ArrayList<>(), quadratic = new ArrayList<>();
@@ -326,7 +326,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
                 poly = poly.multiply(RandomPolynomials.randomPoly(rndd.nextInt(5, 15), BigInteger.valueOf(1000), rnd));
             poly = SquareFreeFactorization.SquareFreePart(poly);
 
-            bMutablePolynomialMod polyMod;
+            bMutablePolynomialZp polyMod;
             long modulus;
             do {
                 modulus = getModulusRandom(rndd.nextInt(5, 28));
@@ -334,24 +334,24 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
             } while (!SquareFreeFactorization.isSquareFree(poly.modulus(modulus)) || polyMod.degree() != poly.degree());
 
             BigInteger desiredBound = poly.mignotteBound().shiftLeft(1).multiply(poly.lc());
-            lFactorDecomposition<MutablePolynomialMod> modularFactors = factor(polyMod.toLong());
+            lFactorDecomposition<lMutablePolynomialZp> modularFactors = factor(polyMod.toLong());
             BigInteger bModulus = BigInteger.valueOf(modulus);
 
             long start;
             try {
                 start = System.nanoTime();
-                List<bMutablePolynomialMod> factorsQuad = HenselLifting.liftFactorization(bModulus, desiredBound, poly, modularFactors.factors, true);
+                List<bMutablePolynomialZp> factorsQuad = HenselLifting.liftFactorization(bModulus, desiredBound, poly, modularFactors.factors, true);
                 quadratic.addValue(System.nanoTime() - start);
                 assertFactorization(poly.modulus(factorsQuad.get(0).modulus), poly.lc(), factorsQuad);
 
                 start = System.nanoTime();
-                List<bMutablePolynomialMod> factorsLin = HenselLifting.liftFactorization(bModulus, desiredBound, poly, modularFactors.factors, false);
+                List<bMutablePolynomialZp> factorsLin = HenselLifting.liftFactorization(bModulus, desiredBound, poly, modularFactors.factors, false);
                 linear.addValue(System.nanoTime() - start);
                 assertFactorization(poly.modulus(factorsLin.get(0).modulus), poly.lc(), factorsLin);
 
 
                 start = System.nanoTime();
-                List<bMutablePolynomialMod> factorsAdp = HenselLifting.liftFactorizationAdaptive(bModulus, desiredBound, poly, modularFactors.factors);
+                List<bMutablePolynomialZp> factorsAdp = HenselLifting.liftFactorizationAdaptive(bModulus, desiredBound, poly, modularFactors.factors);
                 adaptive.addValue(System.nanoTime() - start);
                 assertFactorization(poly.modulus(factorsAdp.get(0).modulus), poly.lc(), factorsAdp);
             } catch (Throwable e) {
