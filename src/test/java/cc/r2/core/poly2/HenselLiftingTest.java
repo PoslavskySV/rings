@@ -351,7 +351,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
 
 
                 start = System.nanoTime();
-                List<bMutablePolynomialZp> factorsAdp = HenselLifting.liftFactorizationAdaptive(bModulus, desiredBound, poly, modularFactors.factors);
+                List<bMutablePolynomialZp> factorsAdp = HenselLifting.liftFactorization(bModulus, desiredBound, poly, modularFactors.factors);
                 adaptive.addValue(System.nanoTime() - start);
                 assertFactorization(poly.modulus(factorsAdp.get(0).modulus), poly.lc(), factorsAdp);
             } catch (Throwable e) {

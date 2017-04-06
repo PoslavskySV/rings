@@ -344,7 +344,7 @@ public final class Factorization {
                 break;
         }
 
-        List<bMutablePolynomialZp> modularFactors = HenselLifting.liftFactorizationAdaptive(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors);
+        List<bMutablePolynomialZp> modularFactors = HenselLifting.liftFactorization(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors);
         assert modularFactors.get(0).modulus.compareTo(bound2) >= 0;
         bFactorDecomposition<bMutablePolynomialZ> res = reconstructFactorsZ(poly, new bFactorDecomposition<>(modularFactors, BigInteger.ONE));
         return res;
@@ -425,7 +425,7 @@ public final class Factorization {
     }
 
     /**
-     * Factors polynomial in Zp[x].
+     * Factors polynomial in Z[x].
      *
      * @param poly the polynomial
      * @return factor decomposition
@@ -443,7 +443,7 @@ public final class Factorization {
     }
 
     /**
-     * Factors polynomial in Zp[x].
+     * Factors polynomial in Z[x].
      *
      * @param poly the polynomial
      * @return factor decomposition
