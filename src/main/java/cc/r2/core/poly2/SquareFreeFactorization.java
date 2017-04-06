@@ -422,7 +422,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return square free part
      */
-    public static <T extends MutablePolynomialAbstract<T>> T SquareFreePart(T poly) {
-        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), MutablePolynomialAbstract<T>::multiply);
+    public static <T extends IMutablePolynomial<T>> T SquareFreePart(T poly) {
+        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), IMutablePolynomial<T>::multiply);
     }
 }

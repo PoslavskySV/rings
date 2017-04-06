@@ -115,7 +115,7 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
 
     /** modulus operation */
     BigInteger mod(BigInteger val) {
-        return val.compareTo(modulus) < 0 ? val : val.mod(modulus);
+        return (val.signum() >= 0 && val.compareTo(modulus) < 0) ? val : val.mod(modulus);
     }
 
 
@@ -214,7 +214,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      * @param copy whether to copy the internal data
      * @return Z[x] version of this
      */
-    bMutablePolynomialZ normalForm(boolean copy) {
+    @Override
+    @SuppressWarnings("unchecked")
+    public bMutablePolynomialZ normalForm(boolean copy) {
         return bMutablePolynomialZ.create(copy ? data.clone() : data);
     }
 
@@ -224,7 +226,9 @@ final class bMutablePolynomialMod extends bMutablePolynomialAbstract<bMutablePol
      *
      * @return Z[x] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
      */
-    bMutablePolynomialZ normalSymmetricForm() {
+    @Override
+    @SuppressWarnings("unchecked")
+    public bMutablePolynomialZ normalSymmetricForm() {
         BigInteger[] newData = new BigInteger[degree + 1];
         for (int i = degree; i >= 0; --i)
             newData[i] = symMod(data[i]);

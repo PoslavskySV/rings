@@ -1,6 +1,7 @@
 package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.List;
@@ -23,6 +24,10 @@ public final class bFactorDecomposition<T extends bMutablePolynomialAbstract<T>>
     public bFactorDecomposition(List<T> factors, TIntArrayList exponents, BigInteger factor) {
         super(factors, exponents);
         this.factor = factor;
+    }
+
+    bFactorDecomposition(List<T> factors, BigInteger factor) {
+        this(factors, new TIntArrayList(ArraysUtil.arrayOf(1, factors.size())), factor);
     }
 
     /** Set the content to the specified value */

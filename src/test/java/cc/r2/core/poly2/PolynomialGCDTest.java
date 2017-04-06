@@ -564,6 +564,23 @@ public class PolynomialGCDTest extends AbstractPolynomialTest {
         System.out.println("\nTiming statistics:\n" + timings);
     }
 
+    @Test
+    public void test24() throws Exception {
+        long modulus = 419566991;
+
+        bMutablePolynomialZ poly = bMutablePolynomialZ.create(new BigInteger("-4914"), new BigInteger("6213"), new BigInteger("3791"), new BigInteger("996"), new BigInteger("-13304"), new BigInteger("-1567"), new BigInteger("2627"), new BigInteger("15845"), new BigInteger("-12626"), new BigInteger("-6383"), new BigInteger("294"), new BigInteger("26501"), new BigInteger("-17063"), new BigInteger("-14635"), new BigInteger("9387"), new BigInteger("-7141"), new BigInteger("-8185"), new BigInteger("17856"), new BigInteger("4431"), new BigInteger("-13075"), new BigInteger("-7050"), new BigInteger("14672"), new BigInteger("3690"), new BigInteger("-3990"));
+        bMutablePolynomialZ a = bMutablePolynomialZ.create(new BigInteger("419563715"), new BigInteger("419566193"), new BigInteger("3612"), new BigInteger("3444"), new BigInteger("419563127"), new BigInteger("419564681"), new BigInteger("419565017"), new BigInteger("419564387"), new BigInteger("419563463"), new BigInteger("3192"), new BigInteger("419563841"), new BigInteger("419563001"));
+        bMutablePolynomialZ b = bMutablePolynomialZ.create(new BigInteger("209783497"), new BigInteger("9989688"), new BigInteger("379608231"), new BigInteger("399587609"), new BigInteger("59938143"), new BigInteger("29969072"), new BigInteger("99896901"), new BigInteger("359628849"), new BigInteger("329659781"), new BigInteger("239752567"), new BigInteger("19979379"), new BigInteger("179814423"), new BigInteger("1"));
+
+        bMutablePolynomialMod aMod = a.modulus(modulus).monic(poly.lc());
+        bMutablePolynomialMod bMod = b.modulus(modulus).monic();
+        bMutablePolynomialMod[] xgcd = PolynomialGCD.ExtendedEuclid(aMod, bMod);
+        MutablePolynomialMod[] lxgcd = PolynomialGCD.ExtendedEuclid(aMod.toLong(), bMod.toLong());
+        Assert.assertEquals(xgcd[0].toLong(), lxgcd[0]);
+        Assert.assertEquals(xgcd[1].toLong(), lxgcd[1]);
+        Assert.assertEquals(xgcd[2].toLong(), lxgcd[2]);
+    }
+
     static <T extends MutablePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {
         assertExtendedGCD(ExtendedEuclid(a, b), a, b);
     }

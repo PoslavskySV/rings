@@ -76,6 +76,10 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
             data[i] = modSignedFast(data[i], magicSigned);
     }
 
+    static MutablePolynomialMod createUnsafe(long modulus, long[] data) {
+        return new MutablePolynomialMod(modulus, magicUnsigned(modulus), data);
+    }
+
     /**
      * Creates monomial {@code coefficient * x^exponent}
      *
@@ -242,6 +246,8 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      * @param copy whether to copy the internal data
      * @return Z[x] version of this
      */
+    @Override
+    @SuppressWarnings("unchecked")
     public MutablePolynomialZ normalForm(boolean copy) {
         return MutablePolynomialZ.create(copy ? data.clone() : data);
     }
@@ -252,6 +258,8 @@ public final class MutablePolynomialMod extends MutablePolynomialAbstract<Mutabl
      *
      * @return Z[x] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
      */
+    @Override
+    @SuppressWarnings("unchecked")
     public MutablePolynomialZ normalSymmetricForm() {
         long[] newData = new long[degree + 1];
         for (int i = degree; i >= 0; --i)

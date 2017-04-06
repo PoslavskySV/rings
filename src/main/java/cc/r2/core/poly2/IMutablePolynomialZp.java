@@ -30,4 +30,8 @@ interface IMutablePolynomialZp<T extends IMutablePolynomialZp> extends IMutableP
      * @return BigInteger value of the modulus
      */
     BigInteger modulusAsBigInt();
+
+    <PolyZ extends IMutablePolynomialZ<PolyZ>> PolyZ normalSymmetricForm();
+
+    <PolyZ extends IMutablePolynomialZ<PolyZ>> PolyZ normalForm(boolean copy);
 }

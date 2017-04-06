@@ -1,5 +1,6 @@
 package cc.r2.core.poly2;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -21,6 +22,10 @@ public final class FactorizationTestUtil {
     }
 
     static <T extends MutablePolynomialAbstract<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
+        assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
+    }
+
+    static <T extends bMutablePolynomialAbstract<T>> void assertFactorization(T poly, BigInteger factor, List<T> factorization) {
         assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
     }
 

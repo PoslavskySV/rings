@@ -51,6 +51,18 @@ public final class BigIntegerArithmetics {
      * @return {@code base} in a power of {@code e}
      * @throws ArithmeticException if the result overflows a long
      */
+    public static BigInteger pow(final long base, long exponent) {
+        return pow(BigInteger.valueOf(base), exponent);
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative)
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code e}
+     * @throws ArithmeticException if the result overflows a long
+     */
     public static BigInteger pow(final BigInteger base, long exponent) {
         if (exponent < 0)
             throw new IllegalArgumentException();

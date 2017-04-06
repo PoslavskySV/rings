@@ -42,6 +42,12 @@ public final class ArraysUtil {
 
     public static final Comparator<Object> HASH_COMPARATOR = (o1, o2) -> Integer.compare(o1.hashCode(), o2.hashCode());
 
+    public static int[] arrayOf(int val, int len){
+        int[] r = new int[len];
+        Arrays.fill(r, val);
+        return r;
+    }
+
     public static String toString(long[] a, int from, int to) {
         if (a == null)
             return "null";

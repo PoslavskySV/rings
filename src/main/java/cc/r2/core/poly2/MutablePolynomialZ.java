@@ -116,6 +116,10 @@ public final class MutablePolynomialZ extends MutablePolynomialAbstract<MutableP
         return modulus(modulus, true);
     }
 
+    MutablePolynomialMod modulusUnsafe(long modulus) {
+        return MutablePolynomialMod.createUnsafe(modulus, data);
+    }
+
     /**
      * Divides this polynomial by a {@code factor} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
