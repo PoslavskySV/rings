@@ -269,7 +269,7 @@ public final class HenselLifting {
     }
 
     /** actual multifactor Hensel lifting implementation **/
-    public static List<bMutablePolynomialMod> liftFactorizationAdaptive(long initialModulus,
+    public static List<bMutablePolynomialMod> liftFactorizationAdaptive(BigInteger initialModulus,
                                                                         BigInteger desiredBound,
                                                                         bMutablePolynomialZ poly,
                                                                         List<MutablePolynomialMod> modularFactors) {
@@ -311,21 +311,21 @@ public final class HenselLifting {
     private static final int SWITCH_TO_QUADRATIC_LIFT = 64;
 
     private static final class AdaptiveLift {
-        final long initialModulus;
+        final BigInteger initialModulus;
         final BigInteger finalModulus;
         final int nLinearIterations, nQuadraticIterations;
 
-        public AdaptiveLift(long initialModulus, BigInteger desiredBound) {
+        public AdaptiveLift(BigInteger initialModulus, BigInteger desiredBound) {
             this.initialModulus = initialModulus;
             LiftingInfo
-                    nLinearIterations = nIterations(BigInteger.valueOf(initialModulus), desiredBound, false);
+                    nLinearIterations = nIterations(initialModulus, desiredBound, false);
 
             if (nLinearIterations.nIterations < SWITCH_TO_QUADRATIC_LIFT) {
                 this.nLinearIterations = nLinearIterations.nIterations;
                 this.nQuadraticIterations = -1;
                 this.finalModulus = nLinearIterations.finalModulus;
             } else {
-                LiftingInfo nQuadraticIterations = nIterations(BigInteger.valueOf(initialModulus), desiredBound, true);
+                LiftingInfo nQuadraticIterations = nIterations(initialModulus, desiredBound, true);
                 this.nLinearIterations = -1;
                 this.nQuadraticIterations = nQuadraticIterations.nIterations;
                 this.finalModulus = nQuadraticIterations.finalModulus;
@@ -336,7 +336,7 @@ public final class HenselLifting {
             boolean quadratic = nLinearIterations == -1;
             LiftableQuintet<bMutablePolynomialMod> lift =
                     quadratic
-                            ? createQuadraticLift(BigInteger.valueOf(initialModulus), poly, a.toBigPoly(), b.toBigPoly())
+                            ? createQuadraticLift(initialModulus, poly, a.toBigPoly(), b.toBigPoly())
                             : createLinearLift(initialModulus, poly, a, b);
             lift.lift(quadratic ? nQuadraticIterations : nLinearIterations);
             return new bMutablePolynomialMod[]{lift.aFactorMod(), lift.bFactorMod()};

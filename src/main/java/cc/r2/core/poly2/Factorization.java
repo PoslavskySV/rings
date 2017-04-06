@@ -2,16 +2,11 @@ package cc.r2.core.poly2;
 
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly2.HenselLifting.QuadraticLiftAbstract;
-import cc.r2.core.poly2.HenselLifting.bQuadraticLift;
-import cc.r2.core.poly2.HenselLifting.lQuadraticLift;
 import cc.r2.core.util.ArraysUtil;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static cc.r2.core.poly2.DistinctDegreeFactorization.DistinctDegreeFactorization;
@@ -140,176 +135,6 @@ public final class Factorization {
     /* ************************** Factorization in Z[x] ************************** */
 
 
-    /**
-     * Applies Hensel lifting to factorization. As result factorization in Z/p[x] will be lifted to factorization
-     * in Z/p^(2^k)[x] where k is {@code nIterations}.
-     *
-     * @param modulus        the initial modulus
-     * @param nIterations    number of single step Hensel iterations (so the resulting modulus is {@code modulus^{2^nIterations}}
-     * @param basePoly       initial polynomial in Z[x]
-     * @param modularFactors modular factorization of {@code basePoly}
-     * @return factorization modulo {@code modulus^(2^nIterations)}
-     */
-    public static lFactorDecomposition<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
-                                                                               MutablePolynomialZ basePoly,
-                                                                               lFactorDecomposition<MutablePolynomialMod> modularFactors) {
-        return new lFactorDecomposition<>(
-                liftFactorization(modulus, nIterations, basePoly, modularFactors.factors),
-                modularFactors.exponents, modularFactors.factor);
-    }
-
-    /**
-     * Applies Hensel lifting to factorization. As result factorization in Z/p[x] will be lifted to factorization
-     * in Z/p^(2^k)[x] where k is {@code nIterations}.
-     *
-     * @param modulus        the initial modulus
-     * @param nIterations    number of single step Hensel iterations (so the resulting modulus is {@code modulus^{2^nIterations}}
-     * @param basePoly       initial polynomial in Z[x]
-     * @param modularFactors modular factorization of {@code basePoly}
-     * @return factorization modulo {@code modulus^(2^nIterations)}
-     */
-    static List<MutablePolynomialMod> liftFactorization(long modulus, int nIterations,
-                                                        MutablePolynomialZ basePoly,
-                                                        List<MutablePolynomialMod> modularFactors) {
-        assert modularFactors.size() > 0 : String.format("no factors: %s  mod %s", basePoly.toStringForCopy(), modulus);
-        assert nIterations < 32;
-        return liftFactorization0(modulus, LongArithmetics.safePow(modulus, 1L << nIterations),
-                nIterations, basePoly, modularFactors);
-    }
-
-    /**
-     * Applies Hensel lifting to factorization. As result factorization in Z/p[x] will be lifted to factorization
-     * in Z/p^(2^k)[x] where k is {@code nIterations}.
-     *
-     * @param modulus        the initial modulus
-     * @param nIterations    number of single step Hensel iterations (so the resulting modulus is {@code modulus^{2^nIterations}}
-     * @param basePoly       initial polynomial in Z[x]
-     * @param modularFactors modular factorization of {@code basePoly}
-     * @return factorization modulo {@code modulus^(2^nIterations)}
-     */
-    public static bFactorDecomposition<bMutablePolynomialMod> liftFactorization(BigInteger modulus, int nIterations,
-                                                                                bMutablePolynomialZ basePoly,
-                                                                                bFactorDecomposition<bMutablePolynomialMod> modularFactors) {
-        return new bFactorDecomposition<>(
-                liftFactorization(modulus, nIterations, basePoly, modularFactors.factors),
-                modularFactors.exponents, modularFactors.factor);
-    }
-
-    /**
-     * Applies Hensel lifting to factorization. As result factorization in Z/p[x] will be lifted to factorization
-     * in Z/p^(2^k)[x] where k is {@code nIterations}.
-     *
-     * @param modulus        the initial modulus
-     * @param nIterations    number of single step Hensel iterations (so the resulting modulus is {@code modulus^{2^nIterations}}
-     * @param basePoly       initial polynomial in Z[x]
-     * @param modularFactors modular factorization of {@code basePoly}
-     * @return factorization modulo {@code modulus^(2^nIterations)}
-     */
-    static List<bMutablePolynomialMod> liftFactorization(BigInteger modulus, int nIterations,
-                                                         bMutablePolynomialZ basePoly,
-                                                         List<bMutablePolynomialMod> modularFactors) {
-        assert modularFactors.size() > 0 : String.format("no factors: %s  mod %s", basePoly.toStringForCopy(), modulus);
-        return liftFactorization0(modulus, BigIntegerArithmetics.pow(modulus, BigInteger.ONE.shiftLeft(nIterations)),
-                nIterations, basePoly, modularFactors);
-    }
-
-    /** actual multifactor Hensel lifting implementation **/
-    static List<MutablePolynomialMod> liftFactorization0(long modulus, long newModulus, int nIterations,
-                                                         MutablePolynomialZ poly,
-                                                         List<MutablePolynomialMod> modularFactors) {
-        // for the future:
-        // recursion may be replaced with precomputed binary tree
-        // for now the major part of execution time (~99%) is spent in actual lifting step, so irrelevant
-
-        assert nIterations > 0;
-
-        if (modularFactors.size() == 1)
-            return Collections.singletonList(poly.modulus(newModulus, true).monic());
-
-        MutablePolynomialMod factory = modularFactors.get(0);
-        MutablePolynomialMod
-                aFactor = factory.createConstant(poly.lc()),
-                bFactor = factory.createOne();
-
-        int nHalf = modularFactors.size() / 2, i = 0;
-        for (; i < nHalf; ++i)
-            aFactor = aFactor.multiply(modularFactors.get(i));
-        for (; i < modularFactors.size(); ++i)
-            bFactor = bFactor.multiply(modularFactors.get(i));
-
-        lQuadraticLift hensel = HenselLifting.createQuadraticLift(modulus, poly, aFactor, bFactor);
-        assertHenselLift(hensel);
-
-        for (i = 0; i < nIterations - 1; ++i) {
-            hensel.lift();
-            assertHenselLift(hensel);
-        }
-        hensel.liftLast();
-        assertHenselLift(hensel);
-
-        aFactor = hensel.aFactor;
-        bFactor = hensel.bFactor;
-
-        ArrayList<MutablePolynomialMod> result = new ArrayList<>();
-        result.addAll(liftFactorization0(modulus, newModulus, nIterations, aFactor.normalSymmetricForm(), modularFactors.subList(0, nHalf)));
-        result.addAll(liftFactorization0(modulus, newModulus, nIterations, bFactor.normalSymmetricForm(), modularFactors.subList(nHalf, modularFactors.size())));
-        return result;
-    }
-
-    static long t_HE_MUL = 0, t_HE_LIFT, t_HE_CREATE;
-
-    /** actual multifactor Hensel lifting implementation **/
-    static List<bMutablePolynomialMod> liftFactorization0(BigInteger modulus, BigInteger newModulus, int nIterations,
-                                                          bMutablePolynomialZ poly,
-                                                          List<bMutablePolynomialMod> modularFactors) {
-        // for the future:
-        // recursion may be replaced with precomputed binary tree
-        // for now the major part of execution time (~99%) is spent in actual lifting step, so irrelevant
-
-        assert nIterations > 0;
-
-        if (modularFactors.size() == 1)
-            return Collections.singletonList(poly.modulus(newModulus, true).monic());
-
-        long start = System.nanoTime();
-        bMutablePolynomialMod factory = modularFactors.get(0);
-        bMutablePolynomialMod
-                aFactor = factory.createConstant(poly.lc()),
-                bFactor = factory.createOne();
-
-        int nHalf = modularFactors.size() / 2, i = 0;
-        for (; i < nHalf; ++i)
-            aFactor = aFactor.multiply(modularFactors.get(i));
-        for (; i < modularFactors.size(); ++i)
-            bFactor = bFactor.multiply(modularFactors.get(i));
-
-        t_HE_MUL += System.nanoTime() - start;
-        start = System.nanoTime();
-
-        bQuadraticLift hensel = HenselLifting.createQuadraticLift(modulus, poly, aFactor, bFactor);
-        assertHenselLift(hensel);
-
-        t_HE_CREATE += System.nanoTime() - start;
-        start = System.nanoTime();
-
-        for (i = 0; i < nIterations - 1; ++i) {
-            hensel.lift();
-            assertHenselLift(hensel);
-        }
-        hensel.liftLast();
-        assertHenselLift(hensel);
-
-        t_HE_LIFT += System.nanoTime() - start;
-
-        aFactor = hensel.aFactor;
-        bFactor = hensel.bFactor;
-
-        ArrayList<bMutablePolynomialMod> result = new ArrayList<>();
-        result.addAll(liftFactorization0(modulus, newModulus, nIterations, aFactor.normalSymmetricForm(), modularFactors.subList(0, nHalf)));
-        result.addAll(liftFactorization0(modulus, newModulus, nIterations, bFactor.normalSymmetricForm(), modularFactors.subList(nHalf, modularFactors.size())));
-        return result;
-    }
-
     /** assertion for correct Hensel structure */
     static <T extends IMutablePolynomialZp<T>> void assertHenselLift(QuadraticLiftAbstract<T> lift) {
         assert lift.polyMod().equals(lift.aFactor.clone().multiply(lift.bFactor)) : lift.toString();
@@ -399,19 +224,12 @@ public final class Factorization {
         return trueFactors;
     }
 
-//    static int[] degrees(FactorDecomposition<?> factors) {
-//        int[] r = new int[factors.size()];
-//        for (int i = 0; i < factors.size(); i++)
-//            r[i] = factors.get(i).degree();
-//        return ArraysUtil.getSortedDistinct(r);
-//    }
 
     /** reconstruct true factors by enumerating all combinations */
     static bFactorDecomposition<bMutablePolynomialZ> reconstructFactorsZ(
             bMutablePolynomialZ poly,
             bFactorDecomposition<bMutablePolynomialMod> modularFactors) {
 
-//        System.out.println(Arrays.toString(degrees(modularFactors)));
         if (modularFactors.isTrivial())
             return bFactorDecomposition.oneFactor(poly, BigInteger.ONE);
 
@@ -446,7 +264,6 @@ public final class Factorization {
                         || !factor.cc().multiply(rest.cc()).equals(fRest.cc()))
                     continue;
                 if (rest.clone().multiply(factor).equals(fRest)) {
-                    System.out.println(" <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><> " + s);
                     modIndexes = restIndexes;
                     trueFactors.addFactor(factor, 1);
                     fRest = rest.primitivePart();
@@ -484,8 +301,7 @@ public final class Factorization {
             return SmallPrimes.nextPrime(val);
     }
 
-    static int N_MODULAR_FACTORIZATION_TRIALS = 5;
-    static long t_CZ = 0, t_LIFT = 0, t_RECOMB = 0;
+    final static int N_MODULAR_FACTORIZATION_TRIALS = 2;
 
     /**
      * Factors primitive square-free polynomial using Hensel lifting
@@ -528,67 +344,9 @@ public final class Factorization {
                 break;
         }
 
-
-//        bFactorDecomposition<bMutablePolynomialMod> modularFactors = lFactorDecomposition.convert(lModularFactors);
-//        t_CZ += System.nanoTime() - start;
-//
-//        start = System.nanoTime();
-//        // do Hensel lifting
-//        // determine number of Hensel steps
-//        int henselIterations = 0;
-//        BigInteger bModulus = BigInteger.valueOf(modulus);
-//        BigInteger liftedModulus = bModulus;
-//        while (liftedModulus.compareTo(bound2) < 0) {
-//            liftedModulus = liftedModulus.multiply(liftedModulus);
-//            ++henselIterations;
-//        }
-//        System.out.println("HENSEL_ITS: " + henselIterations);
-//        // actual lift
-//        if (henselIterations > 0) {
-//            bFactorDecomposition<bMutablePolynomialMod> tmodularFactors = liftFactorization(bModulus, 3, poly, modularFactors);
-//            int sssss = 0;
-//            for (bMutablePolynomialMod mF : tmodularFactors) {
-//                bMutablePolynomialZ[] qd = divideAndRemainder(poly, mF.multiply(poly.lc()).normalSymmetricForm().primitivePart(), true);
-//                if (qd != null && qd[1].isZero())
-//                    sssss++;
-//            }
-//            System.out.println("========================================== SSS " + sssss + " / " + tmodularFactors.size());
-//            for (int i = 1; i < tmodularFactors.size(); i++) {
-//                for (int j = 0; j < i; j++) {
-//                    bMutablePolynomialZ[] qd = divideAndRemainder(poly, tmodularFactors.get(i).clone().multiply(tmodularFactors.get(j)).multiply(poly.lc()).normalSymmetricForm().primitivePart(), true);
-//                    if (qd != null && qd[1].isZero())
-//                        sssss++;
-//                }
-//            }
-//            System.out.println("========================================== SSS " + sssss + " / " + tmodularFactors.size());
-//            IntCombinationsGenerator ints = new IntCombinationsGenerator(tmodularFactors.size(), 3);
-//            int[] comb;
-//            while ((comb = ints.take()) != null) {
-//                bMutablePolynomialMod p = tmodularFactors.get(0).createConstant(poly.lc());
-//                for (int i : comb) {
-//                    p = p.multiply(tmodularFactors.get(i));
-//                }
-//                bMutablePolynomialZ[] qd = divideAndRemainder(poly, p.normalSymmetricForm().primitivePart(), true);
-//                if (qd != null && qd[1].isZero())
-//                    sssss++;
-//            }
-//
-////            if (i > 0)
-//            System.out.println("========================================== SSS " + sssss + " / " + tmodularFactors.size());
-//
-//            modularFactors = liftFactorization(bModulus, henselIterations, poly, modularFactors);
-//        }
-//
-//        t_LIFT += System.nanoTime() - start;
-//
-//        start = System.nanoTime();
-        System.out.println(modulus);
-        List<bMutablePolynomialMod>  modularFactors = HenselLifting.liftFactorizationAdaptive(modulus, bound2, poly, lModularFactors.factors);
+        List<bMutablePolynomialMod> modularFactors = HenselLifting.liftFactorizationAdaptive(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors);
         assert modularFactors.get(0).modulus.compareTo(bound2) >= 0;
-//        List<bMutablePolynomialMod> modularFactors = HenselLifting.liftFactorization(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors,false);
-        //reconstruct true factors
         bFactorDecomposition<bMutablePolynomialZ> res = reconstructFactorsZ(poly, new bFactorDecomposition<>(modularFactors, BigInteger.ONE));
-        t_RECOMB += System.nanoTime() - start;
         return res;
     }
 
@@ -652,7 +410,7 @@ public final class Factorization {
         }
         // actual lift
         if (henselIterations > 0)
-            modularFactors = liftFactorization(modulus, henselIterations, poly, modularFactors);
+            modularFactors = new lFactorDecomposition<>(HenselLifting.liftFactorization(modulus, liftedModulus, henselIterations, poly, modularFactors.factors, true), modularFactors.factor);
 
         //reconstruct true factors
         return reconstructFactorsZ(poly, modularFactors);
@@ -698,6 +456,8 @@ public final class Factorization {
 
         bFactorDecomposition<bMutablePolynomialZ> result = new bFactorDecomposition<>();
         BigInteger content = poly.content();
+        if (poly.lc().signum() < 0)
+            content = content.negate();
         factor(poly.clone().divideOrNull(content), result);
         return result.setNumericFactor(content);
     }

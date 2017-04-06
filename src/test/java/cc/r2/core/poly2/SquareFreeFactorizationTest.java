@@ -259,12 +259,12 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             poly = PolynomialArithmetics.polyPow(poly, exponent, false);
 
             bFactorDecomposition<bMutablePolynomialZ> zf = SquareFreeFactorization(poly);
-            assertTrue(zf.sumExpoentns() >= exponent);
+            assertTrue(zf.sumExponents() >= exponent);
             assertFactorization(poly, zf);
 
             bMutablePolynomialMod polyMod = poly.modulus(randomInt(bound, rnd).nextProbablePrime());
             bFactorDecomposition<bMutablePolynomialMod> zpf = SquareFreeFactorization(polyMod);
-            assertTrue(zpf.sumExpoentns() >= exponent);
+            assertTrue(zpf.sumExponents() >= exponent);
             assertFactorization(polyMod, zpf);
         }
     }

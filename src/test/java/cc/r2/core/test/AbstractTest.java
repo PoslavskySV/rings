@@ -73,6 +73,15 @@ public class AbstractTest {
         return runTimeConsumingTests() ? nLarge : nSmall;
     }
 
+    /**
+     * Returns {@code nSmall} if time-consuming are disabled and {@code nLarge} otherwise
+     */
+    public static int its(int nSmall, int nLarge) {
+        return runTimeConsumingTests() ? nLarge : nSmall;
+    }
+
+
+
 //    @Test
 //    public void testLT() throws Exception {
 //        System.clearProperty("runLongTests");

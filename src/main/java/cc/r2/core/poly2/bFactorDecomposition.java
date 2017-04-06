@@ -48,7 +48,7 @@ public final class bFactorDecomposition<T extends bMutablePolynomialAbstract<T>>
         }
     }
 
-    public int sumExpoentns() {
+    public int sumExponents() {
         return exponents.sum();
     }
 
@@ -60,6 +60,24 @@ public final class bFactorDecomposition<T extends bMutablePolynomialAbstract<T>>
     @Override
     BigInteger factorAsBigInt() {
         return factor;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        bFactorDecomposition<?> that = (bFactorDecomposition<?>) o;
+
+        return factor.equals(that.factor);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + factor.hashCode();
+        return result;
     }
 
     /** decomposition with single numeric factor */

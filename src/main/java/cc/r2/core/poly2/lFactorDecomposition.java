@@ -1,6 +1,7 @@
 package cc.r2.core.poly2;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.List;
@@ -23,6 +24,10 @@ public final class lFactorDecomposition<T extends MutablePolynomialAbstract<T>> 
     public lFactorDecomposition(List<T> factors, TIntArrayList exponents, long factor) {
         super(factors, exponents);
         this.factor = factor;
+    }
+
+    public lFactorDecomposition(List<T> factors, long factor) {
+        this(factors, new TIntArrayList(ArraysUtil.arrayOf(1, factors.size())), factor);
     }
 
     /** Set the content to the specified value */
@@ -53,6 +58,23 @@ public final class lFactorDecomposition<T extends MutablePolynomialAbstract<T>> 
         return BigInteger.valueOf(factor);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        lFactorDecomposition<?> that = (lFactorDecomposition<?>) o;
+
+        return factor == that.factor;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) (factor^(factor >>> 32));
+        return result;
+    }
 
     /** decomposition with single numeric factor */
     static <T extends MutablePolynomialAbstract<T>> lFactorDecomposition<T> oneFactor(long factor) {
