@@ -1,6 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.*;
@@ -10,7 +11,7 @@ import java.util.stream.Collectors;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class MultivariatePolynomial {
+public final class MultivariatePolynomial implements IGeneralPolynomial<MultivariatePolynomial> {
     final int nVariables;
     final Comparator<DegreeVector> ordering;
     final TreeMap<DegreeVector, BigInteger> data;
@@ -70,6 +71,88 @@ public final class MultivariatePolynomial {
     }
 
     /**
+     * Creates constant polynomial with specified value
+     *
+     * @param val value
+     * @return constant polynomial with specified value
+     */
+    public MultivariatePolynomial createConstant(BigInteger val) {
+        TreeMap<DegreeVector, BigInteger> data = new TreeMap<>(ordering);
+        data.put(zeroDegreeVector(nVariables), val);
+        return new MultivariatePolynomial(nVariables, ordering, data);
+    }
+
+    @Override
+    public MultivariatePolynomial createZero() {
+        return createConstant(BigInteger.ZERO);
+    }
+
+    @Override
+    public MultivariatePolynomial createOne() {
+        return createConstant(BigInteger.ONE);
+    }
+
+    @Override
+    public MultivariatePolynomial toZero() {
+        data.clear();
+        data.put(zeroDegreeVector(nVariables), BigInteger.ZERO);
+        return this;
+    }
+
+    @Override
+    public MultivariatePolynomial set(MultivariatePolynomial oth) {
+        ensureCompatible(oth);
+        data.clear();
+        data.putAll(oth.data);
+        return null;
+    }
+
+    /**
+     * Returns the number of terms in this polynomial
+     *
+     * @returnthe number of terms
+     */
+    public int size() {return data.size();}
+
+    @Override
+    public boolean isZero() {
+        return isConstant() && data.firstEntry().getValue().isZero();
+    }
+
+    @Override
+    public boolean isOne() {
+        return isConstant() && data.firstEntry().getValue().isOne();
+    }
+
+    @Override
+    public boolean isUnitCC() {
+        return cc().isOne();
+    }
+
+    @Override
+    public boolean isConstant() {
+        return size() == 0 && data.firstEntry().getKey().isZeroVector();
+    }
+
+    @Override
+    public boolean isMonomial() {
+        return size() == 1;
+    }
+
+    /**
+     * Returns the total degree of this polynomial, that is the maximal degree among all terms
+     *
+     * @return the total degree of this polynomial, that is the maximal degree among all terms
+     */
+    @Override
+    public int degree() {
+        int max = 0;
+        for (DegreeVector db : data.keySet())
+            max = Math.max(max, db.totalDegree);
+        return max;
+    }
+
+    /**
      * Returns the leading coefficient of this polynomial.
      *
      * @return leading coefficient of this polynomial
@@ -105,6 +188,23 @@ public final class MultivariatePolynomial {
         return gcd;
     }
 
+    @Override
+    public MultivariatePolynomial primitivePart() {
+        MultivariatePolynomial r = divideOrNull(content());
+        assert r != null;
+        return r;
+    }
+
+    @Override
+    public MultivariatePolynomial primitivePartSameSign() {
+        BigInteger c = content();
+        if (c.signum() < 0)
+            c = c.negate();
+        MultivariatePolynomial r = divideOrNull(c);
+        assert r != null;
+        return r;
+    }
+
     /**
      * Divides this polynomial by a {@code factor} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
@@ -124,11 +224,7 @@ public final class MultivariatePolynomial {
         return this;
     }
 
-    /**
-     * Negates this and returns
-     *
-     * @return this negated
-     */
+    @Override
     public MultivariatePolynomial negate() {
         for (Map.Entry<DegreeVector, BigInteger> entry : data.entrySet())
             entry.setValue(entry.getValue().negate());
@@ -149,25 +245,19 @@ public final class MultivariatePolynomial {
         return this;
     }
 
+    @Override
+    public MultivariatePolynomial multiply(long factor) {
+        return multiply(BigInteger.valueOf(factor));
+    }
 
-    /**
-     * Adds {@code oth} to this polynomial and returns it
-     *
-     * @param oth other polynomial
-     * @return {@code this + oth}
-     */
+    @Override
     public MultivariatePolynomial add(MultivariatePolynomial oth) {
         ensureCompatible(oth);
         oth.data.entrySet().forEach(othElement -> add(data, othElement.getKey(), othElement.getValue()));
         return this;
     }
 
-    /**
-     * Subtracts {@code oth} from this polynomial and returns it
-     *
-     * @param oth other polynomial
-     * @return {@code this + oth}
-     */
+    @Override
     public MultivariatePolynomial subtract(MultivariatePolynomial oth) {
         ensureCompatible(oth);
         oth.data.entrySet().forEach(othElement -> add(data, othElement.getKey(), othElement.getValue().negate()));
@@ -196,20 +286,12 @@ public final class MultivariatePolynomial {
         return this;
     }
 
-    /**
-     * Adds 1 to this
-     *
-     * @return {@code this + 1}
-     */
+    @Override
     public MultivariatePolynomial increment() {
         return add(BigInteger.ONE);
     }
 
-    /**
-     * Subtracts 1 from this
-     *
-     * @return {@code this - 1}
-     */
+    @Override
     public MultivariatePolynomial decrement() {
         return subtract(BigInteger.ONE);
     }
@@ -223,23 +305,22 @@ public final class MultivariatePolynomial {
         });
     }
 
-    /**
-     * Multiplies this by {@code oth} and returns this
-     *
-     * @param oth other polynomial
-     * @return {@code this * oth}
-     */
+    @Override
     public MultivariatePolynomial multiply(MultivariatePolynomial oth) {
         ensureCompatible(oth);
         TreeMap<DegreeVector, BigInteger> newMap = new TreeMap<>(ordering);
-        for (Map.Entry<DegreeVector, BigInteger> othElement : oth.data.entrySet()) {
-            for (Map.Entry<DegreeVector, BigInteger> thisElement : data.entrySet()) {
+        for (Map.Entry<DegreeVector, BigInteger> othElement : oth.data.entrySet())
+            for (Map.Entry<DegreeVector, BigInteger> thisElement : data.entrySet())
                 add(newMap, thisElement.getKey().multiply(othElement.getKey()), thisElement.getValue().multiply(othElement.getValue()));
-            }
-        }
+
         data.clear();
         data.putAll(newMap);
         return this;
+    }
+
+    @Override
+    public MultivariatePolynomial square() {
+        return multiply(this);
     }
 
     @SuppressWarnings("unchecked")
@@ -334,6 +415,10 @@ public final class MultivariatePolynomial {
         public DegreeVector(int... exponents) {
             this.exponents = exponents;
             this.totalDegree = ArraysUtil.sum(exponents);
+        }
+
+        private boolean isZeroVector() {
+            return totalDegree == 0;
         }
 
         private static String toString0(char var, int exp) {

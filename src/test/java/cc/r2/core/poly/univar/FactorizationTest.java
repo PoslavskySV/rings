@@ -182,7 +182,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
 
 
         DescriptiveStatistics timing = new DescriptiveStatistics();
-        int nIterations = its(10, 100);
+        int nIterations = its(100, 100);
         for (int i = 0; i < nIterations; i++) {
             if (i == 1000)
                 timing.clear();
@@ -194,16 +194,16 @@ public class FactorizationTest extends AbstractPolynomialTest {
             assertFactorization(poly, factors);
         }
         System.out.println(TimeUnits.statisticsNanotimeFull(timing));
-    }
 
-//    -XX:+AggressivrOpts
-//    DescriptiveStatistics:
-//    n: 100
-//    min: 165ms
-//    max: 1327ms
-//    mean: 326ms
-//    std dev: 139ms
-//    median: 300ms
-//    skewness: 4ns
-//    kurtosis: 26ns
+        //    -XX:+AggressivrOpts
+        //    DescriptiveStatistics:
+        //    n: 100
+        //    min: 165ms
+        //    max: 1327ms
+        //    mean: 326ms
+        //    std dev: 139ms
+        //    median: 300ms
+        //    skewness: 4ns
+        //    kurtosis: 26ns
+    }
 }
