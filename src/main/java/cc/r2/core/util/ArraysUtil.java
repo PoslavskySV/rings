@@ -42,7 +42,7 @@ public final class ArraysUtil {
 
     public static final Comparator<Object> HASH_COMPARATOR = (o1, o2) -> Integer.compare(o1.hashCode(), o2.hashCode());
 
-    public static int[] arrayOf(int val, int len){
+    public static int[] arrayOf(int val, int len) {
         int[] r = new int[len];
         Arrays.fill(r, val);
         return r;
@@ -197,6 +197,14 @@ public final class ArraysUtil {
     public static <T> void reverse(T[] array, int from, int to) {
         for (int i = 0; i < (to - from) / 2; ++i)
             swap(array, from + i, to - 1 - i);
+    }
+
+    public static <T> void reverse(T[] array) {
+        reverse(array, 0, array.length);
+    }
+
+    public static void reverse(long[] array) {
+        reverse(array, 0, array.length);
     }
 
     public static int[] short2int(final short[] a) {
