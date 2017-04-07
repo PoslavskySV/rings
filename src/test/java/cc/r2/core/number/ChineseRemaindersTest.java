@@ -2,7 +2,7 @@ package cc.r2.core.number;
 
 import cc.r2.core.number.primes.SieveOfAtkin;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly2.LongArithmetics;
+import cc.r2.core.poly.univar.LongArithmetics;
 import cc.r2.core.test.AbstractTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
