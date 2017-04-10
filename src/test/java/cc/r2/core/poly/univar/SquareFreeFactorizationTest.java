@@ -4,6 +4,7 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.univar.FactorizationTestUtil.RandomSource;
 import cc.r2.core.test.Benchmark;
+import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -261,7 +262,7 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             assertTrue(zf.sumExponents() >= exponent);
             assertFactorization(poly, zf);
 
-            bMutablePolynomialZp polyMod = poly.modulus(RandomPolynomials.randomInt(bound, rnd).nextProbablePrime());
+            bMutablePolynomialZp polyMod = poly.modulus(RandomUtil.randomInt(bound, rnd).nextProbablePrime());
             bFactorDecomposition<bMutablePolynomialZp> zpf = SquareFreeFactorization(polyMod);
             assertTrue(zpf.sumExponents() >= exponent);
             assertFactorization(polyMod, zpf);

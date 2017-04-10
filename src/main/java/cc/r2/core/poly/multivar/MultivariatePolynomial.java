@@ -5,7 +5,10 @@ import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import static cc.r2.core.number.BigInteger.ZERO;
 
 /**
  * @author Stanislav Poslavsky
@@ -33,12 +36,26 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
     public static MultivariatePolynomial create(BigInteger[] factors, DegreeVector[] vectors, Comparator<DegreeVector> ordering) {
         if (factors.length != vectors.length)
             throw new IllegalArgumentException();
+        if (factors.length == 0)
+            throw new IllegalArgumentException("empty");
         TreeMap<DegreeVector, BigInteger> map = new TreeMap<>(ordering);
         for (int i = 0; i < factors.length; i++) {
             BigInteger f = factors[i];
-            map.compute(vectors[i], (thisVector, thisValue) -> thisValue == null ? f : thisValue.add(f));
+            if (!f.isZero())
+                map.compute(vectors[i], (thisVector, thisValue) -> thisValue == null ? f : thisValue.add(f));
         }
         return new MultivariatePolynomial(vectors[0].exponents.length, ordering, map);
+    }
+
+    /**
+     * Creates zero
+     *
+     * @param nVariable number of variables
+     * @param ordering  the orderging
+     * @return zero
+     */
+    public static MultivariatePolynomial zero(int nVariable, Comparator<DegreeVector> ordering) {
+        return new MultivariatePolynomial(nVariable, ordering, new TreeMap<>(ordering));
     }
 
     /**
@@ -61,6 +78,14 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
             throw new IllegalArgumentException("Combining multivariate polynomials from different fields");
     }
 
+    /** check whether number of variables is the same */
+    private void ensureCompatible(Entry<DegreeVector, BigInteger> oth) {
+        if (nVariables != oth.getKey().exponents.length)
+            throw new IllegalArgumentException("Combining multivariate polynomials from different fields");
+    }
+
+    private void release() {}
+
     /**
      * Returns the underlying term ordering.
      *
@@ -71,6 +96,27 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
     }
 
     /**
+     * Copies this with the new ordering {@code newOrdering}
+     *
+     * @param newOrdering the new ordering
+     * @return a copy of this with a new ordering
+     */
+    public MultivariatePolynomial setOrdering(Comparator<DegreeVector> newOrdering) {
+        TreeMap<DegreeVector, BigInteger> newData = new TreeMap<>(newOrdering);
+        newData.putAll(data);
+        return new MultivariatePolynomial(nVariables, newOrdering, newData);
+    }
+
+    /**
+     * Returns the number of variables in this
+     *
+     * @return the number of variables
+     */
+    public int nVariables() {
+        return nVariables;
+    }
+
+    /**
      * Creates constant polynomial with specified value
      *
      * @param val value
@@ -78,13 +124,14 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
      */
     public MultivariatePolynomial createConstant(BigInteger val) {
         TreeMap<DegreeVector, BigInteger> data = new TreeMap<>(ordering);
-        data.put(zeroDegreeVector(nVariables), val);
+        if (!val.isZero())
+            data.put(zeroDegreeVector(nVariables), val);
         return new MultivariatePolynomial(nVariables, ordering, data);
     }
 
     @Override
     public MultivariatePolynomial createZero() {
-        return createConstant(BigInteger.ZERO);
+        return createConstant(ZERO);
     }
 
     @Override
@@ -95,7 +142,7 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
     @Override
     public MultivariatePolynomial toZero() {
         data.clear();
-        data.put(zeroDegreeVector(nVariables), BigInteger.ZERO);
+        release();
         return this;
     }
 
@@ -104,24 +151,25 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         ensureCompatible(oth);
         data.clear();
         data.putAll(oth.data);
+        release();
         return null;
     }
 
     /**
      * Returns the number of terms in this polynomial
      *
-     * @returnthe number of terms
+     * @return number of terms
      */
     public int size() {return data.size();}
 
     @Override
     public boolean isZero() {
-        return isConstant() && data.firstEntry().getValue().isZero();
+        return data.size() == 0;
     }
 
     @Override
     public boolean isOne() {
-        return isConstant() && data.firstEntry().getValue().isOne();
+        return size() == 1 && data.firstEntry().getValue().isOne();
     }
 
     @Override
@@ -131,12 +179,12 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
 
     @Override
     public boolean isConstant() {
-        return size() == 0 && data.firstEntry().getKey().isZeroVector();
+        return size() == 0 || (size() == 1 && data.firstEntry().getKey().isZeroVector());
     }
 
     @Override
     public boolean isMonomial() {
-        return size() == 1;
+        return size() <= 1;
     }
 
     /**
@@ -153,12 +201,30 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
     }
 
     /**
-     * Returns the leading coefficient of this polynomial.
+     * Returns the leading term in this polynomial according to ordering
+     *
+     * @return the leading term in this polynomial according to ordering
+     */
+    public Entry<DegreeVector, BigInteger> lt() {
+        return size() == 0 ? new EntryImpl(zeroDegreeVector(nVariables), ZERO) : data.lastEntry();
+    }
+
+    /**
+     * Returns the largest degree vector with respect to this ordering
+     *
+     * @return the largest degree vector
+     */
+    public DegreeVector multiDegree() {
+        return lt().getKey();
+    }
+
+    /**
+     * Returns the leading coefficient of this polynomial that is coefficient of the largest term according to the ordering.
      *
      * @return leading coefficient of this polynomial
      */
     public BigInteger lc() {
-        return data.firstEntry().getValue();
+        return lt().getValue();
     }
 
     /**
@@ -167,7 +233,7 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
      * @return constant coefficient of this polynomial
      */
     public BigInteger cc() {
-        return data.getOrDefault(zeroDegreeVector(nVariables), BigInteger.ZERO);
+        return data.getOrDefault(zeroDegreeVector(nVariables), ZERO);
     }
 
     /**
@@ -192,6 +258,7 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
     public MultivariatePolynomial primitivePart() {
         MultivariatePolynomial r = divideOrNull(content());
         assert r != null;
+        release();
         return r;
     }
 
@@ -202,6 +269,7 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
             c = c.negate();
         MultivariatePolynomial r = divideOrNull(c);
         assert r != null;
+        release();
         return r;
     }
 
@@ -215,54 +283,57 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
     public MultivariatePolynomial divideOrNull(BigInteger factor) {
         if (factor.isOne())
             return this;
-        for (Map.Entry<DegreeVector, BigInteger> entry : data.entrySet()) {
+        for (Entry<DegreeVector, BigInteger> entry : data.entrySet()) {
             BigInteger[] qd = entry.getValue().divideAndRemainder(factor);
             if (!qd[1].isZero())
                 return null;
             entry.setValue(qd[0]);
         }
+        release();
         return this;
     }
 
     @Override
     public MultivariatePolynomial negate() {
-        for (Map.Entry<DegreeVector, BigInteger> entry : data.entrySet())
+        for (Entry<DegreeVector, BigInteger> entry : data.entrySet())
             entry.setValue(entry.getValue().negate());
+        release();
         return this;
-    }
-
-    /**
-     * Raises {@code this} by the {@code factor}
-     *
-     * @param factor the factor
-     * @return {@code} this multiplied by the {@code factor}
-     */
-    public MultivariatePolynomial multiply(BigInteger factor) {
-        if (factor.isOne())
-            return this;
-        for (Map.Entry<DegreeVector, BigInteger> entry : data.entrySet())
-            entry.setValue(entry.getValue().multiply(factor));
-        return this;
-    }
-
-    @Override
-    public MultivariatePolynomial multiply(long factor) {
-        return multiply(BigInteger.valueOf(factor));
     }
 
     @Override
     public MultivariatePolynomial add(MultivariatePolynomial oth) {
+        if (data == oth.data)
+            return multiply(2);
         ensureCompatible(oth);
         oth.data.entrySet().forEach(othElement -> add(data, othElement.getKey(), othElement.getValue()));
+        release();
         return this;
     }
 
     @Override
     public MultivariatePolynomial subtract(MultivariatePolynomial oth) {
+        if (data == oth.data)
+            return toZero();
         ensureCompatible(oth);
         oth.data.entrySet().forEach(othElement -> add(data, othElement.getKey(), othElement.getValue().negate()));
+        release();
         return this;
     }
+
+    /**
+     * Adds {@code term} to this polynomial and returns it
+     *
+     * @param term some term
+     * @return {@code this + oth}
+     */
+    MultivariatePolynomial add(Entry<DegreeVector, BigInteger> term) {
+        ensureCompatible(term);
+        add(data, term.getKey(), term.getValue());
+        release();
+        return this;
+    }
+
 
     /**
      * Adds {@code oth} to this polynomial and returns it
@@ -272,6 +343,20 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
      */
     public MultivariatePolynomial add(BigInteger oth) {
         add(data, zeroDegreeVector(nVariables), oth);
+        release();
+        return this;
+    }
+
+    /**
+     * Subtracts {@code term} to this polynomial and returns it
+     *
+     * @param term some term
+     * @return {@code this - oth}
+     */
+    MultivariatePolynomial subtract(Entry<DegreeVector, BigInteger> term) {
+        ensureCompatible(term);
+        add(data, term.getKey(), term.getValue().negate());
+        release();
         return this;
     }
 
@@ -279,10 +364,22 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
      * Subtracts {@code oth} from this polynomial and returns it
      *
      * @param oth other polynomial
-     * @return {@code this + oth}
+     * @return {@code this - oth}
      */
     public MultivariatePolynomial subtract(BigInteger oth) {
         add(data, zeroDegreeVector(nVariables), oth.negate());
+        release();
+        return this;
+    }
+
+    /**
+     * Removes the leading term from this polynomial
+     *
+     * @return this - this.lt()
+     */
+    public MultivariatePolynomial subtractLt() {
+        data.pollLastEntry();
+        release();
         return this;
     }
 
@@ -305,17 +402,62 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         });
     }
 
+    /**
+     * Raises {@code this} by the {@code factor}
+     *
+     * @param factor the factor
+     * @return {@code} this multiplied by the {@code factor}
+     */
+    public MultivariatePolynomial multiply(BigInteger factor) {
+        if (factor.isOne())
+            return this;
+        if (factor.isZero())
+            return toZero();
+        for (Entry<DegreeVector, BigInteger> entry : data.entrySet())
+            entry.setValue(entry.getValue().multiply(factor));
+        release();
+        return this;
+    }
+
+    private MultivariatePolynomial loadFrom(TreeMap<DegreeVector, BigInteger> map) {
+        data.clear();
+        data.putAll(map);
+        release();
+        return this;
+    }
+
+    /**
+     * Multiplies {@code this} by the {@code term}
+     *
+     * @param term the factor
+     * @return {@code} this multiplied by the {@code term}
+     */
+    public MultivariatePolynomial multiply(Entry<DegreeVector, BigInteger> term) {
+        ensureCompatible(term);
+        if (term.getValue().isZero())
+            return toZero();
+
+        TreeMap<DegreeVector, BigInteger> newMap = new TreeMap<>(ordering);
+        for (Entry<DegreeVector, BigInteger> thisElement : data.entrySet())
+            newMap.put(thisElement.getKey().multiply(term.getKey()), thisElement.getValue().multiply(term.getValue()));
+
+        return loadFrom(newMap);
+    }
+
+    @Override
+    public MultivariatePolynomial multiply(long factor) {
+        return multiply(BigInteger.valueOf(factor));
+    }
+
     @Override
     public MultivariatePolynomial multiply(MultivariatePolynomial oth) {
         ensureCompatible(oth);
         TreeMap<DegreeVector, BigInteger> newMap = new TreeMap<>(ordering);
-        for (Map.Entry<DegreeVector, BigInteger> othElement : oth.data.entrySet())
-            for (Map.Entry<DegreeVector, BigInteger> thisElement : data.entrySet())
+        for (Entry<DegreeVector, BigInteger> othElement : oth.data.entrySet())
+            for (Entry<DegreeVector, BigInteger> thisElement : data.entrySet())
                 add(newMap, thisElement.getKey().multiply(othElement.getKey()), thisElement.getValue().multiply(othElement.getValue()));
 
-        data.clear();
-        data.putAll(newMap);
-        return this;
+        return loadFrom(newMap);
     }
 
     @Override
@@ -348,16 +490,15 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         return result;
     }
 
-    @Override
-    public String toString() {
+    public String toString(String... vars) {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for (Map.Entry<DegreeVector, BigInteger> term : data.entrySet()) {
+        for (Entry<DegreeVector, BigInteger> term : data.entrySet()) {
             DegreeVector monomial = term.getKey();
             BigInteger coeff = term.getValue();
             if (coeff.isZero())
                 continue;
-            String monomialString = monomial.toString();
+            String monomialString = monomial.toString(vars);
             if (first) {
                 if (!coeff.isOne() || monomialString.isEmpty()) {
                     sb.append(coeff);
@@ -382,6 +523,11 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         return sb.length() == 0 ? "0" : sb.toString();
     }
 
+    @Override
+    public String toString() {
+        return toString(defaultVars(nVariables));
+    }
+
 
     /* ******************************************* Static things ******************************************* */
 
@@ -399,13 +545,21 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         return new DegreeVector(new int[nVariables], 0);
     }
 
+    private static String[] defaultVars(int nVars) {
+        char v = 'a';
+        String[] vars = new String[nVars];
+        for (int i = 0; i < nVars; i++)
+            vars[i] = Character.toString(v++);
+        return vars;
+    }
+
 
     /**
      * Degree vector.
      */
     public static final class DegreeVector {
-        private final int[] exponents;
-        private final int totalDegree;
+        final int[] exponents;
+        final int totalDegree;
 
         private DegreeVector(int[] exponents, int totalDegree) {
             this.exponents = exponents;
@@ -417,12 +571,12 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
             this.totalDegree = ArraysUtil.sum(exponents);
         }
 
-        private boolean isZeroVector() {
+        boolean isZeroVector() {
             return totalDegree == 0;
         }
 
-        private static String toString0(char var, int exp) {
-            return exp == 0 ? "" : Character.toString(var) + (exp == 1 ? "" : "^" + exp);
+        private static String toString0(String var, int exp) {
+            return exp == 0 ? "" : var + (exp == 1 ? "" : "^" + exp);
         }
 
         private DegreeVector multiply(DegreeVector dv) {
@@ -432,13 +586,16 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
             return new DegreeVector(newExponents, totalDegree + dv.totalDegree);
         }
 
+        public String toString(String[] vars) {
+            List<String> result = new ArrayList<>();
+            for (int i = 0; i < exponents.length; i++)
+                result.add(toString0(vars[i], exponents[i]));
+            return result.stream().filter(s -> !s.isEmpty()).collect(Collectors.joining("*"));
+        }
+
         @Override
         public String toString() {
-            List<String> result = new ArrayList<>();
-            char x = 'a';
-            for (int exponent : exponents)
-                result.add(toString0(x++, exponent));
-            return result.stream().filter(s -> !s.isEmpty()).collect(Collectors.joining("*"));
+            return toString(defaultVars(exponents.length));
         }
 
         public String toStringArray() {
@@ -503,4 +660,47 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         }
         return 0;
     };
+
+    static final class EntryImpl implements Entry<DegreeVector, BigInteger> {
+        final DegreeVector degreeVector;
+        final BigInteger coefficient;
+
+        public EntryImpl(DegreeVector degreeVector, BigInteger coefficient) {
+            this.degreeVector = degreeVector;
+            this.coefficient = coefficient;
+        }
+
+        @Override
+        public DegreeVector getKey() {
+            return degreeVector;
+        }
+
+        @Override
+        public BigInteger getValue() {
+            return coefficient;
+        }
+
+        @Override
+        public BigInteger setValue(BigInteger value) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EntryImpl entry = (EntryImpl) o;
+
+            if (!degreeVector.equals(entry.degreeVector)) return false;
+            return coefficient.equals(entry.coefficient);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = degreeVector.hashCode();
+            result = 31 * result + coefficient.hashCode();
+            return result;
+        }
+    }
 }
