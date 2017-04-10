@@ -122,7 +122,7 @@ import java.util.concurrent.*;
  * @since JDK1.1
  */
 
-public final class BigInteger extends Number {
+public final class BigInteger extends Number implements Comparable<BigInteger> {
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
      * 1 for positive.  Note that the BigInteger zero <i>must</i> have
@@ -4856,6 +4856,7 @@ public final class BigInteger extends Number {
      * @return -1, 0 or 1 as this BigInteger is numerically less than, equal
      * to, or greater than {@code val}.
      */
+    @Override
     public int compareTo(BigInteger val) {
         if (signum == val.signum) {
             switch (signum) {

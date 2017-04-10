@@ -48,10 +48,6 @@ public final class bFactorDecomposition<T extends bMutablePolynomialAbstract<T>>
         }
     }
 
-    public int sumExponents() {
-        return exponents.sum();
-    }
-
     @Override
     T createInitialFactory(T factory) {
         return factory.createConstant(factor);

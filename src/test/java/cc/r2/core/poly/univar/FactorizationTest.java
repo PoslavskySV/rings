@@ -52,7 +52,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
 
-        int nIterations = (int) its(1000, 3000);
+        int nIterations = its(100000, 3000);
         for (int n = 0; n < nIterations; n++) {
             int nFactors = rndd.nextInt(4, 8);
             long modulus = getModulusRandom(rndd.nextInt(5, 31));
@@ -65,18 +65,34 @@ public class FactorizationTest extends AbstractPolynomialTest {
                 poly = poly.multiply(m);
             }
 
-            lFactorDecomposition<lMutablePolynomialZp> lFactors = Factorization.factor(poly);
-            assertTrue(lFactors.size() >= expectedNFactors);
-            assertFactorization(poly, lFactors);
+            try {
+                lFactorDecomposition<lMutablePolynomialZp> lFactors = Factorization.factor(poly);
+                assertTrue(lFactors.sumExponents() >= expectedNFactors);
+                assertFactorization(poly, lFactors);
 
-            if (n % 100 == 0) {
-                bFactorDecomposition<bMutablePolynomialZp> bFactors = factor(poly.toBigPoly());
-                bFactorDecomposition<bMutablePolynomialZp> converted = lFactorDecomposition.convert(lFactors);
-                converted.canonicalForm();
-                bFactors.canonicalForm();
-                Assert.assertEquals(converted, bFactors);
+                if (n % 100 == 0) {
+                    bFactorDecomposition<bMutablePolynomialZp> bFactors = factor(poly.toBigPoly());
+                    bFactorDecomposition<bMutablePolynomialZp> converted = lFactorDecomposition.convert(lFactors);
+                    converted.canonicalForm();
+                    bFactors.canonicalForm();
+                    Assert.assertEquals(converted, bFactors);
+                }
+            } catch (Throwable e) {
+                System.out.println(expectedNFactors);
+                System.out.println(modulus);
+                System.out.println(poly.toStringForCopy());
+                throw e;
             }
         }
+    }
+
+    @Test
+    public void test4_randomZp_a() throws Exception {
+        long modulus = 59;
+        lMutablePolynomialZp poly = lMutablePolynomialZ.create(46, 16, 1, 54, 16, 57, 22, 15, 31, 21).modulus(modulus);
+        lFactorDecomposition<lMutablePolynomialZp> fct = factor(poly);
+        assertEquals(5, fct.size());
+        assertEquals(6, fct.sumExponents());
     }
 
     @Test

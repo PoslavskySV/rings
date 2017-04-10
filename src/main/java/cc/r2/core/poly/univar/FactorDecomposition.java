@@ -47,6 +47,11 @@ public abstract class FactorDecomposition<T extends IMutablePolynomial<T>> imple
     /** Whether there are no non-trivial factors */
     public final boolean isTrivial() { return size() == 1;}
 
+    /** Sum all exponents */
+    public final int sumExponents() {
+        return exponents.sum();
+    }
+
     /** Multiply each exponent by a given factor */
     public final void raiseExponents(long val) {
         for (int i = exponents.size() - 1; i >= 0; --i)

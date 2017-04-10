@@ -36,8 +36,7 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         TreeMap<DegreeVector, BigInteger> map = new TreeMap<>(ordering);
         for (int i = 0; i < factors.length; i++) {
             BigInteger f = factors[i];
-            map.compute(vectors[i],
-                    (thisVector, thisValue) -> thisValue == null ? f : thisValue.add(f));
+            map.compute(vectors[i], (thisVector, thisValue) -> thisValue == null ? f : thisValue.add(f));
         }
         return new MultivariatePolynomial(vectors[0].exponents.length, ordering, map);
     }
@@ -56,6 +55,7 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         return Parser.parse(string, ordering, variables);
     }
 
+    /** check whether number of variables is the same */
     private void ensureCompatible(MultivariatePolynomial oth) {
         if (nVariables != oth.nVariables)
             throw new IllegalArgumentException("Combining multivariate polynomials from different fields");
