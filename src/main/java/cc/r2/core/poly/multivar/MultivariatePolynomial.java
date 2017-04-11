@@ -42,7 +42,7 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
         for (int i = 0; i < factors.length; i++) {
             BigInteger f = factors[i];
             if (!f.isZero())
-                map.compute(vectors[i], (thisVector, thisValue) -> thisValue == null ? f : thisValue.add(f));
+                add(map, vectors[i], f);
         }
         return new MultivariatePolynomial(vectors[0].exponents.length, ordering, map);
     }
@@ -634,9 +634,9 @@ public final class MultivariatePolynomial implements IGeneralPolynomial<Multivar
     };
 
     /**
-     * Reverse lexicographic monomial order
+     * Antilexicographic monomial order
      */
-    public static final Comparator<DegreeVector> REVLEX = (DegreeVector a, DegreeVector b) -> LEX.compare(b, a);
+    public static final Comparator<DegreeVector> ALEX = (DegreeVector a, DegreeVector b) -> LEX.compare(b, a);
 
     /**
      * Graded lexicographic monomial order

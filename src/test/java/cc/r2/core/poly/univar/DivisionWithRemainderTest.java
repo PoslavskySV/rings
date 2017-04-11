@@ -646,4 +646,10 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         System.out.println(Arrays.toString(fast));
         assertQuotientRemainder(dividend, divider, classic);
     }
+
+    @Test(expected = ArithmeticException.class)
+    public void testDivideByZero() throws Exception {
+        lMutablePolynomialZp poly = lMutablePolynomialZ.create(1, 2, 3, 4).modulus(3);
+        System.out.println(Arrays.toString(divideAndRemainder(poly, poly.createZero(), false)));
+    }
 }

@@ -36,7 +36,10 @@ public final class DivisionWithRemainder {
         return (copy ? dividend.clone() : dividend).truncate(xDegree - 1);
     }
 
-
+    private static void checkZeroDivider(IMutablePolynomial p) {
+        if (p.isZero())
+            throw new ArithmeticException("divide by zero");
+    }
 
     /* ************************************ Machine-precision division in Z[x]  ************************************ */
 
@@ -52,6 +55,7 @@ public final class DivisionWithRemainder {
     public static lMutablePolynomialZ[] divideAndRemainder(final lMutablePolynomialZ dividend,
                                                            final lMutablePolynomialZ divider,
                                                            boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.isZero())
             return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), lMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
@@ -79,6 +83,7 @@ public final class DivisionWithRemainder {
     public static lMutablePolynomialZ[] pseudoDivideAndRemainder(final lMutablePolynomialZ dividend,
                                                                  final lMutablePolynomialZ divider,
                                                                  final boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.isZero())
             return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), lMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
@@ -151,6 +156,7 @@ public final class DivisionWithRemainder {
     static lMutablePolynomialZ[] pseudoDivideAndRemainderAdaptive(final lMutablePolynomialZ dividend,
                                                                   final lMutablePolynomialZ divider,
                                                                   final boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.isZero())
             return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), lMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
@@ -273,6 +279,7 @@ public final class DivisionWithRemainder {
     public static lMutablePolynomialZ remainder(final lMutablePolynomialZ dividend,
                                                 final lMutablePolynomialZ divider,
                                                 final boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.degree < divider.degree)
             return dividend;
         if (divider.degree == 0)
@@ -317,6 +324,7 @@ public final class DivisionWithRemainder {
     public static bMutablePolynomialZ[] divideAndRemainder(final bMutablePolynomialZ dividend,
                                                            final bMutablePolynomialZ divider,
                                                            boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.isZero())
             return new bMutablePolynomialZ[]{bMutablePolynomialZ.zero(), bMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
@@ -344,6 +352,7 @@ public final class DivisionWithRemainder {
     public static bMutablePolynomialZ[] pseudoDivideAndRemainder(final bMutablePolynomialZ dividend,
                                                                  final bMutablePolynomialZ divider,
                                                                  final boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.isZero())
             return new bMutablePolynomialZ[]{bMutablePolynomialZ.zero(), bMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
@@ -450,6 +459,7 @@ public final class DivisionWithRemainder {
     public static bMutablePolynomialZ remainder(final bMutablePolynomialZ dividend,
                                                 final bMutablePolynomialZ divider,
                                                 final boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.degree < divider.degree)
             return dividend;
         if (divider.degree == 0)
@@ -495,6 +505,7 @@ public final class DivisionWithRemainder {
     private static lMutablePolynomialZp[] earlyDivideAndRemainderChecks(final lMutablePolynomialZp dividend,
                                                                         final lMutablePolynomialZp divider,
                                                                         final boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.isZero())
             return new lMutablePolynomialZp[]{dividend.createZero(), dividend.createZero()};
         if (dividend.degree < divider.degree)
@@ -599,6 +610,7 @@ public final class DivisionWithRemainder {
     private static bMutablePolynomialZp[] earlyDivideAndRemainderChecks(final bMutablePolynomialZp dividend,
                                                                         final bMutablePolynomialZp divider,
                                                                         final boolean copy) {
+        checkZeroDivider(divider);
         if (dividend.isZero())
             return new bMutablePolynomialZp[]{dividend.createZero(), dividend.createZero()};
         if (dividend.degree < divider.degree)

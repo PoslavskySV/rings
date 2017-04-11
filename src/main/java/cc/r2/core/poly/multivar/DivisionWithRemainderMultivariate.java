@@ -9,8 +9,8 @@ import java.util.Map.Entry;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class MultivariateDivisionWithRemainder {
-    private MultivariateDivisionWithRemainder() {}
+public final class DivisionWithRemainderMultivariate {
+    private DivisionWithRemainderMultivariate() {}
 
     /**
      * Performs multivariate division with remainder. The resulting array of quotients and remainder (last element of
@@ -22,15 +22,19 @@ public final class MultivariateDivisionWithRemainder {
      */
     public static MultivariatePolynomial[] divideAndRemainder(MultivariatePolynomial dividend, MultivariatePolynomial... dividers) {
         MultivariatePolynomial[] quotients = new MultivariatePolynomial[dividers.length + 1];
-        for (int i = 0; i < quotients.length; i++)
+        int i = 0;
+        for (; i < dividers.length; i++) {
+            if (dividers[i].isZero())
+                throw new ArithmeticException("divide by zero");
             quotients[i] = dividend.createZero();
+        }
+        quotients[i] = dividend.createZero();
 
         MultivariatePolynomial remainder = quotients[quotients.length - 1];
         dividend = dividend.clone();
         while (!dividend.isZero()) {
             Entry<DegreeVector, BigInteger> ltDiv = null;
-            int i = 0;
-            for (; i < dividers.length; i++) {
+            for (i = 0; i < dividers.length; i++) {
                 ltDiv = divide(dividend.lt(), dividers[i].lt());
                 if (ltDiv != null)
                     break;
@@ -46,6 +50,7 @@ public final class MultivariateDivisionWithRemainder {
         return quotients;
     }
 
+    /** Monomial division */
     private static Entry<DegreeVector, BigInteger> divide(Entry<DegreeVector, BigInteger> ltDividend, Entry<DegreeVector, BigInteger> ltDivider) {
         BigInteger[] qr = ltDividend.getValue().divideAndRemainder(ltDivider.getValue());
         if (!qr[1].isZero())

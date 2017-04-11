@@ -3,7 +3,9 @@ package cc.r2.core.test;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well44497b;
-import org.junit.*;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.rules.TestName;
 
 import java.util.Objects;
@@ -26,22 +28,22 @@ public class AbstractTest {
             Assume.assumeTrue(getClass().getMethod(name.getMethodName()).getDeclaredAnnotation(Benchmark.class).runAnyway() || runBenchmarks());
     }
 
-    private final RandomGenerator privateRandom = new Well44497b();
-    private final RandomDataGenerator privateRandomData = new RandomDataGenerator(privateRandom);
+    private static final RandomGenerator privateRandom = new Well44497b();
+    private static final RandomDataGenerator privateRandomData = new RandomDataGenerator(privateRandom);
 
-    protected final RandomDataGenerator getRandomData() {
+    protected static RandomDataGenerator getRandomData() {
         return privateRandomData;
     }
 
     /** Seeds random */
-    protected final RandomGenerator getRandom() {
+    protected static RandomGenerator getRandom() {
         synchronized ( privateRandom ){
             privateRandom.setSeed(System.nanoTime());
             return privateRandom;
         }
     }
 
-    protected final RandomGenerator getFixedRandom() {
+    protected static RandomGenerator getFixedRandom() {
         return privateRandom;
     }
 
@@ -79,7 +81,6 @@ public class AbstractTest {
     public static int its(int nSmall, int nLarge) {
         return runTimeConsumingTests() ? nLarge : nSmall;
     }
-
 
 
 //    @Test
