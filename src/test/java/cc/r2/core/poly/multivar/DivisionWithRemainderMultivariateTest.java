@@ -1,6 +1,8 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.generics.ModularDomain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import cc.r2.core.test.AbstractTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -10,6 +12,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
 import static cc.r2.core.poly.multivar.DivisionWithRemainderMultivariate.divideAndRemainder;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
@@ -24,12 +27,12 @@ public class DivisionWithRemainderMultivariateTest extends AbstractTest {
     public void test1() throws Exception {
         String[] vars = {"a", "b"};
         Comparator<DegreeVector> ordering = LEX;
-        MultivariatePolynomial dividend = parse("a*b^2 + 1", ordering, vars);
-        MultivariatePolynomial f1 = parse("a*b + 1", ordering, vars);
-        MultivariatePolynomial f2 = parse("b + 1", ordering, vars);
+        MultivariatePolynomial<BigInteger> dividend = parse("a*b^2 + 1", ordering, vars);
+        MultivariatePolynomial<BigInteger> f1 = parse("a*b + 1", ordering, vars);
+        MultivariatePolynomial<BigInteger> f2 = parse("b + 1", ordering, vars);
 
 
-        MultivariatePolynomial[] qd;
+        MultivariatePolynomial<BigInteger>[] qd;
         qd = divideAndRemainder(dividend, f1, f2);
         assertQuotientReminder(qd, dividend, f1, f2);
         assertArrayEquals(new MultivariatePolynomial[]{
@@ -70,8 +73,8 @@ public class DivisionWithRemainderMultivariateTest extends AbstractTest {
 
     @Test
     public void test3() throws Exception {
-        MultivariatePolynomial a = randomPolynomial(5, 10, 10, getRandom());
-        MultivariatePolynomial b = randomPolynomial(5, 10, 10, getRandom());
+        MultivariatePolynomial<BigInteger> a = randomPolynomial(5, 10, 10, getRandom());
+        MultivariatePolynomial<BigInteger> b = randomPolynomial(5, 10, 10, getRandom());
         for (Comparator<DegreeVector> order : Arrays.asList(LEX, GRLEX, GREVLEX)) {
             MultivariatePolynomial c = a.clone().multiply(b).setOrdering(order);
             assertTrue(divideAndRemainder(c, a.setOrdering(order))[1].isZero());
@@ -93,38 +96,60 @@ public class DivisionWithRemainderMultivariateTest extends AbstractTest {
         }
     }
 
-    static void testRandomReduce(int nIterations, int nVariables, int nDividers,
-                                 int minSize, int maxDegree,
-                                 Comparator<DegreeVector> ordering) {
-        testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, getRandom());
+    @Test
+    public void test6() throws Exception {
+        String[] vars = {"a", "b"};
+        Domain<BigInteger> domain = new ModularDomain(2);
+        Comparator<DegreeVector> ordering = LEX;
+        MultivariatePolynomial dividend = parse("a^2*b+a*b^2+b^2", domain, ordering, vars);
+        MultivariatePolynomial f1 = parse("a*b - 1", domain, ordering, vars);
+        MultivariatePolynomial f2 = parse("b^2 - 1", domain, ordering, vars);
+
+        MultivariatePolynomial[] qd;
+        qd = divideAndRemainder(dividend, f1, f2);
+        assertQuotientReminder(qd, dividend, f1, f2);
+        assertArrayEquals(new MultivariatePolynomial[]{
+                parse("a+b", ordering, vars),
+                parse("1", ordering, vars),
+                parse("a+b+1", ordering, vars)
+        }, qd);
+
+        assertQuotientReminder(dividend, f2, f1);
     }
 
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,
                                  int minSize, int maxDegree,
-                                 Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+                                 Comparator<DegreeVector> ordering) {
+        testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, IntegersDomain, getRandom());
+    }
+
+    static void testRandomReduce(int nIterations, int nVariables, int nDividers,
+                                 int minSize, int maxDegree,
+                                 Comparator<DegreeVector> ordering,
+                                 Domain<BigInteger> domain, RandomGenerator rnd) {
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         int maxGeneratedDividendSize = 0;
         int maxFoundQuotientSize = 0;
         for (int n = 0; n < nIterations; n++) {
 
-            MultivariatePolynomial[]
+            MultivariatePolynomial<BigInteger>[]
                     dividers = new MultivariatePolynomial[nDividers],
                     quotients = new MultivariatePolynomial[dividers.length];
 
-            MultivariatePolynomial dividend = MultivariatePolynomial.zero(nVariables, ordering);
+            MultivariatePolynomial<BigInteger> dividend = MultivariatePolynomial.zero(domain, ordering, nVariables);
             for (int j = 0; j < dividers.length; j++) {
-                dividers[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), ordering, rnd);
+                dividers[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), domain, ordering, rnd);
                 if (dividers[j].isZero()) {
                     --j;
                     continue;
                 }
-                quotients[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), ordering, rnd);
+                quotients[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), domain, ordering, rnd);
                 dividend = dividend.add(dividers[j].clone().multiply(quotients[j]));
             }
             if (dividend.size() > maxGeneratedDividendSize)
                 maxGeneratedDividendSize = dividend.size();
 
-            MultivariatePolynomial[] qd = divideAndRemainder(dividend, dividers);
+            MultivariatePolynomial<BigInteger>[] qd = divideAndRemainder(dividend, dividers);
             int qSize = Arrays.stream(qd).mapToInt(MultivariatePolynomial::size).max().getAsInt();
             if (qSize > maxFoundQuotientSize)
                 maxFoundQuotientSize = qSize;
@@ -141,13 +166,13 @@ public class DivisionWithRemainderMultivariateTest extends AbstractTest {
         return Arrays.stream(p).map(x -> x.setOrdering(ordering)).toArray(MultivariatePolynomial[]::new);
     }
 
-    public static void assertQuotientReminder(MultivariatePolynomial dividend, MultivariatePolynomial... dividers) {
+    public static <E> void assertQuotientReminder(MultivariatePolynomial<E> dividend, MultivariatePolynomial<E>... dividers) {
         assertQuotientReminder(divideAndRemainder(dividend, dividers), dividend, dividers);
     }
 
-    public static void assertQuotientReminder(MultivariatePolynomial[] quotRem, MultivariatePolynomial dividend, MultivariatePolynomial... dividers) {
+    public static <E> void assertQuotientReminder(MultivariatePolynomial<E>[] quotRem, MultivariatePolynomial<E> dividend, MultivariatePolynomial<E>... dividers) {
         assertEquals(quotRem.length - 1, dividers.length);
-        MultivariatePolynomial r = dividend.createZero();
+        MultivariatePolynomial<E> r = dividend.createZero();
         for (int i = 0; i < dividers.length; i++)
             r.add(dividers[i].clone().multiply(quotRem[i]));
         r.add(quotRem[quotRem.length - 1]);

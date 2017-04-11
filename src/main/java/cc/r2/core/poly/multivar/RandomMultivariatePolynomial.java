@@ -1,6 +1,8 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.generics.IntegersDomain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.DegreeVector;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -12,7 +14,11 @@ import java.util.Comparator;
  * @since 1.0
  */
 public class RandomMultivariatePolynomial {
-    public static MultivariatePolynomial randomPolynomial(int nVars, int degree, int size, BigInteger bound, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+    public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+        return randomPolynomial(nVars, degree, size, bound, IntegersDomain.IntegersDomain, ordering, rnd);
+    }
+
+    public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Domain<BigInteger> domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
         int nd = 3 * degree / 2;
         BigInteger[] cfx = new BigInteger[size];
         DegreeVector[] dvs = new DegreeVector[size];
@@ -22,10 +28,10 @@ public class RandomMultivariatePolynomial {
             if (rnd.nextBoolean() && rnd.nextBoolean())
                 cfx[i] = cfx[i].negate();
         }
-        return MultivariatePolynomial.create(cfx, dvs, ordering);
+        return MultivariatePolynomial.create(domain, ordering, dvs, cfx);
     }
 
-    public static MultivariatePolynomial randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {
+    public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {
         return randomPolynomial(nVars, degree, size, BigInteger.TEN, MultivariatePolynomial.LEX, rnd);
     }
 }

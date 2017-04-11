@@ -1,6 +1,6 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.generics.Domain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.DegreeVector;
 
 import java.util.Map.Entry;
@@ -20,8 +20,9 @@ public final class DivisionWithRemainderMultivariate {
      * @param dividers the dividers
      * @return array of quotients and remainder at the last position
      */
-    public static MultivariatePolynomial[] divideAndRemainder(MultivariatePolynomial dividend, MultivariatePolynomial... dividers) {
-        MultivariatePolynomial[] quotients = new MultivariatePolynomial[dividers.length + 1];
+    @SuppressWarnings("unchecked")
+    public static <E> MultivariatePolynomial<E>[] divideAndRemainder(MultivariatePolynomial<E> dividend, MultivariatePolynomial<E>... dividers) {
+        MultivariatePolynomial<E>[] quotients = new MultivariatePolynomial[dividers.length + 1];
         int i = 0;
         for (; i < dividers.length; i++) {
             if (dividers[i].isZero())
@@ -30,12 +31,12 @@ public final class DivisionWithRemainderMultivariate {
         }
         quotients[i] = dividend.createZero();
 
-        MultivariatePolynomial remainder = quotients[quotients.length - 1];
+        MultivariatePolynomial<E> remainder = quotients[quotients.length - 1];
         dividend = dividend.clone();
         while (!dividend.isZero()) {
-            Entry<DegreeVector, BigInteger> ltDiv = null;
+            Entry<DegreeVector, E> ltDiv = null;
             for (i = 0; i < dividers.length; i++) {
-                ltDiv = divide(dividend.lt(), dividers[i].lt());
+                ltDiv = divide(dividend.domain, dividend.lt(), dividers[i].lt());
                 if (ltDiv != null)
                     break;
             }
@@ -51,9 +52,11 @@ public final class DivisionWithRemainderMultivariate {
     }
 
     /** Monomial division */
-    private static Entry<DegreeVector, BigInteger> divide(Entry<DegreeVector, BigInteger> ltDividend, Entry<DegreeVector, BigInteger> ltDivider) {
-        BigInteger[] qr = ltDividend.getValue().divideAndRemainder(ltDivider.getValue());
-        if (!qr[1].isZero())
+    private static <E> Entry<DegreeVector, E> divide(Domain<E> domain,
+                                                     Entry<DegreeVector, E> ltDividend,
+                                                     Entry<DegreeVector, E> ltDivider) {
+        E[] qr = domain.divideAndRemainder(ltDividend.getValue(), ltDivider.getValue());
+        if (!domain.isZero(qr[1]))
             return null;
         int[] dividendV = ltDividend.getKey().exponents, dividerV = ltDivider.getKey().exponents;
         int[] exponents = new int[dividendV.length];
@@ -62,7 +65,7 @@ public final class DivisionWithRemainderMultivariate {
             if (exponents[i] < 0)
                 return null;
         }
-        return new MultivariatePolynomial.EntryImpl(new DegreeVector(exponents), qr[0]);
+        return new MultivariatePolynomial.EntryImpl<>(new DegreeVector(exponents), qr[0]);
     }
 
 }

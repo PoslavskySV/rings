@@ -358,6 +358,21 @@ public final class ArraysUtil {
         return r;
     }
 
+    public static int[] remove(int[] array, int i) {
+        if (i >= array.length)
+            throw new ArrayIndexOutOfBoundsException();
+        if (array.length == 1) {
+            assert i == 0;
+            return new int[0];
+        } else if (array.length == 2)
+            return new int[]{array[1^i]};
+        int[] newArray = new int[array.length - 1];
+        System.arraycopy(array, 0, newArray, 0, i);
+        if (i != array.length - 1)
+            System.arraycopy(array, i + 1, newArray, i, array.length - i - 1);
+        return newArray;
+    }
+
     public static <T> T[] remove(T[] array, int i) {
         @SuppressWarnings("unchecked")
         T[] r = (T[]) Array.newInstance(array.getClass().getComponentType(), array.length - 1);

@@ -1,7 +1,9 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
+import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.generics.IntegersDomain;
+import cc.r2.core.poly.multivar.MultivariatePolynomial.DegreeVector;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
@@ -13,19 +15,23 @@ import java.util.*;
 final class Parser {
     private Parser() {}
 
-    static MultivariatePolynomial parse(String input, Comparator<MultivariatePolynomial.DegreeVector> ordering, String... variables) {
-        List<ParsedTerm> terms = new ArrayList<>();
+    static MultivariatePolynomial<BigInteger> parse(String input, Comparator<DegreeVector> ordering, String... variables) {
+        return parse(input, IntegersDomain.IntegersDomain, ordering, variables);
+    }
+
+    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
+        List<ParsedTerm<E>> terms = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
             if ((c == '+' || c == '-') && sb.length() != 0) {
-                terms.add(parseTerm(sb.toString()));
+                terms.add(parseTerm(sb.toString(), domain));
                 sb = new StringBuilder();
             }
             sb.append(c);
         }
         if (sb.length() != 0)
-            terms.add(parseTerm(sb.toString()));
+            terms.add(parseTerm(sb.toString(), domain));
 
         Set<String> allVars = new HashSet<>();
         terms.forEach(t -> allVars.addAll(Arrays.asList(t.variables)));
@@ -34,18 +40,18 @@ final class Parser {
         String[] vars = allVars.toArray(new String[allVars.size()]);
         Arrays.sort(vars);
 
-        BigInteger[] factor = new BigInteger[terms.size()];
-        MultivariatePolynomial.DegreeVector[] vectors = new MultivariatePolynomial.DegreeVector[terms.size()];
+        E[] factor = domain.createArray(terms.size());
+        DegreeVector[] vectors = new DegreeVector[terms.size()];
         for (int i = 0; i < terms.size(); i++) {
             factor[i] = terms.get(i).factor;
             vectors[i] = terms.get(i).degreeVector(vars);
         }
 
-        return MultivariatePolynomial.create(factor, vectors, ordering);
+        return MultivariatePolynomial.create(domain, ordering, vectors, factor);
     }
 
 
-    static ParsedTerm parseTerm(String input) {
+    static <E> ParsedTerm<E> parseTerm(String input, Domain<E> domain) {
         input = input.trim();
 
         ArrayList<String> variables = new ArrayList<>();
@@ -76,35 +82,35 @@ final class Parser {
                 currentBuffer.append(c);
         }
 
-        BigInteger factor = sign == '-' ? BigInteger.NEGATIVE_ONE : BigInteger.ONE;
+        E factor = sign == '-' ? domain.getNegativeOne() : domain.getOne();
         for (i = variables.size() - 1; i >= 0; --i) {
             String s = variables.get(i).trim();
             if (s.matches("^\\d+$")) {
-                factor = factor.multiply(BigIntegerArithmetics.pow(new BigInteger(s), exponents.get(i)));
+                factor = domain.multiply(factor, domain.pow(domain.parse(s), exponents.get(i)));
                 variables.remove(i);
                 exponents.removeAt(i);
             }
         }
 
-        return new ParsedTerm(factor, variables.toArray(new String[variables.size()]), exponents.toArray());
+        return new ParsedTerm<>(factor, variables.toArray(new String[variables.size()]), exponents.toArray());
     }
 
-    private static final class ParsedTerm {
-        final BigInteger factor;
+    private static final class ParsedTerm<E> {
+        final E factor;
         final String[] variables;
         final int[] exponents;
 
-        public ParsedTerm(BigInteger factor, String[] variables, int[] exponents) {
+        public ParsedTerm(E factor, String[] variables, int[] exponents) {
             this.factor = factor;
             this.variables = variables;
             this.exponents = exponents;
         }
 
-        public MultivariatePolynomial.DegreeVector degreeVector(String[] map) {
+        public DegreeVector degreeVector(String[] map) {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
                 degrees[Arrays.binarySearch(map, variables[i])] = exponents[i];
-            return new MultivariatePolynomial.DegreeVector(degrees);
+            return new DegreeVector(degrees);
         }
 
         @Override
