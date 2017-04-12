@@ -27,6 +27,11 @@ public final class IntegersDomain extends AbstractIntegersDomain {
     public BigInteger[] divideAndRemainder(BigInteger a, BigInteger b) {return a.divideAndRemainder(b);}
 
     @Override
+    public BigInteger reciprocal(BigInteger a) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public BigInteger valueOf(BigInteger val) {return val;}
 
     @Override

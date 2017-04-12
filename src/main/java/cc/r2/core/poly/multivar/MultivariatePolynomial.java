@@ -167,6 +167,15 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return createConstant(domain.getOne());
     }
 
+    public MultivariatePolynomial<E> createLinear(int variable, E cc, E lc) {
+        int[] ccDegreeVector = new int[nVariables], lcDegreeVector = new int[nVariables];
+        lcDegreeVector[variable] = 1;
+        TreeMap<DegreeVector, E> data = new TreeMap<>(ordering);
+        data.put(new DegreeVector(ccDegreeVector, 0), cc);
+        data.put(new DegreeVector(lcDegreeVector, 1), lc);
+        return new MultivariatePolynomial<E>(domain, ordering, nVariables, data);
+    }
+
     @Override
     public MultivariatePolynomial<E> toZero() {
         data.clear();
@@ -350,7 +359,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         PrecomputedPowers<E> powers = new PrecomputedPowers<>(value, domain);
         for (Entry<DegreeVector, E> el : data.entrySet()) {
             DegreeVector dv = el.getKey();
-            newData.put(dv.setZero(variable), domain.multiply(el.getValue(), powers.pow(dv.exponents[variable])));
+            add(newData, dv.setZero(variable), domain.multiply(el.getValue(), powers.pow(dv.exponents[variable])));
         }
         return new MultivariatePolynomial<>(domain, ordering, nVariables, newData);
     }
@@ -624,6 +633,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return multiply(this);
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E> clone() {
         return new MultivariatePolynomial<>(domain, ordering, nVariables, (TreeMap) data.clone());

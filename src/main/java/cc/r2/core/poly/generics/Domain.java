@@ -64,6 +64,14 @@ public interface Domain<E> extends Comparator<E> {
     E[] divideAndRemainder(E a, E b);
 
     /**
+     * Gives the inverse element a^-1
+     *
+     * @param a the element
+     * @return a^-1
+     */
+    E reciprocal(E a);
+
+    /**
      * Returns greatest common divisor of two elements
      *
      * @param a the first element

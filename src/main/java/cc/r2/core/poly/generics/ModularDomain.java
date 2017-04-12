@@ -61,6 +61,11 @@ public final class ModularDomain extends AbstractIntegersDomain {
     }
 
     @Override
+    public BigInteger reciprocal(BigInteger a) {
+        return a.modInverse(modulus);
+    }
+
+    @Override
     public BigInteger valueOf(BigInteger val) {return modulus(val);}
 
     @Override

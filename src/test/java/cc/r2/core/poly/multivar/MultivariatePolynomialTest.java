@@ -22,8 +22,8 @@ public class MultivariatePolynomialTest extends AbstractTest {
     public void testArithmetics1() throws Exception {
         MultivariatePolynomial<BigInteger> a = MultivariatePolynomial.parse("a*b + a^2 + c^3*b^2", LEX);
         assertEquals(ZERO, a.cc());
-        assertEquals(BigInteger.ONE, a.lc());
-        assertEquals(BigInteger.ONE, a.clone().increment().cc());
+        assertEquals(ONE, a.lc());
+        assertEquals(ONE, a.clone().increment().cc());
         assertEquals(BigInteger.NEGATIVE_ONE, a.clone().decrement().cc());
         MultivariatePolynomial b = MultivariatePolynomial.parse("a*b - a^2 + c^3*b^2", LEX);
         assertEquals(MultivariatePolynomial.parse("2*a^2", LEX, "a", "b", "c"), a.clone().subtract(b));
@@ -89,8 +89,8 @@ public class MultivariatePolynomialTest extends AbstractTest {
         ModularDomain algebra = new ModularDomain(17);
         MultivariatePolynomial<BigInteger> a = MultivariatePolynomial.parse("a*b + a^2 + c^3*b^2", algebra, LEX);
         assertEquals(ZERO, a.cc());
-        assertEquals(BigInteger.ONE, a.lc());
-        assertEquals(BigInteger.ONE, a.clone().increment().cc());
+        assertEquals(ONE, a.lc());
+        assertEquals(ONE, a.clone().increment().cc());
         assertEquals(algebra.getNegativeOne(), a.clone().decrement().cc());
         MultivariatePolynomial<BigInteger> b = MultivariatePolynomial.parse("a*b - a^2 + c^3*b^2", algebra, LEX);
         assertEquals(MultivariatePolynomial.parse("2*a^2", algebra, LEX, "a", "b", "c"), a.clone().subtract(b));
@@ -104,6 +104,15 @@ public class MultivariatePolynomialTest extends AbstractTest {
         assertEquals(0, p0.nVariables);
         assertEquals(1, p0.size());
         assertEquals(0, p0.clone().subtract(p0).size());
+    }
+
+    @Test
+    public void testCreateLinear() throws Exception {
+        MultivariatePolynomial<BigInteger> p0 = MultivariatePolynomial.zero(IntegersDomain, LEX, 3);
+        String[] vars = {"a", "b", "c"};
+        assertEquals(parse("-1+2*a", vars), p0.createLinear(0, NEGATIVE_ONE, TWO));
+        assertEquals(parse("-1+2*b", vars), p0.createLinear(1, NEGATIVE_ONE, TWO));
+        assertEquals(parse("-1+2*c", vars), p0.createLinear(2, NEGATIVE_ONE, TWO));
     }
 
     @Test
@@ -136,5 +145,15 @@ public class MultivariatePolynomialTest extends AbstractTest {
         assertEquals(parse(str.replace("c", "3"), vars), poly.evaluate(2, 3));
         assertEquals(parse(str.replace("b", "3"), vars), poly.evaluate(1, 3));
         assertEquals(parse(str.replace("a", "3"), vars), poly.evaluate(0, 3));
+    }
+
+    @Test
+    public void testEvaluate2() throws Exception {
+        String[] vars = {"a", "b"};
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", IntegersDomain, LEX, vars);
+        assertEquals(parse("18 + 18*a^2 + 18*a^3", vars), poly.evaluate(1, 1));
+
+        ModularDomain pDomain = new ModularDomain(17);
+        assertEquals(parse("1 + a^2 + a^3", pDomain, LEX, vars), poly.setDomain(pDomain).evaluate(1, 1));
     }
 }
