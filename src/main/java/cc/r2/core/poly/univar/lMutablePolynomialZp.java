@@ -126,6 +126,18 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
     }
 
     /**
+     * Creates linear polynomial of form {@code cc + x * lc}
+     *
+     * @param cc      the  constant coefficient
+     * @param lc      the  leading coefficient
+     * @param modulus the modulus
+     * @return {@code cc + x * lc}
+     */
+    public static lMutablePolynomialZp linear(long cc, long lc, long modulus) {
+        return createSigned(modulus, new long[]{cc, lc});
+    }
+
+    /**
      * Returns polynomial corresponding to math 0
      *
      * @param modulus the modulus
@@ -160,6 +172,11 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
         return r + ((r >> 63)&modulus);
     }
 
+    /** negateMod operation */
+    long negateMod(long val) {
+        return modulus - val;
+    }
+
     /** to symmetric modulus */
     long symmetricForm(long value) {
         return value <= modulus / 2 ? value : value - modulus;
@@ -182,6 +199,19 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
         else if (val >= modulus)
             val = mod(val);
         return new lMutablePolynomialZp(modulus, magic, magic32MulMod, new long[]{val}, 0, modulusFits32);
+    }
+
+    /**
+     * Creates linear polynomial of form {@code cc + x * lc}
+     *
+     * @param cc the  constant coefficient
+     * @param lc the  leading coefficient
+     * @return {@code cc + x * lc}
+     */
+    public lMutablePolynomialZp createLinear(long cc, long lc) {
+        lMutablePolynomialZp r = new lMutablePolynomialZp(modulus, magic, magic32MulMod, new long[]{mod(cc), mod(lc)}, 1, modulusFits32);
+        r.fixDegree();
+        return r;
     }
 
     @Override
@@ -283,6 +313,16 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
     }
 
     /**
+     * Divide by specified value
+     *
+     * @param val the value
+     * @return {@code this / val}
+     */
+    public lMutablePolynomialZp divide(long val) {
+        return multiply(LongArithmetics.modInverse(val, modulus));
+    }
+
+    /**
      * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is
      * {@code monic(modulus).multiply(factor)} ).
      *
@@ -310,6 +350,18 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
     public void checkCompatibleModulus(lMutablePolynomialZp oth) {
         if (modulus != oth.modulus)
             throw new IllegalArgumentException();
+    }
+
+    /**
+     * Add constant to this.
+     *
+     * @param val some number
+     * @return this + val
+     */
+    public lMutablePolynomialZp add(long val) {
+        data[0] = addMod(data[0], mod(val));
+        fixDegree();
+        return this;
     }
 
     /** {@inheritDoc} */
@@ -397,7 +449,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
     public lMutablePolynomialZp negate() {
         for (int i = degree; i >= 0; --i)
             if (data[i] != 0)
-                data[i] = modulus - data[i];
+                data[i] = negateMod(data[i]);
         return this;
     }
 

@@ -120,4 +120,21 @@ public class MultivariatePolynomialTest extends AbstractTest {
         assertEquals(parse(str.replace("b", "3"), "a", "c", "d"), poly.eliminate(1, 3));
         assertEquals(parse(str.replace("a", "3"), "b", "c", "d"), poly.eliminate(0, 3));
     }
+
+    @Test
+    public void testEvaluate1() throws Exception {
+        String[] vars = {"a", "b"};
+        assertEquals(parse("2^14*b", vars), parse("a^14*b", vars).evaluate(0, 2));
+        assertEquals(parse("2*a^14", vars), parse("a^14*b", vars).evaluate(1, 2));
+        String str = "2^14*b - 7*2^9*b^4 + 19*2^9*b^4";
+        assertEquals(parse(str, vars), parse(str.replace("2^", "a^"), vars).evaluate(0, 2));
+
+        str = "-5*a^22*c*d^13 + 5*a^32*b^24*c*d + a^31*c*d^42 + c^66";
+        vars = new String[]{"a", "b", "c", "d"};
+        MultivariatePolynomial<BigInteger> poly = parse(str, vars);
+        assertEquals(parse(str.replace("d", "3"), vars), poly.evaluate(3, 3));
+        assertEquals(parse(str.replace("c", "3"), vars), poly.evaluate(2, 3));
+        assertEquals(parse(str.replace("b", "3"), vars), poly.evaluate(1, 3));
+        assertEquals(parse(str.replace("a", "3"), vars), poly.evaluate(0, 3));
+    }
 }

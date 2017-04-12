@@ -106,6 +106,29 @@ public final class ArraysUtil {
     }
 
     /**
+     * Sort array & return array with removed repetitive values.
+     *
+     * @param values input array (this method will quickSort this array)
+     * @return sorted array of distinct values
+     */
+    public static long[] getSortedDistinct(long[] values) {
+        if (values.length == 0)
+            return values;
+        Arrays.sort(values);
+        int shift = 0;
+        int i = 0;
+        while (i + shift + 1 < values.length)
+            if (values[i + shift] == values[i + shift + 1])
+                ++shift;
+            else {
+                values[i] = values[i + shift];
+                ++i;
+            }
+        values[i] = values[i + shift];
+        return Arrays.copyOf(values, i + 1);
+    }
+
+    /**
      * Return the set difference B - A for int sets A and B.<br/> Sets A and B
      * must be represented as two sorted int arrays.<br/> Repetitive values in A
      * or B not allowed.

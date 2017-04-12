@@ -14,21 +14,21 @@ import org.junit.Test;
  */
 public class AbstractPolynomialTest extends AbstractTest {
 
-    protected long getModulusRandom(int nBits) {
+    protected static long getModulusRandom(int nBits) {
         if (nBits <= 1 || nBits > LongArithmetics.MAX_SUPPORTED_MODULUS_BITS)
             throw new IllegalArgumentException();
         return BigPrimes.nextPrime(getRandomData().nextLong(1L << (nBits - 1), (1L << nBits) - 1));
     }
 
-    protected long[] getSmallModulusArray(int n) {
+    protected static long[] getSmallModulusArray(int n) {
         return getModulusArray(n, 0, 0);
     }
 
-    protected long[] getLargeModulusArray(int n, int maxModulusBits) {
+    protected static long[] getLargeModulusArray(int n, int maxModulusBits) {
         return getModulusArray(0, n, maxModulusBits);
     }
 
-    protected long[] getModulusArray(int nSmall, int nLarge, int smallModulusBits, int maxModulusBits) {
+    protected static long[] getModulusArray(int nSmall, int nLarge, int smallModulusBits, int maxModulusBits) {
         long[] res = new long[nSmall + nLarge];
         int i = 0;
         for (; i < nSmall; i++)
@@ -38,7 +38,7 @@ public class AbstractPolynomialTest extends AbstractTest {
         return res;
     }
 
-    protected long[] getModulusArray(int nSmall, int nLarge, int maxModulusBits) {
+    protected static long[] getModulusArray(int nSmall, int nLarge, int maxModulusBits) {
         return getModulusArray(nSmall, nLarge, 31, maxModulusBits);
     }
 
@@ -50,13 +50,13 @@ public class AbstractPolynomialTest extends AbstractTest {
         return res;
     }
 
-    protected long[] getOneSmallOneLargeModulus(int maxModulusBits) {
+    protected static long[] getOneSmallOneLargeModulus(int maxModulusBits) {
         return getModulusArray(1, 1, maxModulusBits);
     }
 
     @Test
     @TimeConsuming
-    public void test1() throws Exception {
+    public void test0() throws Exception {
         for (int nBits = 2; nBits < 60; nBits++) {
             for (int i = 0; i < 10; i++) {
                 int modulusBits = 64 - Long.numberOfLeadingZeros(getModulusRandom(nBits));

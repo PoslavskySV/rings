@@ -402,6 +402,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
 
     private static final int SIZE_OF_POWERS_CACHE = 32;
 
+    /** cached powers used to save some time */
     private static final class PrecomputedPowers<E> {
         private final E value;
         private final Domain<E> domain;
@@ -419,9 +420,6 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
 
             if (precomputedPowers[exponent] != null)
                 return precomputedPowers[exponent];
-
-            if (exponent < 0)
-                throw new IllegalArgumentException();
 
             E result = domain.getOne();
             E k2p = value;

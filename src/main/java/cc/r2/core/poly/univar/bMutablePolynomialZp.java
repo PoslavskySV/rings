@@ -258,6 +258,16 @@ final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePoly
     }
 
     /**
+     * Divide by specified value
+     *
+     * @param val the value
+     * @return {@code this / val}
+     */
+    public bMutablePolynomialZp divide(BigInteger val) {
+        return multiply(val.modInverse(modulus));
+    }
+
+    /**
      * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is
      * {@code monic(modulus).multiply(factor)} ).
      *
