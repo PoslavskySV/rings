@@ -36,9 +36,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class ArraysUtilTest {
 
-    public ArraysUtilTest() {
-    }
-
     @Test
     public void testReverse1() throws Exception {
         long[] arr = {1, 2, 3};
@@ -132,6 +129,15 @@ public class ArraysUtilTest {
             for (int i = 1; i < array.length; ++i)
                 assertTrue(array[i - 1] >= array[i]);
         }
+    }
+
+
+    @Test
+    public void testInsert() throws Exception {
+        int[] arr = {0, 1, 2, 3};
+        assertArrayEquals(new int[]{99, 0, 1, 2, 3}, ArraysUtil.insert(arr, 0, 99));
+        assertArrayEquals(new int[]{0, 99, 1, 2, 3}, ArraysUtil.insert(arr, 1, 99));
+        assertArrayEquals(new int[]{0, 1, 2, 3, 99}, ArraysUtil.insert(arr, 4, 99));
     }
 
 //    @Test

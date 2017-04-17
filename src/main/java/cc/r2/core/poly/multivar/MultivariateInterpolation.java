@@ -52,42 +52,10 @@ public final class MultivariateInterpolation {
         return poly;
     }
 
-//    /**
-//     * Constructs an interpolating polynomial which values at {@code points[i]} are exactly {@code values[i]}. This
-//     * method uses Newton's mixed radix iterations.
-//     *
-//     * @param points evaluation points
-//     * @param values corresponding polynomial values
-//     * @return the interpolating polynomial
-//     */
-//    @SuppressWarnings("unchecked")
-//    public static <E> Interpolation<E> interpolation(int variable, E[] points, MultivariatePolynomial<E>[] values) {
-//        checkInput(points, values);
-//        int length = points.length;
-//
-//        // Newton's representation
-//        MultivariatePolynomial<E>[] mixedRadix = new MultivariatePolynomial[length];
-//        mixedRadix[0] = values[0].clone();
-//        MultivariatePolynomial<E> lins = values[0].createOne();
-//        MultivariatePolynomial<E> poly = mixedRadix[0].clone();
-//
-//        Domain<E> domain = poly.domain;
-//        for (int k = 1; k < length; ++k) {
-//            E reciprocal = domain.subtract(points[k], points[0]);
-//            MultivariatePolynomial<E> accumulator = mixedRadix[0];
-//            for (int i = 1; i < k; ++i) {
-//                accumulator = accumulator.add(mixedRadix[i].clone().multiply(reciprocal));
-//                reciprocal = domain.multiply(reciprocal, domain.subtract(points[k], points[i]));
-//            }
-//            mixedRadix[k] = values[k].clone().subtract(accumulator).multiply(domain.reciprocal(reciprocal));
-//
-//            lins = lins.multiply(lins.createLinear(variable, domain.negate(points[k - 1]), domain.getOne()));
-//            poly = poly.add(lins.clone().multiply(mixedRadix[k]));
-//        }
-//        return new Interpolation<>(variable, points, values, mixedRadix, lins, poly);
-//    }
-
-    static final class Interpolation<E> {
+    /**
+     * Updatable Newton interpolation
+     */
+    public static final class Interpolation<E> {
         final int variable;
         final List<E> points;
         final List<MultivariatePolynomial<E>> values;
@@ -124,32 +92,5 @@ public final class MultivariateInterpolation {
             points.add(point);
             values.add(value);
         }
-    }
-
-    public static <E> MultivariatePolynomial<E> interpolateNewton(int variable, E[] points,
-                                                                  MultivariatePolynomial<E>[] values,
-                                                                  MultivariatePolynomial<E> result) {
-        checkInput(points, values);
-        int length = points.length;
-
-        // Newton's representation
-        MultivariatePolynomial<E>[] mixedRadix = new MultivariatePolynomial[length];
-        mixedRadix[0] = values[0].clone();
-        MultivariatePolynomial<E> lins = values[0].createOne();
-
-        Domain<E> domain = result.domain;
-        for (int k = 1; k < length; ++k) {
-            E reciprocal = domain.subtract(points[k], points[0]);
-            MultivariatePolynomial<E> accumulator = mixedRadix[0];
-            for (int i = 1; i < k; ++i) {
-                accumulator = accumulator.add(mixedRadix[i].clone().multiply(reciprocal));
-                reciprocal = domain.multiply(reciprocal, domain.subtract(points[k], points[i]));
-            }
-            mixedRadix[k] = values[k].clone().subtract(accumulator).multiply(domain.reciprocal(reciprocal));
-
-            lins = lins.multiply(lins.createLinear(variable, domain.negate(points[k - 1]), domain.getOne()));
-            result = result.add(lins.clone().multiply(mixedRadix[k]));
-        }
-        return result;
     }
 }

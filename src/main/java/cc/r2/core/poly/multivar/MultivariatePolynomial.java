@@ -220,21 +220,57 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return new MultivariatePolynomial<>(domain, poly.ordering, poly.nVariables - 1, map);
     }
 
-    public static MultivariatePolynomial<BigInteger> fromZp(MultivariatePolynomial<bMutablePolynomialZp> poly, Domain<BigInteger> domain) {
+    public static MultivariatePolynomial<BigInteger> fromZp(MultivariatePolynomial<bMutablePolynomialZp> poly, Domain<BigInteger> domain, int variable) {
         int nVariables = poly.nVariables + 1;
         MultivariatePolynomial<BigInteger> result = zero(domain, poly.ordering, nVariables);
         for (Entry<DegreeVector, bMutablePolynomialZp> entry : poly.data.entrySet()) {
             bMutablePolynomialZp upoly = entry.getValue();
-            int[] dv = Arrays.copyOf(entry.getKey().exponents, nVariables);
+            int[] dv = ArraysUtil.insert(entry.getKey().exponents, variable, 0);
             for (int i = 0; i <= upoly.degree(); ++i) {
                 if (upoly.get(i).isZero())
                     continue;
                 int[] cdv = dv.clone();
-                cdv[nVariables - 1] = i;
+                cdv[variable] = i;
                 result.add(new EntryImpl<>(new DegreeVector(cdv), upoly.get(i)));
             }
         }
         return result;
+    }
+
+
+    /**
+     * Rename variables from [0,1,...N] to [newVariables[0], newVariables[1], ..., newVariables[N]]
+     *
+     * @param poly         the polynomial
+     * @param newVariables the new variables
+     * @return renamed polynomial
+     */
+    public static <E> MultivariatePolynomial<E> renameVariables(MultivariatePolynomial<E> poly, int[] newVariables) {
+        return renameVariables(poly, newVariables, poly.ordering);
+    }
+
+    /**
+     * Rename variables from [0,1,...N] to [newVariables[0], newVariables[1], ..., newVariables[N]]
+     *
+     * @param poly         the polynomial
+     * @param newVariables the new variables
+     * @param newOrdering  the new ordering
+     * @return renamed polynomial
+     */
+    public static <E> MultivariatePolynomial<E> renameVariables(MultivariatePolynomial<E> poly, int[] newVariables, Comparator<DegreeVector> newOrdering) {
+        TreeMap<DegreeVector, E> data = new TreeMap<>(newOrdering);
+        for (Entry<DegreeVector, E> e : poly.data.entrySet()) {
+            DegreeVector dv = e.getKey();
+            data.put(new DegreeVector(map(dv.exponents, newVariables), dv.totalDegree), e.getValue());
+        }
+        return new MultivariatePolynomial<>(poly.domain, newOrdering, poly.nVariables, data);
+    }
+
+    private static int[] map(int[] degrees, int[] mapping) {
+        int[] newDegrees = new int[degrees.length];
+        for (int i = 0; i < degrees.length; i++)
+            newDegrees[mapping[i]] = degrees[i];
+        return newDegrees;
     }
 
     /** check whether number of variables is the same */

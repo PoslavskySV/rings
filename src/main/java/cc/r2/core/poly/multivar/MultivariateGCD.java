@@ -120,8 +120,11 @@ public final class MultivariateGCD {
             if (interpolation.points.size() <= 1)
                 continue;
 
-            MultivariatePolynomial<BigInteger> interpolated = fromZp(convertZp(interpolation.poly, variable).primitivePart(), a.domain);
+            MultivariatePolynomial<BigInteger> interpolated = fromZp(convertZp(interpolation.poly, variable).primitivePart(), a.domain, variable);
 
+//            System.out.println(interpolation.poly);
+//            System.out.println(fromZp(convertZp(interpolation.poly, variable).primitivePart(), a.domain, variable));
+//            System.out.println("-===");
             qd = divideAndRemainder(a, interpolated);
             if (qd == null || !qd[1].isZero())
                 continue;
