@@ -14,7 +14,7 @@ import static cc.r2.core.number.BigInteger.ZERO;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolynomialZ> implements IMutablePolynomialZ<bMutablePolynomialZ> {
+public final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolynomialZ> implements IMutablePolynomialZ<bMutablePolynomialZ> {
 
     static BigInteger safeAdd(BigInteger a, BigInteger b) {return a.add(b);}
 
@@ -43,7 +43,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param data coefficients
      * @return Z[x] polynomial
      */
-    static bMutablePolynomialZ create(BigInteger... data) {
+    public static bMutablePolynomialZ create(BigInteger... data) {
         return new bMutablePolynomialZ(data);
     }
 
@@ -53,7 +53,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param data coefficients
      * @return Z[x] polynomial
      */
-    static bMutablePolynomialZ create(long... data) {
+    public static bMutablePolynomialZ create(long... data) {
         return new bMutablePolynomialZ(Arrays.stream(data).mapToObj(BigInteger::valueOf).toArray(BigInteger[]::new));
     }
 
@@ -64,7 +64,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param exponent    monomial exponent
      * @return {@code coefficient * x^exponent}
      */
-    static bMutablePolynomialZ monomial(BigInteger coefficient, int exponent) {
+    public static bMutablePolynomialZ monomial(BigInteger coefficient, int exponent) {
         BigInteger[] data = new BigInteger[exponent + 1];
         Arrays.fill(data, ZERO);
         data[exponent] = coefficient;
@@ -114,11 +114,11 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param copy    whether to copy the internal data or reduce inplace
      * @return Zp[x] polynomial from this
      */
-    bMutablePolynomialZp modulus(BigInteger modulus, boolean copy) {
+    public bMutablePolynomialZp modulus(BigInteger modulus, boolean copy) {
         return bMutablePolynomialZp.create(modulus, copy ? data.clone() : data);
     }
 
-    bMutablePolynomialZp modulusUnsafe(BigInteger modulus) {
+    public bMutablePolynomialZp modulusUnsafe(BigInteger modulus) {
         return bMutablePolynomialZp.createUnsafe(modulus, data);
     }
 
@@ -128,7 +128,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param modulus the modulus
      * @return Zp[x] polynomial from this
      */
-    bMutablePolynomialZp modulus(BigInteger modulus) {
+    public bMutablePolynomialZp modulus(BigInteger modulus) {
         return modulus(modulus, true);
     }
 
@@ -138,7 +138,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param modulus the modulus
      * @return Zp[x] polynomial from this
      */
-    bMutablePolynomialZp modulus(long modulus) {
+    public bMutablePolynomialZp modulus(long modulus) {
         return modulus(BigInteger.valueOf(modulus));
     }
 
@@ -149,7 +149,7 @@ final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutablePolyn
      * @param factor the factor
      * @return {@code this} divided by the {@code factor} or {@code null}
      */
-    bMutablePolynomialZ divideOrNull(BigInteger factor) {
+    public bMutablePolynomialZ divideOrNull(BigInteger factor) {
         if (factor.isZero())
             throw new ArithmeticException("Divide by zero");
         if (factor.isOne())

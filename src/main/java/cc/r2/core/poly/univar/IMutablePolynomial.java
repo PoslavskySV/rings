@@ -6,7 +6,7 @@ import cc.r2.core.poly.IGeneralPolynomial;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-interface IMutablePolynomial<T extends IMutablePolynomial> extends IGeneralPolynomial<T>, Comparable<T> {
+public interface IMutablePolynomial<T extends IMutablePolynomial> extends IGeneralPolynomial<T>, Comparable<T> {
 
     /**
      * Returns {@code true} if this polynomial is monic

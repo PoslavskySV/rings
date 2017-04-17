@@ -14,7 +14,7 @@ import static cc.r2.core.number.BigInteger.ZERO;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePolynomialZp>
+public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePolynomialZp>
         implements IMutablePolynomialZp<bMutablePolynomialZp> {
     /** the modulus */
     final BigInteger modulus;
@@ -43,12 +43,12 @@ final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePoly
      * @param data    coefficients
      * @return the polynomial
      */
-    static bMutablePolynomialZp create(BigInteger modulus, BigInteger[] data) {
+    public static bMutablePolynomialZp create(BigInteger modulus, BigInteger[] data) {
         reduce(data, modulus);
         return new bMutablePolynomialZp(modulus, data);
     }
 
-    static bMutablePolynomialZp createUnsafe(BigInteger modulus, BigInteger[] data) {
+    public static bMutablePolynomialZp createUnsafe(BigInteger modulus, BigInteger[] data) {
         return new bMutablePolynomialZp(modulus, data);
     }
 
@@ -70,8 +70,9 @@ final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePoly
      * @param exponent    monomial exponent
      * @return {@code coefficient * x^exponent}
      */
-    static bMutablePolynomialZp createMonomial(BigInteger modulus, BigInteger coefficient, int exponent) {
+    public static bMutablePolynomialZp monomial(BigInteger modulus, BigInteger coefficient, int exponent) {
         BigInteger[] data = new BigInteger[exponent + 1];
+        Arrays.fill(data, BigInteger.ZERO);
         data[exponent] = reduce(coefficient, modulus);
         return new bMutablePolynomialZp(modulus, data);
     }
@@ -83,7 +84,7 @@ final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePoly
      * @param value   the value
      * @return constant polynomial
      */
-    static bMutablePolynomialZp constant(BigInteger modulus, BigInteger value) {
+    public static bMutablePolynomialZp constant(BigInteger modulus, BigInteger value) {
         return new bMutablePolynomialZp(modulus, new BigInteger[]{reduce(value, modulus)});
     }
 
@@ -93,7 +94,7 @@ final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePoly
      * @param modulus the modulus
      * @return polynomial 1
      */
-    static bMutablePolynomialZp one(BigInteger modulus) {
+    public static bMutablePolynomialZp one(BigInteger modulus) {
         return constant(modulus, ONE);
     }
 
@@ -103,7 +104,7 @@ final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMutablePoly
      * @param modulus the modulus
      * @return polynomial 0
      */
-    static bMutablePolynomialZp zero(BigInteger modulus) {
+    public static bMutablePolynomialZp zero(BigInteger modulus) {
         return constant(modulus, ZERO);
     }
 

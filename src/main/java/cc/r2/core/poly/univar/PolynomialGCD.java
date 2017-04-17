@@ -10,6 +10,7 @@ import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
@@ -660,5 +661,31 @@ public final class PolynomialGCD {
             return (T) ModularGCD((bMutablePolynomialZ) a, (bMutablePolynomialZ) b);
         else
             return Euclid(a, b).gcd();
+    }
+
+    /**
+     * Returns GCD of a list of polynomials.
+     *
+     * @param polynomials a set of polynomials
+     * @return GCD of polynomials
+     */
+    public static <T extends IMutablePolynomial<T>> T PolynomialGCD(T... polynomials) {
+        T gcd = polynomials[0];
+        for (int i = 1; i < polynomials.length; i++)
+            gcd = PolynomialGCD(gcd, polynomials[i]);
+        return gcd;
+    }
+
+    /**
+     * Returns GCD of a list of polynomials.
+     *
+     * @param polynomials a set of polynomials
+     * @return GCD of polynomials
+     */
+    public static <T extends IMutablePolynomial<T>> T PolynomialGCD(Collection<T> polynomials) {
+        T gcd = null;
+        for (T poly : polynomials)
+            gcd = gcd == null ? poly : PolynomialGCD(gcd, poly);
+        return gcd;
     }
 }
