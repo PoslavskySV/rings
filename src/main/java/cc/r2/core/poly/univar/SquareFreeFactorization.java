@@ -267,7 +267,7 @@ public final class SquareFreeFactorization {
         else {
             bMutablePolynomialZp expFree = poly.getRange(exponent, poly.degree + 1);
             factorization = SquareFreeFactorizationMusser0(expFree);
-            factorization.addFactor(bMutablePolynomialZp.createMonomial(poly.modulus, BigInteger.ONE, exponent), 1);
+            factorization.addFactor(bMutablePolynomialZp.monomial(poly.modulus, BigInteger.ONE, exponent), 1);
         }
 
         return factorization.setNumericFactor(lc);

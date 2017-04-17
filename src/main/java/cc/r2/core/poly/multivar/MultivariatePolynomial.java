@@ -3,11 +3,18 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.generics.ModularDomain;
+import cc.r2.core.poly.generics.UnivariatePolynomialDomain;
+import cc.r2.core.poly.univar.bMutablePolynomialZ;
+import cc.r2.core.poly.univar.bMutablePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
 
 /**
  * @author Stanislav Poslavsky
@@ -17,7 +24,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     public final Domain<E> domain;
     public final Comparator<DegreeVector> ordering;
     public final int nVariables;
-    private final TreeMap<DegreeVector, E> data;
+    final TreeMap<DegreeVector, E> data;
 
     private MultivariatePolynomial(Domain<E> domain, Comparator<DegreeVector> ordering, int nVariables, TreeMap<DegreeVector, E> data) {
         this.nVariables = nVariables;
@@ -101,6 +108,133 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
         return Parser.parse(string, domain, ordering, variables);
+    }
+
+    /**
+     * Converts multivariate polynomial to univariate if it is effectively univariate
+     *
+     * @param poly the multivariate polynomial
+     * @return the univariate polynomial
+     * @throws IllegalArgumentException if {@code poly} is not actually a univariate polynomial
+     */
+    public static bMutablePolynomialZ asUnivariateZ(MultivariatePolynomial<BigInteger> poly) {
+        return bMutablePolynomialZ.create(asUnivariate(poly));
+    }
+
+    /**
+     * Converts multivariate polynomial to univariate if it is effectively univariate
+     *
+     * @param poly the multivariate polynomial
+     * @return the univariate polynomial
+     * @throws IllegalArgumentException if {@code poly} is not actually a univariate polynomial
+     */
+    public static bMutablePolynomialZp asUnivariateZp(MultivariatePolynomial<BigInteger> poly) {
+        if (!(poly.domain instanceof ModularDomain))
+            throw new IllegalArgumentException("multivariate poly is not Zp[x]");
+        ModularDomain domain = (ModularDomain) poly.domain;
+        BigInteger[] data = asUnivariate(poly);
+        return bMutablePolynomialZp.createUnsafe(domain.modulus, data);
+    }
+
+    private static BigInteger[] asUnivariate(MultivariatePolynomial<BigInteger> poly) {
+        int[] degrees = poly.degrees();
+        int theVar = -1;
+        for (int i = 0; i < degrees.length; i++) {
+            if (degrees[i] != 0) {
+                if (theVar != -1)
+                    throw new IllegalArgumentException("not a univariate polynomial: " + poly);
+                theVar = i;
+            }
+        }
+
+        BigInteger[] data = new BigInteger[degrees[theVar] + 1];
+        Arrays.fill(data, BigInteger.ZERO);
+        for (Entry<DegreeVector, BigInteger> e : poly.data.entrySet()) {
+            assert e.getValue() != null;
+            data[e.getKey().exponents[theVar]] = e.getValue();
+        }
+        return data;
+    }
+
+    /**
+     * Converts univariate polynomial to multivariate over integers domain.
+     *
+     * @param poly       univariate polynomial
+     * @param nVariables number of variables in the result
+     * @param variable   variable that will be used as a primary variable
+     * @param ordering   ordering
+     * @return multivariate polynomial
+     */
+    public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZ poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
+        return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, IntegersDomain, ordering);
+    }
+
+    /**
+     * Converts univariate polynomial to multivariate over Zp domain.
+     *
+     * @param poly       univariate polynomial
+     * @param nVariables number of variables in the result
+     * @param variable   variable that will be used as a primary variable
+     * @param ordering   ordering
+     * @return multivariate polynomial
+     */
+    public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZp poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
+        return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, new ModularDomain(poly.modulusAsBigInt()), ordering);
+    }
+
+    private static MultivariatePolynomial<BigInteger> asMultivariate(BigInteger[] data, int degree, int nVariables, int variable, Domain<BigInteger> domain, Comparator<DegreeVector> ordering) {
+        TreeMap<DegreeVector, BigInteger> map = new TreeMap<>(ordering);
+        for (int i = 0; i <= degree; i++) {
+            if (domain.isZero(data[i]))
+                continue;
+            int[] degreeVector = new int[nVariables];
+            degreeVector[variable] = i;
+
+            map.put(new DegreeVector(degreeVector, i), data[i]);
+        }
+        return new MultivariatePolynomial<>(domain, ordering, nVariables, map);
+    }
+
+    public static MultivariatePolynomial<bMutablePolynomialZ> convertZ(MultivariatePolynomial<BigInteger> poly, int variable) {
+        TreeMap<DegreeVector, bMutablePolynomialZ> map = new TreeMap<>(poly.ordering);
+        UnivariatePolynomialDomain<bMutablePolynomialZ> domain = new UnivariatePolynomialDomain<>(bMutablePolynomialZ.zero());
+        for (Entry<DegreeVector, BigInteger> e : poly.data.entrySet()) {
+            DegreeVector oldDV = e.getKey();
+            DegreeVector newDV = oldDV.without(variable);
+            add(map, newDV, bMutablePolynomialZ.monomial(e.getValue(), oldDV.exponents[variable]), domain);
+        }
+        return new MultivariatePolynomial<>(domain, poly.ordering, poly.nVariables - 1, map);
+    }
+
+    public static MultivariatePolynomial<bMutablePolynomialZp> convertZp(MultivariatePolynomial<BigInteger> poly, int variable) {
+        if (!(poly.domain instanceof ModularDomain))
+            throw new IllegalArgumentException("not a Zp[x] poly");
+        BigInteger modulus = ((ModularDomain) poly.domain).modulus;
+        TreeMap<DegreeVector, bMutablePolynomialZp> map = new TreeMap<>(poly.ordering);
+        UnivariatePolynomialDomain<bMutablePolynomialZp> domain = new UnivariatePolynomialDomain<>(bMutablePolynomialZp.zero(modulus));
+        for (Entry<DegreeVector, BigInteger> e : poly.data.entrySet()) {
+            DegreeVector oldDV = e.getKey();
+            DegreeVector newDV = oldDV.without(variable);
+            add(map, newDV, bMutablePolynomialZp.monomial(modulus, e.getValue(), oldDV.exponents[variable]), domain);
+        }
+        return new MultivariatePolynomial<>(domain, poly.ordering, poly.nVariables - 1, map);
+    }
+
+    public static MultivariatePolynomial<BigInteger> fromZp(MultivariatePolynomial<bMutablePolynomialZp> poly, Domain<BigInteger> domain) {
+        int nVariables = poly.nVariables + 1;
+        MultivariatePolynomial<BigInteger> result = zero(domain, poly.ordering, nVariables);
+        for (Entry<DegreeVector, bMutablePolynomialZp> entry : poly.data.entrySet()) {
+            bMutablePolynomialZp upoly = entry.getValue();
+            int[] dv = Arrays.copyOf(entry.getKey().exponents, nVariables);
+            for (int i = 0; i <= upoly.degree(); ++i) {
+                if (upoly.get(i).isZero())
+                    continue;
+                int[] cdv = dv.clone();
+                cdv[nVariables - 1] = i;
+                result.add(new EntryImpl<>(new DegreeVector(cdv), upoly.get(i)));
+            }
+        }
+        return result;
     }
 
     /** check whether number of variables is the same */
@@ -222,6 +356,25 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     @Override
     public boolean isMonomial() {
         return size() <= 1;
+    }
+
+    /**
+     * Returns whether this poly is effectively univariate
+     *
+     * @return whether this poly is effectively univariate
+     */
+    public boolean isEffectiveUnivariate() {
+        int[] degrees = degrees();
+        boolean b = false;
+        for (int i = 0; i < nVariables; i++) {
+            if (degrees[i] != 0) {
+                if (b)
+                    return false;
+                else
+                    b = true;
+            }
+        }
+        return true;
     }
 
     /**
@@ -659,6 +812,15 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return result;
     }
 
+    private static final Pattern nonTrivialCoefficientString = Pattern.compile("[\\+\\-\\*]");
+
+    private static <E> String coeffToString(E coeff) {
+        String cfs = coeff.toString();
+        if (nonTrivialCoefficientString.matcher(cfs).find())
+            return "(" + cfs + ")";
+        else return cfs;
+    }
+
     public String toString(String... vars) {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
@@ -670,7 +832,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             String monomialString = monomial.toString(vars);
             if (first) {
                 if (!domain.isOne(coeff) || monomialString.isEmpty()) {
-                    sb.append(coeff);
+                    sb.append(coeffToString(coeff));
                     if (!monomialString.isEmpty())
                         sb.append("*");
                 }
@@ -682,7 +844,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
                 if (domain.isMinusOne(coeff))
                     sb.append("-");
                 else if (!domain.isOne(coeff) || monomialString.isEmpty()) {
-                    sb.append(coeff);
+                    sb.append(coeffToString(coeff));
                     if (!monomialString.isEmpty())
                         sb.append("*");
                 }

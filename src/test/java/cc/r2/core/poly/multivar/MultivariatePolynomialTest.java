@@ -2,14 +2,14 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.generics.ModularDomain;
-import cc.r2.core.poly.multivar.MultivariatePolynomial.DegreeVector;
+import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
+import cc.r2.core.poly.univar.bMutablePolynomialZ;
 import cc.r2.core.test.AbstractTest;
 import org.junit.Test;
 
 import static cc.r2.core.number.BigInteger.*;
 import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
-import static cc.r2.core.poly.multivar.MultivariatePolynomial.LEX;
-import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
+import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -155,5 +155,25 @@ public class MultivariatePolynomialTest extends AbstractTest {
 
         ModularDomain pDomain = new ModularDomain(17);
         assertEquals(parse("1 + a^2 + a^3", pDomain, LEX, vars), poly.setDomain(pDomain).evaluate(1, 1));
+    }
+
+    @Test
+    public void testUnivar1() throws Exception {
+        String[] vars = {"a", "b"};
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new ModularDomain(17), LEX, vars);
+        poly = poly.evaluate(0, 1);
+        assertEquals(bMutablePolynomialZ.create(9, 0, 11), asUnivariateZ(poly));
+        assertEquals(bMutablePolynomialZ.create(9, 0, 11).modulus(17), asUnivariateZp(poly));
+
+        assertEquals(poly.setDomain(IntegersDomain), asMultivariate(bMutablePolynomialZ.create(9, 0, 11), 2, 1, poly.ordering));
+        assertEquals(poly, asMultivariate(bMutablePolynomialZ.create(9, 0, 11).modulus(17), 2, 1, poly.ordering));
+    }
+
+    @Test
+    public void testConversion() throws Exception {
+        String[] vars = {"a", "b"};
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new ModularDomain(17), LEX, vars);
+        assertEquals(poly, fromZp(convertZp(poly, 1), poly.domain));
+        assertEquals(poly, fromZp(convertZp(poly, 1), poly.domain));
     }
 }

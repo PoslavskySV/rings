@@ -25,6 +25,11 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
     public final int degree() {return degree;}
 
     /**
+     * Returns i-th element of this poly
+     */
+    public final BigInteger get(int i) { return data[i];}
+
+    /**
      * Ensures that the capacity of internal storage is enough for storing polynomial of the {@code desiredDegree}.
      * The degree of {@code this} is set to {@code desiredDegree} if the latter is greater than the former.
      *
@@ -439,6 +444,10 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
 
     private static String toStringForCopy(BigInteger b) {
         return "new BigInteger(\"" + b + "\")";
+    }
+
+    public BigInteger[] getDataReferenceUnsafe() {
+        return data;
     }
 
     @Override
