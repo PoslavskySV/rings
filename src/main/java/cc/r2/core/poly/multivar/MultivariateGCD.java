@@ -10,6 +10,7 @@ import org.apache.commons.math3.random.Well1024a;
 import java.util.HashSet;
 
 import static cc.r2.core.poly.multivar.DivisionWithRemainderMultivariate.divideAndRemainder;
+import static cc.r2.core.poly.multivar.DivisionWithRemainderMultivariate.dividesQ;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static cc.r2.core.poly.univar.PolynomialGCD.PolynomialGCD;
 
@@ -74,14 +75,13 @@ public final class MultivariateGCD {
                 c = PolynomialGCD(aCont, bCont),
                 g = PolynomialGCD(aConv.lc(), bConv.lc());
 
-
         int n = Math.min(a.degrees()[variable - 1], b.degrees()[variable - 1]);
 
         Interpolation<BigInteger> interpolation = null;
         HashSet<BigInteger> seen = new HashSet<>();
         while (true) {
             if (seen.size() == modulus)
-                throw new RuntimeException();
+                throw new RuntimeException("too small field");
             BigInteger val = BigInteger.valueOf(rndd.nextLong(0, modulus - 1));
             if (seen.contains(val))
                 continue;
@@ -105,39 +105,26 @@ public final class MultivariateGCD {
             if (m < n) {
                 interpolation = new Interpolation<>(variable, val, cVal);
                 n = m;
-//                continue;
             } else if (m == n) {
                 if (interpolation == null)
                     interpolation = new Interpolation<>(variable, val, cVal);
                 else
                     interpolation.update(val, cVal);
             } else {
-                int asi = 0;
+                int i = 0;
                 continue;
             }
 
-
-            if (interpolation.points.size() <= 1)
+            if (interpolation.getPoints().size() <= 1)
                 continue;
 
-            MultivariatePolynomial<BigInteger> interpolated = fromZp(convertZp(interpolation.poly, variable).primitivePart(), a.domain, variable);
-
-//            System.out.println(interpolation.poly);
-//            System.out.println(fromZp(convertZp(interpolation.poly, variable).primitivePart(), a.domain, variable));
-//            System.out.println("-===");
-            qd = divideAndRemainder(a, interpolated);
-            if (qd == null || !qd[1].isZero())
-                continue;
-            qd = divideAndRemainder(b, interpolated);
-            if (qd == null || !qd[1].isZero())
+            MultivariatePolynomial<BigInteger> interpolated = fromZp(
+                    convertZp(interpolation.getInterpolatingPolynomial(), variable).primitivePart(),
+                    a.domain, variable);
+            if (!dividesQ(a, interpolated) || !dividesQ(b, interpolated))
                 continue;
 
-            return interpolation.poly;
+            return interpolated;
         }
-    }
-
-
-    private static bMutablePolynomialZp makePrimitive(MultivariatePolynomial<BigInteger> poly, int variable) {
-        return null;
     }
 }

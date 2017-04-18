@@ -51,6 +51,25 @@ public final class DivisionWithRemainderMultivariate {
         return quotients;
     }
 
+    /**
+     * Tests whether {@code divisor} is a divisor of {@code poly}
+     *
+     * @param poly    the polynomial
+     * @param divisor the divisor to check
+     * @return whether {@code divisor} is a divisor of {@code poly}
+     */
+    @SuppressWarnings("unchecked")
+    public static <E> boolean dividesQ(MultivariatePolynomial<E> poly, MultivariatePolynomial<E> divisor) {
+        poly = poly.clone();
+        while (!poly.isZero()) {
+            Entry<DegreeVector, E> ltDiv = divide(poly.domain, poly.lt(), divisor.lt());
+            if (ltDiv == null)
+                return false;
+            poly = poly.subtract(divisor.clone().multiply(ltDiv));
+        }
+        return true;
+    }
+
     /** Monomial division */
     private static <E> Entry<DegreeVector, E> divide(Domain<E> domain,
                                                      Entry<DegreeVector, E> ltDividend,
