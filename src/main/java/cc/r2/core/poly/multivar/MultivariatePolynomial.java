@@ -50,8 +50,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         TreeMap<DegreeVector, E> map = new TreeMap<>(ordering);
         for (int i = 0; i < factors.length; i++) {
             E f = factors[i];
-            if (!domain.isZero(f))
-                add(map, vectors[i], f, domain);
+            add(map, vectors[i], f, domain);
         }
         return new MultivariatePolynomial<>(domain, ordering, vectors[0].exponents.length, map);
     }
@@ -554,6 +553,14 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     /**
+     * Evaluates this polynomial at specified points
+     */
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E>[] evaluate(int variable, E... values) {
+        return Arrays.stream(values).map(p -> evaluate(variable, p)).toArray(MultivariatePolynomial[]::new);
+    }
+
+    /**
      * Substitutes {@code value} for {@code variable}. NOTE: the resulting polynomial will
      *
      * @param variable the variable
@@ -646,6 +653,8 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         if (data == oth.data)
             return multiply(2);
         ensureCompatible(oth);
+        if(oth.isZero())
+            return this;
         oth.data.entrySet().forEach(othElement -> add(data, othElement.getKey(), othElement.getValue()));
         release();
         return this;
@@ -669,6 +678,8 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      */
     MultivariatePolynomial<E> add(Entry<DegreeVector, E> term) {
         ensureCompatible(term);
+        if (domain.isZero(term.getValue()))
+            return this;
         add(data, term.getKey(), term.getValue());
         release();
         return this;
@@ -682,6 +693,8 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @return {@code this + oth}
      */
     public MultivariatePolynomial<E> add(E oth) {
+        if (domain.isZero(oth))
+            return this;
         add(data, zeroDegreeVector(nVariables), oth);
         release();
         return this;
@@ -738,6 +751,8 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     private static <E> void add(TreeMap<DegreeVector, E> map, DegreeVector deg, E val, Domain<E> domain) {
+        if (domain.isZero(val))
+            return;
         map.compute(deg, (thisVector, thisValue) -> {
             if (thisValue == null)
                 return val;
@@ -852,6 +867,8 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
 
     private static <E> String coeffToString(E coeff) {
         String cfs = coeff.toString();
+        if (coeff instanceof BigInteger)
+            return cfs;
         if (nonTrivialCoefficientString.matcher(cfs).find())
             return "(" + cfs + ")";
         else return cfs;

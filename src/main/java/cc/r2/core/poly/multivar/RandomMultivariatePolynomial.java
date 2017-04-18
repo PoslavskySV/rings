@@ -24,9 +24,9 @@ public class RandomMultivariatePolynomial {
         DegreeVector[] dvs = new DegreeVector[size];
         for (int i = 0; i < size; i++) {
             dvs[i] = new DegreeVector(RandomUtil.randomIntArray(nVars, 0, nd, rnd));
-            cfx[i] = RandomUtil.randomInt(bound, rnd);
+            cfx[i] = domain.valueOf(RandomUtil.randomInt(bound, rnd));
             if (rnd.nextBoolean() && rnd.nextBoolean())
-                cfx[i] = cfx[i].negate();
+                cfx[i] = domain.negate(cfx[i]);
         }
         return MultivariatePolynomial.create(domain, ordering, dvs, cfx);
     }
