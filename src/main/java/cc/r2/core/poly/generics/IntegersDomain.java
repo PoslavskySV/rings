@@ -1,6 +1,7 @@
 package cc.r2.core.poly.generics;
 
 import cc.r2.core.number.BigInteger;
+import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  * @author Stanislav Poslavsky
@@ -10,6 +11,12 @@ public final class IntegersDomain extends AbstractIntegersDomain {
     public static final IntegersDomain IntegersDomain = new IntegersDomain();
 
     private IntegersDomain() {}
+
+    @Override
+    public boolean isField() {return false;}
+
+    @Override
+    public BigInteger size() {return null;}
 
     @Override
     public BigInteger add(BigInteger a, BigInteger b) {return a.add(b);}
@@ -36,4 +43,7 @@ public final class IntegersDomain extends AbstractIntegersDomain {
 
     @Override
     public BigInteger valueOf(long val) {return BigInteger.valueOf(val);}
+
+    @Override
+    public BigInteger randomElement(RandomGenerator rnd) {return valueOf(rnd.nextInt());}
 }

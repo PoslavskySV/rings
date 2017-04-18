@@ -340,8 +340,10 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         int[] ccDegreeVector = new int[nVariables], lcDegreeVector = new int[nVariables];
         lcDegreeVector[variable] = 1;
         TreeMap<DegreeVector, E> data = new TreeMap<>(ordering);
-        data.put(new DegreeVector(ccDegreeVector, 0), cc);
-        data.put(new DegreeVector(lcDegreeVector, 1), lc);
+        if (!domain.isZero(cc))
+            data.put(new DegreeVector(ccDegreeVector, 0), cc);
+        if (!domain.isZero(lc))
+            data.put(new DegreeVector(lcDegreeVector, 1), lc);
         return new MultivariatePolynomial<E>(domain, ordering, nVariables, data);
     }
 
@@ -422,6 +424,18 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         int max = 0;
         for (DegreeVector db : data.keySet())
             max = Math.max(max, db.totalDegree);
+        return max;
+    }
+
+    /**
+     * Returns the degree of this polynomial with respect to i-th variable
+     *
+     * @return the degree of this polynomial with respect to i-th variable
+     */
+    public int degree(int i) {
+        int max = 0;
+        for (DegreeVector db : data.keySet())
+            max = Math.max(max, db.exponents[i]);
         return max;
     }
 
@@ -534,6 +548,18 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     /**
+     * Makes this polynomial monic if possible, if not -- destroys this and returns null
+     *
+     * @return monic this or null if the domain does not support exact division by lc
+     */
+    public MultivariatePolynomial<E> monic() {
+        if (domain.isField())
+            return multiply(domain.reciprocal(lc()));
+        else
+            return divideOrNull(lc());
+    }
+
+    /**
      * Substitutes {@code value} for {@code variable}. NOTE: the resulting polynomial will
      *
      * @param variable the variable
@@ -587,7 +613,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         PrecomputedPowers<E> powers = new PrecomputedPowers<>(value, domain);
         for (Entry<DegreeVector, E> el : data.entrySet()) {
             DegreeVector dv = el.getKey();
-            newData.put(dv.without(variable), domain.multiply(el.getValue(), powers.pow(dv.exponents[variable])));
+            add(newData, dv.without(variable), domain.multiply(el.getValue(), powers.pow(dv.exponents[variable])));
         }
         return new MultivariatePolynomial<>(domain, ordering, nVariables - 1, newData);
     }
@@ -653,7 +679,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         if (data == oth.data)
             return multiply(2);
         ensureCompatible(oth);
-        if(oth.isZero())
+        if (oth.isZero())
             return this;
         oth.data.entrySet().forEach(othElement -> add(data, othElement.getKey(), othElement.getValue()));
         release();
@@ -810,8 +836,11 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             return toZero();
 
         TreeMap<DegreeVector, E> newMap = new TreeMap<>(ordering);
-        for (Entry<DegreeVector, E> thisElement : data.entrySet())
-            newMap.put(thisElement.getKey().multiply(term.getKey()), domain.multiply(thisElement.getValue(), term.getValue()));
+        for (Entry<DegreeVector, E> thisElement : data.entrySet()) {
+            E m = domain.multiply(thisElement.getValue(), term.getValue());
+            if (!domain.isZero(m))
+                newMap.put(thisElement.getKey().multiply(term.getKey()), m);
+        }
 
         return loadFrom(newMap);
     }
@@ -894,7 +923,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             } else {
                 if (domain.signum(coeff) > 0)
                     sb.append("+");
-                if (domain.isMinusOne(coeff))
+                else if (domain.isMinusOne(coeff))
                     sb.append("-");
                 else if (!domain.isOne(coeff) || monomialString.isEmpty()) {
                     sb.append(coeffToString(coeff));

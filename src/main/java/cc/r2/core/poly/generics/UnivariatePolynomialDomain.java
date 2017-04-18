@@ -1,5 +1,6 @@
 package cc.r2.core.poly.generics;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.univar.DivisionWithRemainder;
 import cc.r2.core.poly.univar.IMutablePolynomial;
 import cc.r2.core.poly.univar.PolynomialGCD;
@@ -14,6 +15,12 @@ public final class UnivariatePolynomialDomain<T extends IMutablePolynomial<T>> i
     public UnivariatePolynomialDomain(T factory) {
         this.factory = factory;
     }
+
+    @Override
+    public boolean isField() {return false;}
+
+    @Override
+    public BigInteger size() {return null;}
 
     @Override
     public T add(T a, T b) {

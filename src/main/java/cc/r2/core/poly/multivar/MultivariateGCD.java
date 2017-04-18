@@ -1,13 +1,14 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.generics.Domain;
 import cc.r2.core.poly.generics.ModularDomain;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;
-import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.commons.math3.random.Well1024a;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import static cc.r2.core.poly.multivar.DivisionWithRemainderMultivariate.divideAndRemainder;
 import static cc.r2.core.poly.multivar.DivisionWithRemainderMultivariate.dividesQ;
@@ -29,39 +30,61 @@ public final class MultivariateGCD {
     }
 
     @SuppressWarnings("unchecked")
-    static MultivariatePolynomial<BigInteger> modularZpGCD(
+    static MultivariatePolynomial<BigInteger> denseModularGCD(
             MultivariatePolynomial<BigInteger> a,
             MultivariatePolynomial<BigInteger> b) {
-        return modularZpGCD(((ModularDomain) a.domain).modulus.longValue(), a, b, new RandomDataGenerator(new Well1024a()), a.nVariables - 1);
+        BigInteger domainSize = a.domain.size();
+        if (domainSize.isInt() && Math.min(a.degree(), b.degree()) > domainSize.intValue())
+            throw new IllegalArgumentException("Ground fill is too small for modular algorithm.");
+
+        int evaluationStackLimit = domainSize.isInt() ? domainSize.intValue() : -1;
+        int[] aDegrees = a.degrees(),
+                bDegrees = b.degrees(),
+                degreeBounds = new int[a.nVariables];
+        for (int i = 0; i < a.nVariables; i++)
+            degreeBounds[i] = Math.min(aDegrees[i], bDegrees[i]);
+
+        return denseModularGCD(a, b, PrivateRandom.getRandom(), a.nVariables - 1, degreeBounds, evaluationStackLimit);
     }
 
-
     @SuppressWarnings("unchecked")
-    static MultivariatePolynomial<BigInteger> modularZpGCD(
-            long modulus,
+    private static MultivariatePolynomial<BigInteger> denseModularGCD(
             MultivariatePolynomial<BigInteger> a,
             MultivariatePolynomial<BigInteger> b,
-            RandomDataGenerator rndd,
-            int variable) {
+            RandomGenerator rnd,
+            int variable,
+            int[] degreeBounds,
+            int evaluationStackLimit) {
 
-        int nVariables = a.nVariables;
+        if (a.isZero() || b.isZero())
+            throw new IllegalArgumentException("input is zero");
+
+        MultivariatePolynomial<BigInteger> factory = a;
+        if (a.isConstant() || b.isConstant())
+            return factory.createOne();
+
+        int nVariables = factory.nVariables;
         if (variable == 0) {
-            bMutablePolynomialZp poly = PolynomialGCD(asUnivariateZp(a), asUnivariateZp(b));
-            if (poly.degree() == 0)
-                return a.createOne();
-            MultivariatePolynomial<BigInteger> res = asMultivariate(poly, nVariables, variable, a.ordering);
-            return res;
+            // univariate case
+            bMutablePolynomialZp gcd = PolynomialGCD(asUnivariateZp(a), asUnivariateZp(b));
+            if (gcd.degree() == 0)
+                return factory.createOne();
+            return asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
 
-        //content of a and b in Zp[x]
+        Domain<BigInteger> domain = a.domain;
+
+        // a and b as Zp[x_k][x_1 ... x_{k-1}]
         MultivariatePolynomial<bMutablePolynomialZp>
                 aConv = convertZp(a, variable),
                 bConv = convertZp(b, variable);
 
+        // content of a and b in Zp[x_k]
         bMutablePolynomialZp
                 aCont = PolynomialGCD(aConv.data.values()),
                 bCont = PolynomialGCD(bConv.data.values());
 
+        // normalize a and b
         MultivariatePolynomial<BigInteger>[] qd;
         qd = divideAndRemainder(a, asMultivariate(aCont, nVariables, variable, a.ordering));
         assert qd[1].isZero();
@@ -71,60 +94,79 @@ public final class MultivariateGCD {
         assert qd[1].isZero();
         b = qd[0];
 
+        // gcd of Zp[x_k] content and lc
         bMutablePolynomialZp
-                c = PolynomialGCD(aCont, bCont),
-                g = PolynomialGCD(aConv.lc(), bConv.lc());
+                contentGCD = PolynomialGCD(aCont, bCont),
+                lcGCD = PolynomialGCD(aConv.lc(), bConv.lc());
 
-        int n = Math.min(a.degrees()[variable - 1], b.degrees()[variable - 1]);
+        int prevVarExponent = degreeBounds[variable - 1];
 
         Interpolation<BigInteger> interpolation = null;
-        HashSet<BigInteger> seen = new HashSet<>();
+        MultivariatePolynomial<BigInteger> previousInterpolation;
+        Set<BigInteger> evaluationStack = new HashSet<>();
         while (true) {
-            if (seen.size() == modulus)
-                throw new RuntimeException("too small field");
-            BigInteger val = BigInteger.valueOf(rndd.nextLong(0, modulus - 1));
-            if (seen.contains(val))
+            if (evaluationStackLimit == evaluationStack.size())
+                throw new IllegalArgumentException("Ground fill is too small for modular algorithm.");
+
+            BigInteger randomPoint = domain.randomElement(rnd);
+            if (evaluationStack.contains(randomPoint))
                 continue;
-            seen.add(val);
-            BigInteger gVal = g.evaluate(val);
+
+            evaluationStack.add(randomPoint);
+
+            BigInteger gVal = lcGCD.evaluate(randomPoint);
             if (gVal.isZero())
                 continue;
 
+            // evaluate a and b at variable = randomPoint
+            // calculate gcd of the result by the recursive call
             MultivariatePolynomial<BigInteger>
-                    aVal = a.evaluate(variable, val),
-                    bVal = b.evaluate(variable, val),
-                    cVal = modularZpGCD(modulus, aVal, bVal, rndd, variable - 1);
+                    aVal = a.evaluate(variable, randomPoint),
+                    bVal = b.evaluate(variable, randomPoint);
 
-            int m = cVal.degrees()[variable - 1];
-            cVal = cVal.multiply(cVal.lc().modInverse(BigInteger.valueOf(modulus)).multiply(gVal));
+            // just in case
+            if (aVal.isZero() || bVal.isZero())
+                continue;
 
+            MultivariatePolynomial<BigInteger> cVal = denseModularGCD(aVal, bVal, rnd, variable - 1, degreeBounds, evaluationStackLimit);
+
+            int currExponent = cVal.degree(variable - 1);
+            if (currExponent > prevVarExponent)
+                //unlucky homomorphism
+                continue;
+
+            // normalize gcd
+            cVal = cVal.multiply(domain.multiply(domain.reciprocal(cVal.lc()), gVal));
             assert cVal.lc().equals(gVal);
-            if (m == 0)
-                return asMultivariate(c, nVariables, variable, a.ordering);
 
-            if (m < n) {
-                interpolation = new Interpolation<>(variable, val, cVal);
-                n = m;
-            } else if (m == n) {
-                if (interpolation == null)
-                    interpolation = new Interpolation<>(variable, val, cVal);
-                else
-                    interpolation.update(val, cVal);
-            } else {
-                int i = 0;
+            if (currExponent < prevVarExponent) {
+                //better degree bound detected => start over
+                interpolation = new Interpolation<>(variable, randomPoint, cVal);
+                degreeBounds[variable - 1] = prevVarExponent = currExponent;
+                evaluationStack.clear();
+                evaluationStack.add(randomPoint);
                 continue;
             }
 
-            if (interpolation.getPoints().size() <= 1)
+            if (interpolation == null) {
+                //first successful homomorphism
+                interpolation = new Interpolation<>(variable, randomPoint, cVal);
                 continue;
+            }
 
-            MultivariatePolynomial<BigInteger> interpolated = fromZp(
-                    convertZp(interpolation.getInterpolatingPolynomial(), variable).primitivePart(),
-                    a.domain, variable);
-            if (!dividesQ(a, interpolated) || !dividesQ(b, interpolated))
-                continue;
+            previousInterpolation = interpolation.getInterpolatingPolynomial();
+            interpolation.update(randomPoint, cVal);
 
-            return interpolated;
+            // do division test
+            if (degreeBounds[variable] == 0
+                    || (previousInterpolation != null && previousInterpolation.equals(interpolation.getInterpolatingPolynomial()))) {
+                MultivariatePolynomial<BigInteger> interpolated =
+                        fromZp(convertZp(interpolation.getInterpolatingPolynomial(), variable).primitivePart(), domain, variable);
+                if (!dividesQ(a, interpolated) || !dividesQ(b, interpolated))
+                    continue;
+
+                return interpolated.multiply(asMultivariate(contentGCD, nVariables, variable, factory.ordering));
+            }
         }
     }
 }

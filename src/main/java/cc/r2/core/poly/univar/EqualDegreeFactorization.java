@@ -16,10 +16,10 @@ final class EqualDegreeFactorization {
     private static <T extends IMutablePolynomialZp<T>> T randomMonicPoly(T factory) {
         if (factory instanceof lMutablePolynomialZp) {
             lMutablePolynomialZp fm = (lMutablePolynomialZp) factory;
-            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, GlobalRandom.getRandom());
+            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, PrivateRandom.getRandom());
         } else {
             bMutablePolynomialZp fm = (bMutablePolynomialZp) factory;
-            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, GlobalRandom.getRandom());
+            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, PrivateRandom.getRandom());
         }
     }
 

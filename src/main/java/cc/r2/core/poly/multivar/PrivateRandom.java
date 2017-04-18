@@ -1,4 +1,4 @@
-package cc.r2.core.poly.univar;
+package cc.r2.core.poly.multivar;
 
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well1024a;
@@ -7,8 +7,8 @@ import org.apache.commons.math3.random.Well1024a;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-class GlobalRandom {
-    private GlobalRandom() {}
+class PrivateRandom {
+    private PrivateRandom() {}
 
     /** thread local instance of random */
     private static final ThreadLocal<RandomGenerator> ThreadLocalRandom

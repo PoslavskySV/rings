@@ -1,6 +1,8 @@
 package cc.r2.core.poly.generics;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.util.RandomUtil;
+import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  * @author Stanislav Poslavsky
@@ -16,6 +18,12 @@ public final class ModularDomain extends AbstractIntegersDomain {
     public ModularDomain(long modulus) {
         this(BigInteger.valueOf(modulus));
     }
+
+    @Override
+    public boolean isField() {return true;}
+
+    @Override
+    public BigInteger size() {return modulus;}
 
     /**
      * Returns {@code val mod this.modulus}
@@ -50,7 +58,7 @@ public final class ModularDomain extends AbstractIntegersDomain {
     }
 
     @Override
-    public BigInteger negate(BigInteger val) {return modulus.subtract(val);}
+    public BigInteger negate(BigInteger val) {return val.isZero() ? val : modulus.subtract(val);}
 
     @Override
     public BigInteger multiply(BigInteger a, BigInteger b) {return modulus(a.multiply(b));}
@@ -70,4 +78,7 @@ public final class ModularDomain extends AbstractIntegersDomain {
 
     @Override
     public BigInteger valueOf(long val) {return valueOf(BigInteger.valueOf(val));}
+
+    @Override
+    public BigInteger randomElement(RandomGenerator rnd) {return RandomUtil.randomInt(modulus, rnd);}
 }

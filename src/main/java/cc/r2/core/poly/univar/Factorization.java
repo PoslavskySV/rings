@@ -289,7 +289,7 @@ public final class Factorization {
             UPPER_RND_MODULUS_BOUND = 1 << 30;
 
     private static int randomModulusInf() {
-        return LOWER_RND_MODULUS_BOUND + GlobalRandom.getRandom().nextInt(UPPER_RND_MODULUS_BOUND - LOWER_RND_MODULUS_BOUND);
+        return LOWER_RND_MODULUS_BOUND + PrivateRandom.getRandom().nextInt(UPPER_RND_MODULUS_BOUND - LOWER_RND_MODULUS_BOUND);
     }
 
     private static int next32BitPrime(int val) {

@@ -1,5 +1,8 @@
 package cc.r2.core.poly.generics;
 
+import cc.r2.core.number.BigInteger;
+import org.apache.commons.math3.random.RandomGenerator;
+
 import java.lang.reflect.Array;
 import java.util.Comparator;
 
@@ -10,6 +13,29 @@ import java.util.Comparator;
  * @since 1.0
  */
 public interface Domain<E> extends Comparator<E> {
+    /**
+     * Returns whether this domain is a field
+     *
+     * @return whether this domain is a field
+     */
+    boolean isField();
+
+    /**
+     * Returns number of elements in this domain or null if domain is infinite
+     *
+     * @return number of elements in this domain or null if domain is infinite
+     */
+    BigInteger size();
+
+    /**
+     * Returns whether this domain is finite
+     *
+     * @return whether this domain is finite
+     */
+    default boolean isFinite() {
+        return size() != null;
+    }
+
     /**
      * Adds two elements
      *
@@ -189,4 +215,6 @@ public interface Domain<E> extends Comparator<E> {
             k2p = multiply(k2p, k2p);
         }
     }
+
+    default E randomElement(RandomGenerator rnd) { return valueOf(rnd.nextLong());}
 }
