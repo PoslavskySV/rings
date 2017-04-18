@@ -174,7 +174,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
 
     /** negateMod operation */
     long negateMod(long val) {
-        return modulus - val;
+        return val == 0 ? val : modulus - val;
     }
 
     /** to symmetric modulus */

@@ -18,6 +18,13 @@ public class lMutablePolynomialZpTest {
         }
     }
 
+    @Test
+    public void test2() throws Exception {
+        lMutablePolynomialZp factory = lMutablePolynomialZp.zero(3);
+        Assert.assertEquals(0, factory.negateMod(0));
+        Assert.assertEquals(0, factory.negate().lc());
+    }
+
     private static boolean check(lMutablePolynomialZp poly) {
         for (int i = poly.degree; i >= 0; --i) {
             if (poly.data[i] >= poly.modulus)

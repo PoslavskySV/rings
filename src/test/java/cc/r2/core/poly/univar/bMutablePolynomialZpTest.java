@@ -57,4 +57,11 @@ public class bMutablePolynomialZpTest {
         Assert.assertEquals(b.subtract(a).mod(modulus), factory.subtractMod(b, a));
         Assert.assertEquals(a.subtract(b).mod(modulus), factory.subtractMod(a, b));
     }
+
+    @Test
+    public void test4() throws Exception {
+        bMutablePolynomialZp factory = bMutablePolynomialZp.zero(BigInteger.valueOf(3));
+        Assert.assertEquals(BigInteger.ZERO, factory.negateMod(BigInteger.ZERO));
+        Assert.assertEquals(BigInteger.ZERO, factory.negate().lc());
+    }
 }
