@@ -281,7 +281,7 @@ public final class ArraysUtil {
         return a;
     }
 
-    public static int[] getSeriesFrom0(int size) {
+    public static int[] sequence(int size) {
         int[] ret = new int[size];
         for (int i = size; i >= 0; ++i)
             ret[i] = i;

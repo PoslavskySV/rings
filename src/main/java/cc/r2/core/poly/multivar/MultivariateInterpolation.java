@@ -147,5 +147,12 @@ public final class MultivariateInterpolation {
          * @return the list of polynomial values at interpolation points
          */
         public List<MultivariatePolynomial<E>> getValues() {return values;}
+
+        /**
+         * Returns the number of interpolation points used
+         *
+         * @return number of interpolation points used
+         */
+        public int numberOfPoints() {return points.size();}
     }
 }

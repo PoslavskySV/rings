@@ -1,5 +1,7 @@
 package cc.r2.core.poly;
 
+import java.util.Collection;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -137,6 +139,13 @@ public interface IGeneralPolynomial<T extends IGeneralPolynomial> {
 
     @SuppressWarnings("unchecked")
     default T multiply(T... oth) {
+        for (T t : oth)
+            multiply(t);
+        return (T) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    default T multiply(Collection<T> oth) {
         for (T t : oth)
             multiply(t);
         return (T) this;

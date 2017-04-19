@@ -9,8 +9,8 @@ import java.util.Map.Entry;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class DivisionWithRemainderMultivariate {
-    private DivisionWithRemainderMultivariate() {}
+public final class MultivariateReduction {
+    private MultivariateReduction() {}
 
     /**
      * Performs multivariate division with remainder. The resulting array of quotients and remainder (last element of

@@ -1,15 +1,21 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.generics.Domain;
 import cc.r2.core.poly.generics.ModularDomain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import cc.r2.core.poly.univar.bMutablePolynomialZ;
-import cc.r2.core.test.AbstractTest;
+import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 import static cc.r2.core.number.BigInteger.*;
 import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
+import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -17,7 +23,7 @@ import static org.junit.Assert.assertTrue;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariatePolynomialTest extends AbstractTest {
+public class MultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testArithmetics1() throws Exception {
         MultivariatePolynomial<BigInteger> a = MultivariatePolynomial.parse("a*b + a^2 + c^3*b^2", LEX);
@@ -175,5 +181,43 @@ public class MultivariatePolynomialTest extends AbstractTest {
         MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new ModularDomain(17), LEX, vars);
         assertEquals(poly, fromZp(convertZp(poly, 1), poly.domain, 1));
         assertEquals(poly, fromZp(convertZp(poly, 1), poly.domain, 1));
+    }
+
+    @Test
+    public void testParse1() throws Exception {
+        String[] vars = {"a", "b"};
+        ModularDomain domain = new ModularDomain(17);
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
+        MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(vars), domain, LEX, vars);
+        assertEquals(poly, parsed);
+    }
+
+    @Test
+    public void testParse2() throws Exception {
+        String[] vars = {"a"};
+        ModularDomain domain = new ModularDomain(17);
+        MultivariatePolynomial<BigInteger> poly = parse("8+14*a+16*a^2+11*a^3+12*a^4+a^5", domain, LEX, vars);
+        MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(vars), domain, LEX, vars);
+        assertEquals(poly, parsed);
+    }
+
+    @Test
+    public void testParse_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        int nIterations = its(1000, 5000);
+        String[] vars = {"a", "b", "c", "d", "e", "f"};
+        Domain<BigInteger> domain;
+        for (int i = 0; i < nIterations; i++) {
+            domain = rnd.nextBoolean() ? IntegersDomain : new ModularDomain(getModulusRandom(8));
+            MultivariatePolynomial<BigInteger> poly =
+                    randomPolynomial(
+                            rndd.nextInt(1, 4),
+                            rndd.nextInt(1, 5),
+                            rndd.nextInt(1, 10),
+                            BigInteger.valueOf(1000), domain, LEX, rnd);
+            MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
+            assertEquals(poly, parsed);
+        }
     }
 }

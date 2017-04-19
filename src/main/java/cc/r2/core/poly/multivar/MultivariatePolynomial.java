@@ -236,6 +236,20 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return result;
     }
 
+    /**
+     * Renames variable {@code i} to {@code j} and {@code j} to {@code i}
+     *
+     * @param poly the polynomial
+     * @param i    the first variable
+     * @param j    the second variable
+     * @return polynomial with variable {@code i} renamed to {@code j} and {@code j} renamed to {@code i}
+     */
+    public static <E> MultivariatePolynomial<E> swapVariables(MultivariatePolynomial<E> poly, int i, int j) {
+        int[] newVariables = ArraysUtil.sequence(poly.nVariables);
+        newVariables[i] = j;
+        newVariables[j] = i;
+        return renameVariables(poly, newVariables, poly.ordering);
+    }
 
     /**
      * Rename variables from [0,1,...N] to [newVariables[0], newVariables[1], ..., newVariables[N]]
@@ -336,6 +350,14 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return createConstant(domain.getOne());
     }
 
+    /**
+     * Creates linear polynomial of the form {@code cc + lc * variable}
+     *
+     * @param variable the variable
+     * @param cc       the constant coefficient
+     * @param lc       the leadingcoefficient
+     * @return linear polynomial {@code cc + lc * variable}
+     */
     public MultivariatePolynomial<E> createLinear(int variable, E cc, E lc) {
         int[] ccDegreeVector = new int[nVariables], lcDegreeVector = new int[nVariables];
         lcDegreeVector[variable] = 1;
@@ -452,6 +474,18 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
                 if (db.exponents[i] > degrees[i])
                     degrees[i] = db.exponents[i];
         return degrees;
+    }
+
+    /**
+     * Returns the product of {@link #degrees()}
+     *
+     * @return product of {@link #degrees()}
+     */
+    public int degreeProduct() {
+        int r = 1;
+        for (int d : degrees())
+            r *= d;
+        return r;
     }
 
     /**
@@ -923,9 +957,12 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             } else {
                 if (domain.signum(coeff) > 0)
                     sb.append("+");
-                else if (domain.isMinusOne(coeff))
+                else {
                     sb.append("-");
-                else if (!domain.isOne(coeff) || monomialString.isEmpty()) {
+                    coeff = domain.negate(coeff);
+                }
+
+                if (!domain.isOne(coeff)  || monomialString.isEmpty()) {
                     sb.append(coeffToString(coeff));
                     if (!monomialString.isEmpty())
                         sb.append("*");

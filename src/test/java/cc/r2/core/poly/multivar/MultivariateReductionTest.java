@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
-import static cc.r2.core.poly.multivar.DivisionWithRemainderMultivariate.divideAndRemainder;
+import static cc.r2.core.poly.multivar.MultivariateReduction.divideAndRemainder;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static org.junit.Assert.*;
@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class DivisionWithRemainderMultivariateTest extends AbstractTest {
+public class MultivariateReductionTest extends AbstractTest {
     @Test
     public void test1() throws Exception {
         String[] vars = {"a", "b"};
@@ -123,6 +123,7 @@ public class DivisionWithRemainderMultivariateTest extends AbstractTest {
         testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, IntegersDomain, getRandom());
     }
 
+    @SuppressWarnings("unchecked")
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,
                                  int minSize, int maxDegree,
                                  Comparator<DegreeVector> ordering,
