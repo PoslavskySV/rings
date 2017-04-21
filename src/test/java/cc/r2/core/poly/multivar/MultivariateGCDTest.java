@@ -461,19 +461,29 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         }
     }
 
-    @Test
-    public void testGaussianEl() throws Exception {
-        BigInteger[][] lhs = {
-                {BigInteger.valueOf(4), BigInteger.valueOf(2), BigInteger.valueOf(3)},
-                {BigInteger.valueOf(31), BigInteger.valueOf(12), BigInteger.valueOf(13)},
-                {BigInteger.valueOf(41), BigInteger.valueOf(22), BigInteger.valueOf(123)}
-        };
-        BigInteger[] rhs = {BigInteger.valueOf(1), BigInteger.valueOf(2), BigInteger.valueOf(3)};
-
-        System.out.println(Arrays.deepToString(lhs).replace("[", "{").replace("]", "}"));
-        System.out.println(Arrays.deepToString(rhs).replace("[", "{").replace("]", "}"));
-
-        ModularDomain domain = new ModularDomain(BigInteger.INT_MAX_VALUE);
-        System.out.println(Arrays.toString(MultivariateGCD.gaussianElimination(domain, lhs, rhs)));
-    }
+//    @Test
+//    public void trash() throws Exception {
+//        String[] vars = {"a", "b", "c"};
+//        ModularDomain domain = new ModularDomain(BigPrimes.nextPrime(56423421232L));
+//        MultivariatePolynomial<BigInteger>
+//                a = parse("5*a^1123*c^2+5*a^2*b^2*c^2+5*a^2*b^4*c^3+9*a^2213*b^523*c^5+25709547*a^3*b^6*c^611+8*a^4*b*c^3+a^4*b^3*c+5*a^4*b^3*c^6+a^1500", domain, GREVLEX, vars),
+//                b = parse("3*a*b^2*c^2+2*a^2*b^421+25709540*a^4*b*c^6+7*a^5*c^1232+8*a^6*b^876*c^3+a^1500", domain, GREVLEX, vars),
+//                gcd = parse("5*b^2*c^6+2*a^412*b^4*c^5+25709543*a^5*b^2*c^512+9*a^6*c+25709540*a^6*c^3+a^1500", domain, GREVLEX, vars);
+//        RandomGenerator rnd = getRandom();
+//
+//        int variable = a.nVariables - 1;
+//        a = fromZp(convertZp(a, 0).primitivePart(), domain, 0);
+//        b = fromZp(convertZp(b, 0).primitivePart(), domain, 0);
+//        gcd = fromZp(convertZp(gcd, 0).primitivePart(), domain, 0);
+//
+//        gcd = gcd.monic();
+//        a = a.clone().monic().multiply(gcd);
+//        b = b.clone().monic().multiply(gcd);
+//
+//
+//        System.out.println(a);
+//        System.out.println(b);
+//        System.out.println(domain.modulus);
+//        System.out.println(sparseModularGCD(a, b));
+//    }
 }

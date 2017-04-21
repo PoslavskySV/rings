@@ -556,7 +556,5 @@ public final class MultivariateGCD {
             x[i] = domain.divideAndRemainder(domain.subtract(b[i], sum), A[i][i])[0];
         }
         return x;
-
     }
-
 }

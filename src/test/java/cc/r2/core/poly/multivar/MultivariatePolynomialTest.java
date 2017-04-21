@@ -69,10 +69,10 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
     public void testZero2() throws Exception {
         MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.create(
                 IntegersDomain, LEX, new DegreeVector[]{
-                        new DegreeVector(1, 2, 3),
-                        new DegreeVector(0, 1, 2),
-                        new DegreeVector(0, 1, 2),
-                        new DegreeVector(3, 43, 1)
+                        new DegreeVector(new int[]{1, 2, 3}),
+                        new DegreeVector(new int[]{0, 1, 2}),
+                        new DegreeVector(new int[]{0, 1, 2}),
+                        new DegreeVector(new int[]{3, 43, 1})
                 }, new BigInteger[]{ZERO, FIVE, FIVE, TEN}
         );
         assertEquals(2, poly.size());

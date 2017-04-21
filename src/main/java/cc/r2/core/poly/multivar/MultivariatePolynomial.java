@@ -1115,7 +1115,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * Degree vector.
      */
     public static final class DegreeVector {
-        private static final DegreeVector EMPTY = new DegreeVector();
+        private static final DegreeVector EMPTY = new DegreeVector(new int[0]);
         final int[] exponents;
         final int totalDegree;
 
@@ -1130,7 +1130,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             this.totalDegree = totalDegree;
         }
 
-        public DegreeVector(int... exponents) {
+        public DegreeVector(int[] exponents) {
             this.exponents = exponents;
             this.totalDegree = ArraysUtil.sum(exponents);
         }
