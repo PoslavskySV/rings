@@ -63,11 +63,11 @@ public final class MultivariateInterpolation {
         /** variable */
         private final int variable;
         /** list of evaluation points */
-        private final List<E> points;
+        private final List<E> points = new ArrayList<>();
         /** list of values at points */
-        private final List<MultivariatePolynomial<E>> values;
+        private final List<MultivariatePolynomial<E>> values = new ArrayList<>();
         /** mixed radix form of interpolating polynomial */
-        private final List<MultivariatePolynomial<E>> mixedRadix;
+        private final List<MultivariatePolynomial<E>> mixedRadix = new ArrayList<>();
         /** total modulus (x_i - points[0])*(x_i - points[1])*... */
         private final MultivariatePolynomial<E> lins;
         /** resulting interpolating polynomial */
@@ -84,9 +84,6 @@ public final class MultivariateInterpolation {
          */
         public Interpolation(int variable, E point, MultivariatePolynomial<E> value) {
             this.variable = variable;
-            this.points = new ArrayList<>();
-            this.values = new ArrayList<>();
-            this.mixedRadix = new ArrayList<>();
             this.lins = value.createOne();
             this.poly = value.clone();
             this.domain = poly.domain;

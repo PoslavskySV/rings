@@ -1335,6 +1335,11 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
      */
     public static final BigInteger INT_MAX_VALUE = valueOf(Integer.MAX_VALUE);
 
+    /**
+     * The BigInteger constant Int.MAX_VALUE.
+     */
+    public static final BigInteger SHORT_MAX_VALUE = valueOf(Short.MAX_VALUE);
+
     // Arithmetic Operations
 
     /**

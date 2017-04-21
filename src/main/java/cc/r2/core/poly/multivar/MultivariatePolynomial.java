@@ -294,7 +294,12 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
 
     /** check whether number of variables is the same */
     private void ensureCompatible(Entry<DegreeVector, E> oth) {
-        if (nVariables != oth.getKey().exponents.length)
+        ensureCompatible(oth.getKey());
+    }
+
+    /** check whether number of variables is the same */
+    private void ensureCompatible(DegreeVector oth) {
+        if (nVariables != oth.exponents.length)
             throw new IllegalArgumentException("Combining multivariate polynomials from different fields");
     }
 
@@ -516,6 +521,21 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     /**
+     * Sets the leading coefficient to the specified value
+     *
+     * @param val new value for the lc
+     * @return the leading coefficient to the specified value
+     */
+    public MultivariatePolynomial<E> setLC(E val) {
+        if (isZero())
+            return add(val);
+        val = domain.valueOf(val);
+        Entry<DegreeVector, E> lt = lt();
+        data.put(lt.getKey(), val);
+        return this;
+    }
+
+    /**
      * Returns the constant coefficient of this polynomial.
      *
      * @return constant coefficient of this polynomial
@@ -594,7 +614,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     /**
-     * Substitutes {@code value} for {@code variable}. NOTE: the resulting polynomial will
+     * Substitutes {@code value} for {@code variable}.
      *
      * @param variable the variable
      * @param value    the value
@@ -603,11 +623,45 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @see #eliminate(int, Object)
      */
     public MultivariatePolynomial<E> evaluate(int variable, E value) {
+        value = domain.valueOf(value);
         TreeMap<DegreeVector, E> newData = new TreeMap<>(ordering);
         PrecomputedPowers<E> powers = new PrecomputedPowers<>(value, domain);
         for (Entry<DegreeVector, E> el : data.entrySet()) {
             DegreeVector dv = el.getKey();
             add(newData, dv.setZero(variable), domain.multiply(el.getValue(), powers.pow(dv.exponents[variable])));
+        }
+        return new MultivariatePolynomial<>(domain, ordering, nVariables, newData);
+    }
+
+    /**
+     * Substitutes {@code values} for {@code variables}.
+     *
+     * @param variables the variables
+     * @param values    the values
+     * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the
+     * same {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link #eliminate(int, Object)})
+     * @see #eliminate(int, Object)
+     */
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E> evaluate(int[] variables, E[] values) {
+        return evaluate(new PrecomputedPowersHolder<>(values, domain), ones == null ? ones = ArraysUtil.arrayOf(1, nVariables) : ones, variables);
+    }
+
+    private int[] ones = null;
+
+    /** substitutes {@code values} for {@code variables} */
+    @SuppressWarnings("unchecked")
+    MultivariatePolynomial<E> evaluate(PrecomputedPowersHolder<E> powers, int[] variables, int[] raiseFactors) {
+        TreeMap<DegreeVector, E> newData = new TreeMap<>(ordering);
+        for (Entry<DegreeVector, E> el : data.entrySet()) {
+            DegreeVector dv = el.getKey(), newDv = dv;
+            E value = el.getValue();
+            for (int i = 0; i < variables.length; ++i) {
+                value = domain.multiply(value, powers.pow(i, raiseFactors[i] * dv.exponents[variables[i]]));
+                newDv = newDv.setZero(variables[i]);
+            }
+
+            add(newData, newDv, value);
         }
         return new MultivariatePolynomial<>(domain, ordering, nVariables, newData);
     }
@@ -643,6 +697,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @see #evaluate(int, Object)
      */
     public MultivariatePolynomial<E> eliminate(int variable, E value) {
+        value = domain.valueOf(value);
         TreeMap<DegreeVector, E> newData = new TreeMap<>(ordering);
         PrecomputedPowers<E> powers = new PrecomputedPowers<>(value, domain);
         for (Entry<DegreeVector, E> el : data.entrySet()) {
@@ -668,18 +723,22 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     private static final int SIZE_OF_POWERS_CACHE = 32;
 
     /** cached powers used to save some time */
-    private static final class PrecomputedPowers<E> {
+    static final class PrecomputedPowers<E> {
         private final E value;
         private final Domain<E> domain;
         private final E[] precomputedPowers;
 
-        private PrecomputedPowers(E value, Domain<E> domain) {
-            this.value = value;
-            this.domain = domain;
-            this.precomputedPowers = domain.createArray(SIZE_OF_POWERS_CACHE);
+        PrecomputedPowers(E value, Domain<E> domain) {
+            this(SIZE_OF_POWERS_CACHE, value, domain);
         }
 
-        private E pow(int exponent) {
+        PrecomputedPowers(int cacheSize, E value, Domain<E> domain) {
+            this.value = domain.valueOf(value);
+            this.domain = domain;
+            this.precomputedPowers = domain.createArray(cacheSize);
+        }
+
+        E pow(int exponent) {
             if (exponent >= SIZE_OF_POWERS_CACHE)
                 return domain.pow(value, exponent);
 
@@ -697,6 +756,41 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
                     return precomputedPowers[rExp] = result;
                 precomputedPowers[kExp *= 2] = k2p = domain.multiply(k2p, k2p);
             }
+        }
+    }
+
+    /** holds an array of precomputed powers */
+    static final class PrecomputedPowersHolder<E> {
+        private final int cacheSize;
+        private final Domain<E> domain;
+        private final PrecomputedPowers<E>[] powers;
+
+        PrecomputedPowersHolder(E[] points, Domain<E> domain) {
+            this(SIZE_OF_POWERS_CACHE, points, domain);
+        }
+
+        @SuppressWarnings("unchecked")
+        PrecomputedPowersHolder(int cacheSize, E[] points, Domain<E> domain) {
+            this.cacheSize = cacheSize;
+            this.domain = domain;
+            this.powers = new PrecomputedPowers[points.length];
+            for (int i = 0; i < points.length; i++)
+                powers[i] = points[i] == null ? null : new PrecomputedPowers<E>(cacheSize, points[i], domain);
+        }
+
+        PrecomputedPowersHolder(int cacheSize, Domain<E> domain, PrecomputedPowers<E>[] powers) {
+            this.cacheSize = cacheSize;
+            this.domain = domain;
+            this.powers = powers;
+        }
+
+        void set(int i, E point) {
+            if (powers[i] == null || !powers[i].value.equals(point))
+                powers[i] = new PrecomputedPowers<E>(cacheSize, point, domain);
+        }
+
+        E pow(int i, int exponent) {
+            return powers[i].pow(exponent);
         }
     }
 
@@ -736,15 +830,23 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @param term some term
      * @return {@code this + oth}
      */
-    MultivariatePolynomial<E> add(Entry<DegreeVector, E> term) {
-        ensureCompatible(term);
-        if (domain.isZero(term.getValue()))
-            return this;
-        add(data, term.getKey(), term.getValue());
+    MultivariatePolynomial<E> add(DegreeVector dv, E term) {
+        ensureCompatible(dv);
+        term = domain.valueOf(term);
+        add(data, dv, term);
         release();
         return this;
     }
 
+    /**
+     * Adds {@code term} to this polynomial and returns it
+     *
+     * @param term some term
+     * @return {@code this + oth}
+     */
+    MultivariatePolynomial<E> add(Entry<DegreeVector, E> term) {
+        return add(term.getKey(), term.getValue());
+    }
 
     /**
      * Adds {@code oth} to this polynomial and returns it
@@ -753,6 +855,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @return {@code this + oth}
      */
     public MultivariatePolynomial<E> add(E oth) {
+        oth = domain.valueOf(oth);
         if (domain.isZero(oth))
             return this;
         add(data, zeroDegreeVector(nVariables), oth);
@@ -780,6 +883,9 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @return {@code this - oth}
      */
     public MultivariatePolynomial<E> subtract(E oth) {
+        oth = domain.valueOf(oth);
+        if (domain.isZero(oth))
+            return this;
         subtract(data, zeroDegreeVector(nVariables), oth);
         release();
         return this;
@@ -841,6 +947,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @return {@code} this multiplied by the {@code factor}
      */
     public MultivariatePolynomial<E> multiply(E factor) {
+        factor = domain.valueOf(factor);
         if (domain.isOne(factor))
             return this;
         if (domain.isZero(factor))
@@ -962,7 +1069,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
                     coeff = domain.negate(coeff);
                 }
 
-                if (!domain.isOne(coeff)  || monomialString.isEmpty()) {
+                if (!domain.isOne(coeff) || monomialString.isEmpty()) {
                     sb.append(coeffToString(coeff));
                     if (!monomialString.isEmpty())
                         sb.append("*");
@@ -1012,6 +1119,12 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         final int[] exponents;
         final int totalDegree;
 
+        public DegreeVector(int nVariables, int position, int exponent) {
+            this.exponents = new int[nVariables];
+            this.exponents[position] = exponent;
+            this.totalDegree = exponent;
+        }
+
         private DegreeVector(int[] exponents, int totalDegree) {
             this.exponents = exponents;
             this.totalDegree = totalDegree;
@@ -1037,7 +1150,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             return new DegreeVector(newExponents, totalDegree + dv.totalDegree);
         }
 
-        private DegreeVector without(int i) {
+        DegreeVector without(int i) {
             if (exponents.length == 1) {
                 assert i == 0;
                 return EMPTY;
@@ -1045,7 +1158,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             return new DegreeVector(ArraysUtil.remove(exponents, i), totalDegree - exponents[i]);
         }
 
-        private DegreeVector setZero(int i) {
+        DegreeVector setZero(int i) {
             if (exponents.length == 1) {
                 assert i == 0;
                 return EMPTY;
@@ -1053,6 +1166,12 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             int[] newExponents = exponents.clone();
             newExponents[i] = 0;
             return new DegreeVector(newExponents, totalDegree - exponents[i]);
+        }
+
+        DegreeVector set(int i, int exponent) {
+            int[] newExponents = exponents.clone();
+            newExponents[i] = exponent;
+            return new DegreeVector(newExponents, totalDegree - exponents[i] + exponent);
         }
 
         public String toString(String[] vars) {

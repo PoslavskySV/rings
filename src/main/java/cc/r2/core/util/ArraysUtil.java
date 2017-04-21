@@ -23,6 +23,8 @@
 package cc.r2.core.util;
 
 
+import cc.r2.core.number.BigInteger;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -96,6 +98,29 @@ public final class ArraysUtil {
         int i = 0;
         while (i + shift + 1 < values.length)
             if (values[i + shift] == values[i + shift + 1])
+                ++shift;
+            else {
+                values[i] = values[i + shift];
+                ++i;
+            }
+        values[i] = values[i + shift];
+        return Arrays.copyOf(values, i + 1);
+    }
+
+    /**
+     * Sort array & return array with removed repetitive values.
+     *
+     * @param values input array (this method will quickSort this array)
+     * @return sorted array of distinct values
+     */
+    public static BigInteger[] getSortedDistinct(BigInteger[] values) {
+        if (values.length == 0)
+            return values;
+        Arrays.sort(values);
+        int shift = 0;
+        int i = 0;
+        while (i + shift + 1 < values.length)
+            if (values[i + shift].equals(values[i + shift + 1]))
                 ++shift;
             else {
                 values[i] = values[i + shift];
@@ -282,9 +307,13 @@ public final class ArraysUtil {
     }
 
     public static int[] sequence(int size) {
-        int[] ret = new int[size];
-        for (int i = size; i >= 0; ++i)
-            ret[i] = i;
+        return sequence(0, size);
+    }
+
+    public static int[] sequence(int from, int to) {
+        int[] ret = new int[to - from];
+        for (int i = ret.length - 1; i >= 0; --i)
+            ret[i] = from + i;
         return ret;
     }
 

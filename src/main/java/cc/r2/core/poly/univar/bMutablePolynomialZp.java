@@ -169,6 +169,19 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
         return new bMutablePolynomialZp(modulus, new BigInteger[]{reduce(val, modulus)}, 0);
     }
 
+    /**
+     * Creates linear polynomial of form {@code cc + x * lc}
+     *
+     * @param cc the  constant coefficient
+     * @param lc the  leading coefficient
+     * @return {@code cc + x * lc}
+     */
+    public bMutablePolynomialZp createLinear(BigInteger cc, BigInteger lc) {
+        bMutablePolynomialZp r = new bMutablePolynomialZp(modulus, new BigInteger[]{mod(cc), mod(lc)}, 1);
+        r.fixDegree();
+        return r;
+    }
+
     @Override
     public bMutablePolynomialZp getRange(int from, int to) {
         return new bMutablePolynomialZp(modulus, Arrays.copyOfRange(data, from, to));

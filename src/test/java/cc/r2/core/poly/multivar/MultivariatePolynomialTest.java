@@ -164,6 +164,18 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testEvaluate3() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        ModularDomain domain = new ModularDomain(5642359);
+        MultivariatePolynomial<BigInteger> poly = parse(" b^2*c^2+b^3+a*c^4+a*b*c^2+a*b^2+a*b^2*c+2*a^2*c^2+a^2*c^3+a^2*b+a^2*b^2+a^3+a^3*c+a^3*c^2+a^4", domain, LEX, vars);
+
+        int[] evalVars = {1, 2};
+        int[] raiseFactors = {2, 1};
+        MultivariatePolynomial<BigInteger> r = poly.evaluate(new PrecomputedPowersHolder<>(new BigInteger[]{BigInteger.valueOf(4229599), BigInteger.valueOf(9)}, domain), evalVars, raiseFactors);
+        assertEquals(parse("1694989 + 336131*a + 4996260*a^2 + 91*a^3 + a^4", domain, LEX, vars), r);
+    }
+
+    @Test
     public void testUnivar1() throws Exception {
         String[] vars = {"a", "b"};
         MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new ModularDomain(17), LEX, vars);

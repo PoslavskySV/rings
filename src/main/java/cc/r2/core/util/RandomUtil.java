@@ -45,6 +45,24 @@ public final class RandomUtil {
     }
 
     /**
+     * Creates random array of length {@code degree + 1} with elements bounded by {@code bound} (by absolute value).
+     *
+     * @param length array length
+     * @param min    min value
+     * @param max    max value
+     * @param rnd    random source
+     * @return array of length {@code length} with elements bounded by {@code bound} (by absolute value)
+     */
+    public static BigInteger[] randomBigIntegerArray(int length, BigInteger min, BigInteger max, RandomGenerator rnd) {
+        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
+        BigInteger[] data = new BigInteger[length];
+        BigInteger delta = max.subtract(min);
+        for (int i = 0; i < length; ++i)
+            data[i] = min.add(randomInt(delta, rnd));
+        return data;
+    }
+
+    /**
      * Returns random integer in range {@code [0, bound)}.
      *
      * @param bound maximal allowed value
