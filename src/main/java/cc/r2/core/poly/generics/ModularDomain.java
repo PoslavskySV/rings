@@ -81,4 +81,7 @@ public final class ModularDomain extends AbstractIntegersDomain {
 
     @Override
     public BigInteger randomElement(RandomGenerator rnd) {return RandomUtil.randomInt(modulus, rnd);}
+
+    @Override
+    public String toString() {return "Z/" + modulus;}
 }

@@ -16,7 +16,7 @@ import static cc.r2.core.poly.univar.LongArithmetics.safeMultiply;
 import static cc.r2.core.poly.univar.SquareFreeFactorization.SquareFreeFactorization;
 
 /**
- * Factorization of univariate polynomials with single-precision coefficients.
+ * Factorization of univariate polynomials.
  *
  * @author Stanislav Poslavsky
  * @since 1.0

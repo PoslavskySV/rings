@@ -50,6 +50,12 @@ public final class ArraysUtil {
         return r;
     }
 
+    public static int[] negate(int[] arr) {
+        for (int i = 0; i < arr.length; i++)
+            arr[i] = -arr[i];
+        return arr;
+    }
+
     public static String toString(long[] a, int from, int to) {
         if (a == null)
             return "null";
@@ -305,6 +311,14 @@ public final class ArraysUtil {
             a = Math.max(a, i);
         return a;
     }
+
+    public static int firstIndexOf(int element, int[] array) {
+        for (int i = 0; i < array.length; i++)
+            if(array[i] == element)
+                return i;
+        return -1;
+    }
+
 
     public static int[] sequence(int size) {
         return sequence(0, size);

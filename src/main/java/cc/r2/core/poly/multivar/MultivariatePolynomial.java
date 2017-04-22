@@ -282,7 +282,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     private static int[] map(int[] degrees, int[] mapping) {
         int[] newDegrees = new int[degrees.length];
         for (int i = 0; i < degrees.length; i++)
-            newDegrees[mapping[i]] = degrees[i];
+            newDegrees[i] = degrees[mapping[i]];
         return newDegrees;
     }
 
@@ -388,6 +388,50 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         data.putAll(oth.data);
         release();
         return null;
+    }
+
+    /**
+     * Returns a copy of this with {@code nVariables + 1}
+     *
+     * @return a copy of this with with one additional (last) variable added
+     */
+    public MultivariatePolynomial<E> joinNewVariable() {
+        TreeMap<DegreeVector, E> map = new TreeMap<>(ordering);
+        for (Entry<DegreeVector, E> e : data.entrySet())
+            map.put(e.getKey().joinNewVariable(), e.getValue());
+        return new MultivariatePolynomial<>(domain, ordering, nVariables + 1, map);
+    }
+
+    /**
+     * Returns the number of really used variables
+     *
+     * @return the number of presenting variables
+     */
+    public int usedVariables() {
+        int[] degrees = degrees();
+        int r = 0;
+        for (int i = 0; i < degrees.length; i++)
+            if (degrees[i] != 0)
+                ++r;
+        return r;
+    }
+
+    /**
+     * Returns a coefficient before {@code variable^exponent} as a multivariate polynomial
+     *
+     * @param variable the variable
+     * @param exponent the exponent
+     * @return coefficient before {@code variable^exponent} as a multivariate polynomial
+     */
+    public MultivariatePolynomial<E> coefficientOf(int variable, int exponent) {
+        MultivariatePolynomial<E> result = createZero();
+        for (Entry<DegreeVector, E> e : data.entrySet()) {
+            DegreeVector dv = e.getKey();
+            if (dv.exponents[variable] != exponent)
+                continue;
+            result.add(dv.setZero(variable), e.getValue());
+        }
+        return result;
     }
 
     /**
@@ -972,15 +1016,26 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @return {@code} this multiplied by the {@code term}
      */
     public MultivariatePolynomial<E> multiply(Entry<DegreeVector, E> term) {
-        ensureCompatible(term);
-        if (domain.isZero(term.getValue()))
+        return multiply(term.getKey(), term.getValue());
+    }
+
+    /**
+     * Multiplies {@code this} by the {@code term}
+     *
+     * @param dv   degree vector
+     * @param term the factor
+     * @return {@code} this multiplied by the {@code term}
+     */
+    public MultivariatePolynomial<E> multiply(DegreeVector dv, E term) {
+        ensureCompatible(dv);
+        if (domain.isZero(term))
             return toZero();
 
         TreeMap<DegreeVector, E> newMap = new TreeMap<>(ordering);
         for (Entry<DegreeVector, E> thisElement : data.entrySet()) {
-            E m = domain.multiply(thisElement.getValue(), term.getValue());
+            E m = domain.multiply(thisElement.getValue(), term);
             if (!domain.isZero(m))
-                newMap.put(thisElement.getKey().multiply(term.getKey()), m);
+                newMap.put(thisElement.getKey().multiply(dv), m);
         }
 
         return loadFrom(newMap);
@@ -1013,6 +1068,66 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return new MultivariatePolynomial<>(domain, ordering, nVariables, (TreeMap) data.clone());
     }
 
+    /**
+     * Returns skeleton of this poly
+     *
+     * @return skeleton of this poly
+     */
+    public Set<DegreeVector> getSkeleton() {
+        return data.keySet();
+    }
+
+    /**
+     * Returns skeleton of this poly with respect to specified {@code variables}
+     *
+     * @param variables the variables
+     * @return skeleton of this poly with respect to specified {@code variables}
+     */
+    public Set<DegreeVector> getSkeleton(int... variables) {
+        return data.keySet().stream().map(dv -> dv.of(variables)).collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns skeleton of this poly with respect to all except specified {@code variables}
+     *
+     * @param variables the variables to exclude
+     * @return skeleton of this poly with respect to all except specified {@code variables}
+     */
+    public Set<DegreeVector> getSkeletonExcept(int... variables) {
+        return data.keySet().stream().map(dv -> dv.except(variables)).collect(Collectors.toSet());
+    }
+
+    /**
+     * Tests whether {@code this} and {@code oth} have the same skeleton
+     *
+     * @param oth other multivariate polynomial
+     * @return {@code true} if {@code this} and {@code oth} have the same skeleton and {@code false} otherwise
+     */
+    public boolean sameSkeleton(MultivariatePolynomial<E> oth) {
+        return getSkeleton().equals(oth.getSkeleton());
+    }
+
+    /**
+     * Tests whether {@code this} and {@code oth} have the same skeleton with respect to specified {@code variables}
+     *
+     * @param oth       other multivariate polynomial
+     * @param variables variables to test
+     * @return {@code true} if {@code this} and {@code oth} have the same skeleton with respect to specified {@code variables} and {@code false} otherwise
+     */
+    public boolean sameSkeleton(MultivariatePolynomial<E> oth, int... variables) {
+        return getSkeleton(variables).equals(oth.getSkeleton(variables));
+    }
+
+    /**
+     * Tests whether {@code this} and {@code oth} have the same skeleton with respect all except specified {@code variables}
+     *
+     * @param oth       other multivariate polynomial
+     * @param variables variables to exclude
+     * @return {@code true} if {@code this} and {@code oth} have the same skeleton with respect to all except specified  {@code variables} and {@code false} otherwise
+     */
+    public boolean sameSkeletonExcept(MultivariatePolynomial<E> oth, int... variables) {
+        return getSkeletonExcept(variables).equals(oth.getSkeletonExcept(variables));
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -1133,6 +1248,30 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         public DegreeVector(int[] exponents) {
             this.exponents = exponents;
             this.totalDegree = ArraysUtil.sum(exponents);
+        }
+
+        public DegreeVector joinNewVariable() {
+            return new DegreeVector(Arrays.copyOf(exponents, exponents.length + 1), totalDegree);
+        }
+
+        public DegreeVector of(int[] variables) {
+            int[] exs = new int[exponents.length];
+            int totalDegree = 0;
+            for (int i : variables) {
+                exs[i] = exponents[i];
+                totalDegree += exs[i];
+            }
+            return new DegreeVector(exs, totalDegree);
+        }
+
+        public DegreeVector except(int[] variables) {
+            int[] exs = exponents.clone();
+            int totalDegree = this.totalDegree;
+            for (int i : variables) {
+                exs[i] = 0;
+                totalDegree -= exponents[i];
+            }
+            return new DegreeVector(exs, totalDegree);
         }
 
         boolean isZeroVector() {

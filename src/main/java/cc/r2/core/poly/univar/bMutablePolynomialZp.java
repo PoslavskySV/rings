@@ -139,7 +139,7 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
 
     /** negateMod operation */
     BigInteger negateMod(BigInteger val) {
-        return val .isZero()  ? val : modulus .subtract( val);
+        return val.isZero() ? val : modulus.subtract(val);
     }
 
     /** to symmetric modulus */
@@ -262,6 +262,8 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
 
     /** {@inheritDoc} */
     public bMutablePolynomialZp monic() {
+        if (isMonic())
+            return this;
         if (data[degree].isZero()) // isZero()
             return this;
         if (degree == 0) {

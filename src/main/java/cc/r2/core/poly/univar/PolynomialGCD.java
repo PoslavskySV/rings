@@ -660,7 +660,7 @@ public final class PolynomialGCD {
         else if (a instanceof bMutablePolynomialZ)
             return (T) ModularGCD((bMutablePolynomialZ) a, (bMutablePolynomialZ) b);
         else
-            return Euclid(a, b).gcd();
+            return (T) ((IMutablePolynomialZp) Euclid(a, b).gcd()).monic();
     }
 
     /**

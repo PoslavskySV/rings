@@ -298,6 +298,8 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
     /** {@inheritDoc} */
     @Override
     public lMutablePolynomialZp monic() {
+        if (isMonic())
+            return this;
         if (data[degree] == 0) // isZero()
             return this;
         if (degree == 0) {

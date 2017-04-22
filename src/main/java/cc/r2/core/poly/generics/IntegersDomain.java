@@ -46,4 +46,7 @@ public final class IntegersDomain extends AbstractIntegersDomain {
 
     @Override
     public BigInteger randomElement(RandomGenerator rnd) {return valueOf(rnd.nextInt());}
+
+    @Override
+    public String toString() {return "Z";}
 }

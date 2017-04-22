@@ -216,5 +216,14 @@ public interface Domain<E> extends Comparator<E> {
         }
     }
 
+//    /**
+//     * Returns the element which is next to the specified {@code element} (according to {@link #compare(Object, Object)})
+//     * or {@code null} in the case of infinite cardinality
+//     *
+//     * @param element the element
+//     * @return next element
+//     */
+//    E nextElement(E element);
+
     default E randomElement(RandomGenerator rnd) { return valueOf(rnd.nextLong());}
 }

@@ -1,6 +1,6 @@
 package cc.r2.core.test;
 
-import org.apache.commons.math3.random.RandomDataGenerator;
+import cc.r2.core.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well44497b;
 import org.junit.Assume;

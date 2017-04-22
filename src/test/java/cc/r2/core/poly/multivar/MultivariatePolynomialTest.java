@@ -6,11 +6,13 @@ import cc.r2.core.poly.generics.Domain;
 import cc.r2.core.poly.generics.ModularDomain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import cc.r2.core.poly.univar.bMutablePolynomialZ;
+import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import static cc.r2.core.number.BigInteger.*;
 import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
@@ -231,5 +233,68 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
             MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
             assertEquals(poly, parsed);
         }
+    }
+
+    @Test
+    public void testCoefficient1() throws Exception {
+        String[] vars = {"a", "b"};
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", vars);
+        assertEquals(parse("7+15*a^2+6*a^3", vars), poly.coefficientOf(1, 2));
+        assertEquals(parse("1+11*b+6*b^2", vars), poly.coefficientOf(0, 3));
+
+        for (int v = 0; v < poly.nVariables; v++) {
+            final int var = v;
+            MultivariatePolynomial<BigInteger> r = IntStream.rangeClosed(0, poly.degree(var))
+                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new DegreeVector(poly.nVariables, var, i), BigInteger.ONE))
+                    .reduce(poly.createZero(), (a, b) -> a.add(b));
+            assertEquals(poly, r);
+        }
+    }
+
+    @Test
+    public void testRenameVariables1() throws Exception {
+        String[] vars = {"a", "b", "c", "d", "e"};
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);
+        for (int i = 1; i < poly.nVariables; i++)
+            for (int j = 0; j < i; j++)
+                assertEquals(poly, swapVariables(swapVariables(poly, i, j), i, j));
+    }
+
+
+    @Test
+    public void testRenameVariables2() throws Exception {
+        String[] vars = {"a", "b", "c", "d", "e"};
+        MultivariatePolynomial<BigInteger> poly = parse("1 + a^4 + b^6 + c^5 + d^3 + e^2", vars);
+        int[] variables = ArraysUtil.sequence(poly.nVariables);
+        int[] degrees = poly.degrees();
+        int lastVar = 2;
+        int lastVarDegree = degrees[lastVar];
+
+        System.out.println("degrees = " + Arrays.toString(degrees));
+        System.out.println("variabl = " + Arrays.toString(variables));
+        ArraysUtil.quickSort(ArraysUtil.negate(degrees), variables);
+        System.out.println("====");
+        System.out.println("degrees = " + Arrays.toString(degrees));
+        System.out.println("variabl = " + Arrays.toString(variables));
+        ArraysUtil.negate(degrees);
+        assertEquals(ArraysUtil.firstIndexOf(lastVarDegree, degrees), variables[lastVar]);
+        MultivariatePolynomial<BigInteger> renamed = renameVariables(poly, variables);
+        System.out.println(renamed);
+        System.out.println("degrees = " + Arrays.toString(renamed.degrees()));
+
+        assertDescending(renamed.degrees());
+        assertEquals(poly, renameVariables(renamed, inverse(variables)));
+    }
+
+    private static void assertDescending(int[] arr) {
+        for (int i = 1; i < arr.length; i++)
+            assertTrue(arr[i - 1] >= arr[i]);
+    }
+
+    public static int[] inverse(int[] permutation) {
+        final int[] inv = new int[permutation.length];
+        for (int i = permutation.length - 1; i >= 0; --i)
+            inv[permutation[i]] = i;
+        return inv;
     }
 }
