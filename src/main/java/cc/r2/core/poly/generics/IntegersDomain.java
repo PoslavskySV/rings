@@ -49,4 +49,7 @@ public final class IntegersDomain extends AbstractIntegersDomain {
 
     @Override
     public String toString() {return "Z";}
+
+    @Override
+    public Domain<BigInteger> getExtension() {return null;}
 }

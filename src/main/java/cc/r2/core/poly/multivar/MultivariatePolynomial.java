@@ -8,6 +8,7 @@ import cc.r2.core.poly.generics.UnivariatePolynomialDomain;
 import cc.r2.core.poly.univar.bMutablePolynomialZ;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -345,6 +346,21 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         return new MultivariatePolynomial<>(domain, ordering, nVariables, data);
     }
 
+    /**
+     * Creates multivariate polynomial with one single specified term
+     *
+     * @param dv  term degree vector
+     * @param val term coefficient
+     * @return multivariate polynomial with one single specified term
+     */
+    public MultivariatePolynomial<E> create(DegreeVector dv, E val) {
+        TreeMap<DegreeVector, E> data = new TreeMap<>(ordering);
+        val = domain.valueOf(val);
+        if (!domain.isZero(val))
+            data.put(dv, val);
+        return new MultivariatePolynomial<>(domain, ordering, nVariables, data);
+    }
+
     @Override
     public MultivariatePolynomial<E> createZero() {
         return createConstant(domain.getZero());
@@ -523,6 +539,18 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
                 if (db.exponents[i] > degrees[i])
                     degrees[i] = db.exponents[i];
         return degrees;
+    }
+
+    /**
+     * Returns the degrees in which {@code variable} occurs in this polynomial
+     *
+     * @return the degrees in which {@code variable} occurs in this polynomial
+     */
+    public int[] degrees(int variable) {
+        TIntHashSet degrees = new TIntHashSet();
+        for (DegreeVector db : data.keySet())
+            degrees.add(db.exponents[variable]);
+        return degrees.toArray();
     }
 
     /**

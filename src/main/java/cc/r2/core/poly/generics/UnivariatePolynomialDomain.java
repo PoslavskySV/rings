@@ -96,4 +96,7 @@ public final class UnivariatePolynomialDomain<T extends IMutablePolynomial<T>> i
     public int compare(T o1, T o2) {
         return o1.compareTo(o2);
     }
+
+    @Override
+    public Domain<T> getExtension() {return null;}
 }

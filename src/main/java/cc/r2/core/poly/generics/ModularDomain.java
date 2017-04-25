@@ -84,4 +84,7 @@ public final class ModularDomain extends AbstractIntegersDomain {
 
     @Override
     public String toString() {return "Z/" + modulus;}
+
+    @Override
+    public Domain<BigInteger> getExtension() {return IntegersDomain.IntegersDomain;}
 }

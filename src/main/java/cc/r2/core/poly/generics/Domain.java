@@ -225,5 +225,18 @@ public interface Domain<E> extends Comparator<E> {
 //     */
 //    E nextElement(E element);
 
+    /**
+     * Returns a random element from this domain
+     *
+     * @param rnd the source of randomness
+     * @return random element from this domain
+     */
     default E randomElement(RandomGenerator rnd) { return valueOf(rnd.nextLong());}
+
+    /**
+     * Returns domain with larger cardinality that contains all elements of this or null if there is no such domain.
+     *
+     * @return domain with larger cardinality that contains all elements of this or null if there is no such domain
+     */
+    Domain<E> getExtension();
 }

@@ -52,6 +52,22 @@ public final class MultivariateReduction {
     }
 
     /**
+     * Divides {@code dividend} by {@code divider} or throws exception if exact division is not possible
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return {@code dividend / divider}
+     * @throws ArithmeticException if exact division is not possible
+     */
+    @SuppressWarnings("unchecked")
+    public static <E> MultivariatePolynomial<E> divideExact(MultivariatePolynomial<E> dividend, MultivariatePolynomial<E> divider) {
+        MultivariatePolynomial<E>[] qd = divideAndRemainder(dividend, divider);
+        if (qd == null || !qd[1].isZero())
+            throw new ArithmeticException("not divisible");
+        return qd[0];
+    }
+
+    /**
      * Tests whether {@code divisor} is a divisor of {@code poly}
      *
      * @param poly    the polynomial
