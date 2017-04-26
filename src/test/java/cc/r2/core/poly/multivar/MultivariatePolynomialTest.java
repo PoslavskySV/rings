@@ -268,22 +268,23 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
         int[] variables = ArraysUtil.sequence(poly.nVariables);
         int[] degrees = poly.degrees();
         int lastVar = 2;
-        int lastVarDegree = degrees[lastVar];
 
-        System.out.println("degrees = " + Arrays.toString(degrees));
-        System.out.println("variabl = " + Arrays.toString(variables));
         ArraysUtil.quickSort(ArraysUtil.negate(degrees), variables);
-        System.out.println("====");
-        System.out.println("degrees = " + Arrays.toString(degrees));
-        System.out.println("variabl = " + Arrays.toString(variables));
         ArraysUtil.negate(degrees);
-        assertEquals(ArraysUtil.firstIndexOf(lastVarDegree, degrees), variables[lastVar]);
-        MultivariatePolynomial<BigInteger> renamed = renameVariables(poly, variables);
-        System.out.println(renamed);
-        System.out.println("degrees = " + Arrays.toString(renamed.degrees()));
 
+        assertEquals(0, variables[lastVar]);
+        MultivariatePolynomial<BigInteger> renamed = renameVariables(poly, variables);
         assertDescending(renamed.degrees());
         assertEquals(poly, renameVariables(renamed, inverse(variables)));
+    }
+
+    @Test
+    public void testMonomialContent1() throws Exception {
+        String[] vars = {"a", "b", "c", "d", "e"};
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);
+        poly = poly.multiply(parse("a*b^2*c^3*d^4*e^5", vars));
+        DegreeVector mc = poly.monomialContent();
+        assertEquals(new DegreeVector(new int[]{1, 2, 3, 4, 5}), mc);
     }
 
     private static void assertDescending(int[] arr) {

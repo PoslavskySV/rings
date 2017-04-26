@@ -89,6 +89,13 @@ public interface Domain<E> extends Comparator<E> {
      */
     E[] divideAndRemainder(E a, E b);
 
+    default E divideExact(E a, E b) {
+        E[] qd = divideAndRemainder(a, b);
+        if (!isZero(qd[1]))
+            throw new ArithmeticException("not divisible: " + a + " / " + b);
+        return qd[0];
+    }
+
     /**
      * Gives the inverse element a^-1
      *

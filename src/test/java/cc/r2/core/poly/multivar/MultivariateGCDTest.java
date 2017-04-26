@@ -5,8 +5,7 @@ import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.generics.Domain;
 import cc.r2.core.poly.generics.ModularDomain;
-import cc.r2.core.poly.multivar.MultivariateGCD.SparseGCDInterpolation;
-import cc.r2.core.poly.multivar.MultivariateGCD.SparseNonMonicGCDInterpolation;
+import cc.r2.core.poly.multivar.MultivariateGCD.LinZipGCDInterpolation;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.TimeUnits;
@@ -337,8 +336,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
         for (int i = 0; i < 100; i++) {
-            SparseGCDInterpolation sparseInterpolation
-                    = new SparseGCDInterpolation(variable, a, b, skeleton, rnd);
+            LinZipGCDInterpolation sparseInterpolation
+                    = new LinZipGCDInterpolation(variable, a, b, skeleton, rnd);
             BigInteger point = domain.randomElement(rnd);
             assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
@@ -357,6 +356,57 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         MultivariatePolynomial<BigInteger> gcdActual = ZippelGCD(a, b);
         assertTrue(dividesQ(gcdActual, gcd));
+    }
+
+    @Test
+    public void testZippel5() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        ModularDomain domain = new ModularDomain(BigPrimes.nextPrime(31579447));
+        System.out.println(domain);
+        MultivariatePolynomial<BigInteger>
+                a = parse("b^2 + a*c + a*b*c^2 + a*b^2 + a^5", domain, LEX, vars),
+                b = parse("1 + a*b", domain, LEX, vars),
+                gcd = parse("1 + a*b*c^2 + a^2*c^2 + a^2*b*c^2 + a^2*b^2*c^2 + a^7", domain, LEX, vars);
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+
+
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(123);
+
+        int variable = a.nVariables - 1;
+        BigInteger seed = BigInteger.valueOf(7893482);
+        MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
+
+
+        LinZipGCDInterpolation sparseInterpolation = new LinZipGCDInterpolation(variable, a, b, skeleton, rnd);
+        BigInteger point = domain.valueOf(1324);
+        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+    }
+
+    @Test
+    public void testZippel6() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        ModularDomain domain = new ModularDomain(BigPrimes.nextPrime(31579447));
+        System.out.println(domain);
+        MultivariatePolynomial<BigInteger>
+                a = parse("1+3*b*c^2+7*b^2*c^2+4*a+7*a^3*c^2+a^6", domain, LEX, vars),
+                b = parse("b^3*c^2+a*b^2*c+9*a^2*b*c+9*a^3*b*c^2+a^7", domain, LEX, vars),
+                gcd = parse("b^3*c^2+2*a*c+5*a*b+2*a*b^2*c+4*a*b^3*c^2+5*a^3*b+a^7", domain, LEX, vars);
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+
+
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(123);
+
+        int variable = a.nVariables - 1;
+        BigInteger seed = BigInteger.valueOf(7893482);
+        MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
+
+        LinZipGCDInterpolation sparseInterpolation = new LinZipGCDInterpolation(variable, a, b, skeleton, rnd);
+        BigInteger point = domain.valueOf(1324);
+        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
     }
 
     @Test
@@ -379,8 +429,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             for (int i = 0; i < 10; i++) {
                 int rndSeed = i^n;
                 rnd.setSeed(rndSeed);
-                SparseNonMonicGCDInterpolation sparseInterpolation
-                        = new SparseNonMonicGCDInterpolation(variable, data.aGCD, data.bGCD, skeleton, rnd);
+                LinZipGCDInterpolation sparseInterpolation
+                        = new LinZipGCDInterpolation(variable, data.aGCD, data.bGCD, skeleton, rnd);
                 BigInteger point = data.a.domain.randomElement(rnd);
                 try {
                     MultivariatePolynomial<BigInteger> expected = data.gcd.evaluate(variable, point);
@@ -404,6 +454,30 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testZippel7() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        ModularDomain domain = new ModularDomain(BigPrimes.nextPrime(31579447));
+        System.out.println(domain);
+        MultivariatePolynomial<BigInteger>
+                a = parse("29322275*b+5*b*c+6*a^2*b^3*c^2+29322274*a^2*b^3*c^2*d^3+5*a^3*b*c^2*d^2+a^11", domain, LEX, vars),
+                b = parse("7*a^3*b^3*c^3*d^4+9*a^3*b^4*c+29322274*a^3*b^4*c^5*d^2+29322277*a^5*b*c*d+a^5*b^4+a^15", domain, LEX, vars),
+                gcd = parse("4*d^2+8*c^2*d+4*b*c+6*b^3*c^2*d^2+2*a^3*b^2*c^3*d+a^10", domain, LEX, vars);
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(123);
+
+        int variable = a.nVariables - 1;
+        BigInteger seed = BigInteger.valueOf(7893482);
+        MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
+
+        LinZipGCDInterpolation sparseInterpolation = new LinZipGCDInterpolation(variable, a, b, skeleton, rnd);
+        BigInteger point = domain.valueOf(1324);
+        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+    }
+
+    @Test
     public void testZippel_monic_random2() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 5, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
@@ -416,7 +490,6 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             if (n == nIterations / 10) {
                 zippel.clear(); brown.clear();
             }
-//            if (n % (nIterations / 10) == 0)
             System.out.println(n);
 
             GCDTriplet data = sampleData.nextSample(false, true);
@@ -435,6 +508,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(gcdBrown, data.gcd));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
+                System.out.println("domain: " + data.domain);
                 System.out.println("a: " + data.a);
                 System.out.println("b: " + data.b);
                 System.out.println("gcd : " + data.gcd);
@@ -447,10 +521,39 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testZippel8() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        ModularDomain domain = new ModularDomain(BigPrimes.nextPrime(31579447));
+        System.out.println(domain);
+        MultivariatePolynomial<BigInteger>
+                a = parse("5*a+29923129*a*b*c^2+3*a*b^2+29923132*a^2*b*c^2+7*a^3*c", domain, LEX, vars),
+                b = parse("4*c^2+29923126*a*c^2+5*a*b+6*a^2*b^2*c^3+29923128*a^3*c^3", domain, LEX, vars),
+                gcd = parse("29923132+8*b*c^3+29923132*b^2*c^3+8*a*b*c+7*a^3*b^3*c", domain, LEX, vars);
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+
+
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(123);
+
+        int variable = a.nVariables - 1;
+        BigInteger seed = BigInteger.valueOf(7893482);
+        MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
+
+        System.out.println(a);
+        System.out.println(b);
+        System.out.println(skeleton);
+
+        LinZipGCDInterpolation sparseInterpolation = new LinZipGCDInterpolation(variable, a, b, skeleton, rnd);
+        BigInteger point = domain.valueOf(1324);
+        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+    }
+
+    @Test
     @Ignore
     public void testZippel_nonmonic_random2() throws Exception {
         RandomGenerator rnd = getRandom();
-        int nVarsMin = 3, nVarsMax = 3, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
+        int nVarsMin = 3, nVarsMax = 3, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 5;
         int nIterations = its(100, 1500);
 
         DescriptiveStatistics zippel = new DescriptiveStatistics(), brown = new DescriptiveStatistics();
@@ -479,6 +582,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(gcdBrown, data.gcd));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
+                System.out.println("domain: " + data.domain);
                 System.out.println("a: " + data.a);
                 System.out.println("b: " + data.b);
                 System.out.println("gcd : " + data.gcd);

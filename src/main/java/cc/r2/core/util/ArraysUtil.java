@@ -50,6 +50,12 @@ public final class ArraysUtil {
         return r;
     }
 
+    public static char[] arrayOf(char val, int len) {
+        char[] r = new char[len];
+        Arrays.fill(r, val);
+        return r;
+    }
+
     public static int[] negate(int[] arr) {
         for (int i = 0; i < arr.length; i++)
             arr[i] = -arr[i];
@@ -312,9 +318,24 @@ public final class ArraysUtil {
         return a;
     }
 
+    public static int min(int[] array) {
+        int a = -1;
+        for (int i : array)
+            a = Math.min(a, i);
+        return a;
+    }
+
+
+    public static int[] min(int[] a, int[] b) {
+        int[] r = new int[a.length];
+        for (int i = 0; i < a.length; i++)
+            r[i] = Math.min(a[i], b[i]);
+        return r;
+    }
+
     public static int firstIndexOf(int element, int[] array) {
         for (int i = 0; i < array.length; i++)
-            if(array[i] == element)
+            if (array[i] == element)
                 return i;
         return -1;
     }
@@ -333,6 +354,13 @@ public final class ArraysUtil {
 
     public static int[][] deepClone(int[][] input) {
         int[][] res = new int[input.length][];
+        for (int i = res.length - 1; i >= 0; --i)
+            res[i] = input[i].clone();
+        return res;
+    }
+
+    public static Object[][] deepClone(Object[][] input) {
+        Object[][] res = new Object[input.length][];
         for (int i = res.length - 1; i >= 0; --i)
             res[i] = input[i].clone();
         return res;
