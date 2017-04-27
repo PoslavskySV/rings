@@ -829,7 +829,7 @@ public final class MultivariateGCD {
                     int totalEquations = 0;
                     for (LinZipSystem system : systems) {
                         BigInteger rhs = gcdUnivar.degree() < system.univarDegree ? domain.getZero() : gcdUnivar.get(system.univarDegree);
-                        system.oneMoreEquation(rhs, nUnknownScalings - 1);
+                        system.oneMoreEquation(rhs, nUnknownScalings != 0);
                         totalEquations += system.nEquations();
                     }
                     if (nUnknowns + nUnknownScalings <= totalEquations)
@@ -877,7 +877,7 @@ public final class MultivariateGCD {
                 unknowns.add(degreeVector.set(0, system.univarDegree));
 
         int nUnknownsMonomials = unknowns.size();
-        int nUnknownsTotal = unknowns.size() + nUnknownScalings;
+        int nUnknownsTotal = nUnknownsMonomials + nUnknownScalings;
         ArrayList<BigInteger[]> lhsGlobal = new ArrayList<>();
         ArrayList<BigInteger> rhsGlobal = new ArrayList<>();
         int offset = 0;
@@ -886,10 +886,10 @@ public final class MultivariateGCD {
                 BigInteger[] row = new BigInteger[nUnknownsTotal];
                 Arrays.fill(row, BigInteger.ZERO);
                 BigInteger[] subRow = system.matrix.get(j);
-                BigInteger[] scalingRow = system.scalingMatrix.get(j);
 
                 System.arraycopy(subRow, 0, row, offset, subRow.length);
-                System.arraycopy(scalingRow, 0, row, nUnknownsMonomials, scalingRow.length);
+                if (j > 0)
+                    row[nUnknownsMonomials + j - 1] = system.scalingMatrix.get(j);
                 lhsGlobal.add(row);
                 rhsGlobal.add(system.rhs.get(j));
             }
@@ -1041,22 +1041,19 @@ public final class MultivariateGCD {
             super(univarDegree, skeleton, powers, nVars);
         }
 
-        private final ArrayList<BigInteger[]> scalingMatrix = new ArrayList<>();
+        private final ArrayList<BigInteger> scalingMatrix = new ArrayList<>();
 
-        public void oneMoreEquation(BigInteger rhsVal, int scalingVar) {
+        public void oneMoreEquation(BigInteger rhsVal, boolean newScalingIntroduced) {
             BigInteger[] row = new BigInteger[skeleton.length];
             for (int i = 0; i < skeleton.length; i++)
                 row[i] = evaluateExceptFirst(domain, powers, domain.getOne(), skeleton[i], matrix.size() + 1, nVars);
             matrix.add(row);
 
-            //todo: replace with single element
-            BigInteger[] scalingCoeffs = new BigInteger[scalingVar + 1];
-            Arrays.fill(scalingCoeffs, BigInteger.ZERO);
-            if (scalingVar != -1) {
-                scalingCoeffs[scalingVar] = domain.negate(rhsVal);
+            if (newScalingIntroduced) {
+                scalingMatrix.add(domain.negate(rhsVal));
                 rhsVal = domain.getZero();
-            }
-            scalingMatrix.add(scalingCoeffs);
+            } else
+                scalingMatrix.add(domain.getZero());
             rhs.add(rhsVal);
         }
 

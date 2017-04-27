@@ -384,6 +384,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void testZippel6() throws Exception {
+        MultivariateGCD.ALWAYS_LINZIP = true;
         String[] vars = {"a", "b", "c"};
         ModularDomain domain = new ModularDomain(BigPrimes.nextPrime(31579447));
         MultivariatePolynomial<BigInteger>
@@ -450,9 +451,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void testZippel7() throws Exception {
+        MultivariateGCD.ALWAYS_LINZIP = true;
         String[] vars = {"a", "b", "c"};
         ModularDomain domain = new ModularDomain(BigPrimes.nextPrime(31579447));
-        System.out.println(domain);
         MultivariatePolynomial<BigInteger>
                 a = parse("29322275*b+5*b*c+6*a^2*b^3*c^2+29322274*a^2*b^3*c^2*d^3+5*a^3*b*c^2*d^2+a^11", domain, LEX, vars),
                 b = parse("7*a^3*b^3*c^3*d^4+9*a^3*b^4*c+29322274*a^3*b^4*c^5*d^2+29322277*a^5*b*c*d+a^5*b^4+a^15", domain, LEX, vars),
@@ -517,9 +518,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
     @Test
     public void testZippel8() throws Exception {
+        MultivariateGCD.ALWAYS_LINZIP = true;
         String[] vars = {"a", "b", "c"};
         ModularDomain domain = new ModularDomain(31579447);
-        System.out.println(domain);
         MultivariatePolynomial<BigInteger>
                 a = parse("5*a+29923129*a*b*c^2+3*a*b^2+29923132*a^2*b*c^2+7*a^3*c", domain, LEX, vars),
                 b = parse("4*c^2+29923126*a*c^2+5*a*b+6*a^2*b^2*c^3+29923128*a^3*c^3", domain, LEX, vars),
