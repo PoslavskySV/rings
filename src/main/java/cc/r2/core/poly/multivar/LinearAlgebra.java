@@ -2,9 +2,15 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.generics.ModularDomain;
+import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.univar.bMutablePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import static cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo.*;
 
 /**
  * @author Stanislav Poslavsky
@@ -12,6 +18,26 @@ import java.util.ArrayList;
  */
 final class LinearAlgebra {
     private LinearAlgebra() {}
+
+    public static void transposeSquare(Object[][] matrix) {
+        for (int i = 0; i < matrix.length; ++i) {
+            for (int j = 0; j < i; ++j) {
+                Object tmp = matrix[i][j];
+                matrix[i][j] = matrix[j][i];
+                matrix[j][i] = tmp;
+            }
+        }
+    }
+
+    public static void transposeSquare(long[][] matrix) {
+        for (int i = 0; i < matrix.length; ++i) {
+            for (int j = 0; j < i; ++j) {
+                long tmp = matrix[i][j];
+                matrix[i][j] = matrix[j][i];
+                matrix[j][i] = tmp;
+            }
+        }
+    }
 
     /**
      * Gives the row‐reduced form of the matrix
@@ -78,12 +104,12 @@ final class LinearAlgebra {
     }
 
     /**
-     * Solve linear system {@code lhs.x = rhs}.
+     * Solves linear system {@code lhs.x = rhs}.
      *
      * @param domain the domain
      * @param lhs    the lhs of the system
      * @param rhs    the rhs of the system
-     * @return solution
+     * @return the solution
      * @throws ArithmeticException if the system is inconsistent or under-determined
      */
     public static BigInteger[] solve(Domain<BigInteger> domain, BigInteger[][] lhs, BigInteger[] rhs) {
@@ -92,7 +118,7 @@ final class LinearAlgebra {
             return new BigInteger[0];
         BigInteger[] result = new BigInteger[nUnknowns];
         SystemInfo info = solve(domain, lhs, rhs, result);
-        if (info != SystemInfo.Consistent)
+        if (info != Consistent)
             throw new ArithmeticException("singular or under-determined matrix");
         return result;
     }
@@ -107,7 +133,7 @@ final class LinearAlgebra {
     }
 
     /**
-     * Solve linear system {@code lhs.x = rhs} and place the result to {@code result}
+     * Solves linear system {@code lhs.x = rhs} and stores the result in {@code result}
      * (which should be of the enough length).
      *
      * @param domain the domain
@@ -117,10 +143,25 @@ final class LinearAlgebra {
      * @return system information (inconsistent, under-determined or consistent)
      */
     public static SystemInfo solve(Domain<BigInteger> domain, BigInteger[][] lhs, BigInteger[] rhs, BigInteger[] result) {
+        if (lhs.length != rhs.length)
+            throw new IllegalArgumentException("lhs.length != rhs.length");
+        if (rhs.length == 0)
+            return Consistent;
+        if (rhs.length == 1) {
+            if (lhs[0].length == 1) {
+                result[0] = domain.divideExact(rhs[0], lhs[0][0]);
+                return Consistent;
+            }
+            if (lhs[0].length > 1)
+                return UnderDetermined;
+            if (lhs[0].length < 1)
+                return Inconsistent;
+        }
+
         int nUnderDetermined = rowEchelonForm(domain, lhs, rhs);
         if (nUnderDetermined > 0)
             // under-determined system
-            return SystemInfo.UnderDetermined;
+            return UnderDetermined;
 
         int nRows = rhs.length;
         int nColumns = lhs[0].length;
@@ -135,7 +176,7 @@ final class LinearAlgebra {
             for (int i = nColumns; i < nRows; ++i)
                 if (!domain.isZero(rhs[i]))
                     // inconsistent system
-                    return SystemInfo.Inconsistent;
+                    return Inconsistent;
 
 
         // back substitution
@@ -146,11 +187,11 @@ final class LinearAlgebra {
             }
             result[i] = domain.divideAndRemainder(domain.subtract(rhs[i], sum), lhs[i][i])[0];
         }
-        return SystemInfo.Consistent;
+        return Consistent;
     }
 
     /**
-     * Solve linear system {@code lhs.x = rhs} and place the result to {@code result}
+     * Solves linear system {@code lhs.x = rhs} and stores the result in {@code result}
      * (which should be of the enough length).
      *
      * @param domain the domain
@@ -159,7 +200,119 @@ final class LinearAlgebra {
      * @param result where to place the result
      * @return system information (inconsistent, under-determined or consistent)
      */
-    static SystemInfo solve(Domain<BigInteger> domain, ArrayList<BigInteger[]> lhs, ArrayList<BigInteger> rhs, BigInteger[] result) {
+    public static SystemInfo solve(Domain<BigInteger> domain, ArrayList<BigInteger[]> lhs, ArrayList<BigInteger> rhs, BigInteger[] result) {
         return solve(domain, lhs.toArray(new BigInteger[lhs.size()][]), rhs.toArray(new BigInteger[rhs.size()]), result);
+    }
+
+    /**
+     * Solves Vandermonde linear system (that is with i-th equation of the form {@code row[i]^0 * x0 +  row[i]^1 * x1 + ... row[i]^N * xN = rhs[i] }).
+     *
+     * @param domain the domain
+     * @param row    the Vandermonde coefficients
+     * @param rhs    the rhs of the system
+     * @return the solution
+     * @throws ArithmeticException if the system is inconsistent or under-determined
+     */
+    public static BigInteger[] solveVandermonde(ModularDomain domain, BigInteger[] row, BigInteger[] rhs) {
+        BigInteger[] result = new BigInteger[rhs.length];
+        SystemInfo info = solveVandermonde(domain, row, rhs, result);
+        if (info != Consistent)
+            throw new ArithmeticException("singular or under-determined matrix");
+        return result;
+    }
+
+    /**
+     * Solves transposed Vandermonde linear system (that is with i-th equation of the form {@code row[0]^i * x0 +  row[1]^i * x1 + ... row[N]^i * xN = rhs[i] }).
+     *
+     * @param domain the domain
+     * @param row    the Vandermonde coefficients
+     * @param rhs    the rhs of the system
+     * @return the solution
+     * @throws ArithmeticException if the system is inconsistent or under-determined
+     */
+    public static BigInteger[] solveVandermondeT(ModularDomain domain, BigInteger[] row, BigInteger[] rhs) {
+        BigInteger[] result = new BigInteger[rhs.length];
+        SystemInfo info = solveVandermondeT(domain, row, rhs, result);
+        if (info != Consistent)
+            throw new ArithmeticException("singular or under-determined matrix");
+        return result;
+    }
+
+    /**
+     * Solves Vandermonde linear system (that is with i-th equation of the form {@code row[i]^0 * x0 +  row[i]^1 * x1 + ... row[i]^N * xN = rhs[i] })
+     * and stores the result in {@code result} (which should be of the enough length).
+     *
+     * @param domain the domain
+     * @param row    the Vandermonde coefficients
+     * @param rhs    the rhs of the system
+     * @param result where to place the result
+     * @return system information (inconsistent, under-determined or consistent)
+     */
+    public static SystemInfo solveVandermonde(ModularDomain domain, BigInteger[] row, BigInteger[] rhs, BigInteger[] result) {
+        if (row.length != rhs.length)
+            throw new IllegalArgumentException("not a square Vandermonde matrix");
+        if (rhs.length == 0)
+            return Consistent;
+        if (rhs.length == 1) {
+            result[0] = rhs[0];
+            return Consistent;
+        }
+        bMutablePolynomialZp[] lins = new bMutablePolynomialZp[row.length];
+        bMutablePolynomialZp master = bMutablePolynomialZp.one(domain.modulus);
+        for (int i = 0; i < row.length; ++i) {
+            lins[i] = master.createLinear(domain.negate(row[i]), domain.getOne());
+            master = master.multiply(lins[i]);
+        }
+
+        Arrays.fill(result, domain.getZero());
+        for (int i = 0; i < row.length; i++) {
+            bMutablePolynomialZp quot = DivisionWithRemainder.divideAndRemainder(master, lins[i], true)[0];
+            BigInteger cf = quot.evaluate(row[i]);
+            if (domain.isZero(cf))
+                return UnderDetermined;
+            quot = quot.divide(cf);
+            for (int j = 0; j < row.length; ++j)
+                result[j] = domain.add(result[j], domain.multiply(rhs[i], quot.get(j)));
+        }
+        return Consistent;
+    }
+
+    /**
+     * Solves transposed Vandermonde linear system (that is with i-th equation of the form {@code row[0]^i * x0 +  row[1]^i * x1 + ... row[N]^i * xN = rhs[i] })
+     * and stores the result in {@code result} (which should be of the enough length).
+     *
+     * @param domain the domain
+     * @param row    the Vandermonde coefficients
+     * @param rhs    the rhs of the system
+     * @param result where to place the result
+     * @return system information (inconsistent, under-determined or consistent)
+     */
+    public static SystemInfo solveVandermondeT(ModularDomain domain, BigInteger[] row, BigInteger[] rhs, BigInteger[] result) {
+        if (row.length != rhs.length)
+            throw new IllegalArgumentException("not a square Vandermonde matrix");
+        if (rhs.length == 0)
+            return Consistent;
+        if (rhs.length == 1) {
+            result[0] = rhs[0];
+            return Consistent;
+        }
+        bMutablePolynomialZp[] lins = new bMutablePolynomialZp[row.length];
+        bMutablePolynomialZp master = bMutablePolynomialZp.one(domain.modulus);
+        for (int i = 0; i < row.length; ++i) {
+            lins[i] = master.createLinear(domain.negate(row[i]), domain.getOne());
+            master = master.multiply(lins[i]);
+        }
+
+        for (int i = 0; i < row.length; i++) {
+            bMutablePolynomialZp quot = DivisionWithRemainder.divideAndRemainder(master, lins[i], true)[0];
+            BigInteger cf = quot.evaluate(row[i]);
+            if (domain.isZero(cf))
+                return UnderDetermined;
+            quot = quot.divide(cf);
+            result[i] = domain.getZero();
+            for (int j = 0; j < row.length; ++j)
+                result[i] = domain.add(result[i], domain.multiply(rhs[j], quot.get(j)));
+        }
+        return Consistent;
     }
 }

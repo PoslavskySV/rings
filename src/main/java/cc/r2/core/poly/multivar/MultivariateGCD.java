@@ -2,6 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.generics.ModularDomain;
 import cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;
@@ -10,11 +11,8 @@ import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
@@ -732,7 +730,7 @@ public final class MultivariateGCD {
     static abstract class SparseInterpolation {
         /** the domain */
         final Domain<BigInteger> domain;
-        /** which we are evaluating */
+        /** variable which we are evaluating */
         final int variable;
         /** initial polynomials */
         final MultivariatePolynomial<BigInteger> a, b;
@@ -755,13 +753,13 @@ public final class MultivariateGCD {
         /** random */
         final RandomGenerator rnd;
 
-        public SparseInterpolation(Domain<BigInteger> domain, int variable,
-                                   MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b,
-                                   Set<DegreeVector> globalSkeleton,
-                                   TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton,
-                                   int[] sparseUnivarDegrees, int[] evaluationVariables,
-                                   BigInteger[] evaluationPoint,
-                                   PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd) {
+        SparseInterpolation(Domain<BigInteger> domain, int variable,
+                            MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b,
+                            Set<DegreeVector> globalSkeleton,
+                            TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton,
+                            int[] sparseUnivarDegrees, int[] evaluationVariables,
+                            BigInteger[] evaluationPoint,
+                            PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd) {
             this.domain = domain;
             this.variable = variable;
             this.a = a;
@@ -779,7 +777,7 @@ public final class MultivariateGCD {
     }
 
     static final class LinZipInterpolation extends SparseInterpolation {
-        public LinZipInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd) {
+        LinZipInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
         }
 
@@ -793,7 +791,7 @@ public final class MultivariateGCD {
          * @return gcd at {@code variable = newPoint}
          */
         @Override
-        public MultivariatePolynomial<BigInteger> evaluate(BigInteger newPoint) {
+        MultivariatePolynomial<BigInteger> evaluate(BigInteger newPoint) {
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
             powers.set(evaluationPoint.length - 1, newPoint);
@@ -911,7 +909,7 @@ public final class MultivariateGCD {
         /** univar exponent with monomial factor that can be used for scaling */
         final int monicScalingExponent;
 
-        public MonicInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd, int requiredNumberOfEvaluations, int monicScalingExponent) {
+        MonicInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd, int requiredNumberOfEvaluations, int monicScalingExponent) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
             this.requiredNumberOfEvaluations = requiredNumberOfEvaluations;
             this.monicScalingExponent = monicScalingExponent;
@@ -923,7 +921,8 @@ public final class MultivariateGCD {
          * @param newPoint evaluation point
          * @return gcd at {@code variable = newPoint}
          */
-        public MultivariatePolynomial<BigInteger> evaluate(BigInteger newPoint) {
+        @Override
+        MultivariatePolynomial<BigInteger> evaluate(BigInteger newPoint) {
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
             powers.set(evaluationPoint.length - 1, newPoint);
@@ -1031,7 +1030,6 @@ public final class MultivariateGCD {
         @Override
         public String toString() {
             return "{" + matrix.stream().map(Arrays::toString).collect(Collectors.joining(",")) + "} = " + rhs;
-
         }
     }
 
@@ -1070,7 +1068,19 @@ public final class MultivariateGCD {
         SystemInfo solve() {
             if (solution == null)
                 solution = new BigInteger[nUnknownVariables()];
-            return LinearAlgebra.solve(domain, matrix.toArray(new BigInteger[matrix.size()][]), rhs.toArray(new BigInteger[rhs.size()]), solution);
+
+            if (nUnknownVariables() <= 8)
+                // for small systems Gaussian elimination is indeed faster
+                return LinearAlgebra.solve(domain, matrix.toArray(new BigInteger[matrix.size()][]), rhs.toArray(new BigInteger[rhs.size()]), solution);
+
+            // solve vandermonde system
+            BigInteger[] vandermondeRow = matrix.get(0);
+            SystemInfo info = LinearAlgebra.solveVandermondeT((ModularDomain) domain, vandermondeRow, rhs.toArray(new BigInteger[rhs.size()]), solution);
+            if (info == SystemInfo.Consistent)
+                for (int i = 0; i < solution.length; ++i)
+                    solution[i] = domain.divideExact(solution[i], vandermondeRow[i]);
+
+            return info;
         }
 
         public VandermondeSystem oneMoreEquation(BigInteger rhsVal) {
@@ -1095,10 +1105,12 @@ public final class MultivariateGCD {
         return tmp;
     }
 
-    private static boolean isVandermonde(BigInteger[][] lhs, BigInteger[] rhs, Domain<BigInteger> domain) {
+    private static boolean isVandermonde(List<BigInteger[]> lhs, Domain<BigInteger> domain) {
+        return isVandermonde(lhs.toArray(new BigInteger[0][]), domain);
+    }
+
+    private static boolean isVandermonde(BigInteger[][] lhs, Domain<BigInteger> domain) {
         for (int i = 1; i < lhs.length; i++) {
-            if (!rhs[i].equals(domain.pow(rhs[0], i + 1)))
-                return false;
             for (int j = 0; j < lhs[0].length; j++) {
                 if (!lhs[i][j].equals(domain.pow(lhs[0][j], i + 1)))
                     return false;

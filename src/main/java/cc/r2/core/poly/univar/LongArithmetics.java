@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.redberry.libdivide4j.FastDivision;
 
 /**
  * Helper methods for arithmetics with {@code longs}.
@@ -312,5 +313,69 @@ public final class LongArithmetics {
             throw new ArithmeticException("integer overflow: " + value);
         }
         return (int) value;
+    }
+
+    /**
+     * Returns {@code base} in a power of non-negative {@code e} modulo {@code modulus}
+     *
+     * @param base     the base
+     * @param exponent the non-negative exponent
+     * @param modulus  the modulus
+     * @return {@code base} in a power of {@code e}
+     */
+    public static long powMod(final long base, long exponent, long modulus) {
+        return powModSigned(base, exponent, FastDivision.magicSigned(modulus));
+    }
+
+    /**
+     * Returns {@code base} in a power of non-negative {@code e} modulo {@code magic.modulus}
+     *
+     * @param base     the base
+     * @param exponent the non-negative exponent
+     * @param magic    magic modulus
+     * @return {@code base} in a power of {@code e}
+     */
+    public static long powModSigned(final long base, long exponent, FastDivision.Magic magic) {
+        if (exponent < 0)
+            throw new IllegalArgumentException();
+        if (exponent == 0)
+            return 1;
+
+        long result = 1;
+        long k2p = FastDivision.modSignedFast(base, magic);
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result = FastDivision.modSignedFast(result * k2p, magic);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = FastDivision.modSignedFast(k2p * k2p, magic);
+        }
+    }
+
+    /**
+     * Returns {@code base} in a power of non-negative {@code e} modulo {@code magic.modulus}
+     *
+     * @param base     the base
+     * @param exponent the non-negative exponent
+     * @param magic    magic modulus
+     * @return {@code base} in a power of {@code e}
+     */
+    public static long powModUnsigned(final long base, long exponent, FastDivision.Magic magic) {
+        if (exponent < 0)
+            throw new IllegalArgumentException();
+        if (exponent == 0)
+            return 1;
+
+        long result = 1;
+        long k2p = FastDivision.modUnsignedFast(base, magic);
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result = FastDivision.modUnsignedFast(result * k2p, magic);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = FastDivision.modUnsignedFast(k2p * k2p, magic);
+        }
     }
 }

@@ -3,21 +3,26 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.generics.ModularDomain;
+import cc.r2.core.poly.univar.LongArithmetics;
+import cc.r2.core.test.AbstractTest;
 import cc.r2.core.util.ArraysUtil;
+import cc.r2.core.util.RandomDataGenerator;
+import cc.r2.core.util.TimeUnits;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import static cc.r2.core.poly.multivar.LinearAlgebra.rowEchelonForm;
-import static cc.r2.core.poly.multivar.LinearAlgebra.solve;
+import static cc.r2.core.poly.multivar.LinearAlgebra.*;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class LinearAlgebraTest {
+public class LinearAlgebraTest extends AbstractTest {
     @Test
     public void test1() throws Exception {
         BigInteger[][] system = {
@@ -89,6 +94,148 @@ public class LinearAlgebraTest {
         BigInteger[] solution = solve(domain, lhs, rhs);
         long[] expected = {1, 2183072, 130178, 0, 6, 3367849, 8000, 1};
         Assert.assertArrayEquals(convert(expected), solution);
+    }
+
+    @Test
+    public void testVandermonde1() throws Exception {
+        int modulus = 23;
+        ModularDomain domain = new ModularDomain(modulus);
+        long[] vnd = {1, 2, 3, 4};
+        long[][] lhs = {
+                {1, 1, 1, 1},
+                {1, 2, 2 * 2, 2 * 2 * 2},
+                {1, 3, 3 * 3, (3 * 3 * 3) % modulus},
+                {1, 4, (4 * 4) % modulus, (4 * 4 * 4) % modulus}
+        };
+        long[] rhs = {11, 2, 13, 4};
+        Assert.assertArrayEquals(
+                solve(domain, convert(lhs), convert(rhs)),
+                solveVandermonde(domain, convert(vnd), convert(rhs)));
+
+        transposeSquare(lhs);
+
+        Assert.assertArrayEquals(
+                solve(domain, convert(lhs), convert(rhs)),
+                solveVandermondeT(domain, convert(vnd), convert(rhs)));
+    }
+
+    @Test
+    public void testVandermonde2() throws Exception {
+        int modulus = 23;
+        ModularDomain domain = new ModularDomain(modulus);
+        long[] vnd = {2, 3, 4, 5};
+        long[][] lhs = {
+                {1, 2, 2 * 2, 2 * 2 * 2},
+                {1, 3, 3 * 3, (3 * 3 * 3) % modulus},
+                {1, 4, (4 * 4) % modulus, (4 * 4 * 4) % modulus},
+                {1, 5, (5 * 5) % modulus, (5 * 5 * 5) % modulus}
+        };
+        long[] rhs = {11, 2, 13, 4};
+        Assert.assertArrayEquals(
+                solve(domain, convert(lhs), convert(rhs)),
+                solveVandermonde(domain, convert(vnd), convert(rhs)));
+
+        transposeSquare(lhs);
+
+        Assert.assertArrayEquals(
+                solve(domain, convert(lhs), convert(rhs)),
+                solveVandermondeT(domain, convert(vnd), convert(rhs)));
+    }
+
+    @Test
+    public void testVandermonde3() throws Exception {
+        int modulus = 3;
+        ModularDomain domain = new ModularDomain(modulus);
+        long[] vnd = {2, 3, 4, 5};
+        long[][] lhs = {
+                {1, 2, 2 * 2, 2 * 2 * 2},
+                {1, 3, 3 * 3, (3 * 3 * 3) % modulus},
+                {1, 4, (4 * 4) % modulus, (4 * 4 * 4) % modulus},
+                {1, 5, (5 * 5) % modulus, (5 * 5 * 5) % modulus}
+        };
+        long[] rhs = {11, 2, 13, 4};
+        Assert.assertArrayEquals(
+                solve(domain, convert(lhs), convert(rhs)),
+                solveVandermonde(domain, convert(vnd), convert(rhs)));
+
+        transposeSquare(lhs);
+
+
+    }
+
+    @Test
+    public void testVandermondePerformance() throws Exception {
+        RandomGenerator rnd = getRandom();
+
+        DescriptiveStatistics
+                gauss = new DescriptiveStatistics(),
+                vand = new DescriptiveStatistics(),
+                gaussT = new DescriptiveStatistics(),
+                vandT = new DescriptiveStatistics();
+        int size = 8;
+        long modulus = SmallPrimes.nextPrime(123456789);
+        ModularDomain domain = new ModularDomain(modulus);
+        int nIterations = 1000;
+        for (int n = 0; n < nIterations; n++) {
+            if (n == nIterations / 10)
+                Arrays.asList(gauss, vand, gaussT, vandT).forEach(DescriptiveStatistics::clear);
+
+            long[] k = new long[size];
+            for (int i = 0; i < size; i++)
+                k[i] = rnd.nextInt((int) modulus);
+
+            long[][] lhs = new long[size][size];
+            for (int i = 0; i < size; i++)
+                for (int j = 0; j < size; j++)
+                    lhs[i][j] = LongArithmetics.powMod(k[i], j, modulus);
+
+
+            long[] rhs = new long[size];
+            for (int i = 0; i < rhs.length; i++)
+                rhs[i] = rnd.nextInt((int) modulus);
+
+            BigInteger[][] blhs = convert(lhs);
+            BigInteger[] brhs = convert(rhs), vndCfs = convert(k);
+
+            BigInteger[] gSol, vSol;
+            long start;
+
+            BigInteger[][] tmp = deepClone(blhs);
+            start = System.nanoTime();
+            gSol = solve(domain, tmp, brhs.clone());
+            gauss.addValue(System.nanoTime() - start);
+
+            start = System.nanoTime();
+            vSol = solveVandermonde(domain, vndCfs, brhs.clone());
+            vand.addValue(System.nanoTime() - start);
+
+            Assert.assertArrayEquals(gSol, vSol);
+
+            transposeSquare(blhs);
+
+            tmp = deepClone(blhs);
+            start = System.nanoTime();
+            gSol = solve(domain, tmp, brhs.clone());
+            gaussT.addValue(System.nanoTime() - start);
+
+            start = System.nanoTime();
+            vSol = solveVandermondeT(domain, vndCfs.clone(), brhs.clone());
+            vandT.addValue(System.nanoTime() - start);
+
+            Assert.assertArrayEquals(gSol, vSol);
+        }
+
+        System.out.println("Gauss  : " + TimeUnits.statisticsNanotime(gauss));
+        System.out.println("GaussT : " + TimeUnits.statisticsNanotime(gaussT));
+        System.out.println("Vandermonde  : " + TimeUnits.statisticsNanotime(vand));
+        System.out.println("VandermondeT : " + TimeUnits.statisticsNanotime(vandT));
+    }
+
+    public static BigInteger[][] deepClone(BigInteger[][] input) {
+        BigInteger[][] res = new BigInteger[input.length][];
+        for (int i = res.length - 1; i >= 0; --i)
+            res[i] = input[i].clone();
+        return res;
     }
 
     static BigInteger[] convert(long[] arr) {
