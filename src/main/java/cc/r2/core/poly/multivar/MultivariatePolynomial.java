@@ -575,14 +575,14 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     /**
-     * Returns the product of {@link #degrees()}
+     * Returns the sum of {@link #degrees()}
      *
-     * @return product of {@link #degrees()}
+     * @return sum of {@link #degrees()}
      */
-    public int degreeProduct() {
-        int r = 1;
+    public int degreeSum() {
+        int r = 0;
         for (int d : degrees())
-            r *= d;
+            r += d;
         return r;
     }
 

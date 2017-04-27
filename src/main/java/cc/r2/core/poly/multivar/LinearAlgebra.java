@@ -5,7 +5,6 @@ import cc.r2.core.poly.generics.Domain;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * @author Stanislav Poslavsky
@@ -118,9 +117,6 @@ final class LinearAlgebra {
      * @return system information (inconsistent, under-determined or consistent)
      */
     public static SystemInfo solve(Domain<BigInteger> domain, BigInteger[][] lhs, BigInteger[] rhs, BigInteger[] result) {
-        Object[][] lhsAAAA = ArraysUtil.deepClone(lhs);
-        Object[] rhsAAAA = rhs.clone();
-
         int nUnderDetermined = rowEchelonForm(domain, lhs, rhs);
         if (nUnderDetermined > 0)
             // under-determined system
@@ -137,14 +133,9 @@ final class LinearAlgebra {
             // over-determined system
             // check that all rhs are zero
             for (int i = nColumns; i < nRows; ++i)
-                if (!domain.isZero(rhs[i])) {
-                    System.out.println(domain);
-                    System.out.println(Arrays.deepToString(lhsAAAA).replace("[", "{").replace("]", "}"));
-                    System.out.println(Arrays.deepToString(rhsAAAA).replace("[", "{").replace("]", "}"));
-
+                if (!domain.isZero(rhs[i]))
                     // inconsistent system
                     return SystemInfo.Inconsistent;
-                }
 
 
         // back substitution
