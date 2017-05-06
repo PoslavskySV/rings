@@ -682,7 +682,7 @@ public final class PolynomialGCD {
      * @param polynomials a set of polynomials
      * @return GCD of polynomials
      */
-    public static <T extends IMutablePolynomial<T>> T PolynomialGCD(Collection<T> polynomials) {
+    public static <T extends IMutablePolynomial<T>> T PolynomialGCD(Iterable<T> polynomials) {
         T gcd = null;
         for (T poly : polynomials)
             gcd = gcd == null ? poly : PolynomialGCD(gcd, poly);
