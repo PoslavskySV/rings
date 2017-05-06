@@ -586,7 +586,7 @@ public final class DivisionWithRemainder {
 
         //apply Horner's method
 
-        long cc = dividend.mod(-divider.cc());
+        long cc = dividend.negateMod(divider.cc());
         long lcInverse = LongArithmetics.modInverse(divider.lc(), dividend.modulus);
 
         if (divider.lc() != 1)
