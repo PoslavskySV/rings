@@ -647,8 +647,8 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
             else
                 setMin(degreeVector, exponents);
         if (exponents == null)
-            return MonomialTerm.withZeroExponents(nVariables, null);
-        return new MonomialTerm<>(exponents, null);
+            return MonomialTerm.withZeroExponents(nVariables, domain.getOne());
+        return new MonomialTerm<>(exponents, domain.getOne());
     }
 
     static void setMin(MonomialTerm<?> degreeVector, int[] exponents) {

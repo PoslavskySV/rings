@@ -5,6 +5,7 @@ import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.generics.ModularDomain;
 import cc.r2.core.poly.univar.LongArithmetics;
 import cc.r2.core.test.AbstractTest;
+import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.ArraysUtil;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -24,20 +25,10 @@ import static cc.r2.core.poly.multivar2.LinearAlgebra.*;
 public class LinearAlgebraTest extends AbstractTest {
     @Test
     public void test1() throws Exception {
-        BigInteger[][] system = {
-                {BigInteger.valueOf(1), BigInteger.valueOf(2), BigInteger.valueOf(3)},
-                {BigInteger.valueOf(2), BigInteger.valueOf(2), BigInteger.valueOf(3)},
-                {BigInteger.valueOf(3), BigInteger.valueOf(2), BigInteger.valueOf(3)},
-        };
-        BigInteger[] rhs = {
-                BigInteger.valueOf(1),
-                BigInteger.valueOf(2),
-                BigInteger.valueOf(3),
-        };
-
-
-        BigInteger[] r = solve(new ModularDomain(SmallPrimes.nextPrime(12324)), system, rhs);
-        System.out.println(Arrays.toString(r));
+        long[][] system = {{1, 2, 13}, {2, 14, 3}, {11, 2, 13}};
+        long[] rhs = {1, 2, 13};
+        BigInteger[] r = solve(new ModularDomain(SmallPrimes.nextPrime(12324)), convert(system), convert(rhs));
+        Assert.assertArrayEquals(convert(new long[]{2467, 9625, 6865}), r);
     }
 
     @Test
@@ -79,6 +70,26 @@ public class LinearAlgebraTest extends AbstractTest {
         };
         long[] rhs0 = {1, 0, 740880, 0, 1693671, 0, 810986, 0};
         long modulus = 5642359;
+        BigInteger[] solution = new BigInteger[rhs0.length];
+        SystemInfo r = solve(new ModularDomain(modulus), convert(lhs0), convert(rhs0), solution);
+        Assert.assertEquals(SystemInfo.UnderDetermined, r);
+    }
+
+    @Test
+    public void test3a() throws Exception {
+        long[][] lhs0 = {
+                {1, 0, 0, 0, 0, 0, 0, 0},
+                {1, 0, 0, 0, 0, 0, 0, 5642358},
+                {0, 1, 1168354, 5331039, 0, 0, 0, 0},
+                {0, 1, 798805, 1341857, 0, 0, 0, 5298367},
+                {0, 0, 1, 0, 3103458, 0, 0, 0}, {0, 0, 0, 0, 1168354, 0, 0, 4274594},
+                {0, 0, 0, 0, 0, 1, 1168354, 0}, {0, 0, 0, 0, 0, 1, 798805, 4627257}
+        };
+        long[] rhs0 = {1, 0, 740880, 0, 1693671, 0, 810986, 0};
+        long modulus = 5642359;
+
+//        System.out.println(prettyMatrix(lhs0));
+
 
         BigInteger[][] lhs = convert(lhs0);
         BigInteger[] rhs = convert(rhs0);
@@ -86,12 +97,12 @@ public class LinearAlgebraTest extends AbstractTest {
         ModularDomain domain = new ModularDomain(modulus);
         rowEchelonForm(domain, lhs, rhs);
 
-        System.out.println(prettyMatrix(lhs0));
-        System.out.println(prettyMatrix(lhs));
-        System.out.println(Arrays.toString(rhs));
+//        System.out.println(prettyMatrix(lhs0));
+//        System.out.println(prettyMatrix(lhs));
+//        System.out.println(Arrays.toString(rhs));
 
         BigInteger[] solution = solve(domain, lhs, rhs);
-        long[] expected = {1, 2183072, 130178, 0, 6, 3367849, 8000, 1};
+        long[] expected = {1, 561035, 0, 2317604, 6, 3367849, 8000, 1};
         Assert.assertArrayEquals(convert(expected), solution);
     }
 
@@ -143,7 +154,7 @@ public class LinearAlgebraTest extends AbstractTest {
 
     @Test
     public void testVandermonde3() throws Exception {
-        int modulus = 3;
+        int modulus = 13;
         ModularDomain domain = new ModularDomain(modulus);
         long[] vnd = {2, 3, 4, 5};
         long[][] lhs = {
@@ -158,10 +169,9 @@ public class LinearAlgebraTest extends AbstractTest {
                 solveVandermonde(domain, convert(vnd), convert(rhs)));
 
         transposeSquare(lhs);
-
-
     }
 
+    @Benchmark(runAnyway = true)
     @Test
     public void testVandermondePerformance() throws Exception {
         RandomGenerator rnd = getRandom();
