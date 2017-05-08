@@ -18,7 +18,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Map;
 
-import static cc.r2.core.poly.multivar2.MonomialTerm.LEX;
+import static cc.r2.core.poly.multivar2.DegreeVector.LEX;
 import static cc.r2.core.poly.multivar2.MultivariateGCD.*;
 import static cc.r2.core.poly.multivar2.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar2.MultivariateReduction.dividesQ;
@@ -486,7 +486,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             if (n == nIterations / 10) {
                 zippel.clear(); brown.clear();
             }
-            System.out.println(n);
+            if(n % 100 == 0) System.out.println(n);
 
             GCDTriplet data = sampleData.nextSample(false, true);
             MultivariatePolynomial<BigInteger> gcdZippel = null, gcdBrown = null;

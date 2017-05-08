@@ -4,9 +4,8 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.generics.Domain;
 import cc.r2.core.poly.generics.ModularDomain;
-import cc.r2.core.poly.multivar2.MultivariatePolynomial.PrecomputedPowersHolder;
+import cc.r2.core.poly.multivar2.MultivariatePolynomial.*;
 import cc.r2.core.poly.univar.bMutablePolynomialZ;
-import cc.r2.core.test.AbstractTest;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -17,7 +16,7 @@ import java.util.stream.IntStream;
 
 import static cc.r2.core.number.BigInteger.*;
 import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
-import static cc.r2.core.poly.multivar2.MonomialTerm.LEX;
+import static cc.r2.core.poly.multivar2.DegreeVector.LEX;
 import static cc.r2.core.poly.multivar2.MultivariatePolynomial.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -26,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariatePolynomialTest extends AbstractPolynomialTest{
+public class MultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testArithmetics1() throws Exception {
         MultivariatePolynomial<BigInteger> a = parse("a*b + a^2 + c^3*b^2", LEX);

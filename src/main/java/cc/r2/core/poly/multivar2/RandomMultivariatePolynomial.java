@@ -13,11 +13,11 @@ import java.util.Comparator;
  * @since 1.0
  */
 public class RandomMultivariatePolynomial {
-    public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Comparator<MonomialTerm> ordering, RandomGenerator rnd) {
+    public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
         return randomPolynomial(nVars, degree, size, bound, IntegersDomain.IntegersDomain, ordering, rnd);
     }
 
-    public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Domain<BigInteger> domain, Comparator<MonomialTerm> ordering, RandomGenerator rnd) {
+    public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Domain<BigInteger> domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
         int nd = 3 * degree / 2;
         @SuppressWarnings("unchecked")
         MonomialTerm<BigInteger>[] terms = new MonomialTerm[size];
@@ -31,6 +31,6 @@ public class RandomMultivariatePolynomial {
     }
 
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {
-        return randomPolynomial(nVars, degree, size, BigInteger.TEN, MonomialTerm.LEX, rnd);
+        return randomPolynomial(nVars, degree, size, BigInteger.TEN, DegreeVector.LEX, rnd);
     }
 }

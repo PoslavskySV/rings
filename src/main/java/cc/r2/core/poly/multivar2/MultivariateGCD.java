@@ -34,7 +34,7 @@ public final class MultivariateGCD {
     private static MultivariatePolynomial<BigInteger> evaluateAtRandomPreservingSkeleton(
             MultivariatePolynomial<BigInteger> poly, int variable, RandomGenerator rnd) {
         //desired skeleton
-        Set<MonomialTerm> skeleton = poly.getSkeletonExcept(variable);
+        Set<DegreeVector> skeleton = poly.getSkeletonExcept(variable);
         MultivariatePolynomial<BigInteger> tmp;
         do {
             BigInteger randomPoint = poly.domain.randomElement(rnd);
@@ -670,7 +670,7 @@ public final class MultivariateGCD {
                                                    RandomGenerator rnd) {
         boolean monic = a.coefficientOf(0, a.degree(0)).isConstant() && b.coefficientOf(0, a.degree(0)).isConstant();
 
-        Set<MonomialTerm> globalSkeleton = skeleton.data.keySet();
+        Set<DegreeVector> globalSkeleton = skeleton.data.keySet();
         TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton = getSkeleton(skeleton);
         int[] sparseUnivarDegrees = univarSkeleton.keys();
 
@@ -735,7 +735,7 @@ public final class MultivariateGCD {
         /** initial polynomials */
         final MultivariatePolynomial<BigInteger> a, b;
         /** global skeleton of the result */
-        final Set<MonomialTerm> globalSkeleton;
+        final Set<DegreeVector> globalSkeleton;
         /** skeleton of each of the coefficients of polynomial viewed as Zp[x_1,...,x_N][x_0] */
         final TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton;
         /** univariate degrees of {@code univarSkeleton} with respect to x_0 */
@@ -755,7 +755,7 @@ public final class MultivariateGCD {
 
         SparseInterpolation(Domain<BigInteger> domain, int variable,
                             MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b,
-                            Set<MonomialTerm> globalSkeleton,
+                            Set<DegreeVector> globalSkeleton,
                             TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton,
                             int[] sparseUnivarDegrees, int[] evaluationVariables,
                             BigInteger[] evaluationPoint,
@@ -777,7 +777,7 @@ public final class MultivariateGCD {
     }
 
     static final class LinZipInterpolation extends SparseInterpolation {
-        LinZipInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<MonomialTerm> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd) {
+        LinZipInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
         }
 
@@ -913,7 +913,7 @@ public final class MultivariateGCD {
         /** univar exponent with monomial factor that can be used for scaling */
         final int monicScalingExponent;
 
-        MonicInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<MonomialTerm> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd, int requiredNumberOfEvaluations, int monicScalingExponent) {
+        MonicInterpolation(Domain<BigInteger> domain, int variable, MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, BigInteger[] evaluationPoint, PrecomputedPowersHolder<BigInteger> powers, RandomGenerator rnd, int requiredNumberOfEvaluations, int monicScalingExponent) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
             this.requiredNumberOfEvaluations = requiredNumberOfEvaluations;
             this.monicScalingExponent = monicScalingExponent;

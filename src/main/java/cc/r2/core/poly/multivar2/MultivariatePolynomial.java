@@ -16,7 +16,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
-import static cc.r2.core.poly.multivar2.MonomialTerm.LEX;
 
 /**
  * @author Stanislav Poslavsky
@@ -25,10 +24,10 @@ import static cc.r2.core.poly.multivar2.MonomialTerm.LEX;
 public class MultivariatePolynomial<E> implements IGeneralPolynomial<MultivariatePolynomial<E>> {
     final int nVariables;
     final Domain<E> domain;
-    final Comparator<MonomialTerm> ordering;
+    final Comparator<DegreeVector> ordering;
     final MonomialsSet<E> data;
 
-    public MultivariatePolynomial(int nVariables, Domain<E> domain, Comparator<MonomialTerm> ordering, MonomialsSet<E> data) {
+    public MultivariatePolynomial(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering, MonomialsSet<E> data) {
         this.nVariables = nVariables;
         this.domain = domain;
         this.ordering = ordering;
@@ -43,7 +42,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param terms    the monomial terms
      * @return multivariate polynomial
      */
-    public static <E> MultivariatePolynomial<E> create(Domain<E> domain, Comparator<MonomialTerm> ordering, MonomialTerm<E>... terms) {
+    public static <E> MultivariatePolynomial<E> create(Domain<E> domain, Comparator<DegreeVector> ordering, MonomialTerm<E>... terms) {
         if (terms.length == 0)
             throw new IllegalArgumentException("empty");
         MonomialsSet<E> map = new MonomialsSet<>(ordering);
@@ -61,7 +60,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param nVariables number of variables
      * @return zero
      */
-    public static <E> MultivariatePolynomial<E> zero(Domain<E> domain, Comparator<MonomialTerm> ordering, int nVariables) {
+    public static <E> MultivariatePolynomial<E> zero(Domain<E> domain, Comparator<DegreeVector> ordering, int nVariables) {
         return new MultivariatePolynomial<>(nVariables, domain, ordering, new MonomialsSet<>(ordering));
     }
 
@@ -75,7 +74,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @return multivariate polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, String... variables) {
-        return Parser.parse(string, LEX, variables);
+        return Parser.parse(string, DegreeVector.LEX, variables);
     }
 
     /**
@@ -88,7 +87,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
      * @return multivariate polynomial
      */
-    public static MultivariatePolynomial<BigInteger> parse(String string, Comparator<MonomialTerm> ordering, String... variables) {
+    public static MultivariatePolynomial<BigInteger> parse(String string, Comparator<DegreeVector> ordering, String... variables) {
         return Parser.parse(string, ordering, variables);
     }
 
@@ -103,7 +102,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
      * @return multivariate polynomial
      */
-    public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, Comparator<MonomialTerm> ordering, String... variables) {
+    public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
         return Parser.parse(string, domain, ordering, variables);
     }
 
@@ -161,7 +160,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param ordering   ordering
      * @return multivariate polynomial
      */
-    public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZ poly, int nVariables, int variable, Comparator<MonomialTerm> ordering) {
+    public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZ poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
         return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, IntegersDomain, ordering);
     }
 
@@ -174,11 +173,11 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param ordering   ordering
      * @return multivariate polynomial
      */
-    public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZp poly, int nVariables, int variable, Comparator<MonomialTerm> ordering) {
+    public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZp poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
         return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, new ModularDomain(poly.modulusAsBigInt()), ordering);
     }
 
-    private static MultivariatePolynomial<BigInteger> asMultivariate(BigInteger[] data, int degree, int nVariables, int variable, Domain<BigInteger> domain, Comparator<MonomialTerm> ordering) {
+    private static MultivariatePolynomial<BigInteger> asMultivariate(BigInteger[] data, int degree, int nVariables, int variable, Domain<BigInteger> domain, Comparator<DegreeVector> ordering) {
         MonomialsSet<BigInteger> map = new MonomialsSet<>(ordering);
         for (int i = 0; i <= degree; i++) {
             if (domain.isZero(data[i]))
@@ -196,11 +195,11 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
         UnivariatePolynomialDomain<bMutablePolynomialZ> domain = new UnivariatePolynomialDomain<>(bMutablePolynomialZ.zero());
         for (MonomialTerm<BigInteger> e : poly.data) {
             add(map, new MonomialTerm<>(
-                    e.without(variable).exponents,
-                    bMutablePolynomialZ.monomial(e.coefficient, e.exponents[variable])),
+                            e.without(variable).exponents,
+                            bMutablePolynomialZ.monomial(e.coefficient, e.exponents[variable])),
                     domain);
         }
-        return new MultivariatePolynomial<>(poly.nVariables - 1,domain, poly.ordering,  map);
+        return new MultivariatePolynomial<>(poly.nVariables - 1, domain, poly.ordering, map);
     }
 
     public static MultivariatePolynomial<bMutablePolynomialZp> convertZp(MultivariatePolynomial<BigInteger> poly, int variable) {
@@ -269,12 +268,12 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param newOrdering  the new ordering
      * @return renamed polynomial
      */
-    public static <E> MultivariatePolynomial<E> renameVariables(MultivariatePolynomial<E> poly, int[] newVariables, Comparator<MonomialTerm> newOrdering) {
+    public static <E> MultivariatePolynomial<E> renameVariables(MultivariatePolynomial<E> poly, int[] newVariables, Comparator<DegreeVector> newOrdering) {
         // NOTE: always return a copy of poly, even if order of variables is unchanged
         MonomialsSet<E> data = new MonomialsSet<>(newOrdering);
         for (MonomialTerm<E> e : poly.data)
             data.add(new MonomialTerm<>(map(e.exponents, newVariables), e.totalDegree, e.coefficient));
-        return new MultivariatePolynomial<>(poly.nVariables,poly.domain, newOrdering,  data);
+        return new MultivariatePolynomial<>(poly.nVariables, poly.domain, newOrdering, data);
     }
 
     private static int[] map(int[] degrees, int[] mapping) {
@@ -310,7 +309,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param newOrdering the new ordering
      * @return a copy of this with a new ordering
      */
-    public MultivariatePolynomial<E> setOrdering(Comparator<MonomialTerm> newOrdering) {
+    public MultivariatePolynomial<E> setOrdering(Comparator<DegreeVector> newOrdering) {
         MonomialsSet<E> newData = new MonomialsSet<E>(newOrdering);
         newData.putAll(data);
         return new MultivariatePolynomial<>(nVariables, domain, newOrdering, newData);
@@ -687,7 +686,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
     public MultivariatePolynomial<E> divideOrNull(E factor) {
         if (domain.isOne(factor))
             return this;
-        for (Entry<MonomialTerm, MonomialTerm<E>> entry : data.entrySet()) {
+        for (Entry<DegreeVector, MonomialTerm<E>> entry : data.entrySet()) {
             MonomialTerm<E> term = entry.getValue();
             E[] qd = domain.divideAndRemainder(term.coefficient, factor);
             if (!domain.isZero(qd[1]))
@@ -916,7 +915,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
 
     @Override
     public MultivariatePolynomial<E> negate() {
-        for (Entry<MonomialTerm, MonomialTerm<E>> entry : data.entrySet()) {
+        for (Entry<DegreeVector, MonomialTerm<E>> entry : data.entrySet()) {
             MonomialTerm<E> term = entry.getValue();
             entry.setValue(term.setCoefficient(domain.negate(term.coefficient)));
         }
@@ -1072,7 +1071,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
             return this;
         if (domain.isZero(factor))
             return toZero();
-        for (Entry<MonomialTerm, MonomialTerm<E>> entry : data.entrySet()) {
+        for (Entry<DegreeVector, MonomialTerm<E>> entry : data.entrySet()) {
             MonomialTerm<E> term = entry.getValue();
             entry.setValue(term.setCoefficient(domain.multiply(term.coefficient, factor)));
         }
@@ -1142,7 +1141,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      *
      * @return skeleton of this poly
      */
-    public Set<MonomialTerm> getSkeleton() {
+    public Set<DegreeVector> getSkeleton() {
         return data.keySet();
     }
 
@@ -1152,7 +1151,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param variables the variables
      * @return skeleton of this poly with respect to specified {@code variables}
      */
-    public Set<MonomialTerm> getSkeleton(int... variables) {
+    public Set<DegreeVector> getSkeleton(int... variables) {
         return data.keySet().stream().map(dv -> dv.of(variables)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
     }
 
@@ -1162,7 +1161,7 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
      * @param variables the variables to exclude
      * @return skeleton of this poly with respect to all except specified {@code variables}
      */
-    public Set<MonomialTerm> getSkeletonExcept(int... variables) {
+    public Set<DegreeVector> getSkeletonExcept(int... variables) {
         return data.keySet().stream().map(dv -> dv.except(variables)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
     }
 
@@ -1277,15 +1276,18 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
     }
 
     static final class MonomialsSet<E>
-            extends TreeMap<MonomialTerm, MonomialTerm<E>>
+            extends TreeMap<DegreeVector, MonomialTerm<E>>
             implements Iterable<MonomialTerm<E>>, Cloneable {
-        public MonomialsSet() {}
 
-        public MonomialsSet(Comparator<? super MonomialTerm> comparator) {
+        public MonomialsSet(Comparator<? super DegreeVector> comparator) {
             super(comparator);
         }
 
-        public MonomialsSet(Map<? extends MonomialTerm<E>, ? extends MonomialTerm<E>> m) {
+        public MonomialsSet(Map<? extends DegreeVector, ? extends MonomialTerm<E>> m) {
+            super(m);
+        }
+
+        public MonomialsSet(SortedMap<DegreeVector, ? extends MonomialTerm<E>> m) {
             super(m);
         }
 

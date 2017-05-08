@@ -14,11 +14,11 @@ import java.util.*;
 final class Parser {
     private Parser() {}
 
-    static MultivariatePolynomial<BigInteger> parse(String input, Comparator<MonomialTerm> ordering, String... variables) {
+    static MultivariatePolynomial<BigInteger> parse(String input, Comparator<DegreeVector> ordering, String... variables) {
         return parse(input, IntegersDomain.IntegersDomain, ordering, variables);
     }
 
-    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, Comparator<MonomialTerm> ordering, String... variables) {
+    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
         List<ParsedTerm<E>> terms = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < input.length(); i++) {

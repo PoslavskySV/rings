@@ -26,7 +26,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         String[] vars = {"a", "b"};
-        Comparator<MonomialTerm> ordering = LEX;
+        Comparator<DegreeVector> ordering = LEX;
         MultivariatePolynomial<BigInteger> dividend = parse("a*b^2 + 1", ordering, vars);
         MultivariatePolynomial<BigInteger> f1 = parse("a*b + 1", ordering, vars);
         MultivariatePolynomial<BigInteger> f2 = parse("b + 1", ordering, vars);
@@ -53,7 +53,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     @Test
     public void test2() throws Exception {
         String[] vars = {"a", "b"};
-        Comparator<MonomialTerm> ordering = LEX;
+        Comparator<DegreeVector> ordering = LEX;
         MultivariatePolynomial dividend = parse("a^2*b+a*b^2+b^2", ordering, vars);
         MultivariatePolynomial f1 = parse("a*b - 1", ordering, vars);
         MultivariatePolynomial f2 = parse("b^2 - 1", ordering, vars);
@@ -75,7 +75,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     public void test3() throws Exception {
         MultivariatePolynomial<BigInteger> a = randomPolynomial(5, 10, 10, getRandom());
         MultivariatePolynomial<BigInteger> b = randomPolynomial(5, 10, 10, getRandom());
-        for (Comparator<MonomialTerm> order : Arrays.asList(LEX, GRLEX, GREVLEX)) {
+        for (Comparator<DegreeVector> order : Arrays.asList(LEX, GRLEX, GREVLEX)) {
             MultivariatePolynomial c = a.clone().multiply(b).setOrdering(order);
             assertTrue(divideAndRemainder(c, a.setOrdering(order))[1].isZero());
             assertTrue(divideAndRemainder(c, b.setOrdering(order))[1].isZero());
@@ -90,7 +90,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
 
     @Test
     public void test5_random() throws Exception {
-        for (Comparator<MonomialTerm> ord : Arrays.asList(LEX, GRLEX, GREVLEX)) {
+        for (Comparator<DegreeVector> ord : Arrays.asList(LEX, GRLEX, GREVLEX)) {
             testRandomReduce(its(300, 3000), 5, 3, 1, 5, ord);
             testRandomReduce(its(300, 3000), 5, 1, 1, 15, ord);
         }
@@ -100,7 +100,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     public void test6() throws Exception {
         String[] vars = {"a", "b"};
         Domain<BigInteger> domain = new ModularDomain(2);
-        Comparator<MonomialTerm> ordering = LEX;
+        Comparator<DegreeVector> ordering = LEX;
         MultivariatePolynomial dividend = parse("a^2*b+a*b^2+b^2", domain, ordering, vars);
         MultivariatePolynomial f1 = parse("a*b - 1", domain, ordering, vars);
         MultivariatePolynomial f2 = parse("b^2 - 1", domain, ordering, vars);
@@ -119,14 +119,14 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
 
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,
                                  int minSize, int maxDegree,
-                                 Comparator<MonomialTerm> ordering) {
+                                 Comparator<DegreeVector> ordering) {
         testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, IntegersDomain, getRandom());
     }
 
     @SuppressWarnings("unchecked")
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,
                                  int minSize, int maxDegree,
-                                 Comparator<MonomialTerm> ordering,
+                                 Comparator<DegreeVector> ordering,
                                  Domain<BigInteger> domain, RandomGenerator rnd) {
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         int maxGeneratedDividendSize = 0;
@@ -163,7 +163,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
         System.out.println("Maximal quotient size meet: " + maxFoundQuotientSize);
     }
 
-    private static MultivariatePolynomial[] setOrdering(MultivariatePolynomial[] p, Comparator<MonomialTerm> ordering) {
+    private static MultivariatePolynomial[] setOrdering(MultivariatePolynomial[] p, Comparator<DegreeVector> ordering) {
         return Arrays.stream(p).map(x -> x.setOrdering(ordering)).toArray(MultivariatePolynomial[]::new);
     }
 
