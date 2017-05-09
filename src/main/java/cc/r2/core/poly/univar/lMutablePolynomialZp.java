@@ -16,11 +16,11 @@ import static cc.redberry.libdivide4j.FastDivision.*;
  */
 public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMutablePolynomialZp> implements IMutablePolynomialZp<lMutablePolynomialZp> {
     /** the modulus */
-    final long modulus;
+    public final long modulus;
     /** magic **/
-    private final Magic magic, magic32MulMod;
+    public final Magic magic, magic32MulMod;
     /** whether modulus less then 2^32 (if so, faster mulmod available) **/
-    private final boolean modulusFits32;
+    public final boolean modulusFits32;
 
     /** copy constructor */
     private lMutablePolynomialZp(long modulus, Magic magic, Magic magic32MulMod, long[] data, int degree, boolean modulusFits32) {
@@ -74,7 +74,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
             data[i] = modSignedFast(data[i], magicSigned);
     }
 
-    static lMutablePolynomialZp createUnsafe(long modulus, long[] data) {
+    public static lMutablePolynomialZp createUnsafe(long modulus, long[] data) {
         return new lMutablePolynomialZp(modulus, magicUnsigned(modulus), data);
     }
 

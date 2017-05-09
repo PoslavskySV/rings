@@ -23,6 +23,11 @@ abstract class lMutablePolynomialAbstract<T extends lMutablePolynomialAbstract> 
     public final int degree() {return degree;}
 
     /**
+     * Returns i-th element of this poly
+     */
+    public final long get(int i) { return data[i];}
+
+    /**
      * Ensures that the capacity of internal storage is enough for storing polynomial of the {@code desiredDegree}.
      * The degree of {@code this} is set to {@code desiredDegree} if the latter is greater than the former.
      *
@@ -346,6 +351,10 @@ abstract class lMutablePolynomialAbstract<T extends lMutablePolynomialAbstract> 
         for (int i = degree; i >= 0; --i)
             bData[i] = BigInteger.valueOf(data[i]);
         return bData;
+    }
+
+    public final long[] getDataReferenceUnsafe() {
+        return data;
     }
 
     @Override

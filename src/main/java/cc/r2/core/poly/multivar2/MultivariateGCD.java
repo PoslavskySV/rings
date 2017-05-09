@@ -239,7 +239,7 @@ public final class MultivariateGCD {
         //convert poly to Zp[var][x...]
         MultivariatePolynomial<bMutablePolynomialZp> conv = convertZp(poly, variable);
         //univariate content
-        bMutablePolynomialZp content = PolynomialGCD(conv.data.coefficients());
+        bMutablePolynomialZp content = PolynomialGCD(conv.coefficients());
         MultivariatePolynomial<BigInteger>[]
                 qd = divideAndRemainder(poly, asMultivariate(content, poly.nVariables, variable, poly.ordering));
         assert qd[1].isZero();
@@ -1017,7 +1017,8 @@ public final class MultivariateGCD {
         LinearSystem(int univarDegree, MultivariatePolynomial<BigInteger> skeleton, PrecomputedPowersHolder<BigInteger> powers, int nVars) {
             this.univarDegree = univarDegree;
             this.domain = skeleton.domain;
-            this.skeleton = skeleton.data.keySet().toArray(new MonomialTerm[skeleton.size()]);
+            //todo refactor generics
+            this.skeleton = skeleton.getSkeleton().toArray(new MonomialTerm[skeleton.size()]);
             this.powers = powers;
             this.nVars = nVars;
             this.matrix = new ArrayList<>();

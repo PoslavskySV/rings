@@ -446,7 +446,7 @@ abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> 
         return "new BigInteger(\"" + b + "\")";
     }
 
-    public BigInteger[] getDataReferenceUnsafe() {
+    public final BigInteger[] getDataReferenceUnsafe() {
         return data;
     }
 

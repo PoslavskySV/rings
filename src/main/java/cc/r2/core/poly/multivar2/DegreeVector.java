@@ -33,7 +33,10 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
         this(exponents, ArraysUtil.sum(exponents));
     }
 
-    protected abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
+    abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
+
+
+    abstract MonomialTerm setZero(int var);
 
     public final boolean isZeroVector() {
         return totalDegree == 0;

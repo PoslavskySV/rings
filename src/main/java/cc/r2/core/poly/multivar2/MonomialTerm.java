@@ -68,6 +68,7 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
         return new MonomialTerm<>(ArraysUtil.remove(exponents, i), totalDegree - exponents[i], coefficient);
     }
 
+    @Override
     MonomialTerm<E> setZero(int i) {
         return setZero(i, coefficient);
     }
