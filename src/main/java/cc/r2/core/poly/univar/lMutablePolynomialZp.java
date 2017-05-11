@@ -53,6 +53,17 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
     public boolean isOverField() {
         return true;
     }
+
+    @Override
+    public boolean isOverFiniteField() {
+        return true;
+    }
+
+    @Override
+    public BigInteger domainCardinality() {
+        return BigInteger.valueOf(modulus);
+    }
+
 /* =========================== Factory methods =========================== */
 
     /**

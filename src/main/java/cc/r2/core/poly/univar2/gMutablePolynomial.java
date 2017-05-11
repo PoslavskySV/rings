@@ -135,15 +135,15 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
     }
 
     @Override
-    public final int degree() {return degree;}
+    public int degree() {return degree;}
 
     /**
      * Returns i-th element of this poly
      */
-    public final E get(int i) { return data[i];}
+    public E get(int i) { return data[i];}
 
     @Override
-    public final int firstNonZeroCoefficientPosition() {
+    public int firstNonZeroCoefficientPosition() {
         int i = 0;
         while (domain.isZero(data[i])) ++i;
         assert i < data.length;
@@ -171,14 +171,17 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
      *
      * @return leading coefficient
      */
-    public final E lc() {return data[degree];}
+    public E lc() {return data[degree];}
+
+    @Override
+    public gMutablePolynomial<E> lcAsPoly() {return createConstant(lc());}
 
     /**
      * Returns the constant coefficient of the poly
      *
      * @return constant coefficient
      */
-    public final E cc() {return data[0];}
+    public E cc() {return data[0];}
 
     /**
      * Ensures that the capacity of internal storage is enough for storing polynomial of the {@code desiredDegree}.
@@ -294,29 +297,32 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
     @Override
     public gMutablePolynomial<E> createOne() {return createConstant(domain.getOne());}
 
-    /** {@inheritDoc} */
     @Override
-    public final boolean isZero() {return domain.isZero(data[degree]);}
+    public boolean isZeroAt(int i) {return domain.isZero(data[i]);}
 
     /** {@inheritDoc} */
     @Override
-    public final boolean isOne() {return degree == 0 && domain.isOne(data[0]);}
+    public boolean isZero() {return domain.isZero(data[degree]);}
 
     /** {@inheritDoc} */
     @Override
-    public final boolean isMonic() {return domain.isOne(lc());}
+    public boolean isOne() {return degree == 0 && domain.isOne(data[0]);}
 
     /** {@inheritDoc} */
     @Override
-    public final boolean isUnitCC() {return domain.isOne(cc());}
+    public boolean isMonic() {return domain.isOne(lc());}
 
     /** {@inheritDoc} */
     @Override
-    public final boolean isConstant() {return degree == 0;}
+    public boolean isUnitCC() {return domain.isOne(cc());}
 
     /** {@inheritDoc} */
     @Override
-    public final boolean isMonomial() {
+    public boolean isConstant() {return degree == 0;}
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isMonomial() {
         for (int i = degree - 1; i >= 0; --i)
             if (!domain.isZero(data[i]))
                 return false;
@@ -324,13 +330,23 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
     }
 
     @Override
-    public final int signum() {
+    public int signum() {
         return domain.signum(lc());
     }
 
     @Override
     public boolean isOverField() {
         return domain.isField();
+    }
+
+    @Override
+    public boolean isOverFiniteField() {
+        return domain.isFinite();
+    }
+
+    @Override
+    public BigInteger domainCardinality() {
+        return domain.size();
     }
 
     /**
@@ -460,13 +476,18 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
      *
      * @return polynomial content
      */
-    public final E content() {
+    public E content() {
         if (degree == 0)
             return data[0];
         E gcd = data[degree];
         for (int i = degree - 1; i >= 0; --i)
             gcd = domain.gcd(gcd, data[i]);
         return gcd;
+    }
+
+    @Override
+    public gMutablePolynomial<E> contentAsPoly() {
+        return createConstant(content());
     }
 
     /** {@inheritDoc} */
@@ -502,7 +523,7 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
      * @param point {@code point}
      * @return value at {@code point}
      */
-    public final E evaluate(long point) {
+    public E evaluate(long point) {
         return evaluate(domain.valueOf(point));
     }
 
@@ -512,7 +533,7 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
      * @param point {@code point}
      * @return value at {@code point}
      */
-    public final E evaluate(E point) {
+    public E evaluate(E point) {
         if (domain.isZero(point))
             return cc();
 
@@ -780,10 +801,10 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
         return new gMutablePolynomial<>(domain, data.clone(), degree);
     }
 
-    public final E[] getDataReferenceUnsafe() {return data;}
+    public E[] getDataReferenceUnsafe() {return data;}
 
     @Override
-    public final int compareTo(gMutablePolynomial<E> o) {
+    public int compareTo(gMutablePolynomial<E> o) {
         int c = Integer.compare(degree, o.degree);
         if (c != 0)
             return c;
@@ -796,7 +817,7 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
             if (domain.isZero(data[i]))
@@ -826,7 +847,7 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
     }
 
     @Override
-    public final boolean equals(Object obj) {
+    public boolean equals(Object obj) {
         if (obj.getClass() != this.getClass())
             return false;
         @SuppressWarnings("unchecked")
@@ -840,7 +861,7 @@ public final class gMutablePolynomial<E> implements IMutablePolynomial<gMutableP
     }
 
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         int result = 1;
         for (int i = degree; i >= 0; --i)
             result = 31 * result + data[i].hashCode();

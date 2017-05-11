@@ -46,6 +46,9 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
      */
     public final long lc() {return data[degree];}
 
+    @Override
+    public final lPoly lcAsPoly() {return createConstant(lc());}
+
     /**
      * Returns the constant coefficient of the poly
      *
@@ -132,6 +135,9 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
     /** {@inheritDoc} */
     @Override
     public final lPoly createOne() {return createConstant(1);}
+
+    @Override
+    public boolean isZeroAt(int i) {return data[i] == 0;}
 
     /** {@inheritDoc} */
     @Override
@@ -282,6 +288,11 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         if (degree == 0)
             return data[0];
         return LongArithmetics.gcd(data, 0, degree + 1);
+    }
+
+    @Override
+    public final lPoly contentAsPoly() {
+        return createConstant(content());
     }
 
     /** {@inheritDoc} */

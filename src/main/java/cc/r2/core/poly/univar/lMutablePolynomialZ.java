@@ -1,5 +1,6 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.LongArithmetics;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
@@ -33,6 +34,16 @@ public final class lMutablePolynomialZ extends lMutablePolynomialAbstract<lMutab
     @Override
     public boolean isOverField() {
         return false;
+    }
+
+    @Override
+    public boolean isOverFiniteField() {
+        return false;
+    }
+
+    @Override
+    public BigInteger domainCardinality() {
+        return null;
     }
 
     /**

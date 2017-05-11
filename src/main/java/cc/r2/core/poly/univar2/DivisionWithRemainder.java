@@ -8,6 +8,9 @@ import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.ArrayList;
 
+import static cc.r2.core.poly.LongArithmetics.safeAdd;
+import static cc.r2.core.poly.LongArithmetics.safeMultiply;
+import static cc.r2.core.poly.LongArithmetics.safePow;
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
@@ -87,7 +90,7 @@ public final class DivisionWithRemainder {
             return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), lMutablePolynomialZ.zero()};
         if (dividend.degree < divider.degree)
             return new lMutablePolynomialZ[]{lMutablePolynomialZ.zero(), copy ? dividend.clone() : dividend};
-        long factor = LongArithmetics.safePow(divider.lc(), dividend.degree - divider.degree + 1);
+        long factor = safePow(divider.lc(), dividend.degree - divider.degree + 1);
         if (divider.degree == 0)
             return new lMutablePolynomialZ[]{(copy ? dividend.clone() : dividend).multiply(factor / divider.lc()), lMutablePolynomialZ.zero()};
         if (divider.degree == 1)
@@ -186,7 +189,7 @@ public final class DivisionWithRemainder {
                     long factor = divider.lc() / gcd;
                     remainder.multiply(factor);
                     for (int j = i + 1; j < quotient.length; ++j)
-                        quotient[j] = LongArithmetics.safeMultiply(quotient[j], factor);
+                        quotient[j] = safeMultiply(quotient[j], factor);
                     quot = divideSignedFast(remainder.lc(), magic);
                 }
 
@@ -213,16 +216,16 @@ public final class DivisionWithRemainder {
             long tmp = dividend.data[i];
             if (i != dividend.degree)
                 quotient[i] = res;
-            res = LongArithmetics.safeAdd(LongArithmetics.safeMultiply(res, cc), LongArithmetics.safeMultiply(factor, tmp));
+            res = safeAdd(safeMultiply(res, cc), safeMultiply(factor, tmp));
             if (i == 0) break;
             long quot = divideSignedFast(res, magic);
             if (quot * lc != res) {
                 long gcd = LongArithmetics.gcd(res, lc), f = lc / gcd;
-                factor = LongArithmetics.safeMultiply(factor, f);
-                res = LongArithmetics.safeMultiply(res, f);
+                factor = safeMultiply(factor, f);
+                res = safeMultiply(res, f);
                 if (i != dividend.degree)
                     for (int j = quotient.length - 1; j >= i; --j)
-                        quotient[j] = LongArithmetics.safeMultiply(quotient[j], f);
+                        quotient[j] = safeMultiply(quotient[j], f);
                 quot = divideSignedFast(res, magic);
             }
             res = quot;
@@ -238,7 +241,7 @@ public final class DivisionWithRemainder {
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
     static lMutablePolynomialZ[] pseudoDivideAndRemainderLinearDivider(lMutablePolynomialZ dividend, lMutablePolynomialZ divider, boolean copy) {
-        return divideAndRemainderLinearDivider0(dividend, divider, LongArithmetics.safePow(divider.lc(), dividend.degree), copy);
+        return divideAndRemainderLinearDivider0(dividend, divider, safePow(divider.lc(), dividend.degree), copy);
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
@@ -255,7 +258,7 @@ public final class DivisionWithRemainder {
             long tmp = dividend.data[i];
             if (i != dividend.degree)
                 quotient[i] = res;
-            res = LongArithmetics.safeAdd(LongArithmetics.safeMultiply(res, cc), LongArithmetics.safeMultiply(raiseFactor, tmp));
+            res = safeAdd(safeMultiply(res, cc), safeMultiply(raiseFactor, tmp));
             if (i == 0)
                 break;
             long quot = divideSignedFast(res, magic);

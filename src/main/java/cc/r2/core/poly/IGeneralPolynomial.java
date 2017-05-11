@@ -1,5 +1,7 @@
 package cc.r2.core.poly;
 
+import cc.r2.core.number.BigInteger;
+
 import java.util.Collection;
 
 /**
@@ -62,6 +64,20 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
      * @return whether the coefficient domain of this polynomial is a field
      */
     boolean isOverField();
+
+    /**
+     * Returns whether the coefficient domain of this polynomial is a finite field
+     *
+     * @return whether the coefficient domain of this polynomial is a finite field
+     */
+    boolean isOverFiniteField();
+
+    /**
+     * Returns cardinality of the coefficients domain of this poly
+     *
+     * @return cardinality of the coefficients domain
+     */
+    BigInteger domainCardinality();
 
     /**
      * Sets {@code this} to its monic part (that is {@code this} divided by its leading coefficient), or returns
@@ -195,4 +211,21 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
      * @return {@code this * this}
      */
     Poly square();
+
+    /**
+     * Deep copy of this
+     *
+     * @return deep copy of this
+     */
+    Poly clone();
+
+    /** overcome Java generics... */
+    Poly[] arrayNewInstance(int length);
+
+    /** overcome Java generics... */
+    default Poly[] arrayNewInstance(Poly a, Poly b) {
+        Poly[] r = arrayNewInstance(2);
+        r[0] = a; r[1] = b;
+        return r;
+    }
 }

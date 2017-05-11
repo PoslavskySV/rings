@@ -15,6 +15,14 @@ public interface IMutablePolynomial<Poly extends IMutablePolynomial<Poly>> exten
     void checkCompatible(Poly oth);
 
     /**
+     * Returns whether i-th coefficient of this is zero
+     *
+     * @param i the position
+     * @return whether i-th coefficient of this is zero
+     */
+    boolean isZeroAt(int i);
+
+    /**
      * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
      *
@@ -80,16 +88,6 @@ public interface IMutablePolynomial<Poly extends IMutablePolynomial<Poly>> exten
      */
     Poly createMonomial(int degree);
 
-    /** overcome Java generics... */
-    Poly[] arrayNewInstance(int length);
-
-    /** overcome Java generics... */
-    default Poly[] arrayNewInstance(Poly a, Poly b) {
-        Poly[] r = arrayNewInstance(2);
-        r[0] = a; r[1] = b;
-        return r;
-    }
-
     /**
      * Returns the formal derivative of this poly
      *
@@ -97,10 +95,17 @@ public interface IMutablePolynomial<Poly extends IMutablePolynomial<Poly>> exten
      */
     Poly derivative();
 
+    /** content as a constant poly */
+    Poly contentAsPoly();
+
+    /** leading coefficient as a constant poly */
+    Poly lcAsPoly();
+
     /**
      * Deep copy of this
      *
      * @return deep copy of this
      */
+    @Override
     Poly clone();
 }

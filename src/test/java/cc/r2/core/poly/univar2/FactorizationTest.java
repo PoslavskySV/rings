@@ -1,8 +1,9 @@
-package cc.r2.core.poly.univar;
+package cc.r2.core.poly.univar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.ModularDomain;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -11,8 +12,9 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.r2.core.poly.univar.Factorization.factor;
-import static cc.r2.core.poly.univar.FactorizationTestUtil.assertFactorization;
+import static cc.r2.core.poly.univar2.Factorization.factorZ;
+import static cc.r2.core.poly.univar2.Factorization.factorZp;
+import static cc.r2.core.poly.univar2.FactorizationTestUtil.assertFactorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -22,20 +24,20 @@ import static org.junit.Assert.assertTrue;
 public class FactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
-        assertTrue(Factorization.factor(lMutablePolynomialZ.create(3, 7).modulus(19)).get(0).isMonic());
+        assertTrue(Factorization.factorZp(lMutablePolynomialZ.create(3, 7).modulus(19)).get(0).isMonic());
     }
 
     @Test
     public void test2() throws Exception {
         BigInteger modulus = BigInteger.LONG_MAX_VALUE;
         modulus = modulus.multiply(modulus).increment().nextProbablePrime();
-        bMutablePolynomialZp poly = bMutablePolynomialZ.create(
+        gMutablePolynomial<BigInteger> poly = gMutablePolynomial.create(new ModularDomain(modulus),
                 BigInteger.valueOf(Long.MAX_VALUE),
                 BigInteger.valueOf(Long.MAX_VALUE - 1),
-                BigInteger.valueOf(Long.MAX_VALUE - 2)).modulus(modulus);
+                BigInteger.valueOf(Long.MAX_VALUE - 2));
         for (int i = 0; i < 5; i++)
             poly = poly.square().add(poly.derivative()).increment();
-        bFactorDecomposition<bMutablePolynomialZp> fct = factor(poly);
+        FactorDecomposition<gMutablePolynomial<BigInteger>> fct = factorZp(poly);
         Assert.assertEquals(7, fct.size());
         assertFactorization(poly, fct);
     }
@@ -44,7 +46,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
     public void test3() throws Exception {
         long modulus = 13;
         lMutablePolynomialZp poly = lMutablePolynomialZ.create(5, 8, 1, 5, 7, 0, 0, 1, 5, 7, 0, 9, 3, 2).modulus(modulus);
-        assertFactorization(poly, Factorization.factor(poly));
+        assertFactorization(poly, Factorization.factorZp(poly));
     }
 
     @Test
@@ -52,7 +54,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
 
-        int nIterations = its(100000, 3000);
+        int nIterations = its(1000, 3000);
         for (int n = 0; n < nIterations; n++) {
             int nFactors = rndd.nextInt(4, 8);
             long modulus = getModulusRandom(rndd.nextInt(5, 31));
@@ -66,13 +68,13 @@ public class FactorizationTest extends AbstractPolynomialTest {
             }
 
             try {
-                lFactorDecomposition<lMutablePolynomialZp> lFactors = Factorization.factor(poly);
+                FactorDecomposition<lMutablePolynomialZp> lFactors = Factorization.factorZp(poly);
                 assertTrue(lFactors.sumExponents() >= expectedNFactors);
                 assertFactorization(poly, lFactors);
 
                 if (n % 100 == 0) {
-                    bFactorDecomposition<bMutablePolynomialZp> bFactors = factor(poly.toBigPoly());
-                    bFactorDecomposition<bMutablePolynomialZp> converted = lFactorDecomposition.convert(lFactors);
+                    FactorDecomposition<gMutablePolynomial<BigInteger>> bFactors = factorZp(poly.toBigPoly());
+                    FactorDecomposition<gMutablePolynomial<BigInteger>> converted = FactorDecomposition.convert(lFactors);
                     converted.canonicalForm();
                     bFactors.canonicalForm();
                     Assert.assertEquals(converted, bFactors);
@@ -90,7 +92,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
     public void test4_randomZp_a() throws Exception {
         long modulus = 59;
         lMutablePolynomialZp poly = lMutablePolynomialZ.create(46, 16, 1, 54, 16, 57, 22, 15, 31, 21).modulus(modulus);
-        lFactorDecomposition<lMutablePolynomialZp> fct = factor(poly);
+        FactorDecomposition<lMutablePolynomialZp> fct = factorZp(poly);
         assertEquals(5, fct.size());
         assertEquals(6, fct.sumExponents());
     }
@@ -103,10 +105,10 @@ public class FactorizationTest extends AbstractPolynomialTest {
         int nIterations = (int) its(100, 1000);
         int maxDegree = 30;
         for (int n = 0; n < nIterations; n++) {
-            bMutablePolynomialZ poly = bMutablePolynomialZ.one();
+            gMutablePolynomial<BigInteger> poly = gMutablePolynomial.create(1);
             int expectedNFactors = 0;
             while (true) {
-                bMutablePolynomialZ m = RandomPolynomials.randomPoly(rndd.nextInt(1, 15), BigInteger.LONG_MAX_VALUE, rnd);
+                gMutablePolynomial<BigInteger> m = RandomPolynomials.randomPoly(rndd.nextInt(1, 15), BigInteger.LONG_MAX_VALUE, rnd);
                 if (m.isZero()) continue;
                 if (!m.isConstant()) ++expectedNFactors;
                 poly = poly.multiply(m);
@@ -114,7 +116,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
                     break;
             }
 
-            FactorDecomposition<bMutablePolynomialZ> lFactors = Factorization.factor(poly);
+            FactorDecomposition<gMutablePolynomial<BigInteger>> lFactors = Factorization.factorZ(poly);
             assertTrue(lFactors.size() >= expectedNFactors);
             assertFactorization(poly, lFactors);
         }
@@ -137,7 +139,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
 
             long start;
             start = System.nanoTime();
-            lFactorDecomposition<lMutablePolynomialZp> factorsZp = Factorization.factor(polyMod);
+            FactorDecomposition<lMutablePolynomialZp> factorsZp = Factorization.factorZp(polyMod);
             long timeZp = System.nanoTime() - start;
             timingZp.addValue(timeZp);
             assertFactorization(polyMod, factorsZp);
@@ -145,7 +147,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
             assertEquals(5, factorsZp.size());
 
             start = System.nanoTime();
-            lFactorDecomposition<lMutablePolynomialZ> factorsZ = Factorization.factor(poly);
+            FactorDecomposition<lMutablePolynomialZ> factorsZ = Factorization.factorZ(poly);
             long timeZ = System.nanoTime() - start;
             timingZ.addValue(timeZ);
             assertFactorization(poly, factorsZ);
@@ -157,8 +159,8 @@ public class FactorizationTest extends AbstractPolynomialTest {
                 System.out.println("Z : " + TimeUnits.nanosecondsToString(timeZ));
             }
         }
-        System.out.println(timingZ);
-        System.out.println(timingZp);
+        System.out.println((timingZ));
+        System.out.println((timingZp));
 
 //        -XX:+AggressiveOpts
 //        DescriptiveStatistics:
@@ -183,18 +185,17 @@ public class FactorizationTest extends AbstractPolynomialTest {
 //
     }
 
-
     @Test
     @Benchmark(runAnyway = true)
     public void test7_referenceZb() throws Exception {
-        bMutablePolynomialZ a = bMutablePolynomialZ.create(1, 2, 3, 5, 3, 2, 1),
-                b = bMutablePolynomialZ.create(1, 2, -12443241213L, 412312, 3, 2, 123423554351L),
-                c = bMutablePolynomialZ.create(-1, -2, -12443241213L, 412312, 3, 2, 123423554351L),
-                d = bMutablePolynomialZ.create(-1, -2, -12441213L, 412312, 3, 2, 1234235543L),
-                e = bMutablePolynomialZ.create(-11111111, -2, -12441213L, 412312, 3, 2, 1234235543L),
-                f = bMutablePolynomialZ.create(-11, -2222121, -12441213L, 412312, 3, 2, 1234235543L),
-                g = bMutablePolynomialZ.create(-33, -2, -12441213L, 412312, 3, 2, 1234235543L, -12441213L, 412312, 3, 2, 1234235543L, -1, -2, -12441213L, 412312, 3, 2, 1234235543L, -12441213L, 412312, 3, 2, 1234235543L);
-        bMutablePolynomialZ poly = a.clone().multiply(b, c, d, e, f, g, g.clone().increment(), f.clone().increment());
+        gMutablePolynomial<BigInteger> a = gMutablePolynomial.create(1, 2, 3, 5, 3, 2, 1),
+                b = gMutablePolynomial.create(1, 2, -12443241213L, 412312, 3, 2, 123423554351L),
+                c = gMutablePolynomial.create(-1, -2, -12443241213L, 412312, 3, 2, 123423554351L),
+                d = gMutablePolynomial.create(-1, -2, -12441213L, 412312, 3, 2, 1234235543L),
+                e = gMutablePolynomial.create(-11111111, -2, -12441213L, 412312, 3, 2, 1234235543L),
+                f = gMutablePolynomial.create(-11, -2222121, -12441213L, 412312, 3, 2, 1234235543L),
+                g = gMutablePolynomial.create(-33, -2, -12441213L, 412312, 3, 2, 1234235543L, -12441213L, 412312, 3, 2, 1234235543L, -1, -2, -12441213L, 412312, 3, 2, 1234235543L, -12441213L, 412312, 3, 2, 1234235543L);
+        gMutablePolynomial<BigInteger> poly = a.clone().multiply(b, c, d, e, f, g, g.clone().increment(), f.clone().increment());
 
 
         DescriptiveStatistics timing = new DescriptiveStatistics();
@@ -203,7 +204,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
             if (i == 1000)
                 timing.clear();
             long start = System.nanoTime();
-            bFactorDecomposition<bMutablePolynomialZ> factors = Factorization.factor(poly);
+            FactorDecomposition<gMutablePolynomial<BigInteger>> factors = Factorization.factorZ(poly);
             long time = System.nanoTime() - start;
             timing.addValue(time);
             assertEquals(9, factors.size());

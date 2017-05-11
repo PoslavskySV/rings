@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar2;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersDomain;
 import cc.r2.core.poly.ModularDomain;
 import cc.r2.core.util.RandomUtil;
@@ -58,6 +59,18 @@ public class RandomPolynomials {
     }
 
     /**
+     * Creates random polynomial of specified {@code degree}.
+     *
+     * @param degree polynomial degree
+     * @param domain the domain
+     * @param rnd    random source
+     * @return random polynomial of specified {@code degree}
+     */
+    public static <E> gMutablePolynomial<E> randomMonicPoly(int degree, Domain<E> domain, RandomGenerator rnd) {
+        return randomPoly(degree, domain, rnd).monic();
+    }
+
+    /**
      * Creates random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value).
      *
      * @param degree polynomial degree
@@ -79,6 +92,18 @@ public class RandomPolynomials {
      */
     public static gMutablePolynomial<BigInteger> randomPoly(int degree, BigInteger bound, RandomGenerator rnd) {
         return gMutablePolynomial.create(IntegersDomain.IntegersDomain, randomBigArray(degree, bound, rnd));
+    }
+
+    /**
+     * Creates random polynomial of specified {@code degree} with elements from specified domain
+     *
+     * @param degree polynomial degree
+     * @param domain the domain
+     * @param rnd    random source
+     * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
+     */
+    public static <E> gMutablePolynomial<E> randomPoly(int degree, Domain<E> domain, RandomGenerator rnd) {
+        return gMutablePolynomial.create(domain, randomArray(degree, domain, rnd));
     }
 
     /**
@@ -121,6 +146,24 @@ public class RandomPolynomials {
         }
         while (data[degree].equals(BigInteger.ZERO))
             data[degree] = BigInteger.valueOf(rndd.nextLong(0, lBound));
+        return data;
+    }
+
+    /**
+     * Creates random array of length {@code degree + 1} with elements from the specified domain
+     *
+     * @param degree polynomial degree
+     * @param domain the domain
+     * @param rnd    random source
+     * @return array of length {@code degree + 1} with elements from specified domain
+     */
+    public static <E> E[] randomArray(int degree, Domain<E> domain, RandomGenerator rnd) {
+        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
+        E[] data = domain.createArray(degree + 1);
+        for (int i = 0; i <= degree; ++i)
+            data[i] = domain.randomElement(rnd);
+        while (domain.isZero(data[degree]))
+            data[degree] = domain.randomElement(rnd);
         return data;
     }
 }

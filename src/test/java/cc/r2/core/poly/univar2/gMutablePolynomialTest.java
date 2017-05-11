@@ -19,7 +19,6 @@ import static cc.r2.core.poly.univar2.gMutablePolynomial.asLongPolyZp;
  */
 public class gMutablePolynomialTest extends AbstractPolynomialTest {
 
-
     @Test
     public void test1() throws Exception {
         BigInteger modulus = BigInteger.valueOf(59);

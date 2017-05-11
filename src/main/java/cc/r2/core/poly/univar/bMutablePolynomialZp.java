@@ -40,6 +40,16 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
         return true;
     }
 
+    @Override
+    public boolean isOverFiniteField() {
+        return true;
+    }
+
+    @Override
+    public BigInteger domainCardinality() {
+        return modulus;
+    }
+
     /* =========================== Factory methods =========================== */
 
     /**

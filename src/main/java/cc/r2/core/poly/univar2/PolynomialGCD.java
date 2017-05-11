@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
+import static cc.r2.core.poly.LongArithmetics.safeMultiply;
+import static cc.r2.core.poly.LongArithmetics.safePow;
 import static cc.r2.core.poly.univar2.DivisionWithRemainder.*;
 import static cc.r2.core.poly.univar2.gMutablePolynomial.*;
 
@@ -247,15 +249,15 @@ public final class PolynomialGCD {
                 cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
                 cPsi = -1;
             } else {
-                cPsi = LongArithmetics.safePow(-curr.lc(), deltas.get(i - 1));
+                cPsi = safePow(-curr.lc(), deltas.get(i - 1));
                 if (deltas.get(i - 1) < 1) {
-                    cPsi = LongArithmetics.safeMultiply(cPsi, LongArithmetics.safePow(psi.get(i - 1), -deltas.get(i - 1) + 1));
+                    cPsi = safeMultiply(cPsi, safePow(psi.get(i - 1), -deltas.get(i - 1) + 1));
                 } else {
-                    long tmp = LongArithmetics.safePow(psi.get(i - 1), deltas.get(i - 1) - 1);
+                    long tmp = safePow(psi.get(i - 1), deltas.get(i - 1) - 1);
                     assert cPsi % tmp == 0;
                     cPsi /= tmp;
                 }
-                cBeta = LongArithmetics.safeMultiply(-curr.lc(), LongArithmetics.safePow(cPsi, delta));
+                cBeta = safeMultiply(-curr.lc(), safePow(cPsi, delta));
             }
 
             lMutablePolynomialZ q = DivisionWithRemainder.pseudoDivideAndRemainder(curr, next, true)[1];
@@ -437,7 +439,7 @@ public final class PolynomialGCD {
             previousBase = base.clone();
 
             //lifting
-            long newBasePrime = LongArithmetics.safeMultiply(basePrime, prime);
+            long newBasePrime = safeMultiply(basePrime, prime);
             long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
             long lcMod = LongArithmetics.mod(lcGCD, prime);
             ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
@@ -558,7 +560,7 @@ public final class PolynomialGCD {
                 break;
 
             //lifting
-            long newBasePrime = LongArithmetics.safeMultiply(basePrime, prime);
+            long newBasePrime = safeMultiply(basePrime, prime);
             long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
             long lcMod = lcGCD.mod(bPrime).longValueExact();
             ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);

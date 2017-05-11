@@ -42,6 +42,16 @@ public final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutab
         return false;
     }
 
+    @Override
+    public boolean isOverFiniteField() {
+        return false;
+    }
+
+    @Override
+    public BigInteger domainCardinality() {
+        return null;
+    }
+
     /**
      * Creates Z[x] polynomial from the specified coefficients
      *

@@ -255,6 +255,9 @@ abstract class AbstractMultivariatepolynomial<
         return create(newData);
     }
 
+    @Override
+    public abstract  ThisType clone();
+
     private static int[] map(int[] degrees, int[] mapping) {
         int[] newDegrees = new int[degrees.length];
         for (int i = 0; i < degrees.length; i++)

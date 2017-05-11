@@ -161,6 +161,12 @@ public final class lMutablePolynomialZ extends lMutablePolynomialAbstract<lMutab
     public boolean isOverField() {return false;}
 
     @Override
+    public boolean isOverFiniteField() {return false;}
+
+    @Override
+    public BigInteger domainCardinality() {return null;}
+
+    @Override
     long add(long a, long b) {return LongArithmetics.safeAdd(a, b);}
 
     @Override

@@ -37,6 +37,16 @@ public interface Domain<E> extends Comparator<E> {
     }
 
     /**
+     * Returns whether this domain is a finite finite
+     *
+     * @return whether this domain is a finite finite
+     */
+    default boolean isFiniteField() {
+        return isField() && isFinite();
+    }
+
+
+    /**
      * Adds two elements
      *
      * @param a the first element

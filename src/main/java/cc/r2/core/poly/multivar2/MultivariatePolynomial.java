@@ -39,6 +39,21 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
         return domain.isField();
     }
 
+    @Override
+    public boolean isOverFiniteField() {
+        return domain.isFiniteField();
+    }
+
+    @Override
+    public BigInteger domainCardinality() {
+        return domain.size();
+    }
+
+    @Override
+    public MultivariatePolynomial<E>[] arrayNewInstance(int length) {
+        return new MultivariatePolynomial[length];
+    }
+
     /**
      * Creates multivariate polynomial from a list of monomial terms
      *
