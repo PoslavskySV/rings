@@ -37,6 +37,11 @@ public final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutab
         this.degree = degree;
     }
 
+    @Override
+    public boolean isOverField() {
+        return false;
+    }
+
     /**
      * Creates Z[x] polynomial from the specified coefficients
      *
@@ -69,6 +74,11 @@ public final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutab
         Arrays.fill(data, ZERO);
         data[exponent] = coefficient;
         return new bMutablePolynomialZ(data);
+    }
+
+    @Override
+    public bMutablePolynomialZ monic() {
+        throw new UnsupportedOperationException();
     }
 
     public lMutablePolynomialZ toLong() {

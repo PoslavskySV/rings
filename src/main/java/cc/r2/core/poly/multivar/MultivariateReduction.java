@@ -1,6 +1,6 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.DegreeVector;
 
 import java.util.Map.Entry;

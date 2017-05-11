@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.LongArithmetics;
 import cc.redberry.libdivide4j.FastDivision.*;
 
 import java.util.Arrays;
@@ -48,7 +49,11 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
             throw new IllegalArgumentException("Too large modulus. Max allowed is " + LongArithmetics.MAX_SUPPORTED_MODULUS);
     }
 
-    /* =========================== Factory methods =========================== */
+    @Override
+    public boolean isOverField() {
+        return true;
+    }
+/* =========================== Factory methods =========================== */
 
     /**
      * Creates poly with specified coefficients represented as signed integers reducing them modulo {@code modulus}

@@ -2,7 +2,6 @@ package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
-import cc.r2.core.poly.univar.LongArithmetics;
 import cc.r2.core.test.AbstractTest;
 import cc.r2.core.test.TimeConsuming;
 import org.junit.Assert;

@@ -2,8 +2,8 @@ package cc.r2.core.poly.multivar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.generics.ModularDomain;
-import cc.r2.core.poly.univar.LongArithmetics;
+import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.test.AbstractTest;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.ArraysUtil;

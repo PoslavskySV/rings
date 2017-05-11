@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.LongArithmetics;
 
 import java.util.Arrays;
 
@@ -32,6 +33,11 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
         this.data = data;
         this.degree = data.length - 1;
         fixDegree();
+    }
+
+    @Override
+    public boolean isOverField() {
+        return true;
     }
 
     /* =========================== Factory methods =========================== */

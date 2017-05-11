@@ -1,9 +1,11 @@
-package cc.r2.core.poly.univar;
+package cc.r2.core.poly.univar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.IntegersDomain;
 import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.ModularDomain;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -13,8 +15,9 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
-import static cc.r2.core.poly.univar.RandomPolynomials.randomPoly;
+import static cc.r2.core.poly.univar2.DivisionWithRemainder.*;
+import static cc.r2.core.poly.univar2.RandomPolynomials.randomPoly;
+import static cc.r2.core.poly.univar2.gMutablePolynomial.asLongPolyZp;
 import static org.junit.Assert.*;
 
 
@@ -213,10 +216,10 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
             lMutablePolynomialZ[] actual = DivisionWithRemainder.divideAndRemainderLinearDivider(dividend, divider, true);
             fast.addValue(System.nanoTime() - start);
             start = System.nanoTime();
-            lMutablePolynomialZ[] expected = DivisionWithRemainder.divideAndRemainderGeneral0(dividend, divider, 1, true);
+            lMutablePolynomialZ[] expected = DivisionWithRemainder.divideAndRemainderClassic0(dividend, divider, 1, true);
             gen.addValue(System.nanoTime() - start);
             assertArrayEquals(expected, actual);
-            lMutablePolynomialZ[] expectedNoCopy = divideAndRemainderGeneral0(dividend.clone(), divider, 1, false);
+            lMutablePolynomialZ[] expectedNoCopy = divideAndRemainderClassic0(dividend.clone(), divider, 1, false);
             lMutablePolynomialZ[] actualNoCopy = divideAndRemainderLinearDivider(dividend.clone(), divider, false);
             assertArrayEquals(expected, actualNoCopy);
             assertArrayEquals(expected, expectedNoCopy);
@@ -254,12 +257,12 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
             fastPseudo.addValue(System.nanoTime() - start);
             start = System.nanoTime();
             long factor = LongArithmetics.safePow(divider.lc(), dividend.degree - divider.degree + 1);
-            expected = DivisionWithRemainder.divideAndRemainderGeneral0(dividend, divider, factor, true);
+            expected = DivisionWithRemainder.divideAndRemainderClassic0(dividend, divider, factor, true);
             genPseudo.addValue(System.nanoTime() - start);
             assertArrayEquals(expected, actual);
 
             actualNoCopy = pseudoDivideAndRemainderLinearDivider(dividend.clone(), divider, false);
-            expectedNoCopy = divideAndRemainderGeneral0(dividend.clone(), divider, factor, false);
+            expectedNoCopy = divideAndRemainderClassic0(dividend.clone(), divider, factor, false);
             assertArrayEquals(expected, actualNoCopy);
             assertArrayEquals(expected, expectedNoCopy);
 
@@ -313,10 +316,10 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         assertEquals(dividend, divider.clone().multiply(qr[0]).add(qr[1]));
     }
 
-    private static void assertPseudoQuotientRemainder(lMutablePolynomialZ dividend, lMutablePolynomialZ divider, lMutablePolynomialZ[] qr) {
+    private static <T extends IMutablePolynomial<T>> void assertPseudoQuotientRemainder(T dividend, T divider, T[] qr) {
         if (qr == null) return;
-        lMutablePolynomialZ d = divider.clone().multiply(qr[0]).add(qr[1]);
-        lMutablePolynomialZ[] factor = divideAndRemainder(d, dividend, true);
+        T d = divider.clone().multiply(qr[0]).add(qr[1]);
+        T[] factor = divideAndRemainder(d, dividend, true);
         assertNotNull(factor);
         assertTrue(factor[1].isZero());
         assertTrue(factor[0].isConstant());
@@ -350,7 +353,21 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
     }
 
     static void assertInverseModMonomial(lMutablePolynomialZp poly, lMutablePolynomialZp invMod, int monomialDegree) {
-        assertTrue(PolynomialArithmetics.polyMultiplyMod(poly, invMod, lMutablePolynomialZp.createMonomial(poly.modulus, 1, monomialDegree), true).isOne());
+        assertTrue(polyMultiplyMod(poly, invMod, lMutablePolynomialZp.createMonomial(poly.domain.modulus, 1, monomialDegree), true).isOne());
+    }
+
+    /**
+     * Returns the remainder of dividing the product {@code (m1 * m2)} by {@code polyModulus}.
+     *
+     * @param m1          the first multiplier
+     * @param m2          the second multiplier
+     * @param polyModulus the modulus
+     * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
+     *                    of the first multiplier {@code m1} and the original data of {@code m1} will be lost
+     * @return {@code (m1 * m2) % polyModulus}
+     */
+    public static <T extends IMutablePolynomial<T>> T polyMultiplyMod(T m1, T m2, T polyModulus, boolean copy) {
+        return remainder((copy ? m1.clone() : m1).multiply(m2), polyModulus, false);
     }
 
     @Test
@@ -369,11 +386,12 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         }
     }
 
+
     @Test
     public void test12_FastDivisionRandom() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(100, 500); i++) {
-            long modulus = getModulusRandom(getRandomData().nextInt(30, 33));
+            long modulus = getModulusRandom(getRandomData().nextInt(29, 33));
             lMutablePolynomialZp b = RandomPolynomials.randomMonicPoly(30, modulus, rnd);
             lMutablePolynomialZp a = RandomPolynomials.randomMonicPoly(rnd.nextInt(30), modulus, rnd);
 
@@ -434,7 +452,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         lMutablePolynomialZp f = lMutablePolynomialZ.create(0, 2, 3, 4, -5, 1).modulus(modulus).reverse();
         int modDegree = f.degree;
         lMutablePolynomialZp invmod = inverseModMonomial0(f, modDegree);
-        lMutablePolynomialZp r = PolynomialArithmetics.polyMultiplyMod(f, invmod, lMutablePolynomialZp.createMonomial(modulus, 1, modDegree), true);
+        lMutablePolynomialZp r = polyMultiplyMod(f, invmod, lMutablePolynomialZp.createMonomial(modulus, 1, modDegree), true);
         assertTrue(r.isOne());
     }
 
@@ -444,7 +462,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         lMutablePolynomialZp f = lMutablePolynomialZ.create(7, 12, 12, 12, 13, 2, 7, 10, 7, 15, 13, 1, 10, 16, 6, 1).modulus(modulus).reverse();
         int modDegree = 9;
         lMutablePolynomialZp invmod = inverseModMonomial0(f, modDegree);
-        lMutablePolynomialZp r = PolynomialArithmetics.polyMultiplyMod(f, invmod, lMutablePolynomialZp.createMonomial(modulus, 1, modDegree), true);
+        lMutablePolynomialZp r = polyMultiplyMod(f, invmod, lMutablePolynomialZp.createMonomial(modulus, 1, modDegree), true);
         assertTrue(r.isOne());
     }
 
@@ -540,44 +558,44 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
 
     @Test
     public void test22() throws Exception {
-        bMutablePolynomialZp bDividend = bMutablePolynomialZ.create(1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1).modulus(BigInteger.valueOf(7));
-        lMutablePolynomialZp lDividend = bDividend.toLong();
+        ModularDomain domain = new ModularDomain(7);
+        gMutablePolynomial<BigInteger> bDividend = gMutablePolynomial.create(domain, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1);
+        lMutablePolynomialZp lDividend = asLongPolyZp(bDividend);
 
 
-        bMutablePolynomialZp bDivider = bMutablePolynomialZ.create(1, 2, 3, 3, 2, 1).modulus(BigInteger.valueOf(7));
-        lMutablePolynomialZp lDivider = bDivider.toLong();
+        gMutablePolynomial<BigInteger> bDivider = gMutablePolynomial.create(domain, 1, 2, 3, 3, 2, 1);
+        lMutablePolynomialZp lDivider = asLongPolyZp(bDivider);
 
-        bMutablePolynomialZp[] bqd = DivisionWithRemainder.divideAndRemainderFast(bDividend, bDivider, true);
+        gMutablePolynomial<BigInteger>[] bqd = DivisionWithRemainder.divideAndRemainderFast(bDividend, bDivider, true);
         lMutablePolynomialZp[] lqd = DivisionWithRemainder.divideAndRemainderFast(lDividend, lDivider, true);
-        Assert.assertArrayEquals(new lMutablePolynomialZp[]{bqd[0].toLong(), bqd[1].toLong()}, lqd);
+        Assert.assertArrayEquals(new lMutablePolynomialZp[]{asLongPolyZp(bqd[0]), asLongPolyZp(bqd[1])}, lqd);
     }
-
 
     @Test
     @Benchmark(runAnyway = true)
     public void test19_BigInteger_FastDivisionPerformance() throws Exception {
         BigInteger modulus = new BigInteger("1247842098624308285367648396697");//BigPrimes.nextPrime(new BigInteger(100, rnd));
         RandomGenerator rnd = getRandom();
-        bMutablePolynomialZp divider = RandomPolynomials.randomMonicPoly(128, modulus, rnd);
+        gMutablePolynomial<BigInteger> divider = RandomPolynomials.randomMonicPoly(128, modulus, rnd);
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
-        DivisionWithRemainder.InverseModMonomial<bMutablePolynomialZp> invRev = DivisionWithRemainder.fastDivisionPreConditioning(divider);
+        DivisionWithRemainder.InverseModMonomial<gMutablePolynomial<BigInteger>> invRev = DivisionWithRemainder.fastDivisionPreConditioning(divider);
         long nIterations = its(1000, 5000);
         for (int i = 0; i < nIterations; i++) {
             if (i == nIterations / 10) {
                 classic.clear();
                 fast.clear();
             }
-            bMutablePolynomialZ dividendZ = RandomPolynomials.randomPoly(3 * divider.degree / 2, modulus, rnd);
-            bMutablePolynomialZp dividend = dividendZ.modulus(modulus);
+            gMutablePolynomial<BigInteger> dividendZ = RandomPolynomials.randomPoly(3 * divider.degree / 2, modulus, rnd);
+            gMutablePolynomial<BigInteger> dividend = dividendZ.setDomain(new ModularDomain(modulus));
 
             long start = System.nanoTime();
-            bMutablePolynomialZp[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
+            gMutablePolynomial<BigInteger>[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
             long plain = System.nanoTime() - start;
             classic.addValue(plain);
 
             start = System.nanoTime();
-            bMutablePolynomialZp[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, invRev, true);
+            gMutablePolynomial<BigInteger>[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, invRev, true);
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
@@ -590,7 +608,6 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         System.out.println("==== Fast ====");
         System.out.println(fast.getPercentile(50));
     }
-
 
     @Test
     @Benchmark(runAnyway = true)
@@ -608,18 +625,18 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 fast.clear();
             }
 
-            bMutablePolynomialZp divider = RandomPolynomials.randomMonicPoly(dividerDegree, modulus, rnd);
-            bMutablePolynomialZ dividendZ = RandomPolynomials.randomPoly(dividendDegree, modulus, rnd);
-            bMutablePolynomialZp dividend = dividendZ.modulus(modulus);
+            gMutablePolynomial<BigInteger> divider = RandomPolynomials.randomMonicPoly(dividerDegree, modulus, rnd);
+            gMutablePolynomial<BigInteger> dividendZ = RandomPolynomials.randomPoly(dividendDegree, modulus, rnd);
+            gMutablePolynomial<BigInteger> dividend = dividendZ.setDomain(new ModularDomain(modulus));
             divider.multiply(BigInteger.THREE);
 
             long start = System.nanoTime();
-            bMutablePolynomialZp[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
+            gMutablePolynomial<BigInteger>[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
             long plain = System.nanoTime() - start;
             classic.addValue(plain);
 
             start = System.nanoTime();
-            bMutablePolynomialZp[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, true);
+            gMutablePolynomial<BigInteger>[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, true);
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
@@ -634,19 +651,19 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         System.out.println(fast.getMean());
     }
 
-    @Test
-    public void test23() throws Exception {
-        BigInteger modulus = new BigInteger("998427238390739620139");
-        bMutablePolynomialZp dividend = bMutablePolynomialZ.parse("989441076315244786644+174683251098354358x^1+2939699558711223765x^2+993164729241539182424x^3+8652504087827847685x^4+2978039521215483585x^5+5687372540827878771x^6+3684693598277313443x^7+3034113231916032517x^8+1842720927561159970x^9+1401489172494884190x^10").modulus(modulus);
-        bMutablePolynomialZp divider = bMutablePolynomialZ.parse("718119058879299323824+59748620370951943044x^1+27715597040703811206x^2+3x^3").modulus(modulus);
-
-        bMutablePolynomialZp[] classic = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
-        bMutablePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, true);
-
-        System.out.println(Arrays.toString(classic));
-        System.out.println(Arrays.toString(fast));
-        assertQuotientRemainder(dividend, divider, classic);
-    }
+//    @Test
+//    public void test23() throws Exception {
+//        BigInteger modulus = new BigInteger("998427238390739620139");
+//        bMutablePolynomialZp dividend = bMutablePolynomialZ.parse("989441076315244786644+174683251098354358x^1+2939699558711223765x^2+993164729241539182424x^3+8652504087827847685x^4+2978039521215483585x^5+5687372540827878771x^6+3684693598277313443x^7+3034113231916032517x^8+1842720927561159970x^9+1401489172494884190x^10").modulus(modulus);
+//        bMutablePolynomialZp divider = bMutablePolynomialZ.parse("718119058879299323824+59748620370951943044x^1+27715597040703811206x^2+3x^3").modulus(modulus);
+//
+//        bMutablePolynomialZp[] classic = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
+//        bMutablePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, true);
+//
+//        System.out.println(Arrays.toString(classic));
+//        System.out.println(Arrays.toString(fast));
+//        assertQuotientRemainder(dividend, divider, classic);
+//    }
 
     @Test(expected = ArithmeticException.class)
     public void testDivideByZero() throws Exception {
@@ -686,22 +703,24 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
             assertNotNull(rp);
             assertEquals(rem.modulus(modulus), rp);
 
-            bMutablePolynomialZ br = remainder(a.toBigPoly(), b.toBigPoly(), true);
+            gMutablePolynomial<BigInteger> br = remainder(a.toBigPoly(), b.toBigPoly(), true);
             assertNotNull(br);
             assertEquals(rem.toBigPoly(), br);
 
-            bMutablePolynomialZp brp = remainder(a.toBigPoly().modulus(modulus), b.toBigPoly().modulus(modulus), true);
+            ModularDomain mDomain = new ModularDomain(modulus);
+            gMutablePolynomial<BigInteger> brp = remainder(a.toBigPoly().setDomain(mDomain), b.toBigPoly().setDomain(mDomain), true);
             assertNotNull(brp);
-            assertEquals(rem.toBigPoly().modulus(modulus), brp);
+            assertEquals(rem.toBigPoly().setDomain(mDomain), brp);
         }
     }
+
     @Test
     public void test26() throws Exception {
-        bMutablePolynomialZ dividend = bMutablePolynomialZ.create(
+        gMutablePolynomial<BigInteger> dividend = gMutablePolynomial.create(IntegersDomain.IntegersDomain,
                 new BigInteger("50924915532280396921059912058744139974274010464717486445566429090906004335144553740099697325823981482217595251233173036221148816419907025031109037285812602964126981398549972404972445712495606246251612602646515107556469916968928792288517114629524761056619784125538889985573728321588316873829401388110009323502747325559537492401603348781184777517075447383315534987333005141430297794452769344710334113504161517191471620923923009168593251562951163703046204657823731073238889133009776679947959284882493347742931374480069087134327139957626655815839165341149468676605096098488269737054120888284410186940922588811865217977201434671980392818129023662348422616219595408007164847429098690018036788941569325028261778694448305169116366300968797299392607269512834399626743351451294227407026614474070168043362619155452474803802317594566620282821580866690460901450722523940253763809526916168510380458823716227207456429213838428363313858223438249583518220909107257207453781168662470638622229018698708892857265124137406565985565106519169754356798964383232"),
                 new BigInteger("37940726704358973981646894376520845717379643722668546596604774191462649371799436327770509765417751410853020097236259181340723780640646980528823132305918233917348431603978910702974168356786878991952039076697435685153720389954147196105732666546398882808075467883408078172773943074952881821883968276970586716085556521926276724965832984764113660527315402786928901376759667964550095121161582001082154197929523015687629358088978002050194666997140380633120191985503069336469087766567723745827536389920145897766163207961925615721265621132693244136269578827145639329792340827479965479742934874844926129035539562075005079119861286286379018264676225498300503424412683235789124363971763488749051910815230910592202224639481529849460050198630242102474952014158371176492350931799358619802630663775654806908014463551827044421713475118514891517003720144816583416199973842512734641894953396023836643821945946850868732474395966931084754653075573569398089513199914298230954227062809869737803168417328622780936780114654437560463636354964403162931061261855232"));
-        bMutablePolynomialZ divider = bMutablePolynomialZ.create(
+        gMutablePolynomial<BigInteger> divider = gMutablePolynomial.create(IntegersDomain.IntegersDomain,
                 new BigInteger("-425784855629707210539690417657285596009748771201595246777393523226748147711074288140558389550043516613530500261798739170010747708483239470487926534197999795185337107301428405197650111401424401453281285342023506707519100774028143103154883688933695208217191334712115038212326510433566424650523293261999555565022871454564811453312766524934990529599572227820236569578196841210873189542906771110582428737577172320473113774712560826543606283857910494481715951013601677939588946090257941915294685671582476036525511342773894137847945807902831920328130096765066331366254244760254056538237885678798173308462659097285980035599674879837185559523111215792005945149771714839595770409009983341486144352570200746450022078747332821616059006090021772872988207037534463289442687034943036344354336745002436373485142219064592871177691253579923036133374333408048223917924387929466882231114740060638812996586535143719347485716399431436091507892979143097224033509341961137283167473128691774034159819704359664495382150875212794275998540147497752601895426653284077738548432459176682797681127140157440"));
-        System.out.println(pseudoDivideAndRemainder(dividend, divider, true));
+        assertPseudoQuotientRemainder(dividend, divider, pseudoDivideAndRemainder(dividend, divider, true));
     }
 }

@@ -2,8 +2,8 @@ package cc.r2.core.poly.multivar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.generics.Domain;
-import cc.r2.core.poly.generics.ModularDomain;
+import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.ModularDomain;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
+import static cc.r2.core.poly.IntegersDomain.IntegersDomain;
 import static cc.r2.core.poly.multivar2.MonomialTerm.*;
 import static cc.r2.core.poly.multivar2.MultivariatePolynomial.parse;
 import static cc.r2.core.poly.multivar2.MultivariateReduction.divideAndRemainder;

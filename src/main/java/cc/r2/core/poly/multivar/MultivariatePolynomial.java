@@ -2,9 +2,9 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.IGeneralPolynomial;
-import cc.r2.core.poly.generics.Domain;
-import cc.r2.core.poly.generics.ModularDomain;
-import cc.r2.core.poly.generics.UnivariatePolynomialDomain;
+import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.UnivariatePolynomialDomain;
 import cc.r2.core.poly.univar.bMutablePolynomialZ;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
@@ -15,7 +15,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
+import static cc.r2.core.poly.IntegersDomain.IntegersDomain;
 
 /**
  * @author Stanislav Poslavsky
@@ -32,6 +32,11 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         this.ordering = ordering;
         this.data = data;
         this.domain = domain;
+    }
+
+    @Override
+    public boolean isOverField() {
+        return domain.isField();
     }
 
     /**
@@ -501,6 +506,16 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     @Override
     public boolean isMonomial() {
         return size() <= 1;
+    }
+
+    @Override
+    public boolean isMonic() {
+        return domain.isOne(lc());
+    }
+
+    @Override
+    public int signum() {
+        return domain.signum(lc());
     }
 
     /**

@@ -1,8 +1,8 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.generics.Domain;
-import cc.r2.core.poly.generics.ModularDomain;
+import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.ModularDomain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import cc.r2.core.test.AbstractTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -12,7 +12,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static cc.r2.core.poly.generics.IntegersDomain.IntegersDomain;
+import static cc.r2.core.poly.IntegersDomain.IntegersDomain;
 import static cc.r2.core.poly.multivar.MultivariateReduction.divideAndRemainder;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;

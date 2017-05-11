@@ -1,5 +1,6 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.poly.LongArithmetics;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.Arrays;
@@ -27,6 +28,11 @@ public final class lMutablePolynomialZ extends lMutablePolynomialAbstract<lMutab
     private lMutablePolynomialZ(long[] data, int degree) {
         this.data = data;
         this.degree = degree;
+    }
+
+    @Override
+    public boolean isOverField() {
+        return false;
     }
 
     /**
@@ -140,6 +146,11 @@ public final class lMutablePolynomialZ extends lMutablePolynomialAbstract<lMutab
             data[i] = l;
         }
         return this;
+    }
+
+    @Override
+    public lMutablePolynomialZ monic() {
+        throw new UnsupportedOperationException();
     }
 
     /** {@inheritDoc} */

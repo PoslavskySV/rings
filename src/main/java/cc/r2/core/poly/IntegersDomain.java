@@ -1,4 +1,4 @@
-package cc.r2.core.poly.generics;
+package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -35,6 +35,8 @@ public final class IntegersDomain extends AbstractIntegersDomain {
 
     @Override
     public BigInteger reciprocal(BigInteger a) {
+        if (isOne(a))
+            return a;
         throw new UnsupportedOperationException();
     }
 

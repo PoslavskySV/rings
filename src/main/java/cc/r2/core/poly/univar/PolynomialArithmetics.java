@@ -2,6 +2,7 @@ package cc.r2.core.poly.univar;
 
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.LongArithmetics;
 
 import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
 

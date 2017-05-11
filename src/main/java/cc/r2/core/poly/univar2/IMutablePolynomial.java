@@ -1,4 +1,4 @@
-package cc.r2.core.poly.univar;
+package cc.r2.core.poly.univar2;
 
 import cc.r2.core.poly.IGeneralPolynomial;
 
@@ -6,21 +6,22 @@ import cc.r2.core.poly.IGeneralPolynomial;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGeneralPolynomial<T>, Comparable<T> {
+public interface IMutablePolynomial<Poly extends IMutablePolynomial<Poly>> extends IGeneralPolynomial<Poly>, Comparable<Poly> {
+    /**
+     * Check whether {@code oth} and {@code this} belongs to the same Zp domain
+     *
+     * @param oth other polynomial
+     */
+    void checkCompatible(Poly oth);
 
     /**
-     * Returns {@code true} if this polynomial is monic
+     * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
+     * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
      *
-     * @return whether {@code this} is monic
+     * @param other other polynomial
+     * @return {@code this} divided by the {@code other.lc()} or {@code null}
      */
-    boolean isMonic();
-
-    /**
-     * Gives signum of leading coefficient
-     *
-     * @return signum of leading coefficient
-     */
-    int signum();
+    Poly divideByLC(Poly other);
 
     /**
      * Returns position of the first non-zero coefficient, that is common monomial exponent (e.g. 2 for x^2 + x^3 + ...)
@@ -36,7 +37,7 @@ public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGe
      * @param offset shift amount
      * @return the quotient {@code this / x^offset}
      */
-    T shiftLeft(int offset);
+    Poly shiftLeft(int offset);
 
     /**
      * Multiplies {@code this} by the {@code x^offset}.
@@ -44,7 +45,7 @@ public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGe
      * @param offset monomial exponent
      * @return {@code this * x^offset}
      */
-    T shiftRight(int offset);
+    Poly shiftRight(int offset);
 
     /**
      * Returns the remainder {@code this rem x^(newDegree + 1)}, it is polynomial with the coefficient list truncated
@@ -53,7 +54,7 @@ public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGe
      * @param newDegree new degree
      * @return remainder {@code this rem x^(newDegree + 1)}
      */
-    T truncate(int newDegree);
+    Poly truncate(int newDegree);
 
     /**
      * Creates polynomial formed from the coefficients of this starting from {@code from} (inclusive) to {@code to} (exclusive)
@@ -62,14 +63,14 @@ public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGe
      * @param to   the final index of the range to be copied, exclusive.
      * @return polynomial formed from the range of coefficients
      */
-    T getRange(int from, int to);
+    Poly getRange(int from, int to);
 
     /**
      * Reverses the coefficients of this
      *
      * @return reversed polynomial
      */
-    T reverse();
+    Poly reverse();
 
     /**
      * Creates monomial {@code x^degree}
@@ -77,14 +78,14 @@ public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGe
      * @param degree monomial degree
      * @return {@code coefficient * x^degree}
      */
-    T createMonomial(int degree);
+    Poly createMonomial(int degree);
 
     /** overcome Java generics... */
-    T[] arrayNewInstance(int length);
+    Poly[] arrayNewInstance(int length);
 
     /** overcome Java generics... */
-    default T[] arrayNewInstance(T a, T b) {
-        T[] r = arrayNewInstance(2);
+    default Poly[] arrayNewInstance(Poly a, Poly b) {
+        Poly[] r = arrayNewInstance(2);
         r[0] = a; r[1] = b;
         return r;
     }
@@ -94,12 +95,12 @@ public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGe
      *
      * @return the formal derivative
      */
-    T derivative();
+    Poly derivative();
 
     /**
      * Deep copy of this
      *
      * @return deep copy of this
      */
-    T clone();
+    Poly clone();
 }

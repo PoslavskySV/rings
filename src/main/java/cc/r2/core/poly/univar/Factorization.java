@@ -4,6 +4,7 @@ import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.univar.HenselLifting.QuadraticLiftAbstract;
 import cc.r2.core.util.ArraysUtil;
 
@@ -11,8 +12,8 @@ import java.util.List;
 
 import static cc.r2.core.poly.univar.DistinctDegreeFactorization.DistinctDegreeFactorization;
 import static cc.r2.core.poly.univar.EqualDegreeFactorization.CantorZassenhaus;
-import static cc.r2.core.poly.univar.LongArithmetics.fits32bitWord;
-import static cc.r2.core.poly.univar.LongArithmetics.safeMultiply;
+import static cc.r2.core.poly.LongArithmetics.fits32bitWord;
+import static cc.r2.core.poly.LongArithmetics.safeMultiply;
 import static cc.r2.core.poly.univar.SquareFreeFactorization.SquareFreeFactorization;
 
 /**

@@ -1,7 +1,7 @@
 package cc.r2.core.poly.multivar2;
 
 
-import cc.r2.core.poly.generics.Domain;
+import cc.r2.core.poly.Domain;
 
 import java.util.ArrayList;
 import java.util.List;

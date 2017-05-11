@@ -2,8 +2,8 @@ package cc.r2.core.poly.multivar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.generics.Domain;
-import cc.r2.core.poly.generics.ModularDomain;
+import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.ModularDomain;
 import cc.r2.core.poly.multivar2.MultivariateInterpolation.Interpolation;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomDataGenerator;

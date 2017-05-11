@@ -1,4 +1,4 @@
-package cc.r2.core.poly.generics;
+package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -21,9 +21,9 @@ public interface Domain<E> extends Comparator<E> {
     boolean isField();
 
     /**
-     * Returns number of elements in this domain or null if domain is infinite
+     * Returns number of elements in this domain (cardinality) or null if domain is infinite
      *
-     * @return number of elements in this domain or null if domain is infinite
+     * @return number of elements in this domain (cardinality) or null if domain is infinite
      */
     BigInteger size();
 
@@ -93,6 +93,15 @@ public interface Domain<E> extends Comparator<E> {
         E[] qd = divideAndRemainder(a, b);
         if (!isZero(qd[1]))
             throw new ArithmeticException("not divisible: " + a + " / " + b);
+        return qd[0];
+    }
+
+    default E divideOrNull(E a, E b) {
+        if (isOne(b))
+            return a;
+        E[] qd = divideAndRemainder(a, b);
+        if (!isZero(qd[1]))
+            return null;
         return qd[0];
     }
 
@@ -170,6 +179,13 @@ public interface Domain<E> extends Comparator<E> {
      */
     E valueOf(long val);
 
+    default E[] valueOf(long[] vals) {
+        E[] array = createArray(vals.length);
+        for (int i = 0; i < vals.length; i++)
+            array[i] = valueOf(vals[i]);
+        return array;
+    }
+
     /**
      * Converts a value from possibly other domain to this domain.
      *
@@ -177,6 +193,11 @@ public interface Domain<E> extends Comparator<E> {
      * @return this domain element associated with specified {@code val}
      */
     E valueOf(E val);
+
+    default void setToValueOf(E[] data) {
+        for (int i = 0; i < data.length; i++)
+            data[i] = valueOf(data[i]);
+    }
 
     /**
      * Parse string into domain element
@@ -192,11 +213,41 @@ public interface Domain<E> extends Comparator<E> {
      * Creates generic array of domain elements of specified length
      *
      * @param length array length
-     * @return empty array of domain elements of specified {@code length}
+     * @return array of domain elements of specified {@code length}
      */
     @SuppressWarnings("unchecked")
     default E[] createArray(int length) {
         return (E[]) Array.newInstance(getOne().getClass(), length);
+    }
+
+    /**
+     * Creates generic array of domain elements of specified length
+     *
+     * @param length array length
+     * @return array of domain elements of specified {@code length}
+     */
+    @SuppressWarnings("unchecked")
+    default E[] createZeroesArray(int length) {
+        E[] array = createArray(length);
+        for (int i = 0; i < array.length; i++)
+            // NOTE: getZero() is invoked each time in a loop in order to fill array with unique elements
+            array[i] = getZero();
+        return array;
+    }
+
+    /**
+     * Creates generic array of {@code {a, b}}
+     *
+     * @param a the first element of array
+     * @param b the second element of array
+     * @return array {@code {a,b}}
+     */
+    @SuppressWarnings("unchecked")
+    default E[] createArray(E a, E b) {
+        E[] array = createArray(2);
+        array[0] = a;
+        array[1] = b;
+        return array;
     }
 
     /**

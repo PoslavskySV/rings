@@ -1,4 +1,4 @@
-package cc.r2.core.poly.generics;
+package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.util.RandomUtil;
@@ -87,4 +87,19 @@ public final class ModularDomain extends AbstractIntegersDomain {
 
     @Override
     public Domain<BigInteger> getExtension() {return IntegersDomain.IntegersDomain;}
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ModularDomain that = (ModularDomain) o;
+
+        return modulus.equals(that.modulus);
+    }
+
+    @Override
+    public int hashCode() {
+        return modulus.hashCode();
+    }
 }

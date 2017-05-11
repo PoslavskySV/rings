@@ -1,8 +1,8 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.generics.Domain;
-import cc.r2.core.poly.generics.ModularDomain;
+import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.ModularDomain;
 import cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;

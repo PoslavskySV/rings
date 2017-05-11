@@ -29,6 +29,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * This class contains additional methods for manipulating arrays (such as sorting and searching). For all quick sort
@@ -90,6 +91,23 @@ public final class ArraysUtil {
         b.append('[');
         for (int i = from; ; i++) {
             b.append(a[i]);
+            if (i == iMax)
+                return b.append(']').toString();
+            b.append(", ");
+        }
+    }
+
+    public static <T> String toString(T[] a, int from, int to, Function<T, String> stringer) {
+        if (a == null)
+            return "null";
+        int iMax = to - 1;
+        if (iMax == -1)
+            return "[]";
+
+        StringBuilder b = new StringBuilder();
+        b.append('[');
+        for (int i = from; ; i++) {
+            b.append(stringer.apply(a[i]));
             if (i == iMax)
                 return b.append(']').toString();
             b.append(", ");

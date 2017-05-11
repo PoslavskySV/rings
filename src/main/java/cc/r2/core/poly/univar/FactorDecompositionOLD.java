@@ -1,5 +1,6 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 

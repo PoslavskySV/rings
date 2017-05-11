@@ -3179,6 +3179,19 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code this / val}
      * @throws ArithmeticException if {@code val} is zero.
      */
+    public BigInteger divideExact(BigInteger val) {
+        BigInteger[] qd = divideAndRemainder(val);
+        if(!qd[1].isZero())
+            throw new ArithmeticException("not divisible " + this + " / " + val);
+        return qd[0];
+    }
+    /**
+     * Returns a BigInteger whose value is {@code (this / val)}.
+     *
+     * @param val value by which this BigInteger is to be divided.
+     * @return {@code this / val}
+     * @throws ArithmeticException if {@code val} is zero.
+     */
     public BigInteger divide(BigInteger val) {
         if (val.mag.length < BURNIKEL_ZIEGLER_THRESHOLD ||
                 mag.length - val.mag.length < BURNIKEL_ZIEGLER_OFFSET) {

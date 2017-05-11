@@ -1,8 +1,8 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.generics.Domain;
-import cc.r2.core.poly.generics.IntegersDomain;
+import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.IntegersDomain;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.DegreeVector;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;

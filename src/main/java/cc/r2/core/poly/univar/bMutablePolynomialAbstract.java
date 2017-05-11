@@ -14,7 +14,7 @@ import static cc.r2.core.number.BigIntegerArithmetics.*;
  * Univariate polynomials over Z ({@link lMutablePolynomialZ}) or Zp ({@link lMutablePolynomialZp}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract> implements IMutablePolynomial<T> {
+abstract class bMutablePolynomialAbstract<T extends bMutablePolynomialAbstract<T>> implements IMutablePolynomial<T> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     BigInteger[] data;
     /** points to the last non zero element in the data array */

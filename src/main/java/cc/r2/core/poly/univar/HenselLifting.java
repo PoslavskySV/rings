@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.LongArithmetics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.univar.DivisionWithRemainder.divideAndRemainder;
-import static cc.r2.core.poly.univar.LongArithmetics.safeMultiply;
+import static cc.r2.core.poly.LongArithmetics.safeMultiply;
 
 /**
  * Methods for univariate Hensel lifting.

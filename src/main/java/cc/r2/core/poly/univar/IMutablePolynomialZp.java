@@ -6,7 +6,7 @@ import cc.r2.core.number.BigInteger;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-interface IMutablePolynomialZp<T extends IMutablePolynomialZp> extends IMutablePolynomial<T> {
+interface IMutablePolynomialZp<T extends IMutablePolynomialZp<T>> extends IMutablePolynomial<T> {
     void checkCompatibleModulus(T oth);
 
     /**

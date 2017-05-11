@@ -1,13 +1,23 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.util.TimeUnits;
+import cc.redberry.libdivide4j.FastDivision;
+import org.apache.commons.math3.random.Well44497b;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Arrays;
+
+import static cc.redberry.libdivide4j.FastDivision.modUnsignedFast;
+import static cc.redberry.libdivide4j.FastDivision.multiplyMod128Unsigned;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class lMutablePolynomialZpTest {
+public class lMutablePolynomialZpTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         lMutablePolynomialZp aL = lMutablePolynomialZ.create(1, 2, 3, 4, 5, 6).modulus(59);
