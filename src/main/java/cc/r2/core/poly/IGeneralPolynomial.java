@@ -10,7 +10,7 @@ import java.util.Collection;
  */
 public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
     /**
-     * Return the degree of this
+     * Return the degree of this polynomial
      *
      * @return the degree
      */
@@ -77,21 +77,21 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
      *
      * @return cardinality of the coefficients domain
      */
-    BigInteger domainCardinality();
+    BigInteger coefficientDomainCardinality();
 
     /**
      * Sets {@code this} to its monic part (that is {@code this} divided by its leading coefficient), or returns
      * {@code null} (causing loss of internal data) if some of the elements can't be exactly
-     * divided by the {@code lc()}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
+     * divided by the {@code lc()}. NOTE: if {@code null} is returned, the content of {@code this} is destroyed.
      *
      * @return monic {@code this} or {@code null}
      */
     Poly monic();
 
     /**
-     * Gives signum of leading coefficient
+     * Gives signum of the leading coefficient
      *
-     * @return signum of leading coefficient
+     * @return signum of the leading coefficient
      */
     int signum();
 
@@ -118,7 +118,7 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
     Poly primitivePart();
 
     /**
-     * Reduces poly to its primitive part preserving signum of l.c.
+     * Reduces poly to its primitive part, so that primitive part will have the same signum as the initial poly
      *
      * @return primitive part (poly will be modified)
      */
@@ -183,6 +183,12 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
      */
     Poly multiply(Poly oth);
 
+    /**
+     * Sets this to {@code this * oth }
+     *
+     * @param oth the polynomials
+     * @return {@code this * oth }
+     */
     @SuppressWarnings("unchecked")
     default Poly multiply(Poly... oth) {
         for (Poly t : oth)
@@ -190,6 +196,12 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
         return (Poly) this;
     }
 
+    /**
+     * Sets this to {@code this * oth }
+     *
+     * @param oth the polynomials
+     * @return {@code this * oth }
+     */
     @SuppressWarnings("unchecked")
     default Poly multiply(Collection<Poly> oth) {
         for (Poly t : oth)
@@ -201,12 +213,12 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
      * Raises {@code this} by the {@code factor}
      *
      * @param factor the factor
-     * @return {@code} this multiplied by the {@code factor}
+     * @return {@code this * factor}
      */
     Poly multiply(long factor);
 
     /**
-     * Square of {@code this}
+     * Squares {@code this}
      *
      * @return {@code this * this}
      */

@@ -5,7 +5,7 @@ import cc.r2.core.poly.LongArithmetics;
 import java.util.Arrays;
 
 import static cc.r2.core.poly.univar2.DivisionWithRemainder.divideAndRemainder;
-import static cc.r2.core.poly.univar2.PolynomialGCD.PolynomialGCD;
+import static cc.r2.core.poly.univar2.UnivariateGCD.PolynomialGCD;
 
 
 /**
@@ -23,7 +23,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationZ(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationZ(Poly poly) {
         if (poly.isConstant())
             return FactorDecomposition.constantFactor(poly);
 
@@ -46,7 +46,7 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationYun(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationYun(Poly poly) {
         if (poly.isConstant())
             return FactorDecomposition.constantFactor(poly);
 
@@ -63,7 +63,7 @@ public final class SquareFreeFactorization {
         return factorization;
     }
 
-    private static <Poly extends IMutablePolynomial<Poly>> void SquareFreeFactorizationYun(Poly poly, FactorDecomposition<Poly> factorization) {
+    private static <Poly extends IUnivariatePolynomial<Poly>> void SquareFreeFactorizationYun(Poly poly, FactorDecomposition<Poly> factorization) {
         Poly derivative = poly.derivative(), gcd = PolynomialGCD(poly, derivative);
         if (gcd.isConstant()) {
             factorization.addFactor(poly, 1);
@@ -92,7 +92,7 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         if (poly.isConstant())
             return FactorDecomposition.constantFactor(poly);
 
@@ -109,7 +109,7 @@ public final class SquareFreeFactorization {
         return factorization;
     }
 
-    private static <Poly extends IMutablePolynomial<Poly>> void SquareFreeFactorizationMusser(Poly poly, FactorDecomposition<Poly> factorization) {
+    private static <Poly extends IUnivariatePolynomial<Poly>> void SquareFreeFactorizationMusser(Poly poly, FactorDecomposition<Poly> factorization) {
         Poly derivative = poly.derivative(), gcd = PolynomialGCD(poly, derivative);
         if (gcd.isConstant()) {
             factorization.addFactor(poly, 1);
@@ -137,7 +137,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationZp(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationZp(Poly poly) {
         poly = poly.clone();
         Poly lc = poly.lcAsPoly();
         //make poly monic
@@ -166,7 +166,7 @@ public final class SquareFreeFactorization {
 
     /** {@code poly} will be destroyed */
     @SuppressWarnings("ConstantConditions")
-    private static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
+    private static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
         poly.monic();
         if (poly.isConstant())
             return FactorDecomposition.constantFactor(poly);
@@ -199,7 +199,7 @@ public final class SquareFreeFactorization {
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd);
                 FactorDecomposition<Poly> gcdFactorization = SquareFreeFactorizationMusser0(gcd);
-                gcdFactorization.raiseExponents(poly.domainCardinality().intValueExact());
+                gcdFactorization.raiseExponents(poly.coefficientDomainCardinality().intValueExact());
                 result.addAll(gcdFactorization);
                 return result;
             } else
@@ -207,24 +207,24 @@ public final class SquareFreeFactorization {
         } else {
             Poly pRoot = pRoot(poly);
             FactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
-            fd.raiseExponents(poly.domainCardinality().intValueExact());
+            fd.raiseExponents(poly.coefficientDomainCardinality().intValueExact());
             return fd.setConstantFactor(poly.createOne());
         }
     }
 
     /** p-th root of poly */
     @SuppressWarnings("unchecked")
-    private static <Poly extends IMutablePolynomial<Poly>> Poly pRoot(Poly poly) {
-        if (poly instanceof lMutablePolynomialZp)
-            return (Poly) pRoot((lMutablePolynomialZp) poly);
-        else if (poly instanceof gMutablePolynomial)
-            return (Poly) pRoot((gMutablePolynomial) poly);
+    private static <Poly extends IUnivariatePolynomial<Poly>> Poly pRoot(Poly poly) {
+        if (poly instanceof lUnivariatePolynomialZp)
+            return (Poly) pRoot((lUnivariatePolynomialZp) poly);
+        else if (poly instanceof UnivariatePolynomial)
+            return (Poly) pRoot((UnivariatePolynomial) poly);
         else
             throw new RuntimeException(poly.getClass().toString());
     }
 
     /** p-th root of poly */
-    private static lMutablePolynomialZp pRoot(lMutablePolynomialZp poly) {
+    private static lUnivariatePolynomialZp pRoot(lUnivariatePolynomialZp poly) {
         if (poly.domain.modulus > Integer.MAX_VALUE)
             throw new IllegalArgumentException("Too big modulus: " + poly.domain.modulus);
         int modulus = LongArithmetics.safeToInt(poly.domain.modulus);
@@ -240,11 +240,11 @@ public final class SquareFreeFactorization {
     }
 
     /** p-th root of poly */
-    private static <E> gMutablePolynomial<E> pRoot(gMutablePolynomial<E> poly) {
-        if (poly.domainCardinality() == null || !poly.domainCardinality().isInt())
+    private static <E> UnivariatePolynomial<E> pRoot(UnivariatePolynomial<E> poly) {
+        if (poly.coefficientDomainCardinality() == null || !poly.coefficientDomainCardinality().isInt())
             throw new IllegalArgumentException("Infinite or too large domain: " + poly.domain);
 
-        int modulus = poly.domainCardinality().intValueExact();
+        int modulus = poly.coefficientDomainCardinality().intValueExact();
         assert poly.degree % modulus == 0;
         E[] rootData = poly.domain.createZeroesArray(poly.degree / modulus + 1);
         Arrays.fill(rootData, 0);
@@ -262,7 +262,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return {@code true} if {@code poly} is square-free and {@code false} otherwise
      */
-    public static <T extends IMutablePolynomial<T>> boolean isSquareFree(T poly) {
+    public static <T extends IUnivariatePolynomial<T>> boolean isSquareFree(T poly) {
         return PolynomialGCD(poly, poly.derivative()).isConstant();
     }
 
@@ -273,7 +273,7 @@ public final class SquareFreeFactorization {
      * @return square-free decomposition
      */
     @SuppressWarnings("unchecked")
-    public static <T extends IMutablePolynomial<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
+    public static <T extends IUnivariatePolynomial<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
         if (poly.isOverField())
             return SquareFreeFactorizationZp(poly);
         else
@@ -286,7 +286,7 @@ public final class SquareFreeFactorization {
      * @param poly the polynomial
      * @return square free part
      */
-    public static <T extends IMutablePolynomial<T>> T SquareFreePart(T poly) {
-        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), IMutablePolynomial<T>::multiply);
+    public static <T extends IUnivariatePolynomial<T>> T SquareFreePart(T poly) {
+        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), IUnivariatePolynomial<T>::multiply);
     }
 }

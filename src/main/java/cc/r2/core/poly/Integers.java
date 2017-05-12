@@ -1,22 +1,21 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
-import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class IntegersDomain extends AbstractIntegersDomain {
-    public static final IntegersDomain IntegersDomain = new IntegersDomain();
+public final class Integers extends AbstractIntegers {
+    public static final Integers Integers = new Integers();
 
-    private IntegersDomain() {}
+    private Integers() {}
 
     @Override
     public boolean isField() {return false;}
 
     @Override
-    public BigInteger size() {return null;}
+    public BigInteger cardinality() {return null;}
 
     @Override
     public BigInteger add(BigInteger a, BigInteger b) {return a.add(b);}
@@ -47,11 +46,18 @@ public final class IntegersDomain extends AbstractIntegersDomain {
     public BigInteger valueOf(long val) {return BigInteger.valueOf(val);}
 
     @Override
-    public BigInteger randomElement(RandomGenerator rnd) {return valueOf(rnd.nextInt());}
+    public BigInteger getNegativeOne() {return BigInteger.NEGATIVE_ONE;}
+
+    @Override
+    public boolean isMinusOne(BigInteger bigInteger) {
+        return bigInteger.isMinusOne();
+    }
+
+    @Override
+    public BigInteger[] createArray(int length) {
+        return new BigInteger[length];
+    }
 
     @Override
     public String toString() {return "Z";}
-
-    @Override
-    public Domain<BigInteger> getExtension() {return null;}
 }

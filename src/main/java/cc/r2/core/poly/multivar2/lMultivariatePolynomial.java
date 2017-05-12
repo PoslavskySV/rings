@@ -92,25 +92,25 @@
 //        return modUnsignedFast(val, magic);
 //    }
 //
-//    /** multiplyMod operation */
-//    long multiplyMod(long a, long b) {
+//    /** multiply operation */
+//    long multiply(long a, long b) {
 //        return modulusFits32 ? mod(a * b) : multiplyMod128Unsigned(a, b, modulus, magic32MulMod);
 //    }
 //
-//    /** addMod operation */
-//    long addMod(long a, long b) {
+//    /** add operation */
+//    long add(long a, long b) {
 //        long r = a + b;
 //        return r - modulus >= 0 ? r - modulus : r;
 //    }
 //
-//    /** subtractMod operation */
-//    long subtractMod(long a, long b) {
+//    /** subtract operation */
+//    long subtract(long a, long b) {
 //        long r = a - b;
 //        return r + ((r >> 63)&modulus);
 //    }
 //
-//    /** negateMod operation */
-//    long negateMod(long val) {
+//    /** negate operation */
+//    long negate(long val) {
 //        return val == 0 ? val : modulus - val;
 //    }
 //
@@ -336,7 +336,7 @@
 //        long cfInverse = LongArithmetics.modInverse(monomial.coefficient, modulus);
 //        MonomialsSet<lMonomialTerm> map = new MonomialsSet<>(ordering);
 //        for (lMonomialTerm term : data) {
-//            lMonomialTerm dv = term.divide(monomial, multiplyMod(monomial.coefficient, cfInverse));
+//            lMonomialTerm dv = term.divide(monomial, multiply(monomial.coefficient, cfInverse));
 //            if (dv == null)
 //                return null;
 //            map.add(dv);
@@ -661,7 +661,7 @@
 //        map.compute(term, (thisVector, thisValue) -> {
 //            if (thisValue == null)
 //                return term;
-//            long r = addMod(thisValue.coefficient, term.coefficient);
+//            long r = add(thisValue.coefficient, term.coefficient);
 //            return r == 0 ? null : thisValue.setCoefficient(r);
 //        });
 //    }
@@ -670,7 +670,7 @@
 //        map.compute(term, (thisVector, thisValue) -> {
 //            if (thisValue == null)
 //                return term;
-//            long r = subtractMod(thisValue.coefficient, term.coefficient);
+//            long r = subtract(thisValue.coefficient, term.coefficient);
 //            return r == 0 ? null : thisValue.setCoefficient(r);
 //        });
 //    }

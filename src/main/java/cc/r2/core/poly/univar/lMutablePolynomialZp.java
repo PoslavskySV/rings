@@ -60,7 +60,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
     }
 
     @Override
-    public BigInteger domainCardinality() {
+    public BigInteger coefficientDomainCardinality() {
         return BigInteger.valueOf(modulus);
     }
 
@@ -171,24 +171,24 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
         return modUnsignedFast(val, magic);
     }
 
-    /** multiplyMod operation */
+    /** multiply operation */
     long multiplyMod(long a, long b) {
         return modulusFits32 ? mod(a * b) : multiplyMod128Unsigned(a, b, modulus, magic32MulMod);
     }
 
-    /** addMod operation */
+    /** add operation */
     long addMod(long a, long b) {
         long r = a + b;
         return r - modulus >= 0 ? r - modulus : r;
     }
 
-    /** subtractMod operation */
+    /** subtract operation */
     long subtractMod(long a, long b) {
         long r = a - b;
         return r + ((r >> 63)&modulus);
     }
 
-    /** negateMod operation */
+    /** negate operation */
     long negateMod(long val) {
         return val == 0 ? val : modulus - val;
     }

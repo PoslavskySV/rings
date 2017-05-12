@@ -3,7 +3,7 @@ package cc.r2.core.poly.multivar2;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.IntegersModulo;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
@@ -11,7 +11,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static cc.r2.core.poly.IntegersDomain.IntegersDomain;
+import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.multivar2.MonomialTerm.*;
 import static cc.r2.core.poly.multivar2.MultivariatePolynomial.parse;
 import static cc.r2.core.poly.multivar2.MultivariateReduction.divideAndRemainder;
@@ -99,7 +99,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     @Test
     public void test6() throws Exception {
         String[] vars = {"a", "b"};
-        Domain<BigInteger> domain = new ModularDomain(2);
+        Domain<BigInteger> domain = new IntegersModulo(2);
         Comparator<DegreeVector> ordering = LEX;
         MultivariatePolynomial dividend = parse("a^2*b+a*b^2+b^2", domain, ordering, vars);
         MultivariatePolynomial f1 = parse("a*b - 1", domain, ordering, vars);
@@ -120,7 +120,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,
                                  int minSize, int maxDegree,
                                  Comparator<DegreeVector> ordering) {
-        testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, IntegersDomain, getRandom());
+        testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, Integers, getRandom());
     }
 
     @SuppressWarnings("unchecked")

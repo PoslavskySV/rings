@@ -11,10 +11,10 @@ import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
 /**
- * Univariate polynomials over Z ({@link lMutablePolynomialZ}) or Zp ({@link lMutablePolynomialZp}).
+ * Univariate polynomials over Z ({@link lUnivariatePolynomialZ}) or Zp ({@link lUnivariatePolynomialZp}).
  * All operations (except where it is specifically stated) changes the content of this.
  */
-abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstract<lPoly>> implements IMutablePolynomial<lPoly> {
+abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomialAbstract<lPoly>> implements IUnivariatePolynomial<lPoly> {
     /** list of coefficients { x^0, x^1, ... , x^degree } */
     long[] data;
     /** points to the last non zero element in the data array */
@@ -23,34 +23,37 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
     @SuppressWarnings("unchecked")
     private final lPoly self = (lPoly) this;
 
+    /** {@inheritDoc} */
     @Override
     public final int degree() {return degree;}
 
     /**
      * Returns i-th element of this poly
      */
-    public final long get(int i) { return data[i];}
+    public final long get(int i) {return data[i];}
 
+    /** {@inheritDoc} */
     @Override
     public final int firstNonZeroCoefficientPosition() {
+        if (isZero()) return -1;
         int i = 0;
         while (data[i] == 0) ++i;
-        assert i < data.length;
         return i;
     }
 
     /**
-     * Returns the leading coefficient of the poly
+     * Returns the leading coefficient of this poly
      *
      * @return leading coefficient
      */
     public final long lc() {return data[degree];}
 
+    /** {@inheritDoc} */
     @Override
     public final lPoly lcAsPoly() {return createConstant(lc());}
 
     /**
-     * Returns the constant coefficient of the poly
+     * Returns the constant coefficient of this poly
      *
      * @return constant coefficient
      */
@@ -84,7 +87,12 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         }
     }
 
-    public abstract gMutablePolynomial<BigInteger> toBigPoly();
+    /**
+     * Converts this to a polynomial over BigIntegers
+     *
+     * @return polynomial over BigIntegers
+     */
+    public abstract UnivariatePolynomial<BigInteger> toBigPoly();
 
     /**
      * Factory
@@ -168,6 +176,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public final int signum() {
         return Long.signum(lc());
@@ -202,9 +211,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
      *
      * @return max coefficient (by absolute value)
      */
-    public final double normMax() {
-        return (double) maxAbsCoefficient();
-    }
+    public final double normMax() {return (double) maxAbsCoefficient();}
 
     /**
      * Returns max coefficient (by absolute value) of this poly
@@ -280,7 +287,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
     }
 
     /**
-     * Returns the content of the poly
+     * Returns the content of this poly
      *
      * @return polynomial content
      */
@@ -306,6 +313,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         return primitivePart0(content);
     }
 
+    /** {@inheritDoc} */
     @Override
     public final lPoly primitivePartSameSign() {
         return primitivePart0(content());
@@ -320,14 +328,19 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         return self;
     }
 
+    /** addition in the coefficient domain **/
     abstract long add(long a, long b);
 
+    /** subtraction in the coefficient domain **/
     abstract long subtract(long a, long b);
 
+    /** multiplication in the coefficient domain **/
     abstract long multiply(long a, long b);
 
+    /** negation in the coefficient domain **/
     abstract long negate(long a);
 
+    /** convert long to element of this coefficient domain **/
     abstract long valueOf(long a);
 
     /**
@@ -379,7 +392,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         if (isZero())
             return set(oth);
 
-        checkCompatible(oth);
+        checkSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = add(data[i], oth.data[i]);
@@ -419,7 +432,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         if (factor == 0)
             return self;
 
-        checkCompatible(oth);
+        checkSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = add(data[i], multiply(factor, oth.data[i]));
@@ -435,7 +448,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         if (isZero())
             return set(oth).negate();
 
-        checkCompatible(oth);
+        checkSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = subtract(data[i], oth.data[i]);
@@ -459,7 +472,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         if (factor == 0)
             return self;
 
-        checkCompatible(oth);
+        checkSameDomainWith(oth);
         for (int i = oth.degree + exponent; i >= exponent; --i)
             data[i] = subtract(data[i], multiply(factor, oth.data[i - exponent]));
 
@@ -471,8 +484,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
     @Override
     public final lPoly negate() {
         for (int i = degree; i >= 0; --i)
-            if (data[i] != 0)
-                data[i] = negate(data[i]);
+            data[i] = negate(data[i]);
         return self;
     }
 
@@ -494,6 +506,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
     @Override
     public abstract lPoly clone();
 
+    /** convert this long[] data to BigInteger[] */
     final BigInteger[] dataToBigIntegers() {
         BigInteger[] bData = new BigInteger[degree + 1];
         for (int i = degree; i >= 0; --i)
@@ -501,6 +514,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
         return bData;
     }
 
+    /** direct unsafe access to internal storage */
     public final long[] getDataReferenceUnsafe() {
         return data;
     }
@@ -552,7 +566,7 @@ abstract class lMutablePolynomialAbstract<lPoly extends lMutablePolynomialAbstra
     public final boolean equals(Object obj) {
         if (obj.getClass() != this.getClass())
             return false;
-        lMutablePolynomialAbstract oth = (lMutablePolynomialAbstract) obj;
+        lUnivariatePolynomialAbstract oth = (lUnivariatePolynomialAbstract) obj;
         if (degree != oth.degree)
             return false;
         for (int i = 0; i <= degree; ++i)

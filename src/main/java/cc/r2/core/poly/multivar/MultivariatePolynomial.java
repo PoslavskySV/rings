@@ -3,7 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.UnivariatePolynomialDomain;
 import cc.r2.core.poly.univar.bMutablePolynomialZ;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;
@@ -15,7 +15,7 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static cc.r2.core.poly.IntegersDomain.IntegersDomain;
+import static cc.r2.core.poly.Integers.Integers;
 
 /**
  * @author Stanislav Poslavsky
@@ -45,8 +45,8 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     @Override
-    public BigInteger domainCardinality() {
-        return domain.size();
+    public BigInteger coefficientDomainCardinality() {
+        return domain.cardinality();
     }
 
     @Override
@@ -149,9 +149,9 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @throws IllegalArgumentException if {@code poly} is not actually a univariate polynomial
      */
     public static bMutablePolynomialZp asUnivariateZp(MultivariatePolynomial<BigInteger> poly) {
-        if (!(poly.domain instanceof ModularDomain))
+        if (!(poly.domain instanceof IntegersModulo))
             throw new IllegalArgumentException("multivariate poly is not Zp[x]");
-        ModularDomain domain = (ModularDomain) poly.domain;
+        IntegersModulo domain = (IntegersModulo) poly.domain;
         BigInteger[] data = asUnivariate(poly);
         return bMutablePolynomialZp.createUnsafe(domain.modulus, data);
     }
@@ -186,7 +186,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @return multivariate polynomial
      */
     public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZ poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
-        return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, IntegersDomain, ordering);
+        return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, Integers, ordering);
     }
 
     /**
@@ -199,7 +199,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
      * @return multivariate polynomial
      */
     public static MultivariatePolynomial<BigInteger> asMultivariate(bMutablePolynomialZp poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
-        return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, new ModularDomain(poly.modulusAsBigInt()), ordering);
+        return asMultivariate(poly.getDataReferenceUnsafe(), poly.degree(), nVariables, variable, new IntegersModulo(poly.modulusAsBigInt()), ordering);
     }
 
     private static MultivariatePolynomial<BigInteger> asMultivariate(BigInteger[] data, int degree, int nVariables, int variable, Domain<BigInteger> domain, Comparator<DegreeVector> ordering) {
@@ -227,9 +227,9 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     }
 
     public static MultivariatePolynomial<bMutablePolynomialZp> convertZp(MultivariatePolynomial<BigInteger> poly, int variable) {
-        if (!(poly.domain instanceof ModularDomain))
+        if (!(poly.domain instanceof IntegersModulo))
             throw new IllegalArgumentException("not a Zp[x] poly");
-        BigInteger modulus = ((ModularDomain) poly.domain).modulus;
+        BigInteger modulus = ((IntegersModulo) poly.domain).modulus;
         TreeMap<DegreeVector, bMutablePolynomialZp> map = new TreeMap<>(poly.ordering);
         UnivariatePolynomialDomain<bMutablePolynomialZp> domain = new UnivariatePolynomialDomain<>(bMutablePolynomialZp.zero(modulus));
         for (Entry<DegreeVector, BigInteger> e : poly.data.entrySet()) {

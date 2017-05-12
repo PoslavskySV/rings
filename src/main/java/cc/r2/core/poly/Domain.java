@@ -7,8 +7,6 @@ import java.lang.reflect.Array;
 import java.util.Comparator;
 
 /**
- * Domain specification.
- *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
@@ -25,7 +23,7 @@ public interface Domain<E> extends Comparator<E> {
      *
      * @return number of elements in this domain (cardinality) or null if domain is infinite
      */
-    BigInteger size();
+    BigInteger cardinality();
 
     /**
      * Returns whether this domain is finite
@@ -33,7 +31,7 @@ public interface Domain<E> extends Comparator<E> {
      * @return whether this domain is finite
      */
     default boolean isFinite() {
-        return size() != null;
+        return cardinality() != null;
     }
 
     /**
@@ -44,7 +42,6 @@ public interface Domain<E> extends Comparator<E> {
     default boolean isFiniteField() {
         return isField() && isFinite();
     }
-
 
     /**
      * Adds two elements
@@ -74,7 +71,7 @@ public interface Domain<E> extends Comparator<E> {
     E multiply(E a, E b);
 
     /**
-     * Negates a given element
+     * Negates the given element
      *
      * @param val the domain element
      * @return -val
@@ -91,25 +88,41 @@ public interface Domain<E> extends Comparator<E> {
     int signum(E a);
 
     /**
-     * Returns quotient and remainder of {@code a/b}
+     * Returns quotient and remainder of {@code dividend / divider}
      *
-     * @param a the dividend
-     * @param b the divider
+     * @param dividend the dividend
+     * @param divider  the divider
      * @return {@code {quotient, remainder}}
      */
-    E[] divideAndRemainder(E a, E b);
+    E[] divideAndRemainder(E dividend, E divider);
 
-    default E divideExact(E a, E b) {
-        E[] qd = divideAndRemainder(a, b);
+    /**
+     * Divides {@code dividend} by {@code divider} or throws {@code ArithmeticException} if exact division is not possible
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return {@code dividend / divider}
+     */
+    default E divideExact(E dividend, E divider) {
+        if (isOne(divider))
+            return dividend;
+        E[] qd = divideAndRemainder(dividend, divider);
         if (!isZero(qd[1]))
-            throw new ArithmeticException("not divisible: " + a + " / " + b);
+            throw new ArithmeticException("not divisible: " + dividend + " / " + divider);
         return qd[0];
     }
 
-    default E divideOrNull(E a, E b) {
-        if (isOne(b))
-            return a;
-        E[] qd = divideAndRemainder(a, b);
+    /**
+     * Divides {@code dividend} by {@code divider} or returns {@code null} if exact division is not possible
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return {@code dividend / divider} or {@code null} if exact division is not possible
+     */
+    default E divideOrNull(E dividend, E divider) {
+        if (isOne(divider))
+            return dividend;
+        E[] qd = divideAndRemainder(dividend, divider);
         if (!isZero(qd[1]))
             return null;
         return qd[0];
@@ -140,14 +153,14 @@ public interface Domain<E> extends Comparator<E> {
     E getZero();
 
     /**
-     * Domain element representing one
+     * Domain element representing unit
      *
      * @return 1
      */
     E getOne();
 
     /**
-     * Domain element representing minus one
+     * Domain element representing negative unit
      *
      * @return -1
      */
@@ -164,10 +177,10 @@ public interface Domain<E> extends Comparator<E> {
     boolean isZero(E e);
 
     /**
-     * Tests whether specified element is one
+     * Tests whether specified element is unit
      *
      * @param e the domain element
-     * @return whether specified element is one
+     * @return whether specified element is unit
      */
     boolean isOne(E e);
 
@@ -182,13 +195,19 @@ public interface Domain<E> extends Comparator<E> {
     }
 
     /**
-     * Value of machine integer (if supported)
+     * Returns domain element associated with specified {@code long}
      *
      * @param val machine integer
      * @return domain element associated with specified {@code long}
      */
     E valueOf(long val);
 
+    /**
+     * Converts array of machine integers to domain elements via {@link #valueOf(long)}
+     *
+     * @param vals array of machine integers
+     * @return array of domain elements
+     */
     default E[] valueOf(long[] vals) {
         E[] array = createArray(vals.length);
         for (int i = 0; i < vals.length; i++)
@@ -197,20 +216,25 @@ public interface Domain<E> extends Comparator<E> {
     }
 
     /**
-     * Converts a value from possibly other domain to this domain.
+     * Converts a value from other domain to this domain.
      *
      * @param val some element from any domain
      * @return this domain element associated with specified {@code val}
      */
     E valueOf(E val);
 
+    /**
+     * Applies {@link #valueOf(Object)} inplace to the specified array
+     *
+     * @param data the array
+     */
     default void setToValueOf(E[] data) {
         for (int i = 0; i < data.length; i++)
             data[i] = valueOf(data[i]);
     }
 
     /**
-     * Parse string into domain element
+     * Parse string into domain element, by default throws {@code UnsupportedOperationException}
      *
      * @param string string
      * @return domain element
@@ -231,10 +255,10 @@ public interface Domain<E> extends Comparator<E> {
     }
 
     /**
-     * Creates generic array of domain elements of specified length
+     * Creates array filled with zero elements
      *
      * @param length array length
-     * @return array of domain elements of specified {@code length}
+     * @return array filled with zero elements of specified {@code length}
      */
     @SuppressWarnings("unchecked")
     default E[] createZeroesArray(int length) {
@@ -284,6 +308,54 @@ public interface Domain<E> extends Comparator<E> {
         }
     }
 
+    /**
+     * Returns {@code base} in a power of {@code exponent} (non negative)
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code exponent}
+     * @throws ArithmeticException if the result overflows a long
+     */
+    default E pow(E base, long exponent) {
+        if (exponent < 0)
+            throw new IllegalArgumentException();
+
+        E result = getOne();
+        E k2p = base;
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result = multiply(result, k2p);
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p = multiply(k2p, k2p);
+        }
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code exponent} (non negative)
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code exponent}
+     * @throws ArithmeticException if the result overflows a long
+     */
+    default E pow(E base, BigInteger exponent) {
+        if (exponent.signum() < 0)
+            throw new IllegalArgumentException();
+
+        E result = getOne();
+        E k2p = base;
+        for (; ; ) {
+            if ((exponent.testBit(0)))
+                result = multiply(result, k2p);
+            exponent = exponent.shiftRight(1);
+            if (exponent.isZero())
+                return result;
+            k2p = multiply(k2p, k2p);
+        }
+    }
+
 //    /**
 //     * Returns the element which is next to the specified {@code element} (according to {@link #compare(Object, Object)})
 //     * or {@code null} in the case of infinite cardinality
@@ -301,10 +373,10 @@ public interface Domain<E> extends Comparator<E> {
      */
     default E randomElement(RandomGenerator rnd) { return valueOf(rnd.nextLong());}
 
-    /**
-     * Returns domain with larger cardinality that contains all elements of this or null if there is no such domain.
-     *
-     * @return domain with larger cardinality that contains all elements of this or null if there is no such domain
-     */
-    Domain<E> getExtension();
+//    /**
+//     * Returns domain with larger cardinality that contains all elements of this or null if there is no such domain.
+//     *
+//     * @return domain with larger cardinality that contains all elements of this or null if there is no such domain
+//     */
+//    Domain<E> getExtension();
 }

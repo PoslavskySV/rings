@@ -46,7 +46,7 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
     }
 
     @Override
-    public BigInteger domainCardinality() {
+    public BigInteger coefficientDomainCardinality() {
         return modulus;
     }
 
@@ -136,24 +136,24 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
     }
 
 
-    /** multiplyMod operation */
+    /** multiply operation */
     BigInteger multiplyMod(BigInteger a, BigInteger b) {
         return mod(a.multiply(b));
     }
 
-    /** addMod operation */
+    /** add operation */
     BigInteger addMod(BigInteger a, BigInteger b) {
         BigInteger r = a.add(b), rm = r.subtract(modulus);
         return rm.signum() >= 0 ? rm : r;
     }
 
-    /** subtractMod operation */
+    /** subtract operation */
     BigInteger subtractMod(BigInteger a, BigInteger b) {
         BigInteger r = a.subtract(b);
         return r.signum() < 0 ? r.add(modulus) : r;
     }
 
-    /** negateMod operation */
+    /** negate operation */
     BigInteger negateMod(BigInteger val) {
         return val.isZero() ? val : modulus.subtract(val);
     }

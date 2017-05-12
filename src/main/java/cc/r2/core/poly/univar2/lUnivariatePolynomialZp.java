@@ -2,8 +2,8 @@ package cc.r2.core.poly.univar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.LongArithmetics;
-import cc.r2.core.poly.ModularDomain;
-import cc.r2.core.poly.lModularDomain;
+import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.lIntegersModulo;
 
 import java.util.Arrays;
 
@@ -11,18 +11,17 @@ import java.util.Arrays;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMutablePolynomialZp> {
-    final lModularDomain domain;
+public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract<lUnivariatePolynomialZp> {
+    /** the domain */
+    public final lIntegersModulo domain;
 
-    /** copy constructor */
-    private lMutablePolynomialZp(lModularDomain domain, long[] data, int degree) {
+    private lUnivariatePolynomialZp(lIntegersModulo domain, long[] data, int degree) {
         this.domain = domain;
         this.data = data;
         this.degree = degree;
     }
 
-    /** main constructor */
-    private lMutablePolynomialZp(lModularDomain domain, long[] data) {
+    private lUnivariatePolynomialZp(lIntegersModulo domain, long[] data) {
         this(domain, data, data.length - 1);
         fixDegree();
     }
@@ -41,10 +40,10 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @param data    coefficients
      * @return the polynomial
      */
-    public static lMutablePolynomialZp create(long modulus, long[] data) {
-        lModularDomain domain = new lModularDomain(modulus);
-        domain.mod(data);
-        return new lMutablePolynomialZp(domain, data);
+    public static lUnivariatePolynomialZp create(long modulus, long[] data) {
+        lIntegersModulo domain = new lIntegersModulo(modulus);
+        domain.modulus(data);
+        return new lUnivariatePolynomialZp(domain, data);
     }
 
     /**
@@ -55,12 +54,12 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @param modulus the modulus
      * @return {@code cc + x * lc}
      */
-    public static lMutablePolynomialZp linear(long cc, long lc, long modulus) {
+    public static lUnivariatePolynomialZp linear(long cc, long lc, long modulus) {
         return create(modulus, new long[]{cc, lc});
     }
 
-    public static lMutablePolynomialZp createUnsafe(long modulus, long[] data) {
-        return new lMutablePolynomialZp(new lModularDomain(modulus), data);
+    public static lUnivariatePolynomialZp createUnsafe(long modulus, long[] data) {
+        return new lUnivariatePolynomialZp(new lIntegersModulo(modulus), data);
     }
 
     /**
@@ -71,12 +70,12 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @param exponent    monomial exponent
      * @return {@code coefficient * x^exponent}
      */
-    public static lMutablePolynomialZp createMonomial(long modulus, long coefficient, int exponent) {
-        lModularDomain domain = new lModularDomain(modulus);
-        coefficient = domain.mod(coefficient);
+    public static lUnivariatePolynomialZp createMonomial(long modulus, long coefficient, int exponent) {
+        lIntegersModulo domain = new lIntegersModulo(modulus);
+        coefficient = domain.modulus(coefficient);
         long[] data = new long[exponent + 1];
         data[exponent] = coefficient;
-        return new lMutablePolynomialZp(domain, data);
+        return new lUnivariatePolynomialZp(domain, data);
     }
 
     /**
@@ -86,34 +85,39 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @param value   the value
      * @return constant polynomial
      */
-    public static lMutablePolynomialZp constant(long modulus, long value) {
-        lModularDomain domain = new lModularDomain(modulus);
-        return new lMutablePolynomialZp(domain, new long[]{domain.mod(value)}, 0);
+    public static lUnivariatePolynomialZp constant(long modulus, long value) {
+        lIntegersModulo domain = new lIntegersModulo(modulus);
+        return new lUnivariatePolynomialZp(domain, new long[]{domain.modulus(value)}, 0);
     }
 
     /**
-     * Returns polynomial corresponding to math 0
+     * Creates zero polynomial
      *
      * @param modulus the modulus
-     * @return polynomial 0
+     * @return zero polynomial
      */
-    public static lMutablePolynomialZp zero(long modulus) {
+    public static lUnivariatePolynomialZp zero(long modulus) {
         return constant(modulus, 0L);
     }
 
     /**
-     * Returns polynomial corresponding to math 1
+     * Creates unit polynomial
      *
      * @param modulus the modulus
-     * @return polynomial 1
+     * @return 1
      */
-    public static lMutablePolynomialZp one(long modulus) {
+    public static lUnivariatePolynomialZp one(long modulus) {
         return constant(modulus, 1L);
     }
 
+    /** Returns the modulus */
+    public long modulus() {
+        return domain.modulus;
+    }
+
     /** does not copy the data and does not reduce the data with new modulus */
-    public lMutablePolynomialZp setModulusUnsafe(long newModulus) {
-        return new lMutablePolynomialZp(new lModularDomain(newModulus), data, degree);
+    public lUnivariatePolynomialZp setModulusUnsafe(long newModulus) {
+        return new lUnivariatePolynomialZp(new lIntegersModulo(newModulus), data, degree);
     }
 
     /**
@@ -122,11 +126,11 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @param newModulus the new modulus
      * @return the new Zp[x] polynomial with specified modulus
      */
-    public lMutablePolynomialZp setModulus(long newModulus) {
+    public lUnivariatePolynomialZp setModulus(long newModulus) {
         long[] newData = data.clone();
-        lModularDomain newDomain = new lModularDomain(newModulus);
-        newDomain.mod(newData);
-        return new lMutablePolynomialZp(newDomain, newData);
+        lIntegersModulo newDomain = new lIntegersModulo(newModulus);
+        newDomain.modulus(newData);
+        return new lUnivariatePolynomialZp(newDomain, newData);
     }
 
     /**
@@ -136,17 +140,12 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @return Z[x] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
      */
     @SuppressWarnings("unchecked")
-    public lMutablePolynomialZ normalSymmetricForm() {
+    public lUnivariatePolynomialZ asPolyZSymmetric() {
         long[] newData = new long[degree + 1];
         for (int i = degree; i >= 0; --i)
             newData[i] = domain.symmetricForm(data[i]);
-        return lMutablePolynomialZ.create(newData);
+        return lUnivariatePolynomialZ.create(newData);
     }
-
-//    @Override
-//    public BigInteger modulusAsBigInt() {
-//        return BigInteger.valueOfUnsigned(modulus);
-//    }
 
     /**
      * Returns Z[x] polynomial formed from the coefficients of this.
@@ -155,87 +154,94 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @return Z[x] version of this
      */
     @SuppressWarnings("unchecked")
-    public lMutablePolynomialZ normalForm(boolean copy) {
-        return lMutablePolynomialZ.create(copy ? data.clone() : data);
+    public lUnivariatePolynomialZ asPolyZ(boolean copy) {
+        return lUnivariatePolynomialZ.create(copy ? data.clone() : data);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp[] arrayNewInstance(int length) {
-        return new lMutablePolynomialZp[length];
+    public lUnivariatePolynomialZp[] arrayNewInstance(int length) {
+        return new lUnivariatePolynomialZp[length];
     }
 
+    /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp[] arrayNewInstance(lMutablePolynomialZp a, lMutablePolynomialZp b) {
-        return new lMutablePolynomialZp[]{a, b};
+    public lUnivariatePolynomialZp[] arrayNewInstance(lUnivariatePolynomialZp a, lUnivariatePolynomialZp b) {
+        return new lUnivariatePolynomialZp[]{a, b};
     }
 
+    /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp getRange(int from, int to) {
-        return new lMutablePolynomialZp(domain, Arrays.copyOfRange(data, from, to));
+    public lUnivariatePolynomialZp getRange(int from, int to) {
+        return new lUnivariatePolynomialZp(domain, Arrays.copyOfRange(data, from, to));
     }
 
+    /** {@inheritDoc} */
     @Override
-    public void checkCompatible(lMutablePolynomialZp oth) {
+    public void checkSameDomainWith(lUnivariatePolynomialZp oth) {
         if (domain.modulus != oth.domain.modulus)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Polynomials of different domains: " + domain + " (this) and " + oth.domain + " (oth)");
     }
 
     /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp createFromArray(long[] newData) {
-        domain.mod(newData);
-        return new lMutablePolynomialZp(domain, newData);
+    public lUnivariatePolynomialZp createFromArray(long[] newData) {
+        domain.modulus(newData);
+        return new lUnivariatePolynomialZp(domain, newData);
     }
 
     /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp createMonomial(long coefficient, int newDegree) {
+    public lUnivariatePolynomialZp createMonomial(long coefficient, int newDegree) {
         long[] newData = new long[newDegree + 1];
         newData[newDegree] = valueOf(coefficient);
-        return new lMutablePolynomialZp(domain, newData, newDegree);
+        return new lUnivariatePolynomialZp(domain, newData, newDegree);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isOverField() {return true;}
 
+    /** {@inheritDoc} */
     @Override
     public boolean isOverFiniteField() {return true;}
 
+    /** {@inheritDoc} */
     @Override
-    public BigInteger domainCardinality() {
-        return BigInteger.valueOf(domain.modulus);
+    public BigInteger coefficientDomainCardinality() {
+        return BigInteger.valueOf(modulus());
     }
 
     /*=========================== Main methods ===========================*/
 
     @Override
     long add(long a, long b) {
-        return domain.addMod(a, b);
+        return domain.add(a, b);
     }
 
     @Override
     long subtract(long a, long b) {
-        return domain.subtractMod(a, b);
+        return domain.subtract(a, b);
     }
 
     @Override
     long multiply(long a, long b) {
-        return domain.multiplyMod(a, b);
+        return domain.multiply(a, b);
     }
 
     @Override
     long negate(long a) {
-        return domain.negateMod(a);
+        return domain.negate(a);
     }
 
     @Override
     long valueOf(long a) {
-        return domain.mod(a);
+        return domain.modulus(a);
     }
 
     /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp monic() {
+    public lUnivariatePolynomialZp monic() {
         if (isMonic())
             return this;
         if (isZero())
@@ -254,12 +260,13 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @param factor the factor
      * @return {@code this}
      */
-    public lMutablePolynomialZp monic(long factor) {
+    public lUnivariatePolynomialZp monic(long factor) {
         return multiply(multiply(valueOf(factor), domain.reciprocal(lc())));
     }
 
+    /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp divideByLC(lMutablePolynomialZp other) {
+    public lUnivariatePolynomialZp divideByLC(lUnivariatePolynomialZp other) {
         return divide(other.lc());
     }
 
@@ -269,13 +276,13 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
      * @param val the value
      * @return {@code this / val}
      */
-    public lMutablePolynomialZp divide(long val) {
+    public lUnivariatePolynomialZp divide(long val) {
         return multiply(domain.reciprocal(val));
     }
 
     /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp multiply(lMutablePolynomialZp oth) {
+    public lUnivariatePolynomialZp multiply(lUnivariatePolynomialZp oth) {
         if (isZero())
             return this;
         if (oth.isZero())
@@ -283,13 +290,12 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
         if (this == oth)
             return square();
 
-        checkCompatible(oth);
+        checkSameDomainWith(oth);
         if (oth.degree == 0)
             return multiply(oth.data[0]);
         if (degree == 0) {
             long factor = data[0];
-            data = oth.data.clone();
-            degree = oth.degree;
+            this.set(oth);
             return multiply(factor);
         }
 
@@ -298,7 +304,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
             // we can apply fast integer arithmetic and then reduce
             data = multiplyUnsafe0(oth);
             degree += oth.degree;
-            domain.mod(data);
+            domain.modulus(data);
             fixDegree();
         } else {
             data = multiplySafe0(oth);
@@ -310,7 +316,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
 
     /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp square() {
+    public lUnivariatePolynomialZp square() {
         if (isZero())
             return this;
         if (degree == 0)
@@ -322,7 +328,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
             // we can apply fast integer arithmetic and then reduce
             data = squareUnsafe0();
             degree += degree;
-            domain.mod(data);
+            domain.modulus(data);
             fixDegree();
         } else {
             data = squareSafe0();
@@ -334,7 +340,7 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
 
     /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp derivative() {
+    public lUnivariatePolynomialZp derivative() {
         if (isConstant())
             return createZero();
         long[] newData = new long[degree];
@@ -348,17 +354,18 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
             for (; i > 0; --i)
                 newData[i - 1] = multiply(data[i], i);
         }
-        return new lMutablePolynomialZp(domain, newData);
+        return new lUnivariatePolynomialZp(domain, newData);
     }
 
+    /** {@inheritDoc} */
     @Override
-    public gMutablePolynomial<BigInteger> toBigPoly() {
-        return gMutablePolynomial.createUnsafe(new ModularDomain(domain.modulus), dataToBigIntegers());
+    public UnivariatePolynomial<BigInteger> toBigPoly() {
+        return UnivariatePolynomial.createUnsafe(new IntegersModulo(domain.modulus), dataToBigIntegers());
     }
 
-    /** Deep copy */
+    /** {@inheritDoc} */
     @Override
-    public lMutablePolynomialZp clone() {
-        return new lMutablePolynomialZp(domain, data.clone(), degree);
+    public lUnivariatePolynomialZp clone() {
+        return new lUnivariatePolynomialZp(domain, data.clone(), degree);
     }
 }

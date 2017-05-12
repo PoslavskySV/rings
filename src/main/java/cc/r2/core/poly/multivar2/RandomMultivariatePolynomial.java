@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.IntegersDomain;
+import cc.r2.core.poly.Integers;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -14,7 +14,7 @@ import java.util.Comparator;
  */
 public class RandomMultivariatePolynomial {
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
-        return randomPolynomial(nVars, degree, size, bound, IntegersDomain.IntegersDomain, ordering, rnd);
+        return randomPolynomial(nVars, degree, size, bound, Integers.Integers, ordering, rnd);
     }
 
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, BigInteger bound, Domain<BigInteger> domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {

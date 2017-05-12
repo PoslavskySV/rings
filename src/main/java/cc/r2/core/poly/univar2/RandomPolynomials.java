@@ -2,8 +2,8 @@ package cc.r2.core.poly.univar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.IntegersDomain;
-import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.Integers;
+import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -26,7 +26,7 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static lMutablePolynomialZ randomPoly(int degree, RandomGenerator rnd) {
+    public static lUnivariatePolynomialZ randomPoly(int degree, RandomGenerator rnd) {
         return randomPoly(degree, DEFAULT_BOUND, rnd);
     }
 
@@ -37,8 +37,8 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static lMutablePolynomialZp randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
-        lMutablePolynomialZ r = randomPoly(degree, modulus, rnd);
+    public static lUnivariatePolynomialZp randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
+        lUnivariatePolynomialZ r = randomPoly(degree, modulus, rnd);
         while (r.data[degree] % modulus == 0) {
             r.data[r.degree] = rnd.nextLong();
         }
@@ -52,10 +52,10 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static gMutablePolynomial<BigInteger> randomMonicPoly(int degree, BigInteger modulus, RandomGenerator rnd) {
-        gMutablePolynomial<BigInteger> r = randomPoly(degree, modulus, rnd);
+    public static UnivariatePolynomial<BigInteger> randomMonicPoly(int degree, BigInteger modulus, RandomGenerator rnd) {
+        UnivariatePolynomial<BigInteger> r = randomPoly(degree, modulus, rnd);
         while ((r.data[degree].mod(modulus)).isZero()) {r.data[r.degree] = RandomUtil.randomInt(modulus, rnd);}
-        return r.setDomain(new ModularDomain(modulus)).monic();
+        return r.setDomain(new IntegersModulo(modulus)).monic();
     }
 
     /**
@@ -66,7 +66,7 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static <E> gMutablePolynomial<E> randomMonicPoly(int degree, Domain<E> domain, RandomGenerator rnd) {
+    public static <E> UnivariatePolynomial<E> randomMonicPoly(int degree, Domain<E> domain, RandomGenerator rnd) {
         return randomPoly(degree, domain, rnd).monic();
     }
 
@@ -78,8 +78,8 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
-    public static lMutablePolynomialZ randomPoly(int degree, long bound, RandomGenerator rnd) {
-        return lMutablePolynomialZ.create(randomLongArray(degree, bound, rnd));
+    public static lUnivariatePolynomialZ randomPoly(int degree, long bound, RandomGenerator rnd) {
+        return lUnivariatePolynomialZ.create(randomLongArray(degree, bound, rnd));
     }
 
     /**
@@ -90,8 +90,8 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
-    public static gMutablePolynomial<BigInteger> randomPoly(int degree, BigInteger bound, RandomGenerator rnd) {
-        return gMutablePolynomial.create(IntegersDomain.IntegersDomain, randomBigArray(degree, bound, rnd));
+    public static UnivariatePolynomial<BigInteger> randomPoly(int degree, BigInteger bound, RandomGenerator rnd) {
+        return UnivariatePolynomial.create(Integers.Integers, randomBigArray(degree, bound, rnd));
     }
 
     /**
@@ -102,8 +102,8 @@ public class RandomPolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
-    public static <E> gMutablePolynomial<E> randomPoly(int degree, Domain<E> domain, RandomGenerator rnd) {
-        return gMutablePolynomial.create(domain, randomArray(degree, domain, rnd));
+    public static <E> UnivariatePolynomial<E> randomPoly(int degree, Domain<E> domain, RandomGenerator rnd) {
+        return UnivariatePolynomial.create(domain, randomArray(degree, domain, rnd));
     }
 
     /**

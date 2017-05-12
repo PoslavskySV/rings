@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.univar.DivisionWithRemainder;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
@@ -213,7 +213,7 @@ final class LinearAlgebra {
      * @return the solution
      * @throws ArithmeticException if the system is inconsistent or under-determined
      */
-    public static BigInteger[] solveVandermonde(ModularDomain domain, BigInteger[] row, BigInteger[] rhs) {
+    public static BigInteger[] solveVandermonde(IntegersModulo domain, BigInteger[] row, BigInteger[] rhs) {
         BigInteger[] result = new BigInteger[rhs.length];
         SystemInfo info = solveVandermonde(domain, row, rhs, result);
         if (info != Consistent)
@@ -230,7 +230,7 @@ final class LinearAlgebra {
      * @return the solution
      * @throws ArithmeticException if the system is inconsistent or under-determined
      */
-    public static BigInteger[] solveVandermondeT(ModularDomain domain, BigInteger[] row, BigInteger[] rhs) {
+    public static BigInteger[] solveVandermondeT(IntegersModulo domain, BigInteger[] row, BigInteger[] rhs) {
         BigInteger[] result = new BigInteger[rhs.length];
         SystemInfo info = solveVandermondeT(domain, row, rhs, result);
         if (info != Consistent)
@@ -248,7 +248,7 @@ final class LinearAlgebra {
      * @param result where to place the result
      * @return system information (inconsistent, under-determined or consistent)
      */
-    public static SystemInfo solveVandermonde(ModularDomain domain, BigInteger[] row, BigInteger[] rhs, BigInteger[] result) {
+    public static SystemInfo solveVandermonde(IntegersModulo domain, BigInteger[] row, BigInteger[] rhs, BigInteger[] result) {
         if (row.length != rhs.length)
             throw new IllegalArgumentException("not a square Vandermonde matrix");
         if (rhs.length == 0)
@@ -287,7 +287,7 @@ final class LinearAlgebra {
      * @param result where to place the result
      * @return system information (inconsistent, under-determined or consistent)
      */
-    public static SystemInfo solveVandermondeT(ModularDomain domain, BigInteger[] row, BigInteger[] rhs, BigInteger[] result) {
+    public static SystemInfo solveVandermondeT(IntegersModulo domain, BigInteger[] row, BigInteger[] rhs, BigInteger[] result) {
         if (row.length != rhs.length)
             throw new IllegalArgumentException("not a square Vandermonde matrix");
         if (rhs.length == 0)

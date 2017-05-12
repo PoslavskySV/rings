@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar2;
 
 import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.lModularDomain;
+import cc.r2.core.poly.lIntegersModulo;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
 
@@ -16,7 +16,7 @@ public class RandomPolynomialsTest extends AbstractPolynomialTest {
     public void test1() throws Exception {
         RandomGenerator rnd = getRandom();
         rnd.setSeed(94);
-        lMutablePolynomialZp p = RandomPolynomials.randomMonicPoly(30, 3816990131L, rnd);
+        lUnivariatePolynomialZp p = RandomPolynomials.randomMonicPoly(30, 3816990131L, rnd);
         assertTrue(p.isMonic());
     }
 
@@ -25,8 +25,8 @@ public class RandomPolynomialsTest extends AbstractPolynomialTest {
         long modulus = 3816990131L;
         long a = 3567169893L;
         long b = 3117218385L;
-        lModularDomain domain = new lModularDomain(modulus);
-        System.out.println(domain.multiplyMod(a, b));
+        lIntegersModulo domain = new lIntegersModulo(modulus);
+        System.out.println(domain.multiply(a, b));
         System.out.println(domain.modulusFits32);
     }
 }

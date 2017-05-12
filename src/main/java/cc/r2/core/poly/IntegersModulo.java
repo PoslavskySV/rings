@@ -8,14 +8,14 @@ import org.apache.commons.math3.random.RandomGenerator;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class ModularDomain extends AbstractIntegersDomain {
+public final class IntegersModulo extends AbstractIntegers {
     public final BigInteger modulus;
 
-    public ModularDomain(BigInteger modulus) {
+    public IntegersModulo(BigInteger modulus) {
         this.modulus = modulus;
     }
 
-    public ModularDomain(long modulus) {
+    public IntegersModulo(long modulus) {
         this(BigInteger.valueOf(modulus));
     }
 
@@ -23,7 +23,7 @@ public final class ModularDomain extends AbstractIntegersDomain {
     public boolean isField() {return true;}
 
     @Override
-    public BigInteger size() {return modulus;}
+    public BigInteger cardinality() {return modulus;}
 
     /**
      * Returns {@code val mod this.modulus}
@@ -41,7 +41,7 @@ public final class ModularDomain extends AbstractIntegersDomain {
      * @param value field element
      * @return {@code value} in a symmetric representation of Zp
      */
-    public BigInteger symMod(BigInteger value) {
+    public BigInteger symmetricForm(BigInteger value) {
         return value.compareTo(modulus.shiftRight(1)) <= 0 ? value : value.subtract(modulus);
     }
 
@@ -86,14 +86,11 @@ public final class ModularDomain extends AbstractIntegersDomain {
     public String toString() {return "Z/" + modulus;}
 
     @Override
-    public Domain<BigInteger> getExtension() {return IntegersDomain.IntegersDomain;}
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ModularDomain that = (ModularDomain) o;
+        IntegersModulo that = (IntegersModulo) o;
 
         return modulus.equals(that.modulus);
     }

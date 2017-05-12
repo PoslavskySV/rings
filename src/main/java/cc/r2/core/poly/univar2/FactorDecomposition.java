@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FactorDecomposition<Poly extends IMutablePolynomial<Poly>> implements Iterable<Poly> {
+public final class FactorDecomposition<Poly extends IUnivariatePolynomial<Poly>> implements Iterable<Poly> {
     /** Holds a numerical factor */
     final Poly constantFactor;
     /** Factors */
@@ -169,16 +169,16 @@ public final class FactorDecomposition<Poly extends IMutablePolynomial<Poly>> im
     }
 
     /** multiply factors */
-    public final Poly toPolynomial(Poly factory) {
-        return toPolynomial(factory, false);
+    public final Poly toPolynomial() {
+        return toPolynomial(false);
     }
 
     /** multiply DDF factors */
-    public final Poly toPolynomialIgnoringExponents(Poly factory) {
-        return toPolynomial(factory, true);
+    public final Poly toPolynomialIgnoringExponents() {
+        return toPolynomial(true);
     }
 
-    private Poly toPolynomial(Poly factory, boolean ignoreExps) {
+    private Poly toPolynomial(boolean ignoreExps) {
         Poly r = constantFactor.clone();
         for (int i = 0; i < factors.size(); i++) {
             Poly tmp = ignoreExps ? factors.get(i) : PolynomialArithmetics.polyPow(factors.get(i), exponents.get(i), true);
@@ -188,41 +188,41 @@ public final class FactorDecomposition<Poly extends IMutablePolynomial<Poly>> im
     }
 
     /** decomposition with single numeric factor */
-    static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> empty(Poly factor) {
+    static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> empty(Poly factor) {
         return new FactorDecomposition<>(factor.createOne());
     }
 
     /** decomposition with single numeric factor */
-    static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> constantFactor(Poly factor) {
+    static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> constantFactor(Poly factor) {
         return new FactorDecomposition<>(factor);
     }
 
     /** decomposition with single factor */
-    static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> oneFactor(Poly constantFactor, Poly poly) {
+    static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> oneFactor(Poly constantFactor, Poly poly) {
         FactorDecomposition<Poly> ts = new FactorDecomposition<>(constantFactor);
         ts.addFactor(poly, 1);
         return ts;
     }
 
     /** decomposition with single factor */
-    static <Poly extends lMutablePolynomialAbstract<Poly>> FactorDecomposition<Poly> oneFactor(long constantFactor, Poly poly) {
+    static <Poly extends lUnivariatePolynomialAbstract<Poly>> FactorDecomposition<Poly> oneFactor(long constantFactor, Poly poly) {
         FactorDecomposition<Poly> ts = new FactorDecomposition<>(poly.createConstant(constantFactor));
         ts.addFactor(poly, 1);
         return ts;
     }
 
-    static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> create(Poly constantFactor, List<Poly> factors) {
+    static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> create(Poly constantFactor, List<Poly> factors) {
         return new FactorDecomposition<>(constantFactor, factors, new TIntArrayList(ArraysUtil.arrayOf(1, factors.size())));
     }
 
-    static <Poly extends IMutablePolynomial<Poly>> FactorDecomposition<Poly> create(List<Poly> factors) {
+    static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> create(List<Poly> factors) {
         return create(factors.get(0).createOne(), factors);
     }
 
-    static <T extends lMutablePolynomialAbstract<T>> FactorDecomposition<gMutablePolynomial<BigInteger>> convert(FactorDecomposition<T> decomposition) {
+    static <T extends lUnivariatePolynomialAbstract<T>> FactorDecomposition<UnivariatePolynomial<BigInteger>> convert(FactorDecomposition<T> decomposition) {
         return new FactorDecomposition<>(
                 decomposition.constantFactor.toBigPoly(),
-                decomposition.factors.stream().map(lMutablePolynomialAbstract::toBigPoly).collect(Collectors.toList()),
+                decomposition.factors.stream().map(lUnivariatePolynomialAbstract::toBigPoly).collect(Collectors.toList()),
                 decomposition.exponents);
     }
 }

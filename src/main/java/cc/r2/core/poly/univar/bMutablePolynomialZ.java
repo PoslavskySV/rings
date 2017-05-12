@@ -48,7 +48,7 @@ public final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutab
     }
 
     @Override
-    public BigInteger domainCardinality() {
+    public BigInteger coefficientDomainCardinality() {
         return null;
     }
 

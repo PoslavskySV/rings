@@ -72,16 +72,16 @@ public final class PolynomialInterpolation {
 //        lMutablePolynomialZp poly = lMutablePolynomialZp.constant(modulus, mixedRadix[0]);
 //
 //        for (int k = 1; k < length; ++k) {
-//            long reciprocal = poly.subtractMod(points[k], points[0]);
+//            long reciprocal = poly.subtract(points[k], points[0]);
 //            long accumulator = mixedRadix[0];
 //            for (int i = 1; i < k; ++i) {
-//                accumulator = poly.addMod(accumulator, poly.multiplyMod(mixedRadix[i], reciprocal));
-//                reciprocal = poly.multiplyMod(reciprocal, poly.subtractMod(points[k], points[i]));
+//                accumulator = poly.add(accumulator, poly.multiply(mixedRadix[i], reciprocal));
+//                reciprocal = poly.multiply(reciprocal, poly.subtract(points[k], points[i]));
 //            }
 //            reciprocal = LongArithmetics.modInverse(reciprocal, modulus);
-//            mixedRadix[k] = poly.multiplyMod(reciprocal, poly.subtractMod(values[k], accumulator));
+//            mixedRadix[k] = poly.multiply(reciprocal, poly.subtract(values[k], accumulator));
 //
-//            lins = lins.multiply(lins.createLinear(poly.negateMod(points[k - 1]), 1));
+//            lins = lins.multiply(lins.createLinear(poly.negate(points[k - 1]), 1));
 //            poly = poly.add(lins.clone().multiply(mixedRadix[k]));
 //        }
 //        return poly;

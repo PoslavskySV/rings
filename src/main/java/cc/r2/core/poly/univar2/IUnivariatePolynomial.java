@@ -6,13 +6,13 @@ import cc.r2.core.poly.IGeneralPolynomial;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IMutablePolynomial<Poly extends IMutablePolynomial<Poly>> extends IGeneralPolynomial<Poly>, Comparable<Poly> {
+public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>> extends IGeneralPolynomial<Poly>, Comparable<Poly> {
     /**
-     * Check whether {@code oth} and {@code this} belongs to the same Zp domain
+     * Checks whether {@code oth} and {@code this} have the same coefficients domain, if not exception will be thrown
      *
      * @param oth other polynomial
      */
-    void checkCompatible(Poly oth);
+    void checkSameDomainWith(Poly oth);
 
     /**
      * Returns whether i-th coefficient of this is zero
@@ -24,17 +24,17 @@ public interface IMutablePolynomial<Poly extends IMutablePolynomial<Poly>> exten
 
     /**
      * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
-     * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
+     * divided by the {@code other.lc()}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
      *
-     * @param other other polynomial
-     * @return {@code this} divided by the {@code other.lc()} or {@code null}
+     * @param other the polynomial
+     * @return {@code this} divided by the {@code other.lc()} or {@code null} if exact division is not possible
      */
     Poly divideByLC(Poly other);
 
     /**
-     * Returns position of the first non-zero coefficient, that is common monomial exponent (e.g. 2 for x^2 + x^3 + ...)
+     * Returns position of the first non-zero coefficient, that is common monomial exponent (e.g. 2 for x^2 + x^3 + ...). In the case of zero polynomial, -1 returned
      *
-     * @return position of the first non-zero coefficient
+     * @return position of the first non-zero coefficient or -1 if this is zero
      */
     int firstNonZeroCoefficientPosition();
 

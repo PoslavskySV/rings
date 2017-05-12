@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar2;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.multivar2.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar2.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.univar.bMutablePolynomialZp;
@@ -110,7 +110,7 @@ public final class MultivariateGCD {
             return new GCDInput(trivialGCD);
 
         Domain<BigInteger> domain = a.domain;
-        BigInteger domainSize = domain.size();
+        BigInteger domainSize = domain.cardinality();
         if (domainSize == null)
             throw new IllegalArgumentException("Modular gcd algorithms are supported only for multivariate polynomial over finite fields.");
 
@@ -1080,7 +1080,7 @@ public final class MultivariateGCD {
 
             // solve vandermonde system
             BigInteger[] vandermondeRow = matrix.get(0);
-            SystemInfo info = LinearAlgebra.solveVandermondeT((ModularDomain) domain, vandermondeRow, rhs.toArray(new BigInteger[rhs.size()]), solution);
+            SystemInfo info = LinearAlgebra.solveVandermondeT((IntegersModulo) domain, vandermondeRow, rhs.toArray(new BigInteger[rhs.size()]), solution);
             if (info == SystemInfo.Consistent)
                 for (int i = 0; i < solution.length; ++i)
                     solution[i] = domain.divideExact(solution[i], vandermondeRow[i]);

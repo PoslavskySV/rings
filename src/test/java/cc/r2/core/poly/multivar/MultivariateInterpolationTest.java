@@ -3,7 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.ModularDomain;
+import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -28,7 +28,7 @@ public class MultivariateInterpolationTest extends AbstractPolynomialTest {
     @SuppressWarnings("unchecked")
     public void test1() throws Exception {
         String[] variables = {"a", "b"};
-        Domain<BigInteger> domain = new ModularDomain(17);
+        Domain<BigInteger> domain = new IntegersModulo(17);
         MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, LEX, variables);
         MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, LEX, variables);
         MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, LEX, variables);
@@ -43,7 +43,7 @@ public class MultivariateInterpolationTest extends AbstractPolynomialTest {
     @SuppressWarnings("unchecked")
     public void test2() throws Exception {
         String[] variables = {"a", "b"};
-        Domain<BigInteger> domain = new ModularDomain(17);
+        Domain<BigInteger> domain = new IntegersModulo(17);
         MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, LEX, variables);
         MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, LEX, variables);
         MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, LEX, variables);
@@ -65,7 +65,7 @@ public class MultivariateInterpolationTest extends AbstractPolynomialTest {
     @Test
     @SuppressWarnings("unchecked")
     public void test3() throws Exception {
-        ModularDomain domain = new ModularDomain(197);
+        IntegersModulo domain = new IntegersModulo(197);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger> base = parse("15*b*c^2+47*b^4*c^4+144*a*b^5*c^5+150*a^5*b^4+62*a^5*b^4*c", domain, LEX);
         int var = 2;
@@ -99,7 +99,7 @@ public class MultivariateInterpolationTest extends AbstractPolynomialTest {
         for (int n = 0; n < nIterations; n++) {
 
             int nVars = rndd.nextInt(2, 4);
-            ModularDomain domain = new ModularDomain(getModulusRandom(16));
+            IntegersModulo domain = new IntegersModulo(getModulusRandom(16));
             MultivariatePolynomial<BigInteger> base = randomPolynomial(nVars, rndd.nextInt(3, 10), rndd.nextInt(5, 10), INT_MAX_VALUE, domain, LEX, rnd);
             int var = rndd.nextInt(0, nVars - 1);
             int degree = base.degrees()[var];

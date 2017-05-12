@@ -20,7 +20,7 @@ public final class UnivariatePolynomialDomain<T extends IMutablePolynomial<T>> i
     public boolean isField() {return false;}
 
     @Override
-    public BigInteger size() {return null;}
+    public BigInteger cardinality() {return null;}
 
     @Override
     public T add(T a, T b) {
@@ -97,6 +97,6 @@ public final class UnivariatePolynomialDomain<T extends IMutablePolynomial<T>> i
         return o1.compareTo(o2);
     }
 
-    @Override
-    public Domain<T> getExtension() {return null;}
+//    @Override
+//    public Domain<T> getExtension() {return null;}
 }

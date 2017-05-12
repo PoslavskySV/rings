@@ -10,10 +10,10 @@ import org.junit.Test;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class lMutablePolynomialZpTest extends AbstractPolynomialTest {
+public class lUnivariatePolynomialZpTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
-        lMutablePolynomialZp aL = lMutablePolynomialZ.create(1, 2, 3, 4, 5, 6).modulus(59);
+        lUnivariatePolynomialZp aL = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, 6).modulus(59);
         for (int i = 0; i < 5; i++) {
             aL = (aL.clone().multiply(aL.clone().decrement()).subtract(aL.clone().derivative()).add(aL.clone().square())).multiply(aL.clone());
             aL = aL.truncate(aL.degree * 3 / 2).shiftRight(2).shiftLeft(2).increment().negate();
@@ -23,14 +23,19 @@ public class lMutablePolynomialZpTest extends AbstractPolynomialTest {
 
     @Test
     public void test2() throws Exception {
-        lMutablePolynomialZp factory = lMutablePolynomialZp.zero(3);
-        Assert.assertEquals(0, factory.domain.negateMod(0));
+        lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(3);
+        Assert.assertEquals(0, factory.domain.negate(0));
         Assert.assertEquals(0, factory.negate().lc());
+    }
+
+    @Test
+    public void test4() throws Exception {
+        System.out.println(lUnivariatePolynomialZ.create(0).firstNonZeroCoefficientPosition());
     }
 
     static int LIM = 3;
 
-    private static long test(lMutablePolynomialZp aL) {
+    private static long test(lUnivariatePolynomialZp aL) {
         for (int i = 0; i < LIM; i++) {
             aL = (aL.clone().multiply(aL.clone().decrement()).subtract(aL.clone().derivative()).add(aL.clone().square())).multiply(aL.clone());
             aL = aL.truncate(aL.degree * 3 / 2).shiftRight(2).shiftLeft(2).increment().negate();
@@ -60,7 +65,7 @@ public class lMutablePolynomialZpTest extends AbstractPolynomialTest {
             long[] arr = RandomUtil.randomLongArray(100, 0, modulus, getRandom());
 
             long start = System.nanoTime();
-            long X = test(lMutablePolynomialZ.create(arr).modulus(modulus));
+            long X = test(lUnivariatePolynomialZ.create(arr).modulus(modulus));
             nev.addValue(System.nanoTime() - start);
 
             start = System.nanoTime();
@@ -74,7 +79,7 @@ public class lMutablePolynomialZpTest extends AbstractPolynomialTest {
         System.out.println(nev.getPercentile(0.5));
     }
 
-    private static boolean check(lMutablePolynomialZp poly) {
+    private static boolean check(lUnivariatePolynomialZp poly) {
         for (int i = poly.degree; i >= 0; --i) {
             if (poly.data[i] >= poly.domain.modulus)
                 return false;
