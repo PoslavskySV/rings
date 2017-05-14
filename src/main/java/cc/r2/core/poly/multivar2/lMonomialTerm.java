@@ -29,19 +29,24 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
         return new lMonomialTerm(newDegree, newTotalDegree, coefficient);
     }
 
-
+    /** Set's monomial coefficient to a specified value */
     public lMonomialTerm setCoefficient(long value) {
         return new lMonomialTerm(exponents, totalDegree, value);
     }
 
-    public lMonomialTerm multiply(lMonomialTerm oth, long coefficient) {
+    /** Multiplies this by {@code oth} and sets the resulting coefficient to a specified value */
+    public lMonomialTerm multiply(DegreeVector oth, long coefficient) {
         int[] newExponents = new int[exponents.length];
         for (int i = 0; i < exponents.length; i++)
             newExponents[i] = exponents[i] + oth.exponents[i];
         return new lMonomialTerm(newExponents, totalDegree + oth.totalDegree, coefficient);
     }
 
-    public lMonomialTerm divide(lMonomialTerm oth, long coefficient) {
+    /**
+     * Divides this by {@code oth} and sets the resulting coefficient to a specified value or returns
+     * null if exact division is not possible
+     */
+    public lMonomialTerm divide(DegreeVector oth, long coefficient) {
         int[] newExponents = new int[exponents.length];
         for (int i = 0; i < exponents.length; i++) {
             newExponents[i] = exponents[i] - oth.exponents[i];
@@ -51,10 +56,12 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
         return new lMonomialTerm(newExponents, totalDegree - oth.totalDegree, coefficient);
     }
 
+    /** removes i-th variable from degree vector */
     lMonomialTerm without(int i) {
         return without(i, coefficient);
     }
 
+    /** removes i-th variable from degree vector */
     lMonomialTerm without(int i, long coefficient) {
         if (exponents.length == 1) {
             assert i == 0;
@@ -68,6 +75,7 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
         return setZero(i, coefficient);
     }
 
+    /** set i-th exponent to zero and the coefficient to a new value */
     lMonomialTerm setZero(int i, long coefficient) {
         if (exponents.length == 1) {
             assert i == 0;

@@ -44,6 +44,11 @@ public final class lMutablePolynomialZp extends lMutablePolynomialAbstract<lMuta
         fixDegree();
     }
 
+    @Override
+    public boolean sameDomainWith(lMutablePolynomialZp oth) {
+        return true;
+    }
+
     private static void checkModulus(long modulus) {
         if (Long.compareUnsigned(modulus, LongArithmetics.MAX_SUPPORTED_MODULUS) > 0)
             throw new IllegalArgumentException("Too large modulus. Max allowed is " + LongArithmetics.MAX_SUPPORTED_MODULUS);

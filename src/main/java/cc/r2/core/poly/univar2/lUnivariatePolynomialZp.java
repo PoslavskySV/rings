@@ -176,9 +176,8 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
 
     /** {@inheritDoc} */
     @Override
-    public void checkSameDomainWith(lUnivariatePolynomialZp oth) {
-        if (domain.modulus != oth.domain.modulus)
-            throw new IllegalArgumentException("Polynomials of different domains: " + domain + " (this) and " + oth.domain + " (oth)");
+    public boolean sameDomainWith(lUnivariatePolynomialZp oth) {
+        return domain.modulus == oth.domain.modulus;
     }
 
     /** {@inheritDoc} */

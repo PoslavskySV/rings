@@ -50,6 +50,11 @@ public final class bMutablePolynomialZp extends bMutablePolynomialAbstract<bMuta
         return modulus;
     }
 
+    @Override
+    public boolean sameDomainWith(bMutablePolynomialZp oth) {
+        return true;
+    }
+
     /* =========================== Factory methods =========================== */
 
     /**

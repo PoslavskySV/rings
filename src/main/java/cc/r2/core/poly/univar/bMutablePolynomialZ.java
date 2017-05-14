@@ -38,6 +38,11 @@ public final class bMutablePolynomialZ extends bMutablePolynomialAbstract<bMutab
     }
 
     @Override
+    public boolean sameDomainWith(bMutablePolynomialZ oth) {
+        return true;
+    }
+
+    @Override
     public boolean isOverField() {
         return false;
     }

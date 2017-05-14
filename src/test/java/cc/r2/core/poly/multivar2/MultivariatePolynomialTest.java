@@ -5,7 +5,7 @@ import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.multivar2.MultivariatePolynomial.*;
-import cc.r2.core.poly.univar.bMutablePolynomialZ;
+import cc.r2.core.poly.univar2.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -178,21 +178,22 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testUnivar1() throws Exception {
         String[] vars = {"a", "b"};
-        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new IntegersModulo(17), LEX, vars);
+        IntegersModulo domain = new IntegersModulo(17);
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
         poly = poly.evaluate(0, 1);
-        assertEquals(bMutablePolynomialZ.create(9, 0, 11), asUnivariateZ(poly));
-        assertEquals(bMutablePolynomialZ.create(9, 0, 11).modulus(17), asUnivariateZp(poly));
+        assertEquals(UnivariatePolynomial.create(9, 0, 11), poly.asUnivariate());
+        assertEquals(UnivariatePolynomial.create(9, 0, 11).setDomain(domain), poly.asUnivariate());
 
-        assertEquals(poly.setDomain(Integers), asMultivariate(bMutablePolynomialZ.create(9, 0, 11), 2, 1, poly.ordering));
-        assertEquals(poly, asMultivariate(bMutablePolynomialZ.create(9, 0, 11).modulus(17), 2, 1, poly.ordering));
+        assertEquals(poly.setDomain(Integers), asMultivariate(UnivariatePolynomial.create(9, 0, 11), 2, 1, poly.ordering));
+        assertEquals(poly, asMultivariate(UnivariatePolynomial.create(9, 0, 11).setDomain(domain), 2, 1, poly.ordering));
     }
 
     @Test
     public void testConversion() throws Exception {
         String[] vars = {"a", "b"};
         MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new IntegersModulo(17), LEX, vars);
-        assertEquals(poly, fromZp(convertZp(poly, 1), poly.domain, 1));
-        assertEquals(poly, fromZp(convertZp(poly, 1), poly.domain, 1));
+        assertEquals(poly, asNormalMultivariate(poly.asOverUnivariate(1), 1));
+        assertEquals(poly, asNormalMultivariate(poly.asOverUnivariate(1), 1));
     }
 
     @Test

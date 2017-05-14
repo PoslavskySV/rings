@@ -13,11 +13,11 @@ final class MonomialsSet<Monomial extends DegreeVector>
         extends TreeMap<DegreeVector, Monomial>
         implements Iterable<Monomial>, Cloneable {
 
-    public MonomialsSet(Comparator<? super DegreeVector> comparator) {
+    MonomialsSet(Comparator<? super DegreeVector> comparator) {
         super(comparator);
     }
 
-    public MonomialsSet(SortedMap<DegreeVector, ? extends Monomial> m) {
+    MonomialsSet(SortedMap<DegreeVector, ? extends Monomial> m) {
         super(m);
     }
 
@@ -26,21 +26,13 @@ final class MonomialsSet<Monomial extends DegreeVector>
         return values().iterator();
     }
 
-    Monomial add(Monomial term) {
-        return put(term, term);
-    }
+    Monomial add(Monomial term) {return put(term, term);}
 
-    Monomial first() {
-        return firstEntry().getValue();
-    }
+    Monomial first() {return firstEntry().getValue();}
 
-    Monomial last() {
-        return lastEntry().getValue();
-    }
+    Monomial last() {return lastEntry().getValue();}
 
     @Override
     @SuppressWarnings("unchecked")
-    public MonomialsSet<Monomial> clone() {
-        return (MonomialsSet<Monomial>) super.clone();
-    }
+    public MonomialsSet<Monomial> clone() {return (MonomialsSet<Monomial>) super.clone();}
 }

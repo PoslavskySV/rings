@@ -33,19 +33,23 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
         this(exponents, ArraysUtil.sum(exponents));
     }
 
+    /** internal method */
     abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
 
-
+    /** set i-th exponent to zero and return new Monomial */
     abstract MonomialTerm setZero(int var);
 
+    /** Returns whether all exponents are zero */
     public final boolean isZeroVector() {
         return totalDegree == 0;
     }
 
+    /** Adjoins new variable (with zero exponent) to this monomial */
     public final MonomialTerm joinNewVariable() {
         return setDegreeVector(Arrays.copyOf(exponents, exponents.length + 1), totalDegree);
     }
 
+    /** Set's exponents of all variables except specified ones to zero */
     public final MonomialTerm of(int[] variables) {
         int[] exs = new int[exponents.length];
         int totalDegree = 0;
@@ -56,6 +60,7 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
         return setDegreeVector(exs, totalDegree);
     }
 
+    /** Set's exponents of specified variables to zero */
     public final MonomialTerm except(int[] variables) {
         int[] exs = exponents.clone();
         int totalDegree = this.totalDegree;
@@ -66,6 +71,7 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
         return setDegreeVector(exs, totalDegree);
     }
 
+    /** Set's exponent of i-th variable to specified value */
     public final MonomialTerm set(int i, int exponent) {
         int[] newExponents = exponents.clone();
         newExponents[i] = exponent;

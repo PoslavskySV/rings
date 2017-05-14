@@ -4,11 +4,10 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.UnivariatePolynomialDomain;
-import cc.r2.core.poly.univar.bMutablePolynomialZ;
-import cc.r2.core.poly.univar.bMutablePolynomialZp;
+import cc.r2.core.poly.univar.*;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.set.hash.TIntHashSet;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -57,6 +56,11 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
     @Override
     public MultivariatePolynomial<E>[] arrayNewInstance(int length) {
         return new MultivariatePolynomial[0];
+    }
+
+    @Override
+    public boolean sameDomainWith(MultivariatePolynomial<E> oth) {
+        return true;
     }
 
     /**
@@ -222,7 +226,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
 
     public static MultivariatePolynomial<bMutablePolynomialZ> convertZ(MultivariatePolynomial<BigInteger> poly, int variable) {
         TreeMap<DegreeVector, bMutablePolynomialZ> map = new TreeMap<>(poly.ordering);
-        UnivariatePolynomialDomain<bMutablePolynomialZ> domain = new UnivariatePolynomialDomain<>(bMutablePolynomialZ.zero());
+        Domain<bMutablePolynomialZ> domain = new UnivariatePolynomials<>(bMutablePolynomialZ.zero());
         for (Entry<DegreeVector, BigInteger> e : poly.data.entrySet()) {
             DegreeVector oldDV = e.getKey();
             DegreeVector newDV = oldDV.without(variable);
@@ -236,7 +240,7 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             throw new IllegalArgumentException("not a Zp[x] poly");
         BigInteger modulus = ((IntegersModulo) poly.domain).modulus;
         TreeMap<DegreeVector, bMutablePolynomialZp> map = new TreeMap<>(poly.ordering);
-        UnivariatePolynomialDomain<bMutablePolynomialZp> domain = new UnivariatePolynomialDomain<>(bMutablePolynomialZp.zero(modulus));
+        UnivariatePolynomials<bMutablePolynomialZp> domain = new UnivariatePolynomials<>(bMutablePolynomialZp.zero(modulus));
         for (Entry<DegreeVector, BigInteger> e : poly.data.entrySet()) {
             DegreeVector oldDV = e.getKey();
             DegreeVector newDV = oldDV.without(variable);
@@ -1603,6 +1607,88 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
             int result = degreeVector.hashCode();
             result = 31 * result + coefficient.hashCode();
             return result;
+        }
+    }
+
+    public static final class UnivariatePolynomials<Poly extends IMutablePolynomial<Poly>> implements Domain<Poly> {
+        public final Poly factory;
+
+        public UnivariatePolynomials(Poly factory) {
+            this.factory = factory;
+        }
+
+        @Override
+        public boolean isField() {return false;}
+
+        @Override
+        public BigInteger cardinality() {return null;}
+
+        @Override
+        public BigInteger characteristics() {return factory.coefficientDomainCharacteristics();}
+
+        @Override
+        public Poly add(Poly a, Poly b) {return a.clone().add(b);}
+
+        @Override
+        public Poly subtract(Poly a, Poly b) {return a.clone().subtract(b);}
+
+        @Override
+        public Poly multiply(Poly a, Poly b) {return a.clone().multiply(b);}
+
+        @Override
+        public Poly negate(Poly val) {return val.clone().negate();}
+
+        @Override
+        public int signum(Poly a) {return a.signum();}
+
+        @Override
+        public Poly[] divideAndRemainder(Poly a, Poly b) {return DivisionWithRemainder.divideAndRemainder(a, b, true);}
+
+        @Override
+        public Poly reciprocal(Poly a) {throw new UnsupportedOperationException();}
+
+        @Override
+        public Poly gcd(Poly a, Poly b) {return PolynomialGCD.PolynomialGCD(a, b);}
+
+        @Override
+        public Poly getZero() {return factory.createZero();}
+
+        @Override
+        public Poly getOne() {return factory.createOne();}
+
+        @Override
+        public boolean isZero(Poly poly) {return poly.isZero();}
+
+        @Override
+        public boolean isOne(Poly poly) {return poly.isOne();}
+
+        @Override
+        public Poly valueOf(long val) {return factory.createOne().multiply(val);}
+
+        @Override
+        public Poly valueOf(Poly val) {return val;}
+
+        @Override
+        public int compare(Poly o1, Poly o2) {return o1.compareTo(o2);}
+
+        @Override
+        public Poly randomElement(RandomGenerator rnd) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            UnivariatePolynomials<?> that = (UnivariatePolynomials<?>) o;
+            return that.factory.getClass().equals(factory.getClass()) && factory.sameDomainWith((Poly) that.factory);
+        }
+
+        @Override
+        public int hashCode() {
+            return factory.hashCode();
         }
     }
 }

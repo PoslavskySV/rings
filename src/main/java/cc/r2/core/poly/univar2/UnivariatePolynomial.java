@@ -75,13 +75,25 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
+     * Creates constant polynomial over specified domain
+     *
+     * @param domain   the domain
+     * @param constant the value
+     * @return constant polynomial over specified domain
+     */
+    @SuppressWarnings("unchecked")
+    public static <E> UnivariatePolynomial<E> constant(Domain<E> domain, E constant) {
+        return create(domain, constant);
+    }
+
+    /**
      * Creates zero polynomial over specified domain
      *
      * @param domain the domain
      * @return zero polynomial over specified domain
      */
-    public static UnivariatePolynomial<BigInteger> zero(Domain<BigInteger> domain) {
-        return create(domain, domain.getZero());
+    public static <E> UnivariatePolynomial<E> zero(Domain<E> domain) {
+        return constant(domain, domain.getZero());
     }
 
     /**
@@ -90,8 +102,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @param domain the domain
      * @return unit polynomial over specified domain
      */
-    public static UnivariatePolynomial<BigInteger> one(Domain<BigInteger> domain) {
-        return create(domain, domain.getOne());
+    public static <E> UnivariatePolynomial<E> one(Domain<E> domain) {
+        return constant(domain, domain.getOne());
     }
 
     /**
@@ -259,9 +271,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     /** {@inheritDoc} */
     @Override
-    public void checkSameDomainWith(UnivariatePolynomial<E> oth) {
-        if (!domain.equals(oth.domain))
-            throw new IllegalArgumentException("Mixing polynomials from different domains: " + this.domain + " (this) and " + oth.domain + " (oth)");
+    public boolean sameDomainWith(UnivariatePolynomial<E> oth) {
+        return domain.equals(oth.domain);
     }
 
     /**

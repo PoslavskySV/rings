@@ -10,6 +10,24 @@ import java.util.Collection;
  */
 public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
     /**
+     * Returns whether {@code oth} and {@code this} have the same coefficients domain
+     *
+     * @param oth other polynomial
+     * @return whether this and oth are over the same coefficients domain
+     */
+    boolean sameDomainWith(Poly oth);
+
+    /**
+     * Checks whether {@code oth} and {@code this} have the same coefficients domain, if not exception will be thrown
+     *
+     * @param oth other polynomial
+     */
+    default void checkSameDomainWith(Poly oth) {
+        if (!sameDomainWith(oth))
+            throw new IllegalArgumentException("Mixing polynomials over different coefficient domains.");
+    }
+
+    /**
      * Return the degree of this polynomial
      *
      * @return the degree

@@ -8,13 +8,6 @@ import cc.r2.core.poly.IGeneralPolynomial;
  */
 public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>> extends IGeneralPolynomial<Poly>, Comparable<Poly> {
     /**
-     * Checks whether {@code oth} and {@code this} have the same coefficients domain, if not exception will be thrown
-     *
-     * @param oth other polynomial
-     */
-    void checkSameDomainWith(Poly oth);
-
-    /**
      * Returns whether i-th coefficient of this is zero
      *
      * @param i the position

@@ -146,7 +146,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
 
     /** {@inheritDoc} */
     @Override
-    public void checkSameDomainWith(lUnivariatePolynomialZ oth) {}
+    public boolean sameDomainWith(lUnivariatePolynomialZ oth) {return true;}
 
     /** {@inheritDoc} */
     @Override

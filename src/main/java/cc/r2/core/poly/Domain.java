@@ -153,6 +153,23 @@ public interface Domain<E> extends Comparator<E> {
     E gcd(E a, E b);
 
     /**
+     * Returns greatest common divisor of specified elements
+     *
+     * @param els the elements
+     * @return gcd
+     */
+    default E gcd(Iterable<E> els) {
+        E gcd = null;
+        for (E e : els) {
+            if (gcd == null)
+                gcd = e;
+            else
+                gcd = gcd(gcd, e);
+        }
+        return gcd;
+    }
+
+    /**
      * Domain element representing zero
      *
      * @return 0
@@ -379,7 +396,6 @@ public interface Domain<E> extends Comparator<E> {
      * @return random element from this domain
      */
     default E randomElement(RandomGenerator rnd) { return valueOf(rnd.nextLong());}
-
 //    /**
 //     * Returns domain with larger cardinality that contains all elements of this or null if there is no such domain.
 //     *

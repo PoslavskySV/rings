@@ -5,7 +5,7 @@ import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.multivar2.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar2.MultivariateInterpolation.Interpolation;
-import cc.r2.core.poly.univar.bMutablePolynomialZp;
+import cc.r2.core.poly.univar2.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -17,8 +17,9 @@ import java.util.stream.Collectors;
 import static cc.r2.core.poly.multivar2.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar2.MultivariateReduction.divideAndRemainder;
 import static cc.r2.core.poly.multivar2.MultivariateReduction.dividesQ;
-import static cc.r2.core.poly.univar.PolynomialGCD.PolynomialGCD;
+import static cc.r2.core.poly.univar2.UnivariateGCD.PolynomialGCD;
 import static cc.r2.core.util.ArraysUtil.negate;
+
 
 /**
  * @author Stanislav Poslavsky
@@ -163,7 +164,7 @@ public final class MultivariateGCD {
 
         if (nUsedVariables == 1)
             // switch to univariate gcd
-            return new GCDInput(asMultivariate(PolynomialGCD(asUnivariateZp(a), asUnivariateZp(b)), nVariables, lastPresentVariable, a.ordering).multiply(monomialGCD));
+            return new GCDInput(asMultivariate(PolynomialGCD(a.asUnivariate(), b.asUnivariate()), nVariables, lastPresentVariable, a.ordering).multiply(monomialGCD));
 
         // now swap variables so that the first variable will have the maximal degree (univariate gcd is fast),
         // and all non-used variables are at the end of poly's
@@ -186,11 +187,11 @@ public final class MultivariateGCD {
     }
 
     /** gcd with monomial */
+    @SuppressWarnings("unchecked")
     private static MultivariatePolynomial<BigInteger> gcdWithMonomial(MonomialTerm<BigInteger> monomial,
                                                                       MultivariatePolynomial<BigInteger> poly) {
         return poly.create(poly.commonContent(monomial));
     }
-
 
     /**
      * Removes monomial content from a and b and returns monomial gcd
@@ -201,11 +202,11 @@ public final class MultivariateGCD {
 
         MonomialTerm<BigInteger> aMonomialContent = a.monomialContent();
         int[] exponentsGCD = b.monomialContent().exponents;
-        MultivariatePolynomial.setMin(aMonomialContent, exponentsGCD);
+        MultivariatePolynomial.setMin(aMonomialContent.exponents, exponentsGCD);
         MonomialTerm<BigInteger> monomialGCD = new MonomialTerm<>(exponentsGCD, a.domain.getOne());
 
-        a = a.divideOrNull(monomialGCD);
-        b = b.divideOrNull(monomialGCD);
+        a = a.divideOrNull((DegreeVector) monomialGCD);
+        b = b.divideOrNull((DegreeVector) monomialGCD);
         assert a != null && b != null;
 
         return new MonomialTerm<>(exponentsGCD, a.domain.getOne());
@@ -215,11 +216,11 @@ public final class MultivariateGCD {
      * Primitive part and content of multivariate polynomial considered as polynomial over Zp[x_i][x_1, ..., x_N]
      */
     private static final class UnivariateContent {
-        final MultivariatePolynomial<bMutablePolynomialZp> poly;
+        final MultivariatePolynomial<UnivariatePolynomial<BigInteger>> poly;
         final MultivariatePolynomial<BigInteger> primitivePart;
-        final bMutablePolynomialZp content;
+        final UnivariatePolynomial<BigInteger> content;
 
-        public UnivariateContent(MultivariatePolynomial<bMutablePolynomialZp> poly, MultivariatePolynomial<BigInteger> primitivePart, bMutablePolynomialZp content) {
+        public UnivariateContent(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> poly, MultivariatePolynomial<BigInteger> primitivePart, UnivariatePolynomial<BigInteger> content) {
             this.poly = poly;
             this.primitivePart = primitivePart;
             this.content = content;
@@ -237,9 +238,10 @@ public final class MultivariateGCD {
     private static UnivariateContent univariateContent(
             MultivariatePolynomial<BigInteger> poly, int variable) {
         //convert poly to Zp[var][x...]
-        MultivariatePolynomial<bMutablePolynomialZp> conv = convertZp(poly, variable);
+
+        MultivariatePolynomial<UnivariatePolynomial<BigInteger>> conv = poly.asOverUnivariate(variable);
         //univariate content
-        bMutablePolynomialZp content = PolynomialGCD(conv.coefficients());
+        UnivariatePolynomial<BigInteger> content = PolynomialGCD(conv.coefficients());
         MultivariatePolynomial<BigInteger>[]
                 qd = divideAndRemainder(poly, asMultivariate(content, poly.nVariables, variable, poly.ordering));
         assert qd[1].isZero();
@@ -251,10 +253,10 @@ public final class MultivariateGCD {
         /** primitive parts of a and b viewed as polynomials in Zp[x_k][x_1 ... x_{k-1}] */
         final MultivariatePolynomial<BigInteger> aPrimitive, bPrimitive;
         /** gcd of content and leading coefficient of a and b given as Zp[x_k][x_1 ... x_{k-1}] */
-        final bMutablePolynomialZp contentGCD, lcGCD;
+        final UnivariatePolynomial<BigInteger> contentGCD, lcGCD;
 
         public PrimitiveInput(MultivariatePolynomial<BigInteger> aPrimitive, MultivariatePolynomial<BigInteger> bPrimitive,
-                              bMutablePolynomialZp contentGCD, bMutablePolynomialZp lcGCD) {
+                              UnivariatePolynomial<BigInteger> contentGCD, UnivariatePolynomial<BigInteger> lcGCD) {
             this.aPrimitive = aPrimitive;
             this.bPrimitive = bPrimitive;
             this.contentGCD = contentGCD;
@@ -277,7 +279,7 @@ public final class MultivariateGCD {
         b = bContent.primitivePart;
 
         // gcd of Zp[x_k] content and lc
-        bMutablePolynomialZp
+        UnivariatePolynomial<BigInteger>
                 contentGCD = PolynomialGCD(aContent.content, bContent.content),
                 lcGCD = PolynomialGCD(aContent.poly.lc(), bContent.poly.lc());
         return new PrimitiveInput(a, b, contentGCD, lcGCD);
@@ -334,7 +336,7 @@ public final class MultivariateGCD {
         int nVariables = factory.nVariables;
         if (variable == 0) {
             // univariate case
-            bMutablePolynomialZp gcd = PolynomialGCD(asUnivariateZp(a), asUnivariateZp(b));
+            UnivariatePolynomial<BigInteger> gcd = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
@@ -345,7 +347,7 @@ public final class MultivariateGCD {
         a = primitiveInput.aPrimitive;
         b = primitiveInput.bPrimitive;
         // gcd of Zp[x_k] content and lc
-        bMutablePolynomialZp
+        UnivariatePolynomial<BigInteger>
                 contentGCD = primitiveInput.contentGCD,
                 lcGCD = primitiveInput.lcGCD;
 
@@ -438,11 +440,11 @@ public final class MultivariateGCD {
     /** division test **/
     private static MultivariatePolynomial<BigInteger> doDivisionCheck(
             MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b,
-            bMutablePolynomialZp contentGCD, Interpolation<BigInteger> interpolation, int variable) {
+            UnivariatePolynomial<BigInteger> contentGCD, Interpolation<BigInteger> interpolation, int variable) {
         if (interpolation == null)
             return null;
         MultivariatePolynomial<BigInteger> interpolated =
-                fromZp(convertZp(interpolation.getInterpolatingPolynomial(), variable).primitivePart(), a.domain, variable);
+                asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariate(variable).primitivePart(), variable);
         if (!dividesQ(a, interpolated) || !dividesQ(b, interpolated))
             return null;
 
@@ -543,7 +545,7 @@ public final class MultivariateGCD {
         int nVariables = factory.nVariables;
         if (variable == 0) {
             // univariate case
-            bMutablePolynomialZp gcd = PolynomialGCD(asUnivariateZp(a), asUnivariateZp(b));
+            UnivariatePolynomial<BigInteger> gcd = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
@@ -554,7 +556,7 @@ public final class MultivariateGCD {
         a = primitiveInput.aPrimitive;
         b = primitiveInput.bPrimitive;
         // gcd of Zp[x_k] content and lc
-        bMutablePolynomialZp
+        UnivariatePolynomial<BigInteger>
                 contentGCD = primitiveInput.contentGCD,
                 lcGCD = primitiveInput.lcGCD;
 
@@ -670,7 +672,7 @@ public final class MultivariateGCD {
                                                    RandomGenerator rnd) {
         boolean monic = a.coefficientOf(0, a.degree(0)).isConstant() && b.coefficientOf(0, a.degree(0)).isConstant();
 
-        Set<DegreeVector> globalSkeleton = skeleton.data.keySet();
+        Set<DegreeVector> globalSkeleton = skeleton.terms.keySet();
         TIntObjectHashMap<MultivariatePolynomial<BigInteger>> univarSkeleton = getSkeleton(skeleton);
         int[] sparseUnivarDegrees = univarSkeleton.keys();
 
@@ -715,7 +717,7 @@ public final class MultivariateGCD {
      */
     private static TIntObjectHashMap<MultivariatePolynomial<BigInteger>> getSkeleton(MultivariatePolynomial<BigInteger> poly) {
         TIntObjectHashMap<MultivariatePolynomial<BigInteger>> skeleton = new TIntObjectHashMap<>();
-        for (MonomialTerm<BigInteger> term : poly.data) {
+        for (MonomialTerm<BigInteger> term : poly.terms) {
             MonomialTerm<BigInteger> newDV = term.setZero(0);
             MultivariatePolynomial<BigInteger> coeff = skeleton.get(term.exponents[0]);
             if (coeff != null)
@@ -817,9 +819,9 @@ public final class MultivariateGCD {
                     // sequential powers of evaluation point
                     Arrays.fill(raiseFactors, 0, raiseFactors.length - 1, raiseFactor);
                     // evaluate a and b to univariate and calculate gcd
-                    bMutablePolynomialZp
-                            aUnivar = asUnivariateZp(a.evaluate(powers, evaluationVariables, raiseFactors)),
-                            bUnivar = asUnivariateZp(b.evaluate(powers, evaluationVariables, raiseFactors)),
+                    UnivariatePolynomial<BigInteger>
+                            aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
+                            bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                             gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
 
                     assert gcdUnivar.isMonic();
@@ -943,9 +945,9 @@ public final class MultivariateGCD {
                 // the last variable (the variable) is the same for all evaluations = newPoint
                 raiseFactors[raiseFactors.length - 1] = 1;
                 // evaluate a and b to univariate and calculate gcd
-                bMutablePolynomialZp
-                        aUnivar = asUnivariateZp(a.evaluate(powers, evaluationVariables, raiseFactors)),
-                        bUnivar = asUnivariateZp(b.evaluate(powers, evaluationVariables, raiseFactors)),
+                UnivariatePolynomial<BigInteger>
+                        aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
+                        bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
 
                 assert gcdUnivar.isMonic();

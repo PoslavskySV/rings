@@ -46,6 +46,11 @@ public final class lMutablePolynomialZ extends lMutablePolynomialAbstract<lMutab
         return null;
     }
 
+    @Override
+    public boolean sameDomainWith(lMutablePolynomialZ oth) {
+        return true;
+    }
+
     /**
      * Creates Z[x] polynomial from the specified coefficients
      *

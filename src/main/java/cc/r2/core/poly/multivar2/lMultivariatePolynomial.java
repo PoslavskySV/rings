@@ -975,7 +975,7 @@
 ////    public static MultivariatePolynomial<lMutablePolynomialZp> convertZp(lMultivariatePolynomial poly, int variable) {
 ////        long modulus = poly.modulus;
 ////        MonomialsSet<MonomialTerm<lMutablePolynomialZp>> map = new MonomialsSet<>(poly.ordering);
-////        UnivariatePolynomialDomain<lMutablePolynomialZp> domain = new UnivariatePolynomialDomain<>(lMutablePolynomialZp.zero(modulus));
+////        UnivariatePolynomials<lMutablePolynomialZp> domain = new UnivariatePolynomials<>(lMutablePolynomialZp.zero(modulus));
 ////        for (MonomialTerm<long> e : poly.data) {
 ////            MultivariatePolynomial.add(map, new MonomialTerm<>(
 ////                            e.without(variable).exponents,
