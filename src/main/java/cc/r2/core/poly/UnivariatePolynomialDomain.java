@@ -23,6 +23,9 @@ public final class UnivariatePolynomialDomain<T extends IMutablePolynomial<T>> i
     public BigInteger cardinality() {return null;}
 
     @Override
+    public BigInteger characteristics() {return BigInteger.ZERO;}
+
+    @Override
     public T add(T a, T b) {
         return a.clone().add(b);
     }

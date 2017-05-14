@@ -12,7 +12,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.r2.core.poly.univar2.Factorization.factorZp;
+import static cc.r2.core.poly.univar2.Factorization.factorInFiniteField;
 import static cc.r2.core.poly.univar2.FactorizationTestUtil.assertFactorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 public class FactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
-        assertTrue(Factorization.factorZp(lUnivariatePolynomialZ.create(3, 7).modulus(19)).get(0).isMonic());
+        assertTrue(Factorization.factorInFiniteField(lUnivariatePolynomialZ.create(3, 7).modulus(19)).get(0).isMonic());
     }
 
     @Test
@@ -36,7 +36,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
                 BigInteger.valueOf(Long.MAX_VALUE - 2));
         for (int i = 0; i < 5; i++)
             poly = poly.square().add(poly.derivative()).increment();
-        FactorDecomposition<UnivariatePolynomial<BigInteger>> fct = factorZp(poly);
+        FactorDecomposition<UnivariatePolynomial<BigInteger>> fct = factorInFiniteField(poly);
         Assert.assertEquals(7, fct.size());
         assertFactorization(poly, fct);
     }
@@ -45,7 +45,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
     public void test3() throws Exception {
         long modulus = 13;
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(5, 8, 1, 5, 7, 0, 0, 1, 5, 7, 0, 9, 3, 2).modulus(modulus);
-        assertFactorization(poly, Factorization.factorZp(poly));
+        assertFactorization(poly, Factorization.factorInFiniteField(poly));
     }
 
     @Test
@@ -67,12 +67,12 @@ public class FactorizationTest extends AbstractPolynomialTest {
             }
 
             try {
-                FactorDecomposition<lUnivariatePolynomialZp> lFactors = Factorization.factorZp(poly);
+                FactorDecomposition<lUnivariatePolynomialZp> lFactors = Factorization.factorInFiniteField(poly);
                 assertTrue(lFactors.sumExponents() >= expectedNFactors);
                 assertFactorization(poly, lFactors);
 
                 if (n % 100 == 0) {
-                    FactorDecomposition<UnivariatePolynomial<BigInteger>> bFactors = factorZp(poly.toBigPoly());
+                    FactorDecomposition<UnivariatePolynomial<BigInteger>> bFactors = factorInFiniteField(poly.toBigPoly());
                     FactorDecomposition<UnivariatePolynomial<BigInteger>> converted = FactorDecomposition.convert(lFactors);
                     converted.canonicalForm();
                     bFactors.canonicalForm();
@@ -91,7 +91,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
     public void test4_randomZp_a() throws Exception {
         long modulus = 59;
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(46, 16, 1, 54, 16, 57, 22, 15, 31, 21).modulus(modulus);
-        FactorDecomposition<lUnivariatePolynomialZp> fct = factorZp(poly);
+        FactorDecomposition<lUnivariatePolynomialZp> fct = factorInFiniteField(poly);
         assertEquals(5, fct.size());
         assertEquals(6, fct.sumExponents());
     }
@@ -115,7 +115,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
                     break;
             }
 
-            FactorDecomposition<UnivariatePolynomial<BigInteger>> lFactors = Factorization.factorZ(poly);
+            FactorDecomposition<UnivariatePolynomial<BigInteger>> lFactors = Factorization.factorInZ(poly);
             assertTrue(lFactors.size() >= expectedNFactors);
             assertFactorization(poly, lFactors);
         }
@@ -138,7 +138,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
 
             long start;
             start = System.nanoTime();
-            FactorDecomposition<lUnivariatePolynomialZp> factorsZp = Factorization.factorZp(polyMod);
+            FactorDecomposition<lUnivariatePolynomialZp> factorsZp = Factorization.factorInFiniteField(polyMod);
             long timeZp = System.nanoTime() - start;
             timingZp.addValue(timeZp);
             assertFactorization(polyMod, factorsZp);
@@ -146,7 +146,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
             assertEquals(5, factorsZp.size());
 
             start = System.nanoTime();
-            FactorDecomposition<lUnivariatePolynomialZ> factorsZ = Factorization.factorZ(poly);
+            FactorDecomposition<lUnivariatePolynomialZ> factorsZ = Factorization.factorInZ(poly);
             long timeZ = System.nanoTime() - start;
             timingZ.addValue(timeZ);
             assertFactorization(poly, factorsZ);
@@ -203,7 +203,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
             if (i == 1000)
                 timing.clear();
             long start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomial<BigInteger>> factors = Factorization.factorZ(poly);
+            FactorDecomposition<UnivariatePolynomial<BigInteger>> factors = Factorization.factorInZ(poly);
             long time = System.nanoTime() - start;
             timing.addValue(time);
             assertEquals(9, factors.size());

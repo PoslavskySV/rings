@@ -1,5 +1,6 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.IGeneralPolynomial;
 
 /**
@@ -7,6 +8,10 @@ import cc.r2.core.poly.IGeneralPolynomial;
  * @since 1.0
  */
 public interface IMutablePolynomial<T extends IMutablePolynomial<T>> extends IGeneralPolynomial<T>, Comparable<T> {
+    @Override
+    default BigInteger coefficientDomainCharacteristics() {
+        return null;
+    }
 
     /**
      * Returns {@code true} if this polynomial is monic

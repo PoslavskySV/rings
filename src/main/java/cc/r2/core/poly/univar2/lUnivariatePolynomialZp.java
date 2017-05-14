@@ -31,8 +31,6 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
             throw new IllegalArgumentException("Too large modulus. Max allowed is " + LongArithmetics.MAX_SUPPORTED_MODULUS);
     }
 
-    /* =========================== Factory methods =========================== */
-
     /**
      * Creates poly with specified coefficients represented as signed integers reducing them modulo {@code modulus}
      *
@@ -212,7 +210,11 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
         return BigInteger.valueOf(modulus());
     }
 
-    /*=========================== Main methods ===========================*/
+    /** {@inheritDoc} */
+    @Override
+    public BigInteger coefficientDomainCharacteristics() {
+        return BigInteger.valueOf(modulus());
+    }
 
     @Override
     long add(long a, long b) {

@@ -80,6 +80,13 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
     BigInteger coefficientDomainCardinality();
 
     /**
+     * Returns characteristics of the coefficients domain of this poly
+     *
+     * @return characteristics of the coefficients domain
+     */
+    BigInteger coefficientDomainCharacteristics();
+
+    /**
      * Sets {@code this} to its monic part (that is {@code this} divided by its leading coefficient), or returns
      * {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code lc()}. NOTE: if {@code null} is returned, the content of {@code this} is destroyed.

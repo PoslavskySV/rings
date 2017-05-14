@@ -35,7 +35,7 @@ public class FiniteFieldTest {
                 poly = poly1.clone().multiply(poly2).multiply(poly1.clone().add(poly2));
 
 //        System.out.println(poly1.monic());
-        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = Factorization.factorZp(poly);
+        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = Factorization.factorInFiniteField(poly);
         System.out.println(factors);
         System.out.println(poly);
         System.out.println(factors.toPolynomial());

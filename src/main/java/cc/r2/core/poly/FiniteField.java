@@ -34,6 +34,9 @@ public class FiniteField implements Domain<lUnivariatePolynomialZp> {
     }
 
     @Override
+    public BigInteger characteristics() {return BigInteger.valueOf(modulus());}
+
+    @Override
     public lUnivariatePolynomialZp add(lUnivariatePolynomialZp a, lUnivariatePolynomialZp b) {
         return PolynomialArithmetics.polyAddMod(a, b, irreducible, inverseMod, true);
     }

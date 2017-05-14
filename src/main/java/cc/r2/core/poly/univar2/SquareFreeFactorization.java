@@ -18,12 +18,17 @@ public final class SquareFreeFactorization {
     private SquareFreeFactorization() {}
 
     /**
-     * Performs square-free factorization of a {@code poly} in Z[x].
+     * Performs square-free factorization of a {@code poly} which coefficient domain has zero characteristic
+     * using Yun's algorithm.
      *
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationZ(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly>
+    SquareFreeFactorizationYunZeroCharacteristics(Poly poly) {
+        if (!poly.coefficientDomainCharacteristics().isZero())
+            throw new IllegalArgumentException("Characteristics 0 expected");
+
         if (poly.isConstant())
             return FactorDecomposition.constantFactor(poly);
 
@@ -31,22 +36,22 @@ public final class SquareFreeFactorization {
         int exponent = 0;
         while (exponent <= poly.degree() && poly.isZeroAt(exponent)) { ++exponent; }
         if (exponent == 0)
-            return SquareFreeFactorizationYun(poly);
+            return SquareFreeFactorizationYun0(poly);
 
         Poly expFree = poly.getRange(exponent, poly.degree() + 1);
-        FactorDecomposition<Poly> fd = SquareFreeFactorizationYun(expFree);
+        FactorDecomposition<Poly> fd = SquareFreeFactorizationYun0(expFree);
         fd.addFactor(poly.createMonomial(exponent), 1);
         return fd;
     }
 
     /**
-     * Performs square-free factorization of a poly using Yun's algorithm in Z[x].
+     * Performs square-free factorization of a poly using Yun's algorithm.
      *
      * @param poly the polynomial
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationYun(Poly poly) {
+    static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationYun0(Poly poly) {
         if (poly.isConstant())
             return FactorDecomposition.constantFactor(poly);
 
@@ -59,11 +64,11 @@ public final class SquareFreeFactorization {
             return FactorDecomposition.oneFactor(content, poly);
 
         FactorDecomposition<Poly> factorization = FactorDecomposition.constantFactor(content);
-        SquareFreeFactorizationYun(poly, factorization);
+        SquareFreeFactorizationYun0(poly, factorization);
         return factorization;
     }
 
-    private static <Poly extends IUnivariatePolynomial<Poly>> void SquareFreeFactorizationYun(Poly poly, FactorDecomposition<Poly> factorization) {
+    private static <Poly extends IUnivariatePolynomial<Poly>> void SquareFreeFactorizationYun0(Poly poly, FactorDecomposition<Poly> factorization) {
         Poly derivative = poly.derivative(), gcd = PolynomialGCD(poly, derivative);
         if (gcd.isConstant()) {
             factorization.addFactor(poly, 1);
@@ -86,13 +91,18 @@ public final class SquareFreeFactorization {
     }
 
     /**
-     * Performs square-free factorization of a poly using Musser's algorithm in Z[x].
+     * Performs square-free factorization of a poly which coefficient domain has zero characteristic
+     * using Musser's algorithm.
      *
      * @param poly the polynomial
      * @return square-free decomposition
      */
     @SuppressWarnings("ConstantConditions")
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly>
+    SquareFreeFactorizationMusserZeroCharacteristics(Poly poly) {
+        if (!poly.coefficientDomainCharacteristics().isZero())
+            throw new IllegalArgumentException("Characteristics 0 expected");
+
         if (poly.isConstant())
             return FactorDecomposition.constantFactor(poly);
 
@@ -105,11 +115,12 @@ public final class SquareFreeFactorization {
             return FactorDecomposition.oneFactor(content, poly);
 
         FactorDecomposition<Poly> factorization = FactorDecomposition.constantFactor(content);
-        SquareFreeFactorizationMusser(poly, factorization);
+        SquareFreeFactorizationMusserZeroCharacteristics0(poly, factorization);
         return factorization;
     }
 
-    private static <Poly extends IUnivariatePolynomial<Poly>> void SquareFreeFactorizationMusser(Poly poly, FactorDecomposition<Poly> factorization) {
+    private static <Poly extends IUnivariatePolynomial<Poly>> void
+    SquareFreeFactorizationMusserZeroCharacteristics0(Poly poly, FactorDecomposition<Poly> factorization) {
         Poly derivative = poly.derivative(), gcd = PolynomialGCD(poly, derivative);
         if (gcd.isConstant()) {
             factorization.addFactor(poly, 1);
@@ -132,12 +143,13 @@ public final class SquareFreeFactorization {
     }
 
     /**
-     * Performs square-free factorization of a {@code poly} in Zp[x].
+     * Performs square-free factorization of a {@code poly} using Musser's algorithm (both zero and non-zero
+     * characteristics of coefficient domain allowed).
      *
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationZp(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         poly = poly.clone();
         Poly lc = poly.lcAsPoly();
         //make poly monic
@@ -274,10 +286,10 @@ public final class SquareFreeFactorization {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
-        if (poly.isOverField())
-            return SquareFreeFactorizationZp(poly);
+        if (poly.coefficientDomainCharacteristics().isZero())
+            return SquareFreeFactorizationYunZeroCharacteristics(poly);
         else
-            return SquareFreeFactorizationZ(poly);
+            return SquareFreeFactorizationMusser(poly);
     }
 
     /**

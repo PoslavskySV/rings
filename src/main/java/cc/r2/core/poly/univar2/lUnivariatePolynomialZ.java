@@ -172,6 +172,12 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     @Override
     public BigInteger coefficientDomainCardinality() {return null;}
 
+    /** {@inheritDoc} */
+    @Override
+    public BigInteger coefficientDomainCharacteristics() {
+        return BigInteger.ZERO;
+    }
+
     @Override
     long add(long a, long b) {return LongArithmetics.safeAdd(a, b);}
 

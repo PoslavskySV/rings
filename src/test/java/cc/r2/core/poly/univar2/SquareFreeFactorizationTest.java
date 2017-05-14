@@ -25,15 +25,15 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         lUnivariatePolynomialZ poly = PolynomialArithmetics.polyPow(lUnivariatePolynomialZ.create(1, 3).multiply(2), 3, false).multiply(PolynomialArithmetics.polyPow(lUnivariatePolynomialZ.create(-3, -5, 7), 2, false));
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun(poly));
+        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(1, 3);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun(poly));
+        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(3);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun(poly));
+        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(33);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun(poly));
+        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(22, 22).multiply(lUnivariatePolynomialZ.create(12, 12, 12)).multiply(12);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun(poly));
+        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
     }
 
     @Test
@@ -64,11 +64,11 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             }
             try {
                 long start = System.nanoTime();
-                FactorDecomposition<lUnivariatePolynomialZ> yunFactorization = SquareFreeFactorization.SquareFreeFactorizationYun(poly);
+                FactorDecomposition<lUnivariatePolynomialZ> yunFactorization = SquareFreeFactorization.SquareFreeFactorizationYun0(poly);
                 yun.addValue(System.nanoTime() - start);
 
                 start = System.nanoTime();
-                FactorDecomposition<lUnivariatePolynomialZ> musserFactorization = SquareFreeFactorization.SquareFreeFactorizationMusser(poly);
+                FactorDecomposition<lUnivariatePolynomialZ> musserFactorization = SquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
                 musser.addValue(System.nanoTime() - start);
 
                 assertEquals(yunFactorization.factors.size(), musserFactorization.factors.size());
@@ -89,7 +89,7 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test3() throws Exception {
         lUnivariatePolynomialZ poly = lUnivariatePolynomialZ.create(0, 0, -1458, 6561, -6561);
-        FactorDecomposition<lUnivariatePolynomialZ> factorization = SquareFreeFactorization.SquareFreeFactorizationYun(poly);
+        FactorDecomposition<lUnivariatePolynomialZ> factorization = SquareFreeFactorization.SquareFreeFactorizationYun0(poly);
         assertFactorization(poly, factorization);
     }
 

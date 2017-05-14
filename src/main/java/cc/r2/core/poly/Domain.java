@@ -26,6 +26,13 @@ public interface Domain<E> extends Comparator<E> {
     BigInteger cardinality();
 
     /**
+     * Returns characteristics of this ring
+     *
+     * @return characteristics of this ring
+     */
+    BigInteger characteristics();
+
+    /**
      * Returns whether this domain is finite
      *
      * @return whether this domain is finite

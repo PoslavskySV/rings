@@ -381,6 +381,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return domain.cardinality();
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public BigInteger coefficientDomainCharacteristics() {
+        return domain.characteristics();
+    }
+
     /**
      * Returns Mignotte's bound (sqrt(n+1) * 2^n max |this|) of the poly
      */

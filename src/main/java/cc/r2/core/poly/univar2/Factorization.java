@@ -5,8 +5,8 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.univar2.HenselLifting.QuadraticLiftAbstract;
 import cc.r2.core.util.ArraysUtil;
 
@@ -27,13 +27,6 @@ import static cc.r2.core.poly.univar2.UnivariatePolynomial.*;
  */
 public final class Factorization {
     private Factorization() {}
-
-    /* ************************** Factorization in Zp[x] ************************** */
-
-    static void ensureFiniteFieldDomain(IUnivariatePolynomial poly) {
-        if (!poly.isOverFiniteField())
-            throw new IllegalArgumentException("Polynomial over finite field is expected, but got " + poly.getClass());
-    }
 
     /** x^n * poly */
     private static final class FactorMonomial<T extends IUnivariatePolynomial<T>> {
@@ -63,22 +56,42 @@ public final class Factorization {
     }
 
     /**
-     * Factors polynomial in Zp[x].
+     * Factors {@code poly}.
      *
      * @param poly the polynomial
      * @return factor decomposition
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factorZp(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factor(Poly poly) {
+        if (poly.isOverFiniteField())
+            return factorInFiniteField(poly);
+        else
+            return factorInZ(poly);
+    }
+
+    /* ************************** Factorization in Zp[x] ************************** */
+
+    static void ensureFiniteFieldDomain(IUnivariatePolynomial poly) {
+        if (!poly.isOverFiniteField())
+            throw new IllegalArgumentException("Polynomial over finite field is expected, but got " + poly.getClass());
+    }
+
+    /**
+     * Factors {@code poly} which coefficient domain is a finite field.
+     *
+     * @param poly the polynomial over finite field
+     * @return factor decomposition
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factorInFiniteField(Poly poly) {
         ensureFiniteFieldDomain(poly);
         FactorDecomposition<Poly> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
         result = FactorDecomposition.empty(poly);
-        factorZp(poly, result);
+        factorInFiniteField(poly, result);
         return result.setConstantFactor(poly.lcAsPoly());
     }
 
-    private static <T extends IUnivariatePolynomial<T>> void factorZp(T poly, FactorDecomposition<T> result) {
+    private static <T extends IUnivariatePolynomial<T>> void factorInFiniteField(T poly, FactorDecomposition<T> result) {
         FactorMonomial<T> base = factorOutMonomial(poly);
         result.addFactor(base.monomial, 1);
 
@@ -303,7 +316,7 @@ public final class Factorization {
             while (moduloImage.cc() == 0 || moduloImage.degree() != poly.degree() || !SquareFreeFactorization.isSquareFree(moduloImage));
 
             // do modular factorization
-            FactorDecomposition<lUnivariatePolynomialZp> tmpFactors = factorZp(moduloImage.monic());
+            FactorDecomposition<lUnivariatePolynomialZp> tmpFactors = factorInFiniteField(moduloImage.monic());
             if (tmpFactors.size() == 1)
                 return FactorDecomposition.oneFactor(poly.createOne(), poly);
 
@@ -369,7 +382,7 @@ public final class Factorization {
         } while (!SquareFreeFactorization.isSquareFree(moduloImage));
 
         // do modular factorization
-        FactorDecomposition<lUnivariatePolynomialZp> modularFactors = factorZp(moduloImage.monic());
+        FactorDecomposition<lUnivariatePolynomialZp> modularFactors = factorInFiniteField(moduloImage.monic());
 
         // do Hensel lifting
         // determine number of Hensel steps
@@ -408,7 +421,8 @@ public final class Factorization {
      * @param poly the polynomial
      * @return factor decomposition
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factorZ(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factorInZ(Poly poly) {
+        ensureIntegersDomain(poly);
         if (poly.degree() <= 1 || poly.isMonomial())
             return FactorDecomposition.oneFactor(
                     poly.isMonic() ? poly.createOne() : poly.contentAsPoly(),
@@ -418,11 +432,11 @@ public final class Factorization {
         Poly content = poly.contentAsPoly();
         if (poly.signum() < 0)
             content = content.negate();
-        factorZ(poly.clone().divideByLC(content), result);
+        factorInZ(poly.clone().divideByLC(content), result);
         return result.setConstantFactor(content);
     }
 
-    private static <T extends IUnivariatePolynomial<T>> void factorZ(T poly, FactorDecomposition<T> result) {
+    private static <T extends IUnivariatePolynomial<T>> void factorInZ(T poly, FactorDecomposition<T> result) {
         FactorMonomial<T> base = factorOutMonomial(poly);
         result.addFactor(base.monomial, 1);
 

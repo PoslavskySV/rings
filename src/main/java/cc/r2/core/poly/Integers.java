@@ -18,6 +18,9 @@ public final class Integers extends AbstractIntegers {
     public BigInteger cardinality() {return null;}
 
     @Override
+    public BigInteger characteristics() {return BigInteger.ZERO;}
+
+    @Override
     public BigInteger add(BigInteger a, BigInteger b) {return a.add(b);}
 
     @Override

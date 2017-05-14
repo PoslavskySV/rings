@@ -263,8 +263,7 @@ final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return square-free and distinct-degree decomposition of {@code poly} modulo {@code modulus}
      */
-    @SuppressWarnings("ConstantConditions")
-    public static FactorDecomposition<lUnivariatePolynomialZp> DistinctDegreeFactorizationComplete(lUnivariatePolynomialZp poly) {
+    static FactorDecomposition<lUnivariatePolynomialZp> DistinctDegreeFactorizationComplete(lUnivariatePolynomialZp poly) {
         FactorDecomposition<lUnivariatePolynomialZp> squareFree = SquareFreeFactorization.SquareFreeFactorization(poly);
         long overallFactor = squareFree.constantFactor.lc();
 

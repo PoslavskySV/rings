@@ -50,6 +50,11 @@ public class MultivariatePolynomial<E> implements IGeneralPolynomial<Multivariat
     }
 
     @Override
+    public BigInteger coefficientDomainCharacteristics() {
+        return domain.characteristics();
+    }
+
+    @Override
     public MultivariatePolynomial<E>[] arrayNewInstance(int length) {
         return new MultivariatePolynomial[length];
     }

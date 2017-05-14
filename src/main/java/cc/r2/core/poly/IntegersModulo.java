@@ -25,6 +25,9 @@ public final class IntegersModulo extends AbstractIntegers {
     @Override
     public BigInteger cardinality() {return modulus;}
 
+    @Override
+    public BigInteger characteristics() {return modulus;}
+
     /**
      * Returns {@code val mod this.modulus}
      *
