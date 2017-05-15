@@ -131,6 +131,21 @@ public class FiniteField implements Domain<lUnivariatePolynomialZp> {
     }
 
     @Override
+    public lUnivariatePolynomialZp[] createArray(int length) {
+        return new lUnivariatePolynomialZp[length];
+    }
+
+    @Override
+    public lUnivariatePolynomialZp[][] createArray2d(int length) {
+        return new lUnivariatePolynomialZp[length][];
+    }
+
+    @Override
+    public lUnivariatePolynomialZp[][] createArray2d(int m, int n) {
+        return new lUnivariatePolynomialZp[m][n];
+    }
+
+    @Override
     public int compare(lUnivariatePolynomialZp o1, lUnivariatePolynomialZp o2) {
         return o1.compareTo(o2);
     }

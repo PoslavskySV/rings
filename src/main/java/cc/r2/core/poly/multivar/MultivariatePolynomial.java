@@ -1690,5 +1690,15 @@ public final class MultivariatePolynomial<E> implements IGeneralPolynomial<Multi
         public int hashCode() {
             return factory.hashCode();
         }
+
+        @Override
+        public Poly[][] createArray2d(int length) {
+            return null;
+        }
+
+        @Override
+        public Poly[][] createArray2d(int m, int n) {
+            return null;
+        }
     }
 }

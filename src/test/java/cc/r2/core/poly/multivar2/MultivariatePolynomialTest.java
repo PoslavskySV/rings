@@ -70,7 +70,7 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testZero2() throws Exception {
-        MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.create(
+        MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.create(3,
                 Integers, LEX,
                 new MonomialTerm<>(new int[]{1, 2, 3}, ZERO),
                 new MonomialTerm<>(new int[]{0, 1, 2}, FIVE),
@@ -114,7 +114,7 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
 
     @Test
     public void testCreateLinear() throws Exception {
-        MultivariatePolynomial<BigInteger> p0 = MultivariatePolynomial.zero(Integers, LEX, 3);
+        MultivariatePolynomial<BigInteger> p0 = MultivariatePolynomial.zero(3, Integers, LEX);
         String[] vars = {"a", "b", "c"};
         assertEquals(parse("-1+2*a", vars), p0.createLinear(0, NEGATIVE_ONE, TWO));
         assertEquals(parse("-1+2*b", vars), p0.createLinear(1, NEGATIVE_ONE, TWO));

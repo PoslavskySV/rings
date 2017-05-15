@@ -1,5 +1,6 @@
 package cc.r2.core.poly.multivar2;
 
+import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.util.ArraysUtil;
 
 /**
@@ -23,6 +24,11 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
         super(exponents);
         this.coefficient = coefficient;
     }
+    /** Set's the coefficient to {@code newDomain.valueOf(coefficient) } */
+    lMonomialTerm setDomain(lIntegersModulo newDomain) {
+        long e = newDomain.modulus(coefficient);
+        return coefficient == e ? this : new lMonomialTerm(exponents, totalDegree, e);
+    }
 
     @Override
     protected lMonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree) {
@@ -32,6 +38,11 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
     /** Set's monomial coefficient to a specified value */
     public lMonomialTerm setCoefficient(long value) {
         return new lMonomialTerm(exponents, totalDegree, value);
+    }
+
+    /** Negates the coefficient */
+    public lMonomialTerm negate(lIntegersModulo domain) {
+        return setCoefficient(domain.negate(coefficient));
     }
 
     /** Multiplies this by {@code oth} and sets the resulting coefficient to a specified value */

@@ -25,9 +25,9 @@ public class RandomMultivariatePolynomial {
             BigInteger cfx = domain.valueOf(RandomUtil.randomInt(bound, rnd));
             if (rnd.nextBoolean() && rnd.nextBoolean())
                 cfx = domain.negate(cfx);
-            terms[i] = new MonomialTerm<BigInteger>(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
+            terms[i] = new MonomialTerm<>(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
         }
-        return MultivariatePolynomial.create(domain, ordering, terms);
+        return MultivariatePolynomial.create(nVars, domain, ordering, terms);
     }
 
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {

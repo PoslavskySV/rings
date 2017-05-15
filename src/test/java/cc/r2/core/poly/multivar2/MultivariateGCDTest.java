@@ -5,7 +5,6 @@ import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.multivar2.MultivariateGCD.*;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -18,6 +17,7 @@ import java.util.Arrays;
 
 import static cc.r2.core.poly.multivar2.DegreeVector.LEX;
 import static cc.r2.core.poly.multivar2.MultivariateGCD.*;
+import static cc.r2.core.poly.multivar2.MultivariatePolynomial.asLongPolyZp;
 import static cc.r2.core.poly.multivar2.MultivariatePolynomial.asNormalMultivariate;
 import static cc.r2.core.poly.multivar2.MultivariatePolynomial.parse;
 import static cc.r2.core.poly.multivar2.MultivariateReduction.dividesQ;
@@ -654,6 +654,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
+        lMultivariatePolynomial
+                aL = asLongPolyZp(a),
+                bL = asLongPolyZp(b);
 
 //        System.out.println(a);
 //        System.out.println(b);
@@ -663,8 +666,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
-            System.out.println(ZippelGCD(a, b));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertEquals(10, ZippelGCD(aL, bL).size());
+            System.out.println(System.nanoTime() - start);
         }
 
     }

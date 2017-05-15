@@ -1,8 +1,8 @@
 package cc.r2.core.poly.univar2;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.lIntegersModulo;
 
 import java.util.Arrays;
@@ -60,6 +60,10 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
         return new lUnivariatePolynomialZp(new lIntegersModulo(modulus), data);
     }
 
+    public static lUnivariatePolynomialZp createUnsafe(lIntegersModulo domain, long[] data) {
+        return new lUnivariatePolynomialZp(domain, data);
+    }
+
     /**
      * Creates monomial {@code coefficient * x^exponent}
      *
@@ -99,6 +103,16 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
     }
 
     /**
+     * Creates zero polynomial
+     *
+     * @param domain the domain
+     * @return zero polynomial
+     */
+    public static lUnivariatePolynomialZp zero(lIntegersModulo domain) {
+        return new lUnivariatePolynomialZp(domain, new long[]{0L}, 0);
+    }
+
+    /**
      * Creates unit polynomial
      *
      * @param modulus the modulus
@@ -106,6 +120,16 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
      */
     public static lUnivariatePolynomialZp one(long modulus) {
         return constant(modulus, 1L);
+    }
+
+    /**
+     * Creates unit polynomial
+     *
+     * @param domain the domain
+     * @return unit polynomial
+     */
+    public static lUnivariatePolynomialZp one(lIntegersModulo domain) {
+        return new lUnivariatePolynomialZp(domain, new long[]{1L}, 0);
     }
 
     /** Returns the modulus */

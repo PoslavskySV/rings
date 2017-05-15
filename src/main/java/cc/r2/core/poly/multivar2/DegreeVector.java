@@ -39,6 +39,17 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     /** set i-th exponent to zero and return new Monomial */
     abstract MonomialTerm setZero(int var);
 
+    /** Divide degree vector */
+    final MonomialTerm divide(DegreeVector oth){
+        int[] newExponents = new int[exponents.length];
+        for (int i = 0; i < exponents.length; i++) {
+            newExponents[i] = exponents[i] - oth.exponents[i];
+            if (newExponents[i] < 0)
+                return null;
+        }
+        return setDegreeVector(newExponents, totalDegree - oth.totalDegree);
+    }
+
     /** Returns whether all exponents are zero */
     public final boolean isZeroVector() {
         return totalDegree == 0;

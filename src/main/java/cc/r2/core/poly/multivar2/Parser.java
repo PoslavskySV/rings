@@ -44,7 +44,7 @@ final class Parser {
         for (int i = 0; i < terms.size(); i++)
             mTerms[i] = terms.get(i).monomialTerm(vars);
 
-        return MultivariatePolynomial.create(domain, ordering, mTerms);
+        return MultivariatePolynomial.create(mTerms[0].exponents.length, domain, ordering, mTerms);
     }
 
 

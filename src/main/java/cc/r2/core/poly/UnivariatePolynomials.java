@@ -6,6 +6,8 @@ import cc.r2.core.poly.univar2.IUnivariatePolynomial;
 import cc.r2.core.poly.univar2.UnivariateGCD;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import java.lang.reflect.Array;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -74,6 +76,21 @@ public final class UnivariatePolynomials<Poly extends IUnivariatePolynomial<Poly
     @Override
     public Poly randomElement(RandomGenerator rnd) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Poly[][] createArray2d(int length) {
+        Poly[] array = createArray(0);
+        return (Poly[][]) Array.newInstance(array.getClass(), length);
+    }
+
+    @Override
+    public Poly[][] createArray2d(int m, int n) {
+        Poly[][] arr = createArray2d(m);
+        for (int i = 0; i < arr.length; i++)
+            arr[i] = createArray(n);
+        return arr;
     }
 
     @Override

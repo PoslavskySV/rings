@@ -1,6 +1,7 @@
 package cc.r2.core.poly;
 
 import cc.redberry.libdivide4j.FastDivision.*;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import static cc.redberry.libdivide4j.FastDivision.*;
 
@@ -55,6 +56,11 @@ public final class lIntegersModulo {
         return r + ((r >> 63)&modulus);
     }
 
+    /** Subtract mod operation */
+    public long divide(long a, long b) {
+        return multiply(a, reciprocal(b));
+    }
+
     /** Returns modular inverse of {@code val} */
     public long reciprocal(long val) {
         return LongArithmetics.modInverse(val, modulus);
@@ -70,6 +76,9 @@ public final class lIntegersModulo {
         return value <= modulus / 2 ? value : value - modulus;
     }
 
+    public IntegersModulo asDomain(){
+        return new IntegersModulo(modulus);
+    }
     /**
      * Returns {@code base} in a power of non-negative {@code e} modulo {@code magic.modulus}
      *
@@ -93,5 +102,30 @@ public final class lIntegersModulo {
                 return result;
             k2p = multiply(k2p, k2p);
         }
+    }
+
+    /**
+     * Returns a random element from this domain
+     *
+     * @param rnd the source of randomness
+     * @return random element from this domain
+     */
+    public long randomElement(RandomGenerator rnd) {
+        return modulus(rnd.nextLong());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        lIntegersModulo that = (lIntegersModulo) o;
+
+        return modulus == that.modulus;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (modulus^(modulus >>> 32));
     }
 }

@@ -278,6 +278,10 @@ public interface Domain<E> extends Comparator<E> {
         return (E[]) Array.newInstance(getOne().getClass(), length);
     }
 
+    E[][] createArray2d(int length);
+
+    E[][] createArray2d(int m, int n);
+
     /**
      * Creates array filled with zero elements
      *

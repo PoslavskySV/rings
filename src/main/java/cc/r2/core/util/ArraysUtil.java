@@ -1444,7 +1444,7 @@ public final class ArraysUtil {
     /**
      * Swaps x[a] with x[b].
      */
-    private static void swap(long x[], int a, int b) {
+    public static void swap(long x[], int a, int b) {
         long t = x[a];
         x[a] = x[b];
         x[b] = t;

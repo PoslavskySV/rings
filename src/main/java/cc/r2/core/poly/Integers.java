@@ -57,10 +57,5 @@ public final class Integers extends AbstractIntegers {
     }
 
     @Override
-    public BigInteger[] createArray(int length) {
-        return new BigInteger[length];
-    }
-
-    @Override
     public String toString() {return "Z";}
 }

@@ -137,7 +137,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
                     dividers = new MultivariatePolynomial[nDividers],
                     quotients = new MultivariatePolynomial[dividers.length];
 
-            MultivariatePolynomial<BigInteger> dividend = MultivariatePolynomial.zero(domain, ordering, nVariables);
+            MultivariatePolynomial<BigInteger> dividend = MultivariatePolynomial.zero(nVariables, domain, ordering);
             for (int j = 0; j < dividers.length; j++) {
                 dividers[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), domain, ordering, rnd);
                 if (dividers[j].isZero()) {

@@ -48,6 +48,13 @@ public final class IntegersModulo extends AbstractIntegers {
         return value.compareTo(modulus.shiftRight(1)) <= 0 ? value : value.subtract(modulus);
     }
 
+    /**
+     * Converts to a {@link lIntegersModulo }
+     */
+    public lIntegersModulo asLong() {
+        return new lIntegersModulo(modulus.longValueExact());
+    }
+
     @Override
     public BigInteger add(BigInteger a, BigInteger b) {
         BigInteger r = a.add(b), rm = r.subtract(modulus);
