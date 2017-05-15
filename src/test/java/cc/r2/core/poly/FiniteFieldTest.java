@@ -1,6 +1,6 @@
 package cc.r2.core.poly;
 
-import cc.r2.core.poly.univar2.*;
+import cc.r2.core.poly.univar.*;
 import org.junit.Assert;
 import org.junit.Test;
 

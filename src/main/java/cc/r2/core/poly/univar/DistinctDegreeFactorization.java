@@ -1,15 +1,14 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
 
 import java.util.ArrayList;
 
 import static cc.r2.core.poly.univar.DivisionWithRemainder.quotient;
+import static cc.r2.core.poly.univar.Factorization.ensureFiniteFieldDomain;
 import static cc.r2.core.poly.univar.ModularComposition.*;
 import static cc.r2.core.poly.univar.PolynomialArithmetics.polyMultiplyMod;
-import static cc.r2.core.poly.univar.PolynomialGCD.PolynomialGCD;
-import static cc.r2.core.poly.univar.SquareFreeFactorization.SquareFreeFactorization;
-import static cc.r2.core.poly.univar.lFactorDecomposition.oneFactor;
+import static cc.r2.core.poly.univar.UnivariateGCD.PolynomialGCD;
 
 
 /**
@@ -30,44 +29,44 @@ final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static lFactorDecomposition<lMutablePolynomialZp> DistinctDegreeFactorizationPlain(lMutablePolynomialZp poly) {
+    public static FactorDecomposition<lUnivariatePolynomialZp> DistinctDegreeFactorizationPlain(lUnivariatePolynomialZp poly) {
         if (poly.isConstant())
-            return oneFactor(poly.lc());
+            return FactorDecomposition.constantFactor(poly);
 
         long factor = poly.lc();
-        lMutablePolynomialZp base = poly.clone().monic();
-        lMutablePolynomialZp polyModulus = base.clone();
+        lUnivariatePolynomialZp base = poly.clone().monic();
+        lUnivariatePolynomialZp polyModulus = base.clone();
 
         if (base.degree <= 1)
-            return oneFactor(base, factor);
+            return FactorDecomposition.oneFactor(factor, base);
 
         if (base.isMonomial())
-            return oneFactor(base, factor);
+            return FactorDecomposition.oneFactor(factor, base);
 
-        DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
-        lMutablePolynomialZp exponent = lMutablePolynomialZp.createMonomial(poly.modulus, 1, 1);
-        lFactorDecomposition<lMutablePolynomialZp> result = new lFactorDecomposition<>();
+        InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
+        lUnivariatePolynomialZp exponent = poly.createMonomial(1);
+        FactorDecomposition<lUnivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.createOne());
         int i = 0;
         while (!base.isConstant()) {
             ++i;
-            exponent = PolynomialArithmetics.polyPowMod(exponent, poly.modulus, polyModulus, invMod, false);
-            lMutablePolynomialZp tmpExponent = exponent.clone();
+            exponent = PolynomialArithmetics.polyPowMod(exponent, poly.domain.modulus, polyModulus, invMod, false);
+            lUnivariatePolynomialZp tmpExponent = exponent.clone();
             tmpExponent.ensureCapacity(1);
-            tmpExponent.data[1] = base.subtractMod(tmpExponent.data[1], 1);
+            tmpExponent.data[1] = base.subtract(tmpExponent.data[1], 1);
             tmpExponent.fixDegree();
-            lMutablePolynomialZp gcd = PolynomialGCD(tmpExponent, base);
+            lUnivariatePolynomialZp gcd = PolynomialGCD(tmpExponent, base);
             if (!gcd.isConstant())
                 result.addFactor(gcd.monic(), i);
 
 
-            base = DivisionWithRemainder.quotient(base, gcd, false); //can safely destroy reused base
+            base = quotient(base, gcd, false); //can safely destroy reused base
             if (base.degree < 2 * (i + 1)) {// <- early termination
                 if (!base.isConstant())
                     result.addFactor(base.monic(), base.degree);
                 break;
             }
         }
-        return result.setNumericFactor(factor);
+        return result.setConstantFactor(poly.createConstant(factor));
     }
 
     /**
@@ -79,63 +78,63 @@ final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static lFactorDecomposition<lMutablePolynomialZp> DistinctDegreeFactorizationPrecomputedExponents(lMutablePolynomialZp poly) {
+    public static FactorDecomposition<lUnivariatePolynomialZp> DistinctDegreeFactorizationPrecomputedExponents(lUnivariatePolynomialZp poly) {
         if (poly.isConstant())
-            return oneFactor(poly.lc());
+            return FactorDecomposition.constantFactor(poly);
 
         long factor = poly.lc();
-        lMutablePolynomialZp base = poly.clone().monic();
-        lMutablePolynomialZp polyModulus = base.clone();
+        lUnivariatePolynomialZp base = poly.clone().monic();
+        lUnivariatePolynomialZp polyModulus = base.clone();
 
         if (base.degree <= 1)
-            return oneFactor(base, factor);
+            return FactorDecomposition.oneFactor(factor, base);
 
         if (base.isMonomial())
-            return oneFactor(base, factor);
+            return FactorDecomposition.oneFactor(factor, base);
 
-        DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
-        lMutablePolynomialZp exponent = lMutablePolynomialZp.createMonomial(poly.modulus, 1, 1);
-        lFactorDecomposition<lMutablePolynomialZp> result = new lFactorDecomposition<>();
+        InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
+        lUnivariatePolynomialZp exponent = poly.createMonomial(1);
+        FactorDecomposition<lUnivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.createOne());
 
-        ArrayList<lMutablePolynomialZp> xPowers = xPowers(polyModulus, invMod);
+        ArrayList<lUnivariatePolynomialZp> xPowers = xPowers(polyModulus, invMod);
         int i = 0;
         while (!base.isConstant()) {
             ++i;
             exponent = powModulusMod(exponent, polyModulus, invMod, xPowers);
-            lMutablePolynomialZp tmpExponent = exponent.clone();
+            lUnivariatePolynomialZp tmpExponent = exponent.clone();
             tmpExponent.ensureCapacity(1);
-            tmpExponent.data[1] = poly.subtractMod(tmpExponent.data[1], 1);
+            tmpExponent.data[1] = poly.subtract(tmpExponent.data[1], 1);
             tmpExponent.fixDegree();
-            lMutablePolynomialZp gcd = PolynomialGCD(tmpExponent, base);
+            lUnivariatePolynomialZp gcd = PolynomialGCD(tmpExponent, base);
             if (!gcd.isConstant())
                 result.addFactor(gcd.monic(), i);
 
-            base = DivisionWithRemainder.quotient(base, gcd, false); //can safely destroy reused base
+            base = quotient(base, gcd, false); //can safely destroy reused base
             if (base.degree < 2 * (i + 1)) {// <- early termination
                 if (!base.isConstant())
                     result.addFactor(base.monic(), base.degree);
                 break;
             }
         }
-        return result.setNumericFactor(factor);
+        return result.setConstantFactor(poly.createConstant(factor));
     }
 
     /** Shoup's parameter */
     private static final double SHOUP_BETA = 0.5;
 
     /** Baby step / giant step components for d.d.f. in Shoup's algorithm */
-    static <T extends IMutablePolynomialZp<T>> BabyGiantSteps<T> generateBabyGiantSteps(T poly) {
+    private static <Poly extends IUnivariatePolynomial<Poly>> BabyGiantSteps<Poly> generateBabyGiantSteps(Poly poly) {
         int n = poly.degree();
         int l = (int) Math.ceil(Math.pow(1.0 * n, SHOUP_BETA));
         int m = (int) Math.ceil(1.0 * n / 2 / l);
 
-        DivisionWithRemainder.InverseModMonomial<T> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
-        ArrayList<T> xPowers = xPowers(poly, invMod);
+        InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+        ArrayList<Poly> xPowers = xPowers(poly, invMod);
 
         //baby steps
-        ArrayList<T> babySteps = new ArrayList<>();
+        ArrayList<Poly> babySteps = new ArrayList<>();
         babySteps.add(poly.createMonomial(1)); // <- add x
-        T xPower = xPowers.get(1); // x^p mod poly
+        Poly xPower = xPowers.get(1); // x^p mod poly
         babySteps.add(xPower); // <- add x^p mod poly
         for (int i = 0; i <= l - 2; ++i)
             babySteps.add(xPower = powModulusMod(xPower, poly, invMod, xPowers));
@@ -143,12 +142,12 @@ final class DistinctDegreeFactorization {
         // <- xPower = x^(p^l) mod poly
 
         //giant steps
-        ArrayList<T> giantSteps = new ArrayList<>();
+        ArrayList<Poly> giantSteps = new ArrayList<>();
         giantSteps.add(poly.createMonomial(1)); // <- add x
         giantSteps.add(xPower);
-        T xPowerBig = xPower;
+        Poly xPowerBig = xPower;
         int tBrentKung = (int) Math.sqrt(poly.degree());
-        ArrayList<T> hPowers = polyPowers(xPowerBig, poly, invMod, tBrentKung);
+        ArrayList<Poly> hPowers = polyPowers(xPowerBig, poly, invMod, tBrentKung);
         for (int i = 0; i < m - 1; ++i)
             giantSteps.add(xPowerBig = compositionBrentKung(xPowerBig, hPowers, poly, invMod, tBrentKung));
 
@@ -156,9 +155,9 @@ final class DistinctDegreeFactorization {
     }
 
     /** Shoup's main gcd loop */
-    static <T extends IMutablePolynomialZp<T>> void DistinctDegreeFactorizationShoup(T poly,
-                                                                                     BabyGiantSteps<T> steps,
-                                                                                     FactorDecomposition<T> result) {
+    private static <T extends IUnivariatePolynomial<T>> void DistinctDegreeFactorizationShoup(T poly,
+                                                                                              BabyGiantSteps<T> steps,
+                                                                                              FactorDecomposition<T> result) {
         //generate each I_j
         ArrayList<T> iBases = new ArrayList<>();
         for (int j = 0; j <= steps.m; ++j) {
@@ -197,39 +196,23 @@ final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static lFactorDecomposition<lMutablePolynomialZp> DistinctDegreeFactorizationShoup(lMutablePolynomialZp poly) {
-        long factor = poly.lc();
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> DistinctDegreeFactorizationShoup(Poly poly) {
+        ensureFiniteFieldDomain(poly);
+        Poly factor = poly.lcAsPoly();
         poly = poly.clone().monic();
-        lFactorDecomposition<lMutablePolynomialZp> result = new lFactorDecomposition<>();
+        FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(factor);
         DistinctDegreeFactorizationShoup(poly, generateBabyGiantSteps(poly), result);
-        return result.setNumericFactor(factor);
-    }
-
-    /**
-     * Performs distinct-degree factorization for square-free polynomial {@code poly} using Victor Shoup's baby
-     * step / giant step algorithm.
-     * <p>
-     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
-     *
-     * @param poly the polynomial
-     * @return distinct-degree decomposition of {@code poly}
-     */
-    public static bFactorDecomposition<bMutablePolynomialZp> DistinctDegreeFactorizationShoup(bMutablePolynomialZp poly) {
-        BigInteger factor = poly.lc();
-        poly = poly.clone().monic();
-        bFactorDecomposition<bMutablePolynomialZp> result = new bFactorDecomposition<>();
-        DistinctDegreeFactorizationShoup(poly, generateBabyGiantSteps(poly), result);
-        return result.setNumericFactor(factor);
+        return result;
     }
 
     /** baby/giant steps for Shoup's d.d.f. algorithm */
-    static final class BabyGiantSteps<T extends IMutablePolynomialZp<T>> {
+    private static final class BabyGiantSteps<Poly extends IUnivariatePolynomial<Poly>> {
         final int l, m;
-        final ArrayList<T> babySteps;
-        final ArrayList<T> giantSteps;
-        final DivisionWithRemainder.InverseModMonomial<T> invMod;
+        final ArrayList<Poly> babySteps;
+        final ArrayList<Poly> giantSteps;
+        final InverseModMonomial<Poly> invMod;
 
-        public BabyGiantSteps(int l, int m, ArrayList<T> babySteps, ArrayList<T> giantSteps, DivisionWithRemainder.InverseModMonomial<T> invMod) {
+        public BabyGiantSteps(int l, int m, ArrayList<Poly> babySteps, ArrayList<Poly> giantSteps, InverseModMonomial<Poly> invMod) {
             this.l = l;
             this.m = m;
             this.babySteps = babySteps;
@@ -249,7 +232,7 @@ final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static lFactorDecomposition<lMutablePolynomialZp> DistinctDegreeFactorization(lMutablePolynomialZp poly) {
+    public static FactorDecomposition<lUnivariatePolynomialZp> DistinctDegreeFactorization(lUnivariatePolynomialZp poly) {
         if (poly.degree < DEGREE_SWITCH_TO_SHOUP)
             return DistinctDegreeFactorizationPrecomputedExponents(poly);
         else
@@ -264,24 +247,13 @@ final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static bFactorDecomposition<bMutablePolynomialZp> DistinctDegreeFactorization(bMutablePolynomialZp poly) {
-        return DistinctDegreeFactorizationShoup(poly);
-    }
-
-    /**
-     * Performs distinct-degree factorization for square-free polynomial {@code poly}.
-     * <p>
-     * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
-     *
-     * @param poly the polynomial
-     * @return distinct-degree decomposition of {@code poly}
-     */
     @SuppressWarnings("unchecked")
-    public static <T extends IMutablePolynomialZp<T>> FactorDecomposition<T> DistinctDegreeFactorization(T poly) {
-        if (poly instanceof lMutablePolynomialZp)
-            return (FactorDecomposition<T>) DistinctDegreeFactorization((lMutablePolynomialZp) poly);
+    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> DistinctDegreeFactorization(Poly poly) {
+        ensureFiniteFieldDomain(poly);
+        if (poly instanceof lUnivariatePolynomialZp)
+            return (FactorDecomposition<Poly>) DistinctDegreeFactorization((lUnivariatePolynomialZp) poly);
         else
-            return (FactorDecomposition<T>) DistinctDegreeFactorization((bMutablePolynomialZp) poly);
+            return DistinctDegreeFactorizationShoup(poly);
     }
 
 
@@ -291,20 +263,19 @@ final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return square-free and distinct-degree decomposition of {@code poly} modulo {@code modulus}
      */
-    @SuppressWarnings("ConstantConditions")
-    public static lFactorDecomposition<lMutablePolynomialZp> DistinctDegreeFactorizationComplete(lMutablePolynomialZp poly) {
-        lFactorDecomposition<lMutablePolynomialZp> squareFree = SquareFreeFactorization.SquareFreeFactorization(poly);
-        long overallFactor = squareFree.factor;
+    static FactorDecomposition<lUnivariatePolynomialZp> DistinctDegreeFactorizationComplete(lUnivariatePolynomialZp poly) {
+        FactorDecomposition<lUnivariatePolynomialZp> squareFree = SquareFreeFactorization.SquareFreeFactorization(poly);
+        long overallFactor = squareFree.constantFactor.lc();
 
-        lFactorDecomposition<lMutablePolynomialZp> result = new lFactorDecomposition<>();
+        FactorDecomposition<lUnivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.createOne());
         for (int i = squareFree.size() - 1; i >= 0; --i) {
-            lFactorDecomposition<lMutablePolynomialZp> dd = DistinctDegreeFactorization(squareFree.get(i));
+            FactorDecomposition<lUnivariatePolynomialZp> dd = DistinctDegreeFactorization(squareFree.get(i));
             int nFactors = dd.size();
             for (int j = nFactors - 1; j >= 0; --j)
                 result.addFactor(dd.get(j), squareFree.getExponent(i));
-            overallFactor = poly.multiplyMod(overallFactor, dd.factor);
+            overallFactor = poly.multiply(overallFactor, dd.constantFactor.lc());
         }
 
-        return result.setNumericFactor(overallFactor);
+        return result.setConstantFactor(poly.createConstant(overallFactor));
     }
 }

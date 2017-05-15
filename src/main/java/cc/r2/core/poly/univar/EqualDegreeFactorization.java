@@ -2,6 +2,8 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 
+import static cc.r2.core.poly.univar.Factorization.ensureFiniteFieldDomain;
+
 
 /**
  * Equal-degree factorization of univariate polynomials over finite fields with single-precision coefficients.
@@ -13,56 +15,28 @@ final class EqualDegreeFactorization {
     private EqualDegreeFactorization() {}
 
     @SuppressWarnings("unchecked")
-    private static <T extends IMutablePolynomialZp<T>> T randomMonicPoly(T factory) {
-        if (factory instanceof lMutablePolynomialZp) {
-            lMutablePolynomialZp fm = (lMutablePolynomialZp) factory;
-            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, PrivateRandom.getRandom());
+    private static <T extends IUnivariatePolynomial<T>> T randomMonicPoly(T factory) {
+        if (factory instanceof lUnivariatePolynomialZp) {
+            lUnivariatePolynomialZp fm = (lUnivariatePolynomialZp) factory;
+            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.domain.modulus, PrivateRandom.getRandom());
         } else {
-            bMutablePolynomialZp fm = (bMutablePolynomialZp) factory;
-            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.modulus, PrivateRandom.getRandom());
+            UnivariatePolynomial fm = (UnivariatePolynomial) factory;
+            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.domain, PrivateRandom.getRandom());
         }
     }
 
     /**
-     * Plain Cantor-Zassenhaus algorithm
-     *
-     * @param poly the monic polynomial
-     * @param d    distinct degree
-     * @return irreducible factor of {@code poly}
-     */
-    static <T extends IMutablePolynomialZp<T>> T CantorZassenhaus0(T poly, int d) {
-        assert poly.isMonic();
-
-        T a = randomMonicPoly(poly);
-        if (a.isConstant())
-            return null;
-
-        T gcd1 = PolynomialGCD.PolynomialGCD(a, poly);
-        if (!gcd1.isConstant())
-            return gcd1;
-
-        // (modulus^d - 1) / 2
-        BigInteger exponent = poly.modulusAsBigInt().pow(d).decrement().shiftRight(1);
-        T b = PolynomialArithmetics.polyPowMod(a, exponent, poly, DivisionWithRemainder.fastDivisionPreConditioning(poly), true);
-
-        T gcd2 = PolynomialGCD.PolynomialGCD(b.decrement(), poly);
-        if (!gcd2.isConstant() && !gcd2.equals(poly))
-            return gcd2;
-
-        return null;
-    }
-
-    /**
      * Plain Cantor-Zassenhaus algorithm implementation
      *
      * @param input the polynomial
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    static lFactorDecomposition<lMutablePolynomialZp> CantorZassenhaus(lMutablePolynomialZp input, int d) {
-        lFactorDecomposition<lMutablePolynomialZp> result = new lFactorDecomposition<>();
+    static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> CantorZassenhaus(Poly input, int d) {
+        ensureFiniteFieldDomain(input);
+        FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(input.lcAsPoly());
         CantorZassenhaus(input, d, result);
-        return result.setNumericFactor(input.lc());
+        return result;
     }
 
     /**
@@ -72,35 +46,7 @@ final class EqualDegreeFactorization {
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    static bFactorDecomposition<bMutablePolynomialZp> CantorZassenhaus(bMutablePolynomialZp input, int d) {
-        bFactorDecomposition<bMutablePolynomialZp> result = new bFactorDecomposition<>();
-        CantorZassenhaus(input, d, result);
-        return result.setNumericFactor(input.lc());
-    }
-
-    /**
-     * Plain Cantor-Zassenhaus algorithm implementation
-     *
-     * @param input the polynomial
-     * @param d     distinct degree
-     * @return irreducible factor of {@code poly}
-     */
-    @SuppressWarnings("unchecked")
-    static <T extends IMutablePolynomialZp<T>> FactorDecomposition<T> CantorZassenhaus(T input, int d) {
-        if (input instanceof lMutablePolynomialZp)
-            return (FactorDecomposition<T>) CantorZassenhaus((lMutablePolynomialZp) input, d);
-        else
-            return (FactorDecomposition<T>) CantorZassenhaus((bMutablePolynomialZp) input, d);
-    }
-
-    /**
-     * Plain Cantor-Zassenhaus algorithm implementation
-     *
-     * @param input the polynomial
-     * @param d     distinct degree
-     * @return irreducible factor of {@code poly}
-     */
-    private static <T extends IMutablePolynomialZp<T>> void CantorZassenhaus(T input, int d, FactorDecomposition<T> result) {
+    private static <T extends IUnivariatePolynomial<T>> void CantorZassenhaus(T input, int d, FactorDecomposition<T> result) {
         assert input.degree() % d == 0;
         int nFactors = input.degree() / d;
         if (input.degree() == 1 || nFactors == 1) {
@@ -130,5 +76,34 @@ final class EqualDegreeFactorization {
                 result.addFactor(factor.monic(), 1);
             poly = DivisionWithRemainder.quotient(poly, factor, false);
         }
+    }
+
+    /**
+     * Plain Cantor-Zassenhaus algorithm
+     *
+     * @param poly the monic polynomial
+     * @param d    distinct degree
+     * @return irreducible factor of {@code poly}
+     */
+    private static <Poly extends IUnivariatePolynomial<Poly>> Poly CantorZassenhaus0(Poly poly, int d) {
+        assert poly.isMonic();
+
+        Poly a = randomMonicPoly(poly);
+        if (a.isConstant())
+            return null;
+
+        Poly gcd1 = UnivariateGCD.PolynomialGCD(a, poly);
+        if (!gcd1.isConstant())
+            return gcd1;
+
+        // (modulus^d - 1) / 2
+        BigInteger exponent = poly.coefficientDomainCardinality().pow(d).decrement().shiftRight(1);
+        Poly b = PolynomialArithmetics.polyPowMod(a, exponent, poly, DivisionWithRemainder.fastDivisionPreConditioning(poly), true);
+
+        Poly gcd2 = UnivariateGCD.PolynomialGCD(b.decrement(), poly);
+        if (!gcd2.isConstant() && !gcd2.equals(poly))
+            return gcd2;
+
+        return null;
     }
 }

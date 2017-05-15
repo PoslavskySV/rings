@@ -3,7 +3,6 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.multivar.MultivariatePolynomial.DegreeVector;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
@@ -40,14 +39,12 @@ final class Parser {
         String[] vars = allVars.toArray(new String[allVars.size()]);
         Arrays.sort(vars);
 
-        E[] factor = domain.createArray(terms.size());
-        DegreeVector[] vectors = new DegreeVector[terms.size()];
-        for (int i = 0; i < terms.size(); i++) {
-            factor[i] = terms.get(i).factor;
-            vectors[i] = terms.get(i).degreeVector(vars);
-        }
+        @SuppressWarnings("unchecked")
+        MonomialTerm<E>[] mTerms = new MonomialTerm[terms.size()];
+        for (int i = 0; i < terms.size(); i++)
+            mTerms[i] = terms.get(i).monomialTerm(vars);
 
-        return MultivariatePolynomial.create(domain, ordering, vectors, factor);
+        return MultivariatePolynomial.create(mTerms[0].exponents.length, domain, ordering, mTerms);
     }
 
 
@@ -106,11 +103,11 @@ final class Parser {
             this.exponents = exponents;
         }
 
-        public DegreeVector degreeVector(String[] map) {
+        MonomialTerm<E> monomialTerm(String[] map) {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
                 degrees[Arrays.binarySearch(map, variables[i])] = exponents[i];
-            return new DegreeVector(degrees);
+            return new MonomialTerm<E>(degrees, factor);
         }
 
         @Override

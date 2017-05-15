@@ -4,7 +4,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.LongArithmetics;
 
-import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
+import static cc.r2.core.poly.univar.DivisionWithRemainder.remainder;
 
 /**
  * Helper methods for polynomial arithmetics.
@@ -24,10 +24,26 @@ public final class PolynomialArithmetics {
      *                    {@code dividend} and the original {@code dividend} data will be lost
      * @return {@code dividend % polyModulus}
      */
-    public static <T extends IMutablePolynomialZp<T>> T polyMod(T dividend, T polyModulus, boolean copy) {
+    public static <T extends IUnivariatePolynomial<T>> T polyMod(T dividend, T polyModulus, boolean copy) {
         return remainder(dividend, polyModulus, copy);
     }
 
+    /**
+     * Returns the remainder of dividing {@code dividend} by {@code polyModulus} using fast algorithm for
+     * pre-conditioned modulus.
+     *
+     * @param dividend    the polynomial
+     * @param polyModulus the modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
+     * @param copy        whether to clone {@code dividend}; if not, the result will be placed directly to
+     *                    {@code dividend} and the original {@code dividend} data will be lost
+     * @return {@code dividend % polyModulus}
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polyMod(T dividend, T polyModulus,
+                                                                 DivisionWithRemainder.InverseModMonomial<T> invMod, boolean copy) {
+        return DivisionWithRemainder.remainderFast(dividend, polyModulus, invMod, copy);
+    }
 
     /**
      * Returns the remainder of dividing the product {@code (m1 * m2)} by {@code polyModulus}.
@@ -39,25 +55,8 @@ public final class PolynomialArithmetics {
      *                    of the first multiplier {@code m1} and the original data of {@code m1} will be lost
      * @return {@code (m1 * m2) % polyModulus}
      */
-    public static <T extends IMutablePolynomialZp<T>> T polyMultiplyMod(T m1, T m2, T polyModulus, boolean copy) {
+    public static <T extends IUnivariatePolynomial<T>> T polyMultiplyMod(T m1, T m2, T polyModulus, boolean copy) {
         return polyMod((copy ? m1.clone() : m1).multiply(m2), polyModulus, false);
-    }
-
-    /**
-     * Returns the remainder of dividing {@code dividend} by {@code polyModulus} using fast algorithm for
-     * pre-conditioned modulus.
-     *
-     * @param dividend    the polynomial
-     * @param polyModulus the modulus
-     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
-     * @param copy        whether to clone {@code dividend}; if not, the result will be placed directly to
-     *                    {@code dividend} and the original {@code dividend} data will be lost
-     * @return {@code dividend % polyModulus}
-     * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
-     */
-    public static <T extends IMutablePolynomialZp<T>> T polyMod(T dividend, T polyModulus,
-                                                                DivisionWithRemainder.InverseModMonomial<T> invMod, boolean copy) {
-        return DivisionWithRemainder.remainderFast(dividend, polyModulus, invMod, copy);
     }
 
     /**
@@ -67,16 +66,113 @@ public final class PolynomialArithmetics {
      * @param m1          the first multiplier
      * @param m2          the second multiplier
      * @param polyModulus the modulus
-     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
      * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
      *                    of the first multiplier {@code m1} and the original data of {@code m1} will be lost
      * @return {@code (m1 * m2) % polyModulus}
-     * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
      */
-    public static <T extends IMutablePolynomialZp<T>> T polyMultiplyMod(T m1, T m2,
-                                                                        T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
-                                                                        boolean copy) {
+    public static <T extends IUnivariatePolynomial<T>> T polyMultiplyMod(T m1, T m2,
+                                                                         T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
+                                                                         boolean copy) {
         return polyMod((copy ? m1.clone() : m1).multiply(m2), polyModulus, invMod, false);
+    }
+
+    /**
+     * Returns the remainder of dividing the sum {@code (m1 + m2)} by {@code polyModulus} using fast algorithm for
+     * pre-conditioned modulus.
+     *
+     * @param m1          the first multiplier
+     * @param m2          the second multiplier
+     * @param polyModulus the modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
+     * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
+     *                    of the first multiplier {@code m1} and the original data of {@code m1} will be lost
+     * @return {@code (m1 + m2) % polyModulus}
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polyAddMod(T m1, T m2,
+                                                                    T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
+                                                                    boolean copy) {
+        return polyMod((copy ? m1.clone() : m1).add(m2), polyModulus, invMod, false);
+    }
+
+    /**
+     * Returns the remainder of dividing the sum {@code (m1 + m2)} by {@code polyModulus}.
+     *
+     * @param m1          the first multiplier
+     * @param m2          the second multiplier
+     * @param polyModulus the modulus
+     * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
+     *                    of the first multiplier {@code m1} and the original data of {@code m1} will be lost
+     * @return {@code (m1 + m2) % polyModulus}
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polyAddMod(T m1, T m2, T polyModulus, boolean copy) {
+        return polyMod((copy ? m1.clone() : m1).add(m2), polyModulus, false);
+    }
+
+    /**
+     * Returns the remainder of dividing the difference {@code (m1 - m2)} by {@code polyModulus} using fast algorithm for
+     * pre-conditioned modulus.
+     *
+     * @param m1          the first multiplier
+     * @param m2          the second multiplier
+     * @param polyModulus the modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
+     * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
+     *                    of the first multiplier {@code m1} and the original data of {@code m1} will be lost
+     * @return {@code (m1 - m2) % polyModulus}
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polySubtractMod(T m1, T m2,
+                                                                         T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
+                                                                         boolean copy) {
+        return polyMod((copy ? m1.clone() : m1).subtract(m2), polyModulus, invMod, false);
+    }
+
+    /**
+     * Returns the remainder of dividing the difference {@code (m1 - m2)} by {@code polyModulus}.
+     *
+     * @param m1          the first multiplier
+     * @param m2          the second multiplier
+     * @param polyModulus the modulus
+     * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
+     *                    of the first multiplier {@code m1} and the original data of {@code m1} will be lost
+     * @return {@code (m1 - m2) % polyModulus}
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polySubtractMod(T m1, T m2, T polyModulus, boolean copy) {
+        return polyMod((copy ? m1.clone() : m1).subtract(m2), polyModulus, false);
+    }
+
+    /**
+     * Returns the remainder of dividing the negated poly {@code -m1} by {@code polyModulus} using fast algorithm for
+     * pre-conditioned modulus.
+     *
+     * @param m1          the polynomial
+     * @param polyModulus the modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
+     * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
+     *                    of {@code m1} and the original data of {@code m1} will be lost
+     * @return {@code (-m1) % polyModulus}
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polyNegateMod(T m1,
+                                                                       T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
+                                                                       boolean copy) {
+        return polyMod((copy ? m1.clone() : m1).negate(), polyModulus, invMod, false);
+    }
+
+    /**
+     * Returns the remainder of dividing the negated poly {@code -m1} by {@code polyModulus}.
+     *
+     * @param m1          the polynomial
+     * @param polyModulus the modulus
+     * @param copy        whether to clone {@code m1}; if not, the result will be placed directly to the data structure
+     *                    of {@code m1} and the original data of {@code m1} will be lost
+     * @return {@code (-m1) % polyModulus}
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polyNegateMod(T m1, T polyModulus, boolean copy) {
+        return polyMod((copy ? m1.clone() : m1).negate(), polyModulus, false);
     }
 
     /**
@@ -87,7 +183,7 @@ public final class PolynomialArithmetics {
      * @param copy     whether to clone {@code base}; if not the data of {@code base} will be lost
      * @return {@code base} in a power of {@code e}
      */
-    public static <T extends IMutablePolynomial<T>> T polyPow(final T base, long exponent, boolean copy) {
+    public static <T extends IUnivariatePolynomial<T>> T polyPow(final T base, long exponent, boolean copy) {
         if (exponent < 0)
             throw new IllegalArgumentException();
 
@@ -112,9 +208,9 @@ public final class PolynomialArithmetics {
      * @param copy        whether to clone {@code base}; if not the data of {@code base} will be lost
      * @return {@code base} in a power of {@code e} modulo {@code polyModulus}
      */
-    public static <T extends IMutablePolynomialZp<T>> T polyPowMod(final T base, long exponent,
-                                                                   T polyModulus,
-                                                                   boolean copy) {
+    public static <T extends IUnivariatePolynomial<T>> T polyPowMod(final T base, long exponent,
+                                                                    T polyModulus,
+                                                                    boolean copy) {
         return polyPowMod(base, exponent, polyModulus, DivisionWithRemainder.fastDivisionPreConditioning(polyModulus), copy);
     }
 
@@ -124,14 +220,14 @@ public final class PolynomialArithmetics {
      * @param base        the base
      * @param exponent    the non-negative exponent
      * @param polyModulus the modulus
-     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
      * @param copy        whether to clone {@code base}; if not the data of {@code base} will be lost
      * @return {@code base} in a power of {@code e} modulo {@code polyModulus}
-     * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
      */
-    public static <T extends IMutablePolynomialZp<T>> T polyPowMod(final T base, long exponent,
-                                                                   T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
-                                                                   boolean copy) {
+    public static <T extends IUnivariatePolynomial<T>> T polyPowMod(final T base, long exponent,
+                                                                    T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
+                                                                    boolean copy) {
         if (exponent < 0)
             throw new IllegalArgumentException();
         if (exponent == 0)
@@ -155,14 +251,14 @@ public final class PolynomialArithmetics {
      * @param base        the base
      * @param exponent    the non-negative exponent
      * @param polyModulus the modulus
-     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
      * @param copy        whether to clone {@code base}; if not the data of {@code base} will be lost
      * @return {@code base} in a power of {@code e} modulo {@code polyModulus}
-     * @see DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
      */
-    public static <T extends IMutablePolynomialZp<T>> T polyPowMod(final T base, BigInteger exponent,
-                                                                   T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
-                                                                   boolean copy) {
+    public static <T extends IUnivariatePolynomial<T>> T polyPowMod(final T base, BigInteger exponent,
+                                                                    T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
+                                                                    boolean copy) {
         if (exponent.signum() < 0)
             throw new IllegalArgumentException();
         if (exponent.isZero())
@@ -189,12 +285,12 @@ public final class PolynomialArithmetics {
      *
      * @param exponent    the monomial exponent
      * @param polyModulus the modulus
-     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
      * @return {@code x^exponent mod polyModulus}
      */
-    public static <T extends IMutablePolynomialZp<T>> T createMonomialMod(long exponent,
-                                                                          T polyModulus,
-                                                                          DivisionWithRemainder.InverseModMonomial<T> invMod) {
+    public static <T extends IUnivariatePolynomial<T>> T createMonomialMod(long exponent,
+                                                                           T polyModulus,
+                                                                           DivisionWithRemainder.InverseModMonomial<T> invMod) {
         if (exponent < 0)
             throw new IllegalArgumentException("Negative exponent: " + exponent);
 
@@ -212,12 +308,12 @@ public final class PolynomialArithmetics {
      *
      * @param exponent    the monomial exponent
      * @param polyModulus the modulus
-     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IMutablePolynomial)} )})
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
      * @return {@code x^exponent mod polyModulus}
      */
-    public static <T extends IMutablePolynomialZp<T>> T createMonomialMod(BigInteger exponent,
-                                                                          T polyModulus,
-                                                                          DivisionWithRemainder.InverseModMonomial<T> invMod) {
+    public static <T extends IUnivariatePolynomial<T>> T createMonomialMod(BigInteger exponent,
+                                                                           T polyModulus,
+                                                                           DivisionWithRemainder.InverseModMonomial<T> invMod) {
         if (exponent.signum() < 0)
             throw new IllegalArgumentException("Negative exponent: " + exponent);
 
@@ -231,12 +327,12 @@ public final class PolynomialArithmetics {
     }
 
     /** plain create and reduce */
-    static <T extends IMutablePolynomialZp<T>> T smallMonomial(long exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
+    static <T extends IUnivariatePolynomial<T>> T smallMonomial(long exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
         return PolynomialArithmetics.polyMod(polyModulus.createMonomial(LongArithmetics.safeToInt(exponent)), polyModulus, invMod, false);
     }
 
     /** repeated squaring */
-    static <T extends IMutablePolynomialZp<T>> T largeMonomial(long exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
+    static <T extends IUnivariatePolynomial<T>> T largeMonomial(long exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
         T base = PolynomialArithmetics.polyMod(
                 polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
                 polyModulus, invMod, false);
@@ -255,7 +351,7 @@ public final class PolynomialArithmetics {
     }
 
     /** repeated squaring */
-    static <T extends IMutablePolynomialZp<T>> T largeMonomial(BigInteger exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
+    static <T extends IUnivariatePolynomial<T>> T largeMonomial(BigInteger exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
         T base = PolynomialArithmetics.polyMod(
                 polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
                 polyModulus, invMod, false);

@@ -1,9 +1,9 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.univar2.DivisionWithRemainder;
-import cc.r2.core.poly.univar2.IUnivariatePolynomial;
-import cc.r2.core.poly.univar2.UnivariateGCD;
+import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.univar.IUnivariatePolynomial;
+import cc.r2.core.poly.univar.UnivariateGCD;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;

@@ -1,10 +1,9 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
-import cc.r2.core.test.AbstractTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
@@ -13,8 +12,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import static cc.r2.core.poly.Integers.Integers;
+import static cc.r2.core.poly.multivar.MonomialTerm.*;
+import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
 import static cc.r2.core.poly.multivar.MultivariateReduction.divideAndRemainder;
-import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static org.junit.Assert.*;
 
@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariateReductionTest extends AbstractTest {
+public class MultivariateReductionTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
         String[] vars = {"a", "b"};
@@ -137,7 +137,7 @@ public class MultivariateReductionTest extends AbstractTest {
                     dividers = new MultivariatePolynomial[nDividers],
                     quotients = new MultivariatePolynomial[dividers.length];
 
-            MultivariatePolynomial<BigInteger> dividend = MultivariatePolynomial.zero(domain, ordering, nVariables);
+            MultivariatePolynomial<BigInteger> dividend = MultivariatePolynomial.zero(nVariables, domain, ordering);
             for (int j = 0; j < dividers.length; j++) {
                 dividers[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), domain, ordering, rnd);
                 if (dividers[j].isZero()) {

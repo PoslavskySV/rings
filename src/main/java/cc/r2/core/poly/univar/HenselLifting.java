@@ -1,6 +1,8 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Integers;
+import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.LongArithmetics;
 
 import java.util.ArrayList;
@@ -8,9 +10,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static cc.r2.core.poly.univar.DivisionWithRemainder.divideAndRemainder;
-import static cc.r2.core.poly.LongArithmetics.safeMultiply;
 
 /**
  * Methods for univariate Hensel lifting.
@@ -41,7 +40,7 @@ public final class HenselLifting {
      *
      * @param <PolyZp> Zp[x] polynomial type
      */
-    public interface LiftableQuintet<PolyZp extends IMutablePolynomialZp<PolyZp>> {
+    public interface LiftableQuintet<PolyZp extends IUnivariatePolynomial<PolyZp>> {
         /**
          * Returns initial Z[x] polynomial modulo lifted modulus
          *
@@ -121,14 +120,30 @@ public final class HenselLifting {
      * @return quadratic Hensel lift
      */
     public static lQuadraticLift createQuadraticLift(long modulus,
-                                                     lMutablePolynomialZ poly,
-                                                     lMutablePolynomialZp aFactor,
-                                                     lMutablePolynomialZp bFactor) {
+                                                     lUnivariatePolynomialZ poly,
+                                                     lUnivariatePolynomialZp aFactor,
+                                                     lUnivariatePolynomialZp bFactor) {
         bFactor = ensureMonic(bFactor);
-        if (aFactor.mod(poly.lc()) != aFactor.lc())
+        if (aFactor.domain.modulus(poly.lc()) != aFactor.lc())
             aFactor = aFactor.clone().monic(poly.lc());
-        lMutablePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
+        lUnivariatePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
         return new lQuadraticLift(modulus, poly, aFactor, bFactor, xgcd[1], xgcd[2]);
+    }
+
+    private static void ensureIntegersDomain(UnivariatePolynomial<BigInteger> poly) {
+        if (poly.domain != Integers.Integers)
+            throw new IllegalArgumentException("Not an integers domain domain");
+    }
+
+    private static void ensureModularDomain(UnivariatePolynomial<BigInteger> poly) {
+        if (!(poly.domain instanceof IntegersModulo))
+            throw new IllegalArgumentException("Not a modular domain");
+    }
+
+    private static void ensureInputCorrect(UnivariatePolynomial<BigInteger> poly, UnivariatePolynomial<BigInteger> aFactor, UnivariatePolynomial<BigInteger> bFactor) {
+        ensureIntegersDomain(poly);
+        ensureModularDomain(aFactor);
+        ensureModularDomain(bFactor);
     }
 
     /**
@@ -141,13 +156,15 @@ public final class HenselLifting {
      * @return quadratic Hensel lift
      */
     public static bQuadraticLift createQuadraticLift(BigInteger modulus,
-                                                     bMutablePolynomialZ poly,
-                                                     bMutablePolynomialZp aFactor,
-                                                     bMutablePolynomialZp bFactor) {
+                                                     UnivariatePolynomial<BigInteger> poly,
+                                                     UnivariatePolynomial<BigInteger> aFactor,
+                                                     UnivariatePolynomial<BigInteger> bFactor) {
+        ensureInputCorrect(poly, aFactor, bFactor);
         bFactor = ensureMonic(bFactor);
-        if (!aFactor.mod(poly.lc()).equals(aFactor.lc()))
+        IntegersModulo domain = (IntegersModulo) aFactor.domain;
+        if (!domain.valueOf(poly.lc()).equals(aFactor.lc()))
             aFactor = aFactor.clone().monic(poly.lc());
-        bMutablePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
+        UnivariatePolynomial<BigInteger>[] xgcd = monicExtendedEuclid(aFactor, bFactor);
         return new bQuadraticLift(modulus, poly, aFactor, bFactor, xgcd[1], xgcd[2]);
     }
 
@@ -161,14 +178,15 @@ public final class HenselLifting {
      * @return quadratic Hensel lift
      */
     public static bQuadraticLift createQuadraticLift(BigInteger modulus,
-                                                     bMutablePolynomialZ poly,
-                                                     lMutablePolynomialZp aFactor,
-                                                     lMutablePolynomialZp bFactor) {
+                                                     UnivariatePolynomial<BigInteger> poly,
+                                                     lUnivariatePolynomialZp aFactor,
+                                                     lUnivariatePolynomialZp bFactor) {
+        ensureIntegersDomain(poly);
         bFactor = ensureMonic(bFactor);
         long lc = poly.lc().mod(modulus).longValueExact();
         if (lc != aFactor.lc())
             aFactor = aFactor.clone().monic(lc);
-        lMutablePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
+        lUnivariatePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
         return new bQuadraticLift(modulus, poly, aFactor.toBigPoly(), bFactor.toBigPoly(), xgcd[1].toBigPoly(), xgcd[2].toBigPoly());
     }
 
@@ -182,9 +200,9 @@ public final class HenselLifting {
      * @return linear Hensel lift
      */
     public static lLinearLift createLinearLift(BigInteger modulus,
-                                               lMutablePolynomialZ poly,
-                                               lMutablePolynomialZp aFactor,
-                                               lMutablePolynomialZp bFactor) {
+                                               lUnivariatePolynomialZ poly,
+                                               lUnivariatePolynomialZp aFactor,
+                                               lUnivariatePolynomialZp bFactor) {
         return createLinearLift(modulus.longValueExact(), poly, aFactor, bFactor);
     }
 
@@ -198,9 +216,9 @@ public final class HenselLifting {
      * @return linear Hensel lift
      */
     public static bLinearLift createLinearLift(BigInteger modulus,
-                                               bMutablePolynomialZ poly,
-                                               lMutablePolynomialZp aFactor,
-                                               lMutablePolynomialZp bFactor) {
+                                               UnivariatePolynomial<BigInteger> poly,
+                                               lUnivariatePolynomialZp aFactor,
+                                               lUnivariatePolynomialZp bFactor) {
         return createLinearLift(modulus.longValueExact(), poly, aFactor, bFactor);
     }
 
@@ -214,14 +232,14 @@ public final class HenselLifting {
      * @return linear Hensel lift
      */
     public static lLinearLift createLinearLift(long modulus,
-                                               lMutablePolynomialZ poly,
-                                               lMutablePolynomialZp aFactor,
-                                               lMutablePolynomialZp bFactor) {
+                                               lUnivariatePolynomialZ poly,
+                                               lUnivariatePolynomialZp aFactor,
+                                               lUnivariatePolynomialZp bFactor) {
         bFactor = ensureMonic(bFactor);
-        if (aFactor.mod(poly.lc()) != aFactor.lc())
+        if (aFactor.domain.modulus(poly.lc()) != aFactor.lc())
             aFactor = aFactor.clone().monic(poly.lc());
 
-        lMutablePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
+        lUnivariatePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
         return new lLinearLift(modulus, poly, aFactor, bFactor, xgcd[1], xgcd[2]);
     }
 
@@ -235,22 +253,23 @@ public final class HenselLifting {
      * @return linear Hensel lift
      */
     public static bLinearLift createLinearLift(long modulus,
-                                               bMutablePolynomialZ poly,
-                                               lMutablePolynomialZp aFactor,
-                                               lMutablePolynomialZp bFactor) {
+                                               UnivariatePolynomial<BigInteger> poly,
+                                               lUnivariatePolynomialZp aFactor,
+                                               lUnivariatePolynomialZp bFactor) {
+        ensureIntegersDomain(poly);
         BigInteger bModulus = BigInteger.valueOf(modulus);
         bFactor = ensureMonic(bFactor);
         long lc = poly.lc().mod(bModulus).longValueExact();
         if (lc != aFactor.lc())
             aFactor = aFactor.clone().monic(lc);
 
-        lMutablePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
+        lUnivariatePolynomialZp[] xgcd = monicExtendedEuclid(aFactor, bFactor);
         return new bLinearLift(bModulus, poly, aFactor, bFactor, xgcd[1], xgcd[2]);
     }
 
     /** runs xgcd for coprime polynomials ensuring that gcd is 1 (not another constant) */
-    private static <PolyZp extends IMutablePolynomialZp<PolyZp>> PolyZp[] monicExtendedEuclid(PolyZp a, PolyZp b) {
-        PolyZp[] xgcd = PolynomialGCD.ExtendedEuclid(a, b);
+    private static <PolyZp extends IUnivariatePolynomial<PolyZp>> PolyZp[] monicExtendedEuclid(PolyZp a, PolyZp b) {
+        PolyZp[] xgcd = UnivariateGCD.ExtendedEuclid(a, b);
         if (xgcd[0].isOne())
             return xgcd;
 
@@ -264,7 +283,7 @@ public final class HenselLifting {
         return xgcd;
     }
 
-    private static <PolyZp extends IMutablePolynomialZp<PolyZp>> PolyZp ensureMonic(PolyZp p) {
+    private static <PolyZp extends IUnivariatePolynomial<PolyZp>> PolyZp ensureMonic(PolyZp p) {
         return p.isMonic() ? p : p.clone().monic();
     }
 
@@ -288,11 +307,11 @@ public final class HenselLifting {
      * @param quadratic      whether to use quadratic of linear lift
      * @return factorization of {@code poly.modulus(finalModulus) } with some {@code finalModulus} greater than {@code desiredBound}
      */
-    public static List<lMutablePolynomialZp> liftFactorization(long modulus,
-                                                               long desiredBound,
-                                                               lMutablePolynomialZ poly,
-                                                               List<lMutablePolynomialZp> modularFactors,
-                                                               boolean quadratic) {
+    public static List<lUnivariatePolynomialZp> liftFactorization(long modulus,
+                                                                  long desiredBound,
+                                                                  lUnivariatePolynomialZ poly,
+                                                                  List<lUnivariatePolynomialZp> modularFactors,
+                                                                  boolean quadratic) {
         long[] im = nIterations(modulus, desiredBound, quadratic);
         return liftFactorization(modulus, im[1], (int) im[0], poly, modularFactors, quadratic);
     }
@@ -308,12 +327,12 @@ public final class HenselLifting {
      * @param quadratic      whether to use quadratic of linear lift
      * @return factorization of {@code poly.modulus(finalModulus) }
      */
-    public static List<lMutablePolynomialZp> liftFactorization(long modulus,
-                                                               long finalModulus,
-                                                               int nIterations,
-                                                               lMutablePolynomialZ poly,
-                                                               List<lMutablePolynomialZp> modularFactors,
-                                                               boolean quadratic) {
+    public static List<lUnivariatePolynomialZp> liftFactorization(long modulus,
+                                                                  long finalModulus,
+                                                                  int nIterations,
+                                                                  lUnivariatePolynomialZ poly,
+                                                                  List<lUnivariatePolynomialZp> modularFactors,
+                                                                  boolean quadratic) {
         assert nIterations > 0;
 
         // for the future:
@@ -323,8 +342,8 @@ public final class HenselLifting {
         if (modularFactors.size() == 1)
             return Collections.singletonList(poly.modulus(finalModulus, true).monic());
 
-        lMutablePolynomialZp factory = modularFactors.get(0);
-        lMutablePolynomialZp
+        lUnivariatePolynomialZp factory = modularFactors.get(0);
+        lUnivariatePolynomialZp
                 aFactor = factory.createConstant(poly.lc()),
                 bFactor = factory.createOne();
 
@@ -334,32 +353,32 @@ public final class HenselLifting {
         for (; i < modularFactors.size(); ++i)
             bFactor = bFactor.multiply(modularFactors.get(i));
 
-        LiftableQuintet<lMutablePolynomialZp> hensel = quadratic
+        LiftableQuintet<lUnivariatePolynomialZp> hensel = quadratic
                 ? createQuadraticLift(modulus, poly, aFactor, bFactor)
                 : createLinearLift(modulus, poly, aFactor, bFactor);
         hensel.lift(nIterations);
 
-        lMutablePolynomialZp aFactorRaised = hensel.aFactorMod();
-        lMutablePolynomialZp bFactorRaised = hensel.bFactorMod();
+        lUnivariatePolynomialZp aFactorRaised = hensel.aFactorMod();
+        lUnivariatePolynomialZp bFactorRaised = hensel.bFactorMod();
 
-        ArrayList<lMutablePolynomialZp> result = new ArrayList<>();
-        result.addAll(liftFactorization(modulus, finalModulus, nIterations, aFactorRaised.normalSymmetricForm(), modularFactors.subList(0, nHalf), quadratic));
-        result.addAll(liftFactorization(modulus, finalModulus, nIterations, bFactorRaised.normalSymmetricForm(), modularFactors.subList(nHalf, modularFactors.size()), quadratic));
+        ArrayList<lUnivariatePolynomialZp> result = new ArrayList<>();
+        result.addAll(liftFactorization(modulus, finalModulus, nIterations, aFactorRaised.asPolyZSymmetric(), modularFactors.subList(0, nHalf), quadratic));
+        result.addAll(liftFactorization(modulus, finalModulus, nIterations, bFactorRaised.asPolyZSymmetric(), modularFactors.subList(nHalf, modularFactors.size()), quadratic));
         return result;
     }
 
-    interface LiftFactory<PolyZp extends IMutablePolynomialZp<PolyZp>> {
-        LiftableQuintet<bMutablePolynomialZp> createLift(BigInteger modulus, bMutablePolynomialZ polyZ, PolyZp aFactor, PolyZp bFactor);
+    interface LiftFactory<PolyZp extends IUnivariatePolynomial<PolyZp>> {
+        LiftableQuintet<UnivariatePolynomial<BigInteger>> createLift(BigInteger modulus, UnivariatePolynomial<BigInteger> polyZ, PolyZp aFactor, PolyZp bFactor);
     }
 
     /** actual multifactor Hensel lifting implementation **/
-    static <PolyZp extends IMutablePolynomialZp<PolyZp>>
-    List<bMutablePolynomialZp> liftFactorization0(BigInteger modulus,
-                                                  BigInteger finalModulus,
-                                                  int nIterations,
-                                                  bMutablePolynomialZ poly,
-                                                  List<PolyZp> modularFactors,
-                                                  LiftFactory<PolyZp> liftFactory) {
+    static <PolyZp extends IUnivariatePolynomial<PolyZp>>
+    List<UnivariatePolynomial<BigInteger>> liftFactorization0(BigInteger modulus,
+                                                              BigInteger finalModulus,
+                                                              int nIterations,
+                                                              UnivariatePolynomial<BigInteger> poly,
+                                                              List<PolyZp> modularFactors,
+                                                              LiftFactory<PolyZp> liftFactory) {
         assert nIterations > 0;
 
         // for the future:
@@ -367,7 +386,7 @@ public final class HenselLifting {
         // for now the major part of execution time (~99%) is spent in actual lifting step, so irrelevant
 
         if (modularFactors.size() == 1)
-            return Collections.singletonList(poly.modulus(finalModulus, true).monic());
+            return Collections.singletonList(poly.setDomain(new IntegersModulo(finalModulus)).monic());
 
         PolyZp factory = modularFactors.get(0);
         PolyZp
@@ -380,15 +399,15 @@ public final class HenselLifting {
         for (; i < modularFactors.size(); ++i)
             bFactor = bFactor.multiply(modularFactors.get(i));
 
-        LiftableQuintet<bMutablePolynomialZp> hensel = liftFactory.createLift(modulus, poly, aFactor, bFactor);
+        LiftableQuintet<UnivariatePolynomial<BigInteger>> hensel = liftFactory.createLift(modulus, poly, aFactor, bFactor);
         hensel.lift(nIterations);
 
-        bMutablePolynomialZp aFactorRaised = hensel.aFactorMod();
-        bMutablePolynomialZp bFactorRaised = hensel.bFactorMod();
+        UnivariatePolynomial<BigInteger> aFactorRaised = hensel.aFactorMod();
+        UnivariatePolynomial<BigInteger> bFactorRaised = hensel.bFactorMod();
 
-        ArrayList<bMutablePolynomialZp> result = new ArrayList<>();
-        result.addAll(liftFactorization0(modulus, finalModulus, nIterations, aFactorRaised.normalSymmetricForm(), modularFactors.subList(0, nHalf), liftFactory));
-        result.addAll(liftFactorization0(modulus, finalModulus, nIterations, bFactorRaised.normalSymmetricForm(), modularFactors.subList(nHalf, modularFactors.size()), liftFactory));
+        ArrayList<UnivariatePolynomial<BigInteger>> result = new ArrayList<>();
+        result.addAll(liftFactorization0(modulus, finalModulus, nIterations, UnivariatePolynomial.asPolyZSymmetric(aFactorRaised), modularFactors.subList(0, nHalf), liftFactory));
+        result.addAll(liftFactorization0(modulus, finalModulus, nIterations, UnivariatePolynomial.asPolyZSymmetric(bFactorRaised), modularFactors.subList(nHalf, modularFactors.size()), liftFactory));
         return result;
     }
 
@@ -423,17 +442,17 @@ public final class HenselLifting {
      * @param quadratic      whether to use quadratic of linear lift
      * @return factorization of {@code poly.modulus(finalModulus) } with some {@code finalModulus} greater than {@code desiredBound}
      */
-    public static List<bMutablePolynomialZp> liftFactorization(BigInteger modulus,
-                                                               BigInteger desiredBound,
-                                                               bMutablePolynomialZ poly,
-                                                               List<lMutablePolynomialZp> modularFactors,
-                                                               boolean quadratic) {
+    public static List<UnivariatePolynomial<BigInteger>> liftFactorization(BigInteger modulus,
+                                                                           BigInteger desiredBound,
+                                                                           UnivariatePolynomial<BigInteger> poly,
+                                                                           List<lUnivariatePolynomialZp> modularFactors,
+                                                                           boolean quadratic) {
         if (!quadratic && !modulus.isLong())
             throw new IllegalArgumentException("Only max 64-bit modulus for linear lift allowed.");
         LiftingInfo im = nIterations(modulus, desiredBound, quadratic);
         if (im.nIterations == 0)
-            return modularFactors.stream().map(lMutablePolynomialZp::toBigPoly).collect(Collectors.toList());
-        LiftFactory<lMutablePolynomialZp> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
+            return modularFactors.stream().map(lUnivariatePolynomialZp::toBigPoly).collect(Collectors.toList());
+        LiftFactory<lUnivariatePolynomialZp> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
         return liftFactorization0(modulus, im.finalModulus, im.nIterations, poly, modularFactors, factory);
     }
 
@@ -446,10 +465,10 @@ public final class HenselLifting {
      * @param modularFactors factorization of {@code poly.modulus(modulus)}
      * @return factorization of {@code poly.modulus(finalModulus) } with some {@code finalModulus} greater than {@code desiredBound}
      */
-    public static List<bMutablePolynomialZp> liftFactorizationQuadratic(BigInteger modulus,
-                                                                        BigInteger desiredBound,
-                                                                        bMutablePolynomialZ poly,
-                                                                        List<bMutablePolynomialZp> modularFactors) {
+    public static List<UnivariatePolynomial<BigInteger>> liftFactorizationQuadratic(BigInteger modulus,
+                                                                                    BigInteger desiredBound,
+                                                                                    UnivariatePolynomial<BigInteger> poly,
+                                                                                    List<UnivariatePolynomial<BigInteger>> modularFactors) {
         LiftingInfo im = nIterations(modulus, desiredBound, true);
         return liftFactorization0(modulus, im.finalModulus, im.nIterations, poly, modularFactors, HenselLifting::createQuadraticLift);
     }
@@ -464,26 +483,26 @@ public final class HenselLifting {
      * @param modularFactors factorization of {@code poly.modulus(modulus)}
      * @return factorization of {@code poly.modulus(finalModulus) } with some {@code finalModulus} greater than {@code desiredBound}
      */
-    public static List<bMutablePolynomialZp> liftFactorization(BigInteger modulus,
-                                                               BigInteger desiredBound,
-                                                               bMutablePolynomialZ poly,
-                                                               List<lMutablePolynomialZp> modularFactors) {
+    public static List<UnivariatePolynomial<BigInteger>> liftFactorization(BigInteger modulus,
+                                                                           BigInteger desiredBound,
+                                                                           UnivariatePolynomial<BigInteger> poly,
+                                                                           List<lUnivariatePolynomialZp> modularFactors) {
         return liftFactorization(poly, modularFactors, new AdaptiveLift(modulus, desiredBound));
     }
 
     /** actual multifactor Hensel lifting implementation **/
-    private static List<bMutablePolynomialZp> liftFactorization(bMutablePolynomialZ poly,
-                                                                List<lMutablePolynomialZp> modularFactors,
-                                                                AdaptiveLift lifter) {
+    private static List<UnivariatePolynomial<BigInteger>> liftFactorization(UnivariatePolynomial<BigInteger> poly,
+                                                                            List<lUnivariatePolynomialZp> modularFactors,
+                                                                            AdaptiveLift lifter) {
         // for the future:
         // recursion may be replaced with precomputed binary tree
         // for now the major part of execution time (~99%) is spent in actual lifting step, so irrelevant
 
         if (modularFactors.size() == 1)
-            return Collections.singletonList(poly.modulus(lifter.finalModulus, true).monic());
+            return Collections.singletonList(poly.setDomain(new IntegersModulo(lifter.finalModulus)).monic());
 
-        lMutablePolynomialZp factory = modularFactors.get(0);
-        lMutablePolynomialZp
+        lUnivariatePolynomialZp factory = modularFactors.get(0);
+        lUnivariatePolynomialZp
                 aFactor = factory.createOne(),
                 bFactor = factory.createOne();
 
@@ -493,13 +512,13 @@ public final class HenselLifting {
         for (; i < modularFactors.size(); ++i)
             bFactor = bFactor.multiply(modularFactors.get(i));
 
-        bMutablePolynomialZp[] lifted = lifter.lift(poly, aFactor, bFactor);
-        bMutablePolynomialZp aFactorRaised = lifted[0];
-        bMutablePolynomialZp bFactorRaised = lifted[1];
+        UnivariatePolynomial<BigInteger>[] lifted = lifter.lift(poly, aFactor, bFactor);
+        UnivariatePolynomial<BigInteger> aFactorRaised = lifted[0];
+        UnivariatePolynomial<BigInteger> bFactorRaised = lifted[1];
 
-        ArrayList<bMutablePolynomialZp> result = new ArrayList<>();
-        result.addAll(liftFactorization(aFactorRaised.normalSymmetricForm(), modularFactors.subList(0, nHalf), lifter));
-        result.addAll(liftFactorization(bFactorRaised.normalSymmetricForm(), modularFactors.subList(nHalf, modularFactors.size()), lifter));
+        ArrayList<UnivariatePolynomial<BigInteger>> result = new ArrayList<>();
+        result.addAll(liftFactorization(UnivariatePolynomial.asPolyZSymmetric(aFactorRaised), modularFactors.subList(0, nHalf), lifter));
+        result.addAll(liftFactorization(UnivariatePolynomial.asPolyZSymmetric(bFactorRaised), modularFactors.subList(nHalf, modularFactors.size()), lifter));
         return result;
     }
 
@@ -527,31 +546,32 @@ public final class HenselLifting {
             }
         }
 
-        bMutablePolynomialZp[] lift(bMutablePolynomialZ poly, lMutablePolynomialZp a, lMutablePolynomialZp b) {
+        @SuppressWarnings("unchecked")
+        UnivariatePolynomial<BigInteger>[] lift(UnivariatePolynomial<BigInteger> poly, lUnivariatePolynomialZp a, lUnivariatePolynomialZp b) {
             boolean quadratic = nLinearIterations == -1;
-            LiftableQuintet<bMutablePolynomialZp> lift =
+            LiftableQuintet<UnivariatePolynomial<BigInteger>> lift =
                     quadratic
                             ? createQuadraticLift(initialModulus, poly, a.toBigPoly(), b.toBigPoly())
                             : createLinearLift(initialModulus, poly, a, b);
             lift.lift(quadratic ? nQuadraticIterations : nLinearIterations);
-            return new bMutablePolynomialZp[]{lift.aFactorMod(), lift.bFactorMod()};
+            return new UnivariatePolynomial[]{lift.aFactorMod(), lift.bFactorMod()};
         }
     }
 
-    private static <T extends IMutablePolynomialZp<T>> void assertHenselLift(LiftableQuintet<T> lift) {
+    private static <T extends IUnivariatePolynomial<T>> void assertHenselLift(LiftableQuintet<T> lift) {
         assert lift.polyMod().equals(lift.aFactorMod().clone().multiply(lift.bFactorMod())) : lift.toString();
         assert (lift.aCoFactorMod() == null && lift.bCoFactorMod() == null) ||
                 lift.aFactorMod().clone().multiply(lift.aCoFactorMod())
                         .add(lift.bFactorMod().clone().multiply(lift.bCoFactorMod()))
                         .isOne() :
                 lift.aFactorMod().clone().multiply(lift.aCoFactorMod())
-                        .add(lift.bFactorMod().clone().multiply(lift.bCoFactorMod())) + "  --- " + ((bMutablePolynomialZp) lift.aFactorMod()).modulus;
+                        .add(lift.bFactorMod().clone().multiply(lift.bCoFactorMod())) + "  --- " + ((UnivariatePolynomial<BigInteger>) lift.aFactorMod()).domain;
     }
 
     /* ************************************ Quadratic lifts ************************************ */
 
     /** data used in Hensel lifting **/
-    static abstract class QuadraticLiftAbstract<PolyZp extends IMutablePolynomialZp<PolyZp>>
+    static abstract class QuadraticLiftAbstract<PolyZp extends IUnivariatePolynomial<PolyZp>>
             implements LiftableQuintet<PolyZp> {
         /** Two factors of the initial Z[x] poly **/
         protected PolyZp aFactor, bFactor;
@@ -655,20 +675,20 @@ public final class HenselLifting {
      * Quadratic Hensel lift for machine word arithmetics. On each {@link #lift()} operation modulus is raised
      * as {@code modulus = modulus * modulus}.
      */
-    public static final class lQuadraticLift extends QuadraticLiftAbstract<lMutablePolynomialZp> {
+    public static final class lQuadraticLift extends QuadraticLiftAbstract<lUnivariatePolynomialZp> {
         /** The modulus */
         public long modulus;
         /** Initial Z[x] poly **/
-        public final lMutablePolynomialZ base;
+        public final lUnivariatePolynomialZ base;
 
-        public lQuadraticLift(long modulus, lMutablePolynomialZ base, lMutablePolynomialZp aFactor, lMutablePolynomialZp bFactor, lMutablePolynomialZp aCoFactor, lMutablePolynomialZp bCoFactor) {
+        public lQuadraticLift(long modulus, lUnivariatePolynomialZ base, lUnivariatePolynomialZp aFactor, lUnivariatePolynomialZp bFactor, lUnivariatePolynomialZp aCoFactor, lUnivariatePolynomialZp bCoFactor) {
             super(aFactor, bFactor, aCoFactor, bCoFactor);
             this.modulus = modulus;
             this.base = base;
         }
 
         @Override
-        public lMutablePolynomialZp polyMod() {
+        public lUnivariatePolynomialZp polyMod() {
             return base.modulus(modulus, true);
         }
 
@@ -686,49 +706,49 @@ public final class HenselLifting {
      * Quadratic Hensel lift for BigIntegers arithmetics. On each {@link #lift()} operation modulus is raised
      * as {@code modulus = modulus * modulus}.
      */
-    public static final class bQuadraticLift extends QuadraticLiftAbstract<bMutablePolynomialZp> {
+    public static final class bQuadraticLift extends QuadraticLiftAbstract<UnivariatePolynomial<BigInteger>> {
         /** The modulus */
-        public BigInteger modulus;
+        public IntegersModulo domain;
         /** Initial Z[x] poly **/
-        public final bMutablePolynomialZ base;
+        public final UnivariatePolynomial<BigInteger> base;
 
-        public bQuadraticLift(BigInteger modulus, bMutablePolynomialZ base, bMutablePolynomialZp aFactor, bMutablePolynomialZp bFactor, bMutablePolynomialZp aCoFactor, bMutablePolynomialZp bCoFactor) {
+        public bQuadraticLift(BigInteger modulus, UnivariatePolynomial<BigInteger> base, UnivariatePolynomial<BigInteger> aFactor, UnivariatePolynomial<BigInteger> bFactor, UnivariatePolynomial<BigInteger> aCoFactor, UnivariatePolynomial<BigInteger> bCoFactor) {
             super(aFactor, bFactor, aCoFactor, bCoFactor);
-            this.modulus = modulus;
+            this.domain = new IntegersModulo(modulus);
             this.base = base;
         }
 
         @Override
-        public bMutablePolynomialZp polyMod() {
-            return base.modulus(modulus, true);
+        public UnivariatePolynomial<BigInteger> polyMod() {
+            return base.setDomain(domain);
         }
 
         @Override
         void prepare() {
-            modulus = modulus.multiply(modulus);
-            aFactor = aFactor.setModulusUnsafe(modulus);
-            bFactor = bFactor.setModulusUnsafe(modulus);
-            aCoFactor = aCoFactor.setModulusUnsafe(modulus);
-            bCoFactor = bCoFactor.setModulusUnsafe(modulus);
+            domain = new IntegersModulo(domain.modulus.multiply(domain.modulus));
+            aFactor = aFactor.setDomainUnsafe(domain);
+            bFactor = bFactor.setDomainUnsafe(domain);
+            aCoFactor = aCoFactor.setDomainUnsafe(domain);
+            bCoFactor = bCoFactor.setDomainUnsafe(domain);
         }
     }
 
     /* ************************************ Linear lifts ************************************ */
 
-    private static class LinearLiftAbstract<PolyZ extends IMutablePolynomialZ<PolyZ>> {
+    private static class LinearLiftAbstract<PolyZ extends IUnivariatePolynomial<PolyZ>> {
         /** initial Z[x] poly */
         final PolyZ poly;
         /** lifted polynomials */
         PolyZ aFactor, bFactor, aCoFactor, bCoFactor;
         /** initial modular data */
-        final lMutablePolynomialZp aFactorMod, aFactorModMonic, bFactorMod, aCoFactorMod, bCoFactorMod;
+        final lUnivariatePolynomialZp aFactorMod, aFactorModMonic, bFactorMod, aCoFactorMod, bCoFactorMod;
         /** precomputed inverses */
-        final DivisionWithRemainder.InverseModMonomial<lMutablePolynomialZp> aFactorModMonicInv, bFactorModInv;
+        final DivisionWithRemainder.InverseModMonomial<lUnivariatePolynomialZp> aFactorModMonicInv, bFactorModInv;
 
         public LinearLiftAbstract(PolyZ poly,
                                   PolyZ aFactor, PolyZ bFactor, PolyZ aCoFactor, PolyZ bCoFactor,
-                                  lMutablePolynomialZp aFactorMod, lMutablePolynomialZp aFactorModMonic, lMutablePolynomialZp bFactorMod,
-                                  lMutablePolynomialZp aCoFactorMod, lMutablePolynomialZp bCoFactorMod) {
+                                  lUnivariatePolynomialZp aFactorMod, lUnivariatePolynomialZp aFactorModMonic, lUnivariatePolynomialZp bFactorMod,
+                                  lUnivariatePolynomialZp aCoFactorMod, lUnivariatePolynomialZp bCoFactorMod) {
             assert bFactor.isMonic();
             this.poly = poly;
             this.aFactor = aFactor;
@@ -744,9 +764,9 @@ public final class HenselLifting {
             this.bFactorModInv = DivisionWithRemainder.fastDivisionPreConditioning(bFactorMod);
         }
 
-        protected lMutablePolynomialZp aAdd, bAdd;
+        protected lUnivariatePolynomialZp aAdd, bAdd;
 
-        final void calculateFactorsDiff(lMutablePolynomialZp diff) {
+        final void calculateFactorsDiff(lUnivariatePolynomialZp diff) {
             aAdd = diff.clone();
             aAdd = PolynomialArithmetics.polyMod(aAdd, aFactorModMonic, aFactorModMonicInv, false);
             aAdd = aAdd.multiply(bCoFactorMod);
@@ -758,7 +778,7 @@ public final class HenselLifting {
             bAdd = PolynomialArithmetics.polyMod(bAdd, bFactorMod, bFactorModInv, false);
         }
 
-        final void calculateCoFactorsDiff(lMutablePolynomialZp diff) {
+        final void calculateCoFactorsDiff(lUnivariatePolynomialZp diff) {
             aAdd = diff.clone();
             aAdd = PolynomialArithmetics.polyMod(aAdd, bFactorMod, bFactorModInv, false);
             aAdd = aAdd.multiply(aCoFactorMod);
@@ -776,57 +796,57 @@ public final class HenselLifting {
      * on each {@link #lift()} operation modulus is raised as {@code modulus = modulus * initialModulus}.
      */
     public static final class lLinearLift
-            extends LinearLiftAbstract<lMutablePolynomialZ>
-            implements LiftableQuintet<lMutablePolynomialZp> {
+            extends LinearLiftAbstract<lUnivariatePolynomialZ>
+            implements LiftableQuintet<lUnivariatePolynomialZp> {
         /** The initial modulus */
         public final long initialModulus;
         /** The modulus */
         public long modulus;
 
-        private lLinearLift(long modulus, lMutablePolynomialZ poly,
-                            lMutablePolynomialZp aFactor, lMutablePolynomialZp aFactorMonic, lMutablePolynomialZp bFactor,
-                            lMutablePolynomialZp aCoFactor, lMutablePolynomialZp bCoFactor) {
+        private lLinearLift(long modulus, lUnivariatePolynomialZ poly,
+                            lUnivariatePolynomialZp aFactor, lUnivariatePolynomialZp aFactorMonic, lUnivariatePolynomialZp bFactor,
+                            lUnivariatePolynomialZp aCoFactor, lUnivariatePolynomialZp bCoFactor) {
             super(poly,
-                    ensureMonic(aFactor).normalForm(true).multiply(poly.lc()), bFactor.normalForm(true),
-                    aCoFactor.normalForm(true), bCoFactor.normalForm(true),
+                    ensureMonic(aFactor).asPolyZ(true).multiply(poly.lc()), bFactor.asPolyZ(true),
+                    aCoFactor.asPolyZ(true), bCoFactor.asPolyZ(true),
                     aFactor, aFactorMonic, bFactor, aCoFactor, bCoFactor);
             this.initialModulus = modulus;
             this.modulus = modulus;
         }
 
-        private lLinearLift(long modulus, lMutablePolynomialZ poly,
-                            lMutablePolynomialZp aFactor, lMutablePolynomialZp bFactor,
-                            lMutablePolynomialZp aCoFactor, lMutablePolynomialZp bCoFactor) {
+        private lLinearLift(long modulus, lUnivariatePolynomialZ poly,
+                            lUnivariatePolynomialZp aFactor, lUnivariatePolynomialZp bFactor,
+                            lUnivariatePolynomialZp aCoFactor, lUnivariatePolynomialZp bCoFactor) {
             this(modulus, poly, aFactor, aFactor.clone().monic(), bFactor, aCoFactor, bCoFactor);
         }
 
         @Override
-        public lMutablePolynomialZp polyMod() {return poly.modulus(modulus);}
+        public lUnivariatePolynomialZp polyMod() {return poly.modulus(modulus);}
 
         @Override
-        public lMutablePolynomialZp aFactorMod() {return aFactor.modulus(modulus);}
+        public lUnivariatePolynomialZp aFactorMod() {return aFactor.modulus(modulus);}
 
         @Override
-        public lMutablePolynomialZp bFactorMod() {return bFactor.modulus(modulus);}
+        public lUnivariatePolynomialZp bFactorMod() {return bFactor.modulus(modulus);}
 
         @Override
-        public lMutablePolynomialZp aCoFactorMod() {return aCoFactor == null ? null : aCoFactor.modulus(modulus);}
+        public lUnivariatePolynomialZp aCoFactorMod() {return aCoFactor == null ? null : aCoFactor.modulus(modulus);}
 
         @Override
-        public lMutablePolynomialZp bCoFactorMod() {return bCoFactor == null ? null : bCoFactor.modulus(modulus);}
+        public lUnivariatePolynomialZp bCoFactorMod() {return bCoFactor == null ? null : bCoFactor.modulus(modulus);}
 
         private void liftFactors() {
-            lMutablePolynomialZp factorsDiff = poly.clone().subtract(aFactor.clone().multiply(bFactor))
+            lUnivariatePolynomialZp factorsDiff = poly.clone().subtract(aFactor.clone().multiply(bFactor))
                     .divideOrNull(modulus)
                     .modulus(initialModulus);
 
             calculateFactorsDiff(factorsDiff);
-            aFactor = aFactor.add(aAdd.normalForm(false).multiply(modulus));
-            bFactor = bFactor.add(bAdd.normalForm(false).multiply(modulus));
+            aFactor = aFactor.add(aAdd.asPolyZ(false).multiply(modulus));
+            bFactor = bFactor.add(bAdd.asPolyZ(false).multiply(modulus));
         }
 
         private void liftCoFactors() {
-            lMutablePolynomialZp coFactorsDiff = aCoFactor.clone().multiply(aFactor)
+            lUnivariatePolynomialZp coFactorsDiff = aCoFactor.clone().multiply(aFactor)
                     .add(bCoFactor.clone().multiply(bFactor))
                     .decrement()
                     .negate()
@@ -834,8 +854,8 @@ public final class HenselLifting {
                     .modulus(initialModulus);
 
             calculateCoFactorsDiff(coFactorsDiff);
-            aCoFactor = aCoFactor.add(aAdd.normalForm(false).multiply(modulus));
-            bCoFactor = bCoFactor.add(bAdd.normalForm(false).multiply(modulus));
+            aCoFactor = aCoFactor.add(aAdd.asPolyZ(false).multiply(modulus));
+            bCoFactor = bCoFactor.add(bAdd.asPolyZ(false).multiply(modulus));
         }
 
         @Override
@@ -858,80 +878,80 @@ public final class HenselLifting {
      * on each {@link #lift()} operation modulus is raised as {@code modulus = modulus * initialModulus}.
      */
     public static final class bLinearLift
-            extends LinearLiftAbstract<bMutablePolynomialZ>
-            implements LiftableQuintet<bMutablePolynomialZp> {
+            extends LinearLiftAbstract<UnivariatePolynomial<BigInteger>>
+            implements LiftableQuintet<UnivariatePolynomial<BigInteger>> {
         /** The initial modulus (less than 64-bit) */
-        public final BigInteger initialModulus;
+        public final IntegersModulo initialDomain;
         /** The modulus */
-        public BigInteger modulus;
+        public IntegersModulo domain;
 
-        private bLinearLift(BigInteger modulus, bMutablePolynomialZ poly,
-                            lMutablePolynomialZp aFactor, lMutablePolynomialZp aFactorMonic, lMutablePolynomialZp bFactor,
-                            lMutablePolynomialZp aCoFactor, lMutablePolynomialZp bCoFactor) {
+        private bLinearLift(BigInteger modulus, UnivariatePolynomial<BigInteger> poly,
+                            lUnivariatePolynomialZp aFactor, lUnivariatePolynomialZp aFactorMonic, lUnivariatePolynomialZp bFactor,
+                            lUnivariatePolynomialZp aCoFactor, lUnivariatePolynomialZp bCoFactor) {
             super(poly,
-                    ensureMonic(aFactor).normalForm(true).toBigPoly().multiply(poly.lc()), bFactor.normalForm(false).toBigPoly(),
-                    aCoFactor.normalForm(false).toBigPoly(), bCoFactor.normalForm(false).toBigPoly(),
+                    ensureMonic(aFactor).asPolyZ(true).toBigPoly().multiply(poly.lc()), bFactor.asPolyZ(false).toBigPoly(),
+                    aCoFactor.asPolyZ(false).toBigPoly(), bCoFactor.asPolyZ(false).toBigPoly(),
                     aFactor, aFactorMonic, bFactor, aCoFactor, bCoFactor);
-            this.initialModulus = modulus;
-            this.modulus = modulus;
+            this.initialDomain = new IntegersModulo(modulus);
+            this.domain = new IntegersModulo(modulus);
             assert modulus.isLong();
         }
 
-        private bLinearLift(BigInteger modulus, bMutablePolynomialZ poly,
-                            lMutablePolynomialZp aFactor, lMutablePolynomialZp bFactor,
-                            lMutablePolynomialZp aCoFactor, lMutablePolynomialZp bCoFactor) {
+        private bLinearLift(BigInteger modulus, UnivariatePolynomial<BigInteger> poly,
+                            lUnivariatePolynomialZp aFactor, lUnivariatePolynomialZp bFactor,
+                            lUnivariatePolynomialZp aCoFactor, lUnivariatePolynomialZp bCoFactor) {
             this(modulus, poly, aFactor, aFactor.clone().monic(), bFactor, aCoFactor, bCoFactor);
         }
 
         @Override
-        public bMutablePolynomialZp polyMod() {return poly.modulus(modulus);}
+        public UnivariatePolynomial<BigInteger> polyMod() {return poly.setDomain(domain);}
 
         @Override
-        public bMutablePolynomialZp aFactorMod() {return aFactor.modulus(modulus);}
+        public UnivariatePolynomial<BigInteger> aFactorMod() {return aFactor.setDomain(domain);}
 
         @Override
-        public bMutablePolynomialZp bFactorMod() {return bFactor.modulus(modulus);}
+        public UnivariatePolynomial<BigInteger> bFactorMod() {return bFactor.setDomain(domain);}
 
         @Override
-        public bMutablePolynomialZp aCoFactorMod() {return aCoFactor == null ? null : aCoFactor.modulus(modulus);}
+        public UnivariatePolynomial<BigInteger> aCoFactorMod() {return aCoFactor == null ? null : aCoFactor.setDomain(domain);}
 
         @Override
-        public bMutablePolynomialZp bCoFactorMod() {return bCoFactor == null ? null : bCoFactor.modulus(modulus);}
+        public UnivariatePolynomial<BigInteger> bCoFactorMod() {return bCoFactor == null ? null : bCoFactor.setDomain(domain);}
 
         private void liftFactors() {
-            lMutablePolynomialZp factorsDiff = poly.clone().subtract(aFactor.clone().multiply(bFactor))
-                    .divideOrNull(modulus)
-                    .modulus(initialModulus)
-                    .toLong();
+            lUnivariatePolynomialZp factorsDiff = UnivariatePolynomial.asLongPolyZp(
+                    poly.clone().subtract(aFactor.clone().multiply(bFactor))
+                            .divideOrNull(domain.modulus)
+                            .setDomain(initialDomain));
 
             calculateFactorsDiff(factorsDiff);
-            aFactor = aFactor.add(aAdd.normalForm(false).toBigPoly().multiply(modulus));
-            bFactor = bFactor.add(bAdd.normalForm(false).toBigPoly().multiply(modulus));
+            aFactor = aFactor.add(aAdd.asPolyZ(false).toBigPoly().multiply(domain.modulus));
+            bFactor = bFactor.add(bAdd.asPolyZ(false).toBigPoly().multiply(domain.modulus));
         }
 
         private void liftCoFactors() {
-            lMutablePolynomialZp coFactorsDiff = aCoFactor.clone().multiply(aFactor).add(bCoFactor.clone().multiply(bFactor)).decrement().negate()
-                    .divideOrNull(modulus)
-                    .modulus(initialModulus)
-                    .toLong();
+            lUnivariatePolynomialZp coFactorsDiff = UnivariatePolynomial.asLongPolyZp(
+                    aCoFactor.clone().multiply(aFactor).add(bCoFactor.clone().multiply(bFactor)).decrement().negate()
+                            .divideOrNull(domain.modulus)
+                            .setDomain(initialDomain));
 
             calculateCoFactorsDiff(coFactorsDiff);
 
-            aCoFactor = aCoFactor.add(aAdd.normalForm(false).toBigPoly().multiply(modulus));
-            bCoFactor = bCoFactor.add(bAdd.normalForm(false).toBigPoly().multiply(modulus));
+            aCoFactor = aCoFactor.add(aAdd.asPolyZ(false).toBigPoly().multiply(domain.modulus));
+            bCoFactor = bCoFactor.add(bAdd.asPolyZ(false).toBigPoly().multiply(domain.modulus));
         }
 
         @Override
         public void lift() {
             liftFactors();
             liftCoFactors();
-            modulus = modulus.multiply(initialModulus);
+            domain = new IntegersModulo(domain.modulus.multiply(initialDomain.modulus));
         }
 
         @Override
         public void liftLast() {
             liftFactors();
-            modulus = modulus.multiply(initialModulus);
+            domain = new IntegersModulo(domain.modulus.multiply(initialDomain.modulus));
             aCoFactor = bCoFactor = null;
         }
     }

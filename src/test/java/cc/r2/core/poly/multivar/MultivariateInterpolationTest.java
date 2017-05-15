@@ -13,8 +13,8 @@ import org.junit.Test;
 import java.util.List;
 
 import static cc.r2.core.number.BigInteger.INT_MAX_VALUE;
+import static cc.r2.core.poly.multivar.MonomialTerm.LEX;
 import static cc.r2.core.poly.multivar.MultivariateInterpolation.interpolateNewton;
-import static cc.r2.core.poly.multivar.MultivariatePolynomial.LEX;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static org.junit.Assert.assertEquals;

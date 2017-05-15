@@ -12,7 +12,6 @@ public class ParserTest {
 //        TIntArrayList ints = new TIntArrayList(new int[]{0, 1, 2, 3, 4, 5, 6});
 //        ints.removeA(0);
 //        System.out.println(ints);
-        System.out.println(Parser.parse("a^2 * b^33 + a * c", MultivariatePolynomial.GREVLEX));
-
+        System.out.println(Parser.parse("a^2 * b^33 + a * c", MonomialTerm.GREVLEX));
     }
 }

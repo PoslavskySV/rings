@@ -5,8 +5,6 @@ import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.multivar.MultivariateGCD.*;
-import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -16,8 +14,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Map;
 
+import static cc.r2.core.poly.multivar.DegreeVector.LEX;
 import static cc.r2.core.poly.multivar.MultivariateGCD.*;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar.MultivariateReduction.dividesQ;
@@ -234,7 +232,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
             do {
                 gcd = gcd.evaluate(rnd.nextInt(gcd.nVariables), data.domain.randomElement(rnd));
-            } while (gcd.usedVariables() > nVars);
+            } while (gcd.nUsedVariables() > nVars);
 
             int[] gcdDegrees = gcd.degrees();
             for (int i = 0; i < gcdDegrees.length; i++) {
@@ -284,7 +282,6 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
         assertTrue(dividesQ(gcdActual, gcd));
     }
-
 
     @Test
     public void testBrown9() throws Exception {
@@ -486,7 +483,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             if (n == nIterations / 10) {
                 zippel.clear(); brown.clear();
             }
-            System.out.println(n);
+            if (n % 100 == 0) System.out.println(n);
 
             GCDTriplet data = sampleData.nextSample(false, true);
             MultivariatePolynomial<BigInteger> gcdZippel = null, gcdBrown = null;
@@ -655,6 +652,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
+        lMultivariatePolynomial
+                aL = asLongPolyZp(a),
+                bL = asLongPolyZp(b);
 
 //        System.out.println(a);
 //        System.out.println(b);
@@ -664,8 +664,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
-            System.out.println(ZippelGCD(a, b));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertEquals(10, ZippelGCD(aL, bL).size());
+            System.out.println(System.nanoTime() - start);
         }
 
     }
@@ -733,14 +733,14 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
 
             if (primitive) {
-                a = fromZp(convertZp(a, 0).primitivePart(), domain, 0);
-                b = fromZp(convertZp(b, 0).primitivePart(), domain, 0);
-                gcd = fromZp(convertZp(gcd, 0).primitivePart(), domain, 0);
+                a = asNormalMultivariate(a.asOverUnivariate(0).primitivePart(), 0);
+                b = asNormalMultivariate(b.asOverUnivariate(0).primitivePart(), 0);
+                gcd = asNormalMultivariate(gcd.asOverUnivariate(0).primitivePart(), 0);
             }
             if (monic) {
-                a.add(new DegreeVector(a.nVariables, 0, a.degree() + 1), BigInteger.ONE);
-                b.add(new DegreeVector(a.nVariables, 0, b.degree() + 1), BigInteger.ONE);
-                gcd.add(new DegreeVector(a.nVariables, 0, gcd.degree() + 1), BigInteger.ONE);
+                a.add(new MonomialTerm<>(a.nVariables, 0, a.degree() + 1, BigInteger.ONE));
+                b.add(new MonomialTerm<>(a.nVariables, 0, b.degree() + 1, BigInteger.ONE));
+                gcd.add(new MonomialTerm<>(a.nVariables, 0, gcd.degree() + 1, BigInteger.ONE));
             }
             return new GCDTriplet(a, b, gcd);
         }
@@ -753,8 +753,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
     private static <E> void checkConsistency(MultivariatePolynomial<E> poly) {
         Domain<E> domain = poly.domain;
-        for (Map.Entry<DegreeVector, E> e : poly.data.entrySet()) {
-            E value = e.getValue();
+        for (MonomialTerm<E> e : poly.terms) {
+            E value = e.coefficient;
             assertFalse(domain.isZero(value));
             assertTrue(value == domain.valueOf(value));
             if (domain instanceof IntegersModulo) {
