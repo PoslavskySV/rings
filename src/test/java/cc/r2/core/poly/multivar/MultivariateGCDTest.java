@@ -532,7 +532,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
                 PrivateRandom.getRandom().setSeed(n);
                 lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
-                assertEquals(asLongPolyZp(gcdZippel), lGcdZippel);
+                assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
                 System.out.println("domain: " + data.domain);
@@ -621,7 +621,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
                 PrivateRandom.getRandom().setSeed(n);
                 lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
-                assertEquals(asLongPolyZp(gcdZippel), lGcdZippel);
+                assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
                 System.out.println("domain: " + data.domain);
@@ -634,6 +634,15 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         }
         System.out.println("Zippel: " + TimeUnits.statisticsNanotime(zippel));
         System.out.println("Brown: " + TimeUnits.statisticsNanotime(brown));
+    }
+
+    @Test
+    public void assadasd() throws Exception {
+        IntegersModulo domain = new IntegersModulo(21535757L);
+        MultivariatePolynomial<BigInteger> a = parse("13659400*b^3*c*d+6829700*a*b^3*c^3*d+3855362*a^2*b^3*c^3*d^3+2974338*a^3*b^3*c^2*d^3", domain, LEX);
+        MultivariatePolynomial<BigInteger> b = parse("6107385*b^3*c*d+13821571*a*b^3*c^3*d+8143180*a^2*b^3*c^3*d^3+5678391*a^3*b^3*c^2*d^3", domain, LEX);
+        System.out.println(a.monic());
+        System.out.println(b.monic());
     }
 
     @Test
@@ -662,7 +671,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(gcdZippel, data.gcd));
 
                 PrivateRandom.getRandom().setSeed(n);
-                assertEquals(asLongPolyZp(gcdZippel), ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD)));
+                lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
+                assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
                 System.out.println("domain: " + data.domain);
