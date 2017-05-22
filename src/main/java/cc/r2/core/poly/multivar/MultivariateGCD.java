@@ -461,13 +461,14 @@ public final class MultivariateGCD {
                 continue;
             }
 
-            // interpolate
-            previousInterpolation = interpolation.getInterpolatingPolynomial();
+            // Cache previous interpolation. NOTE: clone() is important, since the poly will
+            // be modified inplace by the update() method
+            previousInterpolation = interpolation.getInterpolatingPolynomial().clone();
             interpolation.update(randomPoint, cVal);
 
             // do division test
-            if (degreeBounds[variable] == 0 || degreeBounds[variable] == interpolation.numberOfPoints()
-                    || (previousInterpolation != null && previousInterpolation.equals(interpolation.getInterpolatingPolynomial()))) {
+            if (degreeBounds[variable] <= interpolation.numberOfPoints()
+                    || previousInterpolation.equals(interpolation.getInterpolatingPolynomial())) {
                 MultivariatePolynomial<E> result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
                 if (result != null)
                     return result;
@@ -609,13 +610,13 @@ public final class MultivariateGCD {
         }
 
         Domain<E> domain = factory.domain;
-        //degree bound for the previous variable
-        int prevVarExponent = degreeBounds[variable - 1];
         //store points that were already used in interpolation
         Set<E> globalEvaluationStack = new HashSet<>();
 
         int[] aDegrees = a.degrees(), bDegrees = b.degrees();
         int failedSparseInterpolations = 0;
+
+        int[] tmpDegreeBounds = degreeBounds.clone();
         main:
         while (true) {
             if (evaluationStackLimit == globalEvaluationStack.size())
@@ -643,19 +644,19 @@ public final class MultivariateGCD {
                 if (aDegrees[i] != aValDegrees[i] || bDegrees[i] != bValDegrees[i])
                     continue main;
 
-            MultivariatePolynomial<E> cVal = ZippelGCD(aVal, bVal, rnd, variable - 1, degreeBounds, evaluationStackLimit);
+            MultivariatePolynomial<E> cVal = ZippelGCD(aVal, bVal, rnd, variable - 1, tmpDegreeBounds, evaluationStackLimit);
             if (cVal == null)
                 //unlucky homomorphism
                 continue;
 
             int currExponent = cVal.degree(variable - 1);
-            if (currExponent > prevVarExponent)
+            if (currExponent > tmpDegreeBounds[variable-1])
                 //unlucky homomorphism
                 continue;
 
-            if (currExponent < prevVarExponent) {
+            if (currExponent < tmpDegreeBounds[variable-1]) {
                 //better degree bound detected
-                degreeBounds[variable - 1] = prevVarExponent = currExponent;
+                tmpDegreeBounds[variable - 1] = currExponent;
             }
 
             cVal = cVal.multiply(domain.multiply(domain.reciprocal(cVal.lc()), lcVal));
@@ -670,8 +671,11 @@ public final class MultivariateGCD {
             //local evaluation stack for points that are calculated via sparse interpolation (but not gcd evaluation) -> always same skeleton
             HashSet<E> localEvaluationStack = new HashSet<>(globalEvaluationStack);
             while (true) {
-                if (interpolation.numberOfPoints() > degreeBounds[variable])
+                if (interpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
+                    // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
+                    tmpDegreeBounds = degreeBounds.clone();
                     continue main;
+                }
                 E randomPoint = domain.randomElement(rnd);
                 if (localEvaluationStack.contains(randomPoint))
                     continue;
@@ -687,17 +691,21 @@ public final class MultivariateGCD {
                     ++failedSparseInterpolations;
                     if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
                         throw new RuntimeException("Sparse interpolation failed");
+                    // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
+                    tmpDegreeBounds = degreeBounds.clone();
                     continue main;
                 }
                 cVal = cVal.multiply(domain.multiply(domain.reciprocal(cVal.lc()), lcVal));
                 assert cVal.lc().equals(lcVal);
 
-                previousInterpolation = interpolation.getInterpolatingPolynomial();
+                // Cache previous interpolation. NOTE: clone() is important, since the poly will
+                // be modified inplace by the update() method
+                previousInterpolation = interpolation.getInterpolatingPolynomial().clone();
                 interpolation.update(randomPoint, cVal);
 
-                if (degreeBounds[variable] == interpolation.numberOfPoints()
+                // do division test
+                if (tmpDegreeBounds[variable] <= interpolation.numberOfPoints()
                         || previousInterpolation.equals(interpolation.getInterpolatingPolynomial())) {
-                    // do division test
                     MultivariatePolynomial<E> result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
                     if (result != null)
                         return result;
@@ -724,13 +732,25 @@ public final class MultivariateGCD {
         int[] evaluationVariables = ArraysUtil.sequence(1, variable + 1);//variable inclusive
         E[] evaluationPoint = domain.createArray(evaluationVariables.length);
 
-        //avoid zero evaluation points // TODO check the same skeleton in main variable!!!
-        for (int i = variable - 2; i >= 0; --i)
-            do {
-                evaluationPoint[i] = domain.randomElement(rnd);
-            } while (domain.isZero(evaluationPoint[i]));
+        PrecomputedPowersHolder<E> powers;
+        search_for_good_evaluation_point:
+        while (true) {
+            //avoid zero evaluation points
+            for (int i = variable - 2; i >= 0; --i)
+                do {
+                    evaluationPoint[i] = domain.randomElement(rnd);
+                } while (domain.isZero(evaluationPoint[i]));
 
-        PrecomputedPowersHolder<E> powers = new PrecomputedPowersHolder<>(evaluationPoint, domain);
+            //set temporary
+            evaluationPoint[evaluationPoint.length - 1] = domain.randomElement(rnd);
+            powers = new PrecomputedPowersHolder<>(evaluationPoint, domain);
+            int[] raiseFactors = ArraysUtil.arrayOf(1, evaluationVariables.length);
+
+            for (MultivariatePolynomial<E> p : Arrays.asList(a, b, skeleton))
+                if (!p.getSkeleton(0).equals(p.evaluate(powers, evaluationVariables, raiseFactors).getSkeleton()))
+                    continue search_for_good_evaluation_point;
+            break;
+        }
 
         int requiredNumberOfEvaluations = -1, monicScalingExponent = -1;
         for (TIntObjectIterator<MultivariatePolynomial<E>> it = univarSkeleton.iterator(); it.hasNext(); ) {
@@ -869,6 +889,10 @@ public final class MultivariateGCD {
                             bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                             gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
 
+                    if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
+                        // unlucky main homomorphism or bad evaluation point
+                        return null;
+
                     assert gcdUnivar.isMonic();
 
                     int totalEquations = 0;
@@ -996,6 +1020,10 @@ public final class MultivariateGCD {
                         aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
+
+                if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
+                    // unlucky main homomorphism or bad evaluation point
+                    return null;
 
                 assert gcdUnivar.isMonic();
 
@@ -1172,7 +1200,6 @@ public final class MultivariateGCD {
 
     /* ========================================= Machine numbers ======================================== */
 
-
     /**
      * Calculates GCD of two multivariate polynomials over Zp using Brown's algorithm with dense interpolation.
      *
@@ -1181,7 +1208,7 @@ public final class MultivariateGCD {
      * @return greatest common divisor of {@code a} and {@code b}
      */
     @SuppressWarnings("unchecked")
-    public static <E> lMultivariatePolynomial BrownGCD(
+    public static lMultivariatePolynomial BrownGCD(
             lMultivariatePolynomial a,
             lMultivariatePolynomial b) {
 
@@ -1207,7 +1234,7 @@ public final class MultivariateGCD {
      * @param evaluationStackLimit domain cardinality
      */
     @SuppressWarnings("unchecked")
-    private static <E> lMultivariatePolynomial BrownGCD(
+    private static lMultivariatePolynomial BrownGCD(
             lMultivariatePolynomial a,
             lMultivariatePolynomial b,
             RandomGenerator rnd,
@@ -1313,13 +1340,15 @@ public final class MultivariateGCD {
                 continue;
             }
 
+            // Cache previous interpolation. NOTE: clone() is important, since the poly will
+            // be modified inplace by the update() method
+            previousInterpolation = interpolation.getInterpolatingPolynomial().clone();
             // interpolate
-            previousInterpolation = interpolation.getInterpolatingPolynomial();
             interpolation.update(randomPoint, cVal);
 
             // do division test
-            if (degreeBounds[variable] == 0 || degreeBounds[variable] == interpolation.numberOfPoints()
-                    || (previousInterpolation != null && previousInterpolation.equals(interpolation.getInterpolatingPolynomial()))) {
+            if (degreeBounds[variable] <= interpolation.numberOfPoints()
+                    || previousInterpolation.equals(interpolation.getInterpolatingPolynomial())) {
                 lMultivariatePolynomial result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
                 if (result != null)
                     return result;
@@ -1406,9 +1435,10 @@ public final class MultivariateGCD {
         return contentGCD;
     }
 
+    private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 32;
 
     @SuppressWarnings("unchecked")
-    private static <E> lMultivariatePolynomial ZippelGCD(
+    private static lMultivariatePolynomial ZippelGCD(
             lMultivariatePolynomial a,
             lMultivariatePolynomial b,
             RandomGenerator rnd,
@@ -1459,13 +1489,13 @@ public final class MultivariateGCD {
         }
 
         lIntegersModulo domain = factory.domain;
-        //degree bound for the previous variable
-        int prevVarExponent = degreeBounds[variable - 1];
         //store points that were already used in interpolation
         TLongHashSet globalEvaluationStack = new TLongHashSet();
 
         int[] aDegrees = a.degrees(), bDegrees = b.degrees();
         int failedSparseInterpolations = 0;
+
+        int[] tmpDegreeBounds = degreeBounds.clone();
         main:
         while (true) {
             if (evaluationStackLimit == globalEvaluationStack.size())
@@ -1493,19 +1523,19 @@ public final class MultivariateGCD {
                 if (aDegrees[i] != aValDegrees[i] || bDegrees[i] != bValDegrees[i])
                     continue main;
 
-            lMultivariatePolynomial cVal = ZippelGCD(aVal, bVal, rnd, variable - 1, degreeBounds, evaluationStackLimit);
+            lMultivariatePolynomial cVal = ZippelGCD(aVal, bVal, rnd, variable - 1, tmpDegreeBounds, evaluationStackLimit);
             if (cVal == null)
                 //unlucky homomorphism
                 continue;
 
             int currExponent = cVal.degree(variable - 1);
-            if (currExponent > prevVarExponent)
+            if (currExponent > tmpDegreeBounds[variable - 1])
                 //unlucky homomorphism
                 continue;
 
-            if (currExponent < prevVarExponent) {
+            if (currExponent < tmpDegreeBounds[variable - 1]) {
                 //better degree bound detected
-                degreeBounds[variable - 1] = prevVarExponent = currExponent;
+                tmpDegreeBounds[variable - 1] = currExponent;
             }
 
             cVal = cVal.multiply(domain.multiply(domain.reciprocal(cVal.lc()), lcVal));
@@ -1520,8 +1550,11 @@ public final class MultivariateGCD {
             //local evaluation stack for points that are calculated via sparse interpolation (but not gcd evaluation) -> always same skeleton
             TLongHashSet localEvaluationStack = new TLongHashSet(globalEvaluationStack);
             while (true) {
-                if (interpolation.numberOfPoints() > degreeBounds[variable])
+                if (interpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
+                    // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
+                    tmpDegreeBounds = degreeBounds.clone();
                     continue main;
+                }
                 long randomPoint = domain.randomElement(rnd);
                 if (localEvaluationStack.contains(randomPoint))
                     continue;
@@ -1537,15 +1570,20 @@ public final class MultivariateGCD {
                     ++failedSparseInterpolations;
                     if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
                         throw new RuntimeException("Sparse interpolation failed");
+                    // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
+                    tmpDegreeBounds = degreeBounds.clone();
                     continue main;
                 }
                 cVal = cVal.multiply(domain.multiply(domain.reciprocal(cVal.lc()), lcVal));
                 assert cVal.lc() == lcVal;
 
-                previousInterpolation = interpolation.getInterpolatingPolynomial();
+                // Cache previous interpolation. NOTE: clone() is important, since the poly will
+                // be modified inplace by the update() method
+                previousInterpolation = interpolation.getInterpolatingPolynomial().clone();
                 interpolation.update(randomPoint, cVal);
 
-                if (degreeBounds[variable] == interpolation.numberOfPoints()
+                // do division test
+                if (tmpDegreeBounds[variable] <= interpolation.numberOfPoints()
                         || previousInterpolation.equals(interpolation.getInterpolatingPolynomial())) {
                     // do division test
                     lMultivariatePolynomial result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
@@ -1563,7 +1601,7 @@ public final class MultivariateGCD {
                                                     RandomGenerator rnd) {
         boolean monic = a.coefficientOf(0, a.degree(0)).isConstant() && b.coefficientOf(0, a.degree(0)).isConstant();
 
-        Set<DegreeVector> globalSkeleton = skeleton.terms.keySet();
+        Set<DegreeVector> globalSkeleton = skeleton.getSkeleton();
         TIntObjectHashMap<lMultivariatePolynomial> univarSkeleton = getSkeleton(skeleton);
         int[] sparseUnivarDegrees = univarSkeleton.keys();
 
@@ -1572,13 +1610,25 @@ public final class MultivariateGCD {
         int[] evaluationVariables = ArraysUtil.sequence(1, variable + 1);//variable inclusive
         long[] evaluationPoint = new long[evaluationVariables.length];
 
-        //avoid zero evaluation points // TODO check the same skeleton in main variable!!!
-        for (int i = variable - 2; i >= 0; --i)
-            do {
-                evaluationPoint[i] = domain.randomElement(rnd);
-            } while (evaluationPoint[i] == 0);
+        lPrecomputedPowersHolder powers;
+        search_for_good_evaluation_point:
+        while (true) {
+            //avoid zero evaluation points
+            for (int i = variable - 2; i >= 0; --i)
+                do {
+                    evaluationPoint[i] = domain.randomElement(rnd);
+                } while (evaluationPoint[i] == 0);
 
-        lPrecomputedPowersHolder powers = new lPrecomputedPowersHolder(evaluationPoint, domain);
+            //set temp value
+            evaluationPoint[evaluationPoint.length - 1] = domain.randomElement(rnd);
+            powers = new lPrecomputedPowersHolder(evaluationPoint, domain);
+            int[] raiseFactors = ArraysUtil.arrayOf(1, evaluationVariables.length);
+
+            for (lMultivariatePolynomial p : Arrays.asList(a, b, skeleton))
+                if (!p.getSkeleton(0).equals(p.evaluate(powers, evaluationVariables, raiseFactors).getSkeleton()))
+                    continue search_for_good_evaluation_point;
+            break;
+        }
 
         int requiredNumberOfEvaluations = -1, monicScalingExponent = -1;
         for (TIntObjectIterator<lMultivariatePolynomial> it = univarSkeleton.iterator(); it.hasNext(); ) {
@@ -1720,6 +1770,10 @@ public final class MultivariateGCD {
                             bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                             gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
 
+                    if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
+                        // unlucky main homomorphism or bad evaluation point
+                        return null;
+
                     assert gcdUnivar.isMonic();
 
                     int totalEquations = 0;
@@ -1852,6 +1906,10 @@ public final class MultivariateGCD {
                         bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
 
+                if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
+                    // unlucky main homomorphism or bad evaluation point
+                    return null;
+
                 assert gcdUnivar.isMonic();
 
                 if (monicScalingExponent != -1) {
@@ -1944,7 +2002,7 @@ public final class MultivariateGCD {
     }
 
     /** Vandermonde system builder */
-    private static final class lLinZipSystem extends lLinearSystem  {
+    private static final class lLinZipSystem extends lLinearSystem {
         public lLinZipSystem(int univarDegree, lMultivariatePolynomial skeleton, lPrecomputedPowersHolder powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }

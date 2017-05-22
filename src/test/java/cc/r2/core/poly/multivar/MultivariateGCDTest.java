@@ -2,6 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
+import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
@@ -513,6 +514,20 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         System.out.println("Brown: " + TimeUnits.statisticsNanotime(brown));
     }
 
+    @Test(timeout = 10000)
+    public void testZippel9() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        IntegersModulo domain = new IntegersModulo(26478253);
+        PrivateRandom.getRandom().setSeed(0);
+        MultivariatePolynomial<BigInteger>
+                a = parse("26478246*a*c^2+7*a*b+26478250*a*b*c^2+26478249*a*b^3*c^2+26478248*a^2*c^2+8*a^3*b*c^2+a^7", domain, LEX, vars),
+                b = parse("4*b^3*c^2+7*a+5*a*b+8*a*b^2+6*a^3*b^2*c+a^7", domain, LEX, vars),
+                gcd = parse("26478248*a*b^2*c^2+3*a*b^3*c^2+2*a^2*b^3*c^2+5*a^3*c+a^8", domain, LEX, vars);
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+        assertNotNull(ZippelGCD(a, b));
+    }
+
     @Test
     public void testZippel8() throws Exception {
         MultivariateGCD.ALWAYS_LINZIP = true;
@@ -641,9 +656,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     @Ignore
     @Test
     public void testZippel4_performance() throws Exception {
-        PrivateRandom.getRandom().setSeed(12323);
+        PrivateRandom.getRandom().setSeed(1232);
         String[] vars = {"a", "b", "c", "d", "e"};
-        IntegersModulo domain = new IntegersModulo(Integer.MAX_VALUE);
+        IntegersModulo domain = new IntegersModulo(SmallPrimes.nextPrime(100000));
         MultivariatePolynomial<BigInteger>
                 a = parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", domain, LEX, vars),
                 b = parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", domain, LEX, vars),
@@ -651,6 +666,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
+        System.out.println(a);
+        System.out.println(b);
 
         lMultivariatePolynomial
                 aL = asLongPolyZp(a),

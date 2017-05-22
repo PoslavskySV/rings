@@ -6,6 +6,7 @@ import cc.r2.core.util.ArraysUtil;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -476,7 +477,7 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
      * @return skeleton of this poly
      */
     public final Set<DegreeVector> getSkeleton() {
-        return terms.keySet();
+        return Collections.unmodifiableSet(terms.keySet());
     }
 
     /**
