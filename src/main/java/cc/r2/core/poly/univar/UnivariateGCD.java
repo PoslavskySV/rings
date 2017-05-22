@@ -414,8 +414,8 @@ public final class UnivariateGCD {
             if (modularGCD.degree == 0)
                 return lUnivariatePolynomialZ.one();
 
-            //save the base
-            if (base == null) {
+            // save the base for the first time or when a new modular image is better
+            if (base == null || base.degree > modularGCD.degree) {
                 //make base monic and multiply lcGCD
                 modularGCD.monic(lcGCD);
                 base = modularGCD;
@@ -423,12 +423,12 @@ public final class UnivariateGCD {
                 continue;
             }
 
-            //unlucky base => start over
-            if (base.degree > modularGCD.degree) {
-                base = null;
-                basePrime = -1;
-                continue;
-            }
+//            //unlucky base => start over
+//            if (base.degree > modularGCD.degree) {
+//                base = null;
+//                basePrime = -1;
+//                continue;
+//            }
 
             //skip unlucky prime
             if (base.degree < modularGCD.degree)
@@ -511,7 +511,7 @@ public final class UnivariateGCD {
         lUnivariatePolynomialZp previousBase, base = null;
         long basePrime = -1;
 
-        PrimesIterator primesLoop = new PrimesIterator(3);
+        PrimesIterator primesLoop = new PrimesIterator(1031);
         while (true) {
             long prime = primesLoop.take();
             assert prime != -1 : "long overflow";
@@ -531,8 +531,8 @@ public final class UnivariateGCD {
             if (modularGCD.degree == 0)
                 return a.createOne();
 
-            //save the base
-            if (base == null) {
+            // save the base for the first time or when a new modular image is better
+            if (base == null || base.degree > modularGCD.degree) {
                 //make base monic and multiply lcGCD
                 long lLcGCD = lcGCD.mod(bPrime).longValueExact();
                 modularGCD.monic(lLcGCD);
@@ -541,12 +541,12 @@ public final class UnivariateGCD {
                 continue;
             }
 
-            //unlucky base => start over
-            if (base.degree > modularGCD.degree) {
-                base = null;
-                basePrime = -1;
-                continue;
-            }
+//            //unlucky base => start over
+//            if (base.degree > modularGCD.degree) {
+//                base = null;
+//                basePrime = -1;
+//                continue;
+//            }
 
             //skip unlucky prime
             if (base.degree < modularGCD.degree)
@@ -555,7 +555,7 @@ public final class UnivariateGCD {
             //cache current base
             previousBase = base.clone();
 
-            if (!LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > LongArithmetics.MAX_SUPPORTED_MODULUS)
+            if (LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > LongArithmetics.MAX_SUPPORTED_MODULUS)
                 break;
 
             //lifting
