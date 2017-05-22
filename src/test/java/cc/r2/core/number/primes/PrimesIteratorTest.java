@@ -46,5 +46,21 @@ public class PrimesIteratorTest {
         Assert.assertEquals(16777259, new PrimesIterator(16777214).take());
         Assert.assertEquals(17777239, new PrimesIterator(17777214).take());
         Assert.assertEquals(1771277227, new PrimesIterator(1771277214).take());
+        Assert.assertEquals(38873, new PrimesIterator(38873).take());
+    }
+
+    @Test
+    public void test4() throws Exception {
+        int mp = SmallPrimes.SmallPrimes12[SmallPrimes.SmallPrimes12.length - 1];
+        int sp = SieveOfAtkin.SmallPrimesSieve.lastPrime();
+        for (int start : new int[]{0, mp - 10, mp - 2, mp - 1, mp, mp + 1, mp + 2, sp - 10, sp - 1, sp - 2, sp, sp + 1, sp + 2}) {
+            PrimesIterator it = new PrimesIterator(start);
+            int prev = (int) it.take();
+            for (int i = 0; i < 100; i++) {
+                int prime = (int) it.take();
+                Assert.assertEquals(SmallPrimes.nextPrime(prev + 1), prime);
+                prev = prime;
+            }
+        }
     }
 }

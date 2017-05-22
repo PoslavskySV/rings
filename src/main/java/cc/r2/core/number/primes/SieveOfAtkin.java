@@ -105,6 +105,14 @@ public final class SieveOfAtkin {
         return sieve.get(n);
     }
 
+    /** Returns the last prime in this sieve */
+    public int lastPrime() {
+        for (int i = limit; i >= 0; --i)
+            if (isPrime(i))
+                return i;
+        throw new IllegalStateException("No ant primes in the sieve");
+    }
+
     public int randomPrime(RandomGenerator rnd) {
         int i;
         do {
