@@ -557,6 +557,8 @@ public final class MultivariateGCD {
 
     /** Maximal number of fails before switch to a new homomorphism */
     private static final int MAX_SPARSE_INTERPOLATION_FAILS = 1000;
+    /** Maximal number of sparse interpolations after interpolation.numberOfPoints() > degreeBounds[variable]  */
+    private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 32;
 
     @SuppressWarnings("unchecked")
     private static <E> MultivariatePolynomial<E> ZippelGCD(
@@ -650,11 +652,11 @@ public final class MultivariateGCD {
                 continue;
 
             int currExponent = cVal.degree(variable - 1);
-            if (currExponent > tmpDegreeBounds[variable-1])
+            if (currExponent > tmpDegreeBounds[variable - 1])
                 //unlucky homomorphism
                 continue;
 
-            if (currExponent < tmpDegreeBounds[variable-1]) {
+            if (currExponent < tmpDegreeBounds[variable - 1]) {
                 //better degree bound detected
                 tmpDegreeBounds[variable - 1] = currExponent;
             }
@@ -665,13 +667,13 @@ public final class MultivariateGCD {
             SparseInterpolation sparseInterpolator = createInterpolation(variable, a, b, cVal, rnd);
 
             // we are applying dense interpolation for univariate skeleton coefficients
-            Interpolation<E> interpolation = new Interpolation<>(variable, seedPoint, cVal);
+            Interpolation<E> denseInterpolation = new Interpolation<>(variable, seedPoint, cVal);
             //previous interpolation (used to detect whether update doesn't change the result)
             MultivariatePolynomial<E> previousInterpolation;
             //local evaluation stack for points that are calculated via sparse interpolation (but not gcd evaluation) -> always same skeleton
             HashSet<E> localEvaluationStack = new HashSet<>(globalEvaluationStack);
             while (true) {
-                if (interpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
+                if (denseInterpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
                     continue main;
@@ -700,13 +702,13 @@ public final class MultivariateGCD {
 
                 // Cache previous interpolation. NOTE: clone() is important, since the poly will
                 // be modified inplace by the update() method
-                previousInterpolation = interpolation.getInterpolatingPolynomial().clone();
-                interpolation.update(randomPoint, cVal);
+                previousInterpolation = denseInterpolation.getInterpolatingPolynomial().clone();
+                denseInterpolation.update(randomPoint, cVal);
 
                 // do division test
-                if (tmpDegreeBounds[variable] <= interpolation.numberOfPoints()
-                        || previousInterpolation.equals(interpolation.getInterpolatingPolynomial())) {
-                    MultivariatePolynomial<E> result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
+                if (tmpDegreeBounds[variable] <= denseInterpolation.numberOfPoints()
+                        || previousInterpolation.equals(denseInterpolation.getInterpolatingPolynomial())) {
+                    MultivariatePolynomial<E> result = doDivisionCheck(a, b, contentGCD, denseInterpolation, variable);
                     if (result != null)
                         return result;
                 }
@@ -1435,8 +1437,6 @@ public final class MultivariateGCD {
         return contentGCD;
     }
 
-    private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 32;
-
     @SuppressWarnings("unchecked")
     private static lMultivariatePolynomial ZippelGCD(
             lMultivariatePolynomial a,
@@ -1544,13 +1544,13 @@ public final class MultivariateGCD {
             lSparseInterpolation sparseInterpolator = createInterpolation(variable, a, b, cVal, rnd);
 
             // we are applying dense interpolation for univariate skeleton coefficients
-            lInterpolation interpolation = new lInterpolation(variable, seedPoint, cVal);
+            lInterpolation denseInterpolation = new lInterpolation(variable, seedPoint, cVal);
             //previous interpolation (used to detect whether update doesn't change the result)
             lMultivariatePolynomial previousInterpolation;
             //local evaluation stack for points that are calculated via sparse interpolation (but not gcd evaluation) -> always same skeleton
             TLongHashSet localEvaluationStack = new TLongHashSet(globalEvaluationStack);
             while (true) {
-                if (interpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
+                if (denseInterpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
                     continue main;
@@ -1579,14 +1579,13 @@ public final class MultivariateGCD {
 
                 // Cache previous interpolation. NOTE: clone() is important, since the poly will
                 // be modified inplace by the update() method
-                previousInterpolation = interpolation.getInterpolatingPolynomial().clone();
-                interpolation.update(randomPoint, cVal);
+                previousInterpolation = denseInterpolation.getInterpolatingPolynomial().clone();
+                denseInterpolation.update(randomPoint, cVal);
 
                 // do division test
-                if (tmpDegreeBounds[variable] <= interpolation.numberOfPoints()
-                        || previousInterpolation.equals(interpolation.getInterpolatingPolynomial())) {
-                    // do division test
-                    lMultivariatePolynomial result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
+                if (tmpDegreeBounds[variable] <= denseInterpolation.numberOfPoints()
+                        || previousInterpolation.equals(denseInterpolation.getInterpolatingPolynomial())) {
+                    lMultivariatePolynomial result = doDivisionCheck(a, b, contentGCD, denseInterpolation, variable);
                     if (result != null)
                         return result;
                 }

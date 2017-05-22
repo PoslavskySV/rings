@@ -28,28 +28,39 @@ import static org.junit.Assert.*;
  * @since 1.0
  */
 public class MultivariateGCDTest extends AbstractPolynomialTest {
+
+
+    private static void assertBrownGCD(MultivariatePolynomial<BigInteger> gcd,
+                                       MultivariatePolynomial<BigInteger> a,
+                                       MultivariatePolynomial<BigInteger> b) {
+        MultivariatePolynomial<BigInteger> actualGCD = BrownGCD(a, b);
+        lMultivariatePolynomial lActualGCD = BrownGCD(asLongPolyZp(a), asLongPolyZp(b));
+        Assert.assertTrue(dividesQ(actualGCD, gcd));
+        Assert.assertEquals(asLongPolyZp(actualGCD).monic(), lActualGCD.monic());
+    }
+
     @Test
     public void testBrown1() throws Exception {
-        MultivariatePolynomial<BigInteger>
-                a = parse("c*b*a^2+b^2 + c"),
-                b = parse("a^2+2*b^2 + 2*c"),
-                gcd = parse("c*a+b+a+ c*a^3");
         IntegersModulo domain = new IntegersModulo(BigPrimes.nextPrime(1321323));
-        a = a.multiply(gcd).setDomain(domain);
-        b = b.multiply(gcd).setDomain(domain);
-        Assert.assertEquals(gcd, MultivariateGCD.BrownGCD(a, b));
+        MultivariatePolynomial<BigInteger>
+                a = parse("c*b*a^2+b^2 + c", domain, LEX),
+                b = parse("a^2+2*b^2 + 2*c", domain, LEX),
+                gcd = parse("c*a+b+a+ c*a^3", domain, LEX);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
     public void testBrown2() throws Exception {
-        MultivariatePolynomial<BigInteger>
-                a = parse("c*b*a^2+b^2 + c"),
-                b = parse("a^2+2*b^2 + 2*c"),
-                gcd = parse("c*a*b+b*b+a*b+ c*a^3*b");
         IntegersModulo domain = new IntegersModulo(BigPrimes.nextPrime(1321323));
-        a = a.multiply(gcd).setDomain(domain);
-        b = b.multiply(gcd).setDomain(domain);
-        Assert.assertEquals(gcd, MultivariateGCD.BrownGCD(a, b));
+        MultivariatePolynomial<BigInteger>
+                a = parse("c*b*a^2+b^2 + c", domain, LEX),
+                b = parse("a^2+2*b^2 + 2*c", domain, LEX),
+                gcd = parse("c*a*b+b*b+a*b+ c*a^3*b", domain, LEX);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -61,9 +72,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("7*b+655*a*b^3*c^2+6*a^2*b^3*c^2", domain, LEX);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
-        Assert.assertEquals(gcd.monic(), MultivariateGCD.BrownGCD(a, b).monic());
+        assertBrownGCD(gcd, a, b);
     }
-
 
     @Test
     public void testBrown3a() throws Exception {
@@ -74,7 +84,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("7*b^6+655*a*b^3*c^6+6*a^2*b^3*c^4", domain, LEX);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
-        Assert.assertEquals(gcd.monic(), MultivariateGCD.BrownGCD(a, b).monic());
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -87,10 +97,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("653*b^3*c^4+b^4+b^5*c^3+a^2*b*c^2+a^4*b^2*c^4", domain, LEX, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
-
-        MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
-        assertTrue(dividesQ(gcdActual, gcd));
-        Assert.assertEquals(gcd.monic(), gcdActual.monic());
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -105,9 +112,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("4*c^2+b^4+a^2*b^4*c+a^3*b^2*c+a^3*b^6+a^5*b^2*c^6+a^6*b^5", domain, LEX, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
-
-        MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
-        assertTrue(dividesQ(gcdActual, gcd));
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -121,9 +126,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("935*c^2+c^4+a^3*b*c^5+a^3*b^2*c^3+a^4*b^3", domain, LEX, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
-
-        MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
-        assertTrue(dividesQ(gcdActual, gcd));
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -137,9 +140,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("4+8*b^2*c^3+4*b^3+8*b^3*c+7*a*c+a*b*c+7*a^2*b^2+2*a^2*b^2*c^2+5*a^3*c^2+5*a^3*c^3", domain, LEX, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
-
-        MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
-        assertTrue(dividesQ(gcdActual, gcd));
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -160,9 +161,12 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             checkConsistency(data.a, data.b, data.gcd, data.aGCD, data.bGCD);
             try {
                 PrivateRandom.getRandom().setSeed(n);
-                gcdActual = MultivariateGCD.BrownGCD(data.aGCD, data.bGCD);
+                gcdActual = BrownGCD(data.aGCD, data.bGCD);
                 checkConsistency(gcdActual);
                 assertTrue(dividesQ(gcdActual, data.gcd));
+
+                PrivateRandom.getRandom().setSeed(n);
+                assertTrue(dividesQ(BrownGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD)), asLongPolyZp(data.gcd)));
             } catch (Throwable err) {
                 System.out.println("seed: " + n);
                 System.out.println("modulus: " + data.domain);
@@ -196,10 +200,15 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             checkConsistency(data.a, data.b);
             try {
                 PrivateRandom.getRandom().setSeed(n);
-                gcdActual = MultivariateGCD.BrownGCD(data.a, data.b);
+                gcdActual = BrownGCD(data.a, data.b);
                 checkConsistency(gcdActual);
                 assertTrue(dividesQ(data.a, gcdActual));
                 assertTrue(dividesQ(data.b, gcdActual));
+
+                PrivateRandom.getRandom().setSeed(n);
+                lMultivariatePolynomial lGcdActual = BrownGCD(asLongPolyZp(data.a), asLongPolyZp(data.b));
+                assertTrue(dividesQ(asLongPolyZp(data.a), lGcdActual));
+                assertTrue(dividesQ(asLongPolyZp(data.b), lGcdActual));
             } catch (Throwable err) {
                 System.out.println("seed: " + n);
                 System.out.println("modulus: " + data.domain);
@@ -251,9 +260,13 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             checkConsistency(data.a, data.b, gcd, aGCD, bGCD);
             try {
                 PrivateRandom.getRandom().setSeed(n);
-                gcdActual = MultivariateGCD.BrownGCD(aGCD, bGCD);
+                gcdActual = BrownGCD(aGCD, bGCD);
                 checkConsistency(gcdActual);
                 assertTrue(dividesQ(gcdActual, gcd));
+
+                PrivateRandom.getRandom().setSeed(n);
+                lMultivariatePolynomial lGcdActual = BrownGCD(asLongPolyZp(aGCD), asLongPolyZp(bGCD));
+                assertTrue(dividesQ(lGcdActual, asLongPolyZp(gcd)));
             } catch (Throwable err) {
                 System.out.println("seed: " + n);
                 System.out.println("modulus: " + data.domain);
@@ -279,9 +292,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("a^2 + c^2", domain, LEX, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
-
-        MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
-        assertTrue(dividesQ(gcdActual, gcd));
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -295,9 +306,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("d^2", domain, LEX, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
-
-        MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
-        assertTrue(dividesQ(gcdActual, gcd));
+        assertBrownGCD(gcd, a, b);
     }
 
     @Test
@@ -308,10 +317,20 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 a = parse("1199884 + 4783764*b + b^2 + 3215597*a*b + 2196297*a*b^2 + 4781733*a^4 + a^4*b + 2196297*a^5*b", domain, LEX, vars),
                 b = parse("4645946 + 3921107*b + b^2 + 5605437*a*b + 2196297*a*b^2 + 4781733*a^3 + a^3*b + 2196297*a^4*b", domain, LEX, vars);
 
-        MultivariatePolynomial<BigInteger> gcdActual = MultivariateGCD.BrownGCD(a, b);
+        MultivariatePolynomial<BigInteger> gcdActual = BrownGCD(a, b);
         gcdActual = gcdActual.monic().multiply(domain.valueOf(4781733));
         MultivariatePolynomial<BigInteger> expected = parse("1574588 + 4559668*b + 4781733*a*b", domain, LEX, vars);
         assertEquals(expected, gcdActual);
+    }
+
+
+    private static void assertZippelGCD(MultivariatePolynomial<BigInteger> gcd,
+                                        MultivariatePolynomial<BigInteger> a,
+                                        MultivariatePolynomial<BigInteger> b) {
+        MultivariatePolynomial<BigInteger> actualGCD = ZippelGCD(a, b);
+        lMultivariatePolynomial lActualGCD = ZippelGCD(asLongPolyZp(a), asLongPolyZp(b));
+        Assert.assertTrue(dividesQ(actualGCD, gcd));
+        Assert.assertEquals(asLongPolyZp(actualGCD).monic(), lActualGCD.monic());
     }
 
     @Test
@@ -332,10 +351,19 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
         for (int i = 0; i < 100; i++) {
-            SparseInterpolation sparseInterpolation
+            SparseInterpolation<BigInteger> sparseInterpolation
                     = createInterpolation(variable, a, b, skeleton, rnd);
             BigInteger point = domain.randomElement(rnd);
             assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        }
+
+        lMultivariatePolynomial la = asLongPolyZp(a), lb = asLongPolyZp(b),
+                lskeleton = asLongPolyZp(skeleton), lgcd = asLongPolyZp(gcd);
+        for (int i = 0; i < 100; i++) {
+            lSparseInterpolation sparseInterpolation
+                    = createInterpolation(variable, la, lb, lskeleton, rnd);
+            long point = domain.asLong().randomElement(rnd);
+            assertEquals(lgcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
     }
 
@@ -349,9 +377,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("a^2 + c*a + b + a*c*b + a*c^2", domain, LEX, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
-
-        MultivariatePolynomial<BigInteger> gcdActual = ZippelGCD(a, b);
-        assertTrue(dividesQ(gcdActual, gcd));
+        assertZippelGCD(gcd, a, b);
     }
 
     @Test
@@ -374,8 +400,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-
-        SparseInterpolation sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
+        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
         BigInteger point = domain.valueOf(1324);
         assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
     }
@@ -400,7 +425,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
+        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
         BigInteger point = domain.valueOf(1324);
         assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
     }
@@ -425,15 +450,19 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             for (int i = 0; i < 10; i++) {
                 int rndSeed = i^n;
                 rnd.setSeed(rndSeed);
-                SparseInterpolation sparseInterpolation
+                SparseInterpolation<BigInteger> sparseInterpolation
                         = createInterpolation(variable, data.aGCD, data.bGCD, skeleton, rnd);
+
+                lSparseInterpolation lSparseInterpolation
+                        = createInterpolation(variable, asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD), asLongPolyZp(skeleton), rnd);
                 BigInteger point = data.a.domain.randomElement(rnd);
                 try {
-                    MultivariatePolynomial<BigInteger> expected = data.gcd.evaluate(variable, point);
-                    MultivariatePolynomial<BigInteger> actual = sparseInterpolation.evaluate(point);
-                    expected = expected.monic();
-                    actual = actual.monic();
+                    MultivariatePolynomial<BigInteger> expected = data.gcd.evaluate(variable, point).monic();
+                    MultivariatePolynomial<BigInteger> actual = sparseInterpolation.evaluate(point).monic();
                     assertEquals(expected, actual);
+
+                    lMultivariatePolynomial lActual = lSparseInterpolation.evaluate(point.longValueExact()).monic();
+                    assertEquals(asLongPolyZp(expected), lActual);
                 } catch (Throwable e) {
                     System.out.println("rnd seed : " + rndSeed);
                     System.out.println("seed point : " + seed);
@@ -466,7 +495,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
+        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
         BigInteger point = domain.valueOf(1324);
         assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
     }
@@ -500,6 +529,10 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
                 assertTrue(dividesQ(gcdZippel, data.gcd));
                 assertTrue(dividesQ(gcdBrown, data.gcd));
+
+                PrivateRandom.getRandom().setSeed(n);
+                lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
+                assertEquals(asLongPolyZp(gcdZippel), lGcdZippel);
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
                 System.out.println("domain: " + data.domain);
@@ -526,6 +559,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertNotNull(ZippelGCD(a, b));
+        assertNotNull(ZippelGCD(asLongPolyZp(a), asLongPolyZp(b)));
     }
 
     @Test
@@ -548,7 +582,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
+        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
         BigInteger point = domain.valueOf(1324);
         assertEquals(gcd.evaluate(variable, point).monic(), sparseInterpolation.evaluate(point).monic());
     }
@@ -584,6 +618,10 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
                 assertTrue(dividesQ(gcdZippel, data.gcd));
                 assertTrue(dividesQ(gcdBrown, data.gcd));
+
+                PrivateRandom.getRandom().setSeed(n);
+                lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
+                assertEquals(asLongPolyZp(gcdZippel), lGcdZippel);
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
                 System.out.println("domain: " + data.domain);
@@ -622,6 +660,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcdZippel = ZippelGCD(data.aGCD, data.bGCD);
                 zippel.addValue(System.nanoTime() - start);
                 assertTrue(dividesQ(gcdZippel, data.gcd));
+
+                PrivateRandom.getRandom().setSeed(n);
+                assertEquals(asLongPolyZp(gcdZippel), ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD)));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
                 System.out.println("domain: " + data.domain);
