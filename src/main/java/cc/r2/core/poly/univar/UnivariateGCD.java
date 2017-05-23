@@ -393,7 +393,8 @@ public final class UnivariateGCD {
         long lcGCD = LongArithmetics.gcd(a.lc(), b.lc());
         double bound = Math.max(a.mignotteBound(), b.mignotteBound()) * lcGCD;
 
-        lUnivariatePolynomialZp previousBase, base = null;
+        lUnivariatePolynomialZ previousBase = null;
+        lUnivariatePolynomialZp base = null;
         long basePrime = -1;
 
         PrimesIterator primesLoop = new PrimesIterator(3);
@@ -423,38 +424,31 @@ public final class UnivariateGCD {
                 continue;
             }
 
-//            //unlucky base => start over
-//            if (base.degree > modularGCD.degree) {
-//                base = null;
-//                basePrime = -1;
-//                continue;
-//            }
-
             //skip unlucky prime
             if (base.degree < modularGCD.degree)
                 continue;
 
-            //cache current base
-            previousBase = base.clone();
-
             //lifting
             long newBasePrime = safeMultiply(basePrime, prime);
-            long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
-            long lcMod = LongArithmetics.mod(lcGCD, prime);
+            long monicFactor =
+                    modularGCD.multiply(
+                            LongArithmetics.modInverse(modularGCD.lc(), prime),
+                            modularGCD.domain.modulus(lcGCD));
             ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
             for (int i = 0; i <= base.degree; ++i) {
                 //this is monic modularGCD multiplied by lcGCD mod prime
                 //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
 
-                long oth = modularGCD.multiply(modularGCD.multiply(modularGCD.data[i], monicFactor), lcMod);
+                long oth = modularGCD.multiply(modularGCD.data[i], monicFactor);
                 base.data[i] = ChineseRemainders(magic, base.data[i], oth);
             }
             base = base.setModulusUnsafe(newBasePrime);
             basePrime = newBasePrime;
 
             //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
-            if ((double) basePrime >= 2 * bound || base.equals(previousBase)) {
-                lUnivariatePolynomialZ candidate = base.asPolyZSymmetric().primitivePart();
+            lUnivariatePolynomialZ candidate = base.asPolyZSymmetric().primitivePart();
+            if ((double) basePrime >= 2 * bound || (previousBase != null && candidate.equals(previousBase))) {
+                previousBase = candidate;
                 //first check b since b is less degree
                 lUnivariatePolynomialZ[] div;
                 div = DivisionWithRemainder.divideAndRemainder(b, candidate, true);
@@ -467,6 +461,7 @@ public final class UnivariateGCD {
 
                 return candidate;
             }
+            previousBase = candidate;
         }
     }
 
@@ -508,7 +503,8 @@ public final class UnivariateGCD {
                 && maxAbsCoefficient(b).isLong())
             return ModularGCD(asLongPolyZ(a), asLongPolyZ(b)).toBigPoly();
 
-        lUnivariatePolynomialZp previousBase, base = null;
+        lUnivariatePolynomialZ previousBase = null;
+        lUnivariatePolynomialZp base = null;
         long basePrime = -1;
 
         PrimesIterator primesLoop = new PrimesIterator(1031);
@@ -541,41 +537,34 @@ public final class UnivariateGCD {
                 continue;
             }
 
-//            //unlucky base => start over
-//            if (base.degree > modularGCD.degree) {
-//                base = null;
-//                basePrime = -1;
-//                continue;
-//            }
-
             //skip unlucky prime
             if (base.degree < modularGCD.degree)
                 continue;
-
-            //cache current base
-            previousBase = base.clone();
 
             if (LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > LongArithmetics.MAX_SUPPORTED_MODULUS)
                 break;
 
             //lifting
-            long newBasePrime = safeMultiply(basePrime, prime);
-            long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
-            long lcMod = lcGCD.mod(bPrime).longValueExact();
+            long newBasePrime = basePrime * prime;
+            long monicFactor = modularGCD.multiply(
+                    LongArithmetics.modInverse(modularGCD.lc(), prime),
+                    lcGCD.mod(bPrime).longValueExact());
             ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
             for (int i = 0; i <= base.degree; ++i) {
                 //this is monic modularGCD multiplied by lcGCD mod prime
                 //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
 
-                long oth = modularGCD.multiply(modularGCD.multiply(modularGCD.data[i], monicFactor), lcMod);
+                long oth = modularGCD.multiply(modularGCD.data[i], monicFactor);
                 base.data[i] = ChineseRemainders(magic, base.data[i], oth);
             }
             base = base.setModulusUnsafe(newBasePrime);
             basePrime = newBasePrime;
 
             //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
-            if (BigInteger.valueOf(basePrime).compareTo(bound2) >= 0 || base.equals(previousBase)) {
-                UnivariatePolynomial<BigInteger> candidate = base.asPolyZSymmetric().primitivePart().toBigPoly();
+            lUnivariatePolynomialZ lCandidate = base.asPolyZSymmetric().primitivePart();
+            if (BigInteger.valueOf(basePrime).compareTo(bound2) >= 0 || (previousBase != null && lCandidate.equals(previousBase))) {
+                previousBase = lCandidate;
+                UnivariatePolynomial<BigInteger> candidate = lCandidate.toBigPoly();
                 //first check b since b is less degree
                 UnivariatePolynomial<BigInteger>[] div;
                 div = divideAndRemainder(b, candidate, true);
@@ -588,10 +577,11 @@ public final class UnivariateGCD {
 
                 return candidate;
             }
+            previousBase = lCandidate;
         }
 
         //continue lifting with multi-precision integers
-        UnivariatePolynomial<BigInteger> bPreviousBase, bBase = base.toBigPoly();
+        UnivariatePolynomial<BigInteger> bPreviousBase = null, bBase = base.toBigPoly();
         BigInteger bBasePrime = BigInteger.valueOf(basePrime);
 
         while (true) {
@@ -614,7 +604,7 @@ public final class UnivariateGCD {
                 return a.createOne();
 
             //save the base
-            if (bBase == null) {
+            if (bBase == null || bBase.degree > modularGCD.degree) {
                 //make base monic and multiply lcGCD
                 long lLcGCD = lcGCD.mod(bPrime).longValueExact();
                 modularGCD.monic(lLcGCD);
@@ -623,38 +613,29 @@ public final class UnivariateGCD {
                 continue;
             }
 
-            //unlucky base => start over
-            if (bBase.degree > modularGCD.degree) {
-                bBase = null;
-                bBasePrime = BigInteger.NEGATIVE_ONE;
-                continue;
-            }
-
             //skip unlucky prime
             if (bBase.degree < modularGCD.degree)
                 continue;
 
-            //cache current base
-            bPreviousBase = bBase.clone();
-
-
             //lifting
             BigInteger newBasePrime = bBasePrime.multiply(bPrime);
-            long monicFactor = LongArithmetics.modInverse(modularGCD.lc(), prime);
-            long lcMod = lcGCD.mod(bPrime).longValueExact();
+            long monicFactor = modularGCD.multiply(
+                    LongArithmetics.modInverse(modularGCD.lc(), prime),
+                    lcGCD.mod(bPrime).longValueExact());
             for (int i = 0; i <= bBase.degree; ++i) {
                 //this is monic modularGCD multiplied by lcGCD mod prime
                 //long oth = mod(safeMultiply(mod(safeMultiply(modularGCD.data[i], monicFactor), prime), lcMod), prime);
 
-                long oth = modularGCD.multiply(modularGCD.multiply(modularGCD.data[i], monicFactor), lcMod);
+                long oth = modularGCD.multiply(modularGCD.data[i], monicFactor);
                 bBase.data[i] = ChineseRemainders(bBasePrime, bPrime, bBase.data[i], BigInteger.valueOf(oth));
             }
             bBase = bBase.setDomainUnsafe(new IntegersModulo(newBasePrime));
             bBasePrime = newBasePrime;
 
+            UnivariatePolynomial<BigInteger> candidate = asPolyZSymmetric(bBase).primitivePart();
             //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
-            if (bBasePrime.compareTo(bound2) >= 0 || bBase.equals(bPreviousBase)) {
-                UnivariatePolynomial<BigInteger> candidate = asPolyZSymmetric(bBase).primitivePart();
+            if (bBasePrime.compareTo(bound2) >= 0 || (bPreviousBase != null && candidate.equals(bPreviousBase))) {
+                bPreviousBase = candidate;
                 //first check b since b is less degree
                 UnivariatePolynomial<BigInteger>[] div;
                 div = divideAndRemainder(b, candidate, true);
@@ -667,6 +648,7 @@ public final class UnivariateGCD {
 
                 return candidate;
             }
+            bPreviousBase = candidate;
         }
     }
 
