@@ -1,6 +1,8 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.poly.IGeneralPolynomial;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 
 /**
  * @author Stanislav Poslavsky
@@ -14,6 +16,19 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      * @return whether i-th coefficient of this is zero
      */
     boolean isZeroAt(int i);
+
+    /**
+     * Returns a set of exponents of non-zero terms
+     *
+     * @return a set of exponents of non-zero terms
+     */
+    default TIntSet exponents() {
+        TIntHashSet degrees = new TIntHashSet();
+        for (int i = degree(); i >= 0; --i)
+            if (!isZeroAt(i))
+                degrees.add(i);
+        return degrees;
+    }
 
     /**
      * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly

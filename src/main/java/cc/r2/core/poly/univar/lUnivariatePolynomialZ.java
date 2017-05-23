@@ -170,6 +170,10 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
 
     /** {@inheritDoc} */
     @Override
+    public boolean isOverZ() {return true;}
+
+    /** {@inheritDoc} */
+    @Override
     public BigInteger coefficientDomainCardinality() {return null;}
 
     /** {@inheritDoc} */

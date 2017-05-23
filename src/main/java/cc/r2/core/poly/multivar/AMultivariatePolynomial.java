@@ -6,10 +6,7 @@ import cc.r2.core.util.ArraysUtil;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -17,7 +14,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-        implements IGeneralPolynomial<Poly> {
+        implements IGeneralPolynomial<Poly>, Iterable<Term> {
     /** number of variables */
     final int nVariables;
     /** the ordering */
@@ -146,6 +143,11 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
      * @return number of terms
      */
     public final int size() {return terms.size();}
+
+    @Override
+    public final Iterator<Term> iterator() {
+        return terms.iterator();
+    }
 
     @Override
     public final boolean isMonomial() {
@@ -345,6 +347,9 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
     /** private term factory */
     abstract Term getUnitTerm();
 
+    /** private term factory */
+    abstract Term getZeroTerm();
+
     /**
      * Divides this polynomial by a {@code monomial} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code monomial}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
@@ -478,6 +483,13 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
      */
     public final Set<DegreeVector> getSkeleton() {
         return Collections.unmodifiableSet(terms.keySet());
+    }
+
+    public final Poly setAllCoefficientsToUnit(){
+        Term unit = getUnitTerm();
+        for (Map.Entry<DegreeVector, Term> entry : terms.entrySet())
+            entry.setValue(unit.setDegreeVector(entry.getKey()));
+        return self;
     }
 
     /**

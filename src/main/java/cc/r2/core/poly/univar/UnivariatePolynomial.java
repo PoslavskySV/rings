@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.util.ArraysUtil;
 
@@ -385,6 +386,10 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public boolean isOverFiniteField() {
         return domain.isFinite();
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isOverZ() {return domain.equals(Integers);}
 
     /** {@inheritDoc} */
     @Override

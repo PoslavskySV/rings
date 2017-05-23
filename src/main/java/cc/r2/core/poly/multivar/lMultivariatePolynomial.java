@@ -1,6 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.UnivariatePolynomials;
 import cc.r2.core.poly.lIntegersModulo;
@@ -168,6 +169,8 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
      */
     @Override
     public lUnivariatePolynomialZp asUnivariate() {
+        if (isConstant())
+            return lUnivariatePolynomialZp.createUnsafe(domain, new long[]{lc()});
         int[] degrees = degrees();
         int theVar = -1;
         for (int i = 0; i < degrees.length; i++) {
@@ -177,6 +180,8 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
                 theVar = i;
             }
         }
+        if (theVar == -1)
+            throw new IllegalStateException("Not a univariate polynomial: " + this);
         long[] univarData = new long[degrees[theVar] + 1];
         for (lMonomialTerm e : terms)
             univarData[e.exponents[theVar]] = e.coefficient;
@@ -228,6 +233,42 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
         return result;
     }
 
+    /**
+     * Returns polynomial over Z formed from the coefficients of this
+     * represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
+     *
+     * @return Z[X] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
+     */
+    public MultivariatePolynomial<BigInteger> asPolyZSymmetric() {
+        MonomialsSet<MonomialTerm<BigInteger>> bTerms = new MonomialsSet<>(ordering);
+        for (lMonomialTerm t : this)
+            bTerms.add(new MonomialTerm<>(t.exponents, t.totalDegree, BigInteger.valueOf(domain.symmetricForm(t.coefficient))));
+        return new MultivariatePolynomial<>(nVariables, Integers.Integers, ordering, bTerms);
+    }
+
+    /**
+     * Returns polynomial over Z formed from the coefficients of this
+     *
+     * @return Z[X] version of this
+     */
+    public MultivariatePolynomial<BigInteger> asPolyZ() {
+        MonomialsSet<MonomialTerm<BigInteger>> bTerms = new MonomialsSet<>(ordering);
+        for (lMonomialTerm t : this)
+            bTerms.add(t.asBigInteger());
+        return new MultivariatePolynomial<>(nVariables, Integers.Integers, ordering, bTerms);
+    }
+
+    /**
+     * Returns polynomial over Z formed from the coefficients of this
+     *
+     * @return Z[X] version of this
+     */
+    public MultivariatePolynomial<BigInteger> toBigPoly() {
+        MonomialsSet<MonomialTerm<BigInteger>> bTerms = new MonomialsSet<>(ordering);
+        for (lMonomialTerm t : this)
+            bTerms.add(t.asBigInteger());
+        return new MultivariatePolynomial<>(nVariables, domain.asDomain(), ordering, bTerms);
+    }
 
     /* ============================================ Main methods ============================================ */
 
@@ -247,10 +288,18 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
     }
 
     @Override
+    lMonomialTerm getZeroTerm() {
+        return lMonomialTerm.withZeroExponents(nVariables, 0L);
+    }
+
+    @Override
     public boolean isOverField() {return true;}
 
     @Override
     public boolean isOverFiniteField() {return true;}
+
+    @Override
+    public boolean isOverZ() {return false;}
 
     @Override
     public BigInteger coefficientDomainCardinality() {return BigInteger.valueOf(domain.modulus);}
@@ -274,6 +323,16 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
         /* add cache in the future */
     }
 
+    /**
+     * Switches to another domain specified by {@code newModulus}
+     *
+     * @param newModulus the new modulus
+     * @return a copy of this reduced to the domain specified by {@code newModulus}
+     */
+    @SuppressWarnings("unchecked")
+    public lMultivariatePolynomial setDomain(long newModulus) {
+        return setDomain(new lIntegersModulo(newModulus));
+    }
 
     /**
      * Switches to another domain specified by {@code newDomain}
@@ -287,6 +346,10 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
         for (lMonomialTerm e : terms)
             newData.add(e.setDomain(newDomain));
         return new lMultivariatePolynomial(nVariables, newDomain, ordering, newData);
+    }
+
+    public lMultivariatePolynomial setDomainUnsafe(lIntegersModulo newDomain) {
+        return new lMultivariatePolynomial(nVariables, newDomain, ordering, terms);
     }
 
     /**
@@ -473,13 +536,24 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
     }
 
     /**
-     * Makes this polynomial monic if possible, if not -- destroys this and returns null
+     * Makes this polynomial monic
      *
-     * @return monic this or null if the domain does not support exact division by lc
+     * @return monic this
      */
     @Override
     public lMultivariatePolynomial monic() {
         return divide(lc());
+    }
+
+    /**
+     * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is
+     * {@code monic(modulus).multiply(factor)} ).
+     *
+     * @param factor the factor
+     * @return {@code this}
+     */
+    public lMultivariatePolynomial monic(long factor) {
+        return multiply(domain.multiply(domain.modulus(factor), domain.reciprocal(lc())));
     }
 
     /**

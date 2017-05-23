@@ -4,6 +4,7 @@ import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.poly.CommonUtils;
 import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.LongArithmetics;
@@ -70,11 +71,6 @@ public final class Factorization {
 
     /* ************************** Factorization in Zp[x] ************************** */
 
-    static void ensureFiniteFieldDomain(IUnivariatePolynomial poly) {
-        if (!poly.isOverFiniteField())
-            throw new IllegalArgumentException("Polynomial over finite field is expected, but got " + poly.getClass());
-    }
-
     /**
      * Factors {@code poly} which coefficient domain is a finite field.
      *
@@ -82,7 +78,7 @@ public final class Factorization {
      * @return factor decomposition
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factorInFiniteField(Poly poly) {
-        ensureFiniteFieldDomain(poly);
+        CommonUtils.ensureFiniteFieldDomain(poly);
         FactorDecomposition<Poly> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;

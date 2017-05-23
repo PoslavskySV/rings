@@ -229,6 +229,10 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
 
     /** {@inheritDoc} */
     @Override
+    public boolean isOverZ() {return false;}
+
+    /** {@inheritDoc} */
+    @Override
     public BigInteger coefficientDomainCardinality() {
         return BigInteger.valueOf(modulus());
     }

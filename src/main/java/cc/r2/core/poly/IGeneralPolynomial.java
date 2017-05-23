@@ -84,6 +84,13 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
     boolean isOverField();
 
     /**
+     * Returns whether the coefficient domain of this polynomial is Z
+     *
+     * @return whether the coefficient domain of this polynomial is Z
+     */
+    boolean isOverZ();
+
+    /**
      * Returns whether the coefficient domain of this polynomial is a finite field
      *
      * @return whether the coefficient domain of this polynomial is a finite field

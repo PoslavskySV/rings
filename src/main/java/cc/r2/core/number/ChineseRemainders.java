@@ -24,7 +24,7 @@ public final class ChineseRemainders {
             throw new RuntimeException("Negative CRT input: " + prime1 + " " + prime2);
 
         long modulus = multiplyExact(prime1, prime2);
-        long result = 0;
+        long result;
 
         //(result + (prime2 * ((bezout0(prime2, prime1) * remainder1) % prime1)) % modulus) % modulus
         result = floorMod(multiplyExact(prime2,

@@ -15,6 +15,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static cc.r2.core.poly.Integers.Integers;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -189,7 +191,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @throws IllegalArgumentException if this is not effectively a univariate polynomial
      */
     @Override
+    @SuppressWarnings("unchecked")
     public UnivariatePolynomial<E> asUnivariate() {
+        if (isConstant())
+            return UnivariatePolynomial.create(domain, lc());
         int[] degrees = degrees();
         int theVar = -1;
         for (int i = 0; i < degrees.length; i++) {
@@ -199,6 +204,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
                 theVar = i;
             }
         }
+        if (theVar == -1)
+            throw new IllegalStateException("Not a univariate polynomial: " + this);
         E[] univarData = domain.createZeroesArray(degrees[theVar] + 1);
         for (MonomialTerm<E> e : terms)
             univarData[e.exponents[theVar]] = e.coefficient;
@@ -250,6 +257,36 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return result;
     }
 
+    /**
+     * Returns Z[X] polynomial formed from the coefficients of the poly.
+     *
+     * @param poly the polynomial
+     * @param copy whether to copy the internal data
+     * @return Z[X] version of the poly
+     */
+    public static MultivariatePolynomial<BigInteger> asPolyZ(MultivariatePolynomial<BigInteger> poly, boolean copy) {
+        return new MultivariatePolynomial<>(poly.nVariables, Integers, poly.ordering, copy ? poly.terms.clone() : poly.terms);
+    }
+
+    /**
+     * Converts Zp[x] polynomial to Z[x] polynomial formed from the coefficients of this
+     * represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
+     *
+     * @param poly Zp polynomial
+     * @return Z[x] version of the poly with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
+     * @throws IllegalArgumentException is {@code poly.domain} is not a {@link IntegersModulo}
+     */
+    public static MultivariatePolynomial<BigInteger> asPolyZSymmetric(MultivariatePolynomial<BigInteger> poly) {
+        if (!(poly.domain instanceof IntegersModulo))
+            throw new IllegalArgumentException("Not a modular domain: " + poly.domain);
+        IntegersModulo domain = (IntegersModulo) poly.domain;
+        MonomialsSet<MonomialTerm<BigInteger>> newTerms = new MonomialsSet<>(poly.ordering);
+        for (MonomialTerm<BigInteger> term : poly)
+            newTerms.add(term.setCoefficient(domain.symmetricForm(term.coefficient)));
+
+        return new MultivariatePolynomial<>(poly.nVariables, Integers, poly.ordering, newTerms);
+    }
+
 
     /* ============================================ Main methods ============================================ */
 
@@ -269,10 +306,19 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    MonomialTerm<E> getZeroTerm() {
+        return MonomialTerm.withZeroExponents(nVariables, domain.getZero());
+    }
+
+    @Override
     public boolean isOverField() {return domain.isField();}
 
     @Override
     public boolean isOverFiniteField() {return domain.isFiniteField();}
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isOverZ() {return domain.equals(Integers);}
 
     @Override
     public BigInteger coefficientDomainCardinality() {return domain.cardinality();}
@@ -303,12 +349,18 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param newDomain the new domain
      * @return a copy of this reduced to the domain specified by {@code newDomain}
      */
-    @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E> setDomain(Domain<E> newDomain) {
         MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> e : terms)
-            newData.add(e.setDomain(newDomain));
+        for (MonomialTerm<E> e : terms) {
+            MonomialTerm<E> term = e.setDomain(newDomain);
+            if (!newDomain.isZero(term.coefficient))
+                newData.add(term);
+        }
         return new MultivariatePolynomial<>(nVariables, newDomain, ordering, newData);
+    }
+
+    public MultivariatePolynomial<E> setDomainUnsafe(Domain<E> newDomain) {
+        return new MultivariatePolynomial<>(nVariables, newDomain, ordering, terms);
     }
 
     /**
@@ -529,6 +581,18 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<E> monic() {
         return divideOrNull(lc());
+    }
+
+    /**
+     * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is
+     * {@code monic(modulus).multiply(factor)} ).
+     *
+     * @param factor the factor
+     * @return {@code this}
+     */
+    public MultivariatePolynomial<E> monic(E factor) {
+        E lc = lc();
+        return multiply(factor).divideOrNull(lc);
     }
 
     /**

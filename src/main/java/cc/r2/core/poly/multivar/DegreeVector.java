@@ -36,11 +36,16 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     /** internal method */
     abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
 
+    /** internal method */
+    final MonomialTerm setDegreeVector(DegreeVector dv) {
+        return setDegreeVector(dv.exponents, dv.totalDegree);
+    }
+
     /** set i-th exponent to zero and return new Monomial */
     abstract MonomialTerm setZero(int var);
 
     /** Divide degree vector */
-    final MonomialTerm divide(DegreeVector oth){
+    final MonomialTerm divide(DegreeVector oth) {
         int[] newExponents = new int[exponents.length];
         for (int i = 0; i < exponents.length; i++) {
             newExponents[i] = exponents[i] - oth.exponents[i];

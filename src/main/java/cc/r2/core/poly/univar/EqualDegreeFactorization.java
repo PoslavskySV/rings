@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 
-import static cc.r2.core.poly.univar.Factorization.ensureFiniteFieldDomain;
+import static cc.r2.core.poly.CommonUtils.ensureFiniteFieldDomain;
 
 
 /**
