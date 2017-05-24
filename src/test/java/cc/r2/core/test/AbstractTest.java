@@ -72,14 +72,14 @@ public class AbstractTest {
      * Returns {@code nSmall} if time-consuming are disabled and {@code nLarge} otherwise
      */
     public static long its(long nSmall, long nLarge) {
-        return runTimeConsumingTests() ? nLarge : nSmall;
+        return runTimeConsumingTests() ? nLarge : nLarge;
     }
 
     /**
      * Returns {@code nSmall} if time-consuming are disabled and {@code nLarge} otherwise
      */
     public static int its(int nSmall, int nLarge) {
-        return runTimeConsumingTests() ? nLarge : nSmall;
+        return runTimeConsumingTests() ? nLarge : nLarge;
     }
 
 

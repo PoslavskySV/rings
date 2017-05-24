@@ -8,7 +8,6 @@ import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.util.RandomDataGenerator;
-import cc.r2.core.util.RandomUtil;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -17,7 +16,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Comparator;
 
 import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.Rationals.Rationals;
@@ -1128,6 +1126,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         assertTrue(dividesQ(ZippelGCD(a, b), gcd));
     }
 
+    @Ignore//too long for rationals
     @Test
     public void testRationals2() throws Exception {
         String[] vars = {"a", "b", "c", "d", "e"};
