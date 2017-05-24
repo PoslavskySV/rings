@@ -295,8 +295,11 @@ public final class Factorization {
         assert poly.lc().signum() > 0;
 
         BigInteger bound2 = BigInteger.TWO.multiply(mignotteBound(poly)).multiply(poly.lc().abs());
-        if (bound2.compareTo(LongArithmetics.b_MAX_SUPPORTED_MODULUS) < 0)
-            return FactorDecomposition.convert(factorSquareFree(asLongPolyZ(poly)));
+        if (bound2.compareTo(LongArithmetics.b_MAX_SUPPORTED_MODULUS) < 0) {
+            FactorDecomposition<lUnivariatePolynomialZ> tryLong = factorSquareFree(asLongPolyZ(poly));
+            if (tryLong != null)
+                return FactorDecomposition.convert(tryLong);
+        }
 
         // choose prime at random
         long modulus = -1;
@@ -377,17 +380,20 @@ public final class Factorization {
             moduloImage = poly.modulus(modulus, true);
         } while (!SquareFreeFactorization.isSquareFree(moduloImage));
 
-        // do modular factorization
-        FactorDecomposition<lUnivariatePolynomialZp> modularFactors = factorInFiniteField(moduloImage.monic());
-
         // do Hensel lifting
         // determine number of Hensel steps
         int henselIterations = 0;
         long liftedModulus = modulus;
         while (liftedModulus < bound2) {
+            if (LongArithmetics.isOverflowMultiply(liftedModulus, liftedModulus))
+                return null;
             liftedModulus = LongArithmetics.safeMultiply(liftedModulus, liftedModulus);
             ++henselIterations;
         }
+
+        // do modular factorization
+        FactorDecomposition<lUnivariatePolynomialZp> modularFactors = factorInFiniteField(moduloImage.monic());
+
         // actual lift
         if (henselIterations > 0)
             modularFactors = FactorDecomposition.create(modularFactors.constantFactor, HenselLifting.liftFactorization(modulus, liftedModulus, henselIterations, poly, modularFactors.factors, true));
