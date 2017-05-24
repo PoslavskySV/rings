@@ -126,8 +126,8 @@ public final class Rationals implements Domain<Rational> {
     @Override
     public Rational randomElement(RandomGenerator rnd) {
         long den;
-        do {den = rnd.nextLong();} while (den == 0);
-        return new Rational(rnd.nextLong(), den);
+        do {den = rnd.nextInt();} while (den == 0);
+        return new Rational(rnd.nextInt(), den);
     }
 
     @Override

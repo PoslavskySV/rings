@@ -6,7 +6,10 @@ import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -1138,6 +1141,33 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
+    }
+
+    @Test
+    public void testFiniteField1() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            FiniteField field = FiniteField.GF17p5;
+            MultivariatePolynomial<lUnivariatePolynomialZp>
+                    a = MultivariatePolynomial.zero(3, field, LEX)
+                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5)), 1, 1, 3))
+                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 3, 2, 13)), 3, 2, 1))
+                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 13, 12, 13)), 0, 2, 1)),
+                    b = MultivariatePolynomial.zero(3, field, LEX)
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5)), 1, 1, 13))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 1, 2, 13)), 2, 2, 1))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 113, 112, 13)), 10, 2, 1)),
+                    gcd = MultivariatePolynomial.one(3, field, LEX)
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5, 12)), 11, 1, 13))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(11, 2, 1, 1, 2, 13)), 21, 2, 1))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12)), 10, 12, 1))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12)), 0, 0, 1));
+
+            a = a.clone().add(b).multiply(gcd);
+            b = b.clone().subtract(gcd).multiply(gcd);
+            long start = System.nanoTime();
+            assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
     }
 
     private static final class GCDTriplet {

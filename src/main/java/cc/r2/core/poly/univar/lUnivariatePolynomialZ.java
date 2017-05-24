@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.lIntegersModulo;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.Arrays;
@@ -88,6 +89,19 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
      */
     public lUnivariatePolynomialZp modulus(long modulus) {
         return modulus(modulus, true);
+    }
+
+    /**
+     * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
+     *
+     * @param domain the modulus
+     * @return Zp[x] polynomial from this
+     */
+    public lUnivariatePolynomialZp modulus(lIntegersModulo domain) {
+        long[] data = this.data.clone();
+        for (int i = degree; i >= 0; --i)
+            data[i] = domain.modulus(data[i]);
+        return lUnivariatePolynomialZp.createUnsafe(domain, data);
     }
 
     lUnivariatePolynomialZp modulusUnsafe(long modulus) {

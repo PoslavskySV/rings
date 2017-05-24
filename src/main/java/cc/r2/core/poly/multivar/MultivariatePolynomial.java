@@ -726,7 +726,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return eliminate(variable, domain.valueOf(value));
     }
 
-    private static final int SIZE_OF_POWERS_CACHE = 32;
+    private static final int SIZE_OF_POWERS_CACHE = 332;
 
     /** cached powers used to save some time */
     static final class PrecomputedPowers<E> {
@@ -746,7 +746,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         }
 
         E pow(int exponent) {
-            if (exponent >= SIZE_OF_POWERS_CACHE)
+            if (exponent >= precomputedPowers.length)
                 return domain.pow(value, exponent);
 
             if (precomputedPowers[exponent] != null)

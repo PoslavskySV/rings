@@ -120,4 +120,8 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
         int[] exponents = nVariables < zeroDegreeVectors.length ? zeroDegreeVectors[nVariables] : new int[nVariables];
         return new MonomialTerm<>(exponents, 0, coefficient);
     }
+
+    public static <E> MonomialTerm<E> create(E coeff, int... exponents){
+        return new MonomialTerm<E>(exponents, coeff);
+    }
 }

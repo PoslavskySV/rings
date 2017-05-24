@@ -586,7 +586,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return result;
     }
 
-
     /* =========================== Multiplication with safe arithmetics =========================== */
 
     /** switch to classical multiplication */

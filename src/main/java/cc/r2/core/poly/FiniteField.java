@@ -3,13 +3,15 @@ package cc.r2.core.poly;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.poly.univar.*;
+import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class FiniteField implements Domain<lUnivariatePolynomialZp> {
+public final class FiniteField implements Domain<lUnivariatePolynomialZp> {
     public static final FiniteField GF27 = new FiniteField(lUnivariatePolynomialZ.create(-1, -1, 0, 1).modulus(3));
+    public static final FiniteField GF17p5 = new FiniteField(lUnivariatePolynomialZ.create(11, 11, 0, 3, 9, 9).modulus(17).monic());
 
     public final lUnivariatePolynomialZp irreducible;
     private final DivisionWithRemainder.InverseModMonomial<lUnivariatePolynomialZp> inverseMod;
@@ -127,7 +129,7 @@ public class FiniteField implements Domain<lUnivariatePolynomialZp> {
     }
 
     public lUnivariatePolynomialZp valueOf(lUnivariatePolynomialZ val) {
-        return PolynomialArithmetics.polyMod(val.modulus(modulus()), irreducible, inverseMod, true);
+        return PolynomialArithmetics.polyMod(val.modulus(irreducible.domain), irreducible, inverseMod, true);
     }
 
     @Override
@@ -148,6 +150,11 @@ public class FiniteField implements Domain<lUnivariatePolynomialZp> {
     @Override
     public int compare(lUnivariatePolynomialZp o1, lUnivariatePolynomialZp o2) {
         return o1.compareTo(o2);
+    }
+
+    @Override
+    public lUnivariatePolynomialZp randomElement(RandomGenerator rnd) {
+        return valueOf(RandomPolynomials.randomPoly(2 * irreducible.degree(), rnd));
     }
 
     @Override

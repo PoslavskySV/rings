@@ -668,7 +668,7 @@ public final class lMultivariatePolynomial extends AMultivariatePolynomial<lMono
         }
 
         long pow(int exponent) {
-            if (exponent >= SIZE_OF_POWERS_CACHE)
+            if (exponent >= precomputedPowers.length)
                 return domain.powMod(value, exponent);
 
             if (precomputedPowers[exponent] != -1)
