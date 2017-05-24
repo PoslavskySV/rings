@@ -742,7 +742,12 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
             assertEquals(10, ZippelGCD(aL, bL).size());
-            System.out.println(System.nanoTime() - start);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            start = System.nanoTime();
+            System.out.println(ZippelGCD(aL.clone().increment(), bL));
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println();
+//            System.out.println(TimeUnits.nanosecondsToString(MultivariateGCD.BROWN));
         }
     }
 
@@ -1095,9 +1100,13 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         System.out.println(b);
 
         for (int i = 0; i < 1000; i++) {
+            System.out.println();
             long start = System.nanoTime();
             System.out.println(ModularGCD(a.clone().increment(), b));
-//            assertTrue(dividesQ(ModularGCD(a, b), gcd));
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            assertTrue(dividesQ(ModularGCD(a, b), gcd));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }

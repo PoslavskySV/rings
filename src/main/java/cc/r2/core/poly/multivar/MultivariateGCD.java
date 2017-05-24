@@ -934,16 +934,9 @@ public final class MultivariateGCD {
         if (trivialGCD != null)
             return trivialGCD;
 
-        //for bivariate polynomials always use dense interpolation
-        if (variable == 1)
-            return BrownGCD(a, b, rnd, variable, degreeBounds, evaluationStackLimit);
-
-//        MultivariatePolynomial<E> content = ZippelContentGCD(a, b, variable);
-//        a = divideExact(a, content);
-//        b = divideExact(b, content);
-
         MultivariatePolynomial<E> factory = a;
         int nVariables = factory.nVariables;
+        //univariate case
         if (variable == 0) {
             // univariate case
             UnivariatePolynomial<E> gcd = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
@@ -951,6 +944,11 @@ public final class MultivariateGCD {
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
+
+//        MultivariatePolynomial<E> content = ZippelContentGCD(a, b, variable);
+//        a = divideExact(a, content);
+//        b = divideExact(b, content);
+
         PrimitiveInput<
                 MonomialTerm<E>,
                 MultivariatePolynomial<E>,
@@ -1083,9 +1081,11 @@ public final class MultivariateGCD {
                                                           MultivariatePolynomial<E> b,
                                                           MultivariatePolynomial<E> skeleton,
                                                           RandomGenerator rnd) {
-        boolean monic = a.coefficientOf(0, a.degree(0)).isConstant() && b.coefficientOf(0, a.degree(0)).isConstant();
-
         skeleton = skeleton.clone().setAllCoefficientsToUnit();
+        if (skeleton.size() == 1)
+            return new TrivialSparseInterpolation<>(skeleton);
+
+        boolean monic = a.coefficientOf(0, a.degree(0)).isConstant() && b.coefficientOf(0, a.degree(0)).isConstant();
         Set<DegreeVector> globalSkeleton = skeleton.terms.keySet();
         TIntObjectHashMap<MultivariatePolynomial<E>> univarSkeleton = getSkeleton(skeleton);
         int[] sparseUnivarDegrees = univarSkeleton.keys();
@@ -1155,7 +1155,42 @@ public final class MultivariateGCD {
         return skeleton;
     }
 
-    static abstract class SparseInterpolation<E> {
+    interface SparseInterpolation<E> {
+        /**
+         * Returns interpolating gcd
+         *
+         * @return gcd
+         */
+        MultivariatePolynomial<E> evaluate();
+
+        /**
+         * Returns interpolating gcd at specified point
+         *
+         * @param newPoint evaluation point
+         * @return gcd at {@code variable = newPoint}
+         */
+        MultivariatePolynomial<E> evaluate(E newPoint);
+    }
+
+    static final class TrivialSparseInterpolation<E> implements SparseInterpolation<E> {
+        final MultivariatePolynomial<E> val;
+
+        TrivialSparseInterpolation(MultivariatePolynomial<E> val) {
+            this.val = val;
+        }
+
+        @Override
+        public MultivariatePolynomial<E> evaluate() {
+            return val;
+        }
+
+        @Override
+        public MultivariatePolynomial<E> evaluate(E newPoint) {
+            return val;
+        }
+    }
+
+    static abstract class ASparseInterpolation<E> implements SparseInterpolation<E> {
         /** the domain */
         final Domain<E> domain;
         /** variable which we are evaluating */
@@ -1181,13 +1216,13 @@ public final class MultivariateGCD {
         /** random */
         final RandomGenerator rnd;
 
-        SparseInterpolation(Domain<E> domain, int variable,
-                            MultivariatePolynomial<E> a, MultivariatePolynomial<E> b,
-                            Set<DegreeVector> globalSkeleton,
-                            TIntObjectHashMap<MultivariatePolynomial<E>> univarSkeleton,
-                            int[] sparseUnivarDegrees, int[] evaluationVariables,
-                            E[] evaluationPoint,
-                            PrecomputedPowersHolder<E> powers, RandomGenerator rnd) {
+        ASparseInterpolation(Domain<E> domain, int variable,
+                             MultivariatePolynomial<E> a, MultivariatePolynomial<E> b,
+                             Set<DegreeVector> globalSkeleton,
+                             TIntObjectHashMap<MultivariatePolynomial<E>> univarSkeleton,
+                             int[] sparseUnivarDegrees, int[] evaluationVariables,
+                             E[] evaluationPoint,
+                             PrecomputedPowersHolder<E> powers, RandomGenerator rnd) {
             this.domain = domain;
             this.variable = variable;
             this.a = a;
@@ -1201,20 +1236,9 @@ public final class MultivariateGCD {
             this.rnd = rnd;
         }
 
-        /**
-         * Returns interpolating gcd
-         *
-         * @return gcd
-         */
-        abstract MultivariatePolynomial<E> evaluate();
-
-        /**
-         * Returns interpolating gcd at specified point
-         *
-         * @param newPoint evaluation point
-         * @return gcd at {@code variable = newPoint}
-         */
-        final MultivariatePolynomial<E> evaluate(E newPoint) {
+        @SuppressWarnings("unchecked")
+        @Override
+        public final MultivariatePolynomial<E> evaluate(E newPoint) {
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
             powers.set(evaluationPoint.length - 1, newPoint);
@@ -1222,7 +1246,7 @@ public final class MultivariateGCD {
         }
     }
 
-    static final class LinZipInterpolation<E> extends SparseInterpolation<E> {
+    static final class LinZipInterpolation<E> extends ASparseInterpolation<E> {
         LinZipInterpolation(Domain<E> domain, int variable, MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<E>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, E[] evaluationPoint, PrecomputedPowersHolder<E> powers, RandomGenerator rnd) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
         }
@@ -1231,7 +1255,7 @@ public final class MultivariateGCD {
         private static final int NUMBER_OF_UNDER_DETERMINED_RETRIES = 100;
 
         @Override
-        MultivariatePolynomial<E> evaluate() {
+        public MultivariatePolynomial<E> evaluate() {
             @SuppressWarnings("unchecked")
             LinZipSystem<E>[] systems = new LinZipSystem[sparseUnivarDegrees.length];
             for (int i = 0; i < sparseUnivarDegrees.length; i++)
@@ -1354,7 +1378,7 @@ public final class MultivariateGCD {
     }
 
 
-    static final class MonicInterpolation<E> extends SparseInterpolation<E> {
+    static final class MonicInterpolation<E> extends ASparseInterpolation<E> {
         /** required number of sparse evaluations to reconstruct all coefficients in skeleton */
         final int requiredNumberOfEvaluations;
         /** univar exponent with monomial factor that can be used for scaling */
@@ -1367,7 +1391,7 @@ public final class MultivariateGCD {
         }
 
         @Override
-        MultivariatePolynomial<E> evaluate() {
+        public MultivariatePolynomial<E> evaluate() {
             @SuppressWarnings("unchecked")
             VandermondeSystem<E>[] systems = new VandermondeSystem[sparseUnivarDegrees.length];
             for (int i = 0; i < sparseUnivarDegrees.length; i++)
@@ -1841,14 +1865,7 @@ public final class MultivariateGCD {
         if (trivialGCD != null)
             return trivialGCD;
 
-        //for bivariate polynomials always use dense interpolation
-        if (variable == 1)
-            return BrownGCD(a, b, rnd, variable, degreeBounds, evaluationStackLimit);
-
-//        lMultivariatePolynomial content = ZippelContentGCD(a, b, variable);
-//        a = divideExact(a, content);
-//        b = divideExact(b, content);
-
+        //univariate case
         lMultivariatePolynomial factory = a;
         int nVariables = factory.nVariables;
         if (variable == 0) {
@@ -1858,6 +1875,11 @@ public final class MultivariateGCD {
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
+
+//        lMultivariatePolynomial content = ZippelContentGCD(a, b, variable);
+//        a = divideExact(a, content);
+//        b = divideExact(b, content);
+
         PrimitiveInput<
                 lMonomialTerm,
                 lMultivariatePolynomial,
@@ -1988,9 +2010,12 @@ public final class MultivariateGCD {
                                                     lMultivariatePolynomial b,
                                                     lMultivariatePolynomial skeleton,
                                                     RandomGenerator rnd) {
+        skeleton = skeleton.clone().setAllCoefficientsToUnit();
+        if (skeleton.size() == 1)
+            return new lTrivialSparseInterpolation(skeleton);
+
         boolean monic = a.coefficientOf(0, a.degree(0)).isConstant() && b.coefficientOf(0, a.degree(0)).isConstant();
 
-        skeleton = skeleton.clone().setAllCoefficientsToUnit();
         Set<DegreeVector> globalSkeleton = skeleton.getSkeleton();
         TIntObjectHashMap<lMultivariatePolynomial> univarSkeleton = getSkeleton(skeleton);
         int[] sparseUnivarDegrees = univarSkeleton.keys();
@@ -2059,7 +2084,42 @@ public final class MultivariateGCD {
         return skeleton;
     }
 
-    static abstract class lSparseInterpolation {
+    interface lSparseInterpolation {
+        /**
+         * Returns interpolating gcd
+         *
+         * @return gcd
+         */
+        lMultivariatePolynomial evaluate();
+
+        /**
+         * Returns interpolating gcd at specified point
+         *
+         * @param newPoint evaluation point
+         * @return gcd at {@code variable = newPoint}
+         */
+        lMultivariatePolynomial evaluate(long newPoint);
+    }
+
+    static final class lTrivialSparseInterpolation implements lSparseInterpolation {
+        final lMultivariatePolynomial val;
+
+        lTrivialSparseInterpolation(lMultivariatePolynomial val) {
+            this.val = val;
+        }
+
+        @Override
+        public lMultivariatePolynomial evaluate() {
+            return val;
+        }
+
+        @Override
+        public lMultivariatePolynomial evaluate(long newPoint) {
+            return val;
+        }
+    }
+
+    static abstract class lASparseInterpolation implements lSparseInterpolation {
         /** the domain */
         final lIntegersModulo domain;
         /** variable which we are evaluating */
@@ -2085,13 +2145,13 @@ public final class MultivariateGCD {
         /** random */
         final RandomGenerator rnd;
 
-        lSparseInterpolation(lIntegersModulo domain, int variable,
-                             lMultivariatePolynomial a, lMultivariatePolynomial b,
-                             Set<DegreeVector> globalSkeleton,
-                             TIntObjectHashMap<lMultivariatePolynomial> univarSkeleton,
-                             int[] sparseUnivarDegrees, int[] evaluationVariables,
-                             long[] evaluationPoint,
-                             lPrecomputedPowersHolder powers, RandomGenerator rnd) {
+        lASparseInterpolation(lIntegersModulo domain, int variable,
+                              lMultivariatePolynomial a, lMultivariatePolynomial b,
+                              Set<DegreeVector> globalSkeleton,
+                              TIntObjectHashMap<lMultivariatePolynomial> univarSkeleton,
+                              int[] sparseUnivarDegrees, int[] evaluationVariables,
+                              long[] evaluationPoint,
+                              lPrecomputedPowersHolder powers, RandomGenerator rnd) {
             this.domain = domain;
             this.variable = variable;
             this.a = a;
@@ -2105,20 +2165,11 @@ public final class MultivariateGCD {
             this.rnd = rnd;
         }
 
-        /**
-         * Returns interpolating gcd
-         *
-         * @return gcd
-         */
-        abstract lMultivariatePolynomial evaluate();
-
-        /**
-         * Returns interpolating gcd at specified point
-         *
-         * @param newPoint evaluation point
-         * @return gcd at {@code variable = newPoint}
-         */
-        final lMultivariatePolynomial evaluate(long newPoint) {
+        @Override
+        public final lMultivariatePolynomial evaluate(long newPoint) {
+            // constant is constant
+            if (globalSkeleton.size() == 1)
+                return a.create(((lMonomialTerm) globalSkeleton.iterator().next()).setCoefficient(1));
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
             powers.set(evaluationPoint.length - 1, newPoint);
@@ -2126,7 +2177,7 @@ public final class MultivariateGCD {
         }
     }
 
-    static final class lLinZipInterpolation extends lSparseInterpolation {
+    static final class lLinZipInterpolation extends lASparseInterpolation {
         lLinZipInterpolation(lIntegersModulo domain, int variable, lMultivariatePolynomial a,
                              lMultivariatePolynomial b, Set<DegreeVector> globalSkeleton,
                              TIntObjectHashMap<lMultivariatePolynomial> univarSkeleton, int[] sparseUnivarDegrees,
@@ -2139,7 +2190,7 @@ public final class MultivariateGCD {
         private static final int NUMBER_OF_UNDER_DETERMINED_RETRIES = 100;
 
         @Override
-        lMultivariatePolynomial evaluate() {
+        public lMultivariatePolynomial evaluate() {
             @SuppressWarnings("unchecked")
             lLinZipSystem[] systems = new lLinZipSystem[sparseUnivarDegrees.length];
             for (int i = 0; i < sparseUnivarDegrees.length; i++)
@@ -2262,7 +2313,7 @@ public final class MultivariateGCD {
     }
 
 
-    static final class lMonicInterpolation extends lSparseInterpolation {
+    static final class lMonicInterpolation extends lASparseInterpolation {
         /** required number of sparse evaluations to reconstruct all coefficients in skeleton */
         final int requiredNumberOfEvaluations;
         /** univar exponent with monomial factor that can be used for scaling */
@@ -2279,7 +2330,7 @@ public final class MultivariateGCD {
         }
 
         @Override
-        lMultivariatePolynomial evaluate() {
+        public lMultivariatePolynomial evaluate() {
             @SuppressWarnings("unchecked")
             lVandermondeSystem[] systems = new lVandermondeSystem[sparseUnivarDegrees.length];
             for (int i = 0; i < sparseUnivarDegrees.length; i++)
