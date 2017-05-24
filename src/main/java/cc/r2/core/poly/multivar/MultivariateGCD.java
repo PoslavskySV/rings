@@ -11,6 +11,7 @@ import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.lInterpolation;
 import cc.r2.core.poly.multivar.lMultivariatePolynomial.lPrecomputedPowersHolder;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
+import cc.r2.core.poly.univar.UnivariateGCD;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
@@ -25,7 +26,6 @@ import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static cc.r2.core.poly.multivar.MultivariateReduction.*;
-import static cc.r2.core.poly.univar.UnivariateGCD.PolynomialGCD;
 import static cc.r2.core.util.ArraysUtil.negate;
 
 
@@ -36,8 +36,34 @@ import static cc.r2.core.util.ArraysUtil.negate;
 public final class MultivariateGCD {
     private MultivariateGCD() {}
 
+    /**
+     * Calculates greatest common divisor for two multivariate polynomials
+     *
+     * @param a the first poly
+     * @param b the second poly
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly a, Poly b) {
+        a.checkSameDomainWith(b);
+        if (a instanceof lMultivariatePolynomial)
+            return (Poly) ZippelGCD((lMultivariatePolynomial) a, (lMultivariatePolynomial) b);
+        else if (a instanceof MultivariatePolynomial) {
+            Domain domain = ((MultivariatePolynomial) a).domain;
+            if (Integers.Integers.equals(domain))
+                return (Poly) ModularGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
+            else if (domain.isField())
+                return (Poly) ZippelGCD((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+            else
+                throw new RuntimeException("GCD over " + domain + " domain not supported.");
+        } else
+            throw new RuntimeException();
+    }
+
+    /* ============================================== Auxiliary methods ============================================= */
+
     /** calculates the inverse permutation */
-    public static int[] inversePermutation(int[] permutation) {
+    private static int[] inversePermutation(int[] permutation) {
         final int[] inv = new int[permutation.length];
         for (int i = permutation.length - 1; i >= 0; --i)
             inv[permutation[i]] = i;
@@ -154,7 +180,7 @@ public final class MultivariateGCD {
         // switch to univariate gcd
         {
             @SuppressWarnings("unchecked")
-            IUnivariatePolynomial iUnivar = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
+            IUnivariatePolynomial iUnivar = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             Poly poly = asMultivariate(iUnivar, nVariables, lastPresentVariable, a.ordering);
             return new GCDInput<>(poly.multiply(monomialGCD));
         }
@@ -265,7 +291,7 @@ public final class MultivariateGCD {
 
         MultivariatePolynomial<uPoly> conv = asOverUnivariate(poly, variable);
         //univariate content
-        uPoly content = PolynomialGCD(conv.coefficients());
+        uPoly content = UnivariateGCD.PolynomialGCD(conv.coefficients());
         Poly divider = asMultivariate(content, poly.nVariables, variable, poly.ordering);
         Poly[] qd = divideAndRemainder(poly, divider);
         assert qd[1].isZero();
@@ -311,8 +337,8 @@ public final class MultivariateGCD {
 
         // gcd of Zp[x_k] content and lc
         uPoly
-                contentGCD = PolynomialGCD(aContent.content, bContent.content),
-                lcGCD = PolynomialGCD(aContent.poly.lc(), bContent.poly.lc());
+                contentGCD = UnivariateGCD.PolynomialGCD(aContent.content, bContent.content),
+                lcGCD = UnivariateGCD.PolynomialGCD(aContent.poly.lc(), bContent.poly.lc());
         return new PrimitiveInput(a, b, contentGCD, lcGCD);
     }
 
@@ -471,7 +497,7 @@ public final class MultivariateGCD {
                 base = base.setDomainUnsafe(new lIntegersModulo(newBasePrime));
                 basePrime = newBasePrime;
 
-                //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
+                // two trials didn't change the result, probably we are done
                 MultivariatePolynomial<BigInteger> candidate = base.asPolyZSymmetric().primitivePart();
                 if (previousBase != null && candidate.equals(previousBase)) {
                     previousBase = candidate;
@@ -567,7 +593,7 @@ public final class MultivariateGCD {
                 bBase = bBase.setDomainUnsafe(new IntegersModulo(newBasePrime));
                 bBasePrime = newBasePrime;
 
-                //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
+                // two trials didn't change the result, probably we are done
                 MultivariatePolynomial<BigInteger> candidate = MultivariatePolynomial.asPolyZSymmetric(bBase).primitivePart();
                 if (previousBase != null && candidate.equals(previousBase)) {
                     previousBase = candidate;
@@ -683,7 +709,7 @@ public final class MultivariateGCD {
     public static <E> MultivariatePolynomial<E> BrownGCD(
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
-        CommonUtils.ensureFiniteFieldDomain(a, b);
+        CommonUtils.ensureFieldDomain(a, b);
 
         // prepare input and test for early termination
         GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b);
@@ -722,9 +748,10 @@ public final class MultivariateGCD {
 
         MultivariatePolynomial<E> factory = a;
         int nVariables = factory.nVariables;
-        if (variable == 0) {
-            // univariate case
-            UnivariatePolynomial<E> gcd = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
+        if (variable == 0)
+        // switch to univariate gcd
+        {
+            UnivariatePolynomial<E> gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
@@ -856,7 +883,7 @@ public final class MultivariateGCD {
     public static <E> MultivariatePolynomial<E> ZippelGCD(
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
-        CommonUtils.ensureFiniteFieldDomain(a, b);
+        CommonUtils.ensureFieldDomain(a, b);
 
         // prepare input and test for early termination
         GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b);
@@ -936,10 +963,10 @@ public final class MultivariateGCD {
 
         MultivariatePolynomial<E> factory = a;
         int nVariables = factory.nVariables;
-        //univariate case
-        if (variable == 0) {
-            // univariate case
-            UnivariatePolynomial<E> gcd = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
+        if (variable == 0)
+        // switch to univariate gcd
+        {
+            UnivariatePolynomial<E> gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
@@ -1282,7 +1309,7 @@ public final class MultivariateGCD {
                     UnivariatePolynomial<E>
                             aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                             bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
-                            gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
+                            gcdUnivar = UnivariateGCD.PolynomialGCD(aUnivar, bUnivar);
 
                     if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
                         // unlucky main homomorphism or bad evaluation point
@@ -1408,7 +1435,7 @@ public final class MultivariateGCD {
                 UnivariatePolynomial<E>
                         aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
-                        gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
+                        gcdUnivar = UnivariateGCD.PolynomialGCD(aUnivar, bUnivar);
 
                 if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
                     // unlucky main homomorphism or bad evaluation point
@@ -1660,9 +1687,10 @@ public final class MultivariateGCD {
 
         lMultivariatePolynomial factory = a;
         int nVariables = factory.nVariables;
-        if (variable == 0) {
-            // univariate case
-            lUnivariatePolynomialZp gcd = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
+        if (variable == 0)
+        // switch to univariate gcd
+        {
+            lUnivariatePolynomialZp gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
@@ -1865,12 +1893,12 @@ public final class MultivariateGCD {
         if (trivialGCD != null)
             return trivialGCD;
 
-        //univariate case
         lMultivariatePolynomial factory = a;
         int nVariables = factory.nVariables;
-        if (variable == 0) {
-            // univariate case
-            lUnivariatePolynomialZp gcd = PolynomialGCD(a.asUnivariate(), b.asUnivariate());
+        if (variable == 0)
+        // switch to univariate gcd
+        {
+            lUnivariatePolynomialZp gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return asMultivariate(gcd, nVariables, variable, factory.ordering);
@@ -2217,7 +2245,7 @@ public final class MultivariateGCD {
                     lUnivariatePolynomialZp
                             aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                             bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
-                            gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
+                            gcdUnivar = UnivariateGCD.PolynomialGCD(aUnivar, bUnivar);
 
                     if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
                         // unlucky main homomorphism or bad evaluation point
@@ -2347,7 +2375,7 @@ public final class MultivariateGCD {
                 lUnivariatePolynomialZp
                         aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
-                        gcdUnivar = PolynomialGCD(aUnivar, bUnivar);
+                        gcdUnivar = UnivariateGCD.PolynomialGCD(aUnivar, bUnivar);
 
                 if (a.degree(0) != aUnivar.degree() || b.degree(0) != bUnivar.degree())
                     // unlucky main homomorphism or bad evaluation point

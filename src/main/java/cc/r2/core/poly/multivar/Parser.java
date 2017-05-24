@@ -18,19 +18,28 @@ final class Parser {
         return parse(input, Integers.Integers, ordering, variables);
     }
 
+    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain) {
+        return parse(input, domain, DegreeVector.LEX);
+    }
+
     static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
-        List<ParsedTerm<E>> terms = new ArrayList<>();
+        List<TMonomialTerm<E>> terms = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
+        int bracketLevel = 0;
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
-            if ((c == '+' || c == '-') && sb.length() != 0) {
-                terms.add(parseTerm(sb.toString(), domain));
+            if (c == '(')
+                ++bracketLevel;
+            if (c == ')')
+                --bracketLevel;
+            if ((c == '+' || c == '-') && bracketLevel == 0 && sb.length() != 0) {
+                terms.add(parseMonomial(sb.toString(), domain));
                 sb = new StringBuilder();
             }
             sb.append(c);
         }
         if (sb.length() != 0)
-            terms.add(parseTerm(sb.toString(), domain));
+            terms.add(parseMonomial(sb.toString(), domain));
 
         Set<String> allVars = new HashSet<>();
         terms.forEach(t -> allVars.addAll(Arrays.asList(t.variables)));
@@ -42,81 +51,76 @@ final class Parser {
         @SuppressWarnings("unchecked")
         MonomialTerm<E>[] mTerms = new MonomialTerm[terms.size()];
         for (int i = 0; i < terms.size(); i++)
-            mTerms[i] = terms.get(i).monomialTerm(vars);
+            mTerms[i] = terms.get(i).toMonomialTerm(vars);
 
         return MultivariatePolynomial.create(mTerms[0].exponents.length, domain, ordering, mTerms);
     }
 
-
-    static <E> ParsedTerm<E> parseTerm(String input, Domain<E> domain) {
-        input = input.trim();
-
-        ArrayList<String> variables = new ArrayList<>();
-        TIntArrayList exponents = new TIntArrayList();
-
-        char sign = input.charAt(0);
-        int i = (sign == '+' || sign == '-') ? 1 : 0;
-        StringBuilder currentBuffer = new StringBuilder();
-        for (; i < input.length(); ++i) {
-            char c = input.charAt(i);
-            if (c == ' ')
-                continue;
-
-            if (c == '*' || i == input.length() - 1) {
-                if (i == input.length() - 1)
-                    currentBuffer.append(c);
-                String variable = currentBuffer.toString();
-                String[] varExp = variable.split("\\^");
-                if (varExp.length == 1) {
-                    variables.add(variable);
-                    exponents.add(1);
-                } else {
-                    variables.add(varExp[0]);
-                    exponents.add(Integer.parseInt(varExp[1]));
-                }
-                currentBuffer = new StringBuilder();
-            } else
-                currentBuffer.append(c);
-        }
-
-        E factor = sign == '-' ? domain.getNegativeOne() : domain.getOne();
-        for (i = variables.size() - 1; i >= 0; --i) {
-            String s = variables.get(i).trim();
-            if (s.matches("^\\d+$")) {
-                factor = domain.multiply(factor, domain.pow(domain.parse(s), exponents.get(i)));
-                variables.remove(i);
-                exponents.removeAt(i);
-            }
-        }
-
-        return new ParsedTerm<>(factor, variables.toArray(new String[variables.size()]), exponents.toArray());
-    }
-
-    private static final class ParsedTerm<E> {
-        final E factor;
+    public static final class TMonomialTerm<E> {
         final String[] variables;
+        final E coefficient;
         final int[] exponents;
 
-        public ParsedTerm(E factor, String[] variables, int[] exponents) {
-            this.factor = factor;
+        public TMonomialTerm(String[] variables, E coefficient, int[] exponents) {
             this.variables = variables;
+            this.coefficient = coefficient;
             this.exponents = exponents;
         }
 
-        MonomialTerm<E> monomialTerm(String[] map) {
+        MonomialTerm<E> toMonomialTerm(String[] map) {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
                 degrees[Arrays.binarySearch(map, variables[i])] = exponents[i];
-            return new MonomialTerm<E>(degrees, factor);
+            return new MonomialTerm<>(degrees, coefficient);
         }
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(factor);
-            for (int i = 0; i < exponents.length; i++)
-                sb.append("*").append(variables[i]).append("^").append(exponents[i]);
+            sb.append(coefficient);
+            if (variables.length > 0) {
+                for (int i = 0; i < variables.length; i++) {
+                    sb.append("*").append(variables[i]);
+                    if (exponents[i] != 1)
+                        sb.append("^").append(exponents[i]);
+                }
+            }
             return sb.toString();
         }
+    }
+
+    public static <E> TMonomialTerm<E> parseMonomial(String expression, Domain<E> domain) {
+        expression = expression.replace(" ", "");
+        E coefficient = domain.getOne();
+        if (expression.startsWith("+"))
+            expression = expression.substring(1);
+        if (expression.startsWith("-")) {
+            coefficient = domain.negate(coefficient);
+            expression = expression.substring(1);
+        }
+        String[] elements = expression.split("\\*");
+
+        ArrayList<String> variables = new ArrayList<>();
+        TIntArrayList exponents = new TIntArrayList();
+        for (String element : elements) {
+            String el = element.trim();
+            try {
+                coefficient = domain.multiply(coefficient, domain.parse(el));
+                continue;
+            } catch (Exception e) {}  // not a coefficient
+
+            // variable with exponent
+            String[] varExp = el.split("\\^");
+            if (varExp.length == 2) {
+                try {
+                    coefficient = domain.multiply(coefficient, domain.pow(domain.parse(varExp[0].trim()), Integer.parseInt(varExp[1].trim())));
+                    continue;
+                } catch (Exception e) {}
+            }
+            variables.add(varExp[0].trim());
+            exponents.add(varExp.length == 1 ? 1 : Integer.parseInt(varExp[1].trim()));
+        }
+
+        return new TMonomialTerm<>(variables.toArray(new String[variables.size()]), coefficient, exponents.toArray());
     }
 }

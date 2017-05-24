@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.number.Rational;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.LongArithmetics;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static cc.r2.core.poly.Integers.Integers;
+import static cc.r2.core.poly.Rationals.Rationals;
 import static cc.r2.core.poly.univar.DivisionWithRemainder.divideAndRemainder;
 import static cc.r2.core.poly.univar.RandomPolynomials.randomPoly;
 import static cc.r2.core.poly.univar.UnivariateGCD.*;
@@ -587,6 +589,28 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         assertEquals(asLongPolyZp(xgcd[0]), lxgcd[0]);
         assertEquals(asLongPolyZp(xgcd[1]), lxgcd[1]);
         assertEquals(asLongPolyZp(xgcd[2]), lxgcd[2]);
+    }
+
+    @Test
+    public void test25() throws Exception {
+        UnivariatePolynomial<Rational> a = UnivariatePolynomial.create(Rationals,
+                Rationals.parse("2/3"),
+                Rationals.parse("4/5"),
+                Rationals.parse("1/2"),
+                Rationals.parse("-31/2"));
+        UnivariatePolynomial<Rational> b = UnivariatePolynomial.create(Rationals,
+                Rationals.parse("7/3"),
+                Rationals.parse("4/7"),
+                Rationals.parse("3/2"),
+                Rationals.parse("-31/12"));
+        UnivariatePolynomial<Rational> gcd = UnivariatePolynomial.create(Rationals,
+                Rationals.parse("4/3"),
+                Rationals.parse("-4/7"),
+                Rationals.parse("-1/2"),
+                Rationals.parse("-1/12"));
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+        assertGCD(a, b, PolynomialGCD(a, b));
     }
 
     static <T extends lUnivariatePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {

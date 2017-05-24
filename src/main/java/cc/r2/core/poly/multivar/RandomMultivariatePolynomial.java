@@ -30,6 +30,17 @@ public class RandomMultivariatePolynomial {
         return MultivariatePolynomial.create(nVars, domain, ordering, terms);
     }
 
+    public static <E> MultivariatePolynomial<E> randomPolynomial(int nVars, int degree, int size, Domain<E> domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+        int nd = 3 * degree / 2;
+        @SuppressWarnings("unchecked")
+        MonomialTerm<E>[] terms = new MonomialTerm[size];
+        for (int i = 0; i < size; i++) {
+            E cfx = domain.randomElement(rnd);
+            terms[i] = new MonomialTerm<>(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
+        }
+        return MultivariatePolynomial.create(nVars, domain, ordering, terms);
+    }
+
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {
         return randomPolynomial(nVars, degree, size, BigInteger.TEN, DegreeVector.LEX, rnd);
     }

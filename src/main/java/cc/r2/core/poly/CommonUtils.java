@@ -13,6 +13,12 @@ public final class CommonUtils {
                 throw new IllegalArgumentException("Polynomial over finite field is expected, but got " + poly.getClass());
     }
 
+    public static void ensureFieldDomain(IGeneralPolynomial... polys) {
+        for (IGeneralPolynomial poly : polys)
+            if (!poly.isOverField())
+                throw new IllegalArgumentException("Polynomial over finite field is expected, but got " + poly.getClass());
+    }
+
     public static void ensureZDomain(IGeneralPolynomial... polys) {
         for (IGeneralPolynomial poly : polys)
             if (!poly.isOverZ())

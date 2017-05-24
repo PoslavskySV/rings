@@ -65,7 +65,7 @@ public final class Factorization {
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factor(Poly poly) {
         if (poly.isOverFiniteField())
             return factorInFiniteField(poly);
-        else
+        else // TODO Fractions!
             return factorInZ(poly);
     }
 

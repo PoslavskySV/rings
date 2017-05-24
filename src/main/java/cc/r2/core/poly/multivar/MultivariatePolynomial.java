@@ -147,6 +147,17 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
+     * Parse multivariate polynomial from string.
+     *
+     * @param string    string polynomials
+     * @param domain    domain
+     * @return multivariate polynomial
+     */
+    public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain) {
+        return Parser.parse(string, domain);
+    }
+
+    /**
      * Converts multivariate polynomial over BigIntegers to multivariate polynomial over machine sized modular integers
      *
      * @param poly the polynomial
