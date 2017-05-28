@@ -476,6 +476,12 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
      */
     public abstract Poly multiply(Term term);
 
+    /** Multiply two terms */
+    abstract Term multiply(Term a, Term b);
+
+    /** Subtract b from a */
+    abstract Term divideOrNull(Term a, Term b);
+
     /**
      * Returns skeleton of this poly
      *
@@ -485,7 +491,7 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
         return Collections.unmodifiableSet(terms.keySet());
     }
 
-    public final Poly setAllCoefficientsToUnit(){
+    public final Poly setAllCoefficientsToUnit() {
         Term unit = getUnitTerm();
         for (Map.Entry<DegreeVector, Term> entry : terms.entrySet())
             entry.setValue(unit.setDegreeVector(entry.getKey()));

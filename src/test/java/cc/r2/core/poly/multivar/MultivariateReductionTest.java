@@ -54,12 +54,12 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     public void test2() throws Exception {
         String[] vars = {"a", "b"};
         Comparator<DegreeVector> ordering = LEX;
-        MultivariatePolynomial dividend = parse("a^2*b+a*b^2+b^2", ordering, vars);
-        MultivariatePolynomial f1 = parse("a*b - 1", ordering, vars);
-        MultivariatePolynomial f2 = parse("b^2 - 1", ordering, vars);
+        MultivariatePolynomial<BigInteger> dividend = parse("a^2*b+a*b^2+b^2", ordering, vars);
+        MultivariatePolynomial<BigInteger> f1 = parse("a*b - 1", ordering, vars);
+        MultivariatePolynomial<BigInteger> f2 = parse("b^2 - 1", ordering, vars);
 
 
-        MultivariatePolynomial[] qd;
+        MultivariatePolynomial<BigInteger>[] qd;
         qd = divideAndRemainder(dividend, f1, f2);
         assertQuotientReminder(qd, dividend, f1, f2);
         assertArrayEquals(new MultivariatePolynomial[]{
@@ -101,11 +101,11 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
         String[] vars = {"a", "b"};
         Domain<BigInteger> domain = new IntegersModulo(2);
         Comparator<DegreeVector> ordering = LEX;
-        MultivariatePolynomial dividend = parse("a^2*b+a*b^2+b^2", domain, ordering, vars);
-        MultivariatePolynomial f1 = parse("a*b - 1", domain, ordering, vars);
-        MultivariatePolynomial f2 = parse("b^2 - 1", domain, ordering, vars);
+        MultivariatePolynomial<BigInteger> dividend = parse("a^2*b+a*b^2+b^2", domain, ordering, vars);
+        MultivariatePolynomial<BigInteger> f1 = parse("a*b - 1", domain, ordering, vars);
+        MultivariatePolynomial<BigInteger> f2 = parse("b^2 - 1", domain, ordering, vars);
 
-        MultivariatePolynomial[] qd;
+        MultivariatePolynomial<BigInteger>[] qd;
         qd = divideAndRemainder(dividend, f1, f2);
         assertQuotientReminder(qd, dividend, f1, f2);
         assertArrayEquals(new MultivariatePolynomial[]{

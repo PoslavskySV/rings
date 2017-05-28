@@ -316,6 +316,16 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return nVariables == oth.nVariables && domain.equals(oth.domain);
     }
 
+    @Override
+    lMonomialTerm multiply(lMonomialTerm a, lMonomialTerm b) {
+        return a.multiply(b, domain.multiply(a.coefficient, b.coefficient));
+    }
+
+    @Override
+    lMonomialTerm divideOrNull(lMonomialTerm a, lMonomialTerm b) {
+        return a.divide(b, domain.divide(a.coefficient, b.coefficient));
+    }
+
     /** release caches */
     @Override
     protected void release() {

@@ -149,8 +149,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string    string polynomials
-     * @param domain    domain
+     * @param string string polynomials
+     * @param domain domain
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain) {
@@ -344,6 +344,19 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public boolean sameDomainWith(MultivariatePolynomial<E> oth) {
         return nVariables == oth.nVariables && domain.equals(oth.domain);
+    }
+
+    @Override
+    MonomialTerm<E> multiply(MonomialTerm<E> a, MonomialTerm<E> b) {
+        return a.multiply(b, domain.multiply(a.coefficient, b.coefficient));
+    }
+
+    @Override
+    MonomialTerm<E> divideOrNull(MonomialTerm<E> a, MonomialTerm<E> b) {
+        E e = domain.divideOrNull(a.coefficient, b.coefficient);
+        if (e == null)
+            return null;
+        return a.divide(b, e);
     }
 
     /** release caches */
@@ -571,10 +584,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return divideOrNull(monomial.coefficient);
         MonomialsSet<MonomialTerm<E>> map = new MonomialsSet<>(ordering);
         for (MonomialTerm<E> term : terms) {
-            E quot = domain.divideOrNull(term.coefficient, monomial.coefficient);
-            if (quot == null)
-                return null;
-            MonomialTerm<E> dv = term.divide(monomial, quot);
+            MonomialTerm<E> dv = divideOrNull(term, monomial);
             if (dv == null)
                 return null;
             map.add(dv);
