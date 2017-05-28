@@ -165,13 +165,13 @@ public final class MultivariateInterpolation {
         /** list of evaluation points */
         private final TLongArrayList points = new TLongArrayList();
         /** list of values at points */
-        private final List<lMultivariatePolynomial> values = new ArrayList<>();
+        private final List<lMultivariatePolynomialZp> values = new ArrayList<>();
         /** mixed radix form of interpolating polynomial */
-        private final List<lMultivariatePolynomial> mixedRadix = new ArrayList<>();
+        private final List<lMultivariatePolynomialZp> mixedRadix = new ArrayList<>();
         /** total modulus (x_i - points[0])*(x_i - points[1])*... */
-        private final lMultivariatePolynomial lins;
+        private final lMultivariatePolynomialZp lins;
         /** resulting interpolating polynomial */
-        private final lMultivariatePolynomial poly;
+        private final lMultivariatePolynomialZp poly;
         /** domain */
         private final lIntegersModulo domain;
 
@@ -182,7 +182,7 @@ public final class MultivariateInterpolation {
          * @param point    evaluation point
          * @param value    polynomial value at {@code point}
          */
-        public lInterpolation(int variable, long point, lMultivariatePolynomial value) {
+        public lInterpolation(int variable, long point, lMultivariatePolynomialZp value) {
             this.variable = variable;
             this.lins = value.createOne();
             this.poly = value.clone();
@@ -199,9 +199,9 @@ public final class MultivariateInterpolation {
          * @param point evaluation point
          * @param value polynomial value at {@code point}
          */
-        public void update(long point, lMultivariatePolynomial value) {
+        public void update(long point, lMultivariatePolynomialZp value) {
             long reciprocal = domain.subtract(point, points.get(0));
-            lMultivariatePolynomial accumulator = mixedRadix.get(0).clone();
+            lMultivariatePolynomialZp accumulator = mixedRadix.get(0).clone();
             for (int i = 1; i < points.size(); ++i) {
                 accumulator = accumulator.add(mixedRadix.get(i).clone().multiply(reciprocal));
                 reciprocal = domain.multiply(reciprocal, domain.subtract(point, points.get(i)));
@@ -229,7 +229,7 @@ public final class MultivariateInterpolation {
          *
          * @return interpolating polynomial
          */
-        public lMultivariatePolynomial getInterpolatingPolynomial() {return poly;}
+        public lMultivariatePolynomialZp getInterpolatingPolynomial() {return poly;}
 
         /**
          * Returns the list of evaluation points used in interpolation
@@ -243,7 +243,7 @@ public final class MultivariateInterpolation {
          *
          * @return the list of polynomial values at interpolation points
          */
-        public List<lMultivariatePolynomial> getValues() {return values;}
+        public List<lMultivariatePolynomialZp> getValues() {return values;}
 
         /**
          * Returns the number of interpolation points used

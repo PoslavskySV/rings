@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static cc.r2.core.poly.multivar.DegreeVector.LEX;
-import static cc.r2.core.poly.multivar.lMultivariatePolynomial.*;
+import static cc.r2.core.poly.multivar.lMultivariatePolynomialZp.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -21,26 +21,26 @@ import static org.junit.Assert.assertTrue;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
+public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
 
     private lIntegersModulo Integers = new lIntegersModulo(Integer.MAX_VALUE);
 
-    private lMultivariatePolynomial parse0(String str) {
-        return lMultivariatePolynomial.parse(str, Integers);
+    private lMultivariatePolynomialZp parse0(String str) {
+        return lMultivariatePolynomialZp.parse(str, Integers);
     }
 
-    private lMultivariatePolynomial parse0(String str, String... vars) {
-        return lMultivariatePolynomial.parse(str, Integers, vars);
+    private lMultivariatePolynomialZp parse0(String str, String... vars) {
+        return lMultivariatePolynomialZp.parse(str, Integers, vars);
     }
 
     @Test
     public void testArithmetics1() throws Exception {
-        lMultivariatePolynomial a = parse("a*b + a^2 + c^3*b^2", Integers);
+        lMultivariatePolynomialZp a = parse("a*b + a^2 + c^3*b^2", Integers);
         assertEquals(0, a.cc());
         assertEquals(1, a.lc());
         assertEquals(1, a.clone().increment().cc());
         assertEquals(Integers.modulus(-1), a.clone().decrement().cc());
-        lMultivariatePolynomial b = parse("a*b - a^2 + c^3*b^2", Integers);
+        lMultivariatePolynomialZp b = parse("a*b - a^2 + c^3*b^2", Integers);
         assertEquals(parse("2*a^2", Integers, "a", "b", "c"), a.clone().subtract(b));
         assertEquals(parse("2*a*b + 2*c^3*b^2", Integers, "a", "b", "c"), a.clone().add(b));
         assertEquals(parse("-a^4 + a^2*b^2 + 2*a*b^3*c^3 + b^4*c^6", Integers), a.multiply(b));
@@ -48,9 +48,9 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
 
     @Test
     public void testZero1() throws Exception {
-        lMultivariatePolynomial p = parse("a*b + a^2 + c^3*b^2", Integers);
+        lMultivariatePolynomialZp p = parse("a*b + a^2 + c^3*b^2", Integers);
 
-        lMultivariatePolynomial a = p.clone();
+        lMultivariatePolynomialZp a = p.clone();
         a.subtract(a.clone());
         assertZero(a);
 
@@ -77,7 +77,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testZero2() throws Exception {
-        lMultivariatePolynomial poly = lMultivariatePolynomial.create(3,
+        lMultivariatePolynomialZp poly = lMultivariatePolynomialZp.create(3,
                 Integers, LEX,
                 new lMonomialTerm(new int[]{1, 2, 3}, 0),
                 new lMonomialTerm(new int[]{0, 1, 2}, 5),
@@ -87,7 +87,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
         assertEquals(parse("10*b*c^2 + 10*a^3*b^43*c", Integers), poly);
     }
 
-    private static void assertZero(lMultivariatePolynomial a) {
+    private static void assertZero(lMultivariatePolynomialZp a) {
         assertEquals(0, a.size());
         assertTrue(a.isZero());
         assertTrue(a.isConstant());
@@ -100,12 +100,12 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testArithmetics2() throws Exception {
         lIntegersModulo algebra = new lIntegersModulo(17);
-        lMultivariatePolynomial a = parse("a*b + a^2 + c^3*b^2", algebra, LEX);
+        lMultivariatePolynomialZp a = parse("a*b + a^2 + c^3*b^2", algebra, LEX);
         assertEquals(0, a.cc());
         assertEquals(1, a.lc());
         assertEquals(1, a.clone().increment().cc());
         assertEquals(algebra.modulus(-1), a.clone().decrement().cc());
-        lMultivariatePolynomial b = parse("a*b - a^2 + c^3*b^2", algebra, LEX);
+        lMultivariatePolynomialZp b = parse("a*b - a^2 + c^3*b^2", algebra, LEX);
         assertEquals(parse("2*a^2", algebra, LEX, "a", "b", "c"), a.clone().subtract(b));
         assertEquals(parse("2*a*b + 2*c^3*b^2", algebra, LEX, "a", "b", "c"), a.clone().add(b));
         assertEquals(parse("-a^4 + a^2*b^2 + 2*a*b^3*c^3 + b^4*c^6", algebra, LEX), a.multiply(b));
@@ -113,7 +113,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
 
     @Test
     public void testZeroVariables() throws Exception {
-        lMultivariatePolynomial p0 = parse("23", Integers);
+        lMultivariatePolynomialZp p0 = parse("23", Integers);
         assertEquals(0, p0.nVariables);
         assertEquals(1, p0.size());
         assertEquals(0, p0.clone().subtract(p0).size());
@@ -121,7 +121,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
 
     @Test
     public void testCreateLinear() throws Exception {
-        lMultivariatePolynomial p0 = lMultivariatePolynomial.zero(3, Integers, LEX);
+        lMultivariatePolynomialZp p0 = lMultivariatePolynomialZp.zero(3, Integers, LEX);
         String[] vars = {"a", "b", "c"};
         assertEquals(parse("-1+2*a", Integers, vars), p0.createLinear(0, -1, 2));
         assertEquals(parse("-1+2*b", Integers, vars), p0.createLinear(1, -1, 2));
@@ -136,7 +136,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
         assertEquals(parse0(str), parse0(str.replace("2^", "a^"), "a", "b").eliminate(0, 2));
 
         str = "-5*a^22*c*d^13 + 5*a^32*b^24*c*d + a^31*c*d^42 + c^66";
-        lMultivariatePolynomial poly = parse0(str);
+        lMultivariatePolynomialZp poly = parse0(str);
         assertEquals(parse0(str.replace("d", "3")), poly.eliminate(3, 3));
         assertEquals(parse0(str.replace("c", "3"), "a", "b", "d"), poly.eliminate(2, 3));
         assertEquals(parse0(str.replace("b", "3"), "a", "c", "d"), poly.eliminate(1, 3));
@@ -153,7 +153,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
 
         str = "-5*a^22*c*d^13 + 5*a^32*b^24*c*d + a^31*c*d^42 + c^66";
         vars = new String[]{"a", "b", "c", "d"};
-        lMultivariatePolynomial poly = parse0(str, vars);
+        lMultivariatePolynomialZp poly = parse0(str, vars);
         assertEquals(parse0(str.replace("d", "3"), vars), poly.evaluate(3, 3));
         assertEquals(parse0(str.replace("c", "3"), vars), poly.evaluate(2, 3));
         assertEquals(parse0(str.replace("b", "3"), vars), poly.evaluate(1, 3));
@@ -163,7 +163,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testEvaluate2() throws Exception {
         String[] vars = {"a", "b"};
-        lMultivariatePolynomial poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", Integers, LEX, vars);
+        lMultivariatePolynomialZp poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", Integers, LEX, vars);
         assertEquals(parse0("18 + 18*a^2 + 18*a^3", vars), poly.evaluate(1, 1));
 
         lIntegersModulo pDomain = new lIntegersModulo(17);
@@ -174,11 +174,11 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     public void testEvaluate3() throws Exception {
         String[] vars = {"a", "b", "c"};
         lIntegersModulo domain = new lIntegersModulo(5642359);
-        lMultivariatePolynomial poly = parse(" b^2*c^2+b^3+a*c^4+a*b*c^2+a*b^2+a*b^2*c+2*a^2*c^2+a^2*c^3+a^2*b+a^2*b^2+a^3+a^3*c+a^3*c^2+a^4", domain, LEX, vars);
+        lMultivariatePolynomialZp poly = parse(" b^2*c^2+b^3+a*c^4+a*b*c^2+a*b^2+a*b^2*c+2*a^2*c^2+a^2*c^3+a^2*b+a^2*b^2+a^3+a^3*c+a^3*c^2+a^4", domain, LEX, vars);
 
         int[] evalVars = {1, 2};
         int[] raiseFactors = {2, 1};
-        lMultivariatePolynomial r = poly.evaluate(new lPrecomputedPowersHolder(new long[]{4229599, 9}, domain), evalVars, raiseFactors);
+        lMultivariatePolynomialZp r = poly.evaluate(new lPrecomputedPowersHolder(new long[]{4229599, 9}, domain), evalVars, raiseFactors);
         assertEquals(parse("1694989 + 336131*a + 4996260*a^2 + 91*a^3 + a^4", domain, LEX, vars), r);
     }
 
@@ -186,7 +186,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     public void testUnivar1() throws Exception {
         String[] vars = {"a", "b"};
         lIntegersModulo domain = new lIntegersModulo(17);
-        lMultivariatePolynomial poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
+        lMultivariatePolynomialZp poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
         poly = poly.evaluate(0, 1);
         assertEquals(lUnivariatePolynomialZ.create(9, 0, 11).modulus(domain.modulus), poly.asUnivariate());
 
@@ -197,7 +197,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testConversion() throws Exception {
         String[] vars = {"a", "b"};
-        lMultivariatePolynomial poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new lIntegersModulo(17), LEX, vars);
+        lMultivariatePolynomialZp poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new lIntegersModulo(17), LEX, vars);
         assertEquals(poly, asNormalMultivariate(poly.asOverUnivariate(1), 1));
         assertEquals(poly, asNormalMultivariate(poly.asOverUnivariate(1), 1));
     }
@@ -206,8 +206,8 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     public void testParse1() throws Exception {
         String[] vars = {"a", "b"};
         lIntegersModulo domain = new lIntegersModulo(17);
-        lMultivariatePolynomial poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
-        lMultivariatePolynomial parsed = parse(poly.toString(vars), domain, LEX, vars);
+        lMultivariatePolynomialZp poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
+        lMultivariatePolynomialZp parsed = parse(poly.toString(vars), domain, LEX, vars);
         assertEquals(poly, parsed);
     }
 
@@ -215,8 +215,8 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     public void testParse2() throws Exception {
         String[] vars = {"a"};
         lIntegersModulo domain = new lIntegersModulo(17);
-        lMultivariatePolynomial poly = parse("8+14*a+16*a^2+11*a^3+12*a^4+a^5", domain, LEX, vars);
-        lMultivariatePolynomial parsed = parse(poly.toString(vars), domain, LEX, vars);
+        lMultivariatePolynomialZp poly = parse("8+14*a+16*a^2+11*a^3+12*a^4+a^5", domain, LEX, vars);
+        lMultivariatePolynomialZp parsed = parse(poly.toString(vars), domain, LEX, vars);
         assertEquals(poly, parsed);
     }
 
@@ -229,13 +229,13 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
         lIntegersModulo domain;
         for (int i = 0; i < nIterations; i++) {
             domain = rnd.nextBoolean() ? Integers : new lIntegersModulo(getModulusRandom(8));
-            lMultivariatePolynomial poly =
+            lMultivariatePolynomialZp poly =
                     MultivariatePolynomial.asLongPolyZp(RandomMultivariatePolynomial.randomPolynomial(
                             rndd.nextInt(1, 4),
                             rndd.nextInt(1, 5),
                             rndd.nextInt(1, 10),
                             BigInteger.valueOf(1000), domain.asDomain(), LEX, rnd));
-            lMultivariatePolynomial parsed = parse(poly.toString(), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
+            lMultivariatePolynomialZp parsed = parse(poly.toString(), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
             assertEquals(poly, parsed);
         }
     }
@@ -243,13 +243,13 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testCoefficient1() throws Exception {
         String[] vars = {"a", "b"};
-        lMultivariatePolynomial poly = parse0("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", vars);
+        lMultivariatePolynomialZp poly = parse0("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", vars);
         assertEquals(parse0("7+15*a^2+6*a^3", vars), poly.coefficientOf(1, 2));
         assertEquals(parse0("1+11*b+6*b^2", vars), poly.coefficientOf(0, 3));
 
         for (int v = 0; v < poly.nVariables; v++) {
             final int var = v;
-            lMultivariatePolynomial r = IntStream.rangeClosed(0, poly.degree(var))
+            lMultivariatePolynomialZp r = IntStream.rangeClosed(0, poly.degree(var))
                     .mapToObj(i -> poly.coefficientOf(var, i).multiply(new lMonomialTerm(poly.nVariables, var, i, 1)))
                     .reduce(poly.createZero(), AMultivariatePolynomial::add);
             assertEquals(poly, r);
@@ -259,7 +259,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testRenameVariables1() throws Exception {
         String[] vars = {"a", "b", "c", "d", "e"};
-        lMultivariatePolynomial poly = parse0("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);
+        lMultivariatePolynomialZp poly = parse0("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);
         for (int i = 1; i < poly.nVariables; i++)
             for (int j = 0; j < i; j++)
                 assertEquals(poly, swapVariables(swapVariables(poly, i, j), i, j));
@@ -269,7 +269,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void testRenameVariables2() throws Exception {
         String[] vars = {"a", "b", "c", "d", "e"};
-        lMultivariatePolynomial poly = parse0("1 + a^4 + b^6 + c^5 + d^3 + e^2", vars);
+        lMultivariatePolynomialZp poly = parse0("1 + a^4 + b^6 + c^5 + d^3 + e^2", vars);
         int[] variables = ArraysUtil.sequence(poly.nVariables);
         int[] degrees = poly.degrees();
         int lastVar = 2;
@@ -278,7 +278,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
         ArraysUtil.negate(degrees);
 
         assertEquals(0, variables[lastVar]);
-        lMultivariatePolynomial renamed = renameVariables(poly, variables);
+        lMultivariatePolynomialZp renamed = renameVariables(poly, variables);
         assertDescending(renamed.degrees());
         assertEquals(poly, renameVariables(renamed, inverse(variables)));
     }
@@ -286,7 +286,7 @@ public class lMultivariatePolynomialTest extends AbstractPolynomialTest {
 //    @Test
 //    public void testMonomialContent1() throws Exception {
 //        String[] vars = {"a", "b", "c", "d", "e"};
-//        lMultivariatePolynomial poly = parse("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);
+//        lMultivariatePolynomialZp poly = parse("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);
 //        poly = poly.multiply(parse("a*b^2*c^3*d^4*e^5", vars));
 //        DegreeVector mc = poly.monomialContent();
 //        assertEquals(new DegreeVector(new int[]{1, 2, 3, 4, 5}), mc);

@@ -164,14 +164,14 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial over machine sized modular integers
      * @throws ArithmeticException if some of coefficients will not exactly fit in a {@code long}.
      */
-    public static lMultivariatePolynomial asLongPolyZp(MultivariatePolynomial<BigInteger> poly) {
+    public static lMultivariatePolynomialZp asLongPolyZp(MultivariatePolynomial<BigInteger> poly) {
         if (!(poly.domain instanceof IntegersModulo))
             throw new IllegalArgumentException("Poly is not over modular domain: " + poly.domain);
         IntegersModulo domain = (IntegersModulo) poly.domain;
         MonomialsSet<lMonomialTerm> terms = new MonomialsSet<>(poly.ordering);
         for (MonomialTerm<BigInteger> term : poly.terms)
             terms.add(new lMonomialTerm(term.exponents, term.totalDegree, term.coefficient.longValueExact()));
-        return lMultivariatePolynomial.create(poly.nVariables, domain.asLong(), poly.ordering, terms);
+        return lMultivariatePolynomialZp.create(poly.nVariables, domain.asLong(), poly.ordering, terms);
     }
 
     /**

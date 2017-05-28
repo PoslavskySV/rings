@@ -67,8 +67,8 @@ public final class MultivariateReduction {
      * @param dividers the dividers
      * @return array of quotients and remainder at the last position
      */
-    public static lMultivariatePolynomial[] divideAndRemainder(lMultivariatePolynomial dividend, lMultivariatePolynomial... dividers) {
-        lMultivariatePolynomial[] quotients = new lMultivariatePolynomial[dividers.length + 1];
+    public static lMultivariatePolynomialZp[] divideAndRemainder(lMultivariatePolynomialZp dividend, lMultivariatePolynomialZp... dividers) {
+        lMultivariatePolynomialZp[] quotients = new lMultivariatePolynomialZp[dividers.length + 1];
         int i = 0;
         for (; i < dividers.length; i++) {
             if (dividers[i].isZero())
@@ -77,7 +77,7 @@ public final class MultivariateReduction {
         }
         quotients[i] = dividend.createZero();
 
-        lMultivariatePolynomial remainder = quotients[quotients.length - 1];
+        lMultivariatePolynomialZp remainder = quotients[quotients.length - 1];
         dividend = dividend.clone();
         while (!dividend.isZero()) {
             lMonomialTerm ltDiv = null;
@@ -117,8 +117,8 @@ public final class MultivariateReduction {
     Poly[] divideAndRemainder(Poly dividend, Poly[] dividers) {
         if (dividend instanceof MultivariatePolynomial)
             return (Poly[]) divideAndRemainder((MultivariatePolynomial) dividend, (MultivariatePolynomial[]) dividers);
-        else if (dividend instanceof lMultivariatePolynomial)
-            return (Poly[]) divideAndRemainder((lMultivariatePolynomial) dividend, (lMultivariatePolynomial[]) dividers);
+        else if (dividend instanceof lMultivariatePolynomialZp)
+            return (Poly[]) divideAndRemainder((lMultivariatePolynomialZp) dividend, (lMultivariatePolynomialZp[]) dividers);
         else
             throw new RuntimeException();
     }
@@ -135,8 +135,8 @@ public final class MultivariateReduction {
     Poly[] divideAndRemainder(Poly dividend, Poly divider) {
         if (dividend instanceof MultivariatePolynomial)
             return (Poly[]) divideAndRemainder((MultivariatePolynomial) dividend, new MultivariatePolynomial[]{(MultivariatePolynomial) divider});
-        else if (dividend instanceof lMultivariatePolynomial)
-            return (Poly[]) divideAndRemainder((lMultivariatePolynomial) dividend, new lMultivariatePolynomial[]{(lMultivariatePolynomial) divider});
+        else if (dividend instanceof lMultivariatePolynomialZp)
+            return (Poly[]) divideAndRemainder((lMultivariatePolynomialZp) dividend, new lMultivariatePolynomialZp[]{(lMultivariatePolynomialZp) divider});
         else
             throw new RuntimeException();
     }
@@ -185,7 +185,7 @@ public final class MultivariateReduction {
      * @return whether {@code divisor} is a divisor of {@code poly}
      */
     @SuppressWarnings("unchecked")
-    public static boolean dividesQ(lMultivariatePolynomial dividend, lMultivariatePolynomial divider) {
+    public static boolean dividesQ(lMultivariatePolynomialZp dividend, lMultivariatePolynomialZp divider) {
         dividend = dividend.clone();
         while (!dividend.isZero()) {
             lMonomialTerm ltDiv = divide(dividend.domain, dividend.lt(), divider.lt());
@@ -208,8 +208,8 @@ public final class MultivariateReduction {
     boolean dividesQ(Poly dividend, Poly divider) {
         if (dividend instanceof MultivariatePolynomial)
             return dividesQ((MultivariatePolynomial) dividend, (MultivariatePolynomial) divider);
-        else if (dividend instanceof lMultivariatePolynomial)
-            return dividesQ((lMultivariatePolynomial) dividend, (lMultivariatePolynomial) divider);
+        else if (dividend instanceof lMultivariatePolynomialZp)
+            return dividesQ((lMultivariatePolynomialZp) dividend, (lMultivariatePolynomialZp) divider);
         else
             throw new RuntimeException();
     }

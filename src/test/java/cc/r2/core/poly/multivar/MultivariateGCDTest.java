@@ -40,7 +40,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                                        MultivariatePolynomial<BigInteger> a,
                                        MultivariatePolynomial<BigInteger> b) {
         MultivariatePolynomial<BigInteger> actualGCD = BrownGCD(a, b);
-        lMultivariatePolynomial lActualGCD = BrownGCD(asLongPolyZp(a), asLongPolyZp(b));
+        lMultivariatePolynomialZp lActualGCD = BrownGCD(asLongPolyZp(a), asLongPolyZp(b));
         Assert.assertTrue(dividesQ(actualGCD, gcd));
         Assert.assertEquals(asLongPolyZp(actualGCD).monic(), lActualGCD.monic());
     }
@@ -212,7 +212,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(data.b, gcdActual));
 
                 PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomial lGcdActual = BrownGCD(asLongPolyZp(data.a), asLongPolyZp(data.b));
+                lMultivariatePolynomialZp lGcdActual = BrownGCD(asLongPolyZp(data.a), asLongPolyZp(data.b));
                 assertTrue(dividesQ(asLongPolyZp(data.a), lGcdActual));
                 assertTrue(dividesQ(asLongPolyZp(data.b), lGcdActual));
             } catch (Throwable err) {
@@ -271,7 +271,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(gcdActual, gcd));
 
                 PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomial lGcdActual = BrownGCD(asLongPolyZp(aGCD), asLongPolyZp(bGCD));
+                lMultivariatePolynomialZp lGcdActual = BrownGCD(asLongPolyZp(aGCD), asLongPolyZp(bGCD));
                 assertTrue(dividesQ(lGcdActual, asLongPolyZp(gcd)));
             } catch (Throwable err) {
                 System.out.println("seed: " + n);
@@ -334,7 +334,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                                         MultivariatePolynomial<BigInteger> a,
                                         MultivariatePolynomial<BigInteger> b) {
         MultivariatePolynomial<BigInteger> actualGCD = ZippelGCD(a, b);
-        lMultivariatePolynomial lActualGCD = ZippelGCD(asLongPolyZp(a), asLongPolyZp(b));
+        lMultivariatePolynomialZp lActualGCD = ZippelGCD(asLongPolyZp(a), asLongPolyZp(b));
         Assert.assertTrue(dividesQ(actualGCD, gcd));
         Assert.assertEquals(asLongPolyZp(actualGCD).monic(), lActualGCD.monic());
     }
@@ -363,7 +363,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
 
-        lMultivariatePolynomial la = asLongPolyZp(a), lb = asLongPolyZp(b),
+        lMultivariatePolynomialZp la = asLongPolyZp(a), lb = asLongPolyZp(b),
                 lskeleton = asLongPolyZp(skeleton), lgcd = asLongPolyZp(gcd);
         for (int i = 0; i < 100; i++) {
             lSparseInterpolation sparseInterpolation
@@ -467,7 +467,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                     MultivariatePolynomial<BigInteger> actual = sparseInterpolation.evaluate(point).monic();
                     assertEquals(expected, actual);
 
-                    lMultivariatePolynomial lActual = lSparseInterpolation.evaluate(point.longValueExact()).monic();
+                    lMultivariatePolynomialZp lActual = lSparseInterpolation.evaluate(point.longValueExact()).monic();
                     assertEquals(asLongPolyZp(expected), lActual);
                 } catch (Throwable e) {
                     System.out.println("rnd seed : " + rndSeed);
@@ -537,7 +537,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(gcdBrown, data.gcd));
 
                 PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
+                lMultivariatePolynomialZp lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
                 assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
@@ -626,7 +626,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(gcdBrown, data.gcd));
 
                 PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
+                lMultivariatePolynomialZp lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
                 assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
@@ -677,7 +677,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 assertTrue(dividesQ(gcdZippel, data.gcd));
 
                 PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomial lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
+                lMultivariatePolynomialZp lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
                 assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
             } catch (Throwable e) {
                 System.out.println("rnd seed : " + n);
@@ -740,7 +740,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         System.out.println(a);
         System.out.println(b);
 
-        lMultivariatePolynomial
+        lMultivariatePolynomialZp
                 aL = asLongPolyZp(a),
                 bL = asLongPolyZp(b);
 
@@ -815,7 +815,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
-        lMultivariatePolynomial intrp = interpolateGCD(asLongPolyZp(a), asLongPolyZp(b), asLongPolyZp(gcd), getRandom());
+        lMultivariatePolynomialZp intrp = interpolateGCD(asLongPolyZp(a), asLongPolyZp(b), asLongPolyZp(gcd), getRandom());
         assertEquals(asLongPolyZp(gcd).monic(), intrp.monic());
     }
 
@@ -830,9 +830,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         a = a.multiply(gcd);
         b = b.multiply(gcd);
 
-        lMultivariatePolynomial la = asLongPolyZp(a), lb = asLongPolyZp(b);
-        lMultivariatePolynomial lgcd = ZippelGCD(la, lb);
-        lMultivariatePolynomial intrp = interpolateGCD(la, lb, lgcd, getRandom());
+        lMultivariatePolynomialZp la = asLongPolyZp(a), lb = asLongPolyZp(b);
+        lMultivariatePolynomialZp lgcd = ZippelGCD(la, lb);
+        lMultivariatePolynomialZp intrp = interpolateGCD(la, lb, lgcd, getRandom());
         assertEquals(lgcd.monic(), intrp.monic());
     }
 
@@ -843,11 +843,11 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
             GCDTriplet gcdTriplet = sampleData.nextSample(false, false);
-            lMultivariatePolynomial gcd = null, actual = null;
+            lMultivariatePolynomialZp gcd = null, actual = null;
             try {
 
-                lMultivariatePolynomial la = asLongPolyZp(gcdTriplet.aGCD);
-                lMultivariatePolynomial lb = asLongPolyZp(gcdTriplet.bGCD);
+                lMultivariatePolynomialZp la = asLongPolyZp(gcdTriplet.aGCD);
+                lMultivariatePolynomialZp lb = asLongPolyZp(gcdTriplet.bGCD);
                 gcd = ZippelGCD(la, lb);
                 if (la.isConstant() || lb.isConstant() || gcd.degree(0) == 0) {
                     --n; continue;
@@ -877,20 +877,20 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         IntegersModulo domain = new IntegersModulo(27445993);
 
-        lMultivariatePolynomial
+        lMultivariatePolynomialZp
                 la = asLongPolyZp(a.setDomain(domain)),
                 lb = asLongPolyZp(b.setDomain(domain));
-        lMultivariatePolynomial skeleton = ZippelGCD(la, lb);
+        lMultivariatePolynomialZp skeleton = ZippelGCD(la, lb);
 
         IntegersModulo domain1 = new IntegersModulo(BigPrimes.nextPrime(37445993132451L));
-        lMultivariatePolynomial
+        lMultivariatePolynomialZp
                 la1 = asLongPolyZp(a.setDomain(domain1)),
                 lb1 = asLongPolyZp(b.setDomain(domain1));
 
-        lMultivariatePolynomial gcd1 = ZippelGCD(la1, lb1);
+        lMultivariatePolynomialZp gcd1 = ZippelGCD(la1, lb1);
 
         skeleton = skeleton.setDomain(la1.domain);
-        lMultivariatePolynomial intrp = interpolateGCD(la1, lb1, skeleton, getRandom());
+        lMultivariatePolynomialZp intrp = interpolateGCD(la1, lb1, skeleton, getRandom());
         assertEquals(gcd1.monic(), intrp.monic());
     }
 
@@ -901,11 +901,11 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
             GCDTriplet gcdTriplet = sampleData.nextSample(false, false).asZ();
-            lMultivariatePolynomial skeleton = null, gcd = null, actual = null;
+            lMultivariatePolynomialZp skeleton = null, gcd = null, actual = null;
             try {
 
                 IntegersModulo domain = new IntegersModulo(getModulusRandom(20));
-                lMultivariatePolynomial
+                lMultivariatePolynomialZp
                         la = asLongPolyZp(gcdTriplet.aGCD.setDomain(domain)),
                         lb = asLongPolyZp(gcdTriplet.bGCD.setDomain(domain));
 
@@ -915,7 +915,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 }
 
                 IntegersModulo domain1 = new IntegersModulo(getModulusRandom(20));
-                lMultivariatePolynomial
+                lMultivariatePolynomialZp
                         la1 = asLongPolyZp(gcdTriplet.aGCD.setDomain(domain1)),
                         lb1 = asLongPolyZp(gcdTriplet.bGCD.setDomain(domain1));
 
@@ -949,12 +949,12 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                     b = parse("12*c^6*d^2+234*b^8*c^8*d^6+28*a^2*b^2*c^6*d^3+16*a^2*b^2*c^6*d^4+3*a^2*b^7*c^5*d+546*a^2*b^10*c^8*d^7+312*a^2*b^10*c^8*d^8+32*a^3*b^6*c^12*d^9+624*a^3*b^14*c^14*d^13+7*a^4*b^9*c^5*d^2+4*a^4*b^9*c^5*d^3+8*a^5*b^13*c^11*d^8+12*a^6*b*c^6+36*a^6*b^4*c^12*d^6+4*a^6*b^9*c^8*d^3+702*a^6*b^12*c^14*d^10+78*a^6*b^17*c^10*d^7+28*a^7*b^9*c^5*d^7+546*a^7*b^17*c^7*d^11+3*a^8*c*d^3+332*a^8*b*c^5*d^10+28*a^8*b^3*c^6*d+16*a^8*b^3*c^6*d^2+312*a^8*b^3*c^9*d^4+180*a^8*b^9*c^7*d^14+9*a^8*b^11*c^11*d^5+839*a^8*b^11*c^11*d^8+a^8*b^16*c^7*d^2+16*a^9*b^7*c^5*d^4+32*a^9*b^7*c^12*d^7+324*a^9*b^9*c^6*d^4+312*a^9*b^15*c^7*d^8+7*a^9*b^16*c^4*d^6+24*a^9*b^17*c^8*d^8+7*a^10*b^2*c*d^4+4*a^10*b^2*c*d^5+83*a^10*b^8*c^4*d^9+78*a^10*b^10*c^8*d^3+8*a^11*b^6*c^7*d^10+4*a^11*b^14*c^4*d^3+81*a^11*b^16*c^5*d^3+36*a^12*b^5*c^12*d^4+4*a^12*b^10*c^8*d+28*a^13*b^10*c^5*d^5+332*a^14*b^2*c^5*d^8+9*a^14*b^4*c^7*d^7+312*a^14*b^4*c^9*d^2+a^14*b^9*c^3*d^4+16*a^15*b^8*c^5*d^2+7*a^15*b^9*d^8+324*a^15*b^10*c^6*d^2+83*a^16*b*d^11+78*a^16*b^3*c^4*d^5+4*a^17*b^7*d^5+81*a^17*b^9*c*d^5", domain, LEX),
                     base = parse("3*c+7*a^2*b^2*c*d+4*a^2*b^2*c*d^2+8*a^3*b^6*c^7*d^7+9*a^6*b^4*c^7*d^4+a^6*b^9*c^3*d+7*a^7*b^9*d^5+17492158*a^8*b*d^8+17492153*a^8*b^3*c^4*d^2+4*a^9*b^7*d^2+17492156*a^9*b^9*c*d^2", domain, LEX);
 
-            lMultivariatePolynomial
+            lMultivariatePolynomialZp
                     la = asLongPolyZp(a),
                     lb = asLongPolyZp(b),
                     skeleton = asLongPolyZp(base);
-            lMultivariatePolynomial lgcd = ZippelGCD(la, lb);
-            lMultivariatePolynomial intrp = null;
+            lMultivariatePolynomialZp lgcd = ZippelGCD(la, lb);
+            lMultivariatePolynomialZp intrp = null;
             try {
                 rnd.setSeed(i);
                 intrp = interpolateGCD(la, lb, skeleton, rnd);
@@ -977,17 +977,17 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 a = parse("15*a*b^5*c^5*d^3+27*a^2*b^10*c^4*d+35*a^3*b^7*c^5*d^4+20*a^3*b^7*c^5*d^5+40*a^4*b^11*c^11*d^10+63*a^4*b^12*c^4*d^2+36*a^4*b^12*c^4*d^3+72*a^5*b^16*c^10*d^8+243*a^6*b^12*c^9*d^4+15*a^6*b^15*c*d^3+15*a^6*b^15*c^11*d^10+45*a^7*b^9*c^11*d^7+5*a^7*b^14*c^7*d^4+12*a^8*b*c*d^11+35*a^8*b^14*c^4*d^8+567*a^8*b^14*c^9*d^5+324*a^8*b^14*c^9*d^6+81*a^8*b^14*c^10*d^5+231*a^8*b^15*c^3*d^10+35*a^8*b^17*c*d^4+20*a^8*b^17*c*d^5+35*a^8*b^17*c^11*d^11+20*a^8*b^17*c^11*d^12+9*a^8*b^19*c^6*d^2+15*a^9*c^10*d^11+415*a^9*b^6*c^4*d^11+390*a^9*b^8*c^8*d^5+648*a^9*b^18*c^15*d^11+63*a^9*b^19*c^3*d^6+40*a^9*b^21*c^7*d^10+40*a^9*b^21*c^17*d^17+24*a^10*c^3*d^11+28*a^10*b^3*c*d^12+16*a^10*b^3*c*d^13+747*a^10*b^11*c^3*d^9+20*a^10*b^12*c^4*d^5+702*a^10*b^13*c^7*d^3+405*a^10*b^14*c^5*d^5+539*a^10*b^17*c^3*d^11+308*a^10*b^17*c^3*d^12+35*a^11*b^2*c^10*d^12+20*a^11*b^2*c^10*d^13+32*a^11*b^7*c^7*d^18+36*a^11*b^17*c^3*d^3+729*a^11*b^19*c^4*d^3+616*a^11*b^21*c^9*d^17+56*a^12*b^2*c^3*d^12+32*a^12*b^2*c^3*d^13+40*a^12*b^6*c^16*d^18+729*a^12*b^16*c^15*d^8+45*a^12*b^19*c^7*d^7+45*a^12*b^19*c^17*d^14+81*a^12*b^21*c^11*d^5+5*a^12*b^24*c^3*d^4+5*a^12*b^24*c^13*d^11+18*a^13*b^3*c^5*d^13+64*a^13*b^6*c^9*d^18+567*a^13*b^21*c^8*d^9+35*a^13*b^24*d^8+35*a^13*b^24*c^10*d^15+36*a^14*b^5*c^7*d^15+4*a^14*b^10*c^3*d^12+429*a^14*b^13*c^8*d^12+24*a^14*b^15*c^12*d^6+415*a^14*b^16*d^11+415*a^14*b^16*c^10*d^18+390*a^14*b^18*c^4*d^5+390*a^14*b^18*c^14*d^12+693*a^14*b^19*c^9*d^14+77*a^14*b^24*c^5*d^11+45*a^15*b^4*c^16*d^15+42*a^15*b^5*c^5*d^14+24*a^15*b^5*c^5*d^15+5*a^15*b^9*c^12*d^12+28*a^15*b^10*d^16+324*a^15*b^19*c^8*d^6+267*a^15*b^21*c^9*d^6+20*a^15*b^22*d^5+20*a^15*b^22*c^10*d^12+405*a^15*b^24*c*d^5+539*a^15*b^24*c^2*d^15+405*a^15*b^24*c^11*d^12+332*a^16*b^2*d^19+312*a^16*b^4*c^4*d^13+72*a^16*b^4*c^9*d^15+8*a^16*b^9*c^5*d^12+35*a^16*b^9*c^9*d^16+48*a^16*b^9*c^11*d^20+97*a^16*b^16*c^2*d^18+761*a^16*b^18*c^6*d^12+415*a^17*b*c^9*d^19+390*a^17*b^3*c^13*d^13+16*a^17*b^8*d^13+56*a^17*b^9*c^2*d^16+324*a^17*b^10*c*d^13+308*a^17*b^22*c^2*d^12+992*a^17*b^24*c^3*d^12+664*a^18*b*c^2*d^19+624*a^18*b^3*c^6*d^13+20*a^18*b^7*c^9*d^13+405*a^18*b^9*c^10*d^13+32*a^19*b^7*c^2*d^13+54*a^19*b^7*c^11*d^17+648*a^19*b^9*c^3*d^13+6*a^19*b^12*c^7*d^14+42*a^20*b^12*c^4*d^18+498*a^21*b^4*c^4*d^21+468*a^21*b^6*c^8*d^15+24*a^22*b^10*c^4*d^15+486*a^22*b^12*c^5*d^15", domain, LEX),
                 b = parse("12*c^6*d^2+234*b^8*c^8*d^6+28*a^2*b^2*c^6*d^3+16*a^2*b^2*c^6*d^4+3*a^2*b^7*c^5*d+546*a^2*b^10*c^8*d^7+312*a^2*b^10*c^8*d^8+32*a^3*b^6*c^12*d^9+624*a^3*b^14*c^14*d^13+7*a^4*b^9*c^5*d^2+4*a^4*b^9*c^5*d^3+8*a^5*b^13*c^11*d^8+12*a^6*b*c^6+36*a^6*b^4*c^12*d^6+4*a^6*b^9*c^8*d^3+702*a^6*b^12*c^14*d^10+78*a^6*b^17*c^10*d^7+28*a^7*b^9*c^5*d^7+546*a^7*b^17*c^7*d^11+3*a^8*c*d^3+332*a^8*b*c^5*d^10+28*a^8*b^3*c^6*d+16*a^8*b^3*c^6*d^2+312*a^8*b^3*c^9*d^4+180*a^8*b^9*c^7*d^14+9*a^8*b^11*c^11*d^5+839*a^8*b^11*c^11*d^8+a^8*b^16*c^7*d^2+16*a^9*b^7*c^5*d^4+32*a^9*b^7*c^12*d^7+324*a^9*b^9*c^6*d^4+312*a^9*b^15*c^7*d^8+7*a^9*b^16*c^4*d^6+24*a^9*b^17*c^8*d^8+7*a^10*b^2*c*d^4+4*a^10*b^2*c*d^5+83*a^10*b^8*c^4*d^9+78*a^10*b^10*c^8*d^3+8*a^11*b^6*c^7*d^10+4*a^11*b^14*c^4*d^3+81*a^11*b^16*c^5*d^3+36*a^12*b^5*c^12*d^4+4*a^12*b^10*c^8*d+28*a^13*b^10*c^5*d^5+332*a^14*b^2*c^5*d^8+9*a^14*b^4*c^7*d^7+312*a^14*b^4*c^9*d^2+a^14*b^9*c^3*d^4+16*a^15*b^8*c^5*d^2+7*a^15*b^9*d^8+324*a^15*b^10*c^6*d^2+83*a^16*b*d^11+78*a^16*b^3*c^4*d^5+4*a^17*b^7*d^5+81*a^17*b^9*c*d^5", domain, LEX);
 
-        lMultivariatePolynomial
+        lMultivariatePolynomialZp
                 la = asLongPolyZp(a),
                 lb = asLongPolyZp(b);
 
-        lMultivariatePolynomial lgcd = ZippelGCD(la, lb);
+        lMultivariatePolynomialZp lgcd = ZippelGCD(la, lb);
         assertTrue(dividesQ(la, lgcd));
         assertTrue(dividesQ(lb, lgcd));
 
 
         rnd.setSeed(701);
-        lMultivariatePolynomial intrp = interpolateGCD(la, lb, lgcd, rnd);
+        lMultivariatePolynomialZp intrp = interpolateGCD(la, lb, lgcd, rnd);
         if (intrp != null)
             assertEquals(lgcd.monic(), intrp.monic());
     }
