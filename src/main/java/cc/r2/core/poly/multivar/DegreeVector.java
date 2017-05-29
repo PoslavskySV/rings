@@ -55,6 +55,15 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
         return setDegreeVector(newExponents, totalDegree - oth.totalDegree);
     }
 
+    /** Whether divides degree vector */
+    final boolean dividesQ(DegreeVector oth) {
+        for (int i = 0; i < exponents.length; i++) {
+            if (exponents[i] < oth.exponents[i])
+                return false;
+        }
+        return true;
+    }
+
     /** Returns whether all exponents are zero */
     public final boolean isZeroVector() {
         return totalDegree == 0;

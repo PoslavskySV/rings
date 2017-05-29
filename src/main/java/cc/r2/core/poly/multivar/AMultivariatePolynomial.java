@@ -241,6 +241,15 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
     }
 
     /**
+     * Returns the multidegree of this polynomial i.e. exponents of the leading term (without copying)
+     *
+     * @return the multidegree of this polynomial i.e. exponents of the leading term (without copying)
+     */
+    public final int[] multidegree() {
+        return lt().exponents;
+    }
+
+    /**
      * Returns the degrees in which {@code variable} occurs in this polynomial
      *
      * @return the degrees in which {@code variable} occurs in this polynomial
@@ -479,7 +488,7 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
     /** Multiply two terms */
     abstract Term multiply(Term a, Term b);
 
-    /** Subtract b from a */
+    /** Divide a/b or return null if exact division is not possible */
     abstract Term divideOrNull(Term a, Term b);
 
     /**

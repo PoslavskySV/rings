@@ -336,6 +336,13 @@ public final class ArraysUtil {
         return a;
     }
 
+    public static int[] max(int[] a, int[] b) {
+        int[] r = new int[a.length];
+        for (int i = 0; i < a.length; i++)
+            r[i] = Math.max(a[i], b[i]);
+        return r;
+    }
+
     public static int min(int[] array) {
         int a = -1;
         for (int i : array)
