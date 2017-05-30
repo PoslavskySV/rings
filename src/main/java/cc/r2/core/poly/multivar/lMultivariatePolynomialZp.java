@@ -11,6 +11,7 @@ import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -857,6 +858,44 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             tmp = evaluate(variable, randomPoint);
         } while (!skeleton.equals(tmp.getSkeleton()));
         return tmp;
+    }
+
+    @Override
+    public lMultivariatePolynomialZp derivative(int variable) {
+        MonomialsSet<lMonomialTerm> newTerms = new MonomialsSet<lMonomialTerm>(ordering);
+        for (lMonomialTerm term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent == 0)
+                continue;
+            long newCoefficient = domain.multiply(term.coefficient, exponent);
+            int[] newExponents = term.exponents.clone();
+            --newExponents[variable];
+            newTerms.add(new lMonomialTerm(newExponents, term.totalDegree - 1, newCoefficient));
+        }
+        return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);
+    }
+
+    @Override
+    public int compareTo(lMultivariatePolynomialZp oth) {
+        int c = Integer.compare(size(), oth.size());
+        if (c != 0)
+            return c;
+        Iterator<lMonomialTerm>
+                thisIt = iterator(),
+                othIt = oth.iterator();
+
+        while (thisIt.hasNext() && othIt.hasNext()) {
+            lMonomialTerm
+                    a = thisIt.next(),
+                    b = othIt.next();
+
+            if ((c = ordering.compare(a, b)) != 0)
+                return c;
+
+            if ((c = Long.compare(a.coefficient, b.coefficient)) != 0)
+                return c;
+        }
+        return 0;
     }
 
     @Override

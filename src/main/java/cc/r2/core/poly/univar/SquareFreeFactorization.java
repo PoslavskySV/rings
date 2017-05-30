@@ -1,5 +1,6 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.LongArithmetics;
 
 import java.util.Arrays;
@@ -61,7 +62,7 @@ public final class SquareFreeFactorization {
 
         poly = poly.clone().divideByLC(content);
         if (poly.degree() <= 1)
-            return FactorDecomposition.oneFactor(content, poly);
+            return FactorDecomposition.singleFactor(content, poly);
 
         FactorDecomposition<Poly> factorization = FactorDecomposition.constantFactor(content);
         SquareFreeFactorizationYun0(poly, factorization);
@@ -112,7 +113,7 @@ public final class SquareFreeFactorization {
 
         poly = poly.clone().divideByLC(content);
         if (poly.degree() <= 1)
-            return FactorDecomposition.oneFactor(content, poly);
+            return FactorDecomposition.singleFactor(content, poly);
 
         FactorDecomposition<Poly> factorization = FactorDecomposition.constantFactor(content);
         SquareFreeFactorizationMusserZeroCharacteristics0(poly, factorization);
@@ -159,7 +160,7 @@ public final class SquareFreeFactorization {
             return FactorDecomposition.constantFactor(lc);
 
         if (poly.degree() <= 1)
-            return FactorDecomposition.oneFactor(lc, poly);
+            return FactorDecomposition.singleFactor(lc, poly);
 
         FactorDecomposition<Poly> factorization;
         // x^2 + x^3 -> x^2 (1 + x)
@@ -184,13 +185,13 @@ public final class SquareFreeFactorization {
             return FactorDecomposition.constantFactor(poly);
 
         if (poly.degree() <= 1)
-            return FactorDecomposition.oneFactor(poly.createOne(), poly);
+            return FactorDecomposition.singleFactor(poly.createOne(), poly);
 
         Poly derivative = poly.derivative();
         if (!derivative.isZero()) {
             Poly gcd = PolynomialGCD(poly, derivative);
             if (gcd.isConstant())
-                return FactorDecomposition.oneFactor(poly.createOne(), poly);
+                return FactorDecomposition.singleFactor(poly.createOne(), poly);
             Poly quot = divideAndRemainder(poly, gcd, false)[0]; // can safely destroy poly (not used further)
 
             FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(poly.createOne());

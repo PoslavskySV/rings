@@ -559,6 +559,26 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
         return getSkeletonExcept(variables).equals(oth.getSkeletonExcept(variables));
     }
 
+    /**
+     * Gives partial derivative with respect to specified variable
+     *
+     * @param variable the variable
+     * @return partial derivative with respect to specified variable
+     */
+    public abstract Poly derivative(int variable);
+
+    /**
+     * Gives the derivative vector
+     *
+     * @return derivative vector
+     */
+    public final Poly[] derivative() {
+        Poly[] result = arrayNewInstance(nVariables);
+        for (int i = 0; i < nVariables; ++i)
+            result[i] = derivative(i);
+        return result;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -3,12 +3,13 @@ package cc.r2.core.poly;
 import cc.r2.core.number.BigInteger;
 
 import java.util.Collection;
+import java.util.Comparator;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> {
+public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> extends Comparable<Poly> {
     /**
      * Returns whether {@code oth} and {@code this} have the same coefficients domain
      *

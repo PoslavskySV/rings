@@ -277,7 +277,40 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
         assertEquals(poly, renameVariables(renamed, inverse(variables)));
     }
 
-//    @Test
+    @Test
+    public void testDerivative1() throws Exception {
+        String[] vars = {"a", "b", "c", "d", "e"};
+        MultivariatePolynomial<BigInteger> poly =
+                parse("1 + a^4*b^2 + c*b^6 + a*c^5 + a*b*d^3 + a^3*b^3*e^2", vars);
+        assertEquals(
+                parse("4*a^3*b^2 + c^5 + b*d^3 + 3*a^2*b^3*e^2", vars),
+                poly.derivative(0));
+        assertEquals(
+                parse("2*a^4*b + 6*c*b^5 + a*d^3 + 3*a^3*b^2*e^2", vars),
+                poly.derivative(1));
+        assertEquals(
+                parse("b^6 + 5*a*c^4", vars),
+                poly.derivative(2));
+        assertEquals(
+                parse("3*a*b*d^2", vars),
+                poly.derivative(3));
+        assertEquals(
+                parse("2*a^3*b^3*e", vars),
+                poly.derivative(4));
+        assertEquals(
+                parse("0", vars),
+                poly.derivative(4).derivative(2));
+
+        for (int var = 0; var < poly.nVariables; var++) {
+            MultivariatePolynomial<BigInteger> tmp = poly;
+            int degree = poly.degree(var);
+            for (int i = 0; i <= degree; ++i)
+                tmp = tmp.derivative(var);
+            assertTrue(tmp.isZero());
+        }
+    }
+
+    //    @Test
 //    public void testMonomialContent1() throws Exception {
 //        String[] vars = {"a", "b", "c", "d", "e"};
 //        MultivariatePolynomial<BigInteger> poly = parse("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);

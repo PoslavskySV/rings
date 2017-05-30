@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.FactorDecomposition;
 
 import static cc.r2.core.poly.CommonUtils.ensureFiniteFieldDomain;
 

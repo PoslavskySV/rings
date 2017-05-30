@@ -4,14 +4,12 @@ import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.CommonUtils;
-import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.HenselLifting.QuadraticLiftAbstract;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.LongArithmetics.fits32bitWord;
 import static cc.r2.core.poly.LongArithmetics.safeMultiply;
@@ -51,7 +49,7 @@ public final class Factorization {
     /** early check for trivial cases */
     private static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> earlyFactorizationChecks(Poly poly) {
         if (poly.degree() <= 1 || poly.isMonomial())
-            return FactorDecomposition.oneFactor(poly.lcAsPoly(), poly.isMonic() ? poly : poly.clone().monic());
+            return FactorDecomposition.singleFactor(poly.lcAsPoly(), poly.isMonic() ? poly : poly.clone().monic());
 
         return null;
     }
@@ -158,7 +156,7 @@ public final class Factorization {
             FactorDecomposition<lUnivariatePolynomialZp> modularFactors) {
 
         if (modularFactors.isTrivial())
-            return FactorDecomposition.oneFactor(1, poly);
+            return FactorDecomposition.singleFactor(poly.createOne(), poly);
 
         lUnivariatePolynomialZp factory = modularFactors.get(0);
 
@@ -213,7 +211,7 @@ public final class Factorization {
             FactorDecomposition<UnivariatePolynomial<BigInteger>> modularFactors) {
 
         if (modularFactors.isTrivial())
-            return FactorDecomposition.oneFactor(poly.createOne(), poly);
+            return FactorDecomposition.singleFactor(poly.createOne(), poly);
 
         UnivariatePolynomial<BigInteger> factory = modularFactors.get(0);
 
@@ -298,7 +296,7 @@ public final class Factorization {
         if (bound2.compareTo(LongArithmetics.b_MAX_SUPPORTED_MODULUS) < 0) {
             FactorDecomposition<lUnivariatePolynomialZ> tryLong = factorSquareFree(asLongPolyZ(poly));
             if (tryLong != null)
-                return FactorDecomposition.convert(tryLong);
+                return convertFactorizationToBigIntegers(tryLong);
         }
 
         // choose prime at random
@@ -317,7 +315,7 @@ public final class Factorization {
             // do modular factorization
             FactorDecomposition<lUnivariatePolynomialZp> tmpFactors = factorInFiniteField(moduloImage.monic());
             if (tmpFactors.size() == 1)
-                return FactorDecomposition.oneFactor(poly.createOne(), poly);
+                return FactorDecomposition.singleFactor(poly.createOne(), poly);
 
             if (lModularFactors == null || lModularFactors.size() > tmpFactors.size()) {
                 lModularFactors = tmpFactors;
@@ -331,6 +329,15 @@ public final class Factorization {
         List<UnivariatePolynomial<BigInteger>> modularFactors = HenselLifting.liftFactorization(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors);
         assert modularFactors.get(0).domain.cardinality().compareTo(bound2) >= 0;
         return reconstructFactorsZ(poly, FactorDecomposition.create(modularFactors));
+    }
+
+    /** machine integers -> BigIntegers */
+    static <T extends lUnivariatePolynomialAbstract<T>> FactorDecomposition<UnivariatePolynomial<BigInteger>>
+    convertFactorizationToBigIntegers(FactorDecomposition<T> decomposition) {
+        return FactorDecomposition.create(
+                decomposition.constantFactor.toBigPoly(),
+                decomposition.factors.stream().map(lUnivariatePolynomialAbstract::toBigPoly).collect(Collectors.toList()),
+                decomposition.exponents);
     }
 
     /** determines the lower bound for the possible modulus for Zp trials */
@@ -426,7 +433,7 @@ public final class Factorization {
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factorInZ(Poly poly) {
         ensureIntegersDomain(poly);
         if (poly.degree() <= 1 || poly.isMonomial())
-            return FactorDecomposition.oneFactor(
+            return FactorDecomposition.singleFactor(
                     poly.isMonic() ? poly.createOne() : poly.contentAsPoly(),
                     poly.isMonic() ? poly : poly.clone().primitivePart());
 

@@ -8,7 +8,7 @@ import gnu.trove.set.hash.TIntHashSet;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>> extends IGeneralPolynomial<Poly>, Comparable<Poly> {
+public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>> extends IGeneralPolynomial<Poly> {
     /**
      * Returns whether i-th coefficient of this is zero
      *

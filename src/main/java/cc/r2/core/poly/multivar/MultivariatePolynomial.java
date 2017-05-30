@@ -943,11 +943,48 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public MultivariatePolynomial<E> derivative(int variable) {
+        MonomialsSet<MonomialTerm<E>> newTerms = new MonomialsSet<>(ordering);
+        for (MonomialTerm<E> term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent == 0)
+                continue;
+            E newCoefficient = domain.multiply(term.coefficient, domain.valueOf(exponent));
+            int[] newExponents = term.exponents.clone();
+            --newExponents[variable];
+            newTerms.add(new MonomialTerm<>(newExponents, term.totalDegree - 1, newCoefficient));
+        }
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
+    }
+
+    @Override
+    public int compareTo(MultivariatePolynomial<E> oth) {
+        int c = Integer.compare(size(), oth.size());
+        if (c != 0)
+            return c;
+        Iterator<MonomialTerm<E>>
+                thisIt = iterator(),
+                othIt = oth.iterator();
+
+        while (thisIt.hasNext() && othIt.hasNext()) {
+            MonomialTerm<E>
+                    a = thisIt.next(),
+                    b = othIt.next();
+
+            if ((c = ordering.compare(a, b)) != 0)
+                return c;
+
+            if ((c = domain.compare(a.coefficient, b.coefficient)) != 0)
+                return c;
+        }
+        return 0;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E> clone() {
         return new MultivariatePolynomial<>(nVariables, domain, ordering, terms.clone());
     }
-
 
     private static final Pattern nonTrivialCoefficientString = Pattern.compile("[\\+\\-\\*]");
 

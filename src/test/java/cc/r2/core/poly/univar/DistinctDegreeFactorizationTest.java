@@ -4,6 +4,7 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.univar.FactorizationTestUtil.PolynomialSource;
 import cc.r2.core.poly.univar.FactorizationTestUtil.RandomSource;

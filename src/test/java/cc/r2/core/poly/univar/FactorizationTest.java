@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.TimeUnits;
@@ -74,7 +75,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
 
                 if (n % 100 == 0) {
                     FactorDecomposition<UnivariatePolynomial<BigInteger>> bFactors = factorInFiniteField(poly.toBigPoly());
-                    FactorDecomposition<UnivariatePolynomial<BigInteger>> converted = FactorDecomposition.convert(lFactors);
+                    FactorDecomposition<UnivariatePolynomial<BigInteger>> converted = Factorization.convertFactorizationToBigIntegers(lFactors);
                     converted.canonicalForm();
                     bFactors.canonicalForm();
                     Assert.assertEquals(converted, bFactors);

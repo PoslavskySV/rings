@@ -2,6 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.univar.FactorizationTestUtil.RandomSource;
 import cc.r2.core.test.Benchmark;

@@ -1,5 +1,6 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
 
 import java.util.ArrayList;
@@ -38,10 +39,10 @@ final class DistinctDegreeFactorization {
         lUnivariatePolynomialZp polyModulus = base.clone();
 
         if (base.degree <= 1)
-            return FactorDecomposition.oneFactor(factor, base);
+            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
 
         if (base.isMonomial())
-            return FactorDecomposition.oneFactor(factor, base);
+            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
 
         InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
         lUnivariatePolynomialZp exponent = poly.createMonomial(1);
@@ -87,10 +88,10 @@ final class DistinctDegreeFactorization {
         lUnivariatePolynomialZp polyModulus = base.clone();
 
         if (base.degree <= 1)
-            return FactorDecomposition.oneFactor(factor, base);
+            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
 
         if (base.isMonomial())
-            return FactorDecomposition.oneFactor(factor, base);
+            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
 
         InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
         lUnivariatePolynomialZp exponent = poly.createMonomial(1);
