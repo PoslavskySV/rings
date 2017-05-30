@@ -620,7 +620,10 @@ public final class MultivariateGCD {
         b = divideExact(b, content);
         skeleton = divideSkeletonExact(skeleton, content);
 
-        lMultivariatePolynomialZp gcd = createInterpolation(-1, a, b, skeleton, rnd).evaluate();
+        lSparseInterpolation interpolation = createInterpolation(-1, a, b, skeleton, rnd);
+        if (interpolation == null)
+            return null;
+        lMultivariatePolynomialZp gcd = interpolation.evaluate();
         if (gcd == null)
             return null;
 
@@ -912,12 +915,15 @@ public final class MultivariateGCD {
     private static <E> MultivariatePolynomial<E>[] multivariateCoefficients(
             MultivariatePolynomial<E> a,
             int variable) {
-        MultivariatePolynomial[] mCfs = Arrays.stream(a.degrees(variable)).mapToObj(d -> a.coefficientOf(variable, d)).toArray(MultivariatePolynomial[]::new);
+        MultivariatePolynomial[] mCfs = Arrays.stream(a.degrees(variable))
+                .mapToObj(d -> a.coefficientOf(variable, d))
+                .filter(poly -> !poly.isZero())
+                .toArray(MultivariatePolynomial[]::new);
         int minSizeCoefficient = 0;
         int minSize = Integer.MAX_VALUE;
         for (int i = 0; i < mCfs.length; i++) {
-            if (mCfs[i].isZero())
-                throw new RuntimeException();
+            //if (mCfs[i].isZero())
+            //    throw new RuntimeException();
 
             if (mCfs[i].size() < minSize) {
                 minSize = mCfs[i].size();
@@ -1050,6 +1056,9 @@ public final class MultivariateGCD {
             assert cVal.lc().equals(lcVal);
 
             SparseInterpolation sparseInterpolator = createInterpolation(variable, a, b, cVal, rnd);
+            if (sparseInterpolator == null)
+                //unlucky homomorphism
+                continue;
 
             // we are applying dense interpolation for univariate skeleton coefficients
             Interpolation<E> denseInterpolation = new Interpolation<>(variable, seedPoint, cVal);
@@ -1058,6 +1067,9 @@ public final class MultivariateGCD {
             //local evaluation stack for points that are calculated via sparse interpolation (but not gcd evaluation) -> always same skeleton
             HashSet<E> localEvaluationStack = new HashSet<>(globalEvaluationStack);
             while (true) {
+                if (evaluationStackLimit == localEvaluationStack.size())
+                    return null;
+
                 if (denseInterpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
@@ -1066,12 +1078,11 @@ public final class MultivariateGCD {
                 E randomPoint = domain.randomElement(rnd);
                 if (localEvaluationStack.contains(randomPoint))
                     continue;
+                localEvaluationStack.add(randomPoint);
 
                 lcVal = lcGCD.evaluate(randomPoint);
                 if (domain.isZero(lcVal))
                     continue;
-
-                localEvaluationStack.add(randomPoint);
 
                 cVal = sparseInterpolator.evaluate(randomPoint);
                 if (cVal == null) {
@@ -1102,6 +1113,8 @@ public final class MultivariateGCD {
     }
 
     static boolean ALWAYS_LINZIP = false;
+    /** maximal number of attempts to choose a good evaluation point for sparse interpolation */
+    private static final int MAX_FAILED_SUBSTITUTIONS = 32;
 
     static <E> SparseInterpolation<E> createInterpolation(int variable,
                                                           MultivariatePolynomial<E> a,
@@ -1124,8 +1137,11 @@ public final class MultivariateGCD {
         E[] evaluationPoint = domain.createArray(evaluationVariables.length);
 
         PrecomputedPowersHolder<E> powers;
+        int fails = 0;
         search_for_good_evaluation_point:
         while (true) {
+            if (fails >= MAX_FAILED_SUBSTITUTIONS)
+                return null;
             //avoid zero evaluation points
             for (int i = lastVariable - 1; i >= 0; --i)
                 do {
@@ -1136,8 +1152,10 @@ public final class MultivariateGCD {
             int[] raiseFactors = ArraysUtil.arrayOf(1, evaluationVariables.length);
 
             for (MultivariatePolynomial<E> p : Arrays.asList(a, b, skeleton))
-                if (!p.getSkeleton(0).equals(p.evaluate(powers, evaluationVariables, raiseFactors).getSkeleton()))
+                if (!p.getSkeleton(0).equals(p.evaluate(powers, evaluationVariables, raiseFactors).getSkeleton())) {
+                    ++fails;
                     continue search_for_good_evaluation_point;
+                }
             break;
         }
 
@@ -1982,6 +2000,9 @@ public final class MultivariateGCD {
             assert cVal.lc() == lcVal;
 
             lSparseInterpolation sparseInterpolator = createInterpolation(variable, a, b, cVal, rnd);
+            if (sparseInterpolator == null)
+                //unlucky homomorphism
+                continue;
 
             // we are applying dense interpolation for univariate skeleton coefficients
             lInterpolation denseInterpolation = new lInterpolation(variable, seedPoint, cVal);
@@ -1990,6 +2011,9 @@ public final class MultivariateGCD {
             //local evaluation stack for points that are calculated via sparse interpolation (but not gcd evaluation) -> always same skeleton
             TLongHashSet localEvaluationStack = new TLongHashSet(globalEvaluationStack);
             while (true) {
+                if (evaluationStackLimit == localEvaluationStack.size())
+                    return null;
+
                 if (denseInterpolation.numberOfPoints() > tmpDegreeBounds[variable] + ALLOWED_OVER_INTERPOLATED_ATTEMPTS) {
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
@@ -1998,12 +2022,11 @@ public final class MultivariateGCD {
                 long randomPoint = domain.randomElement(rnd);
                 if (localEvaluationStack.contains(randomPoint))
                     continue;
+                localEvaluationStack.add(randomPoint);
 
                 lcVal = lcGCD.evaluate(randomPoint);
                 if (lcVal == 0)
                     continue;
-
-                localEvaluationStack.add(randomPoint);
 
                 cVal = sparseInterpolator.evaluate(randomPoint);
                 if (cVal == null) {
@@ -2055,8 +2078,11 @@ public final class MultivariateGCD {
         long[] evaluationPoint = new long[evaluationVariables.length];
 
         lPrecomputedPowersHolder powers;
+        int fails = 0;
         search_for_good_evaluation_point:
         while (true) {
+            if (fails >= MAX_FAILED_SUBSTITUTIONS)
+                return null;
             //avoid zero evaluation points
             for (int i = lastVariable - 1; i >= 0; --i)
                 do {
@@ -2067,8 +2093,10 @@ public final class MultivariateGCD {
             int[] raiseFactors = ArraysUtil.arrayOf(1, evaluationVariables.length);
 
             for (lMultivariatePolynomialZp p : Arrays.asList(a, b, skeleton))
-                if (!p.getSkeleton(0).equals(p.evaluate(powers, evaluationVariables, raiseFactors).getSkeleton()))
+                if (!p.getSkeleton(0).equals(p.evaluate(powers, evaluationVariables, raiseFactors).getSkeleton())) {
+                    ++fails;
                     continue search_for_good_evaluation_point;
+                }
             break;
         }
 
