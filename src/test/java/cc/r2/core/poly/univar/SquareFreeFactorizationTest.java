@@ -269,4 +269,13 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             assertFactorization(polyMod, zpf);
         }
     }
+
+    @Test
+    public void test11() throws Exception {
+        lUnivariatePolynomialZp
+                a = lUnivariatePolynomialZ.create(1, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 6).modulus(7),
+                b = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, 6, 5, 4).modulus(7),
+                poly = a.square().multiply(b.square());
+        assertFactorization(poly, SquareFreeFactorization(poly));
+    }
 }

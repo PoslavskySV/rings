@@ -118,7 +118,7 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
         if (term.exponents.length != nVariables)
             throw new IllegalArgumentException();
         MonomialsSet<Term> monomials = new MonomialsSet<>(ordering);
-        monomials.add(term);
+        add(monomials, term);
         return create(monomials);
     }
 
@@ -484,6 +484,9 @@ abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly ext
      * @return {@code} this multiplied by the {@code term}
      */
     public abstract Poly multiply(Term term);
+
+    /** Whether monomial is zero */
+    abstract boolean isZeroMonomial(Term a);
 
     /** Multiply two terms */
     abstract Term multiply(Term a, Term b);

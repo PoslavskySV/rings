@@ -19,16 +19,22 @@ public final class MultivariateReduction {
      */
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly[] divideAndRemainder(Poly dividend, Poly...  dividers) {
+    Poly[] divideAndRemainder(Poly dividend, Poly... dividers) {
         Poly[] quotients = dividend.arrayNewInstance(dividers.length + 1);
         int i = 0;
+        int constDivider = -1;
         for (; i < dividers.length; i++) {
             if (dividers[i].isZero())
                 throw new ArithmeticException("divide by zero");
+            if (dividers[i].isConstant())
+                constDivider = i;
             quotients[i] = dividend.createZero();
         }
         quotients[i] = dividend.createZero();
-
+        if (constDivider != -1) {
+            quotients[constDivider] = dividend.divideByLC(dividers[constDivider]);
+            return quotients;
+        }
         Poly remainder = quotients[quotients.length - 1];
         dividend = dividend.clone();
         while (!dividend.isZero()) {
@@ -40,7 +46,7 @@ public final class MultivariateReduction {
             }
             if (ltDiv != null) {
                 quotients[i] = quotients[i].add(ltDiv);
-                dividend = dividend.subtract(dividers[i].clone().multiply(ltDiv));
+                dividend = dividend.subtract(dividend.create(ltDiv).multiply(dividers[i]));
             } else {
                 remainder = remainder.add(dividend.lt());
                 dividend = dividend.subtractLt();
@@ -118,7 +124,11 @@ public final class MultivariateReduction {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     boolean dividesQ(Poly dividend, Poly divider) {
+        if (divider.isOne())
+            return true;
         dividend = dividend.clone();
+        if (divider.isConstant())
+            return dividend.divideByLC(divider) != null;
         while (!dividend.isZero()) {
             Term ltDiv = dividend.divideOrNull(dividend.lt(), divider.lt());
             if (ltDiv == null)

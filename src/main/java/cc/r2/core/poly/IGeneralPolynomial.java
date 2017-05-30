@@ -257,6 +257,21 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
      */
     Poly square();
 
+    /** content as a constant poly */
+    Poly contentAsPoly();
+
+    /** leading coefficient as a constant poly */
+    Poly lcAsPoly();
+
+    /**
+     * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
+     * divided by the {@code other.lc()}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
+     *
+     * @param other the polynomial
+     * @return {@code this} divided by the {@code other.lc()} or {@code null} if exact division is not possible
+     */
+    Poly divideByLC(Poly other);
+
     /**
      * Deep copy of this
      *

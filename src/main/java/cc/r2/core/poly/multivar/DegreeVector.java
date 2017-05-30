@@ -36,6 +36,10 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     /** internal method */
     abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
 
+    final MonomialTerm setDegreeVector(int[] newDegree){
+        return setDegreeVector(newDegree, ArraysUtil.sum(newDegree));
+    }
+
     /** internal method */
     final MonomialTerm setDegreeVector(DegreeVector dv) {
         return setDegreeVector(dv.exponents, dv.totalDegree);

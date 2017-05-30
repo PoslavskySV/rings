@@ -31,15 +31,6 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     }
 
     /**
-     * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
-     * divided by the {@code other.lc()}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
-     *
-     * @param other the polynomial
-     * @return {@code this} divided by the {@code other.lc()} or {@code null} if exact division is not possible
-     */
-    Poly divideByLC(Poly other);
-
-    /**
      * Returns position of the first non-zero coefficient, that is common monomial exponent (e.g. 2 for x^2 + x^3 + ...). In the case of zero polynomial, -1 returned
      *
      * @return position of the first non-zero coefficient or -1 if this is zero
@@ -102,12 +93,6 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      * @return the formal derivative
      */
     Poly derivative();
-
-    /** content as a constant poly */
-    Poly contentAsPoly();
-
-    /** leading coefficient as a constant poly */
-    Poly lcAsPoly();
 
     /**
      * Deep copy of this

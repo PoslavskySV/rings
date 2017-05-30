@@ -274,6 +274,16 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     /* ============================================ Main methods ============================================ */
 
     @Override
+    public lMultivariatePolynomialZp contentAsPoly() {
+        return createConstant(content());
+    }
+
+    @Override
+    public lMultivariatePolynomialZp lcAsPoly() {
+        return createConstant(lc());
+    }
+
+    @Override
     lMultivariatePolynomialZp create(int nVariables, MonomialsSet<lMonomialTerm> lMonomialTerms) {
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, lMonomialTerms);
     }
@@ -318,6 +328,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
+    boolean isZeroMonomial(lMonomialTerm a) {
+        return a.coefficient == 0L;
+    }
+
+    @Override
     lMonomialTerm multiply(lMonomialTerm a, lMonomialTerm b) {
         return a.multiply(b, domain.multiply(a.coefficient, b.coefficient));
     }
@@ -355,7 +370,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     public lMultivariatePolynomialZp setDomain(lIntegersModulo newDomain) {
         MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
         for (lMonomialTerm e : terms)
-            newData.add(e.setDomain(newDomain));
+            add(newData, e.setDomain(newDomain));
         return new lMultivariatePolynomialZp(nVariables, newDomain, ordering, newData);
     }
 
@@ -513,6 +528,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     @Override
     public lMultivariatePolynomialZp primitivePartSameSign() {
         return primitivePart();
+    }
+
+    @Override
+    public lMultivariatePolynomialZp divideByLC(lMultivariatePolynomialZp other) {
+        return divide(other.lc());
     }
 
     /**
@@ -870,7 +890,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             long newCoefficient = domain.multiply(term.coefficient, exponent);
             int[] newExponents = term.exponents.clone();
             --newExponents[variable];
-            newTerms.add(new lMonomialTerm(newExponents, term.totalDegree - 1, newCoefficient));
+            add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - 1, newCoefficient));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);
     }

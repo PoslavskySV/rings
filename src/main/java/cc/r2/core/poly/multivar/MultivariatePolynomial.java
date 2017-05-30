@@ -302,6 +302,16 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     /* ============================================ Main methods ============================================ */
 
     @Override
+    public MultivariatePolynomial<E> contentAsPoly() {
+        return createConstant(content());
+    }
+
+    @Override
+    public MultivariatePolynomial<E> lcAsPoly() {
+        return createConstant(lc());
+    }
+
+    @Override
     MultivariatePolynomial<E> create(int nVariables, MonomialsSet<MonomialTerm<E>> monomialTerms) {
         return new MultivariatePolynomial<>(nVariables, domain, ordering, monomialTerms);
     }
@@ -347,6 +357,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    boolean isZeroMonomial(MonomialTerm<E> a) {
+        return domain.isZero(a.coefficient);
+    }
+
+    @Override
     MonomialTerm<E> multiply(MonomialTerm<E> a, MonomialTerm<E> b) {
         return a.multiply(b, domain.multiply(a.coefficient, b.coefficient));
     }
@@ -375,11 +390,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     public MultivariatePolynomial<E> setDomain(Domain<E> newDomain) {
         MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> e : terms) {
-            MonomialTerm<E> term = e.setDomain(newDomain);
-            if (!newDomain.isZero(term.coefficient))
-                newData.add(term);
-        }
+        for (MonomialTerm<E> e : terms)
+            add(newData, e.setDomain(newDomain));
         return new MultivariatePolynomial<>(nVariables, newDomain, ordering, newData);
     }
 
@@ -553,6 +565,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return r;
     }
 
+    @Override
+    public MultivariatePolynomial<E> divideByLC(MultivariatePolynomial<E> other) {
+        return divideOrNull(other.lc());
+    }
+
     /**
      * Divides this polynomial by a {@code factor} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
@@ -575,7 +592,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         release();
         return this;
     }
-
 
     /** {@inheritDoc} */
     @Override
@@ -736,7 +752,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return eliminate(variable, domain.valueOf(value));
     }
 
-    private static final int SIZE_OF_POWERS_CACHE = 332;
+    private static final int SIZE_OF_POWERS_CACHE = 32;
 
     /** cached powers used to save some time */
     static final class PrecomputedPowers<E> {
@@ -952,7 +968,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             E newCoefficient = domain.multiply(term.coefficient, domain.valueOf(exponent));
             int[] newExponents = term.exponents.clone();
             --newExponents[variable];
-            newTerms.add(new MonomialTerm<>(newExponents, term.totalDegree - 1, newCoefficient));
+            add(newTerms, new MonomialTerm<>(newExponents, term.totalDegree - 1, newCoefficient));
         }
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
     }
