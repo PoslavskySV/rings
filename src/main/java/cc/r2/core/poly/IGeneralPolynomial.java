@@ -3,7 +3,6 @@ package cc.r2.core.poly;
 import cc.r2.core.number.BigInteger;
 
 import java.util.Collection;
-import java.util.Comparator;
 
 /**
  * @author Stanislav Poslavsky
@@ -120,6 +119,20 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
      * @return monic {@code this} or {@code null}
      */
     Poly monic();
+
+    /**
+     * Sets {@code this} to its monic part (that is {@code this} divided by its leading coefficient), or throws
+     * {@code ArithmeticsException} if some of the elements can't be exactly divided by the {@code lc()}.
+     *
+     * @return monic {@code this} or {@code null}
+     * @throws ArithmeticException if some of the elements can't be exactly divided by the {@code lc()}
+     */
+    default Poly monicExact() {
+        Poly monic = monic();
+        if (monic == null)
+            throw new ArithmeticException("Not divisible by lc.");
+        return monic;
+    }
 
     /**
      * Gives signum of the leading coefficient
