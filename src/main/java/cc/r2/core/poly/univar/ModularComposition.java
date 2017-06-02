@@ -245,6 +245,22 @@ public final class ModularComposition {
      * @param poly        the polynomial
      * @param point       the evaluation point
      * @param polyModulus the monic polynomial modulus
+     * @param invMod      pre-conditioned modulus ({@link DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)} )})
+     * @return modular composition {@code poly(point) mod polyModulus }
+     * @see #polyPowers(IUnivariatePolynomial, IUnivariatePolynomial, DivisionWithRemainder.InverseModMonomial, int)
+     * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T composition(T poly, T point, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
+        return compositionBrentKung(poly, point, polyModulus, invMod);
+    }
+
+    /**
+     * Returns modular composition {@code poly(point) mod polyModulus}. Brent & Kung algorithm used
+     * ({@link #compositionBrentKung(IUnivariatePolynomial, ArrayList, IUnivariatePolynomial, DivisionWithRemainder.InverseModMonomial, int)}
+     *
+     * @param poly        the polynomial
+     * @param point       the evaluation point
+     * @param polyModulus the monic polynomial modulus
      * @return modular composition {@code poly(point) mod polyModulus }
      * @see #polyPowers(IUnivariatePolynomial, IUnivariatePolynomial, DivisionWithRemainder.InverseModMonomial, int)
      * @see DivisionWithRemainder#fastDivisionPreConditioning(IUnivariatePolynomial)

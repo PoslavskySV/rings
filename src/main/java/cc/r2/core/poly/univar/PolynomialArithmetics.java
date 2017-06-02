@@ -333,39 +333,41 @@ public final class PolynomialArithmetics {
 
     /** repeated squaring */
     static <T extends IUnivariatePolynomial<T>> T largeMonomial(long exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
-        T base = PolynomialArithmetics.polyMod(
-                polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
-                polyModulus, invMod, false);
-
-        T result = base.clone();
-        long exp = MONOMIAL_MOD_EXPONENT_THRESHOLD;
-        for (; ; ) {
-            if (exp + exp > exponent)
-                break;
-            result = PolynomialArithmetics.polyMultiplyMod(result, result, polyModulus, invMod, false);
-            exp += exp;
-        }
-
-        T rest = createMonomialMod(exponent - exp, polyModulus, invMod);
-        return PolynomialArithmetics.polyMultiplyMod(result, rest, polyModulus, invMod, false);
+        return polyPowMod(polyModulus.createMonomial(1), exponent, polyModulus, invMod, false);
+//        T base = PolynomialArithmetics.polyMod(
+//                polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
+//                polyModulus, invMod, false);
+//
+//        T result = base.clone();
+//        long exp = MONOMIAL_MOD_EXPONENT_THRESHOLD;
+//        for (; ; ) {
+//            if (LongArithmetics.isOverflowAdd(exp, exp) || exp + exp > exponent)
+//                break;
+//            result = PolynomialArithmetics.polyMultiplyMod(result, result, polyModulus, invMod, false);
+//            exp += exp;
+//        }
+//
+//        T rest = createMonomialMod(exponent - exp, polyModulus, invMod);
+//        return PolynomialArithmetics.polyMultiplyMod(result, rest, polyModulus, invMod, false);
     }
 
     /** repeated squaring */
     static <T extends IUnivariatePolynomial<T>> T largeMonomial(BigInteger exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
-        T base = PolynomialArithmetics.polyMod(
-                polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
-                polyModulus, invMod, false);
-
-        T result = base.clone();
-        BigInteger exp = BigInteger.valueOf(MONOMIAL_MOD_EXPONENT_THRESHOLD);
-        for (; ; ) {
-            if (exp.shiftLeft(1).compareTo(exponent) > 0)
-                break;
-            result = PolynomialArithmetics.polyMultiplyMod(result, result, polyModulus, invMod, false);
-            exp = exp.shiftLeft(1);
-        }
-
-        T rest = createMonomialMod(exponent.subtract(exp), polyModulus, invMod);
-        return PolynomialArithmetics.polyMultiplyMod(result, rest, polyModulus, invMod, false);
+        return polyPowMod(polyModulus.createMonomial(1), exponent, polyModulus, invMod, false);
+//        T base = PolynomialArithmetics.polyMod(
+//                polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
+//                polyModulus, invMod, false);
+//
+//        T result = base.clone();
+//        BigInteger exp = BigInteger.valueOf(MONOMIAL_MOD_EXPONENT_THRESHOLD);
+//        for (; ; ) {
+//            if (exp.shiftLeft(1).compareTo(exponent) > 0)
+//                break;
+//            result = PolynomialArithmetics.polyMultiplyMod(result, result, polyModulus, invMod, false);
+//            exp = exp.shiftLeft(1);
+//        }
+//
+//        T rest = createMonomialMod(exponent.subtract(exp), polyModulus, invMod);
+//        return PolynomialArithmetics.polyMultiplyMod(result, rest, polyModulus, invMod, false);
     }
 }

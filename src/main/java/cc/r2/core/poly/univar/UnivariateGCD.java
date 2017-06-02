@@ -662,20 +662,27 @@ public final class UnivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T a, T b) {
+        T gcd;
+
         if (a instanceof lUnivariatePolynomialZp)
-            return (T) Euclid((lUnivariatePolynomialZp) a, (lUnivariatePolynomialZp) b).gcd().monic();
+            gcd = (T) Euclid((lUnivariatePolynomialZp) a, (lUnivariatePolynomialZp) b).gcd();
         else if (a instanceof lUnivariatePolynomialZ)
-            return (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
+            gcd = (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
         else if (a instanceof UnivariatePolynomial) {
             Domain domain = ((UnivariatePolynomial) a).domain;
             if (domain.isField())
-                return (T) Euclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd().monic();
+                gcd =  (T) Euclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
             else if (domain == Integers.Integers)
-                return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+                gcd =  (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
             else
-                return (T) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd().monic();
+                gcd =  (T) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
         } else
             throw new RuntimeException(a.getClass().toString());
+
+        if(gcd.isOverField())
+            gcd = gcd.monicExact();
+
+        return gcd;
     }
 
     /**
