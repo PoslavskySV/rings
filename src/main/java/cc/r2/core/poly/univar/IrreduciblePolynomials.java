@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.CommonUtils;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.map.TIntObjectMap;
@@ -24,6 +25,8 @@ public final class IrreduciblePolynomials {
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> boolean irreducibleQ(Poly poly) {
         CommonUtils.ensureFiniteFieldDomain(poly);
+        if (poly.degree() <= 1)
+            return true;
 
         poly = poly.clone().monic();
         InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
@@ -71,6 +74,44 @@ public final class IrreduciblePolynomials {
             poly = RandomPolynomials.randomMonicPoly(degree, modulus, rnd);
         } while (!irreducibleQ(poly));
         assert poly.degree == degree;
+        return poly;
+    }
+
+    /**
+     * Generated random irreducible polynomial over finite field of degree {@code degree}
+     *
+     * @param domain finite field domain
+     * @param degree the degree
+     * @param rnd    random source
+     * @return irreducible polynomial
+     */
+    public static <E> UnivariatePolynomial<E> randomIrreduciblePolynomial(Domain<E> domain, int degree, RandomGenerator rnd) {
+        if (!domain.isFiniteField())
+            throw new IllegalArgumentException("Not a finite domain.");
+        UnivariatePolynomial<E> poly;
+        do {
+            poly = RandomPolynomials.randomMonicPoly(degree, domain, rnd);
+        } while (!irreducibleQ(poly));
+        assert poly.degree == degree;
+        return poly;
+    }
+
+    /**
+     * Generated random irreducible Zp polynomial of degree {@code degree}
+     *
+     * @param factory tyep marker
+     * @param degree  the degree
+     * @param rnd     random source
+     * @return irreducible polynomial
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> Poly randomIrreduciblePolynomial(Poly factory, int degree, RandomGenerator rnd) {
+        if (!factory.isOverFiniteField())
+            throw new IllegalArgumentException("Not a finite domain.");
+        Poly poly;
+        do {
+            poly = RandomPolynomials.randomPoly(factory, degree, rnd);
+        } while (!irreducibleQ(poly));
+        assert poly.degree() == degree;
         return poly;
     }
 

@@ -1,5 +1,7 @@
 package cc.r2.core.number;
 
+import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.redberry.libdivide4j.FastDivision;
 
 import static java.lang.Math.*;
@@ -59,6 +61,29 @@ public final class ChineseRemainders {
 
         return result;
     }
+
+    /**
+     * Runs Chinese Remainders algorithm
+     *
+     * @param prime1     #1 prime
+     * @param prime2     #2 prime
+     * @param remainder1 #1 remainder
+     * @param remainder2 #2 remainder
+     * @return the result
+     */
+    public static <E> E ChineseRemainders(Domain<E> domain, E prime1, E prime2,
+                                          E remainder1, E remainder2) {
+
+        E modulus = domain.multiply(prime1, prime2);
+        E result = domain.getZero();
+
+        //(result + (prime2 * ((bezout0(prime2, prime1) * remainder1) % prime1)) ) % modulus
+        result = domain.remainder(domain.add(result, domain.multiply(prime2, domain.remainder(domain.multiply(bezout0(domain, prime2, prime1), remainder1), prime1))), modulus);
+        result = domain.remainder(domain.add(result, domain.multiply(prime1, domain.remainder(domain.multiply(bezout0(domain, prime1, prime2), remainder2), prime2))), modulus);
+
+        return result;
+    }
+
 
     /**
      * Runs Chinese Remainders algorithm
@@ -228,6 +253,29 @@ public final class ChineseRemainders {
             s = tmp.subtract(q.multiply(s));
         }
         assert old_r.isOne();
+        return old_s;
+    }
+
+    private static <E> E bezout0(Domain<E> domain, E a, E b) {
+        E s = domain.getZero(), old_s = domain.getOne();
+        E r = b, old_r = a;
+
+        E q;
+        E tmp;
+        while (!domain.isZero(r)) {
+            q = domain.quotient(old_r, r);
+
+            tmp = old_r;
+            old_r = r;
+            r = domain.subtract(tmp, domain.multiply(q, r));
+
+            tmp = old_s;
+            old_s = s;
+            s = domain.subtract(tmp, domain.multiply(q, s));
+        }
+        assert domain.isUnit(old_r) : old_r;
+        if (!domain.isOne(old_r))
+            old_s = domain.divideExact(old_s, old_r);
         return old_s;
     }
 }

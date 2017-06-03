@@ -28,6 +28,11 @@ public final class IntegersModulo extends AbstractIntegers {
     @Override
     public BigInteger characteristics() {return modulus;}
 
+    @Override
+    public boolean isUnit(BigInteger a) {
+        return !isZero(a);
+    }
+
     /**
      * Returns {@code val mod this.modulus}
      *
@@ -76,6 +81,11 @@ public final class IntegersModulo extends AbstractIntegers {
     @Override
     public BigInteger[] divideAndRemainder(BigInteger a, BigInteger b) {
         return new BigInteger[]{multiply(a, b.modInverse(modulus)), BigInteger.ZERO};
+    }
+
+    @Override
+    public BigInteger remainder(BigInteger a, BigInteger b) {
+        return getZero();
     }
 
     @Override

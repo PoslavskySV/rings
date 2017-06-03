@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
         implements IGeneralPolynomial<Poly>, Iterable<Term> {
     /** number of variables */
     final int nVariables;

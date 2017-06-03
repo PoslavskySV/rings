@@ -22,6 +22,29 @@ public class RandomPolynomials {
     /**
      * Creates random polynomial of specified {@code degree}.
      *
+     * @param factory return type marker
+     * @param degree  polynomial degree
+     * @param rnd     random source
+     * @return random polynomial of specified {@code degree}
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IUnivariatePolynomial<Poly>> Poly randomPoly(Poly factory, int degree, RandomGenerator rnd) {
+        if (factory instanceof lUnivariatePolynomialZ)
+            return (Poly) randomPoly(degree, rnd);
+        else if (factory instanceof lUnivariatePolynomialZp)
+            return (Poly) randomMonicPoly(degree, ((lUnivariatePolynomialZp) factory).modulus(), rnd);
+        else if (factory instanceof UnivariatePolynomial) {
+            UnivariatePolynomial p = randomPoly(degree, ((UnivariatePolynomial) factory).domain, rnd);
+            if (factory.isOverField())
+                p = p.monic();
+            return (Poly) p;
+        }
+        throw new RuntimeException(factory.getClass().toString());
+    }
+
+    /**
+     * Creates random polynomial of specified {@code degree}.
+     *
      * @param degree polynomial degree
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}

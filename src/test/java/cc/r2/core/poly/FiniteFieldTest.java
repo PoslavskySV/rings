@@ -12,7 +12,7 @@ public class FiniteFieldTest {
     @Test
     public void test1() throws Exception {
         lUnivariatePolynomialZp irreducible = lUnivariatePolynomialZ.create(-1, -1, 0, 1).modulus(3);
-        FiniteField domain = new FiniteField(irreducible);
+        FiniteField<lUnivariatePolynomialZp> domain = new FiniteField<>(irreducible);
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(1, 1, 1, 1).modulus(3);
         lUnivariatePolynomialZp el = domain.valueOf(poly);
         Assert.assertTrue(domain.isOne(domain.multiply(el, domain.reciprocal(el))));
@@ -20,11 +20,11 @@ public class FiniteFieldTest {
 
     @Test
     public void test2() throws Exception {
-        FiniteField domain = FiniteField.GF27;
+        FiniteField<lUnivariatePolynomialZp> domain = FiniteField.GF27;
         lUnivariatePolynomialZp
-                c0 = domain.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5)),
-                c1 = domain.valueOf(lUnivariatePolynomialZ.create(1, -2, 3, -4, -5)),
-                c2 = domain.valueOf(lUnivariatePolynomialZ.create(11, 12, 13, 14, 15)),
+                c0 = domain.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5).modulus(3)),
+                c1 = domain.valueOf(lUnivariatePolynomialZ.create(1, -2, 3, -4, -5).modulus(3)),
+                c2 = domain.valueOf(lUnivariatePolynomialZ.create(11, 12, 13, 14, 15).modulus(3)),
                 c3 = domain.add(c0, c1),
                 c4 = domain.subtract(c1, c2),
                 c5 = domain.multiply(c0, c1);

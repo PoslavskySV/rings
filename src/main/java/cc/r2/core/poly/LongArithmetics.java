@@ -90,6 +90,15 @@ public final class LongArithmetics {
         return false;
     }
 
+    public static boolean isOverflowAdd(long x, long y) {
+        long r = x + y;
+        // HD 2-12 Overflow iff both arguments have the opposite sign of the result
+        if (((x ^ r) & (y ^ r)) < 0) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Returns {@code base} in a power of {@code e} (non negative)
      *

@@ -89,6 +89,11 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
+    public boolean isUnit(Rational rational) {
+        return !isZero(rational);
+    }
+
+    @Override
     public Rational valueOf(long val) {
         return new Rational(val);
     }

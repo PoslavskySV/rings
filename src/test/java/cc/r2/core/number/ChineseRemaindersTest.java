@@ -2,7 +2,11 @@ package cc.r2.core.number;
 
 import cc.r2.core.number.primes.SieveOfAtkin;
 import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.UnivariatePolynomials;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.test.AbstractTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -14,7 +18,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import static cc.r2.core.number.BigInteger.*;
-import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static java.lang.Math.floorMod;
 
@@ -166,7 +169,7 @@ public class ChineseRemaindersTest extends AbstractTest {
     }
 
     @Test
-    public void testRandomXXX() throws Exception {
+    public void testRandom2() throws Exception {
         RandomGenerator rnd = getRandom();
         int bound = 10000;
         SieveOfAtkin primes = SieveOfAtkin.createSieve(bound);
@@ -191,9 +194,37 @@ public class ChineseRemaindersTest extends AbstractTest {
         }
     }
 
+    @Test
+    public void test6() throws Exception {
+        lUnivariatePolynomialZp
+                prime1 = lUnivariatePolynomialZ.create(1, 2, 3, 4).modulus(19),
+                prime2 = lUnivariatePolynomialZ.create(1, 2, 1, 1, 1, 1).modulus(19);
+
+//        System.out.println(Factorization.factor(prime1));
+//        System.out.println(Factorization.factor(prime2));
+//        if (true) return;
+
+        lUnivariatePolynomialZp
+                remainder1 = lUnivariatePolynomialZ.create(1, 2, 3).modulus(19),
+                remainder2 = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5).modulus(19);
+
+
+        UnivariatePolynomials<lUnivariatePolynomialZp> domain = new UnivariatePolynomials<>(prime1.createOne());
+        lUnivariatePolynomialZp crt = ChineseRemainders.ChineseRemainders(domain, prime1, prime2, remainder1, remainder2);
+        assertCRT(domain,
+                new lUnivariatePolynomialZp[]{prime1, prime2},
+                new lUnivariatePolynomialZp[]{remainder1, remainder2},
+                crt);
+    }
+
     static void assertCRT(BigInteger[] coprimes, BigInteger[] rems, BigInteger crt) {
         for (int i = 0; i < coprimes.length; i++)
             Assert.assertEquals(rems[i].mod(coprimes[i]), crt.mod(coprimes[i]));
+    }
+
+    static <E> void assertCRT(Domain<E> domain, E[] coprimes, E[] rems, E crt) {
+        for (int i = 0; i < coprimes.length; i++)
+            Assert.assertEquals("" + i, rems[i], domain.remainder(crt, coprimes[i]));
     }
 
     static BigInteger toSymMod(BigInteger value, BigInteger modulus) {

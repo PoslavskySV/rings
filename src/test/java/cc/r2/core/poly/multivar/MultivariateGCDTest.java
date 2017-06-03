@@ -1146,21 +1146,21 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void testFiniteField1() throws Exception {
         for (int i = 0; i < 10; i++) {
-            FiniteField field = FiniteField.GF17p5;
+            FiniteField<lUnivariatePolynomialZp> field = FiniteField.GF17p5;
             MultivariatePolynomial<lUnivariatePolynomialZp>
                     a = MultivariatePolynomial.zero(3, field, LEX)
-                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5)), 1, 1, 3))
-                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 3, 2, 13)), 3, 2, 1))
-                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 13, 12, 13)), 0, 2, 1)),
+                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5).modulus(17)), 1, 1, 3))
+                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 3, 2, 13).modulus(17)), 3, 2, 1))
+                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 13, 12, 13).modulus(17)), 0, 2, 1)),
                     b = MultivariatePolynomial.zero(3, field, LEX)
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5)), 1, 1, 13))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 1, 2, 13)), 2, 2, 1))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 113, 112, 13)), 10, 2, 1)),
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5).modulus(17)), 1, 1, 13))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 1, 2, 13).modulus(17)), 2, 2, 1))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 113, 112, 13).modulus(17)), 10, 2, 1)),
                     gcd = MultivariatePolynomial.one(3, field, LEX)
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5, 12)), 11, 1, 13))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(11, 2, 1, 1, 2, 13)), 21, 2, 1))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12)), 10, 12, 1))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12)), 0, 0, 1));
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5, 12).modulus(17)), 11, 1, 13))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(11, 2, 1, 1, 2, 13).modulus(17)), 21, 2, 1))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(17)), 10, 12, 1))
+                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(17)), 0, 0, 1));
 
             a = a.clone().add(b).multiply(gcd);
             b = b.clone().subtract(gcd).multiply(gcd);
@@ -1168,6 +1168,111 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
+    }
+
+//
+//    static <E> UnivariatePolynomial<MultivariatePolynomial<E>> asMUnivariate(MultivariatePolynomial<E> poly, int variable) {
+//        int[] uDegrees = poly.degrees(variable);
+//        MultivariatePolynomial<E>[] data = new MultivariatePolynomial[ArraysUtil.max(uDegrees) + 1];
+//        for (int i = 0; i < data.length; i++)
+//            data[i] = poly.createZero();
+//        for (int degree : uDegrees)
+//            data[degree] = poly.coefficientOf(variable, degree);
+//        return UnivariatePolynomial.create(new MultivariatePolynomials<>(poly), data);
+//    }
+//
+//    static <E> MultivariatePolynomial<E> fromMUnivariate(UnivariatePolynomial<MultivariatePolynomial<E>> poly, int variable) {
+//        MultivariatePolynomial<E> zero = poly.domain.getZero();
+//        for (int i = 0; i <= poly.degree(); i++) {
+//            if (poly.isZeroAt(i))
+//                continue;
+//
+//            MultivariatePolynomial<E> term = poly.get(i);
+//            zero.add(
+//                    term.multiply(new MonomialTerm<>(zero.nVariables, variable, i, zero.domain.getOne())));
+//        }
+//        return zero;
+//    }
+//
+//    @Test
+//    public void testPRS() throws Exception {
+//        MultivariatePolynomial<BigInteger>
+//                a = parse("a + 2*b"),
+//                b = parse("a*b + 17*a*b^3"),
+//                gcd = parse("1 + a*b - 2*a*b^2");
+//
+//        a = a.multiply(gcd);
+//        b = b.multiply(gcd);
+//        IntegersModulo domain = new IntegersModulo(3);
+//        a = a.setDomain(domain);
+//        b = b.setDomain(domain);
+//
+//
+////        System.out.println(MultivariateGCD.PolynomialGCD(a, b));
+//        int variable = 0;
+////        System.out.println(a);
+////        System.out.println(asMUnivariate(a, variable));
+////        System.out.println(b);
+////        System.out.println(asMUnivariate(b, variable));
+//
+//        UnivariatePolynomial<MultivariatePolynomial<BigInteger>> result = UnivariateGCD.SubresultantEuclid(asMUnivariate(a, variable), asMUnivariate(b, variable)).gcd();
+//        System.out.println(result);
+//        System.out.println(fromMUnivariate(result, variable));
+//
+//    }
+
+    @Test
+    public void testSmallDomain1() throws Exception {
+        MultivariatePolynomial<BigInteger>
+                a = parse("a + 2*b + c"),
+                b = parse("a*b + 17*a*b^13 + a*c^2"),
+                gcd = parse("1 + a^2*b^31*c + c^3*a^3*b - 2*a^5*b^2 - b*c^2");
+
+        for (long modulus : new long[]{2, 3, 5, 7, 11, 17, 19, 23, 29, 31, 37, 41, 43}) {
+            IntegersModulo domain = new IntegersModulo(modulus);
+            MultivariatePolynomial<BigInteger>
+                    a1 = a.clone().setDomain(domain),
+                    b1 = b.clone().setDomain(domain),
+                    gcd1 = gcd.clone().setDomain(domain);
+            a1 = a1.multiply(gcd1);
+            b1 = b1.multiply(gcd1);
+
+            assertEquals(gcd1.monic(), ModularGCDFiniteField(a1, b1).monic());
+        }
+    }
+
+    @Test
+    public void testSmallDomain_random1() throws Exception {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        int nIterations = its(200, 1000);
+        RandomGenerator rnd = getRandom();
+        TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
+        sampleData.minModulusBits = 2;
+        sampleData.maxModulusBits = 5;
+        for (int n = 0; n < nIterations; n++) {
+            PrivateRandom.getRandom().setSeed(rnd.nextLong());
+            if (n == 33)
+                stats.clear();
+            if (n % 100 == 0)
+                System.out.println(n);
+            GCDTriplet gcdTriplet = sampleData.nextSample(false, false);
+            MultivariatePolynomial<BigInteger> actualGCD = null;
+            try {
+                long start = System.nanoTime();
+                actualGCD = ModularGCDFiniteField(gcdTriplet.aGCD, gcdTriplet.bGCD);
+                stats.addValue(System.nanoTime() - start);
+                assertTrue(dividesQ(actualGCD, gcdTriplet.gcd));
+            } catch (Throwable thr) {
+                System.out.println(n);
+                System.out.println(gcdTriplet.domain);
+                System.out.println("a   : " + gcdTriplet.a);
+                System.out.println("b   : " + gcdTriplet.b);
+                System.out.println("gcd : " + gcdTriplet.gcd);
+                System.out.println("err : " + actualGCD);
+                throw thr;
+            }
+        }
+        System.out.println(stats);
     }
 
     private static final class GCDTriplet {
@@ -1220,11 +1325,13 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             this.rndd = new RandomDataGenerator(rnd);
         }
 
+        int minModulusBits = 24, maxModulusBits = 25;
+
         long counter = 0;
 
         public GCDTriplet nextSample(boolean primitive, boolean monic) {
             PrivateRandom.getRandom().setSeed(counter++);
-            long modulus = getModulusRandom(25);
+            long modulus = getModulusRandom(rndd.nextInt(minModulusBits, maxModulusBits));
             IntegersModulo domain = new IntegersModulo(modulus);
             BigInteger bound = BigInteger.valueOf(10);
 
@@ -1245,6 +1352,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 b.add(new MonomialTerm<>(a.nVariables, 0, b.degree() + 1, BigInteger.ONE));
                 gcd.add(new MonomialTerm<>(a.nVariables, 0, gcd.degree() + 1, BigInteger.ONE));
             }
+            if (gcd.isZero())
+                return nextSample(primitive, monic);
             return new GCDTriplet(a, b, gcd);
         }
     }

@@ -21,6 +21,11 @@ public final class Integers extends AbstractIntegers {
     public BigInteger characteristics() {return BigInteger.ZERO;}
 
     @Override
+    public boolean isUnit(BigInteger a) {
+        return isOne(a);
+    }
+
+    @Override
     public BigInteger add(BigInteger a, BigInteger b) {return a.add(b);}
 
     @Override
@@ -34,6 +39,11 @@ public final class Integers extends AbstractIntegers {
 
     @Override
     public BigInteger[] divideAndRemainder(BigInteger a, BigInteger b) {return a.divideAndRemainder(b);}
+
+    @Override
+    public BigInteger remainder(BigInteger a, BigInteger b) {
+        return a.mod(b);
+    }
 
     @Override
     public BigInteger reciprocal(BigInteger a) {

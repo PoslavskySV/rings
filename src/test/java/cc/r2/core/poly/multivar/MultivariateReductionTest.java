@@ -185,6 +185,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
                 maxGeneratedDividendSize = dividend.size();
 
             MultivariatePolynomial<BigInteger>[] qd = divideAndRemainder(dividend, dividers);
+            assertNotNull(qd);
             int qSize = Arrays.stream(qd).mapToInt(MultivariatePolynomial::size).max().getAsInt();
             if (qSize > maxFoundQuotientSize)
                 maxFoundQuotientSize = qSize;

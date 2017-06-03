@@ -31,12 +31,21 @@ public final class MultivariateReduction {
             quotients[i] = dividend.createZero();
         }
         quotients[i] = dividend.createZero();
+
         if (constDivider != -1) {
-            quotients[constDivider] = dividend.divideByLC(dividers[constDivider]);
-            return quotients;
+            if (dividers[constDivider].isOne()) {
+                quotients[constDivider] = dividend.clone();
+                return quotients;
+            }
+            Poly dd = dividend.clone().divideByLC(dividers[constDivider]);
+            if (dd != null) {
+                quotients[constDivider] = dd;
+                return quotients;
+            }
         }
-        Poly remainder = quotients[quotients.length - 1];
+
         dividend = dividend.clone();
+        Poly remainder = quotients[quotients.length - 1];
         while (!dividend.isZero()) {
             Term ltDiv = null;
             for (i = 0; i < dividers.length; i++) {

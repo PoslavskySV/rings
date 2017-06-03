@@ -10,10 +10,7 @@ import cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.lInterpolation;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lPrecomputedPowersHolder;
-import cc.r2.core.poly.univar.IUnivariatePolynomial;
-import cc.r2.core.poly.univar.UnivariateGCD;
-import cc.r2.core.poly.univar.UnivariatePolynomial;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.univar.*;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.array.TLongArrayList;
@@ -25,7 +22,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
-import static cc.r2.core.poly.multivar.MultivariateReduction.*;
+import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
+import static cc.r2.core.poly.multivar.MultivariateReduction.dividesQ;
 import static cc.r2.core.util.ArraysUtil.negate;
 
 
@@ -82,6 +80,11 @@ public final class MultivariateGCD {
         final int evaluationStackLimit;
         /** GCD of monomial content of a and b **/
         final Term monomialGCD;
+        /**
+         * degree of irreducible univariate polynomial used to construct field extension q^n
+         * (if the coefficient domain has so small cardinality so that modular algorithm will fail)
+         */
+        final int finiteExtensionDegree;
 
         GCDInput(Poly earlyGCD) {
             this.earlyGCD = earlyGCD;
@@ -89,10 +92,12 @@ public final class MultivariateGCD {
             degreeBounds = mapping = null;
             lastPresentVariable = evaluationStackLimit = -1;
             monomialGCD = null;
+            finiteExtensionDegree = -1;
         }
 
         GCDInput(Poly aReduced, Poly bReduced, Term monomialGCD,
-                 int evaluationStackLimit, int[] degreeBounds, int[] mapping, int lastPresentVariable) {
+                 int evaluationStackLimit, int[] degreeBounds, int[] mapping, int lastPresentVariable,
+                 int finiteExtensionDegree) {
             //assert monomialGCD == null || aReduced.domain.isOne(monomialGCD.coefficient);
             this.aReduced = aReduced;
             this.bReduced = bReduced;
@@ -102,6 +107,7 @@ public final class MultivariateGCD {
             this.degreeBounds = degreeBounds;
             this.mapping = inversePermutation(mapping);
             this.lastPresentVariable = lastPresentVariable;
+            this.finiteExtensionDegree = finiteExtensionDegree;
         }
 
         /** recover initial order of variables in the result */
@@ -112,8 +118,10 @@ public final class MultivariateGCD {
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly trivialGCD(Poly a, Poly b) {
-        if (a.isZero() || b.isZero())
-            throw new IllegalArgumentException("Input is zero.");
+        if (a.isZero())
+            return b.clone();
+        if (b.isZero())
+            return a.clone();
         if (a.isConstant() || b.isConstant())
             return a.createOne();
         if (a.size() == 1)
@@ -202,7 +210,17 @@ public final class MultivariateGCD {
         a = renameVariables(a, variables);
         b = renameVariables(b, variables);
 
-        return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastPresentVariable);
+        // check whether coefficient domain cardinality is large enough
+        int finiteExtensionDegree = 1;
+        int cardinalityBound = 5 * ArraysUtil.max(degreeBounds);
+        if (domainSize != null && domainSize.isInt() && domainSize.intValueExact() < cardinalityBound) {
+            long ds = domainSize.intValueExact();
+            finiteExtensionDegree = 2;
+            long tmp = ds;
+            for (; tmp < cardinalityBound; ++finiteExtensionDegree)
+                tmp = tmp * ds;
+        }
+        return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastPresentVariable, finiteExtensionDegree);
     }
 
     @SuppressWarnings("unchecked")
@@ -291,11 +309,10 @@ public final class MultivariateGCD {
 
         MultivariatePolynomial<uPoly> conv = asOverUnivariate(poly, variable);
         //univariate content
-        uPoly content = UnivariateGCD.PolynomialGCD(conv.coefficients());
-        Poly divider = asMultivariate(content, poly.nVariables, variable, poly.ordering);
-        Poly[] qd = divideAndRemainder(poly, divider);
-        assert qd[1].isZero();
-        return new UnivariateContent(conv, qd[0], content);
+        uPoly uContent = UnivariateGCD.PolynomialGCD(conv.coefficients());
+        Poly mContent = asMultivariate(uContent, poly.nVariables, variable, poly.ordering);
+        Poly primitivePart = divideExact(poly, mContent);
+        return new UnivariateContent(conv, primitivePart, uContent);
     }
 
     /** holds primitive parts of a and b viewed as polynomials in Zp[x_k][x_1 ... x_{k-1}] */
@@ -404,8 +421,9 @@ public final class MultivariateGCD {
                     aMod = asLongPolyZp(abMod),
                     bMod = asLongPolyZp(bbMod);
 
-            //accumulator to update coefficients via Chineese remainding
-            lMultivariatePolynomialZp base = ZippelGCD(aMod, bMod);
+            // the base image
+            // accumulator to update coefficients via Chineese remainding
+            lMultivariatePolynomialZp base = PolynomialGCD(aMod, bMod);
             long lLcGCD = lcGCD.mod(bPrime).longValueExact();
             // scale to correct l.c.
             base = base.monic(lLcGCD);
@@ -630,7 +648,7 @@ public final class MultivariateGCD {
         return gcd.multiply(content);
     }
 
-    static lMultivariatePolynomialZp divideSkeletonExact(lMultivariatePolynomialZp dividend, lMultivariatePolynomialZp divider) {
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> Poly divideSkeletonExact(Poly dividend, Poly divider) {
         if (divider.isConstant())
             return dividend;
         if (divider.isMonomial())
@@ -639,11 +657,11 @@ public final class MultivariateGCD {
         dividend = dividend.clone().setAllCoefficientsToUnit();
         divider = divider.clone().setAllCoefficientsToUnit();
 
-        lMultivariatePolynomialZp quotient = dividend.createZero();
+        Poly quotient = dividend.createZero();
         dividend = dividend.clone();
         while (!dividend.isZero()) {
-            lMonomialTerm dlt = dividend.lt();
-            lMonomialTerm ltDiv = dlt.divide(divider.lt(), dlt.coefficient);
+            Term dlt = dividend.lt();
+            Term ltDiv = dlt.divide(divider.lt());
             if (ltDiv == null)
                 throw new RuntimeException();
             quotient = quotient.add(ltDiv);
@@ -699,6 +717,327 @@ public final class MultivariateGCD {
         }
     }
 
+
+    /* ======================== Multivariate GCD over finite fields with small cardinality ========================== */
+
+    /**
+     * Modular GCD algorithm for polynomials over Z.
+     *
+     * @param a the first polynomial
+     * @param b the second polynomial
+     * @return GCD of two polynomials
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static <E> MultivariatePolynomial<E> ModularGCDFiniteField(
+            MultivariatePolynomial<E> a,
+            MultivariatePolynomial<E> b) {
+        CommonUtils.ensureFiniteFieldDomain(a, b);
+        if (a == b)
+            return a.clone();
+        if (a.isZero()) return b.clone();
+        if (b.isZero()) return a.clone();
+
+        if (a.degree() < b.degree())
+            return ModularGCDFiniteField(b, a);
+
+        GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>>
+                gcdInput = preparedGCDInput(a, b);
+        if (gcdInput.earlyGCD != null)
+            return gcdInput.earlyGCD;
+        return ModularGCDFiniteField(gcdInput);
+    }
+
+    private static <E> MultivariatePolynomial<E> ModularGCDFiniteField(GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput) {
+        MultivariatePolynomial<E> a = gcdInput.aReduced;
+        MultivariatePolynomial<E> b = gcdInput.bReduced;
+
+        int uVariable = a.nVariables - 1;
+        if (a.domain instanceof IntegersModulo && a.coefficientDomainCardinality().isLong()) {
+            // use machine integers
+            @SuppressWarnings("unchecked")
+            MultivariatePolynomial<lUnivariatePolynomialZp>
+                    ua = asOverUnivariate0((MultivariatePolynomial<BigInteger>) a, uVariable),
+                    ub = asOverUnivariate0((MultivariatePolynomial<BigInteger>) b, uVariable);
+
+            lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
+            lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
+
+            ua = ua.divideOrNull(aContent);
+            ub = ub.divideOrNull(bContent);
+
+            MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
+                    ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
+            ugcd = ugcd.multiply(contentGCD);
+
+            @SuppressWarnings("unchecked")
+            MultivariatePolynomial<E> r = gcdInput.restoreGCD((MultivariatePolynomial<E>) asNormalMultivariate0(ugcd, uVariable));
+            return r;
+        } else {
+            MultivariatePolynomial<UnivariatePolynomial<E>>
+                    ua = a.asOverUnivariate(uVariable),
+                    ub = b.asOverUnivariate(uVariable);
+
+            UnivariatePolynomial<E> aContent = ua.content(), bContent = ub.content();
+            UnivariatePolynomial<E> contentGCD = ua.domain.gcd(aContent, bContent);
+
+            ua = ua.divideOrNull(aContent);
+            ub = ub.divideOrNull(bContent);
+
+            MultivariatePolynomial<UnivariatePolynomial<E>> ugcd =
+                    ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
+            ugcd = ugcd.multiply(contentGCD);
+
+            return gcdInput.restoreGCD(MultivariatePolynomial.asNormalMultivariate(ugcd, uVariable));
+        }
+    }
+
+    private static MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariate0(MultivariatePolynomial<BigInteger> poly, int variable) {
+        lIntegersModulo domain = new lIntegersModulo(((IntegersModulo) poly.domain).modulus.longValueExact());
+        lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(domain);
+        UnivariatePolynomials<lUnivariatePolynomialZp> pDomain = new UnivariatePolynomials<>(factory);
+        MonomialsSet<MonomialTerm<lUnivariatePolynomialZp>> newData = new MonomialsSet<>(poly.ordering);
+        for (MonomialTerm<BigInteger> e : poly) {
+            add(newData, new MonomialTerm<>(
+                            e.without(variable).exponents,
+                            factory.createMonomial(e.coefficient.longValueExact(), e.exponents[variable])),
+                    pDomain);
+        }
+        return new MultivariatePolynomial<>(poly.nVariables - 1, pDomain, poly.ordering, newData);
+    }
+
+    private static MultivariatePolynomial<BigInteger> asNormalMultivariate0(MultivariatePolynomial<lUnivariatePolynomialZp> poly, int variable) {
+        Domain<BigInteger> domain = poly.domain.getZero().domain.asDomain();
+        int nVariables = poly.nVariables + 1;
+        MultivariatePolynomial<BigInteger> result = zero(nVariables, domain, poly.ordering);
+        for (MonomialTerm<lUnivariatePolynomialZp> entry : poly.terms) {
+            lUnivariatePolynomialZp uPoly = entry.coefficient;
+            int[] dv = ArraysUtil.insert(entry.exponents, variable, 0);
+            for (int i = 0; i <= uPoly.degree(); ++i) {
+                if (uPoly.isZeroAt(i))
+                    continue;
+                int[] cdv = dv.clone();
+                cdv[variable] = i;
+                result.add(new MonomialTerm<>(cdv, BigInteger.valueOf(uPoly.get(i))));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Modular GCD algorithm for polynomials over Z.
+     *
+     * @param a the first polynomial
+     * @param b the second polynomial
+     * @return GCD of two polynomials
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static lMultivariatePolynomialZp ModularGCDFiniteField(
+            lMultivariatePolynomialZp a,
+            lMultivariatePolynomialZp b) {
+        CommonUtils.ensureFiniteFieldDomain(a, b);
+        if (a == b)
+            return a.clone();
+        if (a.isZero()) return b.clone();
+        if (b.isZero()) return a.clone();
+
+        if (a.degree() < b.degree())
+            return ModularGCDFiniteField(b, a);
+
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp>
+                gcdInput = preparedGCDInput(a, b);
+        if (gcdInput.earlyGCD != null)
+            return gcdInput.earlyGCD;
+        return lModularGCDFiniteField(gcdInput);
+    }
+
+    private static lMultivariatePolynomialZp lModularGCDFiniteField(GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput) {
+        lMultivariatePolynomialZp a = gcdInput.aReduced;
+        lMultivariatePolynomialZp b = gcdInput.bReduced;
+
+        int uVariable = a.nVariables - 1;
+        MultivariatePolynomial<lUnivariatePolynomialZp>
+                ua = a.asOverUnivariate(uVariable),
+                ub = b.asOverUnivariate(uVariable);
+
+        lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
+        lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
+
+        ua = ua.divideOrNull(aContent);
+        ub = ub.divideOrNull(bContent);
+
+        MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
+                ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
+        ugcd = ugcd.multiply(contentGCD);
+
+        return gcdInput.restoreGCD(lMultivariatePolynomialZp.asNormalMultivariate(ugcd, uVariable));
+    }
+
+    private static final int MAX_OVER_ITERATIONS = 16;
+
+    static <uPoly extends IUnivariatePolynomial<uPoly>>
+    MultivariatePolynomial<uPoly> ModularGCDFiniteField0(
+            MultivariatePolynomial<uPoly> a,
+            MultivariatePolynomial<uPoly> b,
+            int uDegreeBound,
+            int finiteExtensionDegree) {
+
+        uPoly lcGCD = UnivariateGCD.PolynomialGCD(a.lc(), b.lc());
+
+        Domain<uPoly> univariateDomain = a.domain;
+        RandomGenerator random = PrivateRandom.getRandom();
+        IrreduciblePolynomialsIterator<uPoly> primesLoop = new IrreduciblePolynomialsIterator<>(univariateDomain.getOne(), finiteExtensionDegree);
+        main_loop:
+        while (true) {
+            // prepare the skeleton
+            uPoly basePrime = primesLoop.next();
+
+            FiniteField<uPoly> fField = new FiniteField<>(basePrime);
+
+            // reduce Zp[x] -> GF
+            MultivariatePolynomial<uPoly>
+                    aMod = a.setDomain(fField),
+                    bMod = b.setDomain(fField);
+            if (!aMod.sameSkeleton(a) || !bMod.sameSkeleton(b))
+                continue;
+
+            //accumulator to update coefficients via Chineese remainding
+            MultivariatePolynomial<uPoly> base = PolynomialGCD(aMod, bMod);
+            uPoly lLcGCD = fField.valueOf(lcGCD);
+
+            if (base.isConstant())
+                return a.createOne();
+
+            // scale to correct l.c.
+            base = base.monic(lLcGCD);
+
+            // cache the previous base
+            MultivariatePolynomial<uPoly> previousBase = null;
+
+            // over all primes
+            while (true) {
+                if (basePrime.degree() >= uDegreeBound + MAX_OVER_ITERATIONS)
+                    throw new RuntimeException();
+
+                uPoly prime = primesLoop.next();
+                fField = new FiniteField<>(prime);
+
+                // reduce Zp[x] -> GF
+                aMod = a.setDomain(fField);
+                bMod = b.setDomain(fField);
+                if (!aMod.sameSkeleton(a) || !bMod.sameSkeleton(b))
+                    continue;
+
+                // calculate new GCD using previously calculated skeleton via sparse interpolation
+                MultivariatePolynomial<uPoly> modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(fField), random);
+                if (modularGCD == null) {
+                    // interpolation failed => assumed form is wrong => start over
+                    continue main_loop;
+                }
+
+                assert dividesQ(aMod, modularGCD);
+                assert dividesQ(bMod, modularGCD);
+
+                if (modularGCD.isConstant())
+                    return a.createOne();
+
+                // better degree bound found -> start over
+                if (modularGCD.degree(0) < base.degree(0)) {
+                    lLcGCD = fField.valueOf(lcGCD);
+                    // scale to correct l.c.
+                    base = modularGCD.monic(lLcGCD);
+                    basePrime = prime;
+                    continue;
+                }
+
+                //skip unlucky prime
+                if (modularGCD.degree(0) > base.degree(0))
+                    continue;
+
+                //lifting
+                uPoly newBasePrime = basePrime.clone().multiply(prime);
+                uPoly monicFactor = fField.divideExact(fField.valueOf(lcGCD), modularGCD.lc());
+
+                PairIterator<MonomialTerm<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairIterator<>(base, modularGCD);
+                while (iterator.hasNext()) {
+                    iterator.advance();
+
+                    MonomialTerm<uPoly>
+                            baseTerm = iterator.aTerm,
+                            imageTerm = iterator.bTerm;
+
+                    if (baseTerm.coefficient.isZero())
+                        // term is absent in the base
+                        continue;
+
+                    if (imageTerm.coefficient.isZero()) {
+                        // term is absent in the modularGCD => remove it from the base
+                        base.subtract(baseTerm);
+                        continue;
+                    }
+
+                    uPoly oth = fField.multiply(imageTerm.coefficient, monicFactor);
+
+                    // update base term
+                    uPoly newCoeff = ChineseRemainders.ChineseRemainders(univariateDomain, basePrime, prime, baseTerm.coefficient, oth);
+                    base.terms.add(baseTerm.setCoefficient(newCoeff));
+                }
+
+                basePrime = newBasePrime;
+
+                // set domain back to the normal univariate domain
+                base = base.setDomainUnsafe(univariateDomain);
+                // two trials didn't change the result, probably we are done
+                MultivariatePolynomial<uPoly> candidate = base.clone().primitivePart();
+                if (basePrime.degree() >= uDegreeBound || (previousBase != null && candidate.equals(previousBase))) {
+                    previousBase = candidate;
+                    //first check b since b is less degree
+                    if (!dividesQ(b, candidate))
+                        continue;
+
+                    if (!dividesQ(a, candidate))
+                        continue;
+
+
+                    return candidate;
+                }
+                previousBase = candidate;
+            }
+        }
+    }
+
+    private static final class IrreduciblePolynomialsIterator<uPoly extends IUnivariatePolynomial<uPoly>> {
+        final uPoly factory;
+        int degree;
+
+        IrreduciblePolynomialsIterator(uPoly factory, int degree) {
+            this.factory = factory;
+            this.degree = degree;
+        }
+
+        uPoly next() {
+            return IrreduciblePolynomials.randomIrreduciblePolynomial(factory, degree++, PrivateRandom.getRandom());
+        }
+    }
+
+    static <E> MultivariatePolynomial<E> interpolateGCD(MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, MultivariatePolynomial<E> skeleton, RandomGenerator rnd) {
+        a.checkSameDomainWith(b);
+        a.checkSameDomainWith(skeleton);
+
+        MultivariatePolynomial<E> content = ZippelContentGCD(a, b, 0);
+        a = divideExact(a, content);
+        b = divideExact(b, content);
+        skeleton = divideSkeletonExact(skeleton, content);
+
+        SparseInterpolation<E> interpolation = createInterpolation(-1, a, b, skeleton, rnd);
+        if (interpolation == null)
+            return null;
+        MultivariatePolynomial<E> gcd = interpolation.evaluate();
+        if (gcd == null)
+            return null;
+
+        return gcd.multiply(content);
+    }
+
     /* ===================================== Multivariate GCD over finite fields ==================================== */
 
     /**
@@ -719,11 +1058,15 @@ public final class MultivariateGCD {
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
+        if (gcdInput.finiteExtensionDegree > 1)
+            return ModularGCDFiniteField(gcdInput);
+
         MultivariatePolynomial<E> result = BrownGCD(
                 gcdInput.aReduced, gcdInput.bReduced, PrivateRandom.getRandom(),
                 gcdInput.lastPresentVariable, gcdInput.degreeBounds, gcdInput.evaluationStackLimit);
         if (result == null)
-            throw new IllegalArgumentException("Ground fill is too small for modular algorithm.");
+            // ground fill is too small for modular algorithm
+            return ModularGCDFiniteField(gcdInput);
 
         return gcdInput.restoreGCD(result);
     }
@@ -893,6 +1236,9 @@ public final class MultivariateGCD {
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
+        if (gcdInput.finiteExtensionDegree > 1)
+            return ModularGCDFiniteField(gcdInput);
+
         a = gcdInput.aReduced;
         b = gcdInput.bReduced;
 
@@ -905,7 +1251,8 @@ public final class MultivariateGCD {
         MultivariatePolynomial<E> result = ZippelGCD(a, b, PrivateRandom.getRandom(),
                 gcdInput.lastPresentVariable, gcdInput.degreeBounds, gcdInput.evaluationStackLimit);
         if (result == null)
-            throw new IllegalArgumentException("Ground fill is too small for modular algorithm.");
+            // ground fill is too small for modular algorithm
+            return ModularGCDFiniteField(gcdInput);
 
         result = result.multiply(content);
         return gcdInput.restoreGCD(result);
@@ -1673,11 +2020,15 @@ public final class MultivariateGCD {
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
+        if (gcdInput.finiteExtensionDegree > 1)
+            return lModularGCDFiniteField(gcdInput);
+
         lMultivariatePolynomialZp result = BrownGCD(
                 gcdInput.aReduced, gcdInput.bReduced, PrivateRandom.getRandom(),
                 gcdInput.lastPresentVariable, gcdInput.degreeBounds, gcdInput.evaluationStackLimit);
         if (result == null)
-            throw new IllegalArgumentException("Ground fill is too small for modular algorithm.");
+            // ground fill is too small for modular algorithm
+            return lModularGCDFiniteField(gcdInput);
 
         return gcdInput.restoreGCD(result);
     }
@@ -1847,6 +2198,9 @@ public final class MultivariateGCD {
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
+        if (gcdInput.finiteExtensionDegree > 1)
+            return lModularGCDFiniteField(gcdInput);
+
         a = gcdInput.aReduced;
         b = gcdInput.bReduced;
 
@@ -1859,7 +2213,9 @@ public final class MultivariateGCD {
         lMultivariatePolynomialZp result = ZippelGCD(a, b, PrivateRandom.getRandom(),
                 gcdInput.lastPresentVariable, gcdInput.degreeBounds, gcdInput.evaluationStackLimit);
         if (result == null)
-            throw new IllegalArgumentException("Ground fill is too small for modular algorithm.");
+            // ground fill is too small for modular algorithm
+            return lModularGCDFiniteField(gcdInput);
+
         result = result.multiply(content);
         return gcdInput.restoreGCD(result);
     }

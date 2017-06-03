@@ -104,6 +104,28 @@ public interface Domain<E> extends Comparator<E> {
     E[] divideAndRemainder(E dividend, E divider);
 
     /**
+     * Returns the quotient of {@code dividend / divider}
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return the quotient of {@code dividend / divider}
+     */
+    default E quotient(E dividend, E divider) {
+        return divideAndRemainder(dividend, divider)[0];
+    }
+
+    /**
+     * Returns the remainder of {@code dividend / divider}
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return the remainder of {@code dividend / divider}
+     */
+    default E remainder(E dividend, E divider) {
+        return divideAndRemainder(dividend, divider)[1];
+    }
+
+    /**
      * Divides {@code dividend} by {@code divider} or throws {@code ArithmeticException} if exact division is not possible
      *
      * @param dividend the dividend
@@ -201,12 +223,22 @@ public interface Domain<E> extends Comparator<E> {
     boolean isZero(E e);
 
     /**
-     * Tests whether specified element is unit
+     * Tests whether specified element is one (exactly)
      *
      * @param e the domain element
-     * @return whether specified element is unit
+     * @return whether specified element is one (exactly)
+     * @see #isUnit(Object)
      */
     boolean isOne(E e);
+
+    /**
+     * Tests whether specified element is a ring unit
+     *
+     * @param e the domain element
+     * @return whether specified element is a ring unit
+     * @see #isOne(Object)
+     */
+    boolean isUnit(E e);
 
     /**
      * Tests whether specified element is minus one
