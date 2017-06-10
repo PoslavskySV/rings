@@ -298,6 +298,9 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
                 parse("2*a^3*b^3*e", vars),
                 poly.derivative(4));
         assertEquals(
+                parse("120*b^3*c + 6*a^3*e^2", vars),
+                poly.derivative(1, 3));
+        assertEquals(
                 parse("0", vars),
                 poly.derivative(4).derivative(2));
 

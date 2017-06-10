@@ -12,7 +12,7 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> impleme
     public final Poly factory;
 
     APolynomialsDomain(Poly factory) {
-        this.factory = factory;
+        this.factory = factory.createZero();
     }
 
     @Override

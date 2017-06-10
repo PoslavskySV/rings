@@ -131,6 +131,7 @@ public interface Domain<E> extends Comparator<E> {
      * @param dividend the dividend
      * @param divider  the divider
      * @return {@code dividend / divider}
+     * @throws ArithmeticException if exact division is not possible
      */
     default E divideExact(E dividend, E divider) {
         if (isOne(divider))

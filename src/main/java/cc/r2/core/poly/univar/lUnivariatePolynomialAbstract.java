@@ -32,6 +32,21 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
      */
     public final long get(int i) {return data[i];}
 
+    /**
+     * Sets i-th element of this poly and returns the previous value
+     */
+    public lPoly set(int i, long el) {
+        data[i] = valueOf(el);
+        return self;
+    }
+
+    /**
+     * Sets hte leading coefficient of this poly and returns the previous value
+     */
+    public lPoly setLC(long lc) {
+        return set(degree, lc);
+    }
+
     /** {@inheritDoc} */
     @Override
     public final int firstNonZeroCoefficientPosition() {

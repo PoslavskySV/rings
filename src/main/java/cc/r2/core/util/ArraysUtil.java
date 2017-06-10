@@ -45,6 +45,20 @@ public final class ArraysUtil {
 
     public static final Comparator<Object> HASH_COMPARATOR = (o1, o2) -> Integer.compare(o1.hashCode(), o2.hashCode());
 
+    /**
+     * Lexicographic order
+     */
+    public static final Comparator<int[]> COMPARATOR = (int[] a, int[] b) -> {
+        if (a.length != b.length)
+            throw new IllegalArgumentException();
+        for (int i = 0; i < a.length; ++i) {
+            int c = Integer.compare(a[i], b[i]);
+            if (c != 0)
+                return c;
+        }
+        return 0;
+    };
+
     public static int[] arrayOf(int val, int len) {
         int[] r = new int[len];
         Arrays.fill(r, val);
@@ -361,6 +375,13 @@ public final class ArraysUtil {
     public static int firstIndexOf(int element, int[] array) {
         for (int i = 0; i < array.length; i++)
             if (array[i] == element)
+                return i;
+        return -1;
+    }
+
+    public static int firstIndexOf(Object element, Object[] array) {
+        for (int i = 0; i < array.length; i++)
+            if (element.equals(array[i]))
                 return i;
         return -1;
     }

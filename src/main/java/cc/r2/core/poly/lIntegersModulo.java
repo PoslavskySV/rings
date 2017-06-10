@@ -76,9 +76,10 @@ public final class lIntegersModulo {
         return value <= modulus / 2 ? value : value - modulus;
     }
 
-    public IntegersModulo asDomain(){
+    public IntegersModulo asDomain() {
         return new IntegersModulo(modulus);
     }
+
     /**
      * Returns {@code base} in a power of non-negative {@code e} modulo {@code magic.modulus}
      *
@@ -112,6 +113,13 @@ public final class lIntegersModulo {
      */
     public long randomElement(RandomGenerator rnd) {
         return modulus(rnd.nextLong());
+    }
+
+    public long factorial(int value) {
+        long result = 1;
+        for (int i = 2; i <= value; ++i)
+            result = multiply(result, i);
+        return result;
     }
 
     @Override

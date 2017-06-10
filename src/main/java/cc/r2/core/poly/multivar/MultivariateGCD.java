@@ -1638,13 +1638,13 @@ public final class MultivariateGCD {
         }
     }
 
+    /** Number of retries when raise condition occurs; then drop up with new homomorphism */
+    private static final int NUMBER_OF_UNDER_DETERMINED_RETRIES = 8;
+
     static final class LinZipInterpolation<E> extends ASparseInterpolation<E> {
         LinZipInterpolation(Domain<E> domain, int variable, MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<E>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, E[] evaluationPoint, PrecomputedPowersHolder<E> powers, RandomGenerator rnd) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
         }
-
-        /** Number of retries when raise condition occurs; then drop up with new homomorphism */
-        private static final int NUMBER_OF_UNDER_DETERMINED_RETRIES = 100;
 
         @Override
         public MultivariatePolynomial<E> evaluate() {
@@ -2597,9 +2597,6 @@ public final class MultivariateGCD {
                              RandomGenerator rnd) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
         }
-
-        /** Number of retries when raise condition occurs; then drop up with new homomorphism */
-        private static final int NUMBER_OF_UNDER_DETERMINED_RETRIES = 100;
 
         @Override
         public lMultivariatePolynomialZp evaluate() {

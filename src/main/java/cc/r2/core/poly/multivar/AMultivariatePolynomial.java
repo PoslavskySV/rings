@@ -1,7 +1,9 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.poly.IGeneralPolynomial;
+import cc.r2.core.poly.MultivariatePolynomials;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
+import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -120,6 +122,19 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         MonomialsSet<Term> monomials = new MonomialsSet<>(ordering);
         add(monomials, term);
         return create(monomials);
+    }
+
+    /**
+     * Creates variable^degree monomial
+     *
+     * @param variable the variable
+     * @param degree   the monomial degree
+     * @return variable^degree
+     */
+    public final Poly createUnivariateMonomial(int variable, int degree) {
+        int[] degreeVector = new int[nVariables];
+        degreeVector[variable] = degree;
+        return create(createTermWithUnitCoefficient(degreeVector));
     }
 
     /**
@@ -279,17 +294,26 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return whether this poly is effectively univariate
      */
     public final boolean isEffectiveUnivariate() {
+        return univariateVariable() != -1;
+    }
+
+    /**
+     * Returns -1 if this poly is not effectively univariate or variable in which it is univariate
+     *
+     * @return -1 if this poly is not effectively univariate or variable in which it is univariate
+     */
+    public final int univariateVariable() {
         int[] degrees = degrees();
-        boolean b = false;
+        int var = -1;
         for (int i = 0; i < nVariables; i++) {
             if (degrees[i] != 0) {
-                if (b)
-                    return false;
+                if (var != -1)
+                    return -1;
                 else
-                    b = true;
+                    var = i;
             }
         }
-        return true;
+        return var;
     }
 
     /**
@@ -305,6 +329,40 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
             if (e.exponents[variable] != exponent)
                 continue;
             result.add(e.setZero(variable));
+        }
+        return result;
+    }
+
+    /**
+     * Converts this polynomial to a univariate polynomial over specified variable with the multivariate coefficient
+     * domain.
+     *
+     * @param variable variable which will be treated as univariate variable
+     * @return univariate polynomial
+     * @throws IllegalArgumentException if this is not effectively a univariate polynomial
+     */
+    public final UnivariatePolynomial<Poly> asUnivariate(int variable) {
+        MultivariatePolynomials<Poly> domain = new MultivariatePolynomials<>(self);
+        Poly[] univarData = domain.createZeroesArray(degree(variable) + 1);
+        for (Term e : terms)
+            univarData[e.exponents[variable]].add(e.set(variable, 0));
+        return UnivariatePolynomial.createUnsafe(domain, univarData);
+    }
+
+    /**
+     * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly
+     *
+     * @param uPoly    univariate polynomial over multivariate polynomials
+     * @param variable the univariate variable
+     * @return multivariate poly
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly asMultivariate(UnivariatePolynomial<Poly> uPoly, int variable) {
+        Poly result = uPoly.domain.getZero();
+        for (int i = uPoly.degree(); i >= 0; --i) {
+            if (uPoly.isZeroAt(i))
+                continue;
+            result.add(result.createUnivariateMonomial(variable, i).multiply(uPoly.get(i)));
         }
         return result;
     }
@@ -568,7 +626,16 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param variable the variable
      * @return partial derivative with respect to specified variable
      */
-    public abstract Poly derivative(int variable);
+    public final Poly derivative(int variable) {return derivative(variable, 1);}
+
+    /**
+     * Gives partial derivative of specified {@code order} with respect to specified variable
+     *
+     * @param variable the variable
+     * @param order    derivative order
+     * @return partial derivative of specified {@code order} with respect to specified variable
+     */
+    public abstract Poly derivative(int variable, int order);
 
     /**
      * Gives the derivative vector

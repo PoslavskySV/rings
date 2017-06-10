@@ -3,6 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Integers;
+import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.*;
@@ -42,11 +43,16 @@ final class Parser {
             terms.add(parseMonomial(sb.toString(), domain));
 
         Set<String> allVars = new HashSet<>();
-        terms.forEach(t -> allVars.addAll(Arrays.asList(t.variables)));
         allVars.addAll(Arrays.asList(variables));
+        terms.forEach(t -> allVars.addAll(Arrays.asList(t.variables)));
 
-        String[] vars = allVars.toArray(new String[allVars.size()]);
-        Arrays.sort(vars);
+        List<String> varsList = new ArrayList<>();
+        varsList.addAll(Arrays.asList(variables));
+        for (String var : allVars) {
+            if (!varsList.contains(var))
+                varsList.add(var);
+        }
+        String[] vars = varsList.toArray(new String[allVars.size()]);
 
         @SuppressWarnings("unchecked")
         MonomialTerm<E>[] mTerms = new MonomialTerm[terms.size()];
@@ -70,7 +76,7 @@ final class Parser {
         MonomialTerm<E> toMonomialTerm(String[] map) {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
-                degrees[Arrays.binarySearch(map, variables[i])] = exponents[i];
+                degrees[ArraysUtil.firstIndexOf(variables[i], map)] = exponents[i];
             return new MonomialTerm<>(degrees, coefficient);
         }
 

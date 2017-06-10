@@ -959,16 +959,19 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public MultivariatePolynomial<E> derivative(int variable) {
+    public MultivariatePolynomial<E> derivative(int variable, int order) {
         MonomialsSet<MonomialTerm<E>> newTerms = new MonomialsSet<>(ordering);
         for (MonomialTerm<E> term : this) {
             int exponent = term.exponents[variable];
-            if (exponent == 0)
+            if (exponent < order)
                 continue;
-            E newCoefficient = domain.multiply(term.coefficient, domain.valueOf(exponent));
+            E newCoefficient = term.coefficient;
+            for (int i = 0; i < order; ++i)
+                newCoefficient = domain.multiply(newCoefficient, domain.valueOf(exponent - i));
             int[] newExponents = term.exponents.clone();
-            --newExponents[variable];
-            add(newTerms, new MonomialTerm<>(newExponents, term.totalDegree - 1, newCoefficient));
+            newExponents[variable] -= order;
+
+            add(newTerms, new MonomialTerm<>(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
     }

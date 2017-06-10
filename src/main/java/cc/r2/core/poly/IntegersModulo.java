@@ -30,7 +30,7 @@ public final class IntegersModulo extends AbstractIntegers {
 
     @Override
     public boolean isUnit(BigInteger a) {
-        return !isZero(a);
+        return !modulus.divideAndRemainder(a)[1].isZero();
     }
 
     /**

@@ -2,7 +2,6 @@ package cc.r2.core.poly;
 
 import cc.r2.core.poly.multivar.AMultivariatePolynomial;
 import cc.r2.core.poly.multivar.MultivariateGCD;
-import cc.r2.core.poly.multivar.MultivariatePolynomial;
 import cc.r2.core.poly.multivar.MultivariateReduction;
 
 /**
@@ -17,7 +16,9 @@ public final class MultivariatePolynomials<Poly extends AMultivariatePolynomial<
     @Override
     @SuppressWarnings("unchecked")
     public Poly[] divideAndRemainder(Poly dividend, Poly divider) {
-        return (Poly[]) MultivariateReduction.divideAndRemainder((MultivariatePolynomial) dividend, (MultivariatePolynomial) divider);
+        Poly[] arr = divider.arrayNewInstance(1);
+        arr[0] = divider;
+        return (Poly[]) MultivariateReduction.divideAndRemainder((AMultivariatePolynomial) dividend, (AMultivariatePolynomial[]) arr);
     }
 
     @Override

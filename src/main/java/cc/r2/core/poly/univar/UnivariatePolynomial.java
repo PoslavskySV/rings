@@ -3,7 +3,6 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.util.ArraysUtil;
 
@@ -175,6 +174,21 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * Returns i-th element of this poly
      */
     public E get(int i) { return data[i];}
+
+    /**
+     * Sets i-th element of this poly
+     */
+    public UnivariatePolynomial<E> set(int i, E el) {
+        data[i] = domain.valueOf(el);
+        return this;
+    }
+
+    /**
+     * Sets hte leading coefficient of this poly and returns the previous value
+     */
+    public UnivariatePolynomial<E> setLC(E lc) {
+        return set(degree, lc);
+    }
 
     /** {@inheritDoc} */
     @Override

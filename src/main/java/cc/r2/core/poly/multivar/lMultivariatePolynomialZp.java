@@ -1,10 +1,8 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.LongArithmetics;
-import cc.r2.core.poly.UnivariatePolynomials;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.*;
+import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -881,16 +879,23 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
-    public lMultivariatePolynomialZp derivative(int variable) {
+    public lMultivariatePolynomialZp derivative(int variable, int order) {
+        if (order == 0)
+            return this.clone();
+        if (isConstant())
+            return createZero();
         MonomialsSet<lMonomialTerm> newTerms = new MonomialsSet<lMonomialTerm>(ordering);
         for (lMonomialTerm term : this) {
             int exponent = term.exponents[variable];
-            if (exponent == 0)
+            if (exponent < order)
                 continue;
-            long newCoefficient = domain.multiply(term.coefficient, exponent);
+            long newCoefficient = term.coefficient;
+            for (int i = 0; i < order; ++i)
+                newCoefficient = domain.multiply(newCoefficient, exponent - i);
             int[] newExponents = term.exponents.clone();
-            --newExponents[variable];
-            add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - 1, newCoefficient));
+            newExponents[variable] -= order;
+
+            add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);
     }

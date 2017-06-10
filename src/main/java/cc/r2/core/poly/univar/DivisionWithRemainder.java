@@ -667,6 +667,15 @@ public final class DivisionWithRemainder {
         return new InverseModMonomial<>(divider.clone().reverse());
     }
 
+    /**
+     * Prepares {@code rev(divider)^(-1) mod x^i } for fast division.
+     *
+     * @param divider the divider
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> InverseModMonomial<Poly> fastDivisionPreConditioningWithLCCorrection(Poly divider) {
+        return new InverseModMonomial<>(divider.clone().monic().reverse());
+    }
+
     /** fast division implementation */
     public static <Poly extends IUnivariatePolynomial<Poly>> Poly[] divideAndRemainderFast0(Poly dividend, Poly divider,
                                                                                             InverseModMonomial<Poly> invRevMod,
@@ -716,7 +725,28 @@ public final class DivisionWithRemainder {
         lUnivariatePolynomialZp[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
-        return divideAndRemainderFast0(dividend, divider, invMod, copy);
+        return divideAndRemainderFastCorrectLC(dividend, divider, invMod, copy);
+    }
+
+    static lUnivariatePolynomialZp[] divideAndRemainderFastCorrectLC(lUnivariatePolynomialZp dividend,
+                                                                     lUnivariatePolynomialZp divider,
+                                                                     InverseModMonomial<lUnivariatePolynomialZp> invMod,
+                                                                     boolean copy) {
+        // if the divider can be directly inverted modulo x^i
+        if (divider.isMonic())
+            return divideAndRemainderFast0(dividend, divider, invMod, copy);
+
+        long lc = divider.lc();
+        long lcInv = divider.domain.reciprocal(lc);
+        // make the divisor monic
+        divider.multiply(lcInv);
+        // perform fast arithmetic with monic divisor
+        lUnivariatePolynomialZp[] result = divideAndRemainderFast0(dividend, divider, invMod, copy);
+        // reconstruct divisor's lc
+        divider.multiply(lc);
+        // reconstruct actual quotient
+        result[0].multiply(lcInv);
+        return result;
     }
 
     static lUnivariatePolynomialZp[] divideAndRemainderFast0(lUnivariatePolynomialZp dividend,
@@ -727,7 +757,7 @@ public final class DivisionWithRemainder {
             return divideAndRemainderFast0(dividend, divider, fastDivisionPreConditioning(divider), copy);
 
         long lc = divider.lc();
-        long lcInv = dividend.domain.reciprocal(lc);
+        long lcInv = divider.domain.reciprocal(lc);
         // make the divisor monic
         divider.multiply(lcInv);
         // perform fast arithmetic with monic divisor
@@ -776,7 +806,28 @@ public final class DivisionWithRemainder {
         UnivariatePolynomial<E>[] r = earlyDivideAndRemainderChecks(dividend, divider, copy);
         if (r != null)
             return r;
-        return divideAndRemainderFast0(dividend, divider, invMod, copy);
+        return divideAndRemainderFastCorrectLC(dividend, divider, invMod, copy);
+    }
+
+    static <E> UnivariatePolynomial<E>[] divideAndRemainderFastCorrectLC(UnivariatePolynomial<E> dividend,
+                                                                         UnivariatePolynomial<E> divider,
+                                                                         InverseModMonomial<UnivariatePolynomial<E>> invMod,
+                                                                         boolean copy) {
+        // if the divider can be directly inverted modulo x^i
+        if (divider.isMonic())
+            return divideAndRemainderFast0(dividend, divider, invMod, copy);
+
+        E lc = divider.lc();
+        E lcInv = dividend.domain.reciprocal(lc);
+        // make the divisor monic
+        divider.multiply(lcInv);
+        // perform fast arithmetic with monic divisor
+        UnivariatePolynomial<E>[] result = divideAndRemainderFast0(dividend, divider, invMod, copy);
+        // reconstruct divisor's lc
+        divider.multiply(lc);
+        // reconstruct actual quotient
+        result[0].multiply(lcInv);
+        return result;
     }
 
     static <E> UnivariatePolynomial<E>[] divideAndRemainderFast0(UnivariatePolynomial<E> dividend,
@@ -875,7 +926,7 @@ public final class DivisionWithRemainder {
         if (rem != null)
             return rem;
 
-        return divideAndRemainderFast0(dividend, divider, invMod, copy)[1];
+        return divideAndRemainderFastCorrectLC(dividend, divider, invMod, copy)[1];
     }
 
     /**
@@ -918,7 +969,7 @@ public final class DivisionWithRemainder {
         if (qd != null)
             return qd[0];
 
-        return divideAndRemainderFast0(dividend, divider, invMod, copy)[0];
+        return divideAndRemainderFastCorrectLC(dividend, divider, invMod, copy)[0];
     }
 
     /* ********************************* Multi-precision remainders ******************************** */
@@ -1008,7 +1059,7 @@ public final class DivisionWithRemainder {
         if (rem != null)
             return rem;
 
-        return divideAndRemainderFast0(dividend, divider, invMod, copy)[1];
+        return divideAndRemainderFastCorrectLC(dividend, divider, invMod, copy)[1];
     }
 
     /**
@@ -1051,7 +1102,7 @@ public final class DivisionWithRemainder {
         if (qd != null)
             return qd[0];
 
-        return divideAndRemainderFast0(dividend, divider, invMod, copy)[0];
+        return divideAndRemainderFastCorrectLC(dividend, divider, invMod, copy)[0];
     }
 
 
@@ -1100,6 +1151,21 @@ public final class DivisionWithRemainder {
             return (Poly[]) divideAndRemainder((UnivariatePolynomial) dividend, (UnivariatePolynomial) divider, copy);
         else
             throw new RuntimeException(dividend.getClass().toString());
+    }
+
+    /**
+     * Divides {@code dividend} by {@code divider} or throws {@code ArithmeticException} if exact division is not possible
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return {@code dividend / divider}
+     * @throws ArithmeticException if exact division is not possible
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> Poly divideExact(Poly dividend, Poly divider, boolean copy) {
+        Poly[] qr = divideAndRemainder(dividend, divider, copy);
+        if (!qr[1].isZero())
+            throw new ArithmeticException("Not divisible: (" + dividend + ") / (" + divider + ")");
+        return qr[0];
     }
 
     /**
