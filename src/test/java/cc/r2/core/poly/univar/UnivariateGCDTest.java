@@ -61,7 +61,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         expectedNaive.add(dividend);
         expectedNaive.add(divider);
         expectedNaive.add(lUnivariatePolynomialZ.create(63, -42));
-        expectedNaive.add(lUnivariatePolynomialZ.create(-1L));
+        expectedNaive.add(lUnivariatePolynomialZ.create(1L));
         assertEquals(expectedNaive, naive.remainders);
 
         PolynomialRemainders<lUnivariatePolynomialZ> primitive = PseudoEuclid(dividend.clone(), divider.clone(), true);
@@ -69,7 +69,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         expectedPrimitive.add(dividend);
         expectedPrimitive.add(divider);
         expectedPrimitive.add(lUnivariatePolynomialZ.create(-3, 2));
-        expectedPrimitive.add(lUnivariatePolynomialZ.create(-1L));
+        expectedPrimitive.add(lUnivariatePolynomialZ.create(1L));
         assertEquals(expectedPrimitive, primitive.remainders);
 
         PolynomialRemainders<lUnivariatePolynomialZ> subresultant = SubresultantEuclid(dividend.clone(), divider.clone());
