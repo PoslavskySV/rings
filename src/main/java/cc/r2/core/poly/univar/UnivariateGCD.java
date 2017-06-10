@@ -143,7 +143,7 @@ public final class UnivariateGCD {
         long contentGCD = LongArithmetics.gcd(aContent, bContent);
         lUnivariatePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
         PolynomialRemainders<lUnivariatePolynomialZ> res = PseudoEuclid0(aPP, bPP, primitivePRS);
-        res.gcd().primitivePart().multiply(contentGCD);
+        res.gcd().primitivePartSameSign().multiply(contentGCD);
         return res;
     }
 
@@ -169,7 +169,7 @@ public final class UnivariateGCD {
         E contentGCD = a.domain.gcd(aContent, bContent);
         UnivariatePolynomial<E> aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
         PolynomialRemainders<UnivariatePolynomial<E>> res = PseudoEuclid0(aPP, bPP, primitivePRS);
-        res.gcd().primitivePart().multiply(contentGCD);
+        res.gcd().primitivePartSameSign().multiply(contentGCD);
         return res;
     }
 
@@ -360,6 +360,8 @@ public final class UnivariateGCD {
                 return remainders.get(0);
             return remainders.get(remainders.size() - 1);
         }
+
+        public int size() { return remainders.size(); }
     }
 
     /**
@@ -671,15 +673,15 @@ public final class UnivariateGCD {
         else if (a instanceof UnivariatePolynomial) {
             Domain domain = ((UnivariatePolynomial) a).domain;
             if (domain.isField())
-                gcd =  (T) Euclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+                gcd = (T) Euclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
             else if (domain == Integers.Integers)
-                gcd =  (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+                gcd = (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
             else
-                gcd =  (T) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+                gcd = (T) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
         } else
             throw new RuntimeException(a.getClass().toString());
 
-        if(gcd.isOverField())
+        if (gcd.isOverField())
             gcd = gcd.monicExact();
 
         return gcd;

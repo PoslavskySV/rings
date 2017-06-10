@@ -198,16 +198,41 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void testRandom2() throws Exception {
         RandomGenerator rnd = getRandom();
-        for (int i = 0; i < its(10000, 10000); i++) {
+        int overflows = 0;
+        int nIterations = its(10000, 10000);
+        for (int i = 0; i < nIterations; i++) {
             lUnivariatePolynomialZ dividend = randomPoly(5, 5, rnd);
             lUnivariatePolynomialZ divider = randomPoly(5, 5, rnd);
-            for (UnivariateGCD.PolynomialRemainders prs :
-                    runAlgorithms(dividend, divider,
-                            GCDAlgorithm.PolynomialPrimitiveEuclid,
-                            GCDAlgorithm.SubresultantEuclid)) {
-                assertPolynomialRemainders(dividend, divider, prs);
+            try {
+                for (UnivariateGCD.PolynomialRemainders prs :
+                        runAlgorithms(dividend, divider,
+                                GCDAlgorithm.PolynomialPrimitiveEuclid,
+                                GCDAlgorithm.SubresultantEuclid)) {
+                    assertPolynomialRemainders(dividend, divider, prs);
+                }
+            } catch (ArithmeticException e) {
+                if (!e.getMessage().equals("long overflow"))
+                    throw e;
+                ++overflows;
             }
         }
+        assertTrue(overflows <= Math.ceil(nIterations / 1000.));
+        if (overflows > 0)
+            System.out.println("Overflows: " + overflows);
+    }
+
+    @Test
+    public void testRandom2a() throws Exception {
+        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(4, -1, -4, -3, 2, 4);
+        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(-4, 1, 4, 3, -2, -4);
+        assertPolynomialRemainders(dividend, divider, UnivariateGCD.PseudoEuclid(dividend, divider, true));
+    }
+
+    @Test
+    public void testRandom2b() throws Exception {
+        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(0, 0, 4, 0, 4, 4);
+        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(0, 0, 4, 0, 4, 4);
+        assertPolynomialRemainders(dividend, divider, UnivariateGCD.PseudoEuclid(dividend, divider, true));
     }
 
     @Test
@@ -400,7 +425,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
             b = b.clone().primitivePartSameSign();
         }
         assertEquals(a, prs.remainders.get(0));
-        assertEquals(b, prs.remainders.get(1));
+        assertEquals(b, prs.size() == 2 ? prs.gcd().primitivePartSameSign() : prs.remainders.get(1));
 
         T gcd = prs.gcd().clone();
         if (!a.isOverField())
