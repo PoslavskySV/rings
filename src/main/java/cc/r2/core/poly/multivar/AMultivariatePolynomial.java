@@ -24,7 +24,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     /** the actual data */
     final MonomialsSet<Term> terms;
     @SuppressWarnings("unchecked")
-    final Poly self = (Poly) this;
+    private final Poly self = (Poly) this;
 
     AMultivariatePolynomial(int nVariables, Comparator<DegreeVector> ordering, MonomialsSet<Term> terms) {
         this.nVariables = nVariables;
@@ -350,6 +350,61 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
+     * Multiplies this by variable^exponent
+     *
+     * @param variable the variable
+     * @param exponent the exponent
+     * @return this multiplied by variable^exponent
+     */
+    public final Poly multiplyByMonomial(int variable, int exponent) {
+        if (exponent == 0)
+            return self;
+        Collection<Term> oldData = new ArrayList<>(terms.values());
+
+        terms.clear();
+        for (Term term : oldData)
+            terms.add(term.set(variable, term.exponents[variable] + exponent));
+
+        return self;
+    }
+
+    /**
+     * Returns the multivariate leading coefficient of this poly seen as univariate poly over specified variable.
+     *
+     * @param variable the variable
+     * @return multivariate leading coefficient of this poly treated as univariate poly over specified variable
+     */
+    public final Poly lc(int variable) {
+        int degree = degree(variable);
+        Poly result = createZero();
+        for (Term term : this)
+            if (term.exponents[variable] == degree)
+                result.add(term.set(variable, 0));
+
+        return result;
+    }
+
+    /**
+     * Set the leading coefficient of specified variable to a specified value
+     *
+     * @param variable the variable
+     * @param lc       the leading coefficient
+     */
+    public final Poly setLC(int variable, Poly lc) {
+        int degree = degree(variable);
+
+        lc = lc.clone().multiplyByMonomial(variable, degree);
+        Iterator<Map.Entry<DegreeVector, Term>> it = terms.entrySet().iterator();
+        while (it.hasNext()) {
+            Term term = it.next().getValue();
+            if (term.exponents[variable] == degree)
+                it.remove();
+        }
+        terms.putAll(lc.terms);
+        return self;
+    }
+
+    /**
      * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly
      *
      * @param uPoly    univariate polynomial over multivariate polynomials
@@ -542,6 +597,16 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return {@code} this multiplied by the {@code term}
      */
     public abstract Poly multiply(Term term);
+
+    /**
+     * Multiplies {@code this} by the {@code term}
+     *
+     * @param term the factor
+     * @return {@code} this multiplied by the {@code term}
+     */
+    public final Poly multiplyByDegreeVector(DegreeVector term) {
+        return multiply(getUnitTerm().setDegreeVector(term));
+    }
 
     /** Whether monomial is zero */
     abstract boolean isZeroMonomial(Term a);

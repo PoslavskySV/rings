@@ -413,9 +413,17 @@ public final class ArraysUtil {
     }
 
     public static int sum(final int[] array) {
+        return sum(array, 0, array.length);
+    }
+
+    public static int sum(final int[] array, int from) {
+        return sum(array, from, array.length);
+    }
+
+    public static int sum(final int[] array, int from, int to) {
         int s = 0;
-        for (int i : array)
-            s += i;
+        for (int i = from; i < to; ++i)
+            s += array[i];
         return s;
     }
 

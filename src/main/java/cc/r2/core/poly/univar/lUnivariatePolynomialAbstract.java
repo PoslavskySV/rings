@@ -67,6 +67,10 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     @Override
     public final lPoly lcAsPoly() {return createConstant(lc());}
 
+    /** {@inheritDoc} */
+    @Override
+    public final lPoly ccAsPoly() {return createConstant(cc());}
+
     /**
      * Returns the constant coefficient of this poly
      *

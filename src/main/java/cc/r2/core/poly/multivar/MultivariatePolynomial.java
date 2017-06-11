@@ -312,6 +312,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public MultivariatePolynomial<E> ccAsPoly() {
+        return createConstant(cc());
+    }
+
+    @Override
     MultivariatePolynomial<E> create(int nVariables, MonomialsSet<MonomialTerm<E>> monomialTerms) {
         return new MultivariatePolynomial<>(nVariables, domain, ordering, monomialTerms);
     }

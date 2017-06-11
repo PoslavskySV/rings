@@ -226,6 +226,10 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public UnivariatePolynomial<E> lcAsPoly() {return createConstant(lc());}
 
+    /** {@inheritDoc} */
+    @Override
+    public UnivariatePolynomial<E> ccAsPoly() {return createConstant(cc());}
+
     /**
      * Returns the constant coefficient of the poly
      *

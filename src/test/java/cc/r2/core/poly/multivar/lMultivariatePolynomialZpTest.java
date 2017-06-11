@@ -198,8 +198,8 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
     public void testConversion() throws Exception {
         String[] vars = {"a", "b"};
         lMultivariatePolynomialZp poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new lIntegersModulo(17), LEX, vars);
-        assertEquals(poly, asNormalMultivariate(poly.asOverUnivariate(1), 1));
-        assertEquals(poly, asNormalMultivariate(poly.asOverUnivariate(1), 1));
+        assertEquals(poly, asNormalMultivariate(poly.asOverUnivariateEliminate(1), 1));
+        assertEquals(poly, asNormalMultivariate(poly.asOverUnivariateEliminate(1), 1));
     }
 
     @Test

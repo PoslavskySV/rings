@@ -276,6 +276,9 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
     /** leading coefficient as a constant poly */
     Poly lcAsPoly();
 
+    /** leading coefficient as a constant poly */
+    Poly ccAsPoly();
+
     /**
      * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code other.lc()}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.

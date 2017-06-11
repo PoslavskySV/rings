@@ -286,7 +286,7 @@ public final class MultivariateGCD {
         if (poly instanceof MultivariatePolynomial)
             return (MultivariatePolynomial<uPoly>) ((MultivariatePolynomial) poly).asOverUnivariate(variable);
         else if (poly instanceof lMultivariatePolynomialZp)
-            return (MultivariatePolynomial<uPoly>) ((lMultivariatePolynomialZp) poly).asOverUnivariate(variable);
+            return (MultivariatePolynomial<uPoly>) ((lMultivariatePolynomialZp) poly).asOverUnivariateEliminate(variable);
         else
             throw new RuntimeException();
     }
@@ -856,8 +856,8 @@ public final class MultivariateGCD {
 
         int uVariable = a.nVariables - 1;
         MultivariatePolynomial<lUnivariatePolynomialZp>
-                ua = a.asOverUnivariate(uVariable),
-                ub = b.asOverUnivariate(uVariable);
+                ua = a.asOverUnivariateEliminate(uVariable),
+                ub = b.asOverUnivariateEliminate(uVariable);
 
         lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
         lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
@@ -2171,7 +2171,7 @@ public final class MultivariateGCD {
         if (interpolation == null)
             return null;
         lMultivariatePolynomialZp interpolated =
-                lMultivariatePolynomialZp.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariate(variable).primitivePart(), variable);
+                lMultivariatePolynomialZp.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariateEliminate(variable).primitivePart(), variable);
         if (!dividesQ(a, interpolated) || !dividesQ(b, interpolated))
             return null;
 

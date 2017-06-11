@@ -1,8 +1,10 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.*;
-import cc.r2.core.poly.univar.UnivariatePolynomial;
+import cc.r2.core.poly.Integers;
+import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.UnivariatePolynomials;
+import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -199,6 +201,27 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         MonomialsSet<MonomialTerm<lUnivariatePolynomialZp>> newData = new MonomialsSet<>(ordering);
         for (lMonomialTerm e : terms) {
             MonomialTerm<lUnivariatePolynomialZp> eMonomialTerm = new MonomialTerm<>(
+                    e.set(variable, 0).exponents,
+                    factory.createMonomial(e.coefficient, e.exponents[variable]));
+            MultivariatePolynomial.add(newData, eMonomialTerm, pDomain);
+        }
+        return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
+    }
+
+    /**
+     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable},
+     * the resulting polynomial have (nVariable - 1) multivariate variables
+     *
+     * @param variable variable
+     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}, the
+     * resulting polynomial have (nVariable - 1) multivariate variables
+     */
+    public MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariateEliminate(int variable) {
+        lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(domain);
+        UnivariatePolynomials<lUnivariatePolynomialZp> pDomain = new UnivariatePolynomials<>(factory);
+        MonomialsSet<MonomialTerm<lUnivariatePolynomialZp>> newData = new MonomialsSet<>(ordering);
+        for (lMonomialTerm e : terms) {
+            MonomialTerm<lUnivariatePolynomialZp> eMonomialTerm = new MonomialTerm<>(
                     e.without(variable).exponents,
                     factory.createMonomial(e.coefficient, e.exponents[variable]));
             MultivariatePolynomial.add(newData, eMonomialTerm, pDomain);
@@ -279,6 +302,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     @Override
     public lMultivariatePolynomialZp lcAsPoly() {
         return createConstant(lc());
+    }
+
+    @Override
+    public lMultivariatePolynomialZp ccAsPoly() {
+        return createConstant(cc());
     }
 
     @Override
