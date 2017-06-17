@@ -77,6 +77,12 @@ public final class ArraysUtil {
         return arr;
     }
 
+    public static long[] negate(long[] arr) {
+        for (int i = 0; i < arr.length; i++)
+            arr[i] = -arr[i];
+        return arr;
+    }
+
     public static String toString(long[] a, int from, int to) {
         if (a == null)
             return "null";
@@ -424,6 +430,21 @@ public final class ArraysUtil {
         int s = 0;
         for (int i = from; i < to; ++i)
             s += array[i];
+        return s;
+    }
+
+    public static int or(final long[] array) {
+        return or(array, 0, array.length);
+    }
+
+    public static int or(final long[] array, int from) {
+        return or(array, from, array.length);
+    }
+
+    public static int or(final long[] array, int from, int to) {
+        int s = 0;
+        for (int i = from; i < to; ++i)
+            s |= array[i];
         return s;
     }
 

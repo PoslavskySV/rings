@@ -13,6 +13,7 @@ import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lPrecomputedPowersHold
 import cc.r2.core.poly.univar.*;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.set.hash.TLongHashSet;
@@ -2926,5 +2927,438 @@ public final class MultivariateGCD {
         for (int k = 0; k < nVars; k++)
             tmp = domain.multiply(tmp, powers.pow(k, raiseFactor * skeleton.exponents[1 + k]));
         return tmp;
+    }
+
+    /* =============================================== EZ-GCD algorithm ============================================ */
+
+
+    /**
+     * Calculates GCD of two multivariate polynomials over Zp using Zippel's algorithm with sparse interpolation.
+     *
+     * @param a the first multivariate polynomial
+     * @param b the second multivariate polynomial
+     * @return greatest common divisor of {@code a} and {@code b}
+     */
+    @SuppressWarnings("unchecked")
+    public static lMultivariatePolynomialZp EZGCD(
+            lMultivariatePolynomialZp a,
+            lMultivariatePolynomialZp b) {
+
+        // prepare input and test for early termination
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b);
+        if (gcdInput.earlyGCD != null)
+            return gcdInput.earlyGCD;
+
+        a = gcdInput.aReduced;
+        b = gcdInput.bReduced;
+
+        // content in the main variable => avoid raise condition in LINZIP!
+        // see Example 4 in "Algorithms for the non-monic case of the sparse modular GCD algorithm"
+        lMultivariatePolynomialZp content = EZContentGCD(a, b, 0);
+        a = divideExact(a, content);
+        b = divideExact(b, content);
+
+        lMultivariatePolynomialZp result = EZGCD0(a, b, PrivateRandom.getRandom());
+        result = result.multiply(content);
+        return gcdInput.restoreGCD(result);
+    }
+
+    static lMultivariatePolynomialZp EZContentGCD(
+            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b,
+            int variable) {
+        lMultivariatePolynomialZp[] aCfs = multivariateCoefficients(a, variable);
+        lMultivariatePolynomialZp[] bCfs = multivariateCoefficients(b, variable);
+
+        lMultivariatePolynomialZp contentGCD = EZGCD(aCfs[0], bCfs[0]);
+        for (int i = 1; i < aCfs.length; i++)
+            contentGCD = EZGCD(aCfs[i], contentGCD);
+        for (int i = 1; i < bCfs.length; i++)
+            contentGCD = EZGCD(bCfs[i], contentGCD);
+        return contentGCD;
+    }
+
+    private static lMultivariatePolynomialZp EZGCD0(
+            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, RandomGenerator rnd) {
+
+        // degree of univariate gcd
+        int ugcdDegree = Integer.MAX_VALUE;
+
+        EZGCDEvaluations evaluations = new EZGCDEvaluations(a, b, rnd);
+        choose_evaluation:
+        while (true) {
+            evaluations.nextEvaluation();
+            a = evaluations.aReduced;
+            b = evaluations.bReduced;
+
+            // degrees of a and b as Z[y1, ... ,yN][x]
+            int
+                    uaDegree = a.degree(0),
+                    ubDegree = b.degree(0);
+
+            lUnivariatePolynomialZp
+                    ua = a.evaluateAtZeroAllExcept(0),
+                    ub = b.evaluateAtZeroAllExcept(0);
+
+            assert ua.degree() == uaDegree;
+            assert ub.degree() == ubDegree;
+
+            // gcd of a mod I and b mod I (univariate)
+            lUnivariatePolynomialZp ugcd = UnivariateGCD.PolynomialGCD(ua, ub);
+
+            if (ugcd.degree() == 0) {
+                // coprime polynomials
+                return evaluations.reconstruct(a.createOne());
+            }
+
+            if (ugcd.degree() > ugcdDegree)
+                // unlucky evaluation
+                continue choose_evaluation;
+
+            ugcdDegree = ugcd.degree();
+
+            if (ugcdDegree == uaDegree) {
+                // a is a divisor of b
+                if (dividesQ(b, a))
+                    return evaluations.reconstruct(a);
+                continue choose_evaluation;
+            }
+
+            if (ugcdDegree == ubDegree) {
+                // b is a divisor of a
+                if (dividesQ(a, b))
+                    return evaluations.reconstruct(b);
+                continue choose_evaluation;
+            }
+
+            // base polynomial to lift (either a or b)
+            lMultivariatePolynomialZp base = null;
+            // a cofactor with gcd to lift, i.e. base = ugcd * uCoFactor mod I
+            lUnivariatePolynomialZp uCoFactor = null;
+
+            // deg(b) < deg(a), so it is better to try to lift b
+            lUnivariatePolynomialZp ubCoFactor = DivisionWithRemainder.quotient(ub, ugcd, true);
+            if (UnivariateGCD.PolynomialGCD(ugcd, ubCoFactor).isConstant()) {
+                // b splits into coprime factors
+                base = b;
+                uCoFactor = ubCoFactor;
+            }
+
+            if (base == null) {
+                // b does not split into coprime factors => try a
+                lUnivariatePolynomialZp uaCoFactor = DivisionWithRemainder.quotient(ua, ugcd, true);
+                if (UnivariateGCD.PolynomialGCD(ugcd, uaCoFactor).isConstant()) {
+                    base = a;
+                    uCoFactor = uaCoFactor;
+                }
+            }
+
+            if (base == null) {
+                // neither a nor b does not split into coprime factors => square free decomposition required
+
+                lMultivariatePolynomialZp
+                        bRepeatedFactor = EZGCD(b, b.derivative(0, 1)),
+                        squareFreeGCD = EZGCD(divideExact(b, bRepeatedFactor), a),
+                        aRepeatedFactor = divideExact(a, squareFreeGCD),
+                        gcd = squareFreeGCD.clone();
+
+                lUnivariatePolynomialZp
+                        uSquareFreeGCD = squareFreeGCD.evaluateAtZeroAllExcept(0),
+                        uaRepeatedFactor = aRepeatedFactor.evaluateAtZeroAllExcept(0),
+                        ubRepeatedFactor = bRepeatedFactor.evaluateAtZeroAllExcept(0);
+                while (true) {
+                    ugcd = UnivariateGCD.PolynomialGCD(
+                            uSquareFreeGCD, uaRepeatedFactor, ubRepeatedFactor);
+
+                    if (ugcd.degree() == 0)
+                        return evaluations.reconstruct(gcd);
+
+                    if (!uSquareFreeGCD.clone().monic().equals(ugcd.clone().monic())) {
+                        lMultivariatePolynomialZp
+                                mgcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering),
+                                gcdCoFactor = lMultivariatePolynomialZp.asMultivariate(
+                                        DivisionWithRemainder.divideExact(uSquareFreeGCD, ugcd, false), a.nVariables, 0, a.ordering);
+
+                        HenselLifting.liftPair(squareFreeGCD, mgcd, gcdCoFactor);
+
+                        squareFreeGCD = mgcd.clone();
+                        uSquareFreeGCD = squareFreeGCD.evaluateAtZeroAllExcept(0);
+                    }
+
+                    gcd = gcd.multiply(squareFreeGCD);
+                    uaRepeatedFactor = DivisionWithRemainder.divideExact(uaRepeatedFactor, ugcd, false);
+                    ubRepeatedFactor = DivisionWithRemainder.divideExact(ubRepeatedFactor, ugcd, false);
+                }
+            }
+
+
+            lMultivariatePolynomialZp gcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering);
+            lMultivariatePolynomialZp coFactor = lMultivariatePolynomialZp.asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
+
+            HenselLifting.liftPair(base, gcd, coFactor);
+
+            if (dividesQ(b, gcd) && dividesQ(a, gcd))
+                return evaluations.reconstruct(gcd);
+        }
+    }
+
+    static ZeroVariables commonPossibleZeroes(lMultivariatePolynomialZp a, lMultivariatePolynomialZp b) {
+        return commonPossibleZeroes(possibleZeros(a), possibleZeros(b));
+    }
+
+    static ZeroVariables commonPossibleZeroes(ZeroVariables a, ZeroVariables b) {
+        if (a.allZeroes)
+            return b;
+        if (b.allZeroes)
+            return a;
+
+        ZeroVariables result = new ZeroVariables(a.nVariables);
+        for (BitSet az : a.pZeros)
+            for (BitSet bz : b.pZeros) {
+                BitSet tmp = (BitSet) az.clone();
+                tmp.and(bz);
+                result.add(tmp);
+            }
+
+        return result;
+    }
+
+    /** list of available zero substitutions for poly */
+    static ZeroVariables possibleZeros(lMultivariatePolynomialZp poly) {
+        ZeroVariables result = new ZeroVariables(poly.nVariables);
+        if (poly.cc() != 0) {
+            BitSet s = new BitSet(poly.nVariables);
+            s.set(0, poly.nVariables);
+            result.add(s);
+            return result;
+        }
+        for (lMonomialTerm term : poly.terms) {
+            BitSet zeroes = new BitSet(poly.nVariables);
+            for (int i = 0; i < poly.nVariables; i++)
+                if (term.exponents[i] == 0)
+                    zeroes.set(i);
+            result.add(zeroes);
+        }
+        return result;
+    }
+
+    /** a list of variables that can be replaced with zeroes */
+    static final class ZeroVariables {
+        final List<BitSet> pZeros = new ArrayList<>();
+        final int nVariables;
+
+        public ZeroVariables(int nVariables) {
+            this.nVariables = nVariables;
+        }
+
+        int iMaxPossibleZeros = -1, maxPossibleZeros = -1;
+        boolean allZeroes = false;
+
+        void add(BitSet zeros) {
+            if (allZeroes)
+                return;
+            int nZeros = zeros.cardinality();
+            if (nVariables == nZeros) {
+                maxPossibleZeros = zeros.length();
+                iMaxPossibleZeros = 0;
+                allZeroes = true;
+                pZeros.clear();
+                pZeros.add(zeros);
+                return;
+            }
+            Iterator<BitSet> it = pZeros.iterator();
+            while (it.hasNext()) {
+                BitSet e = it.next();
+                if (contains(e, zeros))
+                    return;
+                if (contains(zeros, e))
+                    it.remove();
+            }
+            pZeros.add(zeros);
+            if (nZeros > maxPossibleZeros) {
+                maxPossibleZeros = nZeros;
+                iMaxPossibleZeros = pZeros.size() - 1;
+            }
+        }
+
+        BitSet maxZeros() {
+            return pZeros.isEmpty() ? new BitSet(nVariables) : pZeros.get(iMaxPossibleZeros);
+        }
+
+        @Override
+        public String toString() {
+            return pZeros.toString();
+        }
+    }
+
+    /** test whether major contains all elements of minor */
+    static boolean contains(BitSet major, BitSet minor) {
+        if (major.equals(minor))
+            return true;
+        BitSet tmp = (BitSet) major.clone();
+        tmp.and(minor);
+        return tmp.equals(minor);
+    }
+
+    static final class EZGCDEvaluations {
+        final lMultivariatePolynomialZp a, b;
+        final RandomGenerator rnd;
+        final int[] variables;
+        // variables in which both cc and lc in a and b are non zeroes
+        final TIntArrayList mainVariables = new TIntArrayList();
+
+        EZGCDEvaluations(lMultivariatePolynomialZp a,
+                         lMultivariatePolynomialZp b,
+                         RandomGenerator rnd) {
+            this.a = a;
+            this.b = b;
+            this.rnd = rnd;
+            this.variables = new int[a.nVariables - 1];
+
+            // search for main variables
+            for (int var = 0; var < a.nVariables; ++var) {
+                lUnivariatePolynomialZp ub = b.evaluateAtZeroAllExcept(var);
+                if (ub.cc() == 0 || ub.degree() != b.degree(var))
+                    continue;
+
+                lUnivariatePolynomialZp ua = a.evaluateAtZeroAllExcept(var);
+                if (ua.cc() == 0 || ua.degree() != a.degree(var))
+                    continue;
+
+                mainVariables.add(var);
+            }
+        }
+
+        // modified a and b so that all except first variables
+        // may be evaluated to zero
+        lMultivariatePolynomialZp aReduced, bReduced;
+
+        // pointers in mainVariables list
+        int
+                currentPerfectVariable = -1,
+                nextPerfectVariable = 0;
+
+        int baseVariable = -1;
+        int[]
+                zeroVariables, // variables that may be replaced with zeros ( 0 <> baseVariable are swaped )
+                shiftingVariables; // variables that must be shifted before substituting zeros ( 0 <> baseVariable are swaped )
+        // shift values for shiftingVariables
+        long[] shifts;
+
+        void nextEvaluation() {
+
+            // first try to evaluate all but one variables to zeroes
+
+            if (nextPerfectVariable < mainVariables.size()) {
+                // we have the main variable
+                currentPerfectVariable = mainVariables.get(nextPerfectVariable);
+                ++nextPerfectVariable;
+
+                aReduced = AMultivariatePolynomial.swapVariables(a, 0, currentPerfectVariable);
+                bReduced = AMultivariatePolynomial.swapVariables(b, 0, currentPerfectVariable);
+                return;
+            }
+
+            // no possible zero substitutions more
+            // => shift some variables and try to
+            // minimize intermediate expression swell
+            // due to "bad zero problem"
+
+            currentPerfectVariable = -1;
+
+            // try to substitute as many zeroes as possible
+            if (baseVariable == -1) {
+                ZeroVariables maxZeros = null;
+                for (int var = 0; var < a.nVariables; ++var) {
+                    ZeroVariables pZeros;
+                    pZeros = possibleZeros(b.coefficientOf(var, 0));
+                    if (maxZeros != null && pZeros.maxPossibleZeros < maxZeros.maxPossibleZeros)
+                        continue;
+
+                    pZeros = commonPossibleZeroes(pZeros, possibleZeros(b.coefficientOf(var, b.degree(var))));
+                    if (maxZeros != null && pZeros.maxPossibleZeros < maxZeros.maxPossibleZeros)
+                        continue;
+
+                    pZeros = commonPossibleZeroes(pZeros, possibleZeros(a.coefficientOf(var, 0)));
+                    if (maxZeros != null && pZeros.maxPossibleZeros < maxZeros.maxPossibleZeros)
+                        continue;
+
+                    pZeros = commonPossibleZeroes(pZeros, possibleZeros(a.coefficientOf(var, a.degree(var))));
+                    if (maxZeros != null && pZeros.maxPossibleZeros < maxZeros.maxPossibleZeros)
+                        continue;
+
+                    maxZeros = pZeros;
+                    baseVariable = var;
+                }
+                assert maxZeros != null;
+
+                // <- we chose the main variable and those that can be safely substituted with zeros
+
+                BitSet zeroSubstitutions = maxZeros.maxZeros();
+                // swap 0 and baseVariable
+                zeroSubstitutions.set(baseVariable, zeroSubstitutions.get(0));
+                zeroSubstitutions.clear(0);
+
+                zeroVariables = new int[zeroSubstitutions.cardinality()];
+                shiftingVariables = new int[a.nVariables - zeroSubstitutions.cardinality() - 1];
+                int iCounter = 0, jCounter = 0;
+                for (int j = 0; j < a.nVariables; j++)
+                    if (zeroSubstitutions.get(j))
+                        zeroVariables[iCounter++] = j;
+                    else if (j != 0) // don't shift the main variable
+                        shiftingVariables[jCounter++] = j;
+
+                shifts = new long[shiftingVariables.length];
+            }
+
+            aReduced = AMultivariatePolynomial.swapVariables(a, 0, baseVariable);
+            bReduced = AMultivariatePolynomial.swapVariables(b, 0, baseVariable);
+
+            int
+                    ubDegree = bReduced.degree(0),
+                    uaDegree = aReduced.degree(0);
+
+            // choosing random shifts
+            while (true) {
+                for (int i = 0; i < shiftingVariables.length; ++i)
+                    shifts[i] = a.domain.randomElement(rnd);
+
+                lUnivariatePolynomialZp ub = bReduced
+                        .evaluateAtZero(zeroVariables)
+                        .shift(shiftingVariables, shifts)
+                        .evaluateAtZero(shiftingVariables)
+                        .asUnivariate();
+
+                if (ub.isZeroAt(0) || ub.isZeroAt(ubDegree))
+                    continue;
+
+                lUnivariatePolynomialZp ua = aReduced
+                        .evaluateAtZero(zeroVariables)
+                        .shift(shiftingVariables, shifts)
+                        .evaluateAtZero(shiftingVariables)
+                        .asUnivariate();
+
+                if (ua.isZeroAt(0) || ua.isZeroAt(uaDegree))
+                    continue;
+
+                break;
+            }
+            aReduced = aReduced.shift(shiftingVariables, shifts);
+            bReduced = bReduced.shift(shiftingVariables, shifts);
+        }
+
+        lMultivariatePolynomialZp reconstruct(lMultivariatePolynomialZp poly) {
+            if (currentPerfectVariable != -1)
+                // just swap the vars
+                return currentPerfectVariable == 0 ?
+                        poly : lMultivariatePolynomialZp.swapVariables(poly, 0, currentPerfectVariable);
+
+            long[] backShifts = shifts.clone();
+            for (int i = 0; i < backShifts.length; i++)
+                backShifts[i] = poly.domain.negate(shifts[i]);
+
+            poly = poly.shift(shiftingVariables, backShifts);
+            poly = lMultivariatePolynomialZp.swapVariables(poly, 0, baseVariable);
+            return poly;
+        }
     }
 }

@@ -283,7 +283,54 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
         assertEquals(poly, renameVariables(renamed, inverse(variables)));
     }
 
-//    @Test
+    @Test
+    public void testSubstitute1() throws Exception {
+        String[] vars = {"a", "b"};
+        lIntegersModulo domain = new lIntegersModulo(17);
+        lMultivariatePolynomialZp poly = parse("1 + a^2*b^2 + a^3*b^3 + a*b^3 + b^3 + a^2 + 2", domain, vars);
+        assertEquals(
+                parse("7 + 4*a + a^2 + 4*b^2 + 4*a*b^2 + a^2*b^2 + 11*b^3 + 13*a*b^3 + 6*a^2*b^3 + a^3*b^3", domain, vars),
+                poly.shift(0, 2));
+        assertEquals(
+                parse("2 + 16*a + 2*a^2 + 16*a^3 + 3*b + 3*a*b + 15*a^2*b + 3*a^3*b + 14*b^2 + 14*a*b^2 + a^2*b^2 + 14*a^3*b^2 + b^3 + a*b^3 + a^3*b^3", domain, vars),
+                poly.shift(1, -1));
+        assertEquals(
+                parse("1 + 9*a + 12*a^2 + 16*a^3 + 7*b + 3*a*b + 2*a^2*b + 3*a^3*b + 14*b^2 + 15*a*b^2 + 14*a^2*b^2 + 14*a^3*b^2 + 11*b^3 + 6*a*b^3 + 7*a^2*b^3 + a^3*b^3", domain, vars),
+                poly.shift(new int[]{0, 1}, new long[]{-9, -1}));
+
+        assertEquals(
+                parse("3 + a^2 + 2*a*b + b^2 + a^2*b^2 + b^3 + 3*a*b^3 + a^3*b^3 + 2*b^4 + 3*a^2*b^4 + 3*a*b^5 + b^6", domain, vars),
+                poly.substitute(0, parse("a + b", domain, vars)));
+        assertEquals(
+                parse("3 + a^2 + 11*a^3*b + a^2*b^2 + 9*a^4*b^2 + b^3 + 16*a*b^3 + 12*a^3*b^3 + 3*a^2*b^4 + 15*a*b^5 + 10*a^5*b^5 + 3*a^2*b^6 + 7*a^6*b^6 + a^3*b^7 + b^8 + 7*a^4*b^8 + 3*a*b^9 + 8*a^2*b^10 + 16*b^12", domain, vars),
+                poly.substitute(0, parse("14*a^2*b - b^3 + a", domain, vars)));
+    }
+
+
+    @Test
+    public void testSubstitute2() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(1321349);
+        lMultivariatePolynomialZp
+                a = parse("7*a*b^3*c^5*d^5*e^4 + 2*a^2*c^2*d^3*e^4", domain);
+
+        int[] vars = {1, 2, 3, 4};
+        long[] shifts = {762555, 207901, 752954, 112652};
+        long[] bShifts = ArraysUtil.negate(shifts.clone());
+
+        assertEquals(a, a.shift(vars, shifts).shift(vars, bShifts));
+    }
+
+    @Test
+    public void testSubstitute3() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(1321349);
+        lMultivariatePolynomialZp
+                poly = parse("7*a*b^3*c^5*d^5*e^4 + 2*a^2*c^2*d^3*e^4", domain),
+                expected = parse("8*a^2*d^3*e^4 + 8*a^2*c*d^3*e^4 + 2*a^2*c^2*d^3*e^4 + 224*a*b^3*d^5*e^4 + 560*a*b^3*c*d^5*e^4 + 560*a*b^3*c^2*d^5*e^4 + 280*a*b^3*c^3*d^5*e^4 + 70*a*b^3*c^4*d^5*e^4 + 7*a*b^3*c^5*d^5*e^4", domain);
+
+        assertEquals(expected, poly.shift(2, 2));
+    }
+
+    //    @Test
 //    public void testMonomialContent1() throws Exception {
 //        String[] vars = {"a", "b", "c", "d", "e"};
 //        lMultivariatePolynomialZp poly = parse("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);

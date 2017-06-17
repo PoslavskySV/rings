@@ -42,6 +42,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      */
     static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>> P
     swapVariables(P poly, int i, int j) {
+        if (i == j)
+            return poly.clone();
         int[] newVariables = ArraysUtil.sequence(poly.nVariables);
         newVariables[i] = j;
         newVariables[j] = i;

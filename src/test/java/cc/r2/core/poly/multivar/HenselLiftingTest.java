@@ -1,5 +1,6 @@
 package cc.r2.core.poly.multivar;
 
+import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.lIntegersModulo;
 import org.junit.Assert;

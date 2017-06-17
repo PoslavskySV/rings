@@ -95,13 +95,24 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
      * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
      *
      * @param domain the modulus
+     * @param copy   whether to copy the data
      * @return Zp[x] polynomial from this
      */
-    public lUnivariatePolynomialZp modulus(lIntegersModulo domain) {
-        long[] data = this.data.clone();
+    public lUnivariatePolynomialZp modulus(lIntegersModulo domain, boolean copy) {
+        long[] data = copy ? this.data.clone() : this.data;
         for (int i = degree; i >= 0; --i)
             data[i] = domain.modulus(data[i]);
         return lUnivariatePolynomialZp.createUnsafe(domain, data);
+    }
+
+    /**
+     * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
+     *
+     * @param domain the modulus
+     * @return Zp[x] polynomial from this
+     */
+    public lUnivariatePolynomialZp modulus(lIntegersModulo domain) {
+        return modulus(domain, true);
     }
 
     lUnivariatePolynomialZp modulusUnsafe(long modulus) {

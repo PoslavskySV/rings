@@ -1,12 +1,11 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.LongArithmetics;
-import cc.r2.core.poly.UnivariatePolynomials;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.*;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Arrays;
@@ -614,6 +613,20 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
+     * Substitutes {@code 0} for {@code variable}.
+     *
+     * @param variable the variable
+     * @return a new multivariate polynomial with {@code 0} substituted for {@code variable}
+     */
+    public lMultivariatePolynomialZp evaluateAtZero(int variable) {
+        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
+        for (lMonomialTerm el : terms)
+            if (el.exponents[variable] == 0)
+                newData.add(el);
+        return new lMultivariatePolynomialZp(nVariables, domain, ordering, newData);
+    }
+
+    /**
      * Substitutes {@code value} for {@code variable}.
      *
      * @param variable the variable
@@ -623,6 +636,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     public lMultivariatePolynomialZp evaluate(int variable, long value) {
         value = domain.modulus(value);
+        if (value == 0)
+            return evaluateAtZero(variable);
         MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
         lPrecomputedPowers powers = new lPrecomputedPowers(value, domain);
         for (lMonomialTerm el : terms) {
@@ -630,6 +645,39 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             add(newData, el.setZero(variable, val));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newData);
+    }
+
+    /**
+     * Substitutes {@code 0} for all specified {@code variables}.
+     *
+     * @param variables the variables
+     * @return a new multivariate polynomial with {@code 0} substituted for all specified {@code variables}
+     */
+    public lMultivariatePolynomialZp evaluateAtZero(int[] variables) {
+        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
+        out:
+        for (lMonomialTerm el : terms) {
+            for (int variable : variables)
+                if (el.exponents[variable] != 0)
+                    continue out;
+            newData.add(el);
+        }
+        return new lMultivariatePolynomialZp(nVariables, domain, ordering, newData);
+    }
+
+    lUnivariatePolynomialZp evaluateAtZeroAllExcept(int variable) {
+        long[] uData = new long[degree(variable) + 1];
+        out:
+        for (lMonomialTerm el : terms) {
+            if (el.totalDegree != 0 && el.exponents[variable] == 0)
+                continue;
+            for (int i = 0; i < nVariables; ++i)
+                if (i != variable && el.exponents[i] != 0)
+                    continue out;
+            int uExp = el.exponents[variable];
+            uData[uExp] = domain.add(uData[uExp], el.coefficient);
+        }
+        return lUnivariatePolynomialZp.createUnsafe(domain, uData);
     }
 
     /**
@@ -642,8 +690,14 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     @SuppressWarnings("unchecked")
     public lMultivariatePolynomialZp evaluate(int[] variables, long[] values) {
-        return evaluate(new lPrecomputedPowersHolder(values, domain), variables, ones(nVariables));
+        for (long value : values)
+            if (value != 0)
+                return evaluate(new lPrecomputedPowersHolder(values, domain), variables, ones(nVariables));
+
+        // <- all values are zero
+        return evaluateAtZero(variables);
     }
+
 
     /* cached array of units */
     private static int[][] ones = new int[16][];
@@ -780,6 +834,154 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         }
     }
 
+    /**
+     * Substitutes {@code variable -> poly} and returns the result (copied)
+     *
+     * @param variable the variable
+     * @param poly     the replacement for the variable
+     * @return a copy of this with  {@code variable -> poly}
+     */
+    public lMultivariatePolynomialZp substitute(int variable, lMultivariatePolynomialZp poly) {
+        if (poly.isConstant())
+            return evaluate(variable, poly.cc());
+        lPrecomputedSubstitution subsPowers;
+        if (poly.isEffectiveUnivariate())
+            subsPowers = new lUSubstitution(poly.univariateVariable(), poly.asUnivariate());
+        else
+            subsPowers = new lMSubstitution(poly);
+
+        lMultivariatePolynomialZp result = createZero();
+        for (lMonomialTerm term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent == 0) {
+                result.add(term);
+                continue;
+            }
+
+            result.add(subsPowers.pow(exponent).multiply(term.setZero(variable)));
+        }
+        return result;
+    }
+
+    /**
+     * Substitutes {@code variable -> variable + shift} and returns the result (copied)
+     *
+     * @param variable the variable
+     * @param shift    shift amount
+     * @return a copy of this with  {@code variable -> variable + shift}
+     */
+    public lMultivariatePolynomialZp shift(int variable, long shift) {
+        if (shift == 0)
+            return clone();
+
+        lUSubstitution shifts = new lUSubstitution(variable, lUnivariatePolynomialZ.create(shift, 1).modulus(domain));
+        lMultivariatePolynomialZp result = createZero();
+        for (lMonomialTerm term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent == 0) {
+                result.add(term);
+                continue;
+            }
+
+            result.add(shifts.pow(exponent).multiply(term.setZero(variable)));
+        }
+        return result;
+    }
+
+    /**
+     * Substitutes {@code variable -> variable + shift} for each variable from {@code variables} array
+     *
+     * @param variables the variables
+     * @param shifts    the corresponding shifts
+     * @return a copy of this with  {@code variable -> variable + shift}
+     */
+    public lMultivariatePolynomialZp shift(int[] variables, long[] shifts) {
+        lPrecomputedSubstitution[] powers = new lPrecomputedSubstitution[nVariables];
+        boolean allShiftsAreZero = true;
+        for (int i = 0; i < variables.length; ++i) {
+            if (shifts[i] != 0)
+                allShiftsAreZero = false;
+            powers[variables[i]] = new lUSubstitution(variables[i], lUnivariatePolynomialZ.create(shifts[i], 1).modulus(domain, false));
+        }
+
+        if (allShiftsAreZero)
+            return clone();
+
+        lPrecomputedSubstitutions calculatedShifts = new lPrecomputedSubstitutions(powers);
+
+        lMultivariatePolynomialZp result = createZero();
+        for (lMonomialTerm term : this) {
+            lMultivariatePolynomialZp temp = createOne();
+            for (int variable : variables) {
+                if (term.exponents[variable] != 0) {
+                    temp = temp.multiply(calculatedShifts.getSubstitutionPower(variable, term.exponents[variable]));
+                    term = term.setZero(variable);
+                }
+            }
+            if (temp.isOne()) {
+                result.add(term);
+                continue;
+            }
+            result.add(temp.multiply(term));
+        }
+        return result;
+    }
+
+    final class lPrecomputedSubstitutions {
+        final lPrecomputedSubstitution[] subs;
+
+        public lPrecomputedSubstitutions(lPrecomputedSubstitution[] subs) {
+            this.subs = subs;
+        }
+
+        lMultivariatePolynomialZp getSubstitutionPower(int var, int exponent) {
+            if (subs[var] == null)
+                throw new IllegalArgumentException();
+
+            return subs[var].pow(exponent);
+        }
+    }
+
+    interface lPrecomputedSubstitution {
+        lMultivariatePolynomialZp pow(int exponent);
+    }
+
+    final class lUSubstitution implements lPrecomputedSubstitution {
+        final int variable;
+        final lUnivariatePolynomialZp base;
+        final TIntObjectHashMap<lUnivariatePolynomialZp> uCache = new TIntObjectHashMap<>();
+        final TIntObjectHashMap<lMultivariatePolynomialZp> mCache = new TIntObjectHashMap<>();
+
+        lUSubstitution(int variable, lUnivariatePolynomialZp base) {
+            this.variable = variable;
+            this.base = base;
+        }
+
+        @Override
+        public lMultivariatePolynomialZp pow(int exponent) {
+            lMultivariatePolynomialZp cached = mCache.get(exponent);
+            if (cached != null)
+                return cached.clone();
+            lUnivariatePolynomialZp r = CommonPolynomialsArithmetics.polyPow(base, exponent, true, uCache);
+            mCache.put(exponent, cached = asMultivariate(r, nVariables, variable, ordering));
+            return cached;
+        }
+    }
+
+    static final class lMSubstitution implements lPrecomputedSubstitution {
+        final lMultivariatePolynomialZp base;
+        final TIntObjectHashMap<lMultivariatePolynomialZp> cache = new TIntObjectHashMap<>();
+
+        lMSubstitution(lMultivariatePolynomialZp base) {
+            this.base = base;
+        }
+
+        @Override
+        public lMultivariatePolynomialZp pow(int exponent) {
+            return CommonPolynomialsArithmetics.polyPow(base, exponent, true, cache);
+        }
+    }
+
     @Override
     public lMultivariatePolynomialZp negate() {
         for (Entry<DegreeVector, lMonomialTerm> entry : terms.entrySet()) {
@@ -881,6 +1083,12 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     @Override
     public lMultivariatePolynomialZp multiply(lMultivariatePolynomialZp oth) {
         checkSameDomainWith(oth);
+        if (oth.isZero())
+            return toZero();
+        if (isZero())
+            return this;
+        if (oth.isConstant())
+            return multiply(oth.cc());
         MonomialsSet<lMonomialTerm> newMap = new MonomialsSet<>(ordering);
         for (lMonomialTerm othElement : oth.terms)
             for (lMonomialTerm thisElement : terms)

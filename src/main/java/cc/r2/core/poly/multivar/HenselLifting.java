@@ -51,11 +51,12 @@ public final class HenselLifting {
         if (lc.isConstant())
             liftPair0(base, a, b, null, null);
         else {
+            // imposing leading coefficients
             lMultivariatePolynomialZp lcCorrection = modImage(lc.clone(), 1);
             assert lcCorrection.isConstant();
 
-            a.monic(lcCorrection.lc()); // <- monic in x^n (depdends on ordering!
-            b.monic(lcCorrection.lc()); // <- monic in x^n (depdends on ordering!
+            a.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
+            b.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
             base = base.clone().multiply(lc);
 
             liftPair0(base, a, b, lc, lc);
@@ -135,8 +136,16 @@ public final class HenselLifting {
         InverseModMonomial<lUnivariatePolynomialZp>
                 uaInvMod = fastDivisionPreConditioningWithLCCorrection(ua);
 
-        for (int degree = 1; ; ++degree) {
-            lMultivariatePolynomialZp rhs = base.clone().subtract(a.clone().multiply(b));
+        int maxDegree = ArraysUtil.sum(base.degrees(), 1);
+        for (int degree = 1; degree < maxDegree; ++degree) {
+            // reduce a and b mod degree to make things faster
+            lMultivariatePolynomialZp
+                    aMod = a.clone(),
+                    bMod = b.clone();
+            modImage(aMod, degree + 1);
+            modImage(bMod, degree + 1);
+
+            lMultivariatePolynomialZp rhs = base.clone().subtract(aMod.multiply(bMod));
             if (rhs.isZero())
                 break;
 
