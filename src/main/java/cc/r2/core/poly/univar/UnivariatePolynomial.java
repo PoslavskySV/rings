@@ -356,7 +356,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     /** {@inheritDoc} */
     @Override
-    public boolean isZeroAt(int i) {return domain.isZero(data[i]);}
+    public boolean isZeroAt(int i) {return i >= data.length || domain.isZero(data[i]);}
 
     /** {@inheritDoc} */
     @Override

@@ -642,15 +642,6 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void assadasd() throws Exception {
-        IntegersModulo domain = new IntegersModulo(21535757L);
-        MultivariatePolynomial<BigInteger> a = parse("13659400*b^3*c*d+6829700*a*b^3*c^3*d+3855362*a^2*b^3*c^3*d^3+2974338*a^3*b^3*c^2*d^3", domain, LEX);
-        MultivariatePolynomial<BigInteger> b = parse("6107385*b^3*c*d+13821571*a*b^3*c^3*d+8143180*a^2*b^3*c^3*d^3+5678391*a^3*b^3*c^2*d^3", domain, LEX);
-        System.out.println(a.monic());
-        System.out.println(b.monic());
-    }
-
-    @Test
     public void testZippel_nonmonic_random3() throws Exception {
         MultivariateGCD.ALWAYS_LINZIP = true;
         RandomGenerator rnd = getRandom();
@@ -1321,46 +1312,11 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         a = a.multiply(gcd);
         b = b.multiply(gcd);
 
-        for (int i = 0; i < 100; i++) {
-            System.out.println();
-            long start = System.nanoTime();
-            lMultivariatePolynomialZp p1 = ZippelGCD(a, b).monic();
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-            start = System.nanoTime();
-            lMultivariatePolynomialZp p2 = EZGCD(a, b).monic();
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-            assertEquals(p1, p2);
-
-        }
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-//    @Test
-//    public void testEZGCD2() throws Exception {
-//        PrivateRandom.getRandom().setSeed(1232);
-//        String[] vars = {"a", "b", "c", "d", "e"};
-//        lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
-//        lMultivariatePolynomialZp
-//                a = lMultivariatePolynomialZp.parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", domain, LEX, vars),
-//                b = lMultivariatePolynomialZp.parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", domain, LEX, vars),
-//                gcd = lMultivariatePolynomialZp.parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", domain, LEX, vars);
-//
-//        a = a.clone().multiply(gcd);
-//        b = b.clone().multiply(gcd);
-//
-//        for (int i = 0; i < 10; i++) {
-//            System.out.println();
-//            long start = System.nanoTime();
-//            lMultivariatePolynomialZp p1 = PolynomialGCD(a, b).monic();
-//            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-//            start = System.nanoTime();
-//            lMultivariatePolynomialZp p2 = EZGCD(a, b).monic();
-//            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-//            assertEquals(p1, p2);
-//        }
-//    }
-
     @Test
-    public void testEZGCD3() throws Exception {
+    public void testEZGCD2() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
         lMultivariatePolynomialZp
 
@@ -1372,24 +1328,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                         .multiply(u).multiply(v).multiply(v);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
-
-        for (int i = 0; i < 100; i++) {
-            System.out.println();
-            long start;
-            start = System.nanoTime();
-            lMultivariatePolynomialZp brown = BrownGCD(a, b).monic();
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-
-            start = System.nanoTime();
-            lMultivariatePolynomialZp zippel = ZippelGCD(a, b).monic();
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-            assertEquals(brown, zippel);
-
-            start = System.nanoTime();
-            lMultivariatePolynomialZp ezgcd = EZGCD(a, b).monic();
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-            assertEquals(zippel, ezgcd);
-        }
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
     @Test
@@ -1398,7 +1337,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp
                 a = lMultivariatePolynomialZp.parse("1 + c*b*a^2+b^2 + c + a^5", domain, LEX),
                 b = lMultivariatePolynomialZp.parse("a^2+2*b^2 + 2*c + a^5", domain, LEX);
-        ZeroVariables pZeros = commonPossibleZeroes(a, b);
+        ZeroVariables pZeros = commonPossibleZeroes(a, b, a.nVariables);
         assertTrue(pZeros.pZeros.size() > 0);
         for (BitSet z : pZeros.pZeros) {
             assertFalse(setZeroes(a, z).isZero());
@@ -1413,7 +1352,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 a = lMultivariatePolynomialZp.parse("1 + c*b*a^2+b^2 + c + a^5*d + e*a + b*g - f", domain, LEX),
                 b = lMultivariatePolynomialZp.parse("a^2+2*b^2 + 2*c + a^5 + a*b*c*d*e*f + g", domain, LEX);
         lMultivariatePolynomialZp ac = a.clone();
-        ZeroVariables pZeros = commonPossibleZeroes(a, b);
+        ZeroVariables pZeros = commonPossibleZeroes(a, b, a.nVariables);
         assertTrue(pZeros.pZeros.size() > 0);
         for (BitSet z : pZeros.pZeros) {
             assertFalse(setZeroes(a, z).isZero());
@@ -1427,7 +1366,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp
                 a = lMultivariatePolynomialZp.parse("4*b^5*d^3*e^6+2*a^4*c^2*d^3*e^2+9939223*a^4*b^3*c^3*e+7*a^4*b^3*c^5*d^5*e+3*a^4*b^5*c^5*d^5*e^4+2*a^5*c^3*d^6*e^3+9939225*a^5*c^5*d*e^3+3*a^5*b*c^6*d^4*e^3+7*a^5*b^2*c^3*d^4*e^4+9939223*a^5*b^6*c^4*d", domain),
                 b = lMultivariatePolynomialZp.parse("4*b^6*c^4+6*a*b*c^2*e+9939226*a*b^5*c*d^3*e^3+8*a^2*b^4*c^5*d^5*e^3+3*a^3*c^6*d^4*e^2+9939223*a^3*b^2*c*d^2*e^2+2*a^4*b^3*c^6*d^2*e+2*a^5*b^3*d^6*e^2+4*a^5*b^5*c^5*d*e^4+9*a^6*b*c^5*d^2+9939221*a^6*b^2*c^4*d^3*e^5", domain);
-        EZGCDEvaluations evals = new EZGCDEvaluations(a, b, getRandom());
+        EZGCDEvaluations evals = new EZGCDEvaluations(a, b, a.nVariables, getRandom());
         for (int j = 0; j < 10; j++) {
             System.out.println(j);
             evals.nextEvaluation();
@@ -1450,7 +1389,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                         b = asLongPolyZp(pp[1]);
                 if (a.isConstant() || b.isConstant())
                     continue;
-                EZGCDEvaluations evals = new EZGCDEvaluations(a, b, rnd);
+                EZGCDEvaluations evals = new EZGCDEvaluations(a, b, a.nVariables, rnd);
                 for (int j = 0; j < 10; j++) {
                     evals.nextEvaluation();
                     assertEquals(a, evals.reconstruct(evals.aReduced));
@@ -1458,6 +1397,287 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void testEZGCD3() throws Exception {
+        PrivateRandom.getRandom().setSeed(4);
+        lIntegersModulo domain = new lIntegersModulo(15627449);
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("3*b^2*c*d+5*a*d^2+15627444*a*b^2*c+15627440*a^2*b^2*c^2", domain, LEX),
+                b = lMultivariatePolynomialZp.parse("4*b*c^2*d^2+8*b^2*c*d^2+15627440*b^3*d^2+3*a*c^3+a^2*b", domain, LEX),
+                gcd = lMultivariatePolynomialZp.parse("15627440*b^2*c^3+7*b^3*c+6*a*b^2*c^3*d^2+7*a^2*b*d+5*a^3*c^2*d^3+6*a^3*b^2*c^2*d", domain, LEX);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD4() throws Exception {
+        PrivateRandom.getRandom().setSeed(4);
+        lIntegersModulo domain = new lIntegersModulo(15627449);
+        String[] vars = {"b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("13312440+25*d", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("902776+10710357*c+6547542*c^2+4925527*b+2965659*b*c+20*b*c^2+2903103*b^2+40*b^2*c+15627404*b^3", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("102871+8266210*d+5121205*d^2+16248*d^3+1722152*c+2574791*c*d+10788581*c*d^2+15247596*c*d^3+8472569*c^2+898837*c^2*d+14099452*c^2*d^2+c^2*d^3", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD5() throws Exception {
+        PrivateRandom.getRandom().setSeed(0);
+        lIntegersModulo domain = new lIntegersModulo(24254707);
+        String[] vars = {"b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("24254706*b+b^2*c+7*a*c+5*a*b^2+2*a^2*b*c+24254705*a^2*b*c^2+a^2*b^2*c^2", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("4*b*c+6*b^2*c+4*a^2+7*a^2*b*c^2+3*a^2*b^2*c", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("9*c+24254705*a*c^2+6*a*b^2+4*a^2+3*a^2*c+24254698*a^2*b^2*c", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD6() throws Exception {
+        PrivateRandom.getRandom().setSeed(0);
+        lIntegersModulo domain = new lIntegersModulo(24254707);
+        String[] vars = {"b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("11106134 + 20915017*a + 948048*a^2 + 18101438*b + 8523620*a*b + 19589342*a^2*b + 13684993*b^2 + 8219998*a*b^2 + 24254698*a^2*b^2", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("12760358 + 5425698*a + 5129306*a^2 + 14380683*b + 16257092*a*b + 24254680*a^2*b + 4515223*b^2 + 24254644*a*b^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("9740181 + 21604578*a + 9691573*a^2 + 11040951*b + 17951441*a*b + a^2*b", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD7() throws Exception {
+        PrivateRandom.getRandom().setSeed(6);
+        lIntegersModulo domain = new lIntegersModulo(28565767);
+        String[] vars = {"a", "b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("6*c^2*d+3*a*d^2+9*a*d^3+28565764*a^2*b*d^2+2*a^2*b^2*c*d^2+9*a^3*c*d^2+3*a^3*b^2*c*d^2", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("c^2*d^2+28565766*a*b^2*d^2+2*a*b^2*c*d+28565763*a^2*c^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("6*c*d+7*c*d^2+7*a*b^2+8*a^2*b*c^2", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD8() throws Exception {
+        PrivateRandom.getRandom().setSeed(6);
+        lIntegersModulo domain = new lIntegersModulo(28565767);
+        String[] vars = {"a", "b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("1564663 + 63*d", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("15383307 + 22520298*b + 12522045*b^2 + 9677552*c + 7*c^2 + 3221049*d + 5785123*b*d + 28565760*b^2*d", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("21095373 + c", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD9() throws Exception {
+        PrivateRandom.getRandom().setSeed(27);
+        lIntegersModulo domain = new lIntegersModulo(8678027);
+        String[] vars = {"a", "b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("6*c^2*d+2*b^2*c^2*d^2+a*c^2+a*b^2*c^2", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("3*b^3*c*d^2+2*a*b^2*d^2+8678026*a^2*c^3*d^3+8678018*a^2*b+5*a^3*b^2*c^3*d", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("8678020*c^2+3*b*c+6*b^2*c^2*d+2*a^2*b^3*c+8678020*a^3*c*d^3", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD10() throws Exception {
+        PrivateRandom.getRandom().setSeed(4);
+        lIntegersModulo domain = new lIntegersModulo(28996511);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("6*b^2*c^2+b^3*c+28996505*a*b*c+28996507*a*b^2+4*a*b^2*c^3", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("6*b^2*c+12*a*b^2*c+3*a^2*b^2*c^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("9+28996505*c^2+7*a*b*c+8*a*b*c^2+9*a^2*b^2*c^2", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD11() throws Exception {
+        PrivateRandom.getRandom().setSeed(11);
+        lIntegersModulo domain = new lIntegersModulo(22687397);
+        String[] vars = {"a", "b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("7*d+7*b^2*c^2+3*a*c^2+2*a^2*d+6*a^2*d^2+9*a^2*c^2*d", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("2*a*b*c^2+22687392*a*b^2*c^2*d^2+9*a*b^2*c^3+22687395*a*b^3*c*d+3*a^2*c*d^3+6*a^3+8*a^3*b^2*c*d^3", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("22687391*d^2+22687393*b*c^2*d^2+5*a+5*a*b+8*a*b^2*c^2*d^2+4*a^2*b^2*c^2", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD12() throws Exception {
+        PrivateRandom.getRandom().setSeed(11);
+        lIntegersModulo domain = new lIntegersModulo(22687397);
+        String[] vars = {"a", "b", "c", "d"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("11244809 + 22687361*a^2 + 30*b + 11244809*c + 30*b*c", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("21851038 + 15893672*a + 14760820*a^2 + 12564491*a^3 + 11694181*a^4 + 16683489*a^5 + 11244809*b + 9237198*a*b + 4795625*a^2*b + 6123527*a^3*b + 5432952*a^4*b + 22659623*a^5*b + 15*b^2 + 14306815*a*b^2 + 15896207*a^2*b^2 + 9051*a^3*b^2 + 22645277*a^4*b^2 + 11745*a*b^3 + 35100*a^2*b^3 + 2299511*c + 15893672*a*c + 1652686*a^2*c + 6762669*a^3*c + 19488092*a^4*c + 3757801*a^5*c + 11247299*b*c + 9237198*a*b*c + 12416836*a^2*b*c + 19792351*a^3*b*c + 9233182*a^4*b*c + 22686257*a^5*b*c + 15*b^2*c + 14306815*a*b^2*c + 15890231*a^2*b^2*c + 22668450*a^3*b^2*c + 22687373*a^4*b^2*c + 11745*a*b^3*c + 35100*a^2*b^3*c + 9448492*c^2 + 11808378*a*c^2 + 20057596*a^2*c^2 + 20794627*a^3*c^2 + 18785592*a^4*c^2 + 4960279*a^5*c^2 + 21841949*b*c^2 + 2669531*a*b*c^2 + 13194739*a^2*b*c^2 + 10436283*a^3*b*c^2 + 19195830*a^4*b*c^2 + 5885213*a^5*b*c^2 + 8273012*b^2*c^2 + 20876792*a*b^2*c^2 + 19005620*a^2*b^2*c^2 + 6957603*a^3*b^2*c^2 + 17675248*a^4*b^2*c^2 + 22615613*a^5*b^2*c^2 + 7430983*b^3*c^2 + 18240653*a*b^3*c^2 + 4232985*a^2*b^3*c^2 + 147044*a^3*b^3*c^2 + 48*a^4*b^3*c^2 + 5976*b^4*c^2 + 42092*a*b^4*c^2 + 24*a^2*b^4*c^2 + 9149236*c^3 + 9268605*a*c^3 + 4080916*a^2*c^3 + 6163313*a^3*c^3 + 2920*a^4*c^3 + 3127846*a^5*c^3 + 11966525*b*c^3 + 22671967*a*b*c^3 + 22683508*a^2*b*c^3 + 21437536*a^3*b*c^3 + 4916674*a^5*b*c^3 + 1168*b^2*c^3 + 2213725*a^3*b^2*c^3 + 22684357*a^5*b^2*c^3 + 61720*a^3*b^3*c^3 + 12936437*c^4 + 9268605*a*c^4 + 15448872*a^2*c^4 + 21785946*a^3*c^4 + 4125558*a^4*c^4 + 19072832*a^5*c^4 + 19011898*b*c^4 + 22671967*a*b*c^4 + 4208806*a^2*b*c^4 + 15458267*a^3*b*c^4 + 22681557*a^4*b*c^4 + 3920321*a^5*b*c^4 + 41624*b^2*c^4 + 22684477*a^2*b^2*c^4 + 3920321*a^3*b^2*c^4 + 7937375*a^5*b^2*c^4 + 12854049*a^3*b^3*c^4 + 6080*a^5*b^3*c^4 + 3040*a^3*b^4*c^4 + 12125660*a*c^5 + 12572867*a^3*c^5 + 12572867*a*b*c^5 + 22685877*a^3*b*c^5 + 22686637*a*b^2*c^5", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("1", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD13() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(13666309);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("4*b^2*c^3+3*a*b^3+2*a*b^3*c+4*a*b^3*c^3+2*a^3*b^2*c", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("5*b*c+5*a*b+13666307*a*b*c+7*a^2*c+6*a^2*c^2+13666307*a^2*b", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("4*b^2+15*a*b^2*c+4*a^2+13666308*a^2*c", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD14() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(13666309);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("3338057+430735*b+13248829*b^2+11374034*b^3+3423812*a+698808*a*b+7995810*a*b^2+60*a*b^3+8933188*a^2+13666305*a^2*b", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("7990553+3359122*b+846494*b^2+131346*a+12831229*a*b+6789484*a*b^2+12272859*a^2+7995810*a^2*b+90*a^2*b^2+13666303*a^3", domain, LEX, vars);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+
+    @Test
+    public void testEZGCD15() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(22687397);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("30*b+30*b*c+22687361*a^2", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("2490*b*c+6800*b*c^2+4310*b*c^3+15*b^2+15*b^2*c+1168*b^2*c^3+41624*b^2*c^4+14028*b^3*c^2+5976*b^4*c^2+40950*a*b+40950*a*b*c+22671967*a*b*c^3+22671967*a*b*c^4+28*a*b^2*c^2+22686637*a*b^2*c^5+11745*a*b^3+11745*a*b^3*c+42092*a*b^4*c^2+22684409*a^2*c+22681057*a^2*c^2+22645773*a^2*c^3+22687379*a^2*b+22673369*a^2*b*c+22681172*a^2*b*c^2+22683508*a^2*b*c^3+83248*a^2*b*c^4+22681421*a^2*b^2*c+28056*a^2*b^2*c^2+22684477*a^2*b^2*c^4+35100*a^2*b^3+35100*a^2*b^3*c+11952*a^2*b^3*c^2+24*a^2*b^4*c^2+22638257*a^3+22687369*a^3*c+18516*a^3*c^3+760*a^3*c^4+56*a^3*b*c^2+22685877*a^3*b*c^5+9051*a^3*b^2+22668450*a^3*b^2*c+147044*a^3*b^3*c^2+61720*a^3*b^3*c^3+3040*a^3*b^4*c^4+7470*a^4*c^2+2920*a^4*c^3+22681557*a^4*b*c^4+22645277*a^4*b^2+22687373*a^4*b^2*c+48*a^4*b^3*c^2+22659623*a^5*b+22686257*a^5*b*c+22615613*a^5*b^2*c^2+22684357*a^5*b^2*c^3+6080*a^5*b^3*c^4", domain, LEX, vars);
+//                gcd = lMultivariatePolynomialZp.parse("4*b^2+15*a*b^2*c+4*a^2+13666308*a^2*c", domain, LEX, vars);
+//        a = a.multiply(gcd);
+//        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD16() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(9607987);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("8+3*a+6*a^2*b*c^2+6*a^2*b^2*c", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("6*b^2+8*b^2*c+9607986*a*b+a*b*c^2+a^2*c+2*a^2*b+7*a^2*b*c^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("6*b*c+6*a*b*c+9607979*a*b^2*c^2+3*a*b^3*c^3+9607982*a^3*b^3", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD17() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(9607987);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("6998457+9068733*c+9042619*c^2+1283895*c^3+3738482*c^4+4888116*c^5+5574926*b+6161435*b*c+3428490*b*c^2+1423636*b*c^3+7718978*b*c^4+9607957*b*c^5+5803370*b^2+3797801*b^2*c+1899022*b^2*c^2+1286548*b^2*c^3+6635895*b^3+1871925*b^3*c+2687295*b^3*c^2+9406093*b^3*c^3+3101467*b^4+8800611*b^4*c+5291877*b^4*c^2+18*b^4*c^3", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("4572338+8988826*c+5700575*c^2+6517458*c^3+7602268*b+8674751*b*c+4253585*b*c^2+9607947*b*c^3+1248945*b^2+3165308*b^2*c+9363637*b^3+9338813*b^3*c+8757270*b^4+24*b^4*c", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("1", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD_random1() throws Exception {
+        RandomGenerator rnd = getRandom();
+        int nVarsMin = 3, nVarsMax = 4, minDegree = 2, maxDegree = 3, minSize = 5, maxSize = 7;
+        int nIterations = its(100, 1000);
+
+        DescriptiveStatistics
+                zippel = new DescriptiveStatistics(),
+                brown = new DescriptiveStatistics(),
+                ezgcd = new DescriptiveStatistics();
+
+        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        for (int n = 0; n < nIterations; n++) {
+            if (n == nIterations / 10) {
+                zippel.clear(); brown.clear(); ezgcd.clear();
+            }
+            if (n % 10 == 0)
+                System.out.println(n);
+
+            GCDTriplet data = sampleData.nextSample(false, false);
+            lMultivariatePolynomialZp
+                    actual = MultivariatePolynomial.asLongPolyZp(data.gcd),
+                    gcdZippel = null, gcdBrown = null, gcdEZ = null;
+            try {
+                PrivateRandom.getRandom().setSeed(n);
+                long start = System.nanoTime();
+                lMultivariatePolynomialZp a = MultivariatePolynomial.asLongPolyZp(data.aGCD);
+                lMultivariatePolynomialZp b = MultivariatePolynomial.asLongPolyZp(data.bGCD);
+                gcdZippel = ZippelGCD(a, b);
+                zippel.addValue(System.nanoTime() - start);
+
+                start = System.nanoTime();
+                gcdBrown = BrownGCD(a, b);
+                brown.addValue(System.nanoTime() - start);
+
+//                System.out.println(n);
+//                System.out.println(a.domain);
+//                System.out.println(data.a);
+//                System.out.println(data.b);
+//                System.out.println(actual);
+
+                PrivateRandom.getRandom().setSeed(n);
+                start = System.nanoTime();
+                gcdEZ = EZGCD(a, b);
+                ezgcd.addValue(System.nanoTime() - start);
+
+
+                assertTrue(dividesQ(gcdZippel, actual));
+                assertTrue(dividesQ(gcdBrown, actual));
+                assertTrue(dividesQ(gcdEZ, actual));
+            } catch (Throwable e) {
+                System.out.println("rnd seed : " + n);
+                System.out.println("domain: " + data.domain);
+                System.out.println("a: " + data.a);
+                System.out.println("b: " + data.b);
+                System.out.println("gcd : " + data.gcd);
+                System.out.println("gcdActual : " + gcdZippel);
+                throw e;
+            }
+        }
+        System.out.println("Zippel: " + TimeUnits.statisticsNanotime(zippel));
+        System.out.println("Brown: " + TimeUnits.statisticsNanotime(brown));
+        System.out.println("EZGCD: " + TimeUnits.statisticsNanotime(ezgcd));
     }
 
     private static lMultivariatePolynomialZp setZeroes(lMultivariatePolynomialZp poly, BitSet zeroes) {

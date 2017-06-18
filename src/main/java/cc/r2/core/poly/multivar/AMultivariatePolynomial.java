@@ -302,6 +302,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return -1 if this poly is not effectively univariate or variable in which it is univariate
      */
     public final int univariateVariable() {
+        if (isConstant())
+            return 0;
         int[] degrees = degrees();
         int var = -1;
         for (int i = 0; i < nVariables; i++) {

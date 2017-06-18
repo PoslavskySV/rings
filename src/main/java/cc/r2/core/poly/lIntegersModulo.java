@@ -133,6 +133,9 @@ public final class lIntegersModulo {
     }
 
     @Override
+    public String toString() {return "Z/" + modulus;}
+
+    @Override
     public int hashCode() {
         return (int) (modulus^(modulus >>> 32));
     }

@@ -52,8 +52,10 @@ public final class HenselLifting {
             liftPair0(base, a, b, null, null);
         else {
             // imposing leading coefficients
-            lMultivariatePolynomialZp lcCorrection = modImage(lc.clone(), 1);
-            assert lcCorrection.isConstant();
+            lMultivariatePolynomialZp lcCorrection = lc.ccAsPoly();
+
+            assert a.lt().exponents[0] == a.degree(0);
+            assert b.lt().exponents[0] == b.degree(0);
 
             a.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
             b.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
@@ -66,7 +68,7 @@ public final class HenselLifting {
         }
     }
 
-    private static lMultivariatePolynomialZp primitivePart(lMultivariatePolynomialZp poly) {
+     static lMultivariatePolynomialZp primitivePart(lMultivariatePolynomialZp poly) {
         if (poly.nVariables == 2)
             // univariate GCDs will be used for calculation of primitive part
             return toSparseRepresentation(poly, toDenseRepresentation(poly).primitivePart());
@@ -106,7 +108,7 @@ public final class HenselLifting {
         // a and b are coprime univariate polynomials over x1
         // we lift them up to the solution in (x1, x2)
 
-        assert a.univariateVariable() == 0 && b.univariateVariable() == 0;
+        assert a.univariateVariable() == 0 && b.univariateVariable() == 0 : a.univariateVariable() + "  " + b.univariateVariable();
         assert modImage(base.clone(), 1).equals(a.clone().multiply(b));
 
         lUnivariatePolynomialZp
@@ -137,7 +139,7 @@ public final class HenselLifting {
                 uaInvMod = fastDivisionPreConditioningWithLCCorrection(ua);
 
         int maxDegree = ArraysUtil.sum(base.degrees(), 1);
-        for (int degree = 1; degree < maxDegree; ++degree) {
+        for (int degree = 1; degree <= maxDegree; ++degree) {
             // reduce a and b mod degree to make things faster
             lMultivariatePolynomialZp
                     aMod = a.clone(),

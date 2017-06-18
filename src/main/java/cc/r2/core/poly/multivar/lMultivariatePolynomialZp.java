@@ -657,6 +657,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return a new multivariate polynomial with {@code 0} substituted for all specified {@code variables}
      */
     public lMultivariatePolynomialZp evaluateAtZero(int[] variables) {
+        if (variables.length == 0)
+            return this.clone();
         MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
         out:
         for (lMonomialTerm el : terms) {

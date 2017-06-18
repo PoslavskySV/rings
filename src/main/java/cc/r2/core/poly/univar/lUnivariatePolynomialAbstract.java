@@ -164,7 +164,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     public final lPoly createOne() {return createConstant(1);}
 
     @Override
-    public boolean isZeroAt(int i) {return data[i] == 0;}
+    public boolean isZeroAt(int i) {return i >= data.length || data[i] == 0;}
 
     /** {@inheritDoc} */
     @Override

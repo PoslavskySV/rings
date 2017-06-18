@@ -111,4 +111,23 @@ public class HenselLiftingTest {
         HenselLifting.liftPair(base, aF, bF);
         Assert.assertEquals(base, aF.clone().multiply(bF));
     }
+
+    @Test
+    public void test6() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(9607987);
+        String[] vars = {"a", "b"};
+        lMultivariatePolynomialZp
+                b = parse("1227874+3587706*b+5373508*a+7197578*a^2+a^3", domain, vars),
+                a = parse("9540707+24*a", domain, vars),
+                base = parse("7717493+597721*b+6517458*b^2+361611*a+9241048*a*b+9607947*a*b^2+3165308*a^2+9338813*a^3+24*a^4", domain, vars);
+
+        assert MultivariateGCD.PolynomialGCD(a, b).isConstant();
+
+        lMultivariatePolynomialZp
+                aF = modImage(a.clone(), 1),
+                bF = modImage(b.clone(), 1);
+
+        HenselLifting.liftPair(base, aF, bF);
+        Assert.assertEquals(base, aF.clone().multiply(bF));
+    }
 }
