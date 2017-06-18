@@ -465,7 +465,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public boolean isOne() {
-        return size() == 1 && domain.isOne(terms.first().coefficient);
+        if (size() != 1)
+            return false;
+        MonomialTerm<E> lt = terms.first();
+        return lt.isZeroVector() && domain.isOne(lt.coefficient);
     }
 
     @Override

@@ -16,6 +16,7 @@ import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.multivar.MonomialTerm.*;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
 import static cc.r2.core.poly.multivar.MultivariateReduction.divideAndRemainder;
+import static cc.r2.core.poly.multivar.MultivariateReduction.dividesQ;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static org.junit.Assert.*;
 
@@ -149,6 +150,13 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
         dividend = dividend.setDomain(domain);
         divider = divider.setDomain(domain);
         assertQuotientReminder(divideAndRemainder(dividend, divider), dividend, divider);
+    }
+
+    @Test
+    public void test10() throws Exception {
+        MultivariatePolynomial<BigInteger> dividend = parse("738*b^18*c^20+28*b^26*c^14+393*a*b^8*c^13+32*a*b^13*c^16+32*a*b^16*c^7+377*a*b^18*c^17+24*a*b^21*c^10+20*a*b^26*c^11+722*a^2*b^9*c^18+42*a^2*b^11*c^25+16*a^2*b^17*c^12+49*a^2*b^24*c^23+48*a^3*b*c^18+36*a^3*b^6*c^21+30*a^3*b^11*c^22+56*a^3*b^14*c^16+361*a^3*b^18*c^14+42*a^3*b^19*c^19+35*a^3*b^24*c^20+8*a^3*b^26*c^8+24*a^4*b^2*c^23+28*a^4*b^15*c^21+12*a^5*b^11*c^19+14*a^5*b^24*c^17+393*a^6*b^8*c^15+623*a^6*b^8*c^17+32*a^6*b^16*c^9+730*a^6*b^16*c^11+262*a^7*b^10*c^17+393*a^7*b^12*c^22+722*a^7*b^18*c^11+32*a^7*b^20*c^16+42*a^7*b^27*c^25+48*a^8*b*c^20+44*a^8*b*c^22+377*a^8*b^14*c^14+56*a^8*b^14*c^18+752*a^8*b^14*c^20+48*a^8*b^17*c^18+20*a^8*b^22*c^8+36*a^8*b^22*c^21+30*a^8*b^27*c^22+32*a^9*b^3*c^22+48*a^9*b^5*c^27+738*a^9*b^16*c^20+968*a^9*b^17*c^18+24*a^9*b^18*c^23+56*a^9*b^18*c^25+726*a^9*b^25*c^12+14*a^9*b^29*c^8+30*a^10*b^7*c^19+7*a^10*b^13*c^24+16*a^10*b^19*c+35*a^10*b^20*c^17+12*a^10*b^24*c^4+12*a^10*b^27*c^19+10*a^10*b^29*c^5+8*a^11*b^3*c^17+706*a^11*b^7*c^22+6*a^11*b^8*c^20+38*a^11*b^10*c^23+5*a^11*b^13*c^21+4*a^11*b^15*c^16+8*a^11*b^20*c^6+745*a^11*b^23*c^21+4*a^12*b^4*c^22+4*a^12*b^29*c^2+6*a^13*c^27+2*a^13*b^13*c^18+7*a^13*b^13*c^25+48*a^13*b^17*c^20+44*a^13*b^17*c^22+32*a^14*b^19*c^22+48*a^14*b^21*c^27+35*a^15*b^18*c^11+16*a^15*b^19*c^3+365*a^15*b^19*c^5+30*a^15*b^23*c^19+8*a^16*b^3*c^19+708*a^16*b^3*c^21+40*a^16*b^8*c^4+30*a^16*b^13*c^7+25*a^16*b^18*c^8+361*a^16*b^21*c^5+16*a^16*b^23*c^10+38*a^16*b^26*c^23+706*a^17*b^5*c^21+8*a^17*b^7*c^26+20*a^17*b^9*c^9+10*a^17*b^25*c^2+5*a^18*b^9*c^18+6*a^18*b^16*c^27+10*a^18*b^18*c^5+49*a^18*b^23*c^20+363*a^18*b^28*c^6+707*a^19*b^12*c^22+56*a^19*b^13*c^13+42*a^19*b^18*c^16+35*a^19*b^23*c^17+28*a^20*b^14*c^18+2*a^20*b^18*c^10+a^21*b^2*c^26+40*a^21*b^8*c^6+387*a^21*b^8*c^8+14*a^21*b^23*c^14+377*a^22*b^10*c^8+40*a^22*b^12*c^13+25*a^23*b^14*c^5+56*a^24*b^13*c^15+752*a^24*b^13*c^17+382*a^24*b^17*c^9+738*a^25*b^15*c^17+56*a^25*b^17*c^22+5*a^26*b^7*c^13+35*a^26*b^19*c^14+745*a^27*b^22*c^18+7*a^29*b^12*c^22");
+        MultivariatePolynomial<BigInteger> divider = parse("b", "a", "b", "c");
+        assertFalse(dividesQ(dividend, divider));
     }
 
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,

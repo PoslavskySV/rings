@@ -468,7 +468,10 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
     @Override
     public boolean isOne() {
-        return size() == 1 && terms.first().coefficient == 1;
+        if (size() != 1)
+            return false;
+        lMonomialTerm lt = terms.first();
+        return lt.isZeroVector() && lt.coefficient == 1L;
     }
 
     @Override
