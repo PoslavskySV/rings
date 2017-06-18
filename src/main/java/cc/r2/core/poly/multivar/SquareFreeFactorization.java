@@ -27,11 +27,12 @@ public final class SquareFreeFactorization {
         return poly.arrayNewInstance(constantContent, poly.create(monomialContent));
     }
 
+    @SuppressWarnings("unchecked")
     private static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly poly, Poly[] arr) {
-        Poly gcd = MultivariateGCD.PolynomialGCD(poly, arr[0]);
-        for (int i = 1; i < arr.length; i++)
-            gcd = MultivariateGCD.PolynomialGCD(gcd, arr[i]);
-        return gcd;
+        Poly[] all = (Poly[]) poly.arrayNewInstance(arr.length + 1);
+        all[0] = poly;
+        System.arraycopy(arr, 0, all, 1, arr.length);
+        return MultivariateGCD.PolynomialGCD(all);
     }
 
     /**

@@ -20,6 +20,7 @@ import gnu.trove.set.hash.TLongHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
@@ -34,6 +35,97 @@ import static cc.r2.core.util.ArraysUtil.negate;
  */
 public final class MultivariateGCD {
     private MultivariateGCD() {}
+
+    /**
+     * Calculates greatest common divisor for array of polynomials
+     *
+     * @param arr set of polynomials
+     * @return the gcd
+     */
+    public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly[] arr) {
+        return PolynomialGCD(arr, MultivariateGCD::PolynomialGCD);
+    }
+
+    /**
+     * Calculates greatest common divisor for array of polynomials
+     *
+     * @param arr       set of polynomials
+     * @param algorithm gcd algorithm
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly[] arr, BiFunction<Poly, Poly, Poly> algorithm) {
+        //choose poly of minimal total degree
+        int iMin = 0, degSum = arr[0].degreeSum();
+        for (int i = 1; i < arr.length; ++i) {
+            int t = arr[i].degreeSum();
+            if (t < degSum) {
+                iMin = i;
+                degSum = t;
+            }
+        }
+
+        ArraysUtil.swap(arr, 0, iMin);
+        AMultivariatePolynomial
+                a = arr[0],
+                b = arr[1].clone();
+
+        RandomGenerator rnd = PrivateRandom.getRandom();
+        for (int i = 2; i < arr.length; i++) {
+            long factor;
+            do { factor = rnd.nextInt(2048); } while (factor == 0);
+            b = b.add((AMultivariatePolynomial) arr[i].clone().multiply(factor));
+        }
+
+        AMultivariatePolynomial gcd = algorithm.apply((Poly) a, (Poly) b);
+        if (gcd.isConstant()) {
+            ArraysUtil.swap(arr, 0, iMin); // <-restore
+            return (Poly) gcd;
+        }
+
+        ArrayList<AMultivariatePolynomial> remainders = new ArrayList<>();
+        for (int i = 1; i < arr.length; i++) {
+            if (!dividesQ(arr[i], gcd))
+                remainders.add(arr[i]);
+        }
+
+        if (!remainders.isEmpty()) {
+            remainders.add(gcd);
+            gcd = PolynomialGCD((Poly[]) remainders.toArray((Poly[]) a.arrayNewInstance(remainders.size())), algorithm);
+        }
+
+        ArraysUtil.swap(arr, 0, iMin); // <-restore
+        return (Poly) gcd;
+    }
+
+    /**
+     * Calculates greatest common divisor for array of polynomials
+     *
+     * @param arr set of polynomials
+     * @return the gcd
+     */
+    public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Iterable<Poly> arr) {
+        return PolynomialGCD(arr, MultivariateGCD::PolynomialGCD);
+    }
+
+    /**
+     * Calculates greatest common divisor for array of polynomials
+     *
+     * @param arr       set of polynomials
+     * @param algorithm gcd algorithm
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Iterable<Poly> arr, BiFunction<Poly, Poly, Poly> algorithm) {
+        Iterator<Poly> iterator = arr.iterator();
+        ArrayList<Poly> list = new ArrayList<>();
+        while (iterator.hasNext())
+            list.add(iterator.next());
+        if (list.isEmpty())
+            throw new IllegalArgumentException("Empty iterable");
+        Poly[] array = (Poly[]) list.get(0).arrayNewInstance(list.size());
+        return PolynomialGCD(list.toArray(array), algorithm);
+    }
 
     /**
      * Calculates greatest common divisor for two multivariate polynomials
@@ -360,6 +452,28 @@ public final class MultivariateGCD {
         return new PrimitiveInput(a, b, contentGCD, lcGCD);
     }
 
+    /** coefficients specified variable as multivariate polynomials */
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly[] multivariateCoefficients(Poly poly, int variable) {
+        return Arrays.stream(poly.degrees(variable)).mapToObj(d -> poly.coefficientOf(variable, d)).toArray(poly::arrayNewInstance);
+    }
+
+    /** gcd of content of a and b with respect to specified variable */
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly contentGCD(Poly a, Poly b, int variable, BiFunction<Poly, Poly, Poly> algorithm) {
+        Poly[] aCfs = multivariateCoefficients(a, variable);
+        Poly[] bCfs = multivariateCoefficients(b, variable);
+
+        Poly[] all = a.arrayNewInstance(aCfs.length + bCfs.length);
+        System.arraycopy(aCfs, 0, all, 0, aCfs.length);
+        System.arraycopy(bCfs, 0, all, aCfs.length, bCfs.length);
+
+        Poly gcd = PolynomialGCD(all, algorithm);
+        assert dividesQ(a, gcd);
+        assert dividesQ(b, gcd);
+        return gcd;
+    }
+
     /* =========================================== Multivariate GCD over Z ========================================== */
 
     /**
@@ -634,7 +748,7 @@ public final class MultivariateGCD {
         a.checkSameDomainWith(b);
         a.checkSameDomainWith(skeleton);
 
-        lMultivariatePolynomialZp content = ZippelContentGCD(a, b, 0);
+        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
         a = divideExact(a, content);
         b = divideExact(b, content);
         skeleton = divideSkeletonExact(skeleton, content);
@@ -1024,7 +1138,7 @@ public final class MultivariateGCD {
         a.checkSameDomainWith(b);
         a.checkSameDomainWith(skeleton);
 
-        MultivariatePolynomial<E> content = ZippelContentGCD(a, b, 0);
+        MultivariatePolynomial<E> content = contentGCD(a, b, 0, MultivariateGCD::ZippelGCD);
         a = divideExact(a, content);
         b = divideExact(b, content);
         skeleton = divideSkeletonExact(skeleton, content);
@@ -1245,7 +1359,7 @@ public final class MultivariateGCD {
 
         // content in the main variable => avoid raise condition in LINZIP!
         // see Example 4 in "Algorithms for the non-monic case of the sparse modular GCD algorithm"
-        MultivariatePolynomial<E> content = ZippelContentGCD(a, b, 0);
+        MultivariatePolynomial<E> content = contentGCD(a, b, 0, MultivariateGCD::ZippelGCD);
         a = divideExact(a, content);
         b = divideExact(b, content);
 
@@ -1257,43 +1371,6 @@ public final class MultivariateGCD {
 
         result = result.multiply(content);
         return gcdInput.restoreGCD(result);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <E> MultivariatePolynomial<E>[] multivariateCoefficients(
-            MultivariatePolynomial<E> a,
-            int variable) {
-        MultivariatePolynomial[] mCfs = Arrays.stream(a.degrees(variable))
-                .mapToObj(d -> a.coefficientOf(variable, d))
-                .filter(poly -> !poly.isZero())
-                .toArray(MultivariatePolynomial[]::new);
-        int minSizeCoefficient = 0;
-        int minSize = Integer.MAX_VALUE;
-        for (int i = 0; i < mCfs.length; i++) {
-            //if (mCfs[i].isZero())
-            //    throw new RuntimeException();
-
-            if (mCfs[i].size() < minSize) {
-                minSize = mCfs[i].size();
-                minSizeCoefficient = i;
-            }
-        }
-        ArraysUtil.swap(mCfs, 0, minSizeCoefficient);
-        return mCfs;
-    }
-
-    static <E> MultivariatePolynomial<E> ZippelContentGCD(
-            MultivariatePolynomial<E> a, MultivariatePolynomial<E> b,
-            int variable) {
-        MultivariatePolynomial<E>[] aCfs = multivariateCoefficients(a, variable);
-        MultivariatePolynomial<E>[] bCfs = multivariateCoefficients(b, variable);
-
-        MultivariatePolynomial<E> contentGCD = ZippelGCD(aCfs[0], bCfs[0]);
-        for (int i = 1; i < aCfs.length; i++)
-            contentGCD = ZippelGCD(aCfs[i], contentGCD);
-        for (int i = 1; i < bCfs.length; i++)
-            contentGCD = ZippelGCD(bCfs[i], contentGCD);
-        return contentGCD;
     }
 
     /** Maximal number of fails before switch to a new homomorphism */
@@ -2207,7 +2284,7 @@ public final class MultivariateGCD {
 
         // content in the main variable => avoid raise condition in LINZIP!
         // see Example 4 in "Algorithms for the non-monic case of the sparse modular GCD algorithm"
-        lMultivariatePolynomialZp content = ZippelContentGCD(a, b, 0);
+        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::ZippelGCD);
         a = divideExact(a, content);
         b = divideExact(b, content);
 
@@ -2219,39 +2296,6 @@ public final class MultivariateGCD {
 
         result = result.multiply(content);
         return gcdInput.restoreGCD(result);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static lMultivariatePolynomialZp[] multivariateCoefficients(
-            lMultivariatePolynomialZp a,
-            int variable) {
-        lMultivariatePolynomialZp[] mCfs = Arrays.stream(a.degrees(variable)).mapToObj(d -> a.coefficientOf(variable, d)).toArray(lMultivariatePolynomialZp[]::new);
-        int minSizeCoefficient = 0;
-        int minSize = Integer.MAX_VALUE;
-        for (int i = 0; i < mCfs.length; i++) {
-            if (mCfs[i].isZero())
-                throw new RuntimeException();
-            if (mCfs[i].size() < minSize) {
-                minSize = mCfs[i].size();
-                minSizeCoefficient = i;
-            }
-        }
-        ArraysUtil.swap(mCfs, 0, minSizeCoefficient);
-        return mCfs;
-    }
-
-    static lMultivariatePolynomialZp ZippelContentGCD(
-            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b,
-            int variable) {
-        lMultivariatePolynomialZp[] aCfs = multivariateCoefficients(a, variable);
-        lMultivariatePolynomialZp[] bCfs = multivariateCoefficients(b, variable);
-
-        lMultivariatePolynomialZp contentGCD = ZippelGCD(aCfs[0], bCfs[0]);
-        for (int i = 1; i < aCfs.length; i++)
-            contentGCD = ZippelGCD(aCfs[i], contentGCD);
-        for (int i = 1; i < bCfs.length; i++)
-            contentGCD = ZippelGCD(bCfs[i], contentGCD);
-        return contentGCD;
     }
 
     @SuppressWarnings("unchecked")
@@ -2952,29 +2996,13 @@ public final class MultivariateGCD {
         a = gcdInput.aReduced;
         b = gcdInput.bReduced;
 
-        // content in the main variable => avoid raise condition in LINZIP!
-        // see Example 4 in "Algorithms for the non-monic case of the sparse modular GCD algorithm"
-        lMultivariatePolynomialZp content = EZContentGCD(a, b, 0);
+        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::EZGCD);
         a = divideExact(a, content);
         b = divideExact(b, content);
 
         lMultivariatePolynomialZp result = EZGCD0(a, b, PrivateRandom.getRandom());
         result = result.multiply(content);
         return gcdInput.restoreGCD(result);
-    }
-
-    static lMultivariatePolynomialZp EZContentGCD(
-            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b,
-            int variable) {
-        lMultivariatePolynomialZp[] aCfs = multivariateCoefficients(a, variable);
-        lMultivariatePolynomialZp[] bCfs = multivariateCoefficients(b, variable);
-
-        lMultivariatePolynomialZp contentGCD = EZGCD(aCfs[0], bCfs[0]);
-        for (int i = 1; i < aCfs.length; i++)
-            contentGCD = EZGCD(aCfs[i], contentGCD);
-        for (int i = 1; i < bCfs.length; i++)
-            contentGCD = EZGCD(bCfs[i], contentGCD);
-        return contentGCD;
     }
 
     private static lMultivariatePolynomialZp EZGCD0(

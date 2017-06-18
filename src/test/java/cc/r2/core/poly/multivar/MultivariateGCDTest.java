@@ -1062,6 +1062,16 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testModularGCD8() throws Exception {
+        PrivateRandom.getRandom().setSeed(48);
+        MultivariatePolynomial<BigInteger>
+                a = parse("8*a*b^19*c^11+8*a^3*b^4*c^9+7*a^3*b^10*c^12+3*a^5*b^14*c^21+7*a^9*b^21*c+8*a^10*b^8*c^5+a^14*b^21*c^12+15477328*a^21*b^20*c^8"),
+                b = parse("15477335*b^8*c^4+7*b^9*c^8+15477332*a^3*b^13*c^4+15477335*a^9*b^13*c^6+15477328*a^12*c^9"),
+                gcd = parse("15477332*a^10*b^13*c^5+7*a^14*b^5*c^3+6*a^19*b^12*c^5+2*a^19*b^12*c^13+15477329*a^20*b*c^19+15477332*a^20*b^8*c^12+7*a^21*b^8*c^2");
+        assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
+    }
+
+    @Test
     public void testModularGCD_random1() throws Exception {
         int nIterations = its(1000, 3000);
         RandomGenerator rnd = getRandom();
@@ -1113,6 +1123,16 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             assertTrue(dividesQ(ModularGCD(a, b), gcd));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
+
+
+        //        7ms
+        //        194ms
+        //
+        //        11ms
+        //        161ms
+        //
+        //        8ms
+        //        138ms
     }
 
     @Test
@@ -1272,6 +1292,23 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             }
         }
         System.out.println(stats);
+    }
+
+    @Test
+    public void testMultipleGCD1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
+        lMultivariatePolynomialZp
+                gcd = lMultivariatePolynomialZp.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, LEX),
+                arr[] = {
+                        lMultivariatePolynomialZp.parse("c*b*a^2 + b^2 + c + b*a^15 + d", domain, LEX).multiply(gcd),
+                        lMultivariatePolynomialZp.parse("a^12 + 2*b^12 + 2*c + c*a^5 + d*a", domain, LEX).multiply(gcd),
+                        lMultivariatePolynomialZp.parse("a^2 + 2*b^12 + 2*c + c*a^5 + d*a", domain, LEX).multiply(gcd),
+                        lMultivariatePolynomialZp.parse("a^12 - 2*b^2 + 2*c^3 + c*a^5 + d*a", domain, LEX).multiply(gcd),
+                        lMultivariatePolynomialZp.parse("b^12 - 2*b^2 + 2*c^3 + c*a^5 + d*a", domain, LEX).multiply(gcd)
+                };
+
+        lMultivariatePolynomialZp aGcd = MultivariateGCD.PolynomialGCD(arr);
+        assertEquals(gcd, aGcd);
     }
 
     @Test

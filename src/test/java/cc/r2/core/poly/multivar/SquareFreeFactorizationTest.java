@@ -48,11 +48,23 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
                 c = MultivariatePolynomial.parse("z*y^2*x^2 - 2*y^3*x - 1234*z^7*x^12*y^13", domain),
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
+        lMultivariatePolynomialZp lPoly = MultivariatePolynomial.asLongPolyZp(poly);
         for (int i = 0; i < its(1, 5); i++) {
             long start = System.nanoTime();
-            assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationMusser(poly));
+            assertFactorization(lPoly, SquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
+
+//        905ms
+//        877ms
+//        911ms
+//        694ms
+//        684ms
+//        729ms
+//        854ms
+//        891ms
+//        805ms
+//        613ms
     }
 
     public static <T extends IGeneralPolynomial<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {

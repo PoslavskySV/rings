@@ -284,10 +284,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return sum of {@link #degrees()}
      */
     public final int degreeSum() {
-        int r = 0;
-        for (int d : degrees())
-            r += d;
-        return r;
+        return ArraysUtil.sum(degrees());
     }
 
     /**
