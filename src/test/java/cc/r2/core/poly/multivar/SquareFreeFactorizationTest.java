@@ -29,13 +29,14 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             long start = System.nanoTime();
             FactorDecomposition<MultivariatePolynomial<BigInteger>> yun = SquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics(poly);
             System.out.println("Yun: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertFactorization(poly, yun);
 
             start = System.nanoTime();
             FactorDecomposition<MultivariatePolynomial<BigInteger>> mus = SquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
             System.out.println("Musser: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
 
-            assertFactorization(poly, yun);
-            Assert.assertEquals(yun, mus);
+            assertFactorization(poly, mus);
+            Assert.assertEquals(yun.size(), mus.size());
         }
     }
 
