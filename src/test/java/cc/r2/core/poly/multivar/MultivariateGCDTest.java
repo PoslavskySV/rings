@@ -1303,35 +1303,6 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void testEZGCD1() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
-        lMultivariatePolynomialZp
-                a = lMultivariatePolynomialZp.parse("c*b*a^2 + b^2 + c + b*a^15 + d", domain, LEX),
-                b = lMultivariatePolynomialZp.parse("a^12 + 2*b^12 + 2*c + c*a^5 + d*a", domain, LEX),
-                gcd = lMultivariatePolynomialZp.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, LEX);
-        a = a.multiply(gcd);
-        b = b.multiply(gcd);
-
-        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
-    }
-
-    @Test
-    public void testEZGCD2() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
-        lMultivariatePolynomialZp
-
-                u = lMultivariatePolynomialZp.parse("c*b*a + b^2 + c + b*a^2 + 1", domain, LEX),
-                v = lMultivariatePolynomialZp.parse("2 + a^2 + 2*b^2 + 2*c + c*a^2 + a", domain, LEX),
-                a = u.clone().square().multiply(u).multiply(v),
-                b = v.clone().square().multiply(u),
-                gcd = lMultivariatePolynomialZp.parse("c*a + b + a + c*a^3 + b*c*a^2 + c*a", domain, LEX)
-                        .multiply(u).multiply(v).multiply(v);
-        a = a.multiply(gcd);
-        b = b.multiply(gcd);
-        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
-    }
-
-    @Test
     public void testCommonZeroes1() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
         lMultivariatePolynomialZp
@@ -1397,6 +1368,35 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void testEZGCD1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("c*b*a^2 + b^2 + c + b*a^15 + d", domain, LEX),
+                b = lMultivariatePolynomialZp.parse("a^12 + 2*b^12 + 2*c + c*a^5 + d*a", domain, LEX),
+                gcd = lMultivariatePolynomialZp.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, LEX);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD2() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
+        lMultivariatePolynomialZp
+
+                u = lMultivariatePolynomialZp.parse("c*b*a + b^2 + c + b*a^2 + 1", domain, LEX),
+                v = lMultivariatePolynomialZp.parse("2 + a^2 + 2*b^2 + 2*c + c*a^2 + a", domain, LEX),
+                a = u.clone().square().multiply(u).multiply(v),
+                b = v.clone().square().multiply(u),
+                gcd = lMultivariatePolynomialZp.parse("c*a + b + a + c*a^3 + b*c*a^2 + c*a", domain, LEX)
+                        .multiply(u).multiply(v).multiply(v);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
     @Test

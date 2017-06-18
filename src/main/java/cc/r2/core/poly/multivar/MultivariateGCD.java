@@ -3280,7 +3280,6 @@ public final class MultivariateGCD {
         final RandomGenerator rnd;
         // actual number of variables in use [0, ... nVariables] (may be less than a.nVariables)
         final int nVariables;
-        final int[] variables;
         // variables in which both cc and lc in a and b are non zeroes
         final TIntArrayList perfectVariables = new TIntArrayList();
 
@@ -3292,7 +3291,6 @@ public final class MultivariateGCD {
             this.b = b;
             this.rnd = rnd;
             this.nVariables = nVariables;
-            this.variables = new int[nVariables - 1];
 
             // search for main variables
             for (int var = 0; var < nVariables; ++var) {
@@ -3358,7 +3356,7 @@ public final class MultivariateGCD {
             if (baseVariable == -1 || nAttemptsWithSameBaseVariable > 8) {
                 if (usedBaseVariables.size() == nVariables)
                     usedBaseVariables.clear();
-                nAttemptsWithSameBaseVariable = 0;
+                nAttemptsWithSameBaseVariable = nAttemptsWithZeros = 0;
                 ZeroVariables maxZeros = null;
                 for (int var = 0; var < nVariables; ++var) {
                     if (usedBaseVariables.contains(var))
@@ -3410,11 +3408,11 @@ public final class MultivariateGCD {
                 }
                 shifts = new long[shiftingVariables.length];
 
-                aReduced = AMultivariatePolynomial.swapVariables(a, 0, baseVariable);
-                bReduced = AMultivariatePolynomial.swapVariables(b, 0, baseVariable);
-
                 changedMainVariable = previousBaseVariable != baseVariable;
             }
+
+            aReduced = AMultivariatePolynomial.swapVariables(a, 0, baseVariable);
+            bReduced = AMultivariatePolynomial.swapVariables(b, 0, baseVariable);
 
             if (nAttemptsWithZeros > 2 && zeroVariables.length != 0) {
                 // fill with some value some zero variable
