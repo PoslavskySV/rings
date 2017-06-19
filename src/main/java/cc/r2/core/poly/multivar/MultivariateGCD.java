@@ -1772,7 +1772,7 @@ public final class MultivariateGCD {
 
                     assert gcdUnivar.isMonic();
                     if (!univarSkeleton.keySet().containsAll(gcdUnivar.exponents()))
-                        // univariate gcd contain terms that are not present in the skeleton
+                        // univariate gcd contains terms that are not present in the skeleton
                         // again unlucky main homomorphism
                         return null;
 
@@ -1898,7 +1898,7 @@ public final class MultivariateGCD {
 
                 assert gcdUnivar.isMonic();
                 if (!univarSkeleton.keySet().containsAll(gcdUnivar.exponents()))
-                    // univariate gcd contain terms that are not present in the skeleton
+                    // univariate gcd contains terms that are not present in the skeleton
                     // again unlucky main homomorphism
                     return null;
 
@@ -2691,7 +2691,7 @@ public final class MultivariateGCD {
 
                     assert gcdUnivar.isMonic();
                     if (!univarSkeleton.keySet().containsAll(gcdUnivar.exponents()))
-                        // univariate gcd contain terms that are not present in the skeleton
+                        // univariate gcd contains terms that are not present in the skeleton
                         // again unlucky main homomorphism
                         return null;
 
@@ -2821,7 +2821,7 @@ public final class MultivariateGCD {
 
                 assert gcdUnivar.isMonic();
                 if (!univarSkeleton.keySet().containsAll(gcdUnivar.exponents()))
-                    // univariate gcd contain terms that are not present in the skeleton
+                    // univariate gcd contains terms that are not present in the skeleton
                     // again unlucky main homomorphism
                     return null;
 

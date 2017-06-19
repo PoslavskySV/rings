@@ -887,14 +887,17 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void testSparseInterpolation_random2() throws Exception {
         int nIterations = its(500, 1000);
+        int badEvaluations = 0;
         RandomGenerator rnd = getRandom();
         TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
             GCDTriplet gcdTriplet = sampleData.nextSample(false, false).asZ();
             lMultivariatePolynomialZp skeleton = null, gcd = null, actual = null;
+            IntegersModulo domain = null, domain1 = null;
+            long seed = -1;
             try {
 
-                IntegersModulo domain = new IntegersModulo(getModulusRandom(20));
+                domain = new IntegersModulo(getModulusRandom(20));
                 lMultivariatePolynomialZp
                         la = asLongPolyZp(gcdTriplet.aGCD.setDomain(domain)),
                         lb = asLongPolyZp(gcdTriplet.bGCD.setDomain(domain));
@@ -904,7 +907,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                     --n; continue;
                 }
 
-                IntegersModulo domain1 = new IntegersModulo(getModulusRandom(20));
+                domain1 = new IntegersModulo(getModulusRandom(20));
                 lMultivariatePolynomialZp
                         la1 = asLongPolyZp(gcdTriplet.aGCD.setDomain(domain1)),
                         lb1 = asLongPolyZp(gcdTriplet.bGCD.setDomain(domain1));
@@ -914,17 +917,28 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                     --n; continue;
                 }
 
+                rnd.setSeed(seed = rnd.nextLong());
                 actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.domain), rnd);
+                if (actual == null) {
+                    ++badEvaluations;
+                    // bad evaluation point => try over
+                    actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.domain), rnd);
+                }
                 assertEquals(gcd.monic(), actual.monic());
             } catch (Throwable thr) {
+                System.out.println(seed);
                 System.out.println(gcdTriplet.domain);
                 System.out.println(gcdTriplet.a);
                 System.out.println(gcdTriplet.b);
+                System.out.println(gcdTriplet.gcd);
+                System.out.println(domain);
+                System.out.println(domain1);
                 System.out.println(skeleton);
                 System.out.println(actual);
                 throw thr;
             }
         }
+        System.out.println("Bad evaluations: " + badEvaluations);
     }
 
     @Ignore
@@ -980,6 +994,42 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp intrp = interpolateGCD(la, lb, lgcd, rnd);
         if (intrp != null)
             assertEquals(lgcd.monic(), intrp.monic());
+    }
+
+    @Test
+    public void testSparseInterpolation7() throws Exception {
+        MultivariatePolynomial<BigInteger>
+                a = parse("7*b*c^4*d^6+9*a^2*b*c^8*d^7*e^7+7*a^2*b^6*c^8*d^3*e+8*a^3*c^2*d^6*e^4+7*a^3*b^5*c^7*d^6*e^4+a^4*b^3*c^5*d^8*e^5+25732656*a^5*c^4*d^2*e^3+9*a^5*b^2*c^6*d^5*e^4+25732652*a^6*b^3*c*d*e+25732656*a^7*b^3*c^8*d+a^7*b^3*c^8*d^2*e"),
+                b = parse("25732655*a^9*b^8*c^12*d^18*e^13+9*a^11*b^16*c^19*d^11*e^13+4*a^16*b^20*c^17*d^3*e^4+2*a^20*b^10*d^3*e^13+4*a^20*b^11*c^13*d^17*e^9"),
+                gcd = parse("3*a^2*b^17*c^14*d^6*e^14+4*a^3*b^14*c^15*d^10*e^8+25732658*a^5*b^17*c^10*d^9*e^12+8*a^6*b^10*c^4*d^3*e^10+25732659*a^6*b^10*c^7*d^5*e^15+a^7*b^2*c^3*d+6*a^9*b^9*c^10*d^6*e^5+3*a^11*b^15*c^7*d^17*e^15+25732652*a^13*b^3*c^5*d^13*e^11+2*a^13*b^12*d^2*e^16+9*a^15*b^2*c^2*d^5*e^4+2*a^15*b^2*c^14*d^14*e^14+a^15*b^13*c^8*e^12+a^16*b*c^10*d^13*e^10");
+
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+        RandomGenerator rnd = getRandom();
+
+        IntegersModulo domain = new IntegersModulo(806213L);
+        lMultivariatePolynomialZp
+                la = asLongPolyZp(a.setDomain(domain)),
+                lb = asLongPolyZp(b.setDomain(domain));
+
+        lMultivariatePolynomialZp skeleton = ZippelGCD(la, lb);
+
+        IntegersModulo domain1 = new IntegersModulo(755899L);
+        lMultivariatePolynomialZp
+                la1 = asLongPolyZp(a.setDomain(domain1)),
+                lb1 = asLongPolyZp(b.setDomain(domain1));
+
+        lMultivariatePolynomialZp gcd0 = ZippelGCD(la1, lb1);
+        System.out.println(gcd0.sameSkeleton(skeleton));
+
+        rnd.setSeed(-7756222446675659124L);
+        lMultivariatePolynomialZp actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.domain), rnd);
+        if (actual == null) {
+            System.out.println("bad evaluation");
+            // bad evaluation point => try over
+            actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.domain), rnd);
+        }
+        assertEquals(gcd0.monic(), actual.monic());
     }
 
     @Test
