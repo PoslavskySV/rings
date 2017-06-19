@@ -415,6 +415,18 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void test5c() throws Exception {
+        long modulus = Integer.MAX_VALUE;
+        for (int i = 0; i < its(10, 50); i++) {
+            lUnivariatePolynomialZp bigPoly =  this.bigPoly.setModulus(modulus);
+            long start = System.nanoTime();
+            FactorDecomposition<lUnivariatePolynomialZp> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            assertDistinctDegreeFactorization(bigPoly, ddf);
+            System.out.println("Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.domain.modulus + "): " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
     @Benchmark
     public void test5b() throws Exception {
         for (int i = 0; i < its(100, 50); i++) {

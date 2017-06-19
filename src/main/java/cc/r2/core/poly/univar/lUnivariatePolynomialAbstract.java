@@ -608,7 +608,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     /* =========================== Multiplication with safe arithmetics =========================== */
 
     /** switch to classical multiplication */
-    static final long KARATSUBA_THRESHOLD = 1024L;
+    static final long KARATSUBA_THRESHOLD = 2048L;
     /** when use Karatsuba fast multiplication */
     static final long
             MUL_CLASSICAL_THRESHOLD = 256L * 256L,
@@ -677,7 +677,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
      * @param bFrom  begin in b
      * @param bTo    end in b
      */
-    final void multiplyClassicalSafe(final long[] result, final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo) {
+    void multiplyClassicalSafe(final long[] result, final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo) {
         if (aTo - aFrom > bTo - bFrom) {
             multiplyClassicalSafe(result, b, bFrom, bTo, a, aFrom, aTo);
             return;

@@ -397,4 +397,55 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
     public lUnivariatePolynomialZp clone() {
         return new lUnivariatePolynomialZp(domain, data.clone(), degree);
     }
+
+    @Override
+    void multiplyClassicalSafe(long[] result, long[] a, int aFrom, int aTo, long[] b, int bFrom, int bTo) {
+        if (domain.modulusFits32)
+            multiplyClassicalSafeTrick(result, a, aFrom, aTo, b, bFrom, bTo);
+        else
+            super.multiplyClassicalSafe(result, a, aFrom, aTo, b, bFrom, bTo);
+    }
+
+    void multiplyClassicalSafeNoTrick(long[] result, long[] a, int aFrom, int aTo, long[] b, int bFrom, int bTo) {
+        super.multiplyClassicalSafe(result, a, aFrom, aTo, b, bFrom, bTo);
+    }
+
+    /**
+     * Classical n*m multiplication algorithm
+     *
+     * @param result where to write the result
+     * @param a      the first multiplier
+     * @param aFrom  begin in a
+     * @param aTo    end in a
+     * @param b      the second multiplier
+     * @param bFrom  begin in b
+     * @param bTo    end in b
+     */
+    final void multiplyClassicalSafeTrick(final long[] result, final long[] a, final int aFrom, final int aTo, final long[] b, final int bFrom, final int bTo) {
+        // this trick is taken from Seyed Mohammad Mahdi Javadi PhD
+        // thesis "EFFICIENT ALGORITHMS FOR COMPUTATIONS WITH SPARSE POLYNOMIALS" page 79
+        // This trick works only when modulus (so as all elements in arrays) is less
+        // than 2^32 (so modulus*modulus fits machine word).
+
+        if (aTo - aFrom > bTo - bFrom) {
+            multiplyClassicalSafeTrick(result, b, bFrom, bTo, a, aFrom, aTo);
+            return;
+        }
+
+        long p2 = domain.modulus * domain.modulus; // this is safe multiplication
+        int
+                aDegree = aTo - aFrom - 1,
+                bDegree = bTo - bFrom - 1,
+                resultDegree = aDegree + bDegree;
+
+        for (int i = 0; i <= resultDegree; ++i) {
+            long acc = 0;
+            for (int j = Math.max(0, i - bDegree), to = Math.min(i, aDegree); j <= to; ++j) {
+                if (acc > 0)
+                    acc = acc - p2;
+                acc = acc + a[aFrom + j] * b[bFrom + i - j];
+            }
+            result[i] = domain.modulus(acc);
+        }
+    }
 }

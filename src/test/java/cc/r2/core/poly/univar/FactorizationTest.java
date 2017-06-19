@@ -160,8 +160,8 @@ public class FactorizationTest extends AbstractPolynomialTest {
                 System.out.println("Z : " + TimeUnits.nanosecondsToString(timeZ));
             }
         }
-        System.out.println((timingZ));
-        System.out.println((timingZp));
+        System.out.println(TimeUnits.statisticsNanotimeFull(timingZ));
+        System.out.println(TimeUnits.statisticsNanotimeFull(timingZp));
 
 //        -XX:+AggressiveOpts
 //        DescriptiveStatistics:
