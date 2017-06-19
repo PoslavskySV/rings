@@ -3275,6 +3275,10 @@ public final class MultivariateGCD {
         return tmp.equals(minor);
     }
 
+    private static final int
+            SAME_BASE_VARIABLE_ATTEMPTS = 8,
+            ATTEMPTS_WITH_MAX_ZEROS = 2;
+
     static final class EZGCDEvaluations {
         final lMultivariatePolynomialZp a, b;
         final RandomGenerator rnd;
@@ -3353,7 +3357,7 @@ public final class MultivariateGCD {
 
             int previousBaseVariable = baseVariable;
             // try to substitute as many zeroes as possible
-            if (baseVariable == -1 || nAttemptsWithSameBaseVariable > 8) {
+            if (baseVariable == -1 || nAttemptsWithSameBaseVariable > SAME_BASE_VARIABLE_ATTEMPTS) {
                 if (usedBaseVariables.size() == nVariables)
                     usedBaseVariables.clear();
                 nAttemptsWithSameBaseVariable = nAttemptsWithZeros = 0;
@@ -3383,7 +3387,11 @@ public final class MultivariateGCD {
                     maxZeros = pZeros;
                     baseVariable = var;
                 }
-                assert maxZeros != null;
+                if (maxZeros == null) {
+                    // all free variables are bad
+                    usedBaseVariables.clear();
+                    return nextEvaluation();
+                }
                 usedBaseVariables.add(baseVariable);
 
                 // <- we chose the main variable and those that can be safely substituted with zeros
@@ -3414,7 +3422,7 @@ public final class MultivariateGCD {
             aReduced = AMultivariatePolynomial.swapVariables(a, 0, baseVariable);
             bReduced = AMultivariatePolynomial.swapVariables(b, 0, baseVariable);
 
-            if (nAttemptsWithZeros > 2 && zeroVariables.length != 0) {
+            if (nAttemptsWithZeros > ATTEMPTS_WITH_MAX_ZEROS && zeroVariables.length != 0) {
                 // fill with some value some zero variable
                 shiftingVariables = Arrays.copyOf(shiftingVariables, shiftingVariables.length + 1);
                 shiftingVariables[shiftingVariables.length - 1] = zeroVariables[zeroVariables.length - 1];
@@ -3430,7 +3438,12 @@ public final class MultivariateGCD {
                     uaDegree = aReduced.degree(0);
 
             // choosing random shifts
-            while (true) {
+            for (int nFails = 0; ; ++nFails) {
+                if (nFails > 8) {
+                    // base variable is unlucky -> start over
+                    nAttemptsWithSameBaseVariable = SAME_BASE_VARIABLE_ATTEMPTS + 1;
+                    return nextEvaluation();
+                }
                 for (int i = 0; i < shiftingVariables.length; ++i)
                     shifts[i] = a.domain.randomElement(rnd);
 

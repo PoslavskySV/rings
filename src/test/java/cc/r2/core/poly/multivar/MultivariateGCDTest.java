@@ -1101,6 +1101,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
+
         System.out.println(a);
         System.out.println(b);
 
@@ -1347,10 +1348,31 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testEZEvaluations2() throws Exception {
+        RandomGenerator rnd = getRandom();
+        TripletPort sampleData = new TripletPort(3, 4, 2, 3, 5, 7, rnd);
+        rnd.setSeed(42);
+        GCDTriplet sample = sampleData.nextSample(false, true);
+        for (MultivariatePolynomial<BigInteger>[] pp : new MultivariatePolynomial[][]{{sample.a, sample.b}, {sample.aGCD, sample.bGCD}}) {
+            lMultivariatePolynomialZp
+                    a = asLongPolyZp(pp[0]),
+                    b = asLongPolyZp(pp[1]);
+            if (a.isConstant() || b.isConstant())
+                continue;
+            EZGCDEvaluations evals = new EZGCDEvaluations(a, b, a.nVariables, rnd);
+            for (int j = 0; j < 10; j++) {
+                evals.nextEvaluation();
+                assertEquals(a, evals.reconstruct(evals.aReduced));
+                assertEquals(b, evals.reconstruct(evals.bReduced));
+            }
+        }
+    }
+
+    @Test
     public void testEZEvaluationsRandom() throws Exception {
         RandomGenerator rnd = getRandom();
         int nIterations = its(10, 100);
-        TripletPort sampleData = new TripletPort(3, 5, 2, 3, 5, 7, rnd);
+        TripletPort sampleData = new TripletPort(3, 4, 2, 3, 5, 7, rnd);
         for (int i = 0; i < nIterations; i++) {
             System.out.println(i);
             GCDTriplet sample = sampleData.nextSample(false, true);
