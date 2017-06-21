@@ -4,7 +4,6 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -171,7 +170,7 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
 
         int[] evalVars = {1, 2};
         int[] raiseFactors = {2, 1};
-        MultivariatePolynomial<BigInteger> r = poly.evaluate(new PrecomputedPowersHolder<BigInteger>(new BigInteger[]{BigInteger.valueOf(4229599), BigInteger.valueOf(9)}, domain), evalVars, raiseFactors);
+        MultivariatePolynomial<BigInteger> r = poly.evaluate(new PrecomputedPowersHolder<>(poly.nVariables, evalVars, new BigInteger[]{BigInteger.valueOf(4229599), BigInteger.valueOf(9)}, domain), evalVars, raiseFactors);
         assertEquals(parse("1694989 + 336131*a + 4996260*a^2 + 91*a^3 + a^4", domain, LEX, vars), r);
     }
 

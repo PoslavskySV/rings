@@ -178,7 +178,7 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
 
         int[] evalVars = {1, 2};
         int[] raiseFactors = {2, 1};
-        lMultivariatePolynomialZp r = poly.evaluate(new lPrecomputedPowersHolder(new long[]{4229599, 9}, domain), evalVars, raiseFactors);
+        lMultivariatePolynomialZp r = poly.evaluate(new lPrecomputedPowersHolder(poly.nVariables, evalVars, new long[]{4229599, 9}, domain), evalVars, raiseFactors);
         assertEquals(parse("1694989 + 336131*a + 4996260*a^2 + 91*a^3 + a^4", domain, LEX, vars), r);
     }
 
