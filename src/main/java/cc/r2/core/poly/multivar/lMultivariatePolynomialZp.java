@@ -697,7 +697,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     public lMultivariatePolynomialZp evaluate(int[] variables, long[] values) {
         for (long value : values)
             if (value != 0)
-                return evaluate(new lPrecomputedPowersHolder(values, domain), variables, ones(nVariables));
+                return evaluate(new lPrecomputedPowersHolder(nVariables, variables, values, domain), variables, ones(nVariables));
 
         // <- all values are zero
         return evaluateAtZero(variables);
@@ -721,13 +721,19 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
     /** substitutes {@code values} for {@code variables} */
     @SuppressWarnings("unchecked")
+    lMultivariatePolynomialZp evaluate(lPrecomputedPowersHolder powers, int[] variables) {
+        return evaluate(powers, variables, ones(variables.length));
+    }
+
+    /** substitutes {@code values} for {@code variables} */
+    @SuppressWarnings("unchecked")
     lMultivariatePolynomialZp evaluate(lPrecomputedPowersHolder powers, int[] variables, int[] raiseFactors) {
         MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
         for (lMonomialTerm el : terms) {
             lMonomialTerm r = el;
             long value = el.coefficient;
             for (int i = 0; i < variables.length; ++i) {
-                value = domain.multiply(value, powers.pow(i, raiseFactors[i] * el.exponents[variables[i]]));
+                value = domain.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
                 r = r.setZero(variables[i], value);
             }
 
@@ -810,23 +816,17 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         private final lIntegersModulo domain;
         private final lPrecomputedPowers[] powers;
 
-        lPrecomputedPowersHolder(long[] points, lIntegersModulo domain) {
-            this(SIZE_OF_POWERS_CACHE, points, domain);
+        lPrecomputedPowersHolder(int nVariables, int[] variables, long[] points, lIntegersModulo domain) {
+            this(SIZE_OF_POWERS_CACHE, nVariables, variables, points, domain);
         }
 
         @SuppressWarnings("unchecked")
-        lPrecomputedPowersHolder(int cacheSize, long[] points, lIntegersModulo domain) {
+        lPrecomputedPowersHolder(int cacheSize, int nVariables,  int[] variables, long[] points, lIntegersModulo domain) {
             this.cacheSize = cacheSize;
             this.domain = domain;
-            this.powers = new lPrecomputedPowers[points.length];
-            for (int i = 0; i < points.length; i++)
-                powers[i] = new lPrecomputedPowers(cacheSize, points[i], domain);
-        }
-
-        lPrecomputedPowersHolder(int cacheSize, lIntegersModulo domain, lPrecomputedPowers[] powers) {
-            this.cacheSize = cacheSize;
-            this.domain = domain;
-            this.powers = powers;
+            this.powers = new lPrecomputedPowers[nVariables];
+            for (int i = 0; i < variables.length; i++)
+                powers[variables[i]] = new lPrecomputedPowers(cacheSize, points[i], domain);
         }
 
         void set(int i, long point) {
@@ -834,8 +834,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
                 powers[i] = new lPrecomputedPowers(cacheSize, point, domain);
         }
 
-        long pow(int i, int exponent) {
-            return powers[i].pow(exponent);
+        long pow(int variable, int exponent) {
+            return powers[variable].pow(exponent);
         }
     }
 

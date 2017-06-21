@@ -1585,7 +1585,7 @@ public final class MultivariateGCD {
                     evaluationPoint[i] = domain.randomElement(rnd);
                 } while (domain.isZero(evaluationPoint[i]));
 
-            powers = new PrecomputedPowersHolder<>(evaluationPoint, domain);
+            powers = new PrecomputedPowersHolder<>(a.nVariables, evaluationVariables, evaluationPoint, domain);
             int[] raiseFactors = ArraysUtil.arrayOf(1, evaluationVariables.length);
 
             for (MultivariatePolynomial<E> p : Arrays.asList(a, b, skeleton))
@@ -1723,7 +1723,7 @@ public final class MultivariateGCD {
         public final MultivariatePolynomial<E> evaluate(E newPoint) {
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
-            powers.set(evaluationPoint.length - 1, newPoint);
+            powers.set(evaluationVariables[evaluationVariables.length - 1], newPoint);
             return evaluate();
         }
     }
@@ -2075,8 +2075,8 @@ public final class MultivariateGCD {
                                              int raiseFactor,
                                              int nVars) {
         E tmp = coefficient;
-        for (int k = 0; k < nVars; k++)
-            tmp = domain.multiply(tmp, powers.pow(k, raiseFactor * skeleton.exponents[1 + k]));
+        for (int k = 1; k <= nVars; k++)
+            tmp = domain.multiply(tmp, powers.pow(k, raiseFactor * skeleton.exponents[k]));
         return tmp;
     }
 
@@ -2502,7 +2502,7 @@ public final class MultivariateGCD {
                     evaluationPoint[i] = domain.randomElement(rnd);
                 } while (evaluationPoint[i] == 0);
 
-            powers = new lPrecomputedPowersHolder(evaluationPoint, domain);
+            powers = new lPrecomputedPowersHolder(a.nVariables, evaluationVariables, evaluationPoint, domain);
             int[] raiseFactors = ArraysUtil.arrayOf(1, evaluationVariables.length);
 
             for (lMultivariatePolynomialZp p : Arrays.asList(a, b, skeleton))
@@ -2641,7 +2641,7 @@ public final class MultivariateGCD {
                 return a.create(((lMonomialTerm) globalSkeleton.iterator().next()).setCoefficient(1));
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
-            powers.set(evaluationPoint.length - 1, newPoint);
+            powers.set(evaluationVariables[evaluationVariables.length - 1], newPoint);
             return evaluate();
         }
     }
@@ -2980,8 +2980,8 @@ public final class MultivariateGCD {
                                             int raiseFactor,
                                             int nVars) {
         long tmp = coefficient;
-        for (int k = 0; k < nVars; k++)
-            tmp = domain.multiply(tmp, powers.pow(k, raiseFactor * skeleton.exponents[1 + k]));
+        for (int k = 1; k <= nVars; k++)
+            tmp = domain.multiply(tmp, powers.pow(k, raiseFactor * skeleton.exponents[k]));
         return tmp;
     }
 

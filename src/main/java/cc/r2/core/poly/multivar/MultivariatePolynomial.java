@@ -121,6 +121,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * Parse multivariate polynomial from string.
      *
      * @param string    string polynomials
+     * @param domain    the domain
+     * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
+     *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
+     *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
+     * @return multivariate polynomial
+     */
+    public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, String... variables) {
+        return Parser.parse(string, domain, DegreeVector.LEX, variables);
+    }
+
+    /**
+     * Parse multivariate polynomial from string.
+     *
+     * @param string    string polynomials
      * @param ordering  term ordering
      * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
      *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
@@ -660,6 +674,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newData);
     }
 
+    /** substitutes {@code values} for {@code variables} */
+    @SuppressWarnings("unchecked")
+    MultivariatePolynomial<E> evaluate(PrecomputedPowersHolder powers, int[] variables) {
+        return evaluate(powers, variables, ones(variables.length));
+    }
+
     /**
      * Substitutes {@code values} for {@code variables}.
      *
@@ -671,7 +691,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E> evaluate(int[] variables, E[] values) {
-        return evaluate(new PrecomputedPowersHolder<>(values, domain), variables, ones(nVariables));
+        return evaluate(new PrecomputedPowersHolder<>(nVariables, variables, values, domain), variables, ones(nVariables));
     }
 
     /* cached array of units */
@@ -697,7 +717,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             MonomialTerm<E> r = el;
             E value = el.coefficient;
             for (int i = 0; i < variables.length; ++i) {
-                value = domain.multiply(value, powers.pow(i, raiseFactors[i] * el.exponents[variables[i]]));
+                value = domain.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
                 r = r.setZero(variables[i], value);
             }
 
@@ -806,32 +826,27 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         private final Domain<E> domain;
         private final PrecomputedPowers<E>[] powers;
 
-        PrecomputedPowersHolder(E[] points, Domain<E> domain) {
-            this(SIZE_OF_POWERS_CACHE, points, domain);
+        PrecomputedPowersHolder(int nVariables, int[] variables, E[] points, Domain<E> domain) {
+            this(SIZE_OF_POWERS_CACHE, nVariables, variables, points, domain);
         }
 
         @SuppressWarnings("unchecked")
-        PrecomputedPowersHolder(int cacheSize, E[] points, Domain<E> domain) {
+        PrecomputedPowersHolder(int cacheSize, int nVariables, int[] variables, E[] points, Domain<E> domain) {
             this.cacheSize = cacheSize;
             this.domain = domain;
-            this.powers = new PrecomputedPowers[points.length];
+            this.powers = new PrecomputedPowers[nVariables];
             for (int i = 0; i < points.length; i++)
-                powers[i] = points[i] == null ? null : new PrecomputedPowers<E>(cacheSize, points[i], domain);
+                powers[variables[i]] = points[i] == null ? null : new PrecomputedPowers<>(cacheSize, points[i], domain);
         }
 
-        PrecomputedPowersHolder(int cacheSize, Domain<E> domain, PrecomputedPowers<E>[] powers) {
-            this.cacheSize = cacheSize;
-            this.domain = domain;
-            this.powers = powers;
-        }
 
         void set(int i, E point) {
             if (powers[i] == null || !powers[i].value.equals(point))
                 powers[i] = new PrecomputedPowers<>(cacheSize, point, domain);
         }
 
-        E pow(int i, int exponent) {
-            return powers[i].pow(exponent);
+        E pow(int variable, int exponent) {
+            return powers[variable].pow(exponent);
         }
     }
 
