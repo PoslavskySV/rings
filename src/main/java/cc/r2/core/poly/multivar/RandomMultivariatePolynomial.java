@@ -3,6 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Integers;
+import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -40,6 +41,18 @@ public class RandomMultivariatePolynomial {
         }
         return MultivariatePolynomial.create(nVars, domain, ordering, terms);
     }
+
+    public static lMultivariatePolynomialZp randomPolynomial(int nVars, int degree, int size, lIntegersModulo domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+        int nd = 3 * degree / 2;
+        @SuppressWarnings("unchecked")
+        lMonomialTerm[] terms = new lMonomialTerm[size];
+        for (int i = 0; i < size; i++) {
+            long cfx = domain.randomElement(rnd);
+            terms[i] = new lMonomialTerm(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
+        }
+        return lMultivariatePolynomialZp.create(nVars, domain, ordering, terms);
+    }
+
 
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {
         return randomPolynomial(nVars, degree, size, BigInteger.TEN, DegreeVector.LEX, rnd);

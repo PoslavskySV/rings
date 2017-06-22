@@ -13,21 +13,21 @@ import org.junit.Test;
  */
 public class AbstractPolynomialTest extends AbstractTest {
 
-    protected static long getModulusRandom(int nBits) {
+    public static long getModulusRandom(int nBits) {
         if (nBits <= 1 || nBits > LongArithmetics.MAX_SUPPORTED_MODULUS_BITS)
             throw new IllegalArgumentException();
         return BigPrimes.nextPrime(getRandomData().nextLong(1L << (nBits - 1), (1L << nBits) - 1));
     }
 
-    protected static long[] getSmallModulusArray(int n) {
+    public static long[] getSmallModulusArray(int n) {
         return getModulusArray(n, 0, 0);
     }
 
-    protected static long[] getLargeModulusArray(int n, int maxModulusBits) {
+    public static long[] getLargeModulusArray(int n, int maxModulusBits) {
         return getModulusArray(0, n, maxModulusBits);
     }
 
-    protected static long[] getModulusArray(int nSmall, int nLarge, int smallModulusBits, int maxModulusBits) {
+    public static long[] getModulusArray(int nSmall, int nLarge, int smallModulusBits, int maxModulusBits) {
         long[] res = new long[nSmall + nLarge];
         int i = 0;
         for (; i < nSmall; i++)
@@ -37,11 +37,11 @@ public class AbstractPolynomialTest extends AbstractTest {
         return res;
     }
 
-    protected static long[] getModulusArray(int nSmall, int nLarge, int maxModulusBits) {
+    public static long[] getModulusArray(int nSmall, int nLarge, int maxModulusBits) {
         return getModulusArray(nSmall, nLarge, 31, maxModulusBits);
     }
 
-    protected static BigInteger[] getProbablePrimesArray(BigInteger from, int n) {
+    public static BigInteger[] getProbablePrimesArray(BigInteger from, int n) {
         BigInteger[] res = new BigInteger[n];
         res[0] = from.nextProbablePrime();
         for (int i = 1; i < n; i++)
@@ -49,7 +49,7 @@ public class AbstractPolynomialTest extends AbstractTest {
         return res;
     }
 
-    protected static long[] getOneSmallOneLargeModulus(int maxModulusBits) {
+    public static long[] getOneSmallOneLargeModulus(int maxModulusBits) {
         return getModulusArray(1, 1, maxModulusBits);
     }
 

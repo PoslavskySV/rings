@@ -518,6 +518,13 @@ public final class ArraysUtil {
         return r;
     }
 
+    public static long[] addAll(long[] array1, long... array2) {
+        long[] r = new long[array1.length + array2.length];
+        System.arraycopy(array1, 0, r, 0, array1.length);
+        System.arraycopy(array2, 0, r, array1.length, array2.length);
+        return r;
+    }
+
     public static int[] addAll(int[]... arrays) {
         if (arrays.length == 0)
             return new int[0];

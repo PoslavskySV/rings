@@ -236,7 +236,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             univarData[e.exponents[theVar]] = e.coefficient;
         return UnivariatePolynomial.createUnsafe(domain, univarData);
     }
-
     /**
      * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
      *
@@ -244,6 +243,25 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}
      */
     public MultivariatePolynomial<UnivariatePolynomial<E>> asOverUnivariate(int variable) {
+        UnivariatePolynomial<E> factory = UnivariatePolynomial.zero(domain);
+        UnivariatePolynomials<UnivariatePolynomial<E>> pDomain = new UnivariatePolynomials<>(factory);
+        MonomialsSet<MonomialTerm<UnivariatePolynomial<E>>> newData = new MonomialsSet<>(ordering);
+        for (MonomialTerm<E> e : terms) {
+            add(newData, new MonomialTerm<>(
+                            e.set(variable, 0).exponents,
+                            factory.createMonomial(e.coefficient, e.exponents[variable])),
+                    pDomain);
+        }
+        return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
+    }
+
+    /**
+     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
+     *
+     * @param variable variable
+     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}
+     */
+    public MultivariatePolynomial<UnivariatePolynomial<E>> asOverUnivariateEliminate(int variable) {
         UnivariatePolynomial<E> factory = UnivariatePolynomial.zero(domain);
         UnivariatePolynomials<UnivariatePolynomial<E>> pDomain = new UnivariatePolynomials<>(factory);
         MonomialsSet<MonomialTerm<UnivariatePolynomial<E>>> newData = new MonomialsSet<>(ordering);
@@ -967,6 +985,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<E> square() {
         return multiply(this);
+    }
+
+    @Override
+    MultivariatePolynomial<E> evaluateAtRandom(int variable, RandomGenerator rnd) {
+        return evaluate(variable, domain.randomElement(rnd));
     }
 
     @Override

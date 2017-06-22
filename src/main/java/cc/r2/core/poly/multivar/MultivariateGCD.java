@@ -389,7 +389,7 @@ public final class MultivariateGCD {
             uPoly extends IUnivariatePolynomial<uPoly>>
     MultivariatePolynomial<uPoly> asOverUnivariate(Poly poly, int variable) {
         if (poly instanceof MultivariatePolynomial)
-            return (MultivariatePolynomial<uPoly>) ((MultivariatePolynomial) poly).asOverUnivariate(variable);
+            return (MultivariatePolynomial<uPoly>) ((MultivariatePolynomial) poly).asOverUnivariateEliminate(variable);
         else if (poly instanceof lMultivariatePolynomialZp)
             return (MultivariatePolynomial<uPoly>) ((lMultivariatePolynomialZp) poly).asOverUnivariateEliminate(variable);
         else
@@ -901,8 +901,8 @@ public final class MultivariateGCD {
             return r;
         } else {
             MultivariatePolynomial<UnivariatePolynomial<E>>
-                    ua = a.asOverUnivariate(uVariable),
-                    ub = b.asOverUnivariate(uVariable);
+                    ua = a.asOverUnivariateEliminate(uVariable),
+                    ub = b.asOverUnivariateEliminate(uVariable);
 
             UnivariatePolynomial<E> aContent = ua.content(), bContent = ub.content();
             UnivariatePolynomial<E> contentGCD = ua.domain.gcd(aContent, bContent);
@@ -1335,7 +1335,7 @@ public final class MultivariateGCD {
         if (interpolation == null)
             return null;
         MultivariatePolynomial<E> interpolated =
-                MultivariatePolynomial.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariate(variable).primitivePart(), variable);
+                MultivariatePolynomial.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariateEliminate(variable).primitivePart(), variable);
         if (!dividesQ(a, interpolated) || !dividesQ(b, interpolated))
             return null;
 
@@ -3334,7 +3334,6 @@ public final class MultivariateGCD {
 
         // returns whether the main variable was changed
         boolean nextEvaluation() {
-
             // first try to evaluate all but one variables to zeroes
 
             if (nextPerfectVariable < perfectVariables.size()) {
@@ -3449,8 +3448,7 @@ public final class MultivariateGCD {
 
                 lUnivariatePolynomialZp ub = bReduced
                         .evaluateAtZero(zeroVariables)
-                        .shift(shiftingVariables, shifts)
-                        .evaluateAtZero(shiftingVariables)
+                        .evaluate(shiftingVariables, shifts)
                         .asUnivariate();
 
                 if (ub.isZeroAt(0) || ub.isZeroAt(ubDegree))
@@ -3458,8 +3456,7 @@ public final class MultivariateGCD {
 
                 lUnivariatePolynomialZp ua = aReduced
                         .evaluateAtZero(zeroVariables)
-                        .shift(shiftingVariables, shifts)
-                        .evaluateAtZero(shiftingVariables)
+                        .evaluate(shiftingVariables, shifts)
                         .asUnivariate();
 
                 if (ua.isZeroAt(0) || ua.isZeroAt(uaDegree))
@@ -3490,6 +3487,212 @@ public final class MultivariateGCD {
             poly = poly.shift(shiftingVariables, ArraysUtil.negate(shifts.clone()));
             poly = lMultivariatePolynomialZp.swapVariables(poly, 0, baseVariable);
             return poly;
+        }
+    }
+
+
+        /* =============================================== EZ-GCD algorithm ============================================ */
+
+
+    /**
+     * Calculates GCD of two multivariate polynomials over Zp using Zippel's algorithm with sparse interpolation.
+     *
+     * @param a the first multivariate polynomial
+     * @param b the second multivariate polynomial
+     * @return greatest common divisor of {@code a} and {@code b}
+     */
+    @SuppressWarnings("unchecked")
+    public static lMultivariatePolynomialZp EEZGCD(
+            lMultivariatePolynomialZp a,
+            lMultivariatePolynomialZp b) {
+
+        // prepare input and test for early termination
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b);
+        if (gcdInput.earlyGCD != null)
+            return gcdInput.earlyGCD;
+
+        a = gcdInput.aReduced;
+        b = gcdInput.bReduced;
+
+        // remove content in each variable
+        lMultivariatePolynomialZp content = a.createOne();
+        for (int i = 0; i < a.nVariables; ++i) {
+            if (a.degree(i) == 0 || b.degree(i) == 0)
+                continue;
+            lMultivariatePolynomialZp tmpContent = contentGCD(a, b, i, MultivariateGCD::EEZGCD);
+            a = divideExact(a, tmpContent);
+            b = divideExact(b, tmpContent);
+            content = content.multiply(tmpContent);
+        }
+
+        // one more reduction; removing of content may shuffle required variables order
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput2 = preparedGCDInput(a, b);
+        a = gcdInput2.aReduced; b = gcdInput2.bReduced;
+
+        lMultivariatePolynomialZp result = gcdInput2.earlyGCD != null
+                ? gcdInput2.earlyGCD
+                : gcdInput2.restoreGCD(EEZGCD0(a, b, PrivateRandom.getRandom()));
+
+        result = result.multiply(content);
+        return gcdInput.restoreGCD(result);
+    }
+
+    /** actual EZ-GCD implementation */
+    private static lMultivariatePolynomialZp EEZGCD0(
+            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, RandomGenerator rnd) {
+
+        // degree of univariate gcd
+        int ugcdDegree = Integer.MAX_VALUE;
+
+        Set<DegreeVector> aSkeleton = a.getSkeleton(0), bSkeleton = b.getSkeleton(0);
+        choose_evaluation:
+        while (true) {
+            // set new evaluation point (true returned if base variable has changed)
+            a = a.clone();
+            b = b.clone();
+
+            // degrees of a and b as Z[y1, ... ,yN][x]
+            int
+                    uaDegree = a.degree(0),
+                    ubDegree = b.degree(0);
+
+            long[] substitutions = new long[a.nVariables - 1];
+            for (int j = 0; j < substitutions.length; j++) {
+                do {
+                    substitutions[j] = a.domain.randomElement(rnd);
+                } while (substitutions[j] == 0);
+            }
+
+            HenselLifting.Evaluation evaluation = new HenselLifting.Evaluation(a.nVariables, substitutions, a.domain, a.ordering);
+            lMultivariatePolynomialZp
+                    mua = evaluation.evaluateFrom(a, 1),
+                    mub = evaluation.evaluateFrom(b, 1);
+
+            if (!aSkeleton.equals(mua.getSkeleton()) || !bSkeleton.equals(mub.getSkeleton()))
+                continue;
+
+            lUnivariatePolynomialZp
+                    ua = mua.asUnivariate(),
+                    ub = mub.asUnivariate();
+
+            assert ua.degree() == uaDegree;
+            assert ub.degree() == ubDegree;
+
+            // gcd of a mod I and b mod I (univariate)
+            lUnivariatePolynomialZp ugcd = UnivariateGCD.PolynomialGCD(ua, ub);
+
+            if (ugcd.degree() == 0) {
+                // coprime polynomials
+                return a.createOne();
+            }
+
+            if (ugcd.degree() > ugcdDegree)
+                // unlucky evaluation
+                continue choose_evaluation;
+
+            ugcdDegree = ugcd.degree();
+
+            if (ugcdDegree == uaDegree) {
+                // a is a divisor of b
+                if (dividesQ(b, a))
+                    return a;
+                //continue choose_evaluation;
+            }
+
+            if (ugcdDegree == ubDegree) {
+                // b is a divisor of a
+                if (dividesQ(a, b))
+                    return b;
+                //continue choose_evaluation;
+            }
+
+            // base polynomial to lift (either a or b)
+            lMultivariatePolynomialZp base = null;
+            // a cofactor with gcd to lift, i.e. base = ugcd * uCoFactor mod I
+            lUnivariatePolynomialZp uCoFactor = null;
+            lMultivariatePolynomialZp coFactorLC = null;
+
+            // deg(b) < deg(a), so it is better to try to lift b
+            lUnivariatePolynomialZp ubCoFactor = DivisionWithRemainder.quotient(ub, ugcd, true);
+            if (UnivariateGCD.PolynomialGCD(ugcd, ubCoFactor).isConstant()) {
+                // b splits into coprime factors
+                base = b;
+                uCoFactor = ubCoFactor;
+                coFactorLC = b.lc(0);
+            }
+
+            if (base == null) {
+                // b does not split into coprime factors => try a
+                lUnivariatePolynomialZp uaCoFactor = DivisionWithRemainder.quotient(ua, ugcd, true);
+                if (UnivariateGCD.PolynomialGCD(ugcd, uaCoFactor).isConstant()) {
+                    base = a;
+                    uCoFactor = uaCoFactor;
+                    coFactorLC = a.lc(0);
+                }
+            }
+
+            if (base == null) {
+                // neither a nor b does not split into coprime factors => square free decomposition required
+                lMultivariatePolynomialZp
+                        bRepeatedFactor = EEZGCD(b, b.derivative(0, 1)),
+                        squareFreeGCD = EEZGCD(divideExact(b, bRepeatedFactor), a),
+                        aRepeatedFactor = divideExact(a, squareFreeGCD),
+                        gcd = squareFreeGCD.clone();
+
+                lUnivariatePolynomialZp
+                        uSquareFreeGCD = evaluation.evaluateFrom(squareFreeGCD, 1).asUnivariate(),
+                        uaRepeatedFactor = evaluation.evaluateFrom(aRepeatedFactor, 1).asUnivariate(),
+                        ubRepeatedFactor = evaluation.evaluateFrom(bRepeatedFactor, 1).asUnivariate();
+                while (true) {
+                    ugcd = UnivariateGCD.PolynomialGCD(
+                            uSquareFreeGCD, uaRepeatedFactor, ubRepeatedFactor);
+
+                    if (ugcd.degree() == 0)
+                        return gcd;
+
+                    if (!uSquareFreeGCD.clone().monic().equals(ugcd.clone().monic())) {
+                        lMultivariatePolynomialZp
+                                mgcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering),
+                                gcdCoFactor = lMultivariatePolynomialZp.asMultivariate(
+                                        DivisionWithRemainder.divideExact(uSquareFreeGCD, ugcd, false), a.nVariables, 0, a.ordering);
+
+                        HenselLifting.liftWang(squareFreeGCD, mgcd, gcdCoFactor, evaluation);
+
+                        squareFreeGCD = mgcd.clone();
+                        uSquareFreeGCD = evaluation.evaluateFrom(squareFreeGCD, 1).asUnivariate();
+                    }
+
+                    gcd = gcd.multiply(squareFreeGCD);
+                    uaRepeatedFactor = DivisionWithRemainder.divideExact(uaRepeatedFactor, ugcd, false);
+                    ubRepeatedFactor = DivisionWithRemainder.divideExact(ubRepeatedFactor, ugcd, false);
+                }
+            }
+
+            lMultivariatePolynomialZp gcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering);
+            lMultivariatePolynomialZp coFactor = lMultivariatePolynomialZp.asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
+
+            // impose the leading coefficient
+            lMultivariatePolynomialZp lcCorrection = EEZGCD(a.lc(0), b.lc(0));
+            assert ZippelGCD(a.lc(0), b.lc(0)).monic(lcCorrection.lc()).equals(lcCorrection) : "\n" + a.lc(0) + "  \n " + b.lc(0);
+
+            if (lcCorrection.isOne()) {
+                HenselLifting.liftWang(base, gcd, coFactor, null, base.lc(0), evaluation);
+            } else {
+                lMultivariatePolynomialZp tmp = evaluation.evaluateFrom(lcCorrection, 1);
+                assert tmp.isConstant();
+                long lcCorrectionMod = tmp.cc(); // substitute all zeros
+                assert lcCorrectionMod != 0 : lcCorrection;
+
+                coFactor = coFactor.multiply(gcd.lc());
+                gcd = gcd.monic(lcCorrectionMod);
+
+                HenselLifting.liftWang(base.clone().multiply(lcCorrection), gcd, coFactor, lcCorrection, coFactorLC, evaluation);
+                assert gcd.lc(0).equals(lcCorrection);
+                gcd = HenselLifting.primitivePart(gcd);
+            }
+
+            if (dividesQ(b, gcd) && dividesQ(a, gcd))
+                return gcd;
         }
     }
 }

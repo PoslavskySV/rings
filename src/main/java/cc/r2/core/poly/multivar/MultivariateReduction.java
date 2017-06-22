@@ -138,6 +138,13 @@ public final class MultivariateReduction {
         dividend = dividend.clone();
         if (divider.isConstant())
             return dividend.divideByLC(divider) != null;
+        int[]
+                dividendDegrees = dividend.degrees(),
+                dividerDegrees = divider.degrees();
+        for (int i = 0; i < dividendDegrees.length; i++)
+            if (dividendDegrees[i] < dividerDegrees[i])
+                return false;
+
         while (!dividend.isZero()) {
             Term ltDiv = dividend.divideOrNull(dividend.lt(), divider.lt());
             if (ltDiv == null)

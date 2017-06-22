@@ -739,6 +739,11 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public abstract Poly clone();
 
     /**
+     * Evaluates {@code poly} at random point
+     */
+    abstract Poly evaluateAtRandom(int variable, RandomGenerator rnd);
+
+    /**
      * Evaluates {@code poly} at random point chosen in such way that the skeleton of evaluated version is the same as of the
      * original {@code poly} with respect to all except {@code variable} variables
      */

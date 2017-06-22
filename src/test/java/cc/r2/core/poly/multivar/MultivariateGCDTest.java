@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.function.BiFunction;
 
 import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.Rationals.Rationals;
@@ -151,39 +152,17 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void testBrown_random1() throws Exception {
         RandomGenerator rnd = getRandom();
-        rnd.setSeed(123);
 
         int nVarsMin = 3, nVarsMax = 3;
         int minDegree = 3, maxDegree = 5;
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            PrivateRandom.getRandom().setSeed(n);
-            MultivariatePolynomial<BigInteger> gcdActual = null;
-            GCDTriplet data = sampleData.nextSample(false, false);
-            checkConsistency(data.a, data.b, data.gcd, data.aGCD, data.bGCD);
-            try {
-                PrivateRandom.getRandom().setSeed(n);
-                gcdActual = BrownGCD(data.aGCD, data.bGCD);
-                checkConsistency(gcdActual);
-                assertTrue(dividesQ(gcdActual, data.gcd));
 
-                PrivateRandom.getRandom().setSeed(n);
-                assertTrue(dividesQ(BrownGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD)), asLongPolyZp(data.gcd)));
-            } catch (Throwable err) {
-                System.out.println("seed: " + n);
-                System.out.println("modulus: " + data.domain);
-                System.out.println("a: " + data.a);
-                System.out.println("b: " + data.b);
-                System.out.println("aGCD: " + data.aGCD);
-                System.out.println("bGCD: " + data.bGCD);
-                System.out.println("expected gcd: " + data.gcd);
-                System.out.println("actual gcd  : " + gcdActual);
-                throw err;
-            }
-        }
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD),
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
     @Test
@@ -196,94 +175,28 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            PrivateRandom.getRandom().setSeed(n);
-            MultivariatePolynomial<BigInteger> gcdActual = null;
-            GCDTriplet data = sampleData.nextSample(false, false);
 
-            checkConsistency(data.a, data.b);
-            try {
-                PrivateRandom.getRandom().setSeed(n);
-                gcdActual = BrownGCD(data.a, data.b);
-                checkConsistency(gcdActual);
-                assertTrue(dividesQ(data.a, gcdActual));
-                assertTrue(dividesQ(data.b, gcdActual));
-
-                PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomialZp lGcdActual = BrownGCD(asLongPolyZp(data.a), asLongPolyZp(data.b));
-                assertTrue(dividesQ(asLongPolyZp(data.a), lGcdActual));
-                assertTrue(dividesQ(asLongPolyZp(data.b), lGcdActual));
-            } catch (Throwable err) {
-                System.out.println("seed: " + n);
-                System.out.println("modulus: " + data.domain);
-                System.out.println("a: " + data.a);
-                System.out.println("b: " + data.b);
-                System.out.println("actual gcd  : " + gcdActual);
-                throw err;
-            }
-        }
+        GCDSampleData sampleData = coprimeData(
+                new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd));
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD),
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
     @Test
     public void testBrown_random3() throws Exception {
         RandomGenerator rnd = getRandom();
-        rnd.setSeed(123);
 
         int nVarsMin = 100, nVarsMax = 100, nVars = 3;
         int minDegree = 3, maxDegree = 5;
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            PrivateRandom.getRandom().setSeed(n);
-            MultivariatePolynomial<BigInteger> gcdActual = null;
-            GCDTriplet data = sampleData.nextSample(false, false);
-
-            MultivariatePolynomial<BigInteger> aGCD = data.a;
-            MultivariatePolynomial<BigInteger> bGCD = data.b;
-            MultivariatePolynomial<BigInteger> gcd = data.gcd;
-
-            do {
-                gcd = gcd.evaluate(rnd.nextInt(gcd.nVariables), data.domain.randomElement(rnd));
-            } while (gcd.nUsedVariables() > nVars);
-
-            int[] gcdDegrees = gcd.degrees();
-            for (int i = 0; i < gcdDegrees.length; i++) {
-                if (gcdDegrees[i] == 0) {
-                    if (rnd.nextBoolean())
-                        aGCD = aGCD.evaluate(i, data.domain.randomElement(rnd));
-                    else
-                        bGCD = bGCD.evaluate(i, data.domain.randomElement(rnd));
-                }
-            }
-
-            aGCD = aGCD.multiply(gcd);
-            bGCD = bGCD.multiply(gcd);
-
-            checkConsistency(data.a, data.b, gcd, aGCD, bGCD);
-            try {
-                PrivateRandom.getRandom().setSeed(n);
-                gcdActual = BrownGCD(aGCD, bGCD);
-                checkConsistency(gcdActual);
-                assertTrue(dividesQ(gcdActual, gcd));
-
-                PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomialZp lGcdActual = BrownGCD(asLongPolyZp(aGCD), asLongPolyZp(bGCD));
-                assertTrue(dividesQ(lGcdActual, asLongPolyZp(gcd)));
-            } catch (Throwable err) {
-                System.out.println("seed: " + n);
-                System.out.println("modulus: " + data.domain);
-                System.out.println("a: " + data.a);
-                System.out.println("b: " + data.b);
-                System.out.println("aGCD: " + aGCD);
-                System.out.println("bGCD: " + bGCD);
-                System.out.println("expected gcd: " + gcd);
-                System.out.println("actual gcd  : " + gcdActual);
-                throw err;
-            }
-        }
+        GCDSampleData sampleData = fixVariables(
+                new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars);
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD),
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
     @Test
@@ -441,33 +354,34 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int nVarsMin = 3, nVarsMax = 10, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
 
         int nIterations = its(100, 1500);
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp> sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
         for (int n = 0; n < nIterations; n++) {
             if (n % 100 == 0) System.out.println(n);
 
-            GCDTriplet data = sampleData.nextSample(true, true);
+            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> data = sampleData.nextSample(true, true);
 
             int variable = data.a.nVariables - 1;
-            BigInteger seed;
-            do {seed = data.a.domain.randomElement(rnd);} while (seed.isZero());
-            MultivariatePolynomial<BigInteger> skeleton = data.gcd.evaluate(variable, seed);
+            long seed;
+            do {seed = data.a.domain.randomElement(rnd);} while (seed == 0);
+            lMultivariatePolynomialZp skeleton = data.gcd.evaluate(variable, seed);
 
             for (int i = 0; i < 10; i++) {
                 int rndSeed = i^n;
                 rnd.setSeed(rndSeed);
                 SparseInterpolation<BigInteger> sparseInterpolation
-                        = createInterpolation(variable, data.aGCD, data.bGCD, skeleton, rnd);
+                        = createInterpolation(variable, data.a.toBigPoly(), data.b.toBigPoly(), skeleton.toBigPoly(), rnd);
 
                 lSparseInterpolation lSparseInterpolation
-                        = createInterpolation(variable, asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD), asLongPolyZp(skeleton), rnd);
-                BigInteger point = data.a.domain.randomElement(rnd);
+                        = createInterpolation(variable, data.a, data.b, skeleton, rnd);
+                long point = data.a.domain.randomElement(rnd);
                 try {
-                    MultivariatePolynomial<BigInteger> expected = data.gcd.evaluate(variable, point).monic();
-                    MultivariatePolynomial<BigInteger> actual = sparseInterpolation.evaluate(point).monic();
-                    assertEquals(expected, actual);
+                    lMultivariatePolynomialZp expected = data.gcd.evaluate(variable, point).monic();
 
-                    lMultivariatePolynomialZp lActual = lSparseInterpolation.evaluate(point.longValueExact()).monic();
-                    assertEquals(asLongPolyZp(expected), lActual);
+                    lMultivariatePolynomialZp lActual = lSparseInterpolation.evaluate(point).monic();
+                    assertEquals(expected, lActual);
+
+                    MultivariatePolynomial<BigInteger> bActual = sparseInterpolation.evaluate(BigInteger.valueOf(point)).monic();
+                    assertEquals(expected.toBigPoly(), bActual);
                 } catch (Throwable e) {
                     System.out.println("rnd seed : " + rndSeed);
                     System.out.println("seed point : " + seed);
@@ -511,45 +425,17 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int nVarsMin = 3, nVarsMax = 5, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
         int nIterations = its(100, 1500);
 
-        DescriptiveStatistics zippel = new DescriptiveStatistics(), brown = new DescriptiveStatistics();
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        sampleData.monic = true;
+        sampleData.primitive = true;
 
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            if (n == nIterations / 10) {
-                zippel.clear(); brown.clear();
-            }
-            if (n % 100 == 0) System.out.println(n);
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Zippel (monic)", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("Zippel (monic)", MultivariateGCD::ZippelGCD));
 
-            GCDTriplet data = sampleData.nextSample(false, true);
-            MultivariatePolynomial<BigInteger> gcdZippel = null, gcdBrown = null;
-            try {
-                PrivateRandom.getRandom().setSeed(n);
-                long start = System.nanoTime();
-                gcdZippel = ZippelGCD(data.aGCD, data.bGCD);
-                zippel.addValue(System.nanoTime() - start);
-
-                start = System.nanoTime();
-                gcdBrown = BrownGCD(data.aGCD, data.bGCD);
-                brown.addValue(System.nanoTime() - start);
-
-                assertTrue(dividesQ(gcdZippel, data.gcd));
-                assertTrue(dividesQ(gcdBrown, data.gcd));
-
-                PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomialZp lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
-                assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
-            } catch (Throwable e) {
-                System.out.println("rnd seed : " + n);
-                System.out.println("domain: " + data.domain);
-                System.out.println("a: " + data.a);
-                System.out.println("b: " + data.b);
-                System.out.println("gcd : " + data.gcd);
-                System.out.println("gcdActual : " + gcdZippel);
-                throw e;
-            }
-        }
-        System.out.println("Zippel: " + TimeUnits.statisticsNanotime(zippel));
-        System.out.println("Brown: " + TimeUnits.statisticsNanotime(brown));
+        testGCDAlgorithms(sampleData, nIterations,
+                GCDAlgorithm.named("Zippel (monic)", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
     @Test(timeout = 10000)
@@ -597,48 +483,20 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         MultivariateGCD.ALWAYS_LINZIP = true;
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 5, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
+
         int nIterations = its(100, 1500);
 
-        DescriptiveStatistics zippel = new DescriptiveStatistics(), brown = new DescriptiveStatistics();
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        sampleData.monic = false;
+        sampleData.primitive = false;
 
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            if (n == nIterations / 10) {
-                zippel.clear(); brown.clear();
-            }
-            if (n % 10 == 0)
-                System.out.println(n);
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Zippel (non monic)", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("Zippel (non monic)", MultivariateGCD::ZippelGCD));
 
-            GCDTriplet data = sampleData.nextSample(false, false);
-            MultivariatePolynomial<BigInteger> gcdZippel = null, gcdBrown = null;
-            try {
-                PrivateRandom.getRandom().setSeed(n);
-                long start = System.nanoTime();
-                gcdZippel = ZippelGCD(data.aGCD, data.bGCD);
-                zippel.addValue(System.nanoTime() - start);
-
-                start = System.nanoTime();
-                gcdBrown = BrownGCD(data.aGCD, data.bGCD);
-                brown.addValue(System.nanoTime() - start);
-
-                assertTrue(dividesQ(gcdZippel, data.gcd));
-                assertTrue(dividesQ(gcdBrown, data.gcd));
-
-                PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomialZp lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
-                assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
-            } catch (Throwable e) {
-                System.out.println("rnd seed : " + n);
-                System.out.println("domain: " + data.domain);
-                System.out.println("a: " + data.a);
-                System.out.println("b: " + data.b);
-                System.out.println("gcd : " + data.gcd);
-                System.out.println("gcdActual : " + gcdZippel);
-                throw e;
-            }
-        }
-        System.out.println("Zippel: " + TimeUnits.statisticsNanotime(zippel));
-        System.out.println("Brown: " + TimeUnits.statisticsNanotime(brown));
+        testGCDAlgorithms(sampleData, nIterations,
+                GCDAlgorithm.named("Zippel (non monic)", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
     @Test
@@ -646,40 +504,15 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         MultivariateGCD.ALWAYS_LINZIP = true;
         RandomGenerator rnd = getRandom();
         int nVarsMin = 7, nVarsMax = 10, minDegree = 7, maxDegree = 10, minSize = 7, maxSize = 10;
-        int nIterations = its(100, 1500);
+        int nIterations = its(500, 1500);
 
-        DescriptiveStatistics zippel = new DescriptiveStatistics();
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        sampleData.monic = false;
+        sampleData.primitive = false;
 
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            if (n == nIterations / 10)
-                zippel.clear();
-            if (n % 10 == 0)
-                System.out.println(n);
-
-            GCDTriplet data = sampleData.nextSample(false, false);
-            MultivariatePolynomial<BigInteger> gcdZippel = null, gcdBrown = null;
-            try {
-                PrivateRandom.getRandom().setSeed(n);
-                long start = System.nanoTime();
-                gcdZippel = ZippelGCD(data.aGCD, data.bGCD);
-                zippel.addValue(System.nanoTime() - start);
-                assertTrue(dividesQ(gcdZippel, data.gcd));
-
-                PrivateRandom.getRandom().setSeed(n);
-                lMultivariatePolynomialZp lGcdZippel = ZippelGCD(asLongPolyZp(data.aGCD), asLongPolyZp(data.bGCD));
-                assertTrue(dividesQ(lGcdZippel, asLongPolyZp(data.gcd)));
-            } catch (Throwable e) {
-                System.out.println("rnd seed : " + n);
-                System.out.println("domain: " + data.domain);
-                System.out.println("a: " + data.a);
-                System.out.println("b: " + data.b);
-                System.out.println("gcd : " + data.gcd);
-                System.out.println("gcdActual : " + gcdZippel);
-                throw e;
-            }
-        }
-        System.out.println("Zippel: " + TimeUnits.statisticsNanotime(zippel));
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Zippel (non monic)", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("Zippel (non monic)", MultivariateGCD::ZippelGCD));
     }
 
     @Test
@@ -690,14 +523,11 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 a = parse("5*a^2*c^2+5*a^2*b^2*c^2+5*a^2*b^4*c^3+9*a^2*b^5*c^5+25709547*a^3*b^6*c^6+8*a^4*b*c^3+a^4*b^3*c+5*a^4*b^3*c^6", domain, LEX, vars),
                 b = parse("3*a*b^2*c^2+2*a^2*b^4+25709540*a^4*b*c^6+7*a^5*c^2+8*a^6*b*c^3", domain, LEX, vars),
                 gcd = parse("a + 5*b^2*c^6+2*a^4*b^4*c^5+25709543*a^5*b^2*c^5+9*a^6*c+25709540*a^6*c^3", domain, LEX, vars);
-        RandomGenerator rnd = getRandom();
 
-        int variable = a.nVariables - 1;
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
-
-        System.out.println(ZippelGCD(a, b));
+        assertZippelGCD(gcd, a, b);
     }
 
     @Test
@@ -830,14 +660,14 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     public void testSparseInterpolation_random1() throws Exception {
         int nIterations = its(1000, 5000);
         RandomGenerator rnd = getRandom();
-        TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
+
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
-            GCDTriplet gcdTriplet = sampleData.nextSample(false, false);
+            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> gcdTriplet = sampleData.nextSample(false, false);
             lMultivariatePolynomialZp gcd = null, actual = null;
             try {
-
-                lMultivariatePolynomialZp la = asLongPolyZp(gcdTriplet.aGCD);
-                lMultivariatePolynomialZp lb = asLongPolyZp(gcdTriplet.bGCD);
+                lMultivariatePolynomialZp la = gcdTriplet.a;
+                lMultivariatePolynomialZp lb = gcdTriplet.b;
                 gcd = ZippelGCD(la, lb);
                 if (la.isConstant() || lb.isConstant() || gcd.degree(0) == 0) {
                     --n; continue;
@@ -889,9 +719,10 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int nIterations = its(500, 1000);
         int badEvaluations = 0;
         RandomGenerator rnd = getRandom();
-        TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
+        GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
+                new GCDSampleDataGeneric<>(Integers, 3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
-            GCDTriplet gcdTriplet = sampleData.nextSample(false, false).asZ();
+            GCDSample<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> gcdTriplet = sampleData.nextSample(false, false);
             lMultivariatePolynomialZp skeleton = null, gcd = null, actual = null;
             IntegersModulo domain = null, domain1 = null;
             long seed = -1;
@@ -899,8 +730,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
                 domain = new IntegersModulo(getModulusRandom(20));
                 lMultivariatePolynomialZp
-                        la = asLongPolyZp(gcdTriplet.aGCD.setDomain(domain)),
-                        lb = asLongPolyZp(gcdTriplet.bGCD.setDomain(domain));
+                        la = asLongPolyZp(gcdTriplet.a.setDomain(domain)),
+                        lb = asLongPolyZp(gcdTriplet.b.setDomain(domain));
 
                 skeleton = ZippelGCD(la, lb);
                 if (la.isConstant() || lb.isConstant() || skeleton.degree(0) == 0) {
@@ -909,8 +740,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
                 domain1 = new IntegersModulo(getModulusRandom(20));
                 lMultivariatePolynomialZp
-                        la1 = asLongPolyZp(gcdTriplet.aGCD.setDomain(domain1)),
-                        lb1 = asLongPolyZp(gcdTriplet.bGCD.setDomain(domain1));
+                        la1 = asLongPolyZp(gcdTriplet.a.setDomain(domain1)),
+                        lb1 = asLongPolyZp(gcdTriplet.b.setDomain(domain1));
 
                 gcd = ZippelGCD(la1, lb1);
                 if (!gcd.sameSkeleton(skeleton)) {
@@ -1116,26 +947,11 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     public void testModularGCD_random1() throws Exception {
         int nIterations = its(1000, 3000);
         RandomGenerator rnd = getRandom();
-        TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            PrivateRandom.getRandom().setSeed(rnd.nextLong());
-            if (n % 100 == 0)
-                System.out.println(n);
-            GCDTriplet gcdTriplet = sampleData.nextSample(false, false).asZ();
-            MultivariatePolynomial<BigInteger> actualGCD = null;
-            try {
-                actualGCD = ModularGCD(gcdTriplet.aGCD, gcdTriplet.bGCD);
-                assertTrue(dividesQ(actualGCD, gcdTriplet.gcd));
-            } catch (Throwable thr) {
-                System.out.println(n);
-                System.out.println(gcdTriplet.domain);
-                System.out.println("a   : " + gcdTriplet.a);
-                System.out.println("b   : " + gcdTriplet.b);
-                System.out.println("gcd : " + gcdTriplet.gcd);
-                System.out.println("err : " + actualGCD);
-                throw thr;
-            }
-        }
+        GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
+                new GCDSampleDataGeneric<>(Integers, 3, 5, 5, 15, 5, 15, rnd);
+
+        testGCDAlgorithms(sampleData, nIterations,
+                GCDAlgorithm.named("Modular gcd", MultivariateGCD::ModularGCD));
     }
 
     @Ignore
@@ -1307,33 +1123,14 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         int nIterations = its(200, 1000);
         RandomGenerator rnd = getRandom();
-        TripletPort sampleData = new TripletPort(3, 5, 5, 15, 5, 15, rnd);
+
+        lGCDSampleDataZp sampleData =
+                new lGCDSampleDataZp(3, 5, 5, 15, 5, 15, rnd);
         sampleData.minModulusBits = 2;
         sampleData.maxModulusBits = 5;
-        for (int n = 0; n < nIterations; n++) {
-            PrivateRandom.getRandom().setSeed(rnd.nextLong());
-            if (n == 33)
-                stats.clear();
-            if (n % 100 == 0)
-                System.out.println(n);
-            GCDTriplet gcdTriplet = sampleData.nextSample(false, false);
-            MultivariatePolynomial<BigInteger> actualGCD = null;
-            try {
-                long start = System.nanoTime();
-                actualGCD = ModularGCDFiniteField(gcdTriplet.aGCD, gcdTriplet.bGCD);
-                stats.addValue(System.nanoTime() - start);
-                assertTrue(dividesQ(actualGCD, gcdTriplet.gcd));
-            } catch (Throwable thr) {
-                System.out.println(n);
-                System.out.println(gcdTriplet.domain);
-                System.out.println("a   : " + gcdTriplet.a);
-                System.out.println("b   : " + gcdTriplet.b);
-                System.out.println("gcd : " + gcdTriplet.gcd);
-                System.out.println("err : " + actualGCD);
-                throw thr;
-            }
-        }
-        System.out.println(stats);
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField),
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField));
     }
 
     @Test
@@ -1382,6 +1179,15 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         }
     }
 
+    private static lMultivariatePolynomialZp setZeroes(lMultivariatePolynomialZp poly, BitSet zeroes) {
+        TIntArrayList vars = new TIntArrayList();
+        for (int i = 0; i < zeroes.size(); i++)
+            if (zeroes.get(i))
+                vars.add(i);
+
+        return poly.evaluateAtZero(vars.toArray());
+    }
+
     @Test
     public void testEZEvaluations1() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
@@ -1400,13 +1206,13 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void testEZEvaluations2() throws Exception {
         RandomGenerator rnd = getRandom();
-        TripletPort sampleData = new TripletPort(3, 4, 2, 3, 5, 7, rnd);
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(3, 4, 2, 3, 5, 7, rnd);
         rnd.setSeed(42);
-        GCDTriplet sample = sampleData.nextSample(false, true);
-        for (MultivariatePolynomial<BigInteger>[] pp : new MultivariatePolynomial[][]{{sample.a, sample.b}, {sample.aGCD, sample.bGCD}}) {
+        GCDSample<lMonomialTerm, lMultivariatePolynomialZp> sample = sampleData.nextSample(false, true);
+        for (lMultivariatePolynomialZp[] pp : new lMultivariatePolynomialZp[][]{{sample.a, sample.b}, {sample.aCoFactor, sample.bCoFactor}}) {
             lMultivariatePolynomialZp
-                    a = asLongPolyZp(pp[0]),
-                    b = asLongPolyZp(pp[1]);
+                    a = pp[0],
+                    b = pp[1];
             if (a.isConstant() || b.isConstant())
                 continue;
             EZGCDEvaluations evals = new EZGCDEvaluations(a, b, a.nVariables, rnd);
@@ -1422,14 +1228,14 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     public void testEZEvaluationsRandom() throws Exception {
         RandomGenerator rnd = getRandom();
         int nIterations = its(10, 100);
-        TripletPort sampleData = new TripletPort(3, 4, 2, 3, 5, 7, rnd);
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(3, 4, 2, 3, 5, 7, rnd);
         for (int i = 0; i < nIterations; i++) {
             System.out.println(i);
-            GCDTriplet sample = sampleData.nextSample(false, true);
-            for (MultivariatePolynomial<BigInteger>[] pp : new MultivariatePolynomial[][]{{sample.a, sample.b}, {sample.aGCD, sample.bGCD}}) {
+            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> sample = sampleData.nextSample(false, true);
+            for (lMultivariatePolynomialZp[] pp : new lMultivariatePolynomialZp[][]{{sample.a, sample.b}, {sample.aCoFactor, sample.bCoFactor}}) {
                 lMultivariatePolynomialZp
-                        a = asLongPolyZp(pp[0]),
-                        b = asLongPolyZp(pp[1]);
+                        a = pp[0],
+                        b = pp[1];
                 if (a.isConstant() || b.isConstant())
                     continue;
                 EZGCDEvaluations evals = new EZGCDEvaluations(a, b, a.nVariables, rnd);
@@ -1688,119 +1494,253 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void testEZGCD_random1() throws Exception {
+    public void testEEZGCD_random1() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 4, minDegree = 2, maxDegree = 3, minSize = 5, maxSize = 7;
         int nIterations = its(100, 1000);
 
-        DescriptiveStatistics
-                zippel = new DescriptiveStatistics(),
-                brown = new DescriptiveStatistics(),
-                ezgcd = new DescriptiveStatistics();
-
-        TripletPort sampleData = new TripletPort(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
-        for (int n = 0; n < nIterations; n++) {
-            if (n == nIterations / 10) {
-                zippel.clear(); brown.clear(); ezgcd.clear();
-            }
-            if (n % 10 == 0)
-                System.out.println(n);
-
-            GCDTriplet data = sampleData.nextSample(false, false);
-            lMultivariatePolynomialZp
-                    actual = MultivariatePolynomial.asLongPolyZp(data.gcd),
-                    gcdZippel = null, gcdBrown = null, gcdEZ = null;
-            try {
-                PrivateRandom.getRandom().setSeed(n);
-                long start = System.nanoTime();
-                lMultivariatePolynomialZp a = MultivariatePolynomial.asLongPolyZp(data.aGCD);
-                lMultivariatePolynomialZp b = MultivariatePolynomial.asLongPolyZp(data.bGCD);
-                gcdZippel = ZippelGCD(a, b);
-                zippel.addValue(System.nanoTime() - start);
-
-                start = System.nanoTime();
-                gcdBrown = BrownGCD(a, b);
-                brown.addValue(System.nanoTime() - start);
-
-//                System.out.println(n);
-//                System.out.println(a.domain);
-//                System.out.println(data.a);
-//                System.out.println(data.b);
-//                System.out.println(actual);
-
-                PrivateRandom.getRandom().setSeed(n);
-                start = System.nanoTime();
-                gcdEZ = EZGCD(a, b);
-                ezgcd.addValue(System.nanoTime() - start);
-
-
-                assertTrue(dividesQ(gcdZippel, actual));
-                assertTrue(dividesQ(gcdBrown, actual));
-                assertTrue(dividesQ(gcdEZ, actual));
-            } catch (Throwable e) {
-                System.out.println("rnd seed : " + n);
-                System.out.println("domain: " + data.domain);
-                System.out.println("a: " + data.a);
-                System.out.println("b: " + data.b);
-                System.out.println("gcd : " + data.gcd);
-                System.out.println("gcdActual : " + gcdZippel);
-                throw e;
-            }
-        }
-        System.out.println("Zippel: " + TimeUnits.statisticsNanotime(zippel));
-        System.out.println("Brown: " + TimeUnits.statisticsNanotime(brown));
-        System.out.println("EZGCD: " + TimeUnits.statisticsNanotime(ezgcd));
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        testGCDAlgorithms(sampleData, nIterations,
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD),
+                GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("EZ-GCD", MultivariateGCD::EZGCD),
+                GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD));
     }
 
-    private static lMultivariatePolynomialZp setZeroes(lMultivariatePolynomialZp poly, BitSet zeroes) {
-        TIntArrayList vars = new TIntArrayList();
-        for (int i = 0; i < zeroes.size(); i++)
-            if (zeroes.get(i))
-                vars.add(i);
-
-        return poly.evaluateAtZero(vars.toArray());
+    @Test
+    public void testEEZGCD1() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(9607987);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("6998457+9068733*c+9042619*c^2+1283895*c^3+3738482*c^4+4888116*c^5+5574926*b+6161435*b*c+3428490*b*c^2+1423636*b*c^3+7718978*b*c^4+9607957*b*c^5+5803370*b^2+3797801*b^2*c+1899022*b^2*c^2+1286548*b^2*c^3+6635895*b^3+1871925*b^3*c+2687295*b^3*c^2+9406093*b^3*c^3+3101467*b^4+8800611*b^4*c+5291877*b^4*c^2+18*b^4*c^3", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("4572338+8988826*c+5700575*c^2+6517458*c^3+7602268*b+8674751*b*c+4253585*b*c^2+9607947*b*c^3+1248945*b^2+3165308*b^2*c+9363637*b^3+9338813*b^3*c+8757270*b^4+24*b^4*c", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("1", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EEZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
-    private static final class GCDTriplet {
-        final MultivariatePolynomial<BigInteger> a, b, gcd, aGCD, bGCD;
-        final Domain<BigInteger> domain;
+    @Test
+    public void testEEZGCD2() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(16604789);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("6*a*c*d^2+2*a*c^2+2*a*b^2*d+3*a*b^2*c^2*d^2", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("7*b^2*c^3*d+6*a^2*b^2*c^3+16604785*a^2*b^3*d+9*a^3*b*c^2+16604781*a^3*b*c^3", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("4*c^2*d+8*a+4*a*c^3*d^2+16604785*a^2*d^3+2*a^2*b^2*c^3*d", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EEZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
+    }
 
-        public GCDTriplet(MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, MultivariatePolynomial<BigInteger> gcd) {
-            this.a = a;
-            this.b = b;
+    @Test
+    public void testEEZGCD3() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(31012727);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("4*c+3*b*c^2+4*a*c+31012723*a*b+2*a^2*c+7*a^2*b*c", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("7*c^2+2*b*c^2+3*a*b*c^2+31012724*a*b^2+a^2*b^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("31012726*b*c+31012724*b*c^2+3*a*b", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EEZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEEZGCD4() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(31012727);
+        String[] vars = {"a", "b"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("31012718 + 3*b", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("12*a + 47454*a^2 + 30989135*b + 12*a*b + 9801*a^2*b + 41292*a*b^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("20675151*a + 31012726*a^2 + b", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EEZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEEZGCD5() throws Exception {
+        PrivateRandom.getRandom().setSeed(78);
+        lIntegersModulo domain = new lIntegersModulo(26662411);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("26662407*a^3*b^3*c*d^5*e^6+3*a^3*b^6*c^3*e^2+4*a^4*b^2*c^3*e^3+8*a^4*b^5*c^6*d^4*e^4+7*a^6*b*c^3*d", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("8*c+26662402*b*c*d+8*b^2*c*d*e+b^2*c^2+a*b*e^2+a^2*d*e^2+8*a^2*d^2*e^2+5*a^2*b*c*d^2*e^2+15*a^2*b*c^2*d", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("5*b^2*d^2*e^2+9*b^2*c^2*e+26662408*b^2*c^2*e^2+3*a*c^2*e+3*a*b*d^2+26662408*a*b^2*d*e+26662407*a*b^2*d^2*e^2+a^2*d^2*e^2+26662402*a^2*b^2*c*e^2", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EEZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEEZGCD6() throws Exception {
+        PrivateRandom.getRandom().setSeed(78);
+        lIntegersModulo domain = new lIntegersModulo(26662411);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("15*c^2*d+27*b^2+26662402*b^2*d+26662402*a*c+26662399*a*c^2*d+26662384*a^2*b*d", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("26657131*c^7*d^8+46200*b*c^2*d^2+26593651*b*c^3*d^2+20960*b*c^3*d^3+2620*b^2*c^2*d^2+26652907*b^2*c^5*d^7+3168*b^2*c^5*d^8+83160*b^3*d+26634691*b^3*d^2+26538643*b^3*c*d+78984*b^3*c*d^2+26649835*b^3*c*d^3+4716*b^4*d+26660839*b^4*d^2+7640*a*c^2*d^4+3168*a*c^6*d^7+26651827*a*c^7*d^6+4224*a*c^7*d^8+26634691*a*b*c*d+35952*a*b*c^2+41256*a*b*c^2*d+26612875*a*b*c^2*d^2+26631226*a*b*c^3+36672*a*b*c^3*d+55008*a*b*c^3*d^2+26645643*a*b*c^3*d^3+13752*a*b^2*d^3+26657827*a*b^2*d^4+26660839*a*b^2*c*d+4584*a*b^2*c^2+26660324*a*b^2*c^2*d^2+17640*a*b^2*c^2*d^5+26644891*a*b^2*c^5*d^7+35976*a*b^3*d+26621965*a*b^3*c*d+27720*a*b^3*c*d^2+3465*a*b^4*d+13833*a*b^4*d^3+31752*a*b^4*d^4+26651827*a*b^4*d^5+40*a*b^5*c^6*d^6+72*a*b^7*c^4*d^5+26662387*a*b^7*c^4*d^6+26657827*a^2*c*d^3+3465*a^2*c^2*d^2+26656299*a^2*c^2*d^4+5775*a^2*c^3*d^4+46200*a^2*c^4*d^4+26656571*a^2*c^7*d^8+11992*a^2*b*c^2*d^2+26648929*a^2*b*c^3*d^2+9240*a^2*b*c^3*d^3+38200*a^2*b*c^4*d^4+9504*a^2*b*c^5*d^8+26579251*a^2*b^2*d^2+4494*a^2*b^2*d^3+123768*a^2*b^2*c*d^2+26635078*a^2*b^2*c*d^3+26648362*a^2*b^2*c*d^4+1155*a^2*b^2*c^2*d^2+100680*a^2*b^2*c^2*d^3+26639302*a^2*b^2*c^2*d^4+26648299*a^2*b^2*c^2*d^5+114600*a^2*b^2*c^3*d^2+26657695*a^2*b^3*d^2+68760*a^2*b^3*c^2*d^3+26639491*a^2*b^3*c^2*d^4+3300*a^2*b^4*d^4+206280*a^2*b^4*c*d+26593651*a^2*b^4*c*d^2+26662387*a^2*b^5*c^5*d^5+36888*a^2*b^5*c^6*d^4+26662379*a^2*b^5*c^6*d^6+6336*a^2*b^7*c^4*d^5+26658946*a^3*c^2*d^3+1498*a^3*c^2*d^4+4494*a^3*c^3*d^2+26634691*a^3*c^3*d^3+26657791*a^3*c^3*d^4+35952*a^3*c^4*d^2+26625451*a^3*c^4*d^4+26648659*a^3*b*d^4+26639491*a^3*b*c^3*d^3+17325*a^3*b*c^4*d^2+26631851*a^3*b*c^4*d^4+4497*a^3*b^2*c*d^3+26593651*a^3*b^2*c^2*d+35976*a^3*b^2*c^2*d^3+1100*a^3*b^2*c^2*d^5+51975*a^3*b^2*c^3+26621831*a^3*b^2*c^3*d^2+26630659*a^3*b^3*d^5+22470*a^3*b^3*c^2*d^3+159390*a^3*b^4*c*d+26631751*a^3*b^4*c*d^2+2112*a^3*b^5*c^6*d^6+26662339*a^3*b^6*c^4*d^6+1499*a^4*c^3*d^4+11992*a^4*c^4*d^4+26652016*a^4*b*c*d^4+26579251*a^4*b*c^2*d^4+7490*a^4*b*c^4*d^4+26631751*a^4*b^2*c^2*d+26593651*a^4*b^2*c^2*d^4+5775*a^4*b^2*c^3+26644001*a^4*b^2*c^3*d^2+26456131*a^4*b^3*c*d^2+15456*a^4*b^4*c*d+5152*a^5*b^2*c^3*d^2+26570431*a^5*b^3*c*d^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("1", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EEZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
+    }
+
+
+    /* =============================================== Test data =============================================== */
+
+    /** sample data for test of GCD */
+    public static final class GCDSample<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        /** sample polynomials */
+        public final Poly a, b;
+        /** their GCD */
+        public final Poly gcd;
+        /** a/gcd and b/gcd */
+        public final Poly aCoFactor, bCoFactor;
+        /** either generic Domain or lIntegersModulo */
+        public final Object domain;
+
+        public GCDSample(Poly aCoFactor, Poly bCoFactor, Poly gcd) {
+            this.aCoFactor = aCoFactor;
+            this.bCoFactor = bCoFactor;
             this.gcd = gcd;
-            this.domain = a.domain;
-            this.aGCD = a.clone().multiply(gcd);
-            this.bGCD = b.clone().multiply(gcd);
-        }
-
-        private GCDTriplet(MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b, MultivariatePolynomial<BigInteger> gcd, MultivariatePolynomial<BigInteger> aGCD, MultivariatePolynomial<BigInteger> bGCD, Domain<BigInteger> domain) {
-            this.a = a;
-            this.b = b;
-            this.gcd = gcd;
-            this.aGCD = aGCD;
-            this.bGCD = bGCD;
-            this.domain = domain;
-        }
-
-        public GCDTriplet evaluate(int variable, BigInteger value) {
-            return new GCDTriplet(a.evaluate(variable, value), b.evaluate(variable, value), gcd.evaluate(variable, value),
-                    aGCD.evaluate(variable, value), bGCD.evaluate(variable, value), domain);
-        }
-
-        GCDTriplet asZ() {
-            return new GCDTriplet(a.setDomain(Integers), b.setDomain(Integers), gcd.setDomain(Integers));
+            this.a = aCoFactor.clone().multiply(gcd);
+            this.b = bCoFactor.clone().multiply(gcd);
+            checkConsistency(a, b, gcd, aCoFactor, bCoFactor);
+            this.domain = (gcd instanceof lMultivariatePolynomialZp)
+                    ? ((lMultivariatePolynomialZp) gcd).domain
+                    : ((MultivariatePolynomial) gcd).domain;
         }
     }
 
-    private static final class TripletPort {
-        final int nVarsMin, nVarsMax,
+    /** substitute random values for some variables */
+    public static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    GCDSampleData<Term, Poly> fixVariables(final GCDSampleData<Term, Poly> data, int nActuallyUsedVariables) {
+        return new GCDSampleData<Term, Poly>() {
+            @Override
+            GCDSample<Term, Poly> nextSample0(boolean primitive, boolean monic) {
+                GCDSample<Term, Poly> sample = data.nextSample(primitive, monic);
+
+                RandomGenerator rnd = getRandom();
+                Poly gcd = sample.gcd;
+                do {
+                    gcd = gcd.evaluateAtRandom(rnd.nextInt(gcd.nVariables), rnd);
+                } while (gcd.nUsedVariables() > nActuallyUsedVariables);
+
+                Poly
+                        aCoFactor = sample.aCoFactor,
+                        bCoFactor = sample.bCoFactor;
+                int[] gcdDegrees = gcd.degrees();
+                for (int i = 0; i < gcdDegrees.length; i++) {
+                    if (gcdDegrees[i] == 0) {
+                        if (rnd.nextBoolean())
+                            aCoFactor = aCoFactor.evaluateAtRandom(i, rnd);
+                        else
+                            bCoFactor = bCoFactor.evaluateAtRandom(i, rnd);
+                    }
+                }
+
+                return new GCDSample<>(aCoFactor, bCoFactor, gcd);
+            }
+
+            @Override
+            public String toString() {
+                return data.toString() + ", nUsedVariables = " + nActuallyUsedVariables;
+            }
+        };
+    }
+
+    /** probable coprime polynomials */
+    public static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    GCDSampleData<Term, Poly> coprimeData(final GCDSampleData<Term, Poly> data) {
+        return new GCDSampleData<Term, Poly>() {
+            @Override
+            GCDSample<Term, Poly> nextSample0(boolean primitive, boolean monic) {
+                GCDSample<Term, Poly> sample = data.nextSample(primitive, monic);
+                return new GCDSample<>(sample.aCoFactor, sample.bCoFactor, sample.aCoFactor.createOne());
+            }
+
+            @Override
+            public String toString() {
+                return data.toString();
+            }
+        };
+    }
+
+    /** provides random data for GCD tests */
+    public static abstract class GCDSampleData<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+
+        final DescriptiveStatistics
+                medFactorsSize = new DescriptiveStatistics(),
+                medFactorsDegree = new DescriptiveStatistics(),
+                medGCDSize = new DescriptiveStatistics(),
+                medGCDDegree = new DescriptiveStatistics(),
+                medFactorsUsedVariables = new DescriptiveStatistics(),
+                medGCDUsedVariables = new DescriptiveStatistics();
+
+        public boolean primitive = false, monic = false;
+
+        final GCDSample<Term, Poly> nextSample() {
+            return nextSample(primitive, monic);
+        }
+
+        final GCDSample<Term, Poly> nextSample(boolean primitive, boolean monic) {
+            GCDSample<Term, Poly> sample = nextSample0(primitive, monic);
+            medFactorsDegree.addValue(sample.a.degreeSum());
+            medFactorsDegree.addValue(sample.b.degreeSum());
+            medGCDDegree.addValue(sample.gcd.degreeSum());
+
+            medFactorsSize.addValue(sample.a.size());
+            medFactorsSize.addValue(sample.b.size());
+            medGCDSize.addValue(sample.gcd.size());
+
+            medFactorsUsedVariables.addValue(sample.a.nUsedVariables());
+            medFactorsUsedVariables.addValue(sample.b.nUsedVariables());
+            medGCDUsedVariables.addValue(sample.gcd.nUsedVariables());
+            return sample;
+        }
+
+        abstract GCDSample<Term, Poly> nextSample0(boolean primitive, boolean monic);
+
+        final void printSamplesStatistics() {
+            System.out.println("Median polys size : " + medFactorsSize.getPercentile(0.5));
+            System.out.println("Median gcd   size : " + medGCDSize.getPercentile(0.5));
+            System.out.println("Median polys deg  : " + medFactorsDegree.getPercentile(0.5));
+            System.out.println("Median gcd   deg  : " + medGCDDegree.getPercentile(0.5));
+            System.out.println("Median poly nVars : " + medFactorsUsedVariables.getPercentile(0.5));
+            System.out.println("Median gcd  nVars : " + medGCDUsedVariables.getPercentile(0.5));
+        }
+    }
+
+    /** provides random data for GCD tests */
+    public static abstract class AGCDSampleData<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+            extends GCDSampleData<Term, Poly> {
+        public final int nVarsMin, nVarsMax,
                 minDegree, maxDegree,
                 minSize, maxSize;
-        final RandomGenerator rnd;
-        final RandomDataGenerator rndd;
+        public final RandomGenerator rnd;
+        public final RandomDataGenerator rndd;
 
-        public TripletPort(int nVarsMin, int nVarsMax, int minDegree, int maxDegree, int minSize, int maxSize, RandomGenerator rnd) {
+        public AGCDSampleData(int nVarsMin, int nVarsMax, int minDegree, int maxDegree, int minSize, int maxSize, RandomGenerator rnd) {
             this.nVarsMin = nVarsMin;
             this.nVarsMax = nVarsMax;
             this.minDegree = minDegree;
@@ -1811,42 +1751,275 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             this.rndd = new RandomDataGenerator(rnd);
         }
 
-        int minModulusBits = 24, maxModulusBits = 25;
+        /** number of generated samples */
+        public long counter = 0;
 
-        long counter = 0;
+        /**
+         * Next sample
+         *
+         * @param primitive whether to make sample primitive
+         * @param monic     ensure that sample polynomials are monic in main variable
+         */
+        @Override
+        public final GCDSample<Term, Poly> nextSample0(boolean primitive, boolean monic) {
+            rnd.setSeed(++counter);
+            return nextSample1(primitive, monic);
+        }
 
-        public GCDTriplet nextSample(boolean primitive, boolean monic) {
-            PrivateRandom.getRandom().setSeed(counter++);
-            long modulus = getModulusRandom(rndd.nextInt(minModulusBits, maxModulusBits));
-            IntegersModulo domain = new IntegersModulo(modulus);
-            BigInteger bound = BigInteger.valueOf(10);
+        protected abstract GCDSample<Term, Poly> nextSample1(boolean primitive, boolean monic);
 
-            int nVariables = rndd.nextInt(nVarsMin, nVarsMax);
-            MultivariatePolynomial<BigInteger>
-                    a = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), bound, domain, LEX, rnd),
-                    b = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), bound, domain, LEX, rnd),
-                    gcd = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), bound, domain, LEX, rnd);
+        private static String range(int from, int to) {
+            return "[" + from + ", " + to + "]";
+        }
 
-
-            if (primitive) {
-                a = asNormalMultivariate(a.asOverUnivariate(0).primitivePart(), 0);
-                b = asNormalMultivariate(b.asOverUnivariate(0).primitivePart(), 0);
-                gcd = asNormalMultivariate(gcd.asOverUnivariate(0).primitivePart(), 0);
-            }
-            if (monic) {
-                a.add(new MonomialTerm<>(a.nVariables, 0, a.degree() + 1, BigInteger.ONE));
-                b.add(new MonomialTerm<>(a.nVariables, 0, b.degree() + 1, BigInteger.ONE));
-                gcd.add(new MonomialTerm<>(a.nVariables, 0, gcd.degree() + 1, BigInteger.ONE));
-            }
-            if (gcd.isZero())
-                return nextSample(primitive, monic);
-            return new GCDTriplet(a, b, gcd);
+        @Override
+        public String toString() {
+            return "Sample data: " +
+                    " nVariables ∈ " + range(nVarsMin, nVarsMax) +
+                    ", deg ∈ " + range(minDegree, maxDegree) +
+                    ", size ∈ " + range(minSize, maxSize) +
+                    ", monic input = " + monic +
+                    ", primitive input = " + primitive;
         }
     }
 
+    /** sample data for machine-sized Zp polynomials */
+    public static final class lGCDSampleDataZp extends AGCDSampleData<lMonomialTerm, lMultivariatePolynomialZp> {
+        public lGCDSampleDataZp(int nVarsMin, int nVarsMax, int minDegree, int maxDegree, int minSize, int maxSize, RandomGenerator rnd) {
+            super(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        }
+
+        public int minModulusBits = 24, maxModulusBits = 32;
+
+        @Override
+        public GCDSample<lMonomialTerm, lMultivariatePolynomialZp> nextSample1(boolean primitive, boolean monic) {
+            long modulus = AbstractPolynomialTest.getModulusRandom(rndd.nextInt(minModulusBits, maxModulusBits));
+            lIntegersModulo domain = new lIntegersModulo(modulus);
+
+            int nVariables = rndd.nextInt(nVarsMin, nVarsMax);
+            lMultivariatePolynomialZp[] data = new lMultivariatePolynomialZp[3];
+            for (int i = 0; i < 3; i++) {
+                lMultivariatePolynomialZp
+                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), domain, LEX, rnd);
+
+                // make coefficients small
+                p = p.setDomain(66).setDomain(domain);
+
+                if (primitive)
+                    p = lMultivariatePolynomialZp.asNormalMultivariate(p.asOverUnivariateEliminate(0).primitivePart(), 0);
+
+                if (monic)
+                    // make monic in main variable by adding some monomial
+                    p.add(p.createUnivariateMonomial(0, p.degreeSum() + 1));
+
+                if (p.isZero()) {
+                    --i;
+                    continue;
+                }
+                data[i] = p;
+            }
+
+            return new GCDSample<>(data[0], data[1], data[2]);
+        }
+    }
+
+    /** generic sample data */
+    public static final class GCDSampleDataGeneric<E> extends AGCDSampleData<MonomialTerm<E>, MultivariatePolynomial<E>> {
+        final Domain<E> domain;
+
+        public GCDSampleDataGeneric(Domain<E> domain, int nVarsMin, int nVarsMax, int minDegree, int maxDegree, int minSize, int maxSize, RandomGenerator rnd) {
+            super(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+            this.domain = domain;
+        }
+
+        @Override
+        public GCDSample<MonomialTerm<E>, MultivariatePolynomial<E>> nextSample1(boolean primitive, boolean monic) {
+            int nVariables = rndd.nextInt(nVarsMin, nVarsMax);
+            @SuppressWarnings("unchecked")
+            MultivariatePolynomial<E>[] data = new MultivariatePolynomial[3];
+            for (int i = 0; i < 3; i++) {
+                MultivariatePolynomial<E>
+                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), domain, LEX, rnd);
+
+                if (primitive)
+                    p = MultivariatePolynomial.asNormalMultivariate(p.asOverUnivariateEliminate(0).primitivePart(), 0);
+
+                if (monic)
+                    // make monic in main variable by adding some monomial
+                    p.add(p.createUnivariateMonomial(0, p.degreeSum() + 1));
+
+                if (p.isZero()) {
+                    --i;
+                    continue;
+                }
+                data[i] = p;
+            }
+
+            return new GCDSample<>(data[0], data[1], data[2]);
+        }
+    }
+
+    /** GCD algorithm with name abbreviation */
+    public static final class GCDAlgorithm<Poly extends AMultivariatePolynomial> {
+        final String algorithmName;
+        final BiFunction<Poly, Poly, Poly> algorithm;
+
+        public GCDAlgorithm(String algorithmName, BiFunction<Poly, Poly, Poly> algorithm) {
+            this.algorithmName = algorithmName;
+            this.algorithm = algorithm;
+        }
+
+        @Override
+        public String toString() {
+            return algorithmName;
+        }
+
+        public static <P extends AMultivariatePolynomial> GCDAlgorithm<P>
+        named(String name, BiFunction<P, P, P> algorithm) {
+            return new GCDAlgorithm<>(name, algorithm);
+        }
+    }
+
+    /** run specified gcd algorithms on sample input */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void testGCDAlgorithms(GCDSampleData<Term, Poly> sampleData, int nIterations,
+                           GCDAlgorithm<Poly>... algorithms) {
+        System.out.println("\nRunning gcd tests for " + Arrays.toString(algorithms));
+        System.out.println(sampleData);
+
+        DescriptiveStatistics timings[] = new DescriptiveStatistics[algorithms.length];
+        for (int i = 0; i < timings.length; i++)
+            timings[i] = new DescriptiveStatistics();
+
+
+        int progressPercent = 0, previousPercent = -1;
+        for (int n = 0; n < nIterations; n++) {
+            if (n == nIterations / 10)
+                Arrays.stream(timings).forEach(DescriptiveStatistics::clear);
+
+            progressPercent = (int) (100.0 * n / nIterations);
+            if (progressPercent != previousPercent) {
+                previousPercent = progressPercent;
+                // print progress
+                System.out.print(">");
+                System.out.flush();
+            }
+
+            GCDSample<Term, Poly> sample = sampleData.nextSample();
+
+            Poly result = null;
+            GCDAlgorithm<Poly> algorithm = null;
+            long seed = -1;
+            try {
+                for (int i = 0; i < algorithms.length; i++) {
+                    PrivateRandom.getRandom().setSeed(seed = PrivateRandom.getRandom().nextLong());
+                    algorithm = algorithms[i];
+                    long start = System.nanoTime();
+                    result = algorithm.algorithm.apply(sample.a, sample.b);
+                    timings[i].addValue(System.nanoTime() - start);
+                    checkConsistency(result);
+                    assertTrue(dividesQ(result, sample.gcd));
+                }
+            } catch (Throwable e) {
+                printError(algorithm, result, sample, seed);
+                throw e;
+            }
+        }
+        System.out.println();
+        sampleData.printSamplesStatistics();
+        System.out.println("---------- timings ----------");
+        for (int i = 0; i < timings.length; i++)
+            System.out.println(algorithms[i].algorithmName + ": " + TimeUnits.statisticsNanotime(timings[i]));
+    }
+
+    /** run specified gcd algorithms on sample input */
+    public static void testGCDAlgorithm(GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp> sampleData, int nIterations,
+                                        GCDAlgorithm<lMultivariatePolynomialZp> lAlgorithm,
+                                        GCDAlgorithm<MultivariatePolynomial<BigInteger>> algorithm) {
+        System.out.println("\nRunning gcd tests for " + algorithm);
+        System.out.println(sampleData);
+
+        DescriptiveStatistics
+                timingLong = new DescriptiveStatistics(),
+                timingBigInteger = new DescriptiveStatistics();
+
+        int progressPercent, previousPercent = -1;
+        for (int n = 0; n < nIterations; n++) {
+            if (n == nIterations / 10) {
+                timingLong.clear();
+                timingBigInteger.clear();
+            }
+
+            progressPercent = (int) (100.0 * n / nIterations);
+            if (progressPercent != previousPercent) {
+                previousPercent = progressPercent;
+                // print progress
+                System.out.print(">");
+                System.out.flush();
+            }
+
+            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> sample = sampleData.nextSample();
+
+            MultivariatePolynomial<BigInteger> result = null;
+            lMultivariatePolynomialZp lResult = null;
+            long seed = -1;
+            try {
+                PrivateRandom.getRandom().setSeed(seed = PrivateRandom.getRandom().nextLong());
+
+                MultivariatePolynomial<BigInteger>
+                        aBig = sample.a.toBigPoly(),
+                        bBig = sample.b.toBigPoly();
+
+                long start = System.nanoTime();
+                result = algorithm.algorithm.apply(aBig, bBig);
+                timingBigInteger.addValue(System.nanoTime() - start);
+                checkConsistency(result);
+                assertTrue(dividesQ(result, sample.gcd.toBigPoly()));
+
+
+                start = System.nanoTime();
+                lResult = lAlgorithm.algorithm.apply(sample.a, sample.b);
+                timingLong.addValue(System.nanoTime() - start);
+                checkConsistency(lResult);
+                assertTrue(dividesQ(lResult, sample.gcd));
+
+                assertEquals(result.size(), lResult.size());
+            } catch (Throwable e) {
+                printError(algorithm, result, sample, seed);
+                throw e;
+            }
+        }
+        System.out.println();
+        sampleData.printSamplesStatistics();
+        System.out.println("---------- timings ----------");
+        System.out.println("Machine integers  : " + TimeUnits.statisticsNanotime(timingLong));
+        System.out.println("Big integers      : " + TimeUnits.statisticsNanotime(timingBigInteger));
+    }
+
+    private static void printError(GCDAlgorithm algorithm, Object result, GCDSample sample, long seed) {
+        System.out.println();
+        System.out.println("========== Exception ========");
+        System.out.println("algorithm  : " + algorithm.algorithmName);
+        System.out.println("rnd seed   : " + seed);
+        System.out.println("domain     : " + sample.domain);
+        System.out.println("a          : " + sample.a);
+        System.out.println("b          : " + sample.b);
+        System.out.println("real gcd   : " + sample.gcd);
+        System.out.println("actual gcd : " + result);
+        System.out.println("=============================");
+    }
+
     @SuppressWarnings("unchecked")
-    private static void checkConsistency(MultivariatePolynomial... polys) {
+    private static <Poly extends AMultivariatePolynomial> void checkConsistency(Poly... polys) {
         Arrays.stream(polys).forEach(MultivariateGCDTest::checkConsistency);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Poly extends AMultivariatePolynomial> void checkConsistency(Poly poly) {
+        if (poly instanceof MultivariatePolynomial) {
+            checkConsistency((MultivariatePolynomial) poly);
+        } else
+            checkConsistency((lMultivariatePolynomialZp) poly);
     }
 
     private static <E> void checkConsistency(MultivariatePolynomial<E> poly) {
@@ -1862,29 +2035,12 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         }
     }
 
-//    @Test
-//    public void trash() throws Exception {
-//        String[] vars = {"a", "b", "c"};
-//        IntegersModulo domain = new IntegersModulo(BigPrimes.nextPrime(56423421232L));
-//        MultivariatePolynomial<BigInteger>
-//                a = parse("5*a^1123*c^2+5*a^2*b^2*c^2+5*a^2*b^4*c^3+9*a^2213*b^523*c^5+25709547*a^3*b^6*c^611+8*a^4*b*c^3+a^4*b^3*c+5*a^4*b^3*c^6+a^1500", domain, GREVLEX, vars),
-//                b = parse("3*a*b^2*c^2+2*a^2*b^421+25709540*a^4*b*c^6+7*a^5*c^1232+8*a^6*b^876*c^3+a^1500", domain, GREVLEX, vars),
-//                gcd = parse("5*b^2*c^6+2*a^412*b^4*c^5+25709543*a^5*b^892*c^512+9*a^6*c+25709540*a^6*c^3+a^1500", domain, GREVLEX, vars);
-//        RandomGenerator rnd = getRandom();
-//
-//        int variable = a.nVariables - 1;
-//        a = fromZp(convertZp(a, 0).primitivePart(), domain, 0);
-//        b = fromZp(convertZp(b, 0).primitivePart(), domain, 0);
-//        gcd = fromZp(convertZp(gcd, 0).primitivePart(), domain, 0);
-//
-//        gcd = gcd.monic();
-//        a = a.clone().monic().multiply(gcd);
-//        b = b.clone().monic().multiply(gcd);
-//
-//
-//        System.out.println(a);
-//        System.out.println(b);
-//        System.out.println(domain.modulus);
-//        System.out.println(Zippel(a, b));
-//    }
+    private static void checkConsistency(lMultivariatePolynomialZp poly) {
+        lIntegersModulo domain = poly.domain;
+        for (lMonomialTerm e : poly.terms) {
+            long value = e.coefficient;
+            assertFalse(value == 0);
+            assertTrue(value == domain.modulus(value));
+        }
+    }
 }
