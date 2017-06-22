@@ -3537,31 +3537,24 @@ public final class MultivariateGCD {
         return gcdInput.restoreGCD(result);
     }
 
-    /** actual EZ-GCD implementation */
+
     private static lMultivariatePolynomialZp EEZGCD0(
             lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, RandomGenerator rnd) {
 
         // degree of univariate gcd
         int ugcdDegree = Integer.MAX_VALUE;
+        // degrees of a and b as Z[y1, ... ,yN][x]
+        int
+                uaDegree = a.degree(0),
+                ubDegree = b.degree(0);
 
         Set<DegreeVector> aSkeleton = a.getSkeleton(0), bSkeleton = b.getSkeleton(0);
         choose_evaluation:
         while (true) {
-            // set new evaluation point (true returned if base variable has changed)
-            a = a.clone();
-            b = b.clone();
-
-            // degrees of a and b as Z[y1, ... ,yN][x]
-            int
-                    uaDegree = a.degree(0),
-                    ubDegree = b.degree(0);
-
+            // set new evaluation point
             long[] substitutions = new long[a.nVariables - 1];
-            for (int j = 0; j < substitutions.length; j++) {
-                do {
-                    substitutions[j] = a.domain.randomElement(rnd);
-                } while (substitutions[j] == 0);
-            }
+            for (int j = 0; j < substitutions.length; j++)
+                substitutions[j] = a.domain.randomNonZeroElement(rnd);
 
             HenselLifting.Evaluation evaluation = new HenselLifting.Evaluation(a.nVariables, substitutions, a.domain, a.ordering);
             lMultivariatePolynomialZp
@@ -3581,10 +3574,9 @@ public final class MultivariateGCD {
             // gcd of a mod I and b mod I (univariate)
             lUnivariatePolynomialZp ugcd = UnivariateGCD.PolynomialGCD(ua, ub);
 
-            if (ugcd.degree() == 0) {
+            if (ugcd.degree() == 0)
                 // coprime polynomials
                 return a.createOne();
-            }
 
             if (ugcd.degree() > ugcdDegree)
                 // unlucky evaluation
@@ -3695,4 +3687,5 @@ public final class MultivariateGCD {
                 return gcd;
         }
     }
+
 }

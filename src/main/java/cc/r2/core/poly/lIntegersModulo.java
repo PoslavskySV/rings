@@ -115,6 +115,20 @@ public final class lIntegersModulo {
         return modulus(rnd.nextLong());
     }
 
+    /**
+     * Returns a random non zero element from this domain
+     *
+     * @param rnd the source of randomness
+     * @return random non zero element from this domain
+     */
+    public long randomNonZeroElement(RandomGenerator rnd) {
+        long el;
+        do {
+            el = randomElement(rnd);
+        } while (el == 0);
+        return el;
+    }
+
     public long factorial(int value) {
         long result = 1;
         for (int i = 2; i <= value; ++i)

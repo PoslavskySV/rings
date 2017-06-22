@@ -373,18 +373,22 @@ public final class HenselLifting {
         }
     }
 
-    static void liftWang(lMultivariatePolynomialZp base,
-                         lMultivariatePolynomialZp a,
-                         lMultivariatePolynomialZp b,
-                         Evaluation evaluation) {
+    /**
+     * Lifts factorization base = a * b mod <(x2-b2), ... , (xN-bN)>
+     */
+    public static void liftWang(lMultivariatePolynomialZp base,
+                                lMultivariatePolynomialZp a,
+                                lMultivariatePolynomialZp b,
+                                Evaluation evaluation) {
         lMultivariatePolynomialZp lc = base.lc(0);
 
         if (lc.isConstant())
             liftWang(base, a, b, null, null, evaluation);
         else {
             // imposing leading coefficients
-            lMultivariatePolynomialZp lcCorrection = lc.ccAsPoly();
+            lMultivariatePolynomialZp lcCorrection = evaluation.evaluateFrom(lc, 1);
 
+            assert !lcCorrection.isZero();
             assert a.lt().exponents[0] == a.degree(0);
             assert b.lt().exponents[0] == b.degree(0);
 
@@ -399,16 +403,17 @@ public final class HenselLifting {
         }
     }
 
-    static void liftWang(lMultivariatePolynomialZp base,
-                         lMultivariatePolynomialZp a,
-                         lMultivariatePolynomialZp b,
-                         lMultivariatePolynomialZp aLC,
-                         lMultivariatePolynomialZp bLC,
-                         Evaluation evaluation) {
+    public static void liftWang(lMultivariatePolynomialZp base,
+                                lMultivariatePolynomialZp a,
+                                lMultivariatePolynomialZp b,
+                                lMultivariatePolynomialZp aLC,
+                                lMultivariatePolynomialZp bLC,
+                                Evaluation evaluation) {
         // a and b are coprime univariate polynomials over x1
         // we lift them up to the solution in (x1, x2, ..., xN)
         assert a.univariateVariable() == 0 && b.univariateVariable() == 0 : a.univariateVariable() + "  " + b.univariateVariable();
-        assert evaluation.evaluateFrom(base, 1).equals(a.clone().multiply(b));
+        assert evaluation.evaluateFrom(base, 1).equals(evaluation.evaluateFrom(a.clone().multiply(b), 1))
+                : "\n base: " + base + "\n a: " + a + "\n b: " + b;
 
         if (aLC != null) {
             // replace lc trick
@@ -448,3 +453,5 @@ public final class HenselLifting {
         }
     }
 }
+
+
