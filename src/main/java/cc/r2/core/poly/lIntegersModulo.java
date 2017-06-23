@@ -129,6 +129,12 @@ public final class lIntegersModulo {
         return el;
     }
 
+    /**
+     * Gives value!
+     *
+     * @param value the number
+     * @return value!
+     */
     public long factorial(int value) {
         long result = 1;
         for (int i = 2; i <= value; ++i)

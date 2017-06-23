@@ -417,6 +417,19 @@ public interface Domain<E> extends Comparator<E> {
         }
     }
 
+    /**
+     * Gives value!
+     *
+     * @param value the number
+     * @return value!
+     */
+    default E factorial(long value) {
+        E result = getOne();
+        for (int i = 2; i <= value; ++i)
+            result = multiply(result, valueOf(i));
+        return result;
+    }
+
 //    /**
 //     * Returns the element which is next to the specified {@code element} (according to {@link #compare(Object, Object)})
 //     * or {@code null} in the case of infinite cardinality

@@ -1,11 +1,13 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.CommonPolynomialsArithmetics;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.UnivariatePolynomials;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Arrays;
@@ -236,6 +238,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             univarData[e.exponents[theVar]] = e.coefficient;
         return UnivariatePolynomial.createUnsafe(domain, univarData);
     }
+
     /**
      * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
      *
@@ -672,6 +675,25 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return multiply(factor).divideOrNull(lc);
     }
 
+    @Override
+    public MultivariatePolynomial<E> monicWithLC(MultivariatePolynomial<E> other) {
+        return monic(other.lc());
+    }
+
+    /**
+     * Substitutes {@code 0} for {@code variable}.
+     *
+     * @param variable the variable
+     * @return a new multivariate polynomial with {@code 0} substituted for {@code variable}
+     */
+    public MultivariatePolynomial<E> evaluateAtZero(int variable) {
+        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
+        for (MonomialTerm<E> el : terms)
+            if (el.exponents[variable] == 0)
+                newData.add(el);
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, newData);
+    }
+
     /**
      * Substitutes {@code value} for {@code variable}.
      *
@@ -683,19 +705,63 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     public MultivariatePolynomial<E> evaluate(int variable, E value) {
         value = domain.valueOf(value);
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
+        if (domain.isZero(value))
+            return evaluateAtZero(variable);
         PrecomputedPowers<E> powers = new PrecomputedPowers<>(value, domain);
+        return evaluate(variable, powers);
+    }
+
+    /**
+     * Substitutes {@code value} for {@code variable}.
+     *
+     * @param variable the variable
+     * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the
+     * same {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link #eliminate(int, long)})
+     */
+    MultivariatePolynomial<E> evaluate(int variable, PrecomputedPowers<E> powers) {
+        if (domain.isZero(powers.value))
+            return evaluateAtZero(variable);
+        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
         for (MonomialTerm<E> el : terms) {
             E val = domain.multiply(el.coefficient, powers.pow(el.exponents[variable]));
             add(newData, el.setZero(variable, val));
         }
+        return new MultivariatePolynomial<E>(nVariables, domain, ordering, newData);
+    }
+
+    /**
+     * Substitutes {@code 0} for all specified {@code variables}.
+     *
+     * @param variables the variables
+     * @return a new multivariate polynomial with {@code 0} substituted for all specified {@code variables}
+     */
+    public MultivariatePolynomial<E> evaluateAtZero(int[] variables) {
+        if (variables.length == 0)
+            return this.clone();
+        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
+        out:
+        for (MonomialTerm<E> el : terms) {
+            for (int variable : variables)
+                if (el.exponents[variable] != 0)
+                    continue out;
+            newData.add(el);
+        }
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newData);
     }
 
-    /** substitutes {@code values} for {@code variables} */
-    @SuppressWarnings("unchecked")
-    MultivariatePolynomial<E> evaluate(PrecomputedPowersHolder powers, int[] variables) {
-        return evaluate(powers, variables, ones(variables.length));
+    UnivariatePolynomial<E> evaluateAtZeroAllExcept(int variable) {
+        E[] uData = domain.createArray(degree(variable) + 1);
+        out:
+        for (MonomialTerm<E> el : terms) {
+            if (el.totalDegree != 0 && el.exponents[variable] == 0)
+                continue;
+            for (int i = 0; i < nVariables; ++i)
+                if (i != variable && el.exponents[i] != 0)
+                    continue out;
+            int uExp = el.exponents[variable];
+            uData[uExp] = domain.add(uData[uExp], el.coefficient);
+        }
+        return UnivariatePolynomial.createUnsafe(domain, uData);
     }
 
     /**
@@ -709,7 +775,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E> evaluate(int[] variables, E[] values) {
-        return evaluate(new PrecomputedPowersHolder<>(nVariables, variables, values, domain), variables, ones(nVariables));
+        for (E value : values)
+            if (!domain.isZero(value))
+                return evaluate(new PrecomputedPowersHolder<>(nVariables, variables, values, domain), variables, ones(nVariables));
+
+        // <- all values are zero
+        return evaluateAtZero(variables);
     }
 
     /* cached array of units */
@@ -725,6 +796,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     static {
         for (int i = 0; i < ones.length; i++)
             ones[i] = ArraysUtil.arrayOf(1, i);
+    }
+
+    /** substitutes {@code values} for {@code variables} */
+    @SuppressWarnings("unchecked")
+    MultivariatePolynomial<E> evaluate(PrecomputedPowersHolder<E> powers, int[] variables) {
+        return evaluate(powers, variables, ones(variables.length));
     }
 
     /** substitutes {@code values} for {@code variables} */
@@ -840,9 +917,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     /** holds an array of precomputed powers */
     static final class PrecomputedPowersHolder<E> {
-        private final int cacheSize;
-        private final Domain<E> domain;
-        private final PrecomputedPowers<E>[] powers;
+        final int cacheSize;
+        final Domain<E> domain;
+        final PrecomputedPowers<E>[] powers;
 
         PrecomputedPowersHolder(int nVariables, int[] variables, E[] points, Domain<E> domain) {
             this(SIZE_OF_POWERS_CACHE, nVariables, variables, points, domain);
@@ -857,7 +934,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
                 powers[variables[i]] = points[i] == null ? null : new PrecomputedPowers<>(cacheSize, points[i], domain);
         }
 
-
         void set(int i, E point) {
             if (powers[i] == null || !powers[i].value.equals(point))
                 powers[i] = new PrecomputedPowers<>(cacheSize, point, domain);
@@ -865,6 +941,172 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
         E pow(int variable, int exponent) {
             return powers[variable].pow(exponent);
+        }
+    }
+
+
+    /**
+     * Substitutes {@code variable -> poly} and returns the result (copied)
+     *
+     * @param variable the variable
+     * @param poly     the replacement for the variable
+     * @return a copy of this with  {@code variable -> poly}
+     */
+    public MultivariatePolynomial<E> substitute(int variable, MultivariatePolynomial<E> poly) {
+        if (poly.isConstant())
+            return evaluate(variable, poly.cc());
+        PrecomputedSubstitution<E> subsPowers;
+        if (poly.isEffectiveUnivariate())
+            subsPowers = new USubstitution<>(poly.asUnivariate(), poly.univariateVariable(), nVariables, ordering);
+        else
+            subsPowers = new MSubstitution<>(poly);
+
+        MultivariatePolynomial<E> result = createZero();
+        for (MonomialTerm<E> term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent == 0) {
+                result.add(term);
+                continue;
+            }
+
+            result.add(subsPowers.pow(exponent).multiply(term.setZero(variable)));
+        }
+        return result;
+    }
+
+    /**
+     * Substitutes {@code variable -> variable + shift} and returns the result (copied)
+     *
+     * @param variable the variable
+     * @param shift    shift amount
+     * @return a copy of this with  {@code variable -> variable + shift}
+     */
+    public MultivariatePolynomial<E> shift(int variable, long shift) {
+        return shift(variable, domain.valueOf(shift));
+    }
+
+    /**
+     * Substitutes {@code variable -> variable + shift} and returns the result (copied)
+     *
+     * @param variable the variable
+     * @param shift    shift amount
+     * @return a copy of this with  {@code variable -> variable + shift}
+     */
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E> shift(int variable, E shift) {
+        if (domain.isZero(shift))
+            return clone();
+
+        USubstitution<E> shifts = new USubstitution<>(UnivariatePolynomial.create(domain, shift, domain.getOne()), variable, nVariables, ordering);
+        MultivariatePolynomial<E> result = createZero();
+        for (MonomialTerm<E> term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent == 0) {
+                result.add(term);
+                continue;
+            }
+
+            result.add(shifts.pow(exponent).multiply(term.setZero(variable)));
+        }
+        return result;
+    }
+
+    /**
+     * Substitutes {@code variable -> variable + shift} for each variable from {@code variables} array
+     *
+     * @param variables the variables
+     * @param shifts    the corresponding shifts
+     * @return a copy of this with  {@code variable -> variable + shift}
+     */
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E> shift(int[] variables, E[] shifts) {
+        PrecomputedSubstitution<E>[] powers = new PrecomputedSubstitution[nVariables];
+        boolean allShiftsAreZero = true;
+        for (int i = 0; i < variables.length; ++i) {
+            if (!domain.isZero(shifts[i]))
+                allShiftsAreZero = false;
+            powers[variables[i]] = new USubstitution<>(UnivariatePolynomial.create(domain, shifts[i], domain.getOne()), variables[i], nVariables, ordering);
+        }
+
+        if (allShiftsAreZero)
+            return clone();
+
+        PrecomputedSubstitutions<E> calculatedShifts = new PrecomputedSubstitutions<>(powers);
+
+        MultivariatePolynomial<E> result = createZero();
+        for (MonomialTerm<E> term : this) {
+            MultivariatePolynomial<E> temp = createOne();
+            for (int variable : variables) {
+                if (term.exponents[variable] != 0) {
+                    temp = temp.multiply(calculatedShifts.getSubstitutionPower(variable, term.exponents[variable]));
+                    term = term.setZero(variable);
+                }
+            }
+            if (temp.isOne()) {
+                result.add(term);
+                continue;
+            }
+            result.add(temp.multiply(term));
+        }
+        return result;
+    }
+
+    static final class PrecomputedSubstitutions<E> {
+        final PrecomputedSubstitution<E>[] subs;
+
+        public PrecomputedSubstitutions(PrecomputedSubstitution<E>[] subs) {
+            this.subs = subs;
+        }
+
+        MultivariatePolynomial<E> getSubstitutionPower(int var, int exponent) {
+            if (subs[var] == null)
+                throw new IllegalArgumentException();
+
+            return subs[var].pow(exponent);
+        }
+    }
+
+    interface PrecomputedSubstitution<E> {
+        MultivariatePolynomial<E> pow(int exponent);
+    }
+
+    static final class USubstitution<E> implements PrecomputedSubstitution<E> {
+        final int variable;
+        final int nVariables;
+        final Comparator<DegreeVector> ordering;
+        final UnivariatePolynomial<E> base;
+        final TIntObjectHashMap<UnivariatePolynomial<E>> uCache = new TIntObjectHashMap<>();
+        final TIntObjectHashMap<MultivariatePolynomial<E>> mCache = new TIntObjectHashMap<>();
+
+        USubstitution(UnivariatePolynomial<E> base, int variable, int nVariables, Comparator<DegreeVector> ordering) {
+            this.nVariables = nVariables;
+            this.variable = variable;
+            this.ordering = ordering;
+            this.base = base;
+        }
+
+        @Override
+        public MultivariatePolynomial<E> pow(int exponent) {
+            MultivariatePolynomial<E> cached = mCache.get(exponent);
+            if (cached != null)
+                return cached.clone();
+            UnivariatePolynomial<E> r = CommonPolynomialsArithmetics.polyPow(base, exponent, true, uCache);
+            mCache.put(exponent, cached = asMultivariate(r, nVariables, variable, ordering));
+            return cached;
+        }
+    }
+
+    static final class MSubstitution<E> implements PrecomputedSubstitution<E> {
+        final MultivariatePolynomial<E> base;
+        final TIntObjectHashMap<MultivariatePolynomial<E>> cache = new TIntObjectHashMap<>();
+
+        MSubstitution(MultivariatePolynomial<E> base) {
+            this.base = base;
+        }
+
+        @Override
+        public MultivariatePolynomial<E> pow(int exponent) {
+            return CommonPolynomialsArithmetics.polyPow(base, exponent, true, cache);
         }
     }
 
@@ -946,6 +1188,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return this;
     }
 
+    @Override
+    public MultivariatePolynomial<E> multiplyByLC(MultivariatePolynomial<E> other) {
+        return multiply(other.lc());
+    }
 
     /** {@inheritDoc} */
     @Override

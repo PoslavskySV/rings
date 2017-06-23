@@ -380,6 +380,19 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     }
 
     /**
+     * Sets {@code this} to its monic part multiplied by the {@code factor};
+     *
+     * @param factor the factor
+     * @return {@code this}
+     */
+    public abstract lPoly monic(long factor);
+
+    @Override
+    public lPoly monicWithLC(lPoly other) {
+        return monic(other.lc());
+    }
+
+    /**
      * Add constant to this.
      *
      * @param val some number
@@ -505,6 +518,11 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         for (int i = degree; i >= 0; --i)
             data[i] = negate(data[i]);
         return self;
+    }
+
+    @Override
+    public lPoly multiplyByLC(lPoly other) {
+        return multiply(other.lc());
     }
 
     /** {@inheritDoc} */

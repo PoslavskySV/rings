@@ -83,6 +83,12 @@ public final class ArraysUtil {
         return arr;
     }
 
+    public static BigInteger[] negate(BigInteger[] arr) {
+        for (int i = 0; i < arr.length; i++)
+            arr[i] = arr[i].negate();
+        return arr;
+    }
+
     public static String toString(long[] a, int from, int to) {
         if (a == null)
             return "null";

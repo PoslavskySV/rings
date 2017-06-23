@@ -6,6 +6,7 @@ import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.number.ChineseRemainders;
 import cc.r2.core.number.primes.PrimesIterator;
 import cc.r2.core.poly.*;
+import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
 import cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.lInterpolation;
@@ -324,7 +325,7 @@ public final class MultivariateGCD {
     }
 
     @SuppressWarnings("unchecked")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly asMultivariate(IUnivariatePolynomial poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
         if (poly instanceof UnivariatePolynomial)
             return (Poly) MultivariatePolynomial.asMultivariate((UnivariatePolynomial) poly, nVariables, variable, ordering);
@@ -3491,23 +3492,21 @@ public final class MultivariateGCD {
     }
 
 
-        /* =============================================== EZ-GCD algorithm ============================================ */
-
+    /* =============================================== EZ-GCD algorithm ============================================ */
 
     /**
-     * Calculates GCD of two multivariate polynomials over Zp using Zippel's algorithm with sparse interpolation.
+     * Calculates GCD of two multivariate polynomials over Zp using enhanced EZ algorithm
      *
      * @param a the first multivariate polynomial
      * @param b the second multivariate polynomial
      * @return greatest common divisor of {@code a} and {@code b}
      */
     @SuppressWarnings("unchecked")
-    public static lMultivariatePolynomialZp EEZGCD(
-            lMultivariatePolynomialZp a,
-            lMultivariatePolynomialZp b) {
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly EEZGCD(Poly a, Poly b) {
 
         // prepare input and test for early termination
-        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b);
+        GCDInput<Term, Poly> gcdInput = preparedGCDInput(a, b);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -3515,21 +3514,21 @@ public final class MultivariateGCD {
         b = gcdInput.bReduced;
 
         // remove content in each variable
-        lMultivariatePolynomialZp content = a.createOne();
+        Poly content = a.createOne();
         for (int i = 0; i < a.nVariables; ++i) {
             if (a.degree(i) == 0 || b.degree(i) == 0)
                 continue;
-            lMultivariatePolynomialZp tmpContent = contentGCD(a, b, i, MultivariateGCD::EEZGCD);
+            Poly tmpContent = contentGCD(a, b, i, MultivariateGCD::EEZGCD);
             a = divideExact(a, tmpContent);
             b = divideExact(b, tmpContent);
             content = content.multiply(tmpContent);
         }
 
         // one more reduction; removing of content may shuffle required variables order
-        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput2 = preparedGCDInput(a, b);
+        GCDInput<Term, Poly> gcdInput2 = preparedGCDInput(a, b);
         a = gcdInput2.aReduced; b = gcdInput2.bReduced;
 
-        lMultivariatePolynomialZp result = gcdInput2.earlyGCD != null
+        Poly result = gcdInput2.earlyGCD != null
                 ? gcdInput2.earlyGCD
                 : gcdInput2.restoreGCD(EEZGCD0(a, b, PrivateRandom.getRandom()));
 
@@ -3537,9 +3536,32 @@ public final class MultivariateGCD {
         return gcdInput.restoreGCD(result);
     }
 
+    @SuppressWarnings("unchecked")
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    IEvaluation<Term, Poly> createEvaluation(Poly factory, RandomGenerator rnd) {
+        if (factory instanceof lMultivariatePolynomialZp) {
+            lMultivariatePolynomialZp lFactory = (lMultivariatePolynomialZp) factory;
+            // set new evaluation point
+            long[] substitutions = new long[factory.nVariables - 1];
+            for (int j = 0; j < substitutions.length; j++)
+                substitutions[j] = lFactory.domain.randomNonZeroElement(rnd);
 
-    private static lMultivariatePolynomialZp EEZGCD0(
-            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, RandomGenerator rnd) {
+            return (IEvaluation<Term, Poly>) new HenselLifting.lEvaluation(lFactory.nVariables, substitutions, lFactory.domain, lFactory.ordering);
+        } else if (factory instanceof MultivariatePolynomial) {
+            MultivariatePolynomial lFactory = (MultivariatePolynomial) factory;
+            // set new evaluation point
+            Object[] substitutions = lFactory.domain.createArray(lFactory.nVariables - 1);
+            for (int j = 0; j < substitutions.length; j++)
+                substitutions[j] = lFactory.domain.randomNonZeroElement(rnd);
+
+            return (IEvaluation<Term, Poly>) new HenselLifting.Evaluation(lFactory.nVariables, substitutions, lFactory.domain, lFactory.ordering);
+        } else
+            throw new RuntimeException();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly EEZGCD0(Poly a, Poly b, RandomGenerator rnd) {
 
         // degree of univariate gcd
         int ugcdDegree = Integer.MAX_VALUE;
@@ -3551,20 +3573,15 @@ public final class MultivariateGCD {
         Set<DegreeVector> aSkeleton = a.getSkeleton(0), bSkeleton = b.getSkeleton(0);
         choose_evaluation:
         while (true) {
-            // set new evaluation point
-            long[] substitutions = new long[a.nVariables - 1];
-            for (int j = 0; j < substitutions.length; j++)
-                substitutions[j] = a.domain.randomNonZeroElement(rnd);
-
-            HenselLifting.Evaluation evaluation = new HenselLifting.Evaluation(a.nVariables, substitutions, a.domain, a.ordering);
-            lMultivariatePolynomialZp
+            IEvaluation<Term, Poly> evaluation = createEvaluation(a, rnd);
+            Poly
                     mua = evaluation.evaluateFrom(a, 1),
                     mub = evaluation.evaluateFrom(b, 1);
 
             if (!aSkeleton.equals(mua.getSkeleton()) || !bSkeleton.equals(mub.getSkeleton()))
                 continue;
 
-            lUnivariatePolynomialZp
+            IUnivariatePolynomial
                     ua = mua.asUnivariate(),
                     ub = mub.asUnivariate();
 
@@ -3572,7 +3589,7 @@ public final class MultivariateGCD {
             assert ub.degree() == ubDegree;
 
             // gcd of a mod I and b mod I (univariate)
-            lUnivariatePolynomialZp ugcd = UnivariateGCD.PolynomialGCD(ua, ub);
+            IUnivariatePolynomial ugcd = UnivariateGCD.PolynomialGCD(ua, ub);
 
             if (ugcd.degree() == 0)
                 // coprime polynomials
@@ -3599,13 +3616,13 @@ public final class MultivariateGCD {
             }
 
             // base polynomial to lift (either a or b)
-            lMultivariatePolynomialZp base = null;
+            Poly base = null;
             // a cofactor with gcd to lift, i.e. base = ugcd * uCoFactor mod I
-            lUnivariatePolynomialZp uCoFactor = null;
-            lMultivariatePolynomialZp coFactorLC = null;
+            IUnivariatePolynomial uCoFactor = null;
+            Poly coFactorLC = null;
 
             // deg(b) < deg(a), so it is better to try to lift b
-            lUnivariatePolynomialZp ubCoFactor = DivisionWithRemainder.quotient(ub, ugcd, true);
+            IUnivariatePolynomial ubCoFactor = DivisionWithRemainder.quotient(ub, ugcd, true);
             if (UnivariateGCD.PolynomialGCD(ugcd, ubCoFactor).isConstant()) {
                 // b splits into coprime factors
                 base = b;
@@ -3615,7 +3632,7 @@ public final class MultivariateGCD {
 
             if (base == null) {
                 // b does not split into coprime factors => try a
-                lUnivariatePolynomialZp uaCoFactor = DivisionWithRemainder.quotient(ua, ugcd, true);
+                IUnivariatePolynomial uaCoFactor = DivisionWithRemainder.quotient(ua, ugcd, true);
                 if (UnivariateGCD.PolynomialGCD(ugcd, uaCoFactor).isConstant()) {
                     base = a;
                     uCoFactor = uaCoFactor;
@@ -3625,13 +3642,13 @@ public final class MultivariateGCD {
 
             if (base == null) {
                 // neither a nor b does not split into coprime factors => square free decomposition required
-                lMultivariatePolynomialZp
+                Poly
                         bRepeatedFactor = EEZGCD(b, b.derivative(0, 1)),
                         squareFreeGCD = EEZGCD(divideExact(b, bRepeatedFactor), a),
                         aRepeatedFactor = divideExact(a, squareFreeGCD),
                         gcd = squareFreeGCD.clone();
 
-                lUnivariatePolynomialZp
+                IUnivariatePolynomial
                         uSquareFreeGCD = evaluation.evaluateFrom(squareFreeGCD, 1).asUnivariate(),
                         uaRepeatedFactor = evaluation.evaluateFrom(aRepeatedFactor, 1).asUnivariate(),
                         ubRepeatedFactor = evaluation.evaluateFrom(bRepeatedFactor, 1).asUnivariate();
@@ -3643,9 +3660,9 @@ public final class MultivariateGCD {
                         return gcd;
 
                     if (!uSquareFreeGCD.clone().monic().equals(ugcd.clone().monic())) {
-                        lMultivariatePolynomialZp
-                                mgcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering),
-                                gcdCoFactor = lMultivariatePolynomialZp.asMultivariate(
+                        Poly
+                                mgcd = (Poly) asMultivariate(ugcd, a.nVariables, 0, a.ordering),
+                                gcdCoFactor = (Poly) asMultivariate(
                                         DivisionWithRemainder.divideExact(uSquareFreeGCD, ugcd, false), a.nVariables, 0, a.ordering);
 
                         HenselLifting.liftWang(squareFreeGCD, mgcd, gcdCoFactor, evaluation);
@@ -3660,23 +3677,21 @@ public final class MultivariateGCD {
                 }
             }
 
-            lMultivariatePolynomialZp gcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering);
-            lMultivariatePolynomialZp coFactor = lMultivariatePolynomialZp.asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
+            Poly gcd = asMultivariate(ugcd, a.nVariables, 0, a.ordering);
+            Poly coFactor = asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
 
             // impose the leading coefficient
-            lMultivariatePolynomialZp lcCorrection = EEZGCD(a.lc(0), b.lc(0));
-            assert ZippelGCD(a.lc(0), b.lc(0)).monic(lcCorrection.lc()).equals(lcCorrection) : "\n" + a.lc(0) + "  \n " + b.lc(0);
+            Poly lcCorrection = EEZGCD(a.lc(0), b.lc(0));
+            //assert ZippelGCD(a.lc(0), b.lc(0)).monic(lcCorrection.lc()).equals(lcCorrection) : "\n" + a.lc(0) + "  \n " + b.lc(0);
 
             if (lcCorrection.isOne()) {
                 HenselLifting.liftWang(base, gcd, coFactor, null, base.lc(0), evaluation);
             } else {
-                lMultivariatePolynomialZp tmp = evaluation.evaluateFrom(lcCorrection, 1);
-                assert tmp.isConstant();
-                long lcCorrectionMod = tmp.cc(); // substitute all zeros
-                assert lcCorrectionMod != 0 : lcCorrection;
+                Poly lcCorrectionMod = evaluation.evaluateFrom(lcCorrection, 1);
+                assert lcCorrectionMod.isConstant();
 
-                coFactor = coFactor.multiply(gcd.lc());
-                gcd = gcd.monic(lcCorrectionMod);
+                coFactor = coFactor.multiplyByLC(gcd);
+                gcd = gcd.monicWithLC(lcCorrectionMod);
 
                 HenselLifting.liftWang(base.clone().multiply(lcCorrection), gcd, coFactor, lcCorrection, coFactorLC, evaluation);
                 assert gcd.lc(0).equals(lcCorrection);
@@ -3687,5 +3702,4 @@ public final class MultivariateGCD {
                 return gcd;
         }
     }
-
 }

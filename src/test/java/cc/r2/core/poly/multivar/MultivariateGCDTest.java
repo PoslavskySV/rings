@@ -1612,6 +1612,18 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testEEZGCD_random3() throws Exception {
+        RandomGenerator rnd = getRandom();
+        int nVarsMin = 3, nVarsMax = 5, minDegree = 2, maxDegree = 5, minSize = 5, maxSize = 17;
+        int nIterations = its(100, 200);
+
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD),
+                GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD));
+    }
+
+    @Test
     public void testEEZGCD7() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
         lMultivariatePolynomialZp

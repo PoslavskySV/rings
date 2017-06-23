@@ -228,6 +228,18 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return divideOrNull(lc());
     }
 
+    @Override
+    public lUnivariatePolynomialZ monic(long factor) {
+        long lc = lc();
+        long gcd = LongArithmetics.gcd(lc, factor);
+        factor = factor / gcd;
+        lc = lc / gcd;
+        lUnivariatePolynomialZ r = divideOrNull(lc);
+        if (r == null)
+            return null;
+        return r.multiply(factor);
+    }
+
     /**
      * Divides this polynomial by a {@code factor} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.

@@ -629,6 +629,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return multiply(domain.multiply(domain.modulus(factor), domain.reciprocal(lc())));
     }
 
+    @Override
+    public lMultivariatePolynomialZp monicWithLC(lMultivariatePolynomialZp other) {
+        return monic(other.lc());
+    }
+
     /**
      * Substitutes {@code 0} for {@code variable}.
      *
@@ -1096,6 +1101,10 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return this;
     }
 
+    @Override
+    public lMultivariatePolynomialZp multiplyByLC(lMultivariatePolynomialZp other) {
+        return multiply(other.lc());
+    }
 
     /** {@inheritDoc} */
     @Override

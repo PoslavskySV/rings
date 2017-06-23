@@ -289,6 +289,7 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
      * @param factor the factor
      * @return {@code this}
      */
+    @Override
     public lUnivariatePolynomialZp monic(long factor) {
         return multiply(multiply(valueOf(factor), domain.reciprocal(lc())));
     }

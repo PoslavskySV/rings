@@ -289,6 +289,22 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
     Poly divideByLC(Poly other);
 
     /**
+     * Sets {@code this} to its monic part multiplied by the leading coefficient of {@code other};
+     *
+     * @param other other polynomial
+     * @return monic part multiplied by the leading coefficient of {@code other};
+     */
+    Poly monicWithLC(Poly other);
+
+    /**
+     * Multiply this by the leading coefficient of {@code other}
+     *
+     * @param other polynomial
+     * @return this * lc(other)
+     */
+    Poly multiplyByLC(Poly other);
+
+    /**
      * Deep copy of this
      *
      * @return deep copy of this

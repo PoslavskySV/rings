@@ -1,7 +1,9 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.poly.UnivariatePolynomials;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.multivar.MultivariatePolynomial.PrecomputedPowersHolder;
+import cc.r2.core.poly.multivar.MultivariatePolynomial.USubstitution;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lPrecomputedPowersHolder;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lUSubstitution;
 import cc.r2.core.poly.univar.*;
@@ -90,35 +92,10 @@ public final class HenselLifting {
         }
     }
 
-    static lMultivariatePolynomialZp primitivePart(lMultivariatePolynomialZp poly) {
-        if (poly.nVariables == 2)
-            // univariate GCDs will be used for calculation of primitive part
-            return toSparseRepresentation(poly, toDenseRepresentation(poly).primitivePart());
-        else
-            // multivariate GCDs will be used for calculation of primitive part
-            return AMultivariatePolynomial.asMultivariate(poly.asUnivariate(0).primitivePart(), 0);
-    }
-
-    /** dense representation R[x][y] of bivariate polynomial **/
-    private static UnivariatePolynomial<lUnivariatePolynomialZp> toDenseRepresentation(lMultivariatePolynomialZp poly) {
-        UnivariatePolynomials<lUnivariatePolynomialZp> domain = new UnivariatePolynomials<>(lUnivariatePolynomialZp.zero(poly.domain));
-        lUnivariatePolynomialZp[] univarData = domain.createZeroesArray(poly.degree(0) + 1);
-        for (lMonomialTerm e : poly.terms)
-            univarData[e.exponents[0]].addMonomial(e.coefficient, e.exponents[1]);
-        return UnivariatePolynomial.createUnsafe(domain, univarData);
-    }
-
-    /** sparse representation R[x, y] of bivariate polynomial R[x][y] **/
-    private static lMultivariatePolynomialZp toSparseRepresentation(lMultivariatePolynomialZp factory, UnivariatePolynomial<lUnivariatePolynomialZp> poly) {
-        lMultivariatePolynomialZp r = factory.createZero();
-        for (int i = poly.degree(); i >= 0; --i) {
-            if (poly.isZeroAt(i))
-                continue;
-
-            lUnivariatePolynomialZp yPoly = poly.get(i);
-            r.add(lMultivariatePolynomialZp.asMultivariate(yPoly, 2, 1, factory.ordering).multiplyByMonomial(0, i));
-        }
-        return r;
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly primitivePart(Poly poly) {
+        // multivariate GCDs will be used for calculation of primitive part
+        return AMultivariatePolynomial.asMultivariate(poly.asUnivariate(0).primitivePart(), 0);
     }
 
     /** Lift equation base = a * b mod x2 to actual solution */
@@ -217,13 +194,35 @@ public final class HenselLifting {
 
     /* ================================ 2-factor variable-by-variable EEZ lifting ================================== */
 
-    static final class Evaluation {
+    /**
+     * Holds a substitution x2 -> b2, ..., xN -> bN
+     */
+    interface IEvaluation<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+
+        /**
+         * Substitutes all variables starting from specified {@code variable} (inclusive), i.e.
+         * {@code variable -> b_i, variable + 1-> b_(i + 1), ... xN -> bN}
+         */
+        Poly evaluateFrom(Poly poly, int variable);
+
+        /**
+         * @return {@code (1/order!) d(poly)/(d var) | var -> b}
+         */
+        Poly taylorCoefficient(Poly poly, int var, int order);
+
+        /** @return (x_i - b_i)^exponent */
+        Poly linearPower(int variable, int exponent);
+    }
+
+    static final class lEvaluation implements IEvaluation<lMonomialTerm, lMultivariatePolynomialZp> {
         final long[] values;
         final int nVariables;
         final lPrecomputedPowersHolder precomputedPowers;
         final lUSubstitution[] linearPowers;
 
-        Evaluation(int nVariables, long[] values, lIntegersModulo domain, Comparator<DegreeVector> ordering) {
+        lEvaluation(int nVariables, long[] values, lIntegersModulo domain, Comparator<DegreeVector> ordering) {
             this.nVariables = nVariables;
             this.values = values;
             this.precomputedPowers = new lPrecomputedPowersHolder(nVariables, ArraysUtil.sequence(1, nVariables), values, domain);
@@ -232,16 +231,13 @@ public final class HenselLifting {
                 linearPowers[i] = new lUSubstitution(lUnivariatePolynomialZ.create(-values[i], 1).modulus(domain), i + 1, nVariables, ordering);
         }
 
-        lMultivariatePolynomialZp evaluateFrom(lMultivariatePolynomialZp poly, int variable) {
+        @Override
+        public lMultivariatePolynomialZp evaluateFrom(lMultivariatePolynomialZp poly, int variable) {
             return poly.evaluate(precomputedPowers, ArraysUtil.sequence(variable, nVariables));
         }
 
-        /** value for specified variable */
-        long valueFor(int variable) {
-            return values[variable - 1];
-        }
-
-        lMultivariatePolynomialZp taylorCoefficient(lMultivariatePolynomialZp poly, int var, int order) {
+        @Override
+        public lMultivariatePolynomialZp taylorCoefficient(lMultivariatePolynomialZp poly, int var, int order) {
             lMultivariatePolynomialZp derivative = poly.derivative(var, order);
             if (derivative.isZero())
                 return derivative;
@@ -250,7 +246,45 @@ public final class HenselLifting {
                     .divide(poly.domain.factorial(order));
         }
 
-        lMultivariatePolynomialZp linearPower(int variable, int exponent) {
+        @Override
+        public lMultivariatePolynomialZp linearPower(int variable, int exponent) {
+            return linearPowers[variable - 1].pow(exponent);
+        }
+    }
+
+    static final class Evaluation<E> implements IEvaluation<MonomialTerm<E>, MultivariatePolynomial<E>> {
+        final E[] values;
+        final int nVariables;
+        final PrecomputedPowersHolder<E> precomputedPowers;
+        final USubstitution<E>[] linearPowers;
+
+        @SuppressWarnings("unchecked")
+        Evaluation(int nVariables, E[] values, Domain<E> domain, Comparator<DegreeVector> ordering) {
+            this.nVariables = nVariables;
+            this.values = values;
+            this.precomputedPowers = new PrecomputedPowersHolder<>(nVariables, ArraysUtil.sequence(1, nVariables), values, domain);
+            this.linearPowers = new USubstitution[nVariables - 1];
+            for (int i = 0; i < nVariables - 1; i++)
+                linearPowers[i] = new USubstitution<>(UnivariatePolynomial.create(domain, domain.negate(values[i]), domain.getOne()), i + 1, nVariables, ordering);
+        }
+
+        @Override
+        public MultivariatePolynomial<E> evaluateFrom(MultivariatePolynomial<E> poly, int variable) {
+            return poly.evaluate(precomputedPowers, ArraysUtil.sequence(variable, nVariables));
+        }
+
+        @Override
+        public MultivariatePolynomial<E> taylorCoefficient(MultivariatePolynomial<E> poly, int var, int order) {
+            MultivariatePolynomial<E> derivative = poly.derivative(var, order);
+            if (derivative.isZero())
+                return derivative;
+            return derivative
+                    .evaluate(var, precomputedPowers.powers[var])
+                    .divideOrNull(poly.domain.factorial(order));
+        }
+
+        @Override
+        public MultivariatePolynomial<E> linearPower(int variable, int exponent) {
             return linearPowers[variable - 1].pow(exponent);
         }
     }
@@ -284,42 +318,47 @@ public final class HenselLifting {
     }
 
     /** solves a * x + b * y = rhs for given multivariate a, b and r (a and b are coprime) and unknown x and y */
-    static final class MDiophantineSolver {
-        final Evaluation evaluation;
-        final lMultivariatePolynomialZp a, b;
-        final lMultivariatePolynomialZp[] aImages, bImages;
-        final UDiophantineSolver<lUnivariatePolynomialZp> uSolver;
+    static final class DiophantineSolver<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>> {
+        final IEvaluation<Term, Poly> evaluation;
+        final Poly a, b;
+        final Poly[] aImages, bImages;
+        final UDiophantineSolver<uPoly> uSolver;
         final int[] degreeBounds;
 
-        public MDiophantineSolver(lMultivariatePolynomialZp a,
-                                  lMultivariatePolynomialZp b,
-                                  Evaluation evaluation,
-                                  int[] degreeBounds) {
+        @SuppressWarnings("unchecked")
+        public DiophantineSolver(Poly a,
+                                 Poly b,
+                                 IEvaluation<Term, Poly> evaluation,
+                                 int[] degreeBounds) {
             this.a = a;
             this.b = b;
             this.evaluation = evaluation;
             this.degreeBounds = degreeBounds;
 
-            aImages = new lMultivariatePolynomialZp[a.nVariables];
-            bImages = new lMultivariatePolynomialZp[b.nVariables];
+            aImages = a.arrayNewInstance(a.nVariables);
+            bImages = a.arrayNewInstance(a.nVariables);
 
             for (int i = 0; i < a.nVariables; i++) {
                 aImages[i] = evaluation.evaluateFrom(a, i + 1);
                 bImages[i] = evaluation.evaluateFrom(b, i + 1);
             }
 
-            uSolver = new UDiophantineSolver<>(aImages[0].asUnivariate(), bImages[0].asUnivariate());
+            uSolver = new UDiophantineSolver<>((uPoly) aImages[0].asUnivariate(), (uPoly) bImages[0].asUnivariate());
         }
 
         /** the solution */
-        lMultivariatePolynomialZp x, y;
+        Poly x, y;
 
-        void solve(lMultivariatePolynomialZp rhs, int liftingVariable) {
+        @SuppressWarnings("unchecked")
+        void solve(Poly rhs, int liftingVariable) {
             rhs = evaluation.evaluateFrom(rhs, liftingVariable + 1);
             if (liftingVariable == 0) {
-                uSolver.solve(rhs.asUnivariate());
-                x = lMultivariatePolynomialZp.asMultivariate(uSolver.x, rhs.nVariables, 0, rhs.ordering);
-                y = lMultivariatePolynomialZp.asMultivariate(uSolver.y, rhs.nVariables, 0, rhs.ordering);
+                uSolver.solve((uPoly) rhs.asUnivariate());
+                x = MultivariateGCD.asMultivariate(uSolver.x, rhs.nVariables, 0, rhs.ordering);
+                y = MultivariateGCD.asMultivariate(uSolver.y, rhs.nVariables, 0, rhs.ordering);
                 return;
             }
 
@@ -333,13 +372,13 @@ public final class HenselLifting {
             // x = x[x1, ..., x(i-1), b(i), ... b(N)]
             // y = y[x1, ..., x(i-1), b(i), ... b(N)]
 
-            lMultivariatePolynomialZp
+            Poly
                     xSolution = x.clone(),
                     ySolution = y.clone();
 
             for (int degree = 1; degree <= degreeBounds[liftingVariable]; degree++) {
                 // Δ = (rhs - a * x - b * y) mod (x_i - b_i)^degree
-                lMultivariatePolynomialZp rhsDelta = rhs.clone().subtract(
+                Poly rhsDelta = rhs.clone().subtract(
                         aImages[liftingVariable].clone().multiply(xSolution)
                                 .add(bImages[liftingVariable].clone().multiply(ySolution)));
 
@@ -353,7 +392,7 @@ public final class HenselLifting {
                 assert x.isZero() || (x.degree(0) < b.degree(0)) : "\na:" + a + "\nb:" + b + "\nx:" + x + "\ny:" + y;
 
                 // (x_i - b_i) ^ degree
-                lMultivariatePolynomialZp idPower = evaluation.linearPower(liftingVariable, degree);
+                Poly idPower = evaluation.linearPower(liftingVariable, degree);
                 xSolution.add(x.multiply(idPower));
                 ySolution.add(y.multiply(idPower));
             }
@@ -364,8 +403,8 @@ public final class HenselLifting {
             //assert assertSolution(rhs, liftingVariable);
         }
 
-        boolean assertSolution(lMultivariatePolynomialZp rhs, int liftingVariable) {
-            lMultivariatePolynomialZp delta = aImages[liftingVariable].clone().multiply(x).add(bImages[liftingVariable].clone().multiply(y)).subtract(rhs);
+        boolean assertSolution(Poly rhs, int liftingVariable) {
+            Poly delta = aImages[liftingVariable].clone().multiply(x).add(bImages[liftingVariable].clone().multiply(y)).subtract(rhs);
             for (int i = 0; i <= degreeBounds[liftingVariable]; i++)
                 if (!evaluation.taylorCoefficient(delta, liftingVariable, i).isZero())
                     return false;
@@ -376,24 +415,22 @@ public final class HenselLifting {
     /**
      * Lifts factorization base = a * b mod <(x2-b2), ... , (xN-bN)>
      */
-    public static void liftWang(lMultivariatePolynomialZp base,
-                                lMultivariatePolynomialZp a,
-                                lMultivariatePolynomialZp b,
-                                Evaluation evaluation) {
-        lMultivariatePolynomialZp lc = base.lc(0);
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftWang(Poly base, Poly a, Poly b, IEvaluation<Term, Poly> evaluation) {
+        Poly lc = base.lc(0);
 
         if (lc.isConstant())
             liftWang(base, a, b, null, null, evaluation);
         else {
             // imposing leading coefficients
-            lMultivariatePolynomialZp lcCorrection = evaluation.evaluateFrom(lc, 1);
+            Poly lcCorrection = evaluation.evaluateFrom(lc, 1);
 
             assert !lcCorrection.isZero();
             assert a.lt().exponents[0] == a.degree(0);
             assert b.lt().exponents[0] == b.degree(0);
 
-            a.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
-            b.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
+            a.monicWithLC(lcCorrection); // <- monic in x^n (depends on ordering!)
+            b.monicWithLC(lcCorrection); // <- monic in x^n (depends on ordering!)
             base = base.clone().multiply(lc);
 
             liftWang(base, a, b, lc, lc, evaluation);
@@ -403,12 +440,8 @@ public final class HenselLifting {
         }
     }
 
-    public static void liftWang(lMultivariatePolynomialZp base,
-                                lMultivariatePolynomialZp a,
-                                lMultivariatePolynomialZp b,
-                                lMultivariatePolynomialZp aLC,
-                                lMultivariatePolynomialZp bLC,
-                                Evaluation evaluation) {
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftWang(Poly base, Poly a, Poly b, Poly aLC, Poly bLC, IEvaluation<Term, Poly> evaluation) {
         // a and b are coprime univariate polynomials over x1
         // we lift them up to the solution in (x1, x2, ..., xN)
         assert a.univariateVariable() == 0 && b.univariateVariable() == 0 : a.univariateVariable() + "  " + b.univariateVariable();
@@ -426,16 +459,15 @@ public final class HenselLifting {
         }
 
         int[] degreeBounds = base.degrees();
-        //MDiophantineSolver dSolver = new MDiophantineSolver(a, b, evaluation, degreeBounds);
         for (int liftingVariable = 1; liftingVariable < base.nVariables; ++liftingVariable) {
-            MDiophantineSolver dSolver = new MDiophantineSolver(
+            DiophantineSolver<Term, Poly, ?> dSolver = new DiophantineSolver<>(
                     evaluation.evaluateFrom(a, liftingVariable),
                     evaluation.evaluateFrom(b, liftingVariable), evaluation, degreeBounds);
 
             // base[x1, x2, ..., x(i), b(i+1), ..., bN]
-            lMultivariatePolynomialZp baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
+            Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
             for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
-                lMultivariatePolynomialZp rhsDelta =
+                Poly rhsDelta =
                         baseImage.clone().subtract(a.clone().multiply(b.clone()));
                 rhsDelta = evaluation.evaluateFrom(rhsDelta, liftingVariable + 1);
                 if (rhsDelta.isZero())
@@ -446,7 +478,7 @@ public final class HenselLifting {
                 dSolver.solve(rhsDelta, liftingVariable);
 
                 // (x_i - b_i) ^ degree
-                lMultivariatePolynomialZp idPower = evaluation.linearPower(liftingVariable, degree);
+                Poly idPower = evaluation.linearPower(liftingVariable, degree);
                 a.add(dSolver.y.multiply(idPower));
                 b.add(dSolver.x.multiply(idPower));
             }

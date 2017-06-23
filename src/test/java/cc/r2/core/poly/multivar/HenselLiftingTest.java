@@ -3,7 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.lIntegersModulo;
-import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
+import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -146,7 +146,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
 
         int[] svars = {1, 2};
         long[] subs = {11, 12};
-        Evaluation evaluation = new Evaluation(vars.length, subs, domain, DegreeVector.LEX);
+        lEvaluation evaluation = new lEvaluation(vars.length, subs, domain, DegreeVector.LEX);
         lMultivariatePolynomialZp
                 a = parse("1 + c*b + b*a*c^5 + b*c*2*a^2", domain, vars).square().square(),
                 b = parse("1227874+3587706*b+5373508*a+7197578*c^2*a^2+a^3", domain, vars).square().square(),
@@ -221,7 +221,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
                 }
 
 
-                Evaluation evaluation = new Evaluation(nVars, substitutions, domain, DegreeVector.LEX);
+                lEvaluation evaluation = new lEvaluation(nVars, substitutions, domain, DegreeVector.LEX);
                 lMultivariatePolynomialZp
                         ua = evaluation.evaluateFrom(a, 1),
                         ub = evaluation.evaluateFrom(b, 1);
@@ -265,7 +265,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
                 base = a.clone().multiply(b);
 
         long[] subs = {11, 12};
-        Evaluation evaluation = new Evaluation(vars.length, subs, domain, DegreeVector.LEX);
+        lEvaluation evaluation = new lEvaluation(vars.length, subs, domain, DegreeVector.LEX);
 
         lMultivariatePolynomialZp
                 ua = evaluation.evaluateFrom(a, 1),
@@ -291,7 +291,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         sf3 = parse("5496291*a^2*b+a*b^2-10840690*a*b-9919891*b^2+7053091*a-10840690*b", domain, vars);
 
         long[] subs = {3793049};
-        Evaluation evaluation = new Evaluation(vars.length, subs, domain, DegreeVector.LEX);
+        lEvaluation evaluation = new lEvaluation(vars.length, subs, domain, DegreeVector.LEX);
 
         lMultivariatePolynomialZp
                 ua = evaluation.evaluateFrom(a, 1),

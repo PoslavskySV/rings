@@ -766,6 +766,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
+    @Override
+    public UnivariatePolynomial<E> multiplyByLC(UnivariatePolynomial<E> other) {
+        return multiply(other.lc());
+    }
+
     /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> multiply(long factor) {
@@ -819,6 +824,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public UnivariatePolynomial<E> monic(E factor) {
         E lc = lc();
         return multiply(factor).divideOrNull(lc);
+    }
+
+    @Override
+    public UnivariatePolynomial<E> monicWithLC(UnivariatePolynomial<E> other) {
+        return monic(other.lc());
     }
 
     /** {@inheritDoc} */
