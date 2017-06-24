@@ -44,7 +44,7 @@ public final class MultivariateGCD {
      * @param arr set of polynomials
      * @return the gcd
      */
-    public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly[] arr) {
+    public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly... arr) {
         return PolynomialGCD(arr, MultivariateGCD::PolynomialGCD);
     }
 
@@ -2990,7 +2990,7 @@ public final class MultivariateGCD {
 
 
     /**
-     * Calculates GCD of two multivariate polynomials over Zp using Zippel's algorithm with sparse interpolation.
+     * Calculates GCD of two multivariate polynomials over Zp using EZ algorithm
      *
      * @param a the first multivariate polynomial
      * @param b the second multivariate polynomial
@@ -3492,7 +3492,7 @@ public final class MultivariateGCD {
     }
 
 
-    /* =============================================== EZ-GCD algorithm ============================================ */
+    /* =============================================== EEZ-GCD algorithm ============================================ */
 
     /**
      * Calculates GCD of two multivariate polynomials over Zp using enhanced EZ algorithm

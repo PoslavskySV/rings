@@ -1,9 +1,15 @@
 package cc.r2.core.poly.multivar;
 
+import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.multivar.HenselLifting.AllProductsCache;
+import cc.r2.core.poly.multivar.HenselLifting.UMultiDiophantineSolver;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
+import cc.r2.core.poly.univar.RandomPolynomials;
+import cc.r2.core.poly.univar.UnivariateGCD;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -12,6 +18,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.StreamSupport;
 
 import static cc.r2.core.poly.multivar.HenselLifting.liftWang;
 import static cc.r2.core.poly.multivar.HenselLifting.modImage;
@@ -21,7 +31,6 @@ import static cc.r2.core.poly.multivar.lMultivariatePolynomialZp.parse;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-@Ignore
 public class HenselLiftingTest extends AbstractPolynomialTest {
     @Test
     public void test1() throws Exception {
@@ -138,46 +147,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         Assert.assertEquals(base, aF.clone().multiply(bF));
     }
 
-
-    @Test
-    public void test8() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(9607987);
-        String[] vars = {"a", "b", "c"};
-
-        int[] svars = {1, 2};
-        long[] subs = {11, 12};
-        lEvaluation evaluation = new lEvaluation(vars.length, subs, domain, DegreeVector.LEX);
-        lMultivariatePolynomialZp
-                a = parse("1 + c*b + b*a*c^5 + b*c*2*a^2", domain, vars).square().square(),
-                b = parse("1227874+3587706*b+5373508*a+7197578*c^2*a^2+a^3", domain, vars).square().square(),
-                base = a.clone().multiply(b),
-                ua = a.evaluate(svars, subs),
-                ub = b.evaluate(svars, subs);
-
-        System.out.println(ua);
-        System.out.println(a);
-        HenselLifting.liftWang(base, ua, ub, evaluation);
-
-        System.out.println(ua.subtract(a));
-        System.out.println(ub.subtract(b));
-
-    }
-
-    @Test
-    public void asd() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(9607987);
-        lUnivariatePolynomialZp
-                a = parse("1+11*a+24*a^2", domain).asUnivariate(),
-                b = parse("2260692+5373508*a+7197578*a^2+a^3", domain).asUnivariate(),
-                rhs = parse("1284104+2030309*a+8124550*a^2+7657516*a^3", domain).asUnivariate();
-
-        lUnivariatePolynomialZp[] sol = HenselLifting.solveDiophantine(a, b, rhs);
-        System.out.println(a.multiply(sol[0]).add(b.multiply(sol[1])).subtract(rhs));
-//        System.out.println(UnivariateGCD.PolynomialGCD(a, b));
-        //1284104+2030309*a+8124550*a^2+7657516*a^3
-
-    }
-
+    @Ignore
     @Test
     public void testHenselLiftingRandom() throws Exception {
         RandomGenerator rnd = getRandom();
@@ -278,31 +248,314 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void testHenselLifting2() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(31012727);
-        String[] vars = {"a", "b"};
+    public void testProducts1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(17);
+        for (int n = 0; n < 10; n++) {
 
+            for (int nFactors : new int[]{4, 5, 6, 7}) {
+                lUnivariatePolynomialZp[] factors = new lUnivariatePolynomialZp[nFactors];
+                for (int i = 0; i < factors.length; i++)
+                    factors[i] = RandomPolynomials.randomMonicPoly(5, domain.modulus, getRandom());
+
+                AllProductsCache<lUnivariatePolynomialZp> cache = new AllProductsCache<>(factors);
+                for (int i = 1; i < factors.length; i++) {
+                    IntCombinationsGenerator combinations = new IntCombinationsGenerator(factors.length, i);
+                    for (int[] combination : combinations) {
+                        lUnivariatePolynomialZp expected = factors[0].createOne();
+                        BitSet key = new BitSet(factors.length);
+                        for (int k : combination) {
+                            key.set(k);
+                            expected = expected.multiply(factors[k]);
+                        }
+
+                        Assert.assertEquals(expected, cache.multiply(key));
+                    }
+                }
+            }
+
+        }
+    }
+
+    @Test
+    public void testDiophantineSolver1() throws Exception {
+        RandomGenerator random = getRandom();
+        lIntegersModulo domain = new lIntegersModulo(17);
+        for (int n = 0; n < 10; n++) {
+
+            for (int nFactors : new int[]{4, 5, 6, 7}) {
+                lUnivariatePolynomialZp[] factors = new lUnivariatePolynomialZp[nFactors];
+
+                out:
+                for (int i = 0; i < factors.length; i++) {
+                    factors[i] = RandomPolynomials.randomMonicPoly(5, domain.modulus, random);
+                    for (int j = 0; j < i; j++) {
+                        if (!UnivariateGCD.PolynomialGCD(factors[j], factors[i]).isConstant()) {
+                            --i;
+                            continue out;
+                        }
+                    }
+                }
+
+                assert UnivariateGCD.PolynomialGCD(factors).isConstant();
+
+                AllProductsCache<lUnivariatePolynomialZp> cache = new AllProductsCache<>(factors);
+                UMultiDiophantineSolver<lUnivariatePolynomialZp> solver = new UMultiDiophantineSolver<>(cache);
+                lUnivariatePolynomialZp rhs = RandomPolynomials.randomMonicPoly(5, domain.modulus, random);
+                solver.solve(rhs);
+
+                lUnivariatePolynomialZp actual = rhs.createZero();
+                for (int i = 0; i < factors.length; i++)
+                    actual = actual.add(cache.except(i).clone().multiply(solver.solution[i]));
+
+                Assert.assertEquals(rhs, actual);
+            }
+        }
+    }
+
+
+    @Test
+    public void testDiophantineSolver2() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        lUnivariatePolynomialZp[] factors = {
+                lUnivariatePolynomialZ.create(2, 11, 30, 1).modulus(domain),
+                lUnivariatePolynomialZ.create(54, 0, 24, 1).modulus(domain),
+                lUnivariatePolynomialZ.create(31, 0, 60, 1).modulus(domain)
+        };
+
+
+        assert UnivariateGCD.PolynomialGCD(factors).isConstant();
+
+        AllProductsCache<lUnivariatePolynomialZp> cache = new AllProductsCache<>(factors);
+        UMultiDiophantineSolver<lUnivariatePolynomialZp> solver = new UMultiDiophantineSolver<>(cache);
+        lUnivariatePolynomialZp rhs = lUnivariatePolynomialZ.one().modulus(domain);
+        solver.solve(rhs);
+
+        lUnivariatePolynomialZp actual = rhs.createZero();
+        for (int i = 0; i < factors.length; i++)
+            actual = actual.add(cache.except(i).clone().multiply(solver.solution[i]));
+
+        Assert.assertEquals(rhs, actual);
+    }
+
+
+    @Test
+    public void testMultiLift1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        String[] vars = {"x", "y"};
         lMultivariatePolynomialZp
-                a = parse("26590303+a^1", domain, vars),
-                b = parse("24266411+16065264*a^1+8307958*a^2", domain, vars),
-                base = parse("31012723*b^2+30996897*b^3+30965273*b^4+7876*a*b+71042*a*b^2+31009448*a*b^3+31002926*a*b^4+30989135*a^2+12*a^2*b+31008764*a^2*b^2+30971435*a^2*b^3+41292*a^3*b", domain, vars),
-        sf1 = parse("-9801", domain, vars),
-        sf2 = parse("b^2-a+10337576b", domain, vars),
-        sf3 = parse("5496291*a^2*b+a*b^2-10840690*a*b-9919891*b^2+7053091*a-10840690*b", domain, vars);
+                a = parse("x^5 - 2*x*y^4 - 3*x + 2 + x^5*y - x^2", domain, vars),
+                b = parse("x^5 + y*y^2 - 3*y^2 + y + 2 - y^3*x^2", domain, vars),
+                c = parse("x^5 - y*x^2 - 3*y^2 + y + 2 - y^3*x^5", domain, vars),
+                d = parse("x^5 - y*x^2 - 3*y + x + 2 - y*x", domain, vars);
 
-        long[] subs = {3793049};
-        lEvaluation evaluation = new lEvaluation(vars.length, subs, domain, DegreeVector.LEX);
+        lMultivariatePolynomialZp[] factors = {a, b, c, d};
+        assert StreamSupport
+                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
 
+        lMultivariatePolynomialZp[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(lMultivariatePolynomialZp[]::new);
+        lMultivariatePolynomialZp base = a.createOne().multiply(factors);
+
+        long[] vals = {31};
+        lEvaluation evaluation = new lEvaluation(a.nVariables, vals, a.domain, a.ordering);
+
+        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        liftWang(base, uFactors, factorsLC, evaluation);
+
+        Assert.assertArrayEquals(factors, uFactors);
+    }
+
+    @Test
+    public void testMultiLift2() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        String[] vars = {"x", "y", "z"};
         lMultivariatePolynomialZp
-                ua = evaluation.evaluateFrom(a, 1),
-                ub = evaluation.evaluateFrom(b, 1);
+                a = parse("x^5 - 2*x*y^4 - 3*x + 2 + x^2*y - x^2", domain, vars),
+                b = parse("x^5 + y*y^2 - 3*y^2 + y + 2 - y^3*x^2", domain, vars),
+                c = parse("x^5 - y*x^2 - 3*y^2 + y + 2 - y^3*x^2", domain, vars),
+                d = parse("x^5 - y*x^2 - 3*y + x + z - y*x", domain, vars);
 
-        HenselLifting.liftWang(base, ua, ub, null, null, evaluation);
+        lMultivariatePolynomialZp[] factors = {c, d};
+        assert StreamSupport
+                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
 
-        System.out.println(base.clone().evaluate(1, subs[0]).subtract(a.clone().multiply(b)));
-        System.out.println(base.clone().subtract(ua.clone().multiply(ub)));
-        System.out.println(base.clone().subtract(ua.clone().multiply(ub)).evaluate(1, subs[0]));
-//        Assert.assertEquals(a, ua);
-//        Assert.assertEquals(b, ub);
+        lMultivariatePolynomialZp base = a.createOne().multiply(factors);
+
+        long[] vals = {31, 32};
+        lEvaluation evaluation = new lEvaluation(a.nVariables, vals, a.domain, a.ordering);
+
+        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+
+        liftWang(base, uFactors, null, evaluation);
+
+        Assert.assertArrayEquals(factors, uFactors);
+    }
+
+    @Test
+    public void testMultiLift3() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        String[] vars = {"x", "y", "z"};
+        lMultivariatePolynomialZp
+                a = parse("x^5 - 2*x*y^4 - 3*x + 2 + x^5*y - x^2 - z", domain, vars),
+                b = parse("x^5 + z*y^2 - 3*y^2 + y + 2 - y^3*x^2", domain, vars),
+                c = parse("x^5 - y*x^2 - 3*y^2 + y + 2 - z - y^3*x^5 + z^3*x^5", domain, vars),
+                d = parse("x^5 - y*x^2 - 3*y + x + 2 - y*x + y*z*x^5", domain, vars);
+
+        lMultivariatePolynomialZp[] factors = {a, b, c, d};
+        assert StreamSupport
+                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
+
+
+        lMultivariatePolynomialZp[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(lMultivariatePolynomialZp[]::new);
+        lMultivariatePolynomialZp base = a.createOne().multiply(factors);
+
+        assert MultivariateGCD.PolynomialGCD(a, b, c, d).isConstant();
+
+        long[] vals = {31, 32};
+        lEvaluation evaluation = new lEvaluation(a.nVariables, vals, a.domain, a.ordering);
+
+
+        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        liftWang(base, uFactors, factorsLC, evaluation);
+
+        Assert.assertArrayEquals(factors, uFactors);
+    }
+
+    @Test
+    public void testMultiLift4() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(17);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                a = parse("6*d+14*c^2*e^2+14*b^2*c*d^2*e+3*a*c*d^2*e+5*a*b*c^2*d*e^2+10*a^2*d^2*e^2+10*a^2*b*c*d*e", domain, vars),
+                b = parse("2*b^2*c*d^3*e^3+3*a^2*b^4*c^2*d^3*e^6+9*a^2*b^6*c*d^2*e^3+4*a^3*b^5*c^2*e^3+2*a^3*b^5*c^6*d+11*a^5*b*c^6*d^3*e^5+11*a^6*b^2*c^6*d^4*e", domain, vars),
+                c = parse("16*c^3*d^2*e^3+2*b^3*c^3+4*a^2*b^2*d*e^3+2*a^2*b^3*c^2*d^2*e^2", domain, vars);
+
+        lMultivariatePolynomialZp[] factors = {a, b, c};
+        assert StreamSupport
+                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
+
+
+        lMultivariatePolynomialZp[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(lMultivariatePolynomialZp[]::new);
+        lMultivariatePolynomialZp base = a.createOne().multiply(factors);
+
+        long[] vals = {31, 32, 33, 32};
+        lEvaluation evaluation = new lEvaluation(a.nVariables, vals, a.domain, a.ordering);
+
+
+        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        liftWang(base, uFactors, factorsLC, evaluation);
+
+        Assert.assertArrayEquals(factors, uFactors);
+    }
+
+    @Test
+    public void testMultiLiftRandom1() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        int nIterations = its(100, 500);
+
+        int prevPercent = -1, currPercent;
+        main:
+        for (int n = 0; n < nIterations; n++) {
+
+            lIntegersModulo domain = new lIntegersModulo(getModulusRandom(rndd.nextInt(4, 30)));
+
+            int nVariables = 5;
+            lMultivariatePolynomialZp[] factors = new lMultivariatePolynomialZp[rndd.nextInt(2, 5)];
+            out:
+            for (int i = 0; i < factors.length; i++) {
+                factors[i] = RandomMultivariatePolynomial.randomPolynomial(nVariables,
+                        rndd.nextInt(2, 5),
+                        rndd.nextInt(3, 7),
+                        domain, DegreeVector.LEX, rnd);
+                for (int j = 0; j < i; j++) {
+                    if (!MultivariateGCD.PolynomialGCD(factors[j], factors[i]).isConstant()) {
+                        --i;
+                        continue out;
+                    }
+                }
+            }
+
+            lMultivariatePolynomialZp[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(lMultivariatePolynomialZp[]::new);
+            lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+
+            long[] substitutions = new long[nVariables - 1];
+            for (int j = 0; j < substitutions.length; j++)
+                substitutions[j] = domain.randomNonZeroElement(rnd);
+
+
+            lEvaluation evaluation = new lEvaluation(nVariables, substitutions, domain, base.ordering);
+            lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+
+            if (!allCoprime(uFactors)) {
+                --n;
+                continue;
+            }
+
+            if (Arrays.stream(uFactors).anyMatch(lMultivariatePolynomialZp::isConstant)) {
+                --n;
+                continue;
+            }
+
+            for (int i = 0; i < factors.length; i++)
+                if (uFactors[i].degree() != factors[i].degree(0)) {
+                    --n;
+                    continue main;
+                }
+
+
+            //boolean b = execute(() -> liftWang(base, uFactors, factorsLC, evaluation), 100_000);
+            liftWang(base, uFactors, factorsLC, evaluation);
+            try {
+                Assert.assertArrayEquals(factors, uFactors);
+            } catch (Throwable r) {
+                System.out.println(domain);
+                System.out.println(Arrays.toString(substitutions));
+                System.out.println(base.size());
+                for (lMultivariatePolynomialZp factor : factors)
+                    System.out.println(factor);
+
+                System.out.println(Arrays.equals(factors, uFactors));
+                throw r;
+            }
+            if ((currPercent = (int) (100. * n / nIterations)) != prevPercent) {
+                System.out.print(">");
+                System.out.flush();
+                prevPercent = currPercent;
+            }
+        }
+    }
+
+//    static boolean execute(Runnable runnable, long milliseconds) throws InterruptedException {
+//        final AtomicBoolean mutex = new AtomicBoolean(false);
+//        CountDownLatch latch = new CountDownLatch(1);
+//        Thread base = new Thread(() -> {
+//            try {
+//                Thread.sleep(milliseconds);
+//            } catch (InterruptedException e) {}
+//            latch.countDown();
+//        });
+//
+//        Thread exec = new Thread(() -> {runnable.run(); mutex.set(true); latch.countDown();});
+//        base.start();
+//        exec.start();
+//
+//        latch.await();
+//
+//        base.stop();
+//        exec.stop();
+//        base.join();
+//        exec.join();
+//
+//        return mutex.get();
+//    }
+
+    private static <Poly extends AMultivariatePolynomial> boolean allCoprime(Poly... factors) {
+        return StreamSupport
+                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
     }
 }

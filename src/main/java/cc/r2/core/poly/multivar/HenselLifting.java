@@ -1,6 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.PrecomputedPowersHolder;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.USubstitution;
@@ -10,10 +11,7 @@ import cc.r2.core.poly.univar.*;
 import cc.r2.core.poly.univar.DivisionWithRemainder.*;
 import cc.r2.core.util.ArraysUtil;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
 
@@ -207,6 +205,13 @@ public final class HenselLifting {
          */
         Poly evaluateFrom(Poly poly, int variable);
 
+        default Poly[] evaluateFrom(Poly[] array, int variable) {
+            Poly[] result = array[0].arrayNewInstance(array.length);
+            for (int i = 0; i < result.length; i++)
+                result[i] = evaluateFrom(array[i], variable);
+            return result;
+        }
+
         /**
          * @return {@code (1/order!) d(poly)/(d var) | var -> b}
          */
@@ -233,6 +238,10 @@ public final class HenselLifting {
 
         @Override
         public lMultivariatePolynomialZp evaluateFrom(lMultivariatePolynomialZp poly, int variable) {
+            if (variable >= poly.nVariables)
+                return poly.clone();
+            if (variable == 1 && poly.univariateVariable() == 0)
+                return poly.clone();
             return poly.evaluate(precomputedPowers, ArraysUtil.sequence(variable, nVariables));
         }
 
@@ -270,6 +279,10 @@ public final class HenselLifting {
 
         @Override
         public MultivariatePolynomial<E> evaluateFrom(MultivariatePolynomial<E> poly, int variable) {
+            if (variable >= poly.nVariables)
+                return poly.clone();
+            if (variable == 1 && poly.univariateVariable() == 0)
+                return poly.clone();
             return poly.evaluate(precomputedPowers, ArraysUtil.sequence(variable, nVariables));
         }
 
@@ -323,7 +336,6 @@ public final class HenselLifting {
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>> {
         final IEvaluation<Term, Poly> evaluation;
-        final Poly a, b;
         final Poly[] aImages, bImages;
         final UDiophantineSolver<uPoly> uSolver;
         final int[] degreeBounds;
@@ -333,8 +345,6 @@ public final class HenselLifting {
                                  Poly b,
                                  IEvaluation<Term, Poly> evaluation,
                                  int[] degreeBounds) {
-            this.a = a;
-            this.b = b;
             this.evaluation = evaluation;
             this.degreeBounds = degreeBounds;
 
@@ -389,7 +399,7 @@ public final class HenselLifting {
                 rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
 
                 solve(rhsDelta, liftingVariable - 1);
-                assert x.isZero() || (x.degree(0) < b.degree(0)) : "\na:" + a + "\nb:" + b + "\nx:" + x + "\ny:" + y;
+                //assert x.isZero() || (x.degree(0) < b.degree(0)) : "\na:" + a + "\nb:" + b + "\nx:" + x + "\ny:" + y;
 
                 // (x_i - b_i) ^ degree
                 Poly idPower = evaluation.linearPower(liftingVariable, degree);
@@ -483,6 +493,252 @@ public final class HenselLifting {
                 b.add(dSolver.x.multiply(idPower));
             }
         }
+    }
+
+    /* =============================== Multi-factor variable-by-variable EEZ lifting =================================*/
+
+    static final class AllProductsCache<Poly extends IGeneralPolynomial<Poly>> {
+        final Poly[] factors;
+        final HashMap<BitSet, Poly> products = new HashMap<>();
+
+        AllProductsCache(Poly[] factors) {
+            this.factors = factors;
+        }
+
+        private static BitSet clear(BitSet set, int from, int to) {
+            set = (BitSet) set.clone();
+            set.clear(from, to);
+            return set;
+        }
+
+        Poly multiply(BitSet selector) {
+            int cardinality = selector.cardinality();
+            if (cardinality == 1)
+                return factors[selector.nextSetBit(0)];
+            Poly cached = products.get(selector);
+            if (cached != null)
+                return cached;
+            // split BitSet into two ~equal parts:
+            int half = cardinality / 2;
+            for (int i = 0; ; ++i) {
+                if (selector.get(i))
+                    --half;
+                if (half == 0) {
+                    products.put(selector, cached =
+                            multiply(clear(selector, 0, i + 1)).clone()
+                                    .multiply(multiply(clear(selector, i + 1, factors.length))));
+                    return cached;
+                }
+            }
+        }
+
+        int size() {
+            return factors.length;
+        }
+
+        Poly get(int var) {
+            return factors[var];
+        }
+
+        Poly except(int var) {
+            BitSet bits = new BitSet(factors.length);
+            bits.set(0, factors.length);
+            bits.clear(var);
+            return multiply(bits);
+        }
+
+        Poly from(int var) {
+            BitSet bits = new BitSet(factors.length);
+            bits.set(var, factors.length);
+            return multiply(bits);
+        }
+
+        Poly[] exceptArray() {
+            Poly[] arr = factors[0].arrayNewInstance(factors.length);
+            for (int i = 0; i < arr.length; i++)
+                arr[i] = except(i);
+            return arr;
+        }
+
+        Poly multiplyAll() {
+            BitSet bits = new BitSet(factors.length);
+            bits.set(0, factors.length);
+            return multiply(bits);
+        }
+    }
+
+    static final class UMultiDiophantineSolver<uPoly extends IUnivariatePolynomial<uPoly>> {
+        /** the given factors */
+        final AllProductsCache<uPoly> factors;
+        final UDiophantineSolver<uPoly>[] biSolvers;
+        final uPoly[] solution;
+
+        @SuppressWarnings("unchecked")
+        UMultiDiophantineSolver(AllProductsCache<uPoly> factors) {
+            this.factors = factors;
+            this.biSolvers = new UDiophantineSolver[factors.size() - 1];
+            for (int i = 0; i < biSolvers.length; i++)
+                biSolvers[i] = new UDiophantineSolver<>(factors.get(i), factors.from(i + 1));
+            this.solution = factors.factors[0].arrayNewInstance(factors.factors.length);
+        }
+
+        void solve(uPoly rhs) {
+            uPoly tmp = rhs.clone();
+            for (int i = 0; i < factors.size() - 1; i++) {
+                biSolvers[i].solve(tmp);
+                solution[i] = biSolvers[i].y;
+                tmp = biSolvers[i].x;
+            }
+            solution[factors.size() - 1] = tmp;
+        }
+    }
+
+    static final class MultiDiophantineSolver<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>> {
+        final IEvaluation<Term, Poly> evaluation;
+        final UMultiDiophantineSolver<uPoly> uSolver;
+        final Poly[] solution;
+        final Poly[][] images;
+        final int[] degreeBounds;
+
+        public MultiDiophantineSolver(IEvaluation<Term, Poly> evaluation,
+                                      Poly[] factors,
+                                      UMultiDiophantineSolver<uPoly> uSolver,
+                                      int[] degreeBounds) {
+            this.evaluation = evaluation;
+            this.uSolver = uSolver;
+            this.degreeBounds = degreeBounds;
+
+            Poly factory = factors[0];
+            this.solution = factory.arrayNewInstance(factors.length);
+            this.images = factory.arrayNewInstance2D(factory.nVariables, factors.length);
+            this.images[0] = factors;
+        }
+
+        @SuppressWarnings("unchecked")
+        void solve(Poly rhs, int liftingVariable) {
+            rhs = evaluation.evaluateFrom(rhs, liftingVariable + 1);
+            if (liftingVariable == 0) {
+                uSolver.solve((uPoly) rhs.asUnivariate());
+                for (int i = 0; i < solution.length; i++)
+                    solution[i] = MultivariateGCD.asMultivariate(uSolver.solution[i], rhs.nVariables, 0, rhs.ordering);
+                return;
+            }
+
+            // solve equation with x_i replaced with b_i:
+            // a[x1, ..., x(i-1), b(i), ... b(N)] * x[x1, ..., x(i-1), b(i), ... b(N)]
+            //    + b[x1, ..., x(i-1), b(i), ... b(N)] * y[x1, ..., x(i-1), b(i), ... b(N)]
+            //         = rhs[x1, ..., x(i-1), b(i), ... b(N)]
+            solve(rhs, liftingVariable - 1);
+
+            // <- x and y are now:
+            // x = x[x1, ..., x(i-1), b(i), ... b(N)]
+            // y = y[x1, ..., x(i-1), b(i), ... b(N)]
+
+            Poly[] tmpSolution = solution[0].arrayNewInstance(solution.length);
+            for (int i = 0; i < tmpSolution.length; i++)
+                tmpSolution[i] = solution[i].clone();
+
+            for (int degree = 1; degree <= degreeBounds[liftingVariable]; degree++) {
+                // Δ = (rhs - a * x - b * y) mod (x_i - b_i)^degree
+                Poly rhsDelta = rhs.clone();
+                for (int i = 0; i < solution.length; i++)
+                    rhsDelta = rhsDelta.subtract(images[liftingVariable][i].clone().multiply(tmpSolution[i]));
+
+                if (rhsDelta.isZero())
+                    // we are done
+                    break;
+
+                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
+
+                solve(rhsDelta, liftingVariable - 1);
+                //assert x.isZero() || (x.degree(0) < b.degree(0)) : "\na:" + a + "\nb:" + b + "\nx:" + x + "\ny:" + y;
+
+                // (x_i - b_i) ^ degree
+                Poly idPower = evaluation.linearPower(liftingVariable, degree);
+                for (int i = 0; i < tmpSolution.length; i++)
+                    tmpSolution[i].add(solution[i].multiply(idPower));
+            }
+
+            System.arraycopy(tmpSolution, 0, solution, 0, tmpSolution.length);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftWang(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation) {
+        if (factorsLC != null)
+            for (int i = 0; i < factors.length; i++)
+                if (factorsLC[i] != null)
+                    factors[i].setLC(0, factorsLC[i]);
+
+        int[] degreeBounds = base.degrees();
+
+        AllProductsCache uFactors = new AllProductsCache(asUnivariate(factors, evaluation));
+        // univariate multifactor diophantine solver
+        UMultiDiophantineSolver<?> uSolver = new UMultiDiophantineSolver<>(uFactors);
+        // initialize multivariate multifactor diophantine solver
+        MultiDiophantineSolver<Term, Poly, ? extends IUnivariatePolynomial> dSolver = new MultiDiophantineSolver<>(
+                evaluation,
+                (Poly[]) asMultivariate((IUnivariatePolynomial[]) uFactors.exceptArray(), base.nVariables, 0, base.ordering),
+                uSolver, degreeBounds);
+        for (int liftingVariable = 1; liftingVariable < base.nVariables; ++liftingVariable) {
+            // fill tmp images
+            dSolver.images[liftingVariable] = dSolver.images[liftingVariable - 1].clone();
+            // base[x1, x2, ..., x(i), b(i+1), ..., bN]
+            Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
+            for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
+                Poly rhsDelta =
+                        baseImage.clone().subtract(base.createOne().multiply(factors));
+                rhsDelta = evaluation.evaluateFrom(rhsDelta, liftingVariable + 1);
+                if (rhsDelta.isZero())
+                    break;
+                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
+                assert rhsDelta.nUsedVariables() <= liftingVariable;
+
+                dSolver.solve(rhsDelta, liftingVariable);
+
+                // (x_i - b_i) ^ degree
+                Poly idPower = evaluation.linearPower(liftingVariable, degree);
+                for (int i = 0; i < factors.length; i++)
+                    factors[i].add(dSolver.solution[i].multiply(idPower));
+            }
+
+            // update tmp images
+            dSolver.images[liftingVariable] =
+                    new AllProductsCache<>(evaluation.evaluateFrom(factors, liftingVariable + 1))
+                            .exceptArray();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    uPoly[] asUnivariate(Poly[] array, IEvaluation<Term, Poly> evaluation) {
+        uPoly u0 = (uPoly) evaluation.evaluateFrom(array[0], 1).asUnivariate();
+        uPoly[] res = u0.arrayNewInstance(array.length);
+        res[0] = u0;
+        for (int i = 1; i < array.length; i++)
+            res[i] = (uPoly) evaluation.evaluateFrom(array[i], 1).asUnivariate();
+        return res;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    Poly[] asMultivariate(uPoly[] array, int nVariables, int variable, Comparator<DegreeVector> ordering) {
+        Poly u0 = MultivariateGCD.asMultivariate(array[0], nVariables, variable, ordering);
+        Poly[] res = u0.arrayNewInstance(array.length);
+        res[0] = u0;
+        for (int i = 1; i < array.length; i++)
+            res[i] = MultivariateGCD.asMultivariate(array[i], nVariables, variable, ordering);
+        return res;
     }
 }
 

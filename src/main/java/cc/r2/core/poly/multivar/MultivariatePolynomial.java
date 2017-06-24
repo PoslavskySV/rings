@@ -392,6 +392,18 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E>[] arrayNewInstance(int length) {return new MultivariatePolynomial[length];}
 
     @Override
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E>[][] arrayNewInstance2D(int length) {
+        return new MultivariatePolynomial[length][];
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E>[][] arrayNewInstance2D(int length1, int length2) {
+        return new MultivariatePolynomial[length1][length2];
+    }
+
+    @Override
     public boolean sameDomainWith(MultivariatePolynomial<E> oth) {
         return nVariables == oth.nVariables && domain.equals(oth.domain);
     }

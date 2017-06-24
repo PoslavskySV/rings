@@ -288,6 +288,18 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return new UnivariatePolynomial[]{a, b};
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public UnivariatePolynomial<E>[][] arrayNewInstance2D(int length) {
+        return new UnivariatePolynomial[length][];
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public UnivariatePolynomial<E>[][] arrayNewInstance2D(int length1, int length2) {
+        return new UnivariatePolynomial[length1][length2];
+    }
+
     /** {@inheritDoc} */
     @Override
     public boolean sameDomainWith(UnivariatePolynomial<E> oth) {

@@ -192,6 +192,16 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
         return new lUnivariatePolynomialZp[]{a, b};
     }
 
+    @Override
+    public lUnivariatePolynomialZp[][] arrayNewInstance2D(int length) {
+        return new lUnivariatePolynomialZp[length][];
+    }
+
+    @Override
+    public lUnivariatePolynomialZp[][] arrayNewInstance2D(int length1, int length2) {
+        return new lUnivariatePolynomialZp[length1][length2];
+    }
+
     /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZp getRange(int from, int to) {

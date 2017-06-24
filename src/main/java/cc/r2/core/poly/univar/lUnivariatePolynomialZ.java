@@ -169,6 +169,16 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return new lUnivariatePolynomialZ[length];
     }
 
+    @Override
+    public lUnivariatePolynomialZ[][] arrayNewInstance2D(int length) {
+        return new lUnivariatePolynomialZ[length][];
+    }
+
+    @Override
+    public lUnivariatePolynomialZ[][] arrayNewInstance2D(int length1, int length2) {
+        return new lUnivariatePolynomialZ[length1][length2];
+    }
+
     /** {@inheritDoc} */
     @Override
     public boolean sameDomainWith(lUnivariatePolynomialZ oth) {return true;}

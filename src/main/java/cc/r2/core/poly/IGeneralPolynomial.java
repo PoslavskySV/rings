@@ -314,6 +314,13 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
     /** overcome Java generics... */
     Poly[] arrayNewInstance(int length);
 
+
+    /** overcome Java generics... */
+    Poly[][] arrayNewInstance2D(int length);
+
+    /** overcome Java generics... */
+    Poly[][] arrayNewInstance2D(int length1, int length2);
+
     /** overcome Java generics... */
     default Poly[] arrayNewInstance(Poly a, Poly b) {
         Poly[] r = arrayNewInstance(2);

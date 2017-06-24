@@ -348,6 +348,16 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     public lMultivariatePolynomialZp[] arrayNewInstance(int length) {return new lMultivariatePolynomialZp[length];}
 
     @Override
+    public lMultivariatePolynomialZp[][] arrayNewInstance2D(int length) {
+        return new lMultivariatePolynomialZp[length][];
+    }
+
+    @Override
+    public lMultivariatePolynomialZp[][] arrayNewInstance2D(int length1, int length2) {
+        return new lMultivariatePolynomialZp[length1][length2];
+    }
+
+    @Override
     public boolean sameDomainWith(lMultivariatePolynomialZp oth) {
         return nVariables == oth.nVariables && domain.equals(oth.domain);
     }
