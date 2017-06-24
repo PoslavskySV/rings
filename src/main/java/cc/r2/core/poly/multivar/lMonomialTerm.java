@@ -99,7 +99,7 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
     lMonomialTerm setZero(int i, long coefficient) {
         if (exponents.length == 1) {
             assert i == 0;
-            return new lMonomialTerm(new int[0], 0, coefficient);
+            return new lMonomialTerm(new int[1], 0, coefficient);
         }
         int[] newExponents = exponents.clone();
         newExponents[i] = 0;

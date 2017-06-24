@@ -91,7 +91,7 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
     MonomialTerm<E> setZero(int i, E coefficient) {
         if (exponents.length == 1) {
             assert i == 0;
-            return new MonomialTerm<>(new int[0], 0, coefficient);
+            return new MonomialTerm<>(new int[1], 0, coefficient);
         }
         int[] newExponents = exponents.clone();
         newExponents[i] = 0;
