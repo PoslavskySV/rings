@@ -151,6 +151,52 @@ public final class BigIntegerArithmetics {
 
     }
 
+    /**
+     * Tests whether {@code n} is a perfect power {@code n == a^b} and returns {@code {a, b}} if so and {@code null}
+     * otherwise
+     *
+     * @param n the number
+     * @return array {@code {a, b}} so that {@code n = a^b} or {@code null} is {@code n} is not a perfect power
+     */
+    public static BigInteger[] perfectPowerDecomposition(BigInteger n) {
+        if (n.signum() < 0) {
+            n = n.negate();
+            BigInteger[] ipp = perfectPowerDecomposition(n);
+            if (ipp == null)
+                return null;
+            if (ipp[1].testBit(0))
+                return null;
+            ipp[0] = ipp[0].negate();
+            return ipp;
+        }
+
+        if (n.bitCount() == 1)
+            return new BigInteger[]{BigInteger.TWO, BigInteger.valueOf(n.bitLength() - 1)};
+
+        int lgn = 1 + n.bitLength();
+        for (int b = 2; b < lgn; b++) {
+            //b lg a = lg n
+            BigInteger lowa = BigInteger.ONE;
+            BigInteger higha = BigInteger.ONE.shiftLeft(lgn / b + 1);
+            while (lowa.compareTo(higha.decrement()) < 0) {
+                BigInteger mida = (lowa.add(higha)).shiftRight(1);
+                BigInteger ab = pow(mida, b);
+                if (ab.compareTo(n) > 0)
+                    higha = mida;
+                else if (ab.compareTo(n) < 0)
+                    lowa = mida;
+                else {
+                    BigInteger[] ipp = perfectPowerDecomposition(mida);
+                    if (ipp != null)
+                        return new BigInteger[]{ipp[0], ipp[1].multiply(b)};
+                    else
+                        return new BigInteger[]{mida, BigInteger.valueOf(b)};
+                }
+            }
+        }
+        return null;
+    }
+
     /* ************************ mock methods for @Specialization ************************ */
 
     public static BigInteger safeAdd(BigInteger a, BigInteger b) {

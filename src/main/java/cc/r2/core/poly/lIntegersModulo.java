@@ -76,6 +76,11 @@ public final class lIntegersModulo {
         return value <= modulus / 2 ? value : value - modulus;
     }
 
+    /**
+     * Converts this to a generic domain over big integers
+     *
+     * @return generic domain
+     */
     public IntegersModulo asDomain() {
         return new IntegersModulo(modulus);
     }
@@ -140,6 +145,90 @@ public final class lIntegersModulo {
         for (int i = 2; i <= value; ++i)
             result = multiply(result, i);
         return result;
+    }
+
+    /**
+     * if modulus = a^b, a and b are stored in this array
+     * if perfectPowerDecomposition[0] ==  0   => the data is not yet initialized
+     * if perfectPowerDecomposition[0] == -1   => modulus is not a perfect power
+     * if perfectPowerDecomposition[0]  >  0   => modulus is a perfect power = a^b
+     * *                                          with a = perfectPowerDecomposition[0]
+     * *                                          and b = perfectPowerDecomposition[1]
+     */
+    private final long[] perfectPowerDecomposition = new long[2];
+
+    private void checkPerfectPower() {
+        // lazy initialization
+        if (perfectPowerDecomposition[0] == 0) {
+            synchronized ( perfectPowerDecomposition ){
+                if (perfectPowerDecomposition[0] != 0)
+                    return;
+
+                long[] ipp = LongArithmetics.perfectPowerDecomposition(modulus);
+                if (ipp == null) {
+                    // not a perfect power
+                    perfectPowerDecomposition[0] = -1;
+                    perfectPowerDecomposition[1] = -1;
+                    return;
+                }
+                perfectPowerDecomposition[0] = ipp[0];
+                perfectPowerDecomposition[1] = ipp[1];
+            }
+        }
+    }
+
+    /**
+     * Returns whether the modulus is a perfect power
+     *
+     * @return whether the modulus is a perfect power
+     */
+    public boolean isPerfectPower() {
+        checkPerfectPower();
+        return perfectPowerDecomposition[0] > 0;
+    }
+
+    /**
+     * Returns {@code base} if {@code modulus == base^exponent}, and {@code -1} otherwisec
+     *
+     * @return {@code base} if {@code modulus == base^exponent}, and {@code -1} otherwisec
+     */
+    public long perfectPowerBase() {
+        checkPerfectPower();
+        return perfectPowerDecomposition[0];
+    }
+
+    /**
+     * Returns {@code exponent} if {@code modulus == base^exponent}, and {@code -1} otherwisec
+     *
+     * @return {@code exponent} if {@code modulus == base^exponent}, and {@code -1} otherwisec
+     */
+    public long perfectPowerExponent() {
+        checkPerfectPower();
+        return perfectPowerDecomposition[1];
+    }
+
+    /** domain for perfectPowerBase() */
+    private lIntegersModulo ppBaseDomain = null;
+
+    /**
+     * Returns domain for {@link #perfectPowerBase()} or {@code this} if modulus is not a perfect power
+     *
+     * @return domain for {@link #perfectPowerBase()} or {@code this} if modulus is not a perfect power
+     */
+    public lIntegersModulo perfectPowerBaseDomain() {
+        if (ppBaseDomain == null) {
+            synchronized ( this ){
+                if (ppBaseDomain == null) {
+                    long base = perfectPowerBase();
+                    if (base == -1)
+                        ppBaseDomain = this;
+                    else
+                        ppBaseDomain = new lIntegersModulo(base);
+                }
+            }
+        }
+
+        return ppBaseDomain;
     }
 
     @Override

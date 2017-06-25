@@ -1,10 +1,13 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
+import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.poly.multivar.HenselLifting.AllProductsCache;
+import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
 import cc.r2.core.poly.multivar.HenselLifting.UMultiDiophantineSolver;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.univar.RandomPolynomials;
@@ -337,7 +340,6 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         Assert.assertEquals(rhs, actual);
     }
 
-
     @Test
     public void testMultiLift1() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
@@ -528,6 +530,110 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
             }
         }
     }
+
+    @Test
+    public void testEvaluation1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(97);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                poly = parse("b*a^2 + b + a^2 + 2 + a^3*b^4 - a^62*b + 3*b^55*a^55 + b^66 + 3*c^55 + c*a*b + 3", domain, vars);
+        lEvaluation evaluation = new lEvaluation(poly.nVariables, new long[]{2, 3}, domain, poly.ordering);
+
+        Assert.assertEquals(evaluation.evaluate(poly, 1), evaluation.modImage(poly, 1, 1));
+        Assert.assertEquals(parse("53 + a^2 + 49*a^3 + 22*a^55 + 2*b + a^2*b + 32*a^3*b + 84*a^55*b + 96*a^62*b + a*b*c + 3*c^55", domain, vars),
+                evaluation.modImage(poly, 1, 2));
+        Assert.assertEquals(parse("31 + a^2 + 26*a^55 + 77*b + a^2*b + 93*a^55*b + 96*a^62*b + 96*b^2 + 60*a^55*b^2 + 52*b^3 + 4*a^55*b^3 + 6*b^4 + a^3*b^4 + 27*a^55*b^4 + 15*b^5 + 88*a^55*b^5 + 25*b^6 + 75*a^55*b^6 + a*b*c + 3*c^55", domain, vars),
+                evaluation.modImage(poly, 1, 7));
+        Assert.assertEquals(parse("89 + a^2 + 22*a^55 + 33*b + a^2*b + 81*a^55*b + 96*a^62*b + 83*b^2 + 26*a^55*b^2 + 54*b^3 + 32*a^55*b^3 + 52*b^4 + a^3*b^4 + 89*a^55*b^4 + 14*b^5 + 56*a^55*b^5 + 19*b^6 + 8*a^55*b^6 + 58*b^7 + 9*a^55*b^7 + 32*b^8 + 23*a^55*b^8 + 57*b^9 + 42*a^55*b^9 + 58*b^10 + 90*a^55*b^10 + 56*b^11 + 53*a^55*b^11 + 24*b^12 + 4*a^55*b^12 + 86*b^13 + 92*a^55*b^13 + 33*b^14 + 64*a^55*b^14 + 71*b^15 + 71*a^55*b^15 + 44*b^16 + 42*a^55*b^16 + 49*b^17 + 92*a^55*b^17 + 26*b^18 + 94*a^55*b^18 + 77*b^19 + 78*a^55*b^19 + 76*b^20 + 24*a^55*b^20 + 37*b^21 + 76*a^55*b^21 + 3*b^22 + 64*a^55*b^22 + 80*b^23 + 71*a^55*b^23 + 77*b^24 + 89*a^55*b^24 + 71*b^25 + 7*a^55*b^25 + 92*b^26 + 87*a^55*b^26 + 65*b^27 + 49*a^55*b^27 + 25*b^28 + 60*a^55*b^28 + 30*b^29 + 19*a^55*b^29 + 95*b^30 + 16*a^55*b^30 + 32*b^31 + 3*a^55*b^31 + 85*b^32 + 62*a^55*b^32 + 24*b^33 + 91*a^55*b^33 + 32*b^34 + 55*a^55*b^34 + 79*b^35 + 58*a^55*b^35 + 57*b^36 + 82*a^55*b^36 + 30*b^37 + 62*a^55*b^37 + 44*b^38 + 64*a^55*b^38 + 61*b^39 + 95*a^55*b^39 + 68*b^40 + 17*a^55*b^40 + 57*b^41 + 35*a^55*b^41 + 76*b^42 + 96*a^55*b^42 + 2*b^43 + 29*a^55*b^43 + 83*b^44 + 37*a^55*b^44 + 42*b^45 + 92*a^55*b^45 + 3*b^46 + 42*a^55*b^46 + a*b*c + 3*c^55", domain, vars),
+                evaluation.modImage(poly, 1, 47));
+
+
+        Assert.assertEquals(evaluation.evaluate(poly, 2), evaluation.modImage(poly, 2, 1));
+        Assert.assertEquals(parse("52 + a^2 + b + a^2*b + 96*a^62*b + a^3*b^4 + 3*a^55*b^55 + b^66 + 5*c + a*b*c", domain, vars),
+                evaluation.modImage(poly, 2, 2));
+        Assert.assertEquals(parse("87 + a^2 + b + a^2*b + 96*a^62*b + a^3*b^4 + 3*a^55*b^55 + b^66 + 9*c + a*b*c + 7*c^2 + 93*c^3 + 79*c^4 + 4*c^5 + 64*c^6", domain, vars),
+                evaluation.modImage(poly, 2, 7));
+        Assert.assertEquals(parse("52 + a^2 + b + a^2*b + 96*a^62*b + a^3*b^4 + 3*a^55*b^55 + b^66 + 36*c + a*b*c + 58*c^2 + 65*c^3 + 70*c^4 + 29*c^5 + 12*c^6 + 9*c^7 + 80*c^8 + 51*c^9 + 59*c^10 + 44*c^11 + 62*c^12 + 13*c^13 + 96*c^14 + 71*c^15 + 28*c^16 + 84*c^17 + 53*c^18 + 19*c^19 + 81*c^20 + 74*c^21 + 96*c^22 + 71*c^23 + 27*c^24 + 57*c^25 + 15*c^26 + 48*c^27 + 57*c^28 + 67*c^29 + 24*c^30 + 3*c^31 + 9*c^32 + 62*c^33 + 63*c^34 + 39*c^35 + 10*c^36 + 91*c^37 + 96*c^38 + 95*c^39 + 76*c^40 + 91*c^41 + 50*c^42 + 68*c^43 + 40*c^44 + 13*c^45 + 63*c^46", domain, vars),
+                evaluation.modImage(poly, 2, 47));
+    }
+
+    @Test
+    public void testEvaluation2() throws Exception {
+        // small characteristics
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                poly = parse("b*a^2 + b + a^2 + 2 + a^3*b^4 - a^62*b + 3*b^55*a^55 + b^66 + 3*c^55 + c*a*b + 3", domain, vars);
+        lEvaluation evaluation = new lEvaluation(poly.nVariables, new long[]{1, 3}, domain, poly.ordering);
+
+        Assert.assertEquals(evaluation.evaluate(poly, 1), evaluation.modImage(poly, 1, 1));
+        Assert.assertEquals(parse("a^2 + a^3 + b + a^2*b + a^55*b + a^62*b + a*b*c + c^55", domain, vars),
+                evaluation.modImage(poly, 1, 2));
+        Assert.assertEquals(parse("1 + a^2 + a^55 + b + a^2*b + a^55*b + a^62*b + b^2 + a^55*b^2 + a^55*b^3 + a^3*b^4 + a^55*b^4 + a^55*b^5 + a^55*b^6 + a*b*c + c^55", domain, vars),
+                evaluation.modImage(poly, 1, 7));
+        Assert.assertEquals(parse("1 + a^2 + b + a^2*b + a^62*b + b^2 + a^3*b^4 + a^55*b^7 + a^55*b^23 + a^55*b^39 + a*b*c + c^55", domain, vars),
+                evaluation.modImage(poly, 1, 47));
+
+
+        Assert.assertEquals(evaluation.evaluate(poly, 2), evaluation.modImage(poly, 2, 1));
+        Assert.assertEquals(parse("1 + a^2 + b + a^2*b + a^62*b + a^3*b^4 + a^55*b^55 + b^66 + c + a*b*c", domain, vars),
+                evaluation.modImage(poly, 2, 2));
+        Assert.assertEquals(parse("a^2 + b + a^2*b + a^62*b + a^3*b^4 + a^55*b^55 + b^66 + c + a*b*c + c^2 + c^3 + c^4 + c^5 + c^6", domain, vars),
+                evaluation.modImage(poly, 2, 7));
+        Assert.assertEquals(parse("1 + a^2 + b + a^2*b + a^62*b + a^3*b^4 + a^55*b^55 + b^66 + a*b*c + c^7 + c^23 + c^39", domain, vars),
+                evaluation.modImage(poly, 2, 47));
+    }
+
+    @Test
+    public void testEvaluation3() throws Exception {
+        // small characteristics
+        IntegersModulo domain = new IntegersModulo(2);
+        String[] vars = {"a", "b", "c"};
+        MultivariatePolynomial<BigInteger>
+                poly = MultivariatePolynomial.parse("b*a^2 + b + a^2 + 2 + a^3*b^4 - a^62*b + 3*b^55*a^55 + b^66 + 3*c^55 + c*a*b + 3", domain, vars);
+        Evaluation<BigInteger> evaluation = new Evaluation<>(poly.nVariables, new BigInteger[]{BigInteger.ONE, BigInteger.ONE}, domain, poly.ordering);
+
+        Assert.assertEquals(evaluation.evaluate(poly, 1), evaluation.modImage(poly, 1, 1));
+        Assert.assertEquals(MultivariatePolynomial.parse("a^2 + a^3 + b + a^2*b + a^55*b + a^62*b + a*b*c + c^55", domain, vars),
+                evaluation.modImage(poly, 1, 2));
+        Assert.assertEquals(MultivariatePolynomial.parse("1 + a^2 + a^55 + b + a^2*b + a^55*b + a^62*b + b^2 + a^55*b^2 + a^55*b^3 + a^3*b^4 + a^55*b^4 + a^55*b^5 + a^55*b^6 + a*b*c + c^55", domain, vars),
+                evaluation.modImage(poly, 1, 7));
+        Assert.assertEquals(MultivariatePolynomial.parse("1 + a^2 + b + a^2*b + a^62*b + b^2 + a^3*b^4 + a^55*b^7 + a^55*b^23 + a^55*b^39 + a*b*c + c^55", domain, vars),
+                evaluation.modImage(poly, 1, 47));
+
+
+        Assert.assertEquals(evaluation.evaluate(poly, 2), evaluation.modImage(poly, 2, 1));
+        Assert.assertEquals(MultivariatePolynomial.parse("1 + a^2 + b + a^2*b + a^62*b + a^3*b^4 + a^55*b^55 + b^66 + c + a*b*c", domain, vars),
+                evaluation.modImage(poly, 2, 2));
+        Assert.assertEquals(MultivariatePolynomial.parse("a^2 + b + a^2*b + a^62*b + a^3*b^4 + a^55*b^55 + b^66 + c + a*b*c + c^2 + c^3 + c^4 + c^5 + c^6", domain, vars),
+                evaluation.modImage(poly, 2, 7));
+        Assert.assertEquals(MultivariatePolynomial.parse("1 + a^2 + b + a^2*b + a^62*b + a^3*b^4 + a^55*b^55 + b^66 + a*b*c + c^7 + c^23 + c^39", domain, vars),
+                evaluation.modImage(poly, 2, 47));
+    }
+
+    @Test
+    public void testMultiLift5() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(19);
+        String[] vars = {"a", "b"};
+        lMultivariatePolynomialZp
+                a = parse("b*a^2 + b + a^2 + 2", domain, vars),
+                b = parse("a^2 + b*a^2 + a^2 + 2 * b + 3", domain, vars);
+
+        lMultivariatePolynomialZp base = a.clone().multiply(b);
+        lMultivariatePolynomialZp[] factors = {base.lc(0), a, b};
+        assert StreamSupport
+                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
+
+        long[] vals = {31};
+        lEvaluation evaluation = new lEvaluation(a.nVariables, vals, a.domain, a.ordering);
+        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        uFactors[1].monic();
+        uFactors[2].monic();
+        liftWang(base, uFactors, null, evaluation);
+        Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(uFactors), 1, base.degree(1) + 1));
+    }
+
 
 //    static boolean execute(Runnable runnable, long milliseconds) throws InterruptedException {
 //        final AtomicBoolean mutex = new AtomicBoolean(false);

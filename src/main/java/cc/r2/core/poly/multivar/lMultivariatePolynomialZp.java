@@ -5,6 +5,7 @@ import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
+import cc.redberry.libdivide4j.FastDivision;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -1180,7 +1181,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             return this.clone();
         if (isConstant())
             return createZero();
-        MonomialsSet<lMonomialTerm> newTerms = new MonomialsSet<lMonomialTerm>(ordering);
+        MonomialsSet<lMonomialTerm> newTerms = new MonomialsSet<>(ordering);
         for (lMonomialTerm term : this) {
             int exponent = term.exponents[variable];
             if (exponent < order)
@@ -1191,6 +1192,79 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             int[] newExponents = term.exponents.clone();
             newExponents[variable] -= order;
 
+            add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - order, newCoefficient));
+        }
+        return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);
+    }
+
+    /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
+    static long seriesCoefficientFactor(int exponent, int order, lIntegersModulo domain) {
+        lIntegersModulo baseDomain = domain.perfectPowerBaseDomain();
+        if (order < baseDomain.modulus) {
+            long factor = 1;
+            for (int i = 0; i < order; ++i)
+                factor = domain.multiply(factor, exponent - i);
+            factor = domain.divide(factor, domain.factorial(order));
+            return factor;
+        }
+
+        long numerator = 1, denominator = 1;
+        int numZeros = 0, denZeros = 0;
+        for (int i = 1; i <= order; ++i) {
+            long
+                    num = exponent - i + 1,
+                    numMod = baseDomain.modulus(num);
+
+            while (num > 1 && numMod == 0) {
+                num = FastDivision.divideSignedFast(num, baseDomain.magic);
+                numMod = baseDomain.modulus(num);
+                ++numZeros;
+            }
+
+            if (numMod != 0)
+                numerator = domain.multiply(numerator, domain == baseDomain ? numMod : domain.modulus(num));
+
+            long
+                    den = i,
+                    denMod = baseDomain.modulus(i);
+
+            while (den > 1 && denMod == 0) {
+                den = FastDivision.divideSignedFast(den, baseDomain.magic);
+                denMod = baseDomain.modulus(den);
+                ++denZeros;
+            }
+
+            if (denMod != 0)
+                denominator = domain.multiply(denominator, domain == baseDomain ? denMod : domain.modulus(den));
+        }
+
+        if (numZeros > denZeros)
+            numerator = domain.multiply(numerator, domain.powMod(baseDomain.modulus, numZeros - denZeros));
+        else if (denZeros < numZeros)
+            denominator = domain.multiply(denominator, domain.powMod(baseDomain.modulus, denZeros - numZeros));
+
+        if (numerator == 0)
+            return numerator;
+        return domain.divide(numerator, denominator);
+    }
+
+    @Override
+    public lMultivariatePolynomialZp seriesCoefficient(int variable, int order) {
+        if (order == 0)
+            return this.clone();
+        if (isConstant())
+            return createZero();
+
+        MonomialsSet<lMonomialTerm> newTerms = new MonomialsSet<>(ordering);
+        for (lMonomialTerm term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent < order)
+                continue;
+
+            int[] newExponents = term.exponents.clone();
+            newExponents[variable] -= order;
+
+            long newCoefficient = domain.multiply(term.coefficient, seriesCoefficientFactor(exponent, order, domain));
             add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);

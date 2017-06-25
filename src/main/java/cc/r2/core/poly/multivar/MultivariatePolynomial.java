@@ -1280,6 +1280,56 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
     }
 
+    /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
+    static BigInteger seriesCoefficientFactor0(int exponent, int order, IntegersModulo domain) {
+        if (!domain.modulus.isInt() || order < domain.modulus.intValueExact())
+            return seriesCoefficientFactor1(exponent, order, domain);
+        return BigInteger.valueOf(lMultivariatePolynomialZp.seriesCoefficientFactor(exponent, order, domain.asMachineSizedDomain()));
+    }
+
+    /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
+    static <E> E seriesCoefficientFactor1(int exponent, int order, Domain<E> domain) {
+        E factor = domain.getOne();
+        for (int i = 0; i < order; ++i)
+            factor = domain.multiply(factor, domain.valueOf(exponent - i));
+        factor = domain.divideExact(factor, domain.factorial(order));
+        return factor;
+    }
+
+    /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
+    @SuppressWarnings("unchecked")
+    static <E> E seriesCoefficientFactor(int exponent, int order, Domain<E> domain) {
+        if (domain instanceof IntegersModulo)
+            return (E) seriesCoefficientFactor0(exponent, order, (IntegersModulo) domain);
+        BigInteger characteristics = domain.characteristics();
+        if (characteristics == null || !characteristics.isInt() || characteristics.intValueExact() > order)
+            return seriesCoefficientFactor1(exponent, order, domain);
+
+        throw new RuntimeException("Operation is not implemented for domains with such small characteristics");
+    }
+
+    @Override
+    public MultivariatePolynomial<E> seriesCoefficient(int variable, int order) {
+        if (order == 0)
+            return clone();
+        if (isConstant())
+            return createZero();
+
+        MonomialsSet<MonomialTerm<E>> newTerms = new MonomialsSet<>(ordering);
+        for (MonomialTerm<E> term : this) {
+            int exponent = term.exponents[variable];
+            if (exponent < order)
+                continue;
+
+            int[] newExponents = term.exponents.clone();
+            newExponents[variable] -= order;
+
+            E newCoefficient = domain.multiply(term.coefficient, seriesCoefficientFactor(exponent, order, domain));
+            add(newTerms, new MonomialTerm<>(newExponents, term.totalDegree - order, newCoefficient));
+        }
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
+    }
+
     @Override
     public int compareTo(MultivariatePolynomial<E> oth) {
         int c = Integer.compare(size(), oth.size());

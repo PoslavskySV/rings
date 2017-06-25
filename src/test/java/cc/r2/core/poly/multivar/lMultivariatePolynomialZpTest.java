@@ -339,6 +339,48 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
 //        assertEquals(new DegreeVector(new int[]{1, 2, 3, 4, 5}), mc);
 //    }
 
+    @Test
+    public void testSeries1() throws Exception {
+        int nIterations = its(1000, 1000);
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        for (int n = 0; n < nIterations; n++) {
+            long modulus = getModulusRandom(rndd.nextInt(2, 4));
+            if (modulus < 10) {
+                if (rnd.nextBoolean())
+                    modulus = modulus * modulus;
+                else if (rnd.nextBoolean() && rnd.nextBoolean())
+                    modulus = modulus * modulus * modulus;
+                else if (rnd.nextBoolean() && rnd.nextBoolean() && rnd.nextBoolean() && rnd.nextBoolean())
+                    modulus = modulus * modulus * modulus * modulus;
+            }
+
+            int order = rndd.nextInt((int) modulus + 1, (int) (3 * modulus) + 1);
+            int exponent = rndd.nextInt(order, 5 * order);
+
+            assertEquals("" + exponent + "   " + order + "   " + modulus, combinatorialFactorExpected(exponent, order, modulus),
+                    lMultivariatePolynomialZp.seriesCoefficientFactor(exponent, order, new lIntegersModulo(modulus)));
+        }
+    }
+
+    @Test
+    public void testSeries2() throws Exception {
+        long modulus = 9;
+        int order = 18;
+        int exponent = 21;
+        assertEquals("" + exponent + "   " + order + "   " + modulus, combinatorialFactorExpected(exponent, order, modulus),
+                lMultivariatePolynomialZp.seriesCoefficientFactor(exponent, order, new lIntegersModulo(modulus)));
+    }
+
+    private static long combinatorialFactorExpected(int exponent, int order, long modulus) {
+        BigInteger result = BigInteger.ONE;
+        for (int i = 1; i <= order; ++i)
+            result = result.multiply(BigInteger.valueOf(exponent - i + 1));
+        for (int i = 1; i <= order; ++i)
+            result = result.divide(BigInteger.valueOf(i));
+        return result.mod(BigInteger.valueOf(modulus)).longValueExact();
+    }
+
     private static void assertDescending(int[] arr) {
         for (int i = 1; i < arr.length; i++)
             assertTrue(arr[i - 1] >= arr[i]);

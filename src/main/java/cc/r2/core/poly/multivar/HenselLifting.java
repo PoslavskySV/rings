@@ -205,6 +205,11 @@ public final class HenselLifting {
          */
         Poly evaluateFrom(Poly poly, int variable);
 
+        /**
+         * Substitute value for variable
+         */
+        Poly evaluate(Poly poly, int variable);
+
         default Poly[] evaluateFrom(Poly[] array, int variable) {
             Poly[] result = array[0].arrayNewInstance(array.length);
             for (int i = 0; i < result.length; i++)
@@ -215,10 +220,39 @@ public final class HenselLifting {
         /**
          * @return {@code (1/order!) d(poly)/(d var) | var -> b}
          */
-        Poly taylorCoefficient(Poly poly, int var, int order);
+        default Poly taylorCoefficient(Poly poly, int variable, int order) {
+            return evaluate(poly.seriesCoefficient(variable, order), variable);
+        }
 
         /** @return (x_i - b_i)^exponent */
         Poly linearPower(int variable, int exponent);
+
+        default Poly modImage(Poly poly, int variable, int idealExponent) {
+            if (idealExponent == 0)
+                return poly.clone();
+            int degree = poly.degree(variable);
+            if (idealExponent < degree - idealExponent) {
+                // select terms
+                Poly result = poly.createZero();
+                for (int i = 0; i < idealExponent; i++) {
+                    Poly term = evaluate(poly.seriesCoefficient(variable, i), variable).multiply(linearPower(variable, i));
+                    if (term.isZero())
+                        continue;
+                    result.add(term);
+                }
+                return result;
+            } else {
+                // drop terms
+                poly = poly.clone();
+                for (int i = idealExponent; i <= degree; i++) {
+                    Poly term = evaluate(poly.seriesCoefficient(variable, i), variable).multiply(linearPower(variable, i));
+                    if (term.isZero())
+                        continue;
+                    poly.subtract(term);
+                }
+                return poly;
+            }
+        }
     }
 
     static final class lEvaluation implements IEvaluation<lMonomialTerm, lMultivariatePolynomialZp> {
@@ -237,22 +271,17 @@ public final class HenselLifting {
         }
 
         @Override
+        public lMultivariatePolynomialZp evaluate(lMultivariatePolynomialZp poly, int variable) {
+            return poly.evaluate(variable, precomputedPowers.powers[variable]);
+        }
+
+        @Override
         public lMultivariatePolynomialZp evaluateFrom(lMultivariatePolynomialZp poly, int variable) {
             if (variable >= poly.nVariables)
                 return poly.clone();
             if (variable == 1 && poly.univariateVariable() == 0)
                 return poly.clone();
             return poly.evaluate(precomputedPowers, ArraysUtil.sequence(variable, nVariables));
-        }
-
-        @Override
-        public lMultivariatePolynomialZp taylorCoefficient(lMultivariatePolynomialZp poly, int var, int order) {
-            lMultivariatePolynomialZp derivative = poly.derivative(var, order);
-            if (derivative.isZero())
-                return derivative;
-            return derivative
-                    .evaluate(var, precomputedPowers.powers[var])
-                    .divide(poly.domain.factorial(order));
         }
 
         @Override
@@ -278,22 +307,17 @@ public final class HenselLifting {
         }
 
         @Override
+        public MultivariatePolynomial<E> evaluate(MultivariatePolynomial<E> poly, int variable) {
+            return poly.evaluate(variable, precomputedPowers.powers[variable]);
+        }
+
+        @Override
         public MultivariatePolynomial<E> evaluateFrom(MultivariatePolynomial<E> poly, int variable) {
             if (variable >= poly.nVariables)
                 return poly.clone();
             if (variable == 1 && poly.univariateVariable() == 0)
                 return poly.clone();
             return poly.evaluate(precomputedPowers, ArraysUtil.sequence(variable, nVariables));
-        }
-
-        @Override
-        public MultivariatePolynomial<E> taylorCoefficient(MultivariatePolynomial<E> poly, int var, int order) {
-            MultivariatePolynomial<E> derivative = poly.derivative(var, order);
-            if (derivative.isZero())
-                return derivative;
-            return derivative
-                    .evaluate(var, precomputedPowers.powers[var])
-                    .divideOrNull(poly.domain.factorial(order));
         }
 
         @Override
@@ -450,8 +474,15 @@ public final class HenselLifting {
         }
     }
 
+    static final boolean USE_MULTIFACTOR_LIFTING = true;
+
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void liftWang(Poly base, Poly a, Poly b, Poly aLC, Poly bLC, IEvaluation<Term, Poly> evaluation) {
+        if (USE_MULTIFACTOR_LIFTING) {
+            liftWang(base, a.arrayNewInstance(a, b), a.arrayNewInstance(aLC, bLC), evaluation);
+            return;
+        }
+
         // a and b are coprime univariate polynomials over x1
         // we lift them up to the solution in (x1, x2, ..., xN)
         assert a.univariateVariable() == 0 && b.univariateVariable() == 0 : a.univariateVariable() + "  " + b.univariateVariable();
@@ -495,7 +526,7 @@ public final class HenselLifting {
         }
     }
 
-    /* =============================== Multi-factor variable-by-variable EEZ lifting =================================*/
+    /*=============================== Multi-factor variable-by-variable EEZ lifting =================================*/
 
     static final class AllProductsCache<Poly extends IGeneralPolynomial<Poly>> {
         final Poly[] factors;
@@ -685,8 +716,6 @@ public final class HenselLifting {
                 (Poly[]) asMultivariate((IUnivariatePolynomial[]) uFactors.exceptArray(), base.nVariables, 0, base.ordering),
                 uSolver, degreeBounds);
         for (int liftingVariable = 1; liftingVariable < base.nVariables; ++liftingVariable) {
-            // fill tmp images
-            dSolver.images[liftingVariable] = dSolver.images[liftingVariable - 1].clone();
             // base[x1, x2, ..., x(i), b(i+1), ..., bN]
             Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
             for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
@@ -698,7 +727,7 @@ public final class HenselLifting {
                 rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
                 assert rhsDelta.nUsedVariables() <= liftingVariable;
 
-                dSolver.solve(rhsDelta, liftingVariable);
+                dSolver.solve(rhsDelta, liftingVariable - 1);
 
                 // (x_i - b_i) ^ degree
                 Poly idPower = evaluation.linearPower(liftingVariable, degree);
@@ -706,7 +735,7 @@ public final class HenselLifting {
                     factors[i].add(dSolver.solution[i].multiply(idPower));
             }
 
-            // update tmp images
+            // update tmp images for the next cycle
             dSolver.images[liftingVariable] =
                     new AllProductsCache<>(evaluation.evaluateFrom(factors, liftingVariable + 1))
                             .exceptArray();

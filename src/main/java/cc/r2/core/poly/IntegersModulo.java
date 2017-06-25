@@ -1,6 +1,7 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -80,7 +81,11 @@ public final class IntegersModulo extends AbstractIntegers {
 
     @Override
     public BigInteger[] divideAndRemainder(BigInteger a, BigInteger b) {
-        return new BigInteger[]{multiply(a, b.modInverse(modulus)), BigInteger.ZERO};
+        return new BigInteger[]{divide(a, b), BigInteger.ZERO};
+    }
+
+    public BigInteger divide(BigInteger a, BigInteger b) {
+        return multiply(a, b.modInverse(modulus));
     }
 
     @Override
@@ -101,6 +106,108 @@ public final class IntegersModulo extends AbstractIntegers {
 
     @Override
     public BigInteger randomElement(RandomGenerator rnd) {return RandomUtil.randomInt(modulus, rnd);}
+
+    /**
+     * if modulus = a^b, a and b are stored in this array
+     * if perfectPowerDecomposition[0] ==  null   => the data is not yet initialized
+     * if perfectPowerDecomposition[1] ==  null   => modulus is not a perfect power
+     */
+    private final BigInteger[] perfectPowerDecomposition = new BigInteger[2];
+
+    private void checkPerfectPower() {
+        // lazy initialization
+        if (perfectPowerDecomposition[0] == null) {
+            synchronized ( perfectPowerDecomposition ){
+                if (perfectPowerDecomposition[0] != null)
+                    return;
+
+                BigInteger[] ipp = BigIntegerArithmetics.perfectPowerDecomposition(modulus);
+                if (ipp == null) {
+                    // not a perfect power
+                    perfectPowerDecomposition[0] = BigInteger.NEGATIVE_ONE;
+                    perfectPowerDecomposition[1] = null;
+                    return;
+                }
+                perfectPowerDecomposition[0] = ipp[0];
+                perfectPowerDecomposition[1] = ipp[1];
+            }
+        }
+    }
+
+    /**
+     * Returns whether the modulus is a perfect power
+     *
+     * @return whether the modulus is a perfect power
+     */
+    public boolean isPerfectPower() {
+        checkPerfectPower();
+        return perfectPowerDecomposition[1] != null;
+    }
+
+    /**
+     * Returns {@code base} if {@code modulus == base^exponent}, and {@code null} otherwise
+     *
+     * @return {@code base} if {@code modulus == base^exponent}, and {@code null} otherwise
+     */
+    public BigInteger perfectPowerBase() {
+        if (!isPerfectPower())
+            return null;
+        return perfectPowerDecomposition[0];
+    }
+
+    /**
+     * Returns {@code exponent} if {@code modulus == base^exponent}, and {@code null} otherwise
+     *
+     * @return {@code exponent} if {@code modulus == base^exponent}, and {@code null} otherwise
+     */
+    public BigInteger perfectPowerExponent() {
+        if (!isPerfectPower())
+            return null;
+        return perfectPowerDecomposition[1];
+    }
+
+    /** domain for perfectPowerBase() */
+    private IntegersModulo ppBaseDomain = null;
+
+    /**
+     * Returns domain for {@link #perfectPowerBase()} or {@code this} if modulus is not a perfect power
+     *
+     * @return domain for {@link #perfectPowerBase()} or {@code this} if modulus is not a perfect power
+     */
+    public IntegersModulo perfectPowerBaseDomain() {
+        if (ppBaseDomain == null) {
+            synchronized ( this ){
+                if (ppBaseDomain == null) {
+                    BigInteger base = perfectPowerBase();
+                    if (base == null)
+                        ppBaseDomain = this;
+                    else
+                        ppBaseDomain = new IntegersModulo(base);
+                }
+            }
+        }
+
+        return ppBaseDomain;
+    }
+
+    lIntegersModulo lDomain;
+
+    /**
+     * Returns machine integer domain or null if modulus is larger than {@code long}
+     *
+     * @return machine integer domain or null if modulus is larger than {@code long}
+     */
+    public lIntegersModulo asMachineSizedDomain() {
+        if (!modulus.isLong())
+            return null;
+        if (lDomain == null)
+            synchronized ( this ){
+                if (lDomain == null)
+                    lDomain = new lIntegersModulo(modulus.longValueExact());
+            }
+
+        return lDomain;
+    }
 
     @Override
     public String toString() {return "Z/" + modulus;}

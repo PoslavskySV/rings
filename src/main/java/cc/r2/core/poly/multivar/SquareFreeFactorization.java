@@ -14,6 +14,20 @@ import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
 public final class SquareFreeFactorization {
     private SquareFreeFactorization() {}
 
+    /**
+     * Performs square-free factorization of a {@code poly.
+     *
+     * @param poly the polynomial
+     * @return square-free decomposition
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    FactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
+        if (poly.coefficientDomainCharacteristics().isZero())
+            return SquareFreeFactorizationYunZeroCharacteristics(poly);
+        else
+            return SquareFreeFactorizationMusser(poly);
+    }
+    
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] reduceContent(Poly poly) {
         Term monomialContent = poly.monomialContent();
@@ -131,7 +145,7 @@ public final class SquareFreeFactorization {
 
 
     /**
-     * Performs square-free factorization of a {@code poly} which coefficient domain has zero characteristic
+     * Performs square-free factorization of a {@code poly} which coefficient domain has non zero characteristic
      * using Musser's algorithm.
      *
      * @param poly the polynomial

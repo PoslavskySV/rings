@@ -93,7 +93,7 @@ public final class LongArithmetics {
     public static boolean isOverflowAdd(long x, long y) {
         long r = x + y;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
-        if (((x ^ r) & (y ^ r)) < 0) {
+        if (((x^r)&(y^r)) < 0) {
             return true;
         }
         return false;
@@ -120,6 +120,29 @@ public final class LongArithmetics {
             if (exponent == 0)
                 return result;
             k2p = safeMultiply(k2p, k2p);
+        }
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative)
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code e}
+     */
+    public static long unsafePow(final long base, long exponent) {
+        if (exponent < 0)
+            throw new IllegalArgumentException();
+
+        long result = 1L;
+        long k2p = base;
+        for (; ; ) {
+            if ((exponent&1) != 0)
+                result *= k2p;
+            exponent = exponent >> 1;
+            if (exponent == 0)
+                return result;
+            k2p *= k2p;
         }
     }
 
@@ -396,5 +419,50 @@ public final class LongArithmetics {
                 return result;
             k2p = FastDivision.modUnsignedFast(k2p * k2p, magic);
         }
+    }
+
+    /**
+     * Tests whether {@code n} is a perfect power {@code n == a^b} and returns {@code {a, b}} if so and {@code null}
+     * otherwise
+     *
+     * @param n the number
+     * @return array {@code {a, b}} so that {@code n = a^b} or {@code null} is {@code n} is not a perfect power
+     */
+    public static long[] perfectPowerDecomposition(long n) {
+        if (n < 0) {
+            long[] ipp = perfectPowerDecomposition(-n);
+            if (ipp == null)
+                return null;
+            if (ipp[1] % 2 == 0)
+                return null;
+            ipp[0] = -ipp[0];
+            return ipp;
+        }
+
+        if ((-n&n) == n)
+            return new long[]{2, 63 - Long.numberOfLeadingZeros(n)};
+
+        int lgn = 1 + (64 - Long.numberOfLeadingZeros(n));
+        for (int b = 2; b < lgn; b++) {
+            //b lg a = lg n
+            long lowa = 1L;
+            long higha = 1L << (lgn / b + 1);
+            while (lowa < higha - 1) {
+                long mida = (lowa + higha) >> 1;
+                long ab = LongArithmetics.unsafePow(mida, b);
+                if (ab > n)
+                    higha = mida;
+                else if (ab < n)
+                    lowa = mida;
+                else {
+                    long[] ipp = perfectPowerDecomposition(mida);
+                    if (ipp != null)
+                        return new long[]{ipp[0], ipp[1] * b};
+                    else
+                        return new long[]{mida, b};
+                }
+            }
+        }
+        return null;
     }
 }

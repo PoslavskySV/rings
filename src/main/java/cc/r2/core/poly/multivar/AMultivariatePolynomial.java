@@ -304,7 +304,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final int univariateVariable() {
         if (isConstant())
             return 0;
-        if(nVariables == 1)
+        if (nVariables == 1)
             return 0;
         int[] degrees = degrees();
         int var = -1;
@@ -704,6 +704,18 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return partial derivative of specified {@code order} with respect to specified variable
      */
     public abstract Poly derivative(int variable, int order);
+
+    /**
+     * Gives (unevaluated) coefficient of Taylor series expansion for specified variable that
+     * is {@code derivative(poly, variable, order) / order! }, where the derivative is formal derivative and
+     * calculated with arithmetic performed in Z domain (to overcome possible zeros in Zp).
+     *
+     * @param variable the variable
+     * @param order    derivative order
+     * @return {@code derivative(poly, variable, order) / order! }, where the derivative is formal derivative and
+     * calculated with arithmetic performed in Z domain (to overcome possible zeros in Zp)
+     */
+    public abstract Poly seriesCoefficient(int variable, int order);
 
     /**
      * Gives the derivative vector
