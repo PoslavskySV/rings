@@ -228,7 +228,7 @@ public final class MultivariateGCD {
 
     /** prepare input for modular GCD algorithms (Brown, Zippel, LinZip) */
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    GCDInput<Term, Poly> preparedGCDInput(Poly a, Poly b) {
+    GCDInput<Term, Poly> preparedGCDInput(Poly a, Poly b, BiFunction<Poly, Poly, Poly> gcdAlgorithm) {
         Poly trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null)
             return new GCDInput<>(trivialGCD);
@@ -245,17 +245,21 @@ public final class MultivariateGCD {
         int
                 nVariables = a.nVariables,
                 nUsedVariables = 0, // number of really present variables in gcd
-                lastPresentVariable = -1, // last variable that present in both input polynomials
+                nRedundantVariables = 0, // number of variables that present either in a or b but do not appear in the gcd
+                lastGCDVariable = -1, // last variable that present in both input polynomials
                 aDegrees[] = a.degrees(),
                 bDegrees[] = b.degrees(),
                 degreeBounds[] = new int[nVariables]; // degree bounds for gcd
 
         // determine initial degree bounds for gcd
         for (int i = 0; i < nVariables; i++) {
+            if ((aDegrees[i] == 0 && bDegrees[i] != 0) || (aDegrees[i] != 0 && bDegrees[i] == 0))
+                ++nRedundantVariables;
+
             degreeBounds[i] = Math.min(aDegrees[i], bDegrees[i]);
             if (degreeBounds[i] != 0) {
                 ++nUsedVariables;
-                lastPresentVariable = i;
+                lastGCDVariable = i;
             }
         }
 
@@ -263,29 +267,42 @@ public final class MultivariateGCD {
             // gcd is constant => 1
             return new GCDInput<>(a.create(monomialGCD));
 
-        RandomGenerator rnd = PrivateRandom.getRandom();
-        if (nUsedVariables != nVariables) {
-            // some of the variables are redundant in one of the polys => can just substitute a random values for them
-            for (int i = 0; i < nVariables; i++) {
-                if (degreeBounds[i] == 0) {
-                    if (a.degree(i) != 0) {
-                        assert b.degree(i) == 0;
-                        a = a.evaluateAtRandomPreservingSkeleton(i, rnd);
-                    } else if (b.degree(i) != 0) {
-                        assert a.degree(i) == 0;
-                        b = b.evaluateAtRandomPreservingSkeleton(i, rnd);
-                    }
-                }
-            }
-        }
-
         if (nUsedVariables == 1)
         // switch to univariate gcd
         {
             @SuppressWarnings("unchecked")
-            IUnivariatePolynomial iUnivar = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
-            Poly poly = AMultivariatePolynomial.asMultivariate(iUnivar, nVariables, lastPresentVariable, a.ordering);
+            IUnivariatePolynomial
+                    uaContent = a.asOverUnivariate(lastGCDVariable).content(),
+                    ubContent = b.asOverUnivariate(lastGCDVariable).content(),
+                    iUnivar = UnivariateGCD.PolynomialGCD(uaContent, ubContent);
+
+            Poly poly = AMultivariatePolynomial.asMultivariate(iUnivar, nVariables, lastGCDVariable, a.ordering);
             return new GCDInput<>(poly.multiply(monomialGCD));
+        }
+
+        if (nRedundantVariables > 0) {
+            // some of the variables are present only in either a or b but not in both simultaneously
+            // call this vars {dummies} and the rest vars as {used}
+            // => then we can consider polynomials as over R[{used}][{dummies}] and calculate
+            // gcd via recursive call as GCD[content(a) in R[{used}], content(b) in R[{used}]]
+
+            int[] usedVariables = new int[nUsedVariables];
+            int counter = 0;
+            for (int i = 0; i < nVariables; ++i)
+                if (degreeBounds[i] != 0)
+                    usedVariables[counter++] = i;
+
+            // coefficients in R[{used}][{dummies}]
+            Poly[]
+                    aEffective = a.asOverMultivariateEliminate(usedVariables).coefficientsArray(),
+                    bEffective = b.asOverMultivariateEliminate(usedVariables).coefficientsArray();
+
+            Poly[] all = ArraysUtil.addAll(aEffective, bEffective);
+            // recursive call in PolynomialGCD
+            Poly gcd = PolynomialGCD(all, gcdAlgorithm);
+
+            gcd = gcd.joinNewVariables(nVariables, usedVariables);
+            return new GCDInput<>(gcd.multiply(monomialGCD));
         }
 
         // now swap variables so that the first variable will have the maximal degree (univariate gcd is fast),
@@ -296,11 +313,11 @@ public final class MultivariateGCD {
         ArraysUtil.quickSort(negate(degreeBounds), variables);
         negate(degreeBounds);//recover degreeBounds
 
-        lastPresentVariable = 0; //recalculate lastPresentVariable
-        for (; lastPresentVariable < degreeBounds.length; ++lastPresentVariable)
-            if (degreeBounds[lastPresentVariable] == 0)
+        lastGCDVariable = 0; //recalculate lastPresentVariable
+        for (; lastGCDVariable < degreeBounds.length; ++lastGCDVariable)
+            if (degreeBounds[lastGCDVariable] == 0)
                 break;
-        --lastPresentVariable;
+        --lastGCDVariable;
 
         a = renameVariables(a, variables);
         b = renameVariables(b, variables);
@@ -315,7 +332,7 @@ public final class MultivariateGCD {
             for (; tmp < cardinalityBound; ++finiteExtensionDegree)
                 tmp = tmp * ds;
         }
-        return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastPresentVariable, finiteExtensionDegree);
+        return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastGCDVariable, finiteExtensionDegree);
     }
 
     /** gcd with monomial */
@@ -502,7 +519,7 @@ public final class MultivariateGCD {
             MultivariatePolynomial<BigInteger> b) {
 
         GCDInput<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>
-                gcdInput = preparedGCDInput(a, b);
+                gcdInput = preparedGCDInput(a, b, MultivariateGCD::ModularGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -852,7 +869,7 @@ public final class MultivariateGCD {
             return ModularGCDFiniteField(b, a);
 
         GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>>
-                gcdInput = preparedGCDInput(a, b);
+                gcdInput = preparedGCDInput(a, b, MultivariateGCD::ModularGCDFiniteField);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
         return ModularGCDFiniteField(gcdInput);
@@ -955,7 +972,7 @@ public final class MultivariateGCD {
             return ModularGCDFiniteField(b, a);
 
         GCDInput<lMonomialTerm, lMultivariatePolynomialZp>
-                gcdInput = preparedGCDInput(a, b);
+                gcdInput = preparedGCDInput(a, b, MultivariateGCD::ModularGCDFiniteField);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
         return lModularGCDFiniteField(gcdInput);
@@ -1165,7 +1182,7 @@ public final class MultivariateGCD {
         CommonUtils.ensureFieldDomain(a, b);
 
         // prepare input and test for early termination
-        GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b);
+        GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::BrownGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -1343,7 +1360,7 @@ public final class MultivariateGCD {
         CommonUtils.ensureFieldDomain(a, b);
 
         // prepare input and test for early termination
-        GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b);
+        GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -2090,7 +2107,7 @@ public final class MultivariateGCD {
             lMultivariatePolynomialZp b) {
 
         // prepare input and test for early termination
-        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b);
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b, MultivariateGCD::BrownGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -2268,7 +2285,7 @@ public final class MultivariateGCD {
             lMultivariatePolynomialZp b) {
 
         // prepare input and test for early termination
-        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b);
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -2985,7 +3002,7 @@ public final class MultivariateGCD {
             lMultivariatePolynomialZp b) {
 
         // prepare input and test for early termination
-        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b);
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b, MultivariateGCD::EZGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -3004,7 +3021,7 @@ public final class MultivariateGCD {
         }
 
         // one more reduction; removing of content may shuffle required variables order
-        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput2 = preparedGCDInput(a, b);
+        GCDInput<lMonomialTerm, lMultivariatePolynomialZp> gcdInput2 = preparedGCDInput(a, b, MultivariateGCD::EZGCD);
         a = gcdInput2.aReduced; b = gcdInput2.bReduced;
 
         lMultivariatePolynomialZp result = gcdInput2.earlyGCD != null
@@ -3489,7 +3506,7 @@ public final class MultivariateGCD {
     Poly EEZGCD(Poly a, Poly b) {
 
         // prepare input and test for early termination
-        GCDInput<Term, Poly> gcdInput = preparedGCDInput(a, b);
+        GCDInput<Term, Poly> gcdInput = preparedGCDInput(a, b, MultivariateGCD::EEZGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -3508,7 +3525,7 @@ public final class MultivariateGCD {
         }
 
         // one more reduction; removing of content may shuffle required variables order
-        GCDInput<Term, Poly> gcdInput2 = preparedGCDInput(a, b);
+        GCDInput<Term, Poly> gcdInput2 = preparedGCDInput(a, b, MultivariateGCD::EEZGCD);
         a = gcdInput2.aReduced; b = gcdInput2.bReduced;
 
         Poly result = gcdInput2.earlyGCD != null

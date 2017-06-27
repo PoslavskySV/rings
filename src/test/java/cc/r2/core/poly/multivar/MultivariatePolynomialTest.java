@@ -368,11 +368,38 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
                 d = parse("a^5 + b^5*a^5 + b^2 + 3", domain),
                 base = a.clone().multiply(b, c, d);
 
-
         assertEquals(parse("64 + 45*a + 18*a^2 + 34*a^3 + 17*a^4 + 5*a^5 + 59*a^6 + 37*a^7 + 55*a^8 + 61*a^9 + 59*a*b + 33*a^2*b + 27*a^3*b + 26*a^4*b + 49*a^5*b + 60*a^6*b + 53*a^7*b + 25*a^8*b + 14*a^9*b + 33*b^2 + 55*a^2*b^2 + 16*a^3*b^2 + 58*a^4*b^2 + 16*a^5*b^2 + 26*a^6*b^2 + 60*a^7*b^2 + 23*a^8*b^2 + 59*a^9*b^2 + 53*b^3 + 23*a*b^3 + 60*a^2*b^3 + 60*a^3*b^3 + 51*a^4*b^3 + 29*a^5*b^3 + 21*a^6*b^3 + 33*a^8*b^3 + 8*a^9*b^3 + 13*b^4 + 55*a*b^4 + 14*a^2*b^4 + 64*a^3*b^4 + 11*a^4*b^4 + 16*a^5*b^4 + 56*a^6*b^4 + 45*a^7*b^4 + 11*a^8*b^4 + 60*a^9*b^4 + 56*b^5 + 11*a*b^5 + 56*a^2*b^5 + 12*a^3*b^5 + a^4*b^5 + 35*a^5*b^5 + 61*a^6*b^5 + 41*a^7*b^5 + 47*a^8*b^5 + 63*a^9*b^5 + 66*b^6 + a*b^6 + 66*a^2*b^6 + a^3*b^6 + 30*a^5*b^6 + 52*a^6*b^6 + 43*a^7*b^6 + 18*a^8*b^6 + 59*a^9*b^6 + 5*a^5*b^7 + 63*a^6*b^7 + 6*a^7*b^7 + 11*a^8*b^7 + 17*a^9*b^7 + 50*a^5*b^8 + 17*a^6*b^8 + 50*a^7*b^8 + 18*a^8*b^8 + a^9*b^8 + 66*a^5*b^9 + a^6*b^9 + 66*a^7*b^9 + a^8*b^9", domain),
                 base.shift(1, 2));
     }
-    //    @Test
+
+    @Test
+    public void testOverMultivariate1() throws Exception {
+        IntegersModulo domain = new IntegersModulo(Integer.MAX_VALUE);
+        MultivariatePolynomial<BigInteger> poly = parse("2*a*b*c*d*e + 3*b*c + a^2*b*c", domain);
+        assertEquals(poly, MultivariatePolynomial.asNormalMultivariate(poly.asOverMultivariate(0, 3, 4)));
+        assertEquals(poly, MultivariatePolynomial.asNormalMultivariate(poly.asOverMultivariateEliminate(0, 3, 4),
+                new int[]{0, 3, 4}, new int[]{1, 2}));
+    }
+
+    @Test
+    public void testOverMultivariate2() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+
+        for (int i = 0; i < its(100, 100); i++) {
+            IntegersModulo domain = new IntegersModulo(getModulusRandom(rndd.nextInt(2, 31)));
+            MultivariatePolynomial<BigInteger> poly = RandomMultivariatePolynomial.randomPolynomial(10, 10, 50, domain, DegreeVector.LEX, rnd);
+            for (int j = 0; j < its(3, 10); j++) {
+                int[] select = rndd.nextPermutation(poly.nVariables, rndd.nextInt(1, poly.nVariables));
+                assertEquals(poly, MultivariatePolynomial.asNormalMultivariate(poly.asOverMultivariate(select)));
+                Arrays.sort(select);
+                assertEquals(poly, MultivariatePolynomial.asNormalMultivariate(poly.asOverMultivariateEliminate(select),
+                        select, ArraysUtil.intSetDifference(ArraysUtil.sequence(poly.nVariables), select)));
+            }
+        }
+    }
+
+//    @Test
 //    public void testMonomialContent1() throws Exception {
 //        String[] vars = {"a", "b", "c", "d", "e"};
 //        MultivariatePolynomial<BigInteger> poly = parse("5+6*b*e+7*b^2+3*a^2+d+15*a^2*b^2+a^3+11*a^3*b*e^9+6*a^3*b^2+c*e^3", vars);

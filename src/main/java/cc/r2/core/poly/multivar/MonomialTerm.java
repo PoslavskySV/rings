@@ -38,7 +38,7 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
 
     /** Set's monomial coefficient to a specified value */
     public MonomialTerm<E> setCoefficient(E value) {
-        return new MonomialTerm<>(exponents, totalDegree, value);
+        return coefficient == value ? this : new MonomialTerm<>(exponents, totalDegree, value);
     }
 
     /** Negates the coefficient */
@@ -87,6 +87,11 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
         return setZero(i, coefficient);
     }
 
+    @Override
+    MonomialTerm<E> setZero(int[] vars) {
+        return setZero(vars, coefficient);
+    }
+
     /** set i-th exponent to zero and the coefficient to a new value */
     MonomialTerm<E> setZero(int i, E coefficient) {
         if (exponents.length == 1) {
@@ -96,6 +101,19 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
         int[] newExponents = exponents.clone();
         newExponents[i] = 0;
         return new MonomialTerm<>(newExponents, totalDegree - exponents[i], coefficient);
+    }
+
+    /** set i-th exponent to zero and the coefficient to a new value */
+    MonomialTerm<E> setZero(int[] vars, E coefficient) {
+        if (vars.length == 0)
+            return setCoefficient(coefficient);
+        int[] newExponents = exponents.clone();
+        int totalDeg = totalDegree;
+        for (int var : vars) {
+            totalDeg -= exponents[var];
+            newExponents[var] = 0;
+        }
+        return new MonomialTerm<>(newExponents, totalDeg, coefficient);
     }
 
     @Override

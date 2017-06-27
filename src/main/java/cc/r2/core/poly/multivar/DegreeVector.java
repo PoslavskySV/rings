@@ -48,6 +48,9 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     /** set i-th exponent to zero and return new Monomial */
     abstract MonomialTerm setZero(int var);
 
+    /** set i-th exponent to zero and return new Monomial */
+    abstract MonomialTerm setZero(int[] vars);
+
     /** Divide degree vector */
     final MonomialTerm divide(DegreeVector oth) {
         int[] newExponents = new int[exponents.length];
@@ -76,6 +79,15 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     /** Adjoins new variable (with zero exponent) to this monomial */
     public final MonomialTerm joinNewVariable() {
         return setDegreeVector(Arrays.copyOf(exponents, exponents.length + 1), totalDegree);
+    }
+
+    public final MonomialTerm joinNewVariables(int newNVariables, int[] mapping) {
+        int[] newExponents = new int[newNVariables];
+        int c = 0;
+        for (int i : mapping)
+            newExponents[i] = exponents[c++];
+
+        return setDegreeVector(newExponents, totalDegree);
     }
 
     /** Set's exponents of all variables except specified ones to zero */

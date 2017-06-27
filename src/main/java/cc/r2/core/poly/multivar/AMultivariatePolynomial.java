@@ -239,6 +239,13 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         return create(nVariables + 1, newData);
     }
 
+    public final Poly joinNewVariables(int newNVariables, int[] mapping) {
+        MonomialsSet<Term> newData = new MonomialsSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.joinNewVariables(newNVariables, mapping));
+        return create(newNVariables, newData);
+    }
+
     /**
      * Returns the number of really used variables
      *
@@ -405,6 +412,26 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * resulting polynomial have (nVariable - 1) multivariate variables
      */
     public abstract MultivariatePolynomial<? extends IUnivariatePolynomial> asOverUnivariateEliminate(int variable);
+
+    /**
+     * Converts this to a multivariate polynomial with coefficients being multivariate polynomials polynomials over
+     * {@code variables} that is polynomial in R[variables][other_variables]
+     *
+     * @param variables the variables to separate
+     * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over
+     * {@code variables} that is polynomial in R[variables][other_variables]
+     */
+    public abstract MultivariatePolynomial<Poly> asOverMultivariate(int... variables);
+
+    /**
+     * Converts this to a multivariate polynomial with coefficients being multivariate polynomials polynomials over
+     * {@code variables} that is polynomial in R[variables][other_variables]
+     *
+     * @param variables the variables to separate
+     * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over
+     * {@code variables} that is polynomial in R[variables][other_variables]
+     */
+    public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int... variables);
 
     /**
      * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly

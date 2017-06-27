@@ -396,6 +396,33 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
         return result.mod(BigInteger.valueOf(modulus)).longValueExact();
     }
 
+    @Test
+    public void testOverMultivariate1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(Integer.MAX_VALUE);
+        lMultivariatePolynomialZp poly = parse("2*a*b*c*d*e + 3*b*c + a^2*b*c", domain);
+        assertEquals(poly, lMultivariatePolynomialZp.asNormalMultivariate(poly.asOverMultivariate(0, 3, 4)));
+        assertEquals(poly, lMultivariatePolynomialZp.asNormalMultivariate(poly.asOverMultivariateEliminate(0, 3, 4),
+                new int[]{0, 3, 4}, new int[]{1, 2}));
+    }
+
+    @Test
+    public void testOverMultivariate2() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+
+        for (int i = 0; i < its(100, 100); i++) {
+            lIntegersModulo domain = new lIntegersModulo(getModulusRandom(rndd.nextInt(2, 31)));
+            lMultivariatePolynomialZp poly = RandomMultivariatePolynomial.randomPolynomial(10, 10, 50, domain, DegreeVector.LEX, rnd);
+            for (int j = 0; j < its(10, 10); j++) {
+                int[] select = rndd.nextPermutation(poly.nVariables, rndd.nextInt(1, poly.nVariables));
+                assertEquals(poly, lMultivariatePolynomialZp.asNormalMultivariate(poly.asOverMultivariate(select)));
+                Arrays.sort(select);
+                assertEquals(poly, lMultivariatePolynomialZp.asNormalMultivariate(poly.asOverMultivariateEliminate(select),
+                        select, ArraysUtil.intSetDifference(ArraysUtil.sequence(poly.nVariables), select)));
+            }
+        }
+    }
+
     private static void assertDescending(int[] arr) {
         for (int i = 1; i < arr.length; i++)
             assertTrue(arr[i - 1] >= arr[i]);

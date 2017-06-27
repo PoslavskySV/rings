@@ -1,10 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.CommonPolynomialsArithmetics;
-import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.UnivariatePolynomials;
+import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -267,6 +264,54 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
     }
 
+    @Override
+    public MultivariatePolynomial<MultivariatePolynomial<E>> asOverMultivariate(int... variables) {
+        Domain<MultivariatePolynomial<E>> domain = new MultivariatePolynomials<>(this);
+        MonomialsSet<MonomialTerm<MultivariatePolynomial<E>>> terms = new MonomialsSet<>(ordering);
+        for (MonomialTerm<E> term : this) {
+            int[] coeffExponents = new int[nVariables];
+            for (int var : variables)
+                coeffExponents[var] = term.exponents[var];
+            MonomialTerm<E> restTerm = term.setZero(variables, this.domain.getOne());
+            MonomialTerm<MultivariatePolynomial<E>> newTerm
+                    = new MonomialTerm<>(
+                    restTerm.exponents,
+                    restTerm.totalDegree,
+                    create(new MonomialTerm<>(coeffExponents, term.coefficient)));
+
+            add(terms, newTerm, domain);
+        }
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, terms);
+    }
+
+    @Override
+    public MultivariatePolynomial<MultivariatePolynomial<E>> asOverMultivariateEliminate(int... variables) {
+        variables = variables.clone();
+        Arrays.sort(variables);
+        int[] restVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(nVariables), variables);
+        Domain<MultivariatePolynomial<E>> domain = new MultivariatePolynomials<>(create(variables.length, new MonomialsSet<>(ordering)));
+        MonomialsSet<MonomialTerm<MultivariatePolynomial<E>>> terms = new MonomialsSet<>(ordering);
+        for (MonomialTerm<E> term : this) {
+            int i = 0;
+            int[] coeffExponents = new int[variables.length];
+            for (int var : variables)
+                coeffExponents[i++] = term.exponents[var];
+
+            i = 0;
+            int[] termExponents = new int[restVariables.length];
+            for (int var : restVariables)
+                termExponents[i++] = term.exponents[var];
+
+            MonomialTerm<MultivariatePolynomial<E>> newTerm
+                    = new MonomialTerm<>(
+                    termExponents,
+                    create(variables.length, this.domain, this.ordering, new MonomialTerm<>(coeffExponents, term.coefficient)));
+
+            add(terms, newTerm, domain);
+        }
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, terms);
+    }
+
     /**
      * Converts multivariate polynomial over univariate polynomial domain to a multivariate polynomial over
      * coefficient domain
@@ -289,6 +334,46 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
                 cdv[variable] = i;
                 result.add(new MonomialTerm<>(cdv, uPoly.get(i)));
             }
+        }
+        return result;
+    }
+
+    /**
+     * Converts multivariate polynomial over multivariate polynomial domain to a multivariate polynomial over
+     * coefficient domain
+     *
+     * @param poly the polynomial
+     * @return multivariate polynomial over normal coefficient domain
+     */
+    public static <E> MultivariatePolynomial<E> asNormalMultivariate(MultivariatePolynomial<MultivariatePolynomial<E>> poly) {
+        Domain<E> domain = poly.domain.getZero().domain;
+        int nVariables = poly.nVariables;
+        MultivariatePolynomial<E> result = zero(nVariables, domain, poly.ordering);
+        for (MonomialTerm<MultivariatePolynomial<E>> term : poly.terms) {
+            MultivariatePolynomial<E> uPoly = term.coefficient;
+            result.add(uPoly.clone().multiply(new MonomialTerm<>(term.exponents, term.totalDegree, domain.getOne())));
+        }
+        return result;
+    }
+
+    /**
+     * Converts multivariate polynomial over multivariate polynomial domain to a multivariate polynomial over
+     * coefficient domain
+     *
+     * @param poly the polynomial
+     * @return multivariate polynomial over normal coefficient domain
+     */
+    public static <E> MultivariatePolynomial<E> asNormalMultivariate(
+            MultivariatePolynomial<MultivariatePolynomial<E>> poly,
+            int[] coefficientVariables, int[] mainVariables) {
+        Domain<E> domain = poly.domain.getZero().domain;
+        int nVariables = coefficientVariables.length + mainVariables.length;
+        MultivariatePolynomial<E> result = zero(nVariables, domain, poly.ordering);
+        for (MonomialTerm<MultivariatePolynomial<E>> term : poly.terms) {
+            MultivariatePolynomial<E> coefficient =
+                    term.coefficient.joinNewVariables(nVariables, coefficientVariables);
+            MonomialTerm<MultivariatePolynomial<E>> t = term.joinNewVariables(nVariables, mainVariables);
+            result.add(coefficient.multiply(new MonomialTerm<>(t.exponents, t.totalDegree, domain.getOne())));
         }
         return result;
     }
@@ -573,6 +658,22 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     public Iterable<E> coefficients() {
         return () -> new It<>(terms.iterator());
+    }
+
+    /**
+     * Returns polynomial coefficients
+     *
+     * @return polynomial coefficients
+     */
+    public E[] coefficientsArray() {
+        if (isZero())
+            return domain.createZeroesArray(1);
+
+        E[] array = domain.createArray(size());
+        int i = 0;
+        for (MonomialTerm<E> term : this)
+            array[i++] = term.coefficient;
+        return array;
     }
 
     private static class It<V> implements Iterator<V> {

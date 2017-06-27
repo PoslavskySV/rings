@@ -7,7 +7,9 @@ import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.util.ArraysUtil;
 import cc.r2.core.util.RandomDataGenerator;
+import cc.r2.core.util.RandomUtil;
 import cc.r2.core.util.TimeUnits;
 import gnu.trove.list.array.TIntArrayList;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -24,7 +26,8 @@ import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.Rationals.Rationals;
 import static cc.r2.core.poly.multivar.DegreeVector.LEX;
 import static cc.r2.core.poly.multivar.MultivariateGCD.*;
-import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
+import static cc.r2.core.poly.multivar.MultivariatePolynomial.asLongPolyZp;
+import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
 import static cc.r2.core.poly.multivar.MultivariateReduction.dividesQ;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static org.junit.Assert.*;
@@ -184,7 +187,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void testBrown_random3() throws Exception {
+    public void testBrown_sparse_variables_random3() throws Exception {
         RandomGenerator rnd = getRandom();
 
         int nVarsMin = 100, nVarsMax = 100, nVars = 3;
@@ -192,7 +195,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        GCDSampleData sampleData = fixVariables(
+        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+                sampleData = fixVariables(
                 new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars);
         testGCDAlgorithm(sampleData, nIterations,
                 GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD),
@@ -577,6 +581,24 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testZippel_sparse_variables_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+
+        int nVarsMin = 100, nVarsMax = 100, nVars = 3;
+        int minDegree = 3, maxDegree = 5;
+        int minSize = 5, maxSize = 10;
+
+        int nIterations = its(1000, 10000);
+        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+                sampleData = fixVariables(
+                new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars);
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD));
+    }
+
+
+    @Test
     public void testPairedIterator() throws Exception {
         RandomGenerator rnd = getRandom();
         int nIterations = its(1000, 1000);
@@ -954,6 +976,25 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 GCDAlgorithm.named("Modular gcd", MultivariateGCD::ModularGCD));
     }
 
+    @Test
+    public void testModularGCD_sparse_variables_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+
+        int nVarsMin = 100, nVarsMax = 100, nVars = 3;
+        int minDegree = 3, maxDegree = 5;
+        int minSize = 5, maxSize = 10;
+
+        int nIterations = its(1000, 10000);
+        GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>
+                sampleData =
+                boundCoefficients(
+                        fixVariables(new GCDSampleDataGeneric<>(Integers, nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars),
+                        BigInteger.valueOf(100));
+
+        testGCDAlgorithms(sampleData, nIterations,
+                GCDAlgorithm.named("ModularGCD", MultivariateGCD::ModularGCD));
+    }
+
     @Ignore
     @Test
     public void testModularGCD_performance() throws Exception {
@@ -1128,6 +1169,27 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 new lGCDSampleDataZp(3, 5, 5, 15, 5, 15, rnd);
         sampleData.minModulusBits = 2;
         sampleData.maxModulusBits = 5;
+        testGCDAlgorithm(sampleData, nIterations,
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField),
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField));
+    }
+
+    @Test
+    public void testSmallDomain_sparse_variables_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+
+        int nVarsMin = 100, nVarsMax = 100, nVars = 3;
+        int minDegree = 3, maxDegree = 5;
+        int minSize = 5, maxSize = 10;
+
+        int nIterations = its(100, 1000);
+        lGCDSampleDataZp source = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        source.minModulusBits = 2;
+        source.maxModulusBits = 5;
+
+        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+                sampleData = filterZeros(fixVariables(source, nVars));
+
         testGCDAlgorithm(sampleData, nIterations,
                 GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField),
                 GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField));
@@ -1508,6 +1570,26 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testEEZGCD_sparse_variables_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+
+        int nVarsMin = 100, nVarsMax = 100, nVars = 3;
+        int minDegree = 3, maxDegree = 5;
+        int minSize = 5, maxSize = 10;
+
+        int nIterations = its(1000, 10000);
+        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+                sampleData = fixVariables(
+                new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars);
+
+        testGCDAlgorithms(sampleData, nIterations,
+                GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD),
+                GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("EZ-GCD", MultivariateGCD::EZGCD),
+                GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD));
+    }
+
+    @Test
     public void testEEZGCD1() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         lIntegersModulo domain = new lIntegersModulo(9607987);
@@ -1583,8 +1665,6 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
 
-
-
     @Test
     public void testEEZGCD6() throws Exception {
         PrivateRandom.getRandom().setSeed(78);
@@ -1639,6 +1719,49 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
+    @Test
+    public void testPolynomialGCD1() throws Exception {
+        // nUsedVariables == 1
+        lIntegersModulo domain = new lIntegersModulo(19);
+        String[] vars = {"a", "b"};
+        lMultivariatePolynomialZp a = lMultivariatePolynomialZp.parse("2 + 3*b + b^2", domain, vars);
+        lMultivariatePolynomialZp b = lMultivariatePolynomialZp.parse("2 + b + a^2 + a^2*b", domain, vars);
+        for (int i = 0; i < 1000; i++)
+            assertTrue(PolynomialGCD(a, b).isConstant());
+    }
+
+    @Test
+    public void testPolynomialGCD2() throws Exception {
+        // nUsedVariables == 1
+        lIntegersModulo domain = new lIntegersModulo(19);
+        String[] vars = {"a", "b"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("a^2 + b*a", domain, vars),
+                b = lMultivariatePolynomialZp.parse("b + 1", domain, vars),
+                gcd = lMultivariatePolynomialZp.parse("2 + b", domain, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        for (int i = 0; i < 1000; i++)
+            assertEquals(gcd, PolynomialGCD(a, b));
+    }
+
+    @Test(timeout = 1000)
+    public void testPolynomialGCD3() throws Exception {
+        // nUsedVariables == 1
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b"};
+        // very tricky example
+        // for both a = 0 and a = 1, the gcd is (1 + b^2), while the true gcd is only 1 + b
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("a^2*b + a*b + b + 1", domain, vars),
+                b = lMultivariatePolynomialZp.parse("b + 1", domain, vars),
+                gcd = lMultivariatePolynomialZp.parse("b + 1", domain, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        for (int i = 0; i < 10; i++)
+            assertEquals(gcd, PolynomialGCD(a, b));
+    }
+
 
     /* =============================================== Test data =============================================== */
 
@@ -1666,6 +1789,55 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                     ? ((lMultivariatePolynomialZp) gcd).domain
                     : ((MultivariatePolynomial) gcd).domain;
         }
+    }
+
+    /** substitute random values for some variables */
+    public static GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>
+    boundCoefficients(final GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> source, BigInteger bound) {
+        final IntegersModulo domain = new IntegersModulo(bound);
+        return new GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>() {
+            @Override
+            GCDSample<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> nextSample0(boolean primitive, boolean monic) {
+                GCDSample<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> sample = source.nextSample(primitive, monic);
+                return new GCDSample<>(
+                        setRandomCoefficients(sample.aCoFactor, bound),
+                        setRandomCoefficients(sample.bCoFactor, bound),
+                        setRandomCoefficients(sample.gcd, bound));
+            }
+
+            private MultivariatePolynomial<BigInteger> setRandomCoefficients(MultivariatePolynomial<BigInteger> poly, BigInteger bound) {
+                RandomGenerator rnd = PrivateRandom.getRandom();
+                MultivariatePolynomial<BigInteger> r = poly.createZero();
+                for (MonomialTerm<BigInteger> term : poly)
+                    r.add(term.setCoefficient(RandomUtil.randomInt(bound, rnd)));
+                return r;
+            }
+
+            @Override
+            public String toString() {
+                return source.toString();
+            }
+        };
+    }
+
+    /** substitute random values for some variables */
+    public static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    GCDSampleData<Term, Poly> filterZeros(final GCDSampleData<Term, Poly> data) {
+        return new GCDSampleData<Term, Poly>() {
+            @Override
+            GCDSample<Term, Poly> nextSample0(boolean primitive, boolean monic) {
+                GCDSample<Term, Poly> sample;
+                do { sample = data.nextSample(primitive, monic);}
+                while (sample.b.isZero() || sample.a.isZero());
+                return sample;
+            }
+
+            @Override
+            public String toString() {
+                return data.toString();
+            }
+        };
     }
 
     /** substitute random values for some variables */
@@ -2084,5 +2256,23 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             assertFalse(value == 0);
             assertTrue(value == domain.modulus(value));
         }
+    }
+
+    @Test
+    public void safsadasd() throws Exception {
+        int[] degrees = {10, 11, 12, 13, 14, 15};
+        int[] sdegrees = {4, 3, 2, 1, 5, 0};
+        int[] variables = ArraysUtil.sequence(sdegrees.length);
+
+        ArraysUtil.quickSort(sdegrees, variables);
+
+        System.out.println(Arrays.toString(permute(degrees, variables)));
+    }
+
+    private static int[] permute(int[] array, int[] permutation) {
+        int[] result = new int[array.length];
+        for (int i = 0; i < array.length; i++)
+            result[i] = array[permutation[i]];
+        return result;
     }
 }

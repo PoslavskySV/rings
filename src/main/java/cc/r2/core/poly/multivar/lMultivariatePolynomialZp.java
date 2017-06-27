@@ -217,6 +217,54 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
     }
 
+    @Override
+    public MultivariatePolynomial<lMultivariatePolynomialZp> asOverMultivariate(int... variables) {
+        Domain<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(this);
+        MonomialsSet<MonomialTerm<lMultivariatePolynomialZp>> terms = new MonomialsSet<>(ordering);
+        for (lMonomialTerm term : this) {
+            int[] coeffExponents = new int[nVariables];
+            for (int var : variables)
+                coeffExponents[var] = term.exponents[var];
+            lMonomialTerm restTerm = term.setZero(variables, 1);
+            MonomialTerm<lMultivariatePolynomialZp> newTerm
+                    = new MonomialTerm<>(
+                    restTerm.exponents,
+                    restTerm.totalDegree,
+                    create(new lMonomialTerm(coeffExponents, term.coefficient)));
+
+            MultivariatePolynomial.add(terms, newTerm, domain);
+        }
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, terms);
+    }
+
+    @Override
+    public MultivariatePolynomial<lMultivariatePolynomialZp> asOverMultivariateEliminate(int... variables) {
+        variables = variables.clone();
+        Arrays.sort(variables);
+        int[] restVariables = ArraysUtil.intSetDifference( ArraysUtil.sequence(nVariables), variables);
+        Domain<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(create(variables.length, new MonomialsSet<>(ordering)));
+        MonomialsSet<MonomialTerm<lMultivariatePolynomialZp>> terms = new MonomialsSet<>(ordering);
+        for (lMonomialTerm term : this) {
+            int i = 0;
+            int[] coeffExponents = new int[variables.length];
+            for (int var : variables)
+                coeffExponents[i++] = term.exponents[var];
+
+            i = 0;
+            int[] termExponents = new int[restVariables.length];
+            for (int var : restVariables)
+                termExponents[i++] = term.exponents[var];
+
+            MonomialTerm<lMultivariatePolynomialZp> newTerm
+                    = new MonomialTerm<>(
+                    termExponents,
+                    create(variables.length, this.domain, this.ordering, new lMonomialTerm(coeffExponents, term.coefficient)));
+
+            MultivariatePolynomial.add(terms, newTerm, domain);
+        }
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, terms);
+    }
+
     /**
      * Converts multivariate polynomial over univariate polynomial domain to a multivariate polynomial over
      * coefficient domain
@@ -239,6 +287,46 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
                 cdv[variable] = i;
                 result.add(new lMonomialTerm(cdv, uPoly.get(i)));
             }
+        }
+        return result;
+    }
+
+    /**
+     * Converts multivariate polynomial over multivariate polynomial domain to a multivariate polynomial over
+     * coefficient domain
+     *
+     * @param poly the polynomial
+     * @return multivariate polynomial over normal coefficient domain
+     */
+    public static lMultivariatePolynomialZp asNormalMultivariate(MultivariatePolynomial<lMultivariatePolynomialZp> poly) {
+        lIntegersModulo domain = poly.domain.getZero().domain;
+        int nVariables = poly.nVariables;
+        lMultivariatePolynomialZp result = zero(nVariables, domain, poly.ordering);
+        for (MonomialTerm<lMultivariatePolynomialZp> term : poly.terms) {
+            lMultivariatePolynomialZp uPoly = term.coefficient;
+            result.add(uPoly.clone().multiply(new lMonomialTerm(term.exponents, term.totalDegree, 1)));
+        }
+        return result;
+    }
+
+    /**
+     * Converts multivariate polynomial over multivariate polynomial domain to a multivariate polynomial over
+     * coefficient domain
+     *
+     * @param poly the polynomial
+     * @return multivariate polynomial over normal coefficient domain
+     */
+    public static lMultivariatePolynomialZp asNormalMultivariate(
+            MultivariatePolynomial<lMultivariatePolynomialZp> poly,
+            int[] coefficientVariables, int[] mainVariables) {
+        lIntegersModulo domain = poly.domain.getZero().domain;
+        int nVariables = coefficientVariables.length + mainVariables.length;
+        lMultivariatePolynomialZp result = zero(nVariables, domain, poly.ordering);
+        for (MonomialTerm<lMultivariatePolynomialZp> term : poly.terms) {
+            lMultivariatePolynomialZp coefficient =
+                    term.coefficient.joinNewVariables(nVariables, coefficientVariables);
+            MonomialTerm<lMultivariatePolynomialZp> t = term.joinNewVariables(nVariables, mainVariables);
+            result.add(coefficient.multiply(new lMonomialTerm(t.exponents, t.totalDegree, 1)));
         }
         return result;
     }

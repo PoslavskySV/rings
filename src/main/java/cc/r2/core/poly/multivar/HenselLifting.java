@@ -217,10 +217,15 @@ public final class HenselLifting {
             return result;
         }
 
+        boolean isZeroSubstitution(int variable);
+
         /**
          * @return {@code (1/order!) d(poly)/(d var) | var -> b}
          */
         default Poly taylorCoefficient(Poly poly, int variable, int order) {
+            if (isZeroSubstitution(variable))
+                return poly.coefficientOf(variable, order);
+
             return evaluate(poly.seriesCoefficient(variable, order), variable);
         }
 
@@ -288,11 +293,17 @@ public final class HenselLifting {
         public lMultivariatePolynomialZp linearPower(int variable, int exponent) {
             return linearPowers[variable - 1].pow(exponent);
         }
+
+        @Override
+        public boolean isZeroSubstitution(int variable) {
+            return values[variable - 1] == 0;
+        }
     }
 
     static final class Evaluation<E> implements IEvaluation<MonomialTerm<E>, MultivariatePolynomial<E>> {
         final E[] values;
         final int nVariables;
+        final Domain<E> domain;
         final PrecomputedPowersHolder<E> precomputedPowers;
         final USubstitution<E>[] linearPowers;
 
@@ -300,6 +311,7 @@ public final class HenselLifting {
         Evaluation(int nVariables, E[] values, Domain<E> domain, Comparator<DegreeVector> ordering) {
             this.nVariables = nVariables;
             this.values = values;
+            this.domain = domain;
             this.precomputedPowers = new PrecomputedPowersHolder<>(nVariables, ArraysUtil.sequence(1, nVariables), values, domain);
             this.linearPowers = new USubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
@@ -323,6 +335,11 @@ public final class HenselLifting {
         @Override
         public MultivariatePolynomial<E> linearPower(int variable, int exponent) {
             return linearPowers[variable - 1].pow(exponent);
+        }
+
+        @Override
+        public boolean isZeroSubstitution(int variable) {
+            return domain.isZero(values[variable - 1]);
         }
     }
 

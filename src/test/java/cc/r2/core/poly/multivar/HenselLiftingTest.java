@@ -613,26 +613,30 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
 
     @Test
     public void testMultiLift5() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(19);
-        String[] vars = {"a", "b"};
-        lMultivariatePolynomialZp
-                a = parse("b*a^2 + b + a^2 + 2", domain, vars),
-                b = parse("a^2 + b*a^2 + a^2 + 2 * b + 3", domain, vars);
+        for (int i = 0; i < 100; i++) {
 
-        lMultivariatePolynomialZp base = a.clone().multiply(b);
-        lMultivariatePolynomialZp[] factors = {base.lc(0), a, b};
-        assert StreamSupport
-                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
-                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
+            lIntegersModulo domain = new lIntegersModulo(19);
+            String[] vars = {"a", "b"};
+            lMultivariatePolynomialZp
+                    a = parse("b*a^2 + b + a^2 + 2", domain, vars),
+                    b = parse("a^2 + b*a^2 + a^2 + 2 * b + 3", domain, vars);
 
-        long[] vals = {31};
-        lEvaluation evaluation = new lEvaluation(a.nVariables, vals, a.domain, a.ordering);
-        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
-        uFactors[1].monic();
-        uFactors[2].monic();
-        liftWang(base, uFactors, null, evaluation);
-        Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(uFactors), 1, base.degree(1) + 1));
-        Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(base.lc(0), uFactors[1], uFactors[2]), 1, base.degree(1) + 1));
+            lMultivariatePolynomialZp base = a.clone().multiply(b);
+            lMultivariatePolynomialZp[] factors = {base.lc(0), a, b};
+            assert StreamSupport
+                    .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                    .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isConstant());
+
+            long[] vals = {31};
+            lEvaluation evaluation = new lEvaluation(a.nVariables, vals, a.domain, a.ordering);
+            lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+            uFactors[1].monic();
+            uFactors[2].monic();
+            liftWang(base, uFactors, null, evaluation);
+            Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(uFactors), 1, base.degree(1) + 1));
+            Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(base.lc(0), uFactors[1], uFactors[2]), 1, base.degree(1) + 1));
+
+        }
     }
 
 

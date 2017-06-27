@@ -46,7 +46,7 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
 
     /** Set's monomial coefficient to a specified value */
     public lMonomialTerm setCoefficient(long value) {
-        return new lMonomialTerm(exponents, totalDegree, value);
+        return value == coefficient ? this : new lMonomialTerm(exponents, totalDegree, value);
     }
 
     /** Negates the coefficient */
@@ -95,6 +95,11 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
         return setZero(i, coefficient);
     }
 
+    @Override
+    lMonomialTerm setZero(int[] vars) {
+        return setZero(vars, coefficient);
+    }
+
     /** set i-th exponent to zero and the coefficient to a new value */
     lMonomialTerm setZero(int i, long coefficient) {
         if (exponents.length == 1) {
@@ -104,6 +109,19 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
         int[] newExponents = exponents.clone();
         newExponents[i] = 0;
         return new lMonomialTerm(newExponents, totalDegree - exponents[i], coefficient);
+    }
+
+    /** set i-th exponent to zero and the coefficient to a new value */
+    lMonomialTerm setZero(int[] vars, long coefficient) {
+        if (vars.length == 0)
+            return setCoefficient(coefficient);
+        int[] newExponents = exponents.clone();
+        int totalDeg = totalDegree;
+        for (int var : vars) {
+            totalDeg -= exponents[var];
+            newExponents[var] = 0;
+        }
+        return new lMonomialTerm(newExponents, totalDeg, coefficient);
     }
 
     MonomialTerm<BigInteger> asBigInteger() {
