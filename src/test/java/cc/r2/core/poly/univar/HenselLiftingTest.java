@@ -4,6 +4,7 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
+import cc.r2.core.poly.FactorDecompositionTest;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.TimeUnits;
@@ -157,7 +158,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
             return;
 
         FactorDecomposition<lUnivariatePolynomialZp> modularFactors = Factorization.factorInFiniteField(baseMod);
-        FactorizationTestUtil.assertFactorization(baseMod, modularFactors);
+        FactorDecompositionTest.assertFactorization(baseMod, modularFactors);
 
         HenselLifting.LiftFactory<lUnivariatePolynomialZp> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
         BigInteger newModulus = newModulus(modulus, nIterations, quadratic);

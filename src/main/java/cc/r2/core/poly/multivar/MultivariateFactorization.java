@@ -118,57 +118,74 @@ public final class MultivariateFactorization {
     /* ====================================== Factorization over finite fields ====================================== */
 
 
-    static long UNI = 0, LIFT = 0, RECOMB = 0;
+    /** Number of univariate factorizations performed with different evaluation homomorphisms before doing Hensel lifting **/
     private static final long UNIVARIATE_FACTORIZATION_ATTEMPTS = 3;
 
-    static FactorDecomposition<lMultivariatePolynomialZp> biVariateFactorSquareFree(lMultivariatePolynomialZp originalPoly) {
-        assert originalPoly.nUsedVariables() == 2;
+    /**
+     * Factors primitive, square-free bivariate polynomial over Zp
+     *
+     * @param poly primitive, square-free bivariate polynomial over Zp
+     * @return factor decomposition
+     */
+    static FactorDecomposition<lMultivariatePolynomialZp> bivariateFactorSquareFree(lMultivariatePolynomialZp poly) {
+        assert poly.nVariables == 2;
 
-        lMultivariatePolynomialZp poly = originalPoly;
-        int[] degreeBounds = poly.degrees();
+        lMultivariatePolynomialZp reducedPoly = poly;
+        int[] degreeBounds = reducedPoly.degrees();
 
         // use main variable with maximal degree
         boolean swapVariables = false;
         if (degreeBounds[1] > degreeBounds[0]) {
             swapVariables = true;
-            poly = AMultivariatePolynomial.swapVariables(poly, 0, 1);
+            reducedPoly = AMultivariatePolynomial.swapVariables(reducedPoly, 0, 1);
             ArraysUtil.swap(degreeBounds, 0, 1);
         }
 
-        lIntegersModulo domain = poly.domain;
+        lIntegersModulo domain = reducedPoly.domain;
         // degree in main variable
-        int degree = poly.degree(0);
-        // value for second variable
+        int degree = reducedPoly.degree(0);
+        // substitution value for second variable
         long ySubstitution = -1;
         // univariate factorization
         FactorDecomposition<lUnivariatePolynomialZp> uFactorization = null;
 
+        // number of univariate factorizations tried
         int univariateFactorizations = 0;
+        boolean tryZeroFirst = true;
         while (univariateFactorizations < UNIVARIATE_FACTORIZATION_ATTEMPTS) {
-            long substitution = domain.randomElement(PrivateRandom.getRandom());
+            // first try to substitute 0 for second variable, then use random values
+            long substitution = tryZeroFirst ? 0 : domain.randomElement(PrivateRandom.getRandom());
+            tryZeroFirst = false;
 
-            lMultivariatePolynomialZp image = poly.evaluate(1, substitution);
+            lMultivariatePolynomialZp image = reducedPoly.evaluate(1, substitution);
             if (image.degree() != degree)
+                // unlucky substitution
                 continue;
+
             if (image.cc() == 0)
+                // c.c. must not be zero since input is primitive
+                // => unlucky substitution
                 continue;
 
             lUnivariatePolynomialZp uImage = image.asUnivariate();
             if (!SquareFreeFactorization.isSquareFree(uImage))
+                // ensure that univariate image is also square free
                 continue;
 
-            long start = System.nanoTime();
             FactorDecomposition<lUnivariatePolynomialZp> factorization = Factorization.factor(uImage);
-            UNI += System.nanoTime() - start;
-
             if (factorization.size() == 1)
-                return FactorDecomposition.singleFactor(originalPoly);
+                // irreducible polynomial
+                return FactorDecomposition.singleFactor(poly);
 
 
             if (uFactorization == null || factorization.size() < uFactorization.size()) {
+                // better univariate factorization found
                 uFactorization = factorization;
                 ySubstitution = substitution;
             }
+
+            if (ySubstitution == 0)
+                break;
 
             ++univariateFactorizations;
         }
@@ -176,36 +193,46 @@ public final class MultivariateFactorization {
         assert ySubstitution != -1;
         assert uFactorization.factors.stream().allMatch(lUnivariatePolynomialZp::isMonic);
 
+        // univariate factors are calculated
         @SuppressWarnings("unchecked")
-        List<lMultivariatePolynomialZp> factorList = AMultivariatePolynomial.asMultivariate((List) uFactorization.factors, poly.nVariables, 0, poly.ordering);
-        lMultivariatePolynomialZp lc = poly.lc(0);
+        List<lMultivariatePolynomialZp> factorList = AMultivariatePolynomial.asMultivariate(
+                (List) uFactorization.factors, reducedPoly.nVariables, 0, reducedPoly.ordering);
+
+        // we don't precompute correct leading coefficients of bivariate factors
+        // instead, we add the l.c. of the product to a list of lifting factors
+        // in order to obtain correct factorization with monic factors mod (y - y0)^l
+        // and then perform l.c. correction at the recombination stage
+
+        lMultivariatePolynomialZp lc = reducedPoly.lc(0);
         if (!lc.isConstant())
             // add lc to lifting factors
             factorList.add(0, lc.clone());
+        else
+            factorList.get(0).multiply(lc);
+
+        // final factors to lift
         lMultivariatePolynomialZp[] factors = factorList.toArray(new lMultivariatePolynomialZp[factorList.size()]);
 
         // lift univariate factorization
-        lEvaluation evaluation = new lEvaluation(2, new long[]{ySubstitution}, domain, poly.ordering);
-        int liftDegree = poly.degree(1);//+ lc.degree();
+        int liftDegree = reducedPoly.degree(1) + 1;
+        lEvaluation evaluation = new lEvaluation(2, new long[]{ySubstitution}, domain, reducedPoly.ordering);
+        HenselLifting.liftWang(reducedPoly, factors, null, evaluation, new int[]{-1, liftDegree});
 
-        long start = System.nanoTime();
-        HenselLifting.liftWang(poly, factors, null, evaluation, new int[]{-1, liftDegree});
-        LIFT += System.nanoTime() - start;
+        assert reducedPoly.equals(evaluation.modImage(poly.createOne().multiply(factors), 1, liftDegree));
 
         if (!lc.isConstant())
-            // without l.c.
+            // drop auxiliary l.c. from factors
             factors = Arrays.copyOfRange(factors, 1, factors.length);
+
         // factors are lifted => do recombination
-        start = System.nanoTime();
-        FactorDecomposition<lMultivariatePolynomialZp> result = reconstructBiVariateFactors(poly, factors, evaluation, liftDegree);
-        RECOMB += System.nanoTime() - start;
+        FactorDecomposition<lMultivariatePolynomialZp> result = reconstructFactors(reducedPoly, factors, evaluation, liftDegree);
 
         if (swapVariables)
+            // reconstruct original variables order
             for (int i = 0; i < result.factors.size(); i++)
                 result.factors.set(i, AMultivariatePolynomial.swapVariables(result.get(i), 0, 1));
 
         return result;
-
     }
 
     /** cache of references **/
@@ -236,7 +263,8 @@ public final class MultivariateFactorization {
         return r;
     }
 
-    static FactorDecomposition<lMultivariatePolynomialZp> reconstructBiVariateFactors(
+    /** naive recombination for factors */
+    static FactorDecomposition<lMultivariatePolynomialZp> reconstructFactors(
             lMultivariatePolynomialZp poly,
             lMultivariatePolynomialZp[] modularFactors,
             lEvaluation evaluation,
@@ -277,7 +305,7 @@ public final class MultivariateFactorization {
         return trueFactors;
     }
 //
-//    static FactorDecomposition<lMultivariatePolynomialZp> reconstructBiVariateFactors(
+//    static FactorDecomposition<lMultivariatePolynomialZp> reconstructFactors(
 //            lMultivariatePolynomialZp poly,
 //            lMultivariatePolynomialZp[] modularFactors,
 //            lEvaluation evaluation,

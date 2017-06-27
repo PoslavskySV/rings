@@ -27,7 +27,7 @@ public final class MultivariateSquareFreeFactorization {
         else
             return SquareFreeFactorizationMusser(poly);
     }
-    
+
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] reduceContent(Poly poly) {
         Term monomialContent = poly.monomialContent();
@@ -226,5 +226,16 @@ public final class MultivariateSquareFreeFactorization {
             poly.add(pRoot, term.setDegreeVector(exponents));
         }
         return poly.create(pRoot);
+    }
+
+    /**
+     * Tests whether the given {@code poly} is square free.
+     *
+     * @param poly the polynomial
+     * @return whether the given {@code poly} is square free
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    boolean isSquareFree(Poly poly) {
+        return PolynomialGCD(poly, poly.derivative()).isConstant();
     }
 }

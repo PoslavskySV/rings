@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 import static cc.r2.core.poly.univar.DistinctDegreeFactorization.DistinctDegreeFactorization;
 import static cc.r2.core.poly.univar.FactorizationTestUtil.assertDistinctDegreeFactorization;
-import static cc.r2.core.poly.univar.FactorizationTestUtil.assertFactorization;
+import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

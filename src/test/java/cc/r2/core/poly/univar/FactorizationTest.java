@@ -15,7 +15,7 @@ import org.junit.Test;
 
 import static cc.r2.core.poly.univar.Factorization.factor;
 import static cc.r2.core.poly.univar.Factorization.factorInFiniteField;
-import static cc.r2.core.poly.univar.FactorizationTestUtil.assertFactorization;
+import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

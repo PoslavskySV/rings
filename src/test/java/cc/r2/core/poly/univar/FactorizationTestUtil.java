@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.poly.FactorDecomposition;
+import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -15,11 +16,7 @@ import static org.junit.Assert.assertEquals;
 public final class FactorizationTestUtil {
     public FactorizationTestUtil() {}
 
-    static <T extends IUnivariatePolynomial<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {
-        assertEquals(poly, factorization.toPolynomial());
-    }
-
-    static <T extends IUnivariatePolynomial<T>> void assertDistinctDegreeFactorization(T poly, FactorDecomposition<T> factorization) {
+    public static <T extends IUnivariatePolynomial<T>> void assertDistinctDegreeFactorization(T poly, FactorDecomposition<T> factorization) {
         for (int i = 0; i < factorization.factors.size(); i++)
             assertEquals("Factor's degree is not divisible by d.d.f. exponent",
                     0, factorization.factors.get(i).degree() % factorization.exponents.get(i));
@@ -27,19 +24,19 @@ public final class FactorizationTestUtil {
     }
 
 
-    static <T extends lUnivariatePolynomialAbstract<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
+    public static <T extends lUnivariatePolynomialAbstract<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
         assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
     }
 
-    static <E> void assertFactorization(UnivariatePolynomial<E> poly, E factor, List<UnivariatePolynomial<E>> factorization) {
+    public static <E> void assertFactorization(UnivariatePolynomial<E> poly, E factor, List<UnivariatePolynomial<E>> factorization) {
         assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
     }
 
-    interface PolynomialSource {
+    public interface PolynomialSource {
         lUnivariatePolynomialZp take(long modulus);
     }
 
-    static final class WithTiming<T> {
+    public static final class WithTiming<T> {
         final T val;
         final long nanoSeconds;
 
@@ -54,7 +51,7 @@ public final class FactorizationTestUtil {
         }
     }
 
-    static final class ShoupSource implements PolynomialSource {
+    public static final class ShoupSource implements PolynomialSource {
         final int minDegree, maxDegree;
         final RandomGenerator rnd;
 
@@ -79,7 +76,7 @@ public final class FactorizationTestUtil {
         }
     }
 
-    static final class GathenSource implements PolynomialSource {
+    public static final class GathenSource implements PolynomialSource {
         final int minDegree, maxDegree;
         final RandomGenerator rnd;
 
@@ -96,7 +93,7 @@ public final class FactorizationTestUtil {
         }
     }
 
-    static final class FactorableSource implements PolynomialSource {
+    public static final class FactorableSource implements PolynomialSource {
         final RandomGenerator rnd;
         final int minNBase, maxNBase;
         final boolean ensureSquareFree;
@@ -145,7 +142,7 @@ public final class FactorizationTestUtil {
         }
     }
 
-    static final class RandomSource extends AbstractRandomSource {
+    public static final class RandomSource extends AbstractRandomSource {
         public RandomSource(RandomGenerator rnd, int minDegree, int maxDegree, boolean ensureSquareFree) {
             super(rnd, minDegree, maxDegree, ensureSquareFree);
         }
@@ -166,7 +163,7 @@ public final class FactorizationTestUtil {
         }
     }
 
-    static final class RandomFactorableSource implements PolynomialSource {
+    public static final class RandomFactorableSource implements PolynomialSource {
         final int nFactors;
         final PolynomialSource pSource;
         final boolean ensureSquareFree;

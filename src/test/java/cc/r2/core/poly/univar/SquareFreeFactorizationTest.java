@@ -13,7 +13,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.r2.core.poly.univar.FactorizationTestUtil.assertFactorization;
+import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
 import static cc.r2.core.poly.univar.SquareFreeFactorization.SquareFreeFactorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

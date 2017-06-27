@@ -1,14 +1,12 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.IGeneralPolynomial;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.*;
 import cc.r2.core.util.TimeUnits;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -66,9 +64,5 @@ public class MultivariateSquareFreeFactorizationTest extends AbstractPolynomialT
 //        891ms
 //        805ms
 //        613ms
-    }
-
-    public static <T extends IGeneralPolynomial<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {
-        assertEquals(poly, factorization.toPolynomial());
     }
 }
