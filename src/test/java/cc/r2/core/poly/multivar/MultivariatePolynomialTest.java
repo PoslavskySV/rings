@@ -357,6 +357,21 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
 
         assertEquals(expected, poly.shift(2, 2));
     }
+
+    @Test
+    public void testSubstitute4() throws Exception {
+        IntegersModulo domain = new IntegersModulo(67);
+        MultivariatePolynomial<BigInteger>
+                a = parse("b*a + b^2 + 1", domain),
+                b = parse("a*b + 66*b + 1", domain),
+                c = parse("b*a^2 + a^2 + b", domain),
+                d = parse("a^5 + b^5*a^5 + b^2 + 3", domain),
+                base = a.clone().multiply(b, c, d);
+
+
+        assertEquals(parse("64 + 45*a + 18*a^2 + 34*a^3 + 17*a^4 + 5*a^5 + 59*a^6 + 37*a^7 + 55*a^8 + 61*a^9 + 59*a*b + 33*a^2*b + 27*a^3*b + 26*a^4*b + 49*a^5*b + 60*a^6*b + 53*a^7*b + 25*a^8*b + 14*a^9*b + 33*b^2 + 55*a^2*b^2 + 16*a^3*b^2 + 58*a^4*b^2 + 16*a^5*b^2 + 26*a^6*b^2 + 60*a^7*b^2 + 23*a^8*b^2 + 59*a^9*b^2 + 53*b^3 + 23*a*b^3 + 60*a^2*b^3 + 60*a^3*b^3 + 51*a^4*b^3 + 29*a^5*b^3 + 21*a^6*b^3 + 33*a^8*b^3 + 8*a^9*b^3 + 13*b^4 + 55*a*b^4 + 14*a^2*b^4 + 64*a^3*b^4 + 11*a^4*b^4 + 16*a^5*b^4 + 56*a^6*b^4 + 45*a^7*b^4 + 11*a^8*b^4 + 60*a^9*b^4 + 56*b^5 + 11*a*b^5 + 56*a^2*b^5 + 12*a^3*b^5 + a^4*b^5 + 35*a^5*b^5 + 61*a^6*b^5 + 41*a^7*b^5 + 47*a^8*b^5 + 63*a^9*b^5 + 66*b^6 + a*b^6 + 66*a^2*b^6 + a^3*b^6 + 30*a^5*b^6 + 52*a^6*b^6 + 43*a^7*b^6 + 18*a^8*b^6 + 59*a^9*b^6 + 5*a^5*b^7 + 63*a^6*b^7 + 6*a^7*b^7 + 11*a^8*b^7 + 17*a^9*b^7 + 50*a^5*b^8 + 17*a^6*b^8 + 50*a^7*b^8 + 18*a^8*b^8 + a^9*b^8 + 66*a^5*b^9 + a^6*b^9 + 66*a^7*b^9 + a^8*b^9", domain),
+                base.shift(1, 2));
+    }
     //    @Test
 //    public void testMonomialContent1() throws Exception {
 //        String[] vars = {"a", "b", "c", "d", "e"};

@@ -1099,7 +1099,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
                 return cached.clone();
             UnivariatePolynomial<E> r = CommonPolynomialsArithmetics.polyPow(base, exponent, true, uCache);
             mCache.put(exponent, cached = asMultivariate(r, nVariables, variable, ordering));
-            return cached;
+            return cached.clone();
         }
     }
 

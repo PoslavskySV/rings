@@ -1009,7 +1009,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
                 return cached.clone();
             lUnivariatePolynomialZp r = CommonPolynomialsArithmetics.polyPow(base, exponent, true, uCache);
             mCache.put(exponent, cached = asMultivariate(r, nVariables, variable, ordering));
-            return cached;
+            return cached.clone();
         }
     }
 
