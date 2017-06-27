@@ -11,8 +11,8 @@ import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class SquareFreeFactorization {
-    private SquareFreeFactorization() {}
+public final class MultivariateSquareFreeFactorization {
+    private MultivariateSquareFreeFactorization() {}
 
     /**
      * Performs square-free factorization of a {@code poly.

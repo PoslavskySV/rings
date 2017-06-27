@@ -239,12 +239,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return UnivariatePolynomial.createUnsafe(domain, univarData);
     }
 
-    /**
-     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
-     *
-     * @param variable variable
-     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}
-     */
+    @Override
     public MultivariatePolynomial<UnivariatePolynomial<E>> asOverUnivariate(int variable) {
         UnivariatePolynomial<E> factory = UnivariatePolynomial.zero(domain);
         UnivariatePolynomials<UnivariatePolynomial<E>> pDomain = new UnivariatePolynomials<>(factory);
@@ -258,12 +253,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
     }
 
-    /**
-     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
-     *
-     * @param variable variable
-     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}
-     */
+    @Override
     public MultivariatePolynomial<UnivariatePolynomial<E>> asOverUnivariateEliminate(int variable) {
         UnivariatePolynomial<E> factory = UnivariatePolynomial.zero(domain);
         UnivariatePolynomials<UnivariatePolynomial<E>> pDomain = new UnivariatePolynomials<>(factory);
@@ -601,6 +591,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         public V next() {
             return inner.next().coefficient;
         }
+    }
+
+    @Override
+    public MultivariatePolynomial<E> primitivePart(int variable) {
+        return asNormalMultivariate(asOverUnivariateEliminate(variable).primitivePart(), variable);
     }
 
     @Override

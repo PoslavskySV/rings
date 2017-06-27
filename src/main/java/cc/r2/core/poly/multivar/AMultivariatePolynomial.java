@@ -4,6 +4,7 @@ import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.poly.MultivariatePolynomials;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -84,6 +85,41 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         for (int i = 0; i < degrees.length; i++)
             newDegrees[i] = degrees[mapping[i]];
         return newDegrees;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly asMultivariate(IUnivariatePolynomial poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
+        if (poly instanceof UnivariatePolynomial)
+            return (Poly) MultivariatePolynomial.asMultivariate((UnivariatePolynomial) poly, nVariables, variable, ordering);
+        else if (poly instanceof lUnivariatePolynomialZp)
+            return (Poly) lMultivariatePolynomialZp.asMultivariate((lUnivariatePolynomialZp) poly, nVariables, variable, ordering);
+        else
+            throw new RuntimeException();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly[] asMultivariate(IUnivariatePolynomial[] polys, int nVariables, int variable, Comparator<DegreeVector> ordering) {
+        Poly p = asMultivariate(polys[0], nVariables, variable, ordering);
+        Poly[] r = p.arrayNewInstance(polys.length);
+        r[0] = p;
+        for (int i = 1; i < polys.length; i++)
+            r[i] = asMultivariate(polys[i], nVariables, variable, ordering);
+        return r;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> asMultivariate(List<IUnivariatePolynomial> polys, int nVariables, int variable, Comparator<DegreeVector> ordering) {
+        List<Poly> r = polys.stream().map(p -> AMultivariatePolynomial.<Term, Poly>asMultivariate(p, nVariables, variable, ordering)).collect(Collectors.toList());
+        return r;
     }
 
     abstract IUnivariatePolynomial asUnivariate();
@@ -353,6 +389,50 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
+     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
+     *
+     * @param variable variable
+     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}
+     */
+    public abstract MultivariatePolynomial<? extends IUnivariatePolynomial> asOverUnivariate(int variable);
+
+    /**
+     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable},
+     * the resulting polynomial have (nVariable - 1) multivariate variables
+     *
+     * @param variable variable
+     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}, the
+     * resulting polynomial have (nVariable - 1) multivariate variables
+     */
+    public abstract MultivariatePolynomial<? extends IUnivariatePolynomial> asOverUnivariateEliminate(int variable);
+
+    /**
+     * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly
+     *
+     * @param uPoly    univariate polynomial over multivariate polynomials
+     * @param variable the univariate variable
+     * @return multivariate poly
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly asMultivariate(UnivariatePolynomial<Poly> uPoly, int variable) {
+        Poly result = uPoly.domain.getZero();
+        for (int i = uPoly.degree(); i >= 0; --i) {
+            if (uPoly.isZeroAt(i))
+                continue;
+            result.add(result.createUnivariateMonomial(variable, i).multiply(uPoly.get(i)));
+        }
+        return result;
+    }
+
+    /**
+     * Gives primitive part of this considered over univariate polynomial domain R[variable]
+     *
+     * @param variable the variable
+     * @return primitive part of this considered over univariate polynomial domain R[variable]
+     */
+    public abstract Poly primitivePart(int variable);
+
+    /**
      * Multiplies this by variable^exponent
      *
      * @param variable the variable
@@ -405,24 +485,6 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         }
         terms.putAll(lc.terms);
         return self;
-    }
-
-    /**
-     * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly
-     *
-     * @param uPoly    univariate polynomial over multivariate polynomials
-     * @param variable the univariate variable
-     * @return multivariate poly
-     */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly asMultivariate(UnivariatePolynomial<Poly> uPoly, int variable) {
-        Poly result = uPoly.domain.getZero();
-        for (int i = uPoly.degree(); i >= 0; --i) {
-            if (uPoly.isZeroAt(i))
-                continue;
-            result.add(result.createUnivariateMonomial(variable, i).multiply(uPoly.get(i)));
-        }
-        return result;
     }
 
     /**

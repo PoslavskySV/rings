@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
+public class MultivariateSquareFreeFactorizationTest extends AbstractPolynomialTest {
 
     @Test
     public void test1() throws Exception {
@@ -27,12 +27,12 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(1, 5); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> yun = SquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics(poly);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> yun = MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics(poly);
             System.out.println("Yun: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
             assertFactorization(poly, yun);
 
             start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> mus = SquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> mus = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
             System.out.println("Musser: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
 
             assertFactorization(poly, mus);
@@ -52,7 +52,7 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp lPoly = MultivariatePolynomial.asLongPolyZp(poly);
         for (int i = 0; i < its(1, 5); i++) {
             long start = System.nanoTime();
-            assertFactorization(lPoly, SquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
+            assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
 

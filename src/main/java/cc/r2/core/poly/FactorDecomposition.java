@@ -193,6 +193,13 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
         return ts;
     }
 
+    /** decomposition with single factor */
+    public static <Poly extends IGeneralPolynomial<Poly>> FactorDecomposition<Poly> singleFactor(Poly poly) {
+        if (poly.isConstant())
+            return constantFactor(poly);
+        return singleFactor(poly.createOne(), poly);
+    }
+
     public static <Poly extends IGeneralPolynomial<Poly>> FactorDecomposition<Poly> create(List<Poly> factors) {
         return create(factors.get(0).createOne(), factors);
     }

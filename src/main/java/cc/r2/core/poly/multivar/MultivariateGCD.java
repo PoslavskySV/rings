@@ -284,7 +284,7 @@ public final class MultivariateGCD {
         {
             @SuppressWarnings("unchecked")
             IUnivariatePolynomial iUnivar = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
-            Poly poly = asMultivariate(iUnivar, nVariables, lastPresentVariable, a.ordering);
+            Poly poly = AMultivariatePolynomial.asMultivariate(iUnivar, nVariables, lastPresentVariable, a.ordering);
             return new GCDInput<>(poly.multiply(monomialGCD));
         }
 
@@ -305,12 +305,6 @@ public final class MultivariateGCD {
         a = renameVariables(a, variables);
         b = renameVariables(b, variables);
 
-        // for all variables which are not used we can just substitute random values
-        for (int i = lastPresentVariable + 1; i < nVariables; ++i) {
-            a = a.evaluateAtRandomPreservingSkeleton(i, rnd);
-            b = b.evaluateAtRandomPreservingSkeleton(i, rnd);
-        }
-
         // check whether coefficient domain cardinality is large enough
         int finiteExtensionDegree = 1;
         int cardinalityBound = 5 * ArraysUtil.max(degreeBounds);
@@ -322,17 +316,6 @@ public final class MultivariateGCD {
                 tmp = tmp * ds;
         }
         return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastPresentVariable, finiteExtensionDegree);
-    }
-
-    @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly asMultivariate(IUnivariatePolynomial poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
-        if (poly instanceof UnivariatePolynomial)
-            return (Poly) MultivariatePolynomial.asMultivariate((UnivariatePolynomial) poly, nVariables, variable, ordering);
-        else if (poly instanceof lUnivariatePolynomialZp)
-            return (Poly) lMultivariatePolynomialZp.asMultivariate((lUnivariatePolynomialZp) poly, nVariables, variable, ordering);
-        else
-            throw new RuntimeException();
     }
 
     /** gcd with monomial */
@@ -416,7 +399,7 @@ public final class MultivariateGCD {
         MultivariatePolynomial<uPoly> conv = asOverUnivariate(poly, variable);
         //univariate content
         uPoly uContent = UnivariateGCD.PolynomialGCD(conv.coefficients());
-        Poly mContent = asMultivariate(uContent, poly.nVariables, variable, poly.ordering);
+        Poly mContent = AMultivariatePolynomial.asMultivariate(uContent, poly.nVariables, variable, poly.ordering);
         Poly primitivePart = divideExact(poly, mContent);
         return new UnivariateContent(conv, primitivePart, uContent);
     }
@@ -1228,7 +1211,7 @@ public final class MultivariateGCD {
             UnivariatePolynomial<E> gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
-            return asMultivariate(gcd, nVariables, variable, factory.ordering);
+            return AMultivariatePolynomial.asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
 
         PrimitiveInput<MonomialTerm<E>, MultivariatePolynomial<E>, UnivariatePolynomial<E>> primitiveInput = makePrimitive(a, b, variable);
@@ -1243,7 +1226,7 @@ public final class MultivariateGCD {
         //check again for trivial gcd
         trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null) {
-            MultivariatePolynomial<E> poly = asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+            MultivariatePolynomial<E> poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
             return trivialGCD.multiply(poly);
         }
 
@@ -1342,7 +1325,7 @@ public final class MultivariateGCD {
 
         if (contentGCD == null)
             return interpolated;
-        MultivariatePolynomial<E> poly = asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+        MultivariatePolynomial<E> poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
         return interpolated.multiply(poly);
     }
 
@@ -1413,7 +1396,7 @@ public final class MultivariateGCD {
             UnivariatePolynomial<E> gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
-            return asMultivariate(gcd, nVariables, variable, factory.ordering);
+            return AMultivariatePolynomial.asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
 
 //        MultivariatePolynomial<E> content = ZippelContentGCD(a, b, variable);
@@ -1436,7 +1419,7 @@ public final class MultivariateGCD {
         //check again for trivial gcd
         trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null) {
-            MultivariatePolynomial<E> poly = asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+            MultivariatePolynomial<E> poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
             return trivialGCD.multiply(poly);
         }
 
@@ -2153,7 +2136,7 @@ public final class MultivariateGCD {
             lUnivariatePolynomialZp gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
-            return asMultivariate(gcd, nVariables, variable, factory.ordering);
+            return AMultivariatePolynomial.asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
 
         PrimitiveInput<lMonomialTerm, lMultivariatePolynomialZp, lUnivariatePolynomialZp> primitiveInput = makePrimitive(a, b, variable);
@@ -2168,7 +2151,7 @@ public final class MultivariateGCD {
         //check again for trivial gcd
         trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null) {
-            lMultivariatePolynomialZp poly = asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+            lMultivariatePolynomialZp poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
             return trivialGCD.multiply(poly);
         }
 
@@ -2268,7 +2251,7 @@ public final class MultivariateGCD {
 
         if (contentGCD == null)
             return interpolated;
-        lMultivariatePolynomialZp poly = asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+        lMultivariatePolynomialZp poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
         return interpolated.multiply(poly);
     }
 
@@ -2333,7 +2316,7 @@ public final class MultivariateGCD {
             lUnivariatePolynomialZp gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
-            return asMultivariate(gcd, nVariables, variable, factory.ordering);
+            return AMultivariatePolynomial.asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
 
 //        lMultivariatePolynomialZp content = ZippelContentGCD(a, b, variable);
@@ -2356,7 +2339,7 @@ public final class MultivariateGCD {
         //check again for trivial gcd
         trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null) {
-            lMultivariatePolynomialZp poly = asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+            lMultivariatePolynomialZp poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
             return trivialGCD.multiply(poly);
         }
 
@@ -3661,8 +3644,8 @@ public final class MultivariateGCD {
 
                     if (!uSquareFreeGCD.clone().monic().equals(ugcd.clone().monic())) {
                         Poly
-                                mgcd = (Poly) asMultivariate(ugcd, a.nVariables, 0, a.ordering),
-                                gcdCoFactor = (Poly) asMultivariate(
+                                mgcd = (Poly) AMultivariatePolynomial.asMultivariate(ugcd, a.nVariables, 0, a.ordering),
+                                gcdCoFactor = (Poly) AMultivariatePolynomial.asMultivariate(
                                         DivisionWithRemainder.divideExact(uSquareFreeGCD, ugcd, false), a.nVariables, 0, a.ordering);
 
                         HenselLifting.liftWang(squareFreeGCD, mgcd, gcdCoFactor, evaluation);
@@ -3677,8 +3660,8 @@ public final class MultivariateGCD {
                 }
             }
 
-            Poly gcd = asMultivariate(ugcd, a.nVariables, 0, a.ordering);
-            Poly coFactor = asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
+            Poly gcd = AMultivariatePolynomial.asMultivariate(ugcd, a.nVariables, 0, a.ordering);
+            Poly coFactor = AMultivariatePolynomial.asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
 
             // impose the leading coefficient
             Poly lcCorrection = EEZGCD(a.lc(0), b.lc(0));

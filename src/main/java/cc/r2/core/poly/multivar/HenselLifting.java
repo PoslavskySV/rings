@@ -391,8 +391,8 @@ public final class HenselLifting {
             rhs = evaluation.evaluateFrom(rhs, liftingVariable + 1);
             if (liftingVariable == 0) {
                 uSolver.solve((uPoly) rhs.asUnivariate());
-                x = MultivariateGCD.asMultivariate(uSolver.x, rhs.nVariables, 0, rhs.ordering);
-                y = MultivariateGCD.asMultivariate(uSolver.y, rhs.nVariables, 0, rhs.ordering);
+                x = AMultivariatePolynomial.asMultivariate(uSolver.x, rhs.nVariables, 0, rhs.ordering);
+                y = AMultivariatePolynomial.asMultivariate(uSolver.y, rhs.nVariables, 0, rhs.ordering);
                 return;
             }
 
@@ -654,7 +654,7 @@ public final class HenselLifting {
             if (liftingVariable == 0) {
                 uSolver.solve((uPoly) rhs.asUnivariate());
                 for (int i = 0; i < solution.length; i++)
-                    solution[i] = MultivariateGCD.asMultivariate(uSolver.solution[i], rhs.nVariables, 0, rhs.ordering);
+                    solution[i] = AMultivariatePolynomial.asMultivariate(uSolver.solution[i], rhs.nVariables, 0, rhs.ordering);
                 return;
             }
 
@@ -700,12 +700,19 @@ public final class HenselLifting {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void liftWang(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation) {
+        liftWang(base, factors, factorsLC, evaluation, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftWang(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation, int[] degreeBounds) {
         if (factorsLC != null)
             for (int i = 0; i < factors.length; i++)
                 if (factorsLC[i] != null)
                     factors[i].setLC(0, factorsLC[i]);
 
-        int[] degreeBounds = base.degrees();
+        if (degreeBounds == null)
+            degreeBounds = base.degrees();
 
         AllProductsCache uFactors = new AllProductsCache(asUnivariate(factors, evaluation));
         // univariate multifactor diophantine solver
@@ -735,10 +742,11 @@ public final class HenselLifting {
                     factors[i].add(dSolver.solution[i].multiply(idPower));
             }
 
-            // update tmp images for the next cycle
-            dSolver.images[liftingVariable] =
-                    new AllProductsCache<>(evaluation.evaluateFrom(factors, liftingVariable + 1))
-                            .exceptArray();
+            if (liftingVariable < base.nVariables) // don't perform on the last step
+                // update tmp images for the next cycle
+                dSolver.images[liftingVariable] =
+                        new AllProductsCache<>(evaluation.evaluateFrom(factors, liftingVariable + 1))
+                                .exceptArray();
         }
     }
 
@@ -762,11 +770,11 @@ public final class HenselLifting {
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     Poly[] asMultivariate(uPoly[] array, int nVariables, int variable, Comparator<DegreeVector> ordering) {
-        Poly u0 = MultivariateGCD.asMultivariate(array[0], nVariables, variable, ordering);
+        Poly u0 = AMultivariatePolynomial.asMultivariate(array[0], nVariables, variable, ordering);
         Poly[] res = u0.arrayNewInstance(array.length);
         res[0] = u0;
         for (int i = 1; i < array.length; i++)
-            res[i] = MultivariateGCD.asMultivariate(array[i], nVariables, variable, ordering);
+            res[i] = AMultivariatePolynomial.asMultivariate(array[i], nVariables, variable, ordering);
         return res;
     }
 }

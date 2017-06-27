@@ -189,12 +189,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return lUnivariatePolynomialZp.createUnsafe(domain, univarData);
     }
 
-    /**
-     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
-     *
-     * @param variable variable
-     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}
-     */
+    @Override
     public MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariate(int variable) {
         lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(domain);
         UnivariatePolynomials<lUnivariatePolynomialZp> pDomain = new UnivariatePolynomials<>(factory);
@@ -208,14 +203,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
     }
 
-    /**
-     * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable},
-     * the resulting polynomial have (nVariable - 1) multivariate variables
-     *
-     * @param variable variable
-     * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}, the
-     * resulting polynomial have (nVariable - 1) multivariate variables
-     */
+    @Override
     public MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariateEliminate(int variable) {
         lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(domain);
         UnivariatePolynomials<lUnivariatePolynomialZp> pDomain = new UnivariatePolynomials<>(factory);
@@ -571,6 +559,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     public long[] coefficients() {
         return terms.values().stream().mapToLong(x -> x.coefficient).toArray();
+    }
+
+    @Override
+    public lMultivariatePolynomialZp primitivePart(int variable) {
+        return asNormalMultivariate(asOverUnivariateEliminate(variable).primitivePart(), variable);
     }
 
     @Override

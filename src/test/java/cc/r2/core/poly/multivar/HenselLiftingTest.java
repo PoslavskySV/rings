@@ -632,6 +632,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         uFactors[2].monic();
         liftWang(base, uFactors, null, evaluation);
         Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(uFactors), 1, base.degree(1) + 1));
+        Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(base.lc(0), uFactors[1], uFactors[2]), 1, base.degree(1) + 1));
     }
 
 
