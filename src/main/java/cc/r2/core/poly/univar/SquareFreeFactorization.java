@@ -212,7 +212,7 @@ public final class SquareFreeFactorization {
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd);
                 FactorDecomposition<Poly> gcdFactorization = SquareFreeFactorizationMusser0(gcd);
-                gcdFactorization.raiseExponents(poly.coefficientDomainCardinality().intValueExact());
+                gcdFactorization.raiseExponents(poly.coefficientDomainCharacteristics().intValueExact());
                 result.addAll(gcdFactorization);
                 return result;
             } else
@@ -220,7 +220,7 @@ public final class SquareFreeFactorization {
         } else {
             Poly pRoot = pRoot(poly);
             FactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
-            fd.raiseExponents(poly.coefficientDomainCardinality().intValueExact());
+            fd.raiseExponents(poly.coefficientDomainCharacteristics().intValueExact());
             return fd.setConstantFactor(poly.createOne());
         }
     }
@@ -254,13 +254,12 @@ public final class SquareFreeFactorization {
 
     /** p-th root of poly */
     private static <E> UnivariatePolynomial<E> pRoot(UnivariatePolynomial<E> poly) {
-        if (poly.coefficientDomainCardinality() == null || !poly.coefficientDomainCardinality().isInt())
+        if (!poly.coefficientDomainCharacteristics().isInt())
             throw new IllegalArgumentException("Infinite or too large domain: " + poly.domain);
 
-        int modulus = poly.coefficientDomainCardinality().intValueExact();
+        int modulus = poly.coefficientDomainCharacteristics().intValueExact();
         assert poly.degree % modulus == 0;
         E[] rootData = poly.domain.createZeroesArray(poly.degree / modulus + 1);
-        Arrays.fill(rootData, 0);
         for (int i = poly.degree; i >= 0; --i)
             if (!poly.domain.isZero(poly.data[i])) {
                 assert i % modulus == 0;

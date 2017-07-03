@@ -199,7 +199,7 @@ public final class MultivariateSquareFreeFactorization {
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd);
                 FactorDecomposition<Poly> gcdFactorization = SquareFreeFactorizationMusser0(gcd);
-                gcdFactorization.raiseExponents(poly.coefficientDomainCardinality().intValueExact());
+                gcdFactorization.raiseExponents(poly.coefficientDomainCharacteristics().intValueExact());
                 result.addAll(gcdFactorization);
                 return result;
             } else
@@ -207,7 +207,7 @@ public final class MultivariateSquareFreeFactorization {
         } else {
             Poly pRoot = pRoot(poly);
             FactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
-            fd.raiseExponents(poly.coefficientDomainCardinality().intValueExact());
+            fd.raiseExponents(poly.coefficientDomainCharacteristics().intValueExact());
             return fd.setConstantFactor(poly.createOne());
         }
     }
@@ -215,7 +215,7 @@ public final class MultivariateSquareFreeFactorization {
     /** p-th root of poly */
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly pRoot(Poly poly) {
-        int modulus = poly.coefficientDomainCardinality().intValueExact();
+        int modulus = poly.coefficientDomainCharacteristics().intValueExact();
         MonomialsSet<Term> pRoot = new MonomialsSet<>(poly.ordering);
         for (Term term : poly) {
             int[] exponents = term.exponents.clone();
