@@ -241,7 +241,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     public MultivariatePolynomial<lMultivariatePolynomialZp> asOverMultivariateEliminate(int... variables) {
         variables = variables.clone();
         Arrays.sort(variables);
-        int[] restVariables = ArraysUtil.intSetDifference( ArraysUtil.sequence(nVariables), variables);
+        int[] restVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(nVariables), variables);
         Domain<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(create(variables.length, new MonomialsSet<>(ordering)));
         MonomialsSet<MonomialTerm<lMultivariatePolynomialZp>> terms = new MonomialsSet<>(ordering);
         for (lMonomialTerm term : this) {

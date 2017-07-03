@@ -71,6 +71,15 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     }
 
     /**
+     * Returns constant
+     *
+     * @return constant
+     */
+    public static lUnivariatePolynomialZ constant(long value) {
+        return new lUnivariatePolynomialZ(new long[]{value}, 0);
+    }
+
+    /**
      * Reduces polynomial modulo {@code modulus} and returns Zp[x] result.
      *
      * @param modulus the modulus

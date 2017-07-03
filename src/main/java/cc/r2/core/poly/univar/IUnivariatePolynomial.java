@@ -18,6 +18,24 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     boolean isZeroAt(int i);
 
     /**
+     * Fills i-th element with zero
+     *
+     * @param i position
+     * @return self
+     */
+    Poly setZero(int i);
+
+    /**
+     * Sets i-th element of this by j-th element of other poly
+     *
+     * @param indexInThis index in self
+     * @param poly        other polynomial
+     * @param indexInPoly index in other polynomial
+     * @return self
+     */
+    Poly setFrom(int indexInThis, Poly poly, int indexInPoly);
+
+    /**
      * Returns a set of exponents of non-zero terms
      *
      * @return a set of exponents of non-zero terms
@@ -101,4 +119,6 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      */
     @Override
     Poly clone();
+
+    void ensureInternalCapacity(int desiredCapacity);
 }

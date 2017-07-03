@@ -1,5 +1,6 @@
 package cc.r2.core.poly.multivar;
 
+import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.FactorDecompositionTest;
@@ -10,6 +11,10 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static cc.r2.core.poly.multivar.MultivariateFactorization.LIFT;
+import static cc.r2.core.poly.multivar.MultivariateFactorization.RECO;
+import static cc.r2.core.poly.multivar.MultivariateFactorization.UNI;
 
 /**
  * @author Stanislav Poslavsky
@@ -31,13 +36,13 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 //        base = base.shift(1, 1);
 //        System.out.println(MultivariateFactorization.bivariateFactorSquareFree(base));
         for (int i = 0; i < 1000; i++) {
-//            UNI = LIFT = RECOMB = 0;
+            UNI = LIFT = RECO = 0;
             long start = System.nanoTime();
             Assert.assertEquals(4, MultivariateFactorization.bivariateFactorSquareFree(base).size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-//            System.out.println(TimeUnits.nanosecondsToString(UNI));
-//            System.out.println(TimeUnits.nanosecondsToString(MultivariateFactorization.LIFT));
-//            System.out.println(TimeUnits.nanosecondsToString(MultivariateFactorization.RECOMB));
+            System.out.println(TimeUnits.nanosecondsToString(UNI));
+            System.out.println(TimeUnits.nanosecondsToString(LIFT));
+            System.out.println(TimeUnits.nanosecondsToString(RECO));
             System.out.println();
         }
     }

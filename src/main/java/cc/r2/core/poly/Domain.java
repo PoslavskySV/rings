@@ -59,6 +59,13 @@ public interface Domain<E> extends Comparator<E> {
      */
     E add(E a, E b);
 
+    default E add(E... vals){
+        E r = vals[0];
+        for (int i = 1; i < vals.length; i++)
+            r = add(r, vals[i]);
+        return r;
+    }
+
     /**
      * Subtracts {@code b} from {@code a}
      *

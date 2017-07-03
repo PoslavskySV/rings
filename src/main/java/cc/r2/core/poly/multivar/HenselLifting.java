@@ -2,6 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IGeneralPolynomial;
+import cc.r2.core.poly.UnivariatePolynomials;
 import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.PrecomputedPowersHolder;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.USubstitution;
@@ -580,6 +581,13 @@ public final class HenselLifting {
             }
         }
 
+        Poly multiply(int[] selector) {
+            BitSet bits = new BitSet(factors.length);
+            for (int i = 0; i < selector.length; i++)
+                bits.set(selector[i]);
+            return multiply(bits);
+        }
+
         int size() {
             return factors.length;
         }
@@ -793,6 +801,159 @@ public final class HenselLifting {
         for (int i = 1; i < array.length; i++)
             res[i] = AMultivariatePolynomial.asMultivariate(array[i], nVariables, variable, ordering);
         return res;
+    }
+
+    /*=============================== Bivariate dense lifting with Bernardin's trick =================================*/
+
+
+    @SuppressWarnings("unchecked")
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    void bivariateLift(Poly base, Poly[] factors, IEvaluation<Term, Poly> evaluation, int degreeBound) {
+        AllProductsCache<uPoly> uFactors = new AllProductsCache(asUnivariate(factors, evaluation));
+        // univariate multifactor diophantine solver
+        UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
+
+        Domain<uPoly> uDomain = new UnivariatePolynomials<>(uFactors.get(0));
+        UnivariatePolynomial<uPoly> baseSeries = seriesExpansionDense(uDomain, base, 1, evaluation);
+        UnivariatePolynomial<uPoly>[] solution = new UnivariatePolynomial[factors.length];
+        for (int i = 0; i < solution.length; i++) {
+            solution[i] = UnivariatePolynomial.constant(baseSeries.domain, uFactors.factors[i]);
+            solution[i].ensureInternalCapacity(degreeBound + 1);
+        }
+
+        BernardinsTrick<uPoly> product = new BernardinsTrick<>(solution);
+        for (int degree = 1; degree <= degreeBound; ++degree) {
+            uPoly rhsDelta = baseSeries.get(degree).clone().subtract(product.fullProduct().get(degree));
+            if (rhsDelta.isZero())
+                break;
+            uSolver.solve(rhsDelta);
+            product.update(uSolver.solution);
+        }
+
+        for (int i = 0; i < solution.length; i++)
+            factors[i] = denseSeriesToPoly(base, solution[i], 1, evaluation);
+
+    }
+
+//    public static <uPoly extends IUnivariatePolynomial<uPoly>>
+//    void correctUpdates(uPoly[] factorsLC, uPoly[] factors, uPoly[] updates, int degree) {
+//        // factorsLC are polynomials in y
+//        // updates are polynomials in x
+//        for (int i = 0; i < updates.length; i++) {
+//            int xdeg = factors[i].degree();
+//            if (!updates[i].isZeroAt(xdeg)) {
+//                // updates[i] will update the leading coefficient of factors[i]
+//                updates[i].setZero(xdeg);
+//                updates[i].setFrom(xdeg, factorsLC[i], degree);
+//            }
+//        }
+//
+//        for (int i = 0; i < updates.length; i++) {
+//            int xdeg = factors[i].degree();
+//            if (!factorsLC[i].isZeroAt(degree)) {
+//                System.out.println(i + ": " +  xdeg + "   " + degree);
+//                // updates[i] will update the leading coefficient of factors[i]
+//                updates[i].setFrom(xdeg, factorsLC[i], degree);
+//            }
+//        }
+//    }
+
+    /** Bernardin's trick for fast f_0 * f_1 * ... * f_N computing */
+    static final class BernardinsTrick<Poly extends IGeneralPolynomial<Poly>> {
+        // the factors
+        final UnivariatePolynomial<Poly>[] factors;
+        // partial products: {factor[0] * factor[1], (factor[0] * factor[1]) * factor[2], ... }
+        final UnivariatePolynomial<Poly>[] partialProducts;
+        final Domain<Poly> domain;
+
+        BernardinsTrick(UnivariatePolynomial<Poly>... factors) {
+            this.factors = factors;
+            this.partialProducts = factors[0].arrayNewInstance(factors.length - 1);
+            this.domain = factors[0].domain;
+
+            partialProducts[0] = factors[0].clone().multiply(factors[1]);
+            for (int i = 1; i < partialProducts.length; i++)
+                partialProducts[i] = partialProducts[i - 1].clone().multiply(factors[i + 1]);
+        }
+
+        /** get's (f_0 * f_1 * ... * f_N) mod y^(degree + 1) */
+        UnivariatePolynomial<Poly> fullProduct() {return partialProducts[partialProducts.length - 1];}
+
+        // current lift, so that factors are known mod I^pDegree
+        private int pDegree = 0;
+
+        /** update products */
+        void update(Poly... updates) {
+            ++pDegree;
+            // update factors
+            for (int i = 0; i < factors.length; i++)
+                factors[i].set(pDegree, updates[i]);
+
+            // update the first product: factors[0] * factors[1]
+            // k-th element is updated by (factors[0]_k * factors[1]_0 + factors[0]_0 * factors[1]_k)
+            Poly updateValue = factors[0].get(pDegree).clone().multiply(factors[1].get(0))
+                    .add(factors[1].get(pDegree).clone().multiply(factors[0].get(0)));
+            partialProducts[0].addMonomial(updateValue, pDegree);
+
+            // (k+1)-th element is calculated as (factors[0]_1*factors[1]_k + ... + factors[0]_k*factors[1]_1)
+            Poly newElement = domain.getZero();
+            for (int i = 1; i <= pDegree; i++)
+                newElement.add(factors[0].get(i).clone().multiply(factors[1].get(pDegree - i + 1)));
+            partialProducts[0].set(pDegree + 1, newElement);
+
+            // => the first product (factors[0] * factors[1]) is updated
+            // update other partial products accordingly
+            for (int j = 1; j < partialProducts.length; j++) {
+
+                // k-th element is updated by (update(p_k) * factors[j+1]_0 + p_0 * factors[j+1]_k),
+                // where p is the previous partial product (without factors[j+1]) and
+                // update(p_k) is the k-th element update of the previous partial product
+                Poly currentUpdate =
+                        partialProducts[j - 1].get(0).clone().multiply(factors[j + 1].get(pDegree))
+                                .add(updateValue.multiply(factors[j + 1].get(0)));
+                partialProducts[j].addMonomial(currentUpdate, pDegree);
+                // cache current update for the next cycle
+                updateValue = currentUpdate;
+
+                // (k+1)-th element is calculated as (p[0]_1*factors[1]_k + ... + p[0]_k*factors[1]_1 + p[0]_(k+1)*factors[1]_0)
+                newElement = domain.getZero();
+                for (int i = 1; i <= (pDegree + 1); i++)
+                    newElement.add(partialProducts[j - 1].get(i).clone().multiply(factors[j + 1].get(pDegree - i + 1)));
+                partialProducts[j].set(pDegree + 1, newElement);
+            }
+        }
+    }
+
+    /**
+     * Generates a power series expansion for poly about the point specified by variable and evaluation
+     */
+    @SuppressWarnings("unchecked")
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    UnivariatePolynomial<uPoly> seriesExpansionDense(Domain<uPoly> domain, Poly poly, int variable, IEvaluation<Term, Poly> evaluate) {
+        int degree = poly.degree(variable);
+        uPoly[] coefficients = domain.createArray(degree + 1);
+        for (int i = 0; i <= degree; i++)
+            coefficients[i] = (uPoly) evaluate.taylorCoefficient(poly, variable, i).asUnivariate();
+        return UnivariatePolynomial.create(domain, coefficients);
+    }
+
+    static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    Poly denseSeriesToPoly(Poly factory, UnivariatePolynomial<uPoly> series, int seriesVariable, IEvaluation<Term, Poly> evaluation) {
+        Poly result = factory.createZero();
+        for (int i = 0; i <= series.degree(); i++) {
+            Poly mPoly = AMultivariatePolynomial.asMultivariate(series.get(i), factory.nVariables, 0, factory.ordering);
+            result = result.add(mPoly.multiply(evaluation.linearPower(seriesVariable, i)));
+        }
+        return result;
     }
 }
 

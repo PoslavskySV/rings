@@ -30,13 +30,23 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     /**
      * Returns i-th element of this poly
      */
-    public final long get(int i) {return data[i];}
+    public final long get(int i) { return i > degree ? 0 : data[i];}
 
     /**
      * Sets i-th element of this poly and returns the previous value
      */
     public lPoly set(int i, long el) {
-        data[i] = valueOf(el);
+        el = valueOf(el);
+        if (el == 0) {
+            if (i > degree)
+                return self;
+            data[i] = el;
+            fixDegree();
+            return self;
+        }
+        ensureCapacity(i);
+        data[i] = el;
+        fixDegree();
         return self;
     }
 
@@ -77,6 +87,13 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
      * @return constant coefficient
      */
     public final long cc() {return data[0];}
+
+    @Override
+    public final void ensureInternalCapacity(int desiredCapacity) {
+        if (data.length < desiredCapacity)
+            // the rest will be filled with zeros
+            data = Arrays.copyOf(data, desiredCapacity);
+    }
 
     /**
      * Ensures that the capacity of internal storage is enough for storing polynomial of the {@code desiredDegree}.
@@ -164,7 +181,22 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     public final lPoly createOne() {return createConstant(1);}
 
     @Override
-    public boolean isZeroAt(int i) {return i >= data.length || data[i] == 0;}
+    public final boolean isZeroAt(int i) {return i >= data.length || data[i] == 0;}
+
+    @Override
+    public final lPoly setZero(int i) {
+        if (i < data.length)
+            data[i] = 0;
+        return self;
+    }
+
+    @Override
+    public final lPoly setFrom(int indexInThis, lPoly poly, int indexInPoly) {
+        ensureCapacity(indexInThis);
+        data[indexInThis] = poly.get(indexInPoly);
+        fixDegree();
+        return self;
+    }
 
     /** {@inheritDoc} */
     @Override
