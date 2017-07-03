@@ -580,6 +580,38 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         }
     }
 
+    @Ignore
+    @Test
+    public void testZippel5_bivariate_performance() throws Exception {
+        PrivateRandom.getRandom().setSeed(1232);
+        String[] vars = {"a", "b"};
+        IntegersModulo domain = new IntegersModulo(100011111111101L);
+        MultivariatePolynomial<BigInteger>
+                a = parse("38*a^32*b^6 + 2147483093*a^52*b^26 + 357*a^36*b^34 + 44*a^8*b^39 + 19*a^52*b^40 + 563*a^42*b^41 + 613*a^48*b^55 + 2147483167*a^4*b^60 + 257*a^44*b^68 + 639*a^55*b^72", domain, LEX, vars),
+                b = parse("2147482723*a^4*b^5 + 627*a^67*b^8 + 243*a^60*b^15 + 555*a^62*b^20 + 394*a^27*b^22 + 2147483150*b^25 + 952*a^39*b^48 + 40*a^61*b^56 + 447*a^70*b^59 + 261*a^15*b^60", domain, LEX, vars),
+                gcd = parse("893*a^6*b^13 + 737*a^47*b^15 + 376*a^2*b^28 + 783*a^20*b^28 + 2147482938*a^31*b^30 + 868*a^53*b^30 + 35*a*b^36 + 2147482960*a^31*b^49 + 23*a^8*b^71 + 898*a^61*b^71", domain, LEX, vars);
+
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+        System.out.println(a);
+        System.out.println(b);
+
+        lMultivariatePolynomialZp
+                aL = asLongPolyZp(a),
+                bL = asLongPolyZp(b);
+
+        for (int i = 0; i < 1000; i++) {
+            long start = System.nanoTime();
+            assertEquals(10, ZippelGCD(aL, bL).size());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            start = System.nanoTime();
+            System.out.println(ZippelGCD(aL.clone().increment(), bL));
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println();
+//            System.out.println(TimeUnits.nanosecondsToString(MultivariateGCD.BROWN));
+        }
+    }
+
     @Test
     public void testZippel_sparse_variables_random() throws Exception {
         RandomGenerator rnd = getRandom();

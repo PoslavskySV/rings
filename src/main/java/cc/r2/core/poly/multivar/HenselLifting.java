@@ -803,6 +803,7 @@ public final class HenselLifting {
         return res;
     }
 
+
     /*=============================== Bivariate dense lifting with Bernardin's trick =================================*/
 
 
@@ -827,39 +828,37 @@ public final class HenselLifting {
         BernardinsTrick<uPoly> product = new BernardinsTrick<>(solution);
         for (int degree = 1; degree <= degreeBound; ++degree) {
             uPoly rhsDelta = baseSeries.get(degree).clone().subtract(product.fullProduct().get(degree));
-            if (rhsDelta.isZero())
-                break;
             uSolver.solve(rhsDelta);
             product.update(uSolver.solution);
         }
 
         for (int i = 0; i < solution.length; i++)
             factors[i] = denseSeriesToPoly(base, solution[i], 1, evaluation);
-
     }
 
-//    public static <uPoly extends IUnivariatePolynomial<uPoly>>
-//    void correctUpdates(uPoly[] factorsLC, uPoly[] factors, uPoly[] updates, int degree) {
-//        // factorsLC are polynomials in y
-//        // updates are polynomials in x
-//        for (int i = 0; i < updates.length; i++) {
-//            int xdeg = factors[i].degree();
-//            if (!updates[i].isZeroAt(xdeg)) {
-//                // updates[i] will update the leading coefficient of factors[i]
-//                updates[i].setZero(xdeg);
-//                updates[i].setFrom(xdeg, factorsLC[i], degree);
-//            }
-//        }
-//
-//        for (int i = 0; i < updates.length; i++) {
-//            int xdeg = factors[i].degree();
-//            if (!factorsLC[i].isZeroAt(degree)) {
-//                System.out.println(i + ": " +  xdeg + "   " + degree);
-//                // updates[i] will update the leading coefficient of factors[i]
-//                updates[i].setFrom(xdeg, factorsLC[i], degree);
-//            }
-//        }
-//    }
+    @SuppressWarnings("unchecked")
+    static <uPoly extends IUnivariatePolynomial<uPoly>>
+    UnivariatePolynomial<uPoly>[] bivariateLift(
+            UnivariatePolynomial<uPoly> baseSeries, uPoly[] factors, int degreeBound) {
+        AllProductsCache<uPoly> uFactors = new AllProductsCache(factors);
+        // univariate multifactor diophantine solver
+        UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
+
+        UnivariatePolynomial<uPoly>[] solution = new UnivariatePolynomial[factors.length];
+        for (int i = 0; i < solution.length; i++) {
+            solution[i] = UnivariatePolynomial.constant(baseSeries.domain, uFactors.factors[i]);
+            solution[i].ensureInternalCapacity(degreeBound + 1);
+        }
+
+        BernardinsTrick<uPoly> product = new BernardinsTrick<>(solution);
+        for (int degree = 1; degree <= degreeBound; ++degree) {
+            uPoly rhsDelta = baseSeries.get(degree).clone().subtract(product.fullProduct().get(degree));
+            uSolver.solve(rhsDelta);
+            product.update(uSolver.solution);
+        }
+
+        return solution;
+    }
 
     /** Bernardin's trick for fast f_0 * f_1 * ... * f_N computing */
     static final class BernardinsTrick<Poly extends IGeneralPolynomial<Poly>> {

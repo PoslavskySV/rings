@@ -1,6 +1,5 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.FactorDecompositionTest;
@@ -12,9 +11,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static cc.r2.core.poly.multivar.MultivariateFactorization.LIFT;
-import static cc.r2.core.poly.multivar.MultivariateFactorization.RECO;
-import static cc.r2.core.poly.multivar.MultivariateFactorization.UNI;
+import java.util.Arrays;
 
 /**
  * @author Stanislav Poslavsky
@@ -33,17 +30,10 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 base = a.clone().multiply(b, c, d);
 
         System.out.println(base);
-//        base = base.shift(1, 1);
-//        System.out.println(MultivariateFactorization.bivariateFactorSquareFree(base));
         for (int i = 0; i < 1000; i++) {
-            UNI = LIFT = RECO = 0;
             long start = System.nanoTime();
-            Assert.assertEquals(4, MultivariateFactorization.bivariateFactorSquareFree(base).size());
+            Assert.assertEquals(4, MultivariateFactorization.bivariateDenseFactorSquareFree(base).size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-            System.out.println(TimeUnits.nanosecondsToString(UNI));
-            System.out.println(TimeUnits.nanosecondsToString(LIFT));
-            System.out.println(TimeUnits.nanosecondsToString(RECO));
-            System.out.println();
         }
     }
 
@@ -52,7 +42,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
 
-        int nIterations = its(100, 1000);
+        int nIterations = its(1000, 10000);
         int prevPercent = -1, currPercent;
         for (int n = 0; n < nIterations; n++) {
             if ((currPercent = (int) (100.0 * n / nIterations)) != prevPercent) {
@@ -76,9 +66,29 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             }
 
             poly = poly.divideDegreeVectorOrNull(poly.monomialContent());
-            FactorDecomposition<lMultivariatePolynomialZp> factorization = MultivariateFactorization.bivariateFactorSquareFree(poly);
-            FactorDecompositionTest.assertFactorization(poly, factorization);
-            Assert.assertTrue(factorization.size() >= nFactors);
+            try {
+                FactorDecomposition<lMultivariatePolynomialZp> factorization = MultivariateFactorization.bivariateDenseFactorSquareFree(poly);
+                FactorDecompositionTest.assertFactorization(poly, factorization);
+                Assert.assertTrue(factorization.size() >= nFactors);
+            } catch (Throwable t) {
+                System.out.println(domain);
+                System.out.println(Arrays.toString(factors));
+                throw t;
+            }
         }
+    }
+
+    @Test
+    public void test1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(62653);
+        String[] vars = {"a", "b"};
+        lMultivariatePolynomialZp[] factors = {
+                lMultivariatePolynomialZp.parse("17096+6578*a*b^2+54905*a^3", domain, vars),
+                lMultivariatePolynomialZp.parse("43370+32368*a^2*b^2+45712*a^2*b^4+52302*a^4+23776*a^4*b^2", domain, vars)
+        };
+        lMultivariatePolynomialZp poly = factors[0].createOne().multiply(factors);
+        FactorDecomposition<lMultivariatePolynomialZp> factorization = MultivariateFactorization.bivariateDenseFactorSquareFree(poly);
+        FactorDecompositionTest.assertFactorization(poly, factorization);
+        Assert.assertTrue(factorization.size() >= factors.length);
     }
 }

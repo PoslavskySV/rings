@@ -2,14 +2,12 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.FactorDecomposition;
+import cc.r2.core.poly.UnivariatePolynomials;
 import cc.r2.core.poly.lIntegersModulo;
-import cc.r2.core.poly.multivar.HenselLifting.AllProductsCache;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
-import cc.r2.core.poly.univar.Factorization;
-import cc.r2.core.poly.univar.IUnivariatePolynomial;
-import cc.r2.core.poly.univar.SquareFreeFactorization;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.univar.*;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.Arrays;
@@ -120,9 +118,8 @@ public final class MultivariateFactorization {
 
 
     /** Number of univariate factorizations performed with different evaluation homomorphisms before doing Hensel lifting **/
-    private static final long UNIVARIATE_FACTORIZATION_ATTEMPTS = 23;
+    private static final long UNIVARIATE_FACTORIZATION_ATTEMPTS = 3;
 
-    static long UNI = 0, LIFT = 0, RECO = 0;
 
     /**
      * Factors primitive, square-free bivariate polynomial over Zp
@@ -130,7 +127,7 @@ public final class MultivariateFactorization {
      * @param poly primitive, square-free bivariate polynomial over Zp
      * @return factor decomposition
      */
-    static FactorDecomposition<lMultivariatePolynomialZp> bivariateFactorSquareFree(lMultivariatePolynomialZp poly) {
+    static FactorDecomposition<lMultivariatePolynomialZp> bivariateDenseFactorSquareFree(lMultivariatePolynomialZp poly) {
         assert poly.nVariables == 2;
 
         lMultivariatePolynomialZp reducedPoly = poly;
@@ -175,9 +172,7 @@ public final class MultivariateFactorization {
                 // ensure that univariate image is also square free
                 continue;
 
-            long start = System.nanoTime();
             FactorDecomposition<lUnivariatePolynomialZp> factorization = Factorization.factor(uImage);
-            UNI += System.nanoTime() - start;
             if (factorization.size() == 1)
                 // irreducible polynomial
                 return FactorDecomposition.singleFactor(poly);
@@ -189,8 +184,8 @@ public final class MultivariateFactorization {
                 ySubstitution = substitution;
             }
 
-//            if (ySubstitution == 0)
-//                break;
+            //if (ySubstitution == 0)
+            //   break;
 
             ++univariateFactorizations;
         }
@@ -200,43 +195,44 @@ public final class MultivariateFactorization {
 
         // univariate factors are calculated
         @SuppressWarnings("unchecked")
-        List<lMultivariatePolynomialZp> factorList = AMultivariatePolynomial.asMultivariate(
-                (List) uFactorization.factors, reducedPoly.nVariables, 0, reducedPoly.ordering);
+        List<lUnivariatePolynomialZp> factorList = uFactorization.factors;
 
         // we don't precompute correct leading coefficients of bivariate factors
         // instead, we add the l.c. of the product to a list of lifting factors
         // in order to obtain correct factorization with monic factors mod (y - y0)^l
         // and then perform l.c. correction at the recombination stage
 
+        lEvaluation evaluation = new lEvaluation(2, new long[]{ySubstitution}, domain, reducedPoly.ordering);
         lMultivariatePolynomialZp lc = reducedPoly.lc(0);
-        if (!lc.isConstant())
+        if (!lc.isConstant()) {
             // add lc to lifting factors
-            factorList.add(0, lc.clone());
-        else
-            factorList.get(0).multiply(lc);
+            lUnivariatePolynomialZp ulc = evaluation.evaluateFrom(lc, 1).asUnivariate();
+            assert ulc.isConstant();
+            factorList.add(0, ulc);
+        } else
+            factorList.get(0).multiply(lc.cc());
 
         // final factors to lift
-        lMultivariatePolynomialZp[] factors = factorList.toArray(new lMultivariatePolynomialZp[factorList.size()]);
+        lUnivariatePolynomialZp[] factors = factorList.toArray(new lUnivariatePolynomialZp[factorList.size()]);
 
         // lift univariate factorization
         int liftDegree = reducedPoly.degree(1) + 1;
-        lEvaluation evaluation = new lEvaluation(2, new long[]{ySubstitution}, domain, reducedPoly.ordering);
-//        System.out.println(ySubstitution);
-        long start = System.nanoTime();
-        HenselLifting.bivariateLift(reducedPoly, factors, evaluation, liftDegree);
-        LIFT += System.nanoTime() - start;
 
-        assert reducedPoly.equals(evaluation.modImage(poly.createOne().multiply(factors), 1, liftDegree));
+        Domain<lUnivariatePolynomialZp> uDomain = new UnivariatePolynomials<>(factors[0]);
+        // series expansion around y = y0 for initial poly
+        UnivariatePolynomial<lUnivariatePolynomialZp> baseSeries =
+                HenselLifting.seriesExpansionDense(uDomain, reducedPoly, 1, evaluation);
 
-//        System.out.println(factors.length);
+        // lifted factors (each factor represented as series around y = y0)
+        UnivariatePolynomial<lUnivariatePolynomialZp>[] lifted =
+                HenselLifting.bivariateLift(baseSeries, factors, liftDegree);
+
         if (!lc.isConstant())
             // drop auxiliary l.c. from factors
-            factors = Arrays.copyOfRange(factors, 1, factors.length);
+            lifted = Arrays.copyOfRange(lifted, 1, factors.length);
 
         // factors are lifted => do recombination
-        start = System.nanoTime();
-        FactorDecomposition<lMultivariatePolynomialZp> result = reconstructFactors(reducedPoly, factors, evaluation, liftDegree);
-        RECO += System.nanoTime() - start;
+        FactorDecomposition<lMultivariatePolynomialZp> result = denseBivariateRecombination(reducedPoly, baseSeries, lifted, evaluation, liftDegree);
 
         if (swapVariables)
             // reconstruct original variables order
@@ -274,17 +270,27 @@ public final class MultivariateFactorization {
         return r;
     }
 
-    /** naive recombination for factors */
-    static FactorDecomposition<lMultivariatePolynomialZp> reconstructFactors(
-            lMultivariatePolynomialZp poly,
-            lMultivariatePolynomialZp[] modularFactors,
+
+    /**
+     * Naive dense recombination for bivariate factors
+     *
+     * @param factory        multivariate polynomial factory
+     * @param poly           series around y = y0 for base polynomial (which we attempt to factor)
+     * @param modularFactors univariate factors mod (y-y0)^liftDegree
+     * @param evaluation     evaluation ideal
+     * @param liftDegree     lifting degree (ideal power)
+     * @return true factorization
+     */
+    static FactorDecomposition<lMultivariatePolynomialZp> denseBivariateRecombination(
+            lMultivariatePolynomialZp factory,
+            UnivariatePolynomial<lUnivariatePolynomialZp> poly,
+            UnivariatePolynomial<lUnivariatePolynomialZp>[] modularFactors,
             lEvaluation evaluation,
             int liftDegree) {
 
         int[] modIndexes = naturalSequenceRef(modularFactors.length);
-        FactorDecomposition<lMultivariatePolynomialZp> trueFactors = FactorDecomposition.empty(poly);
-        lMultivariatePolynomialZp fRest = poly;
-//        AllProductsCache<lMultivariatePolynomialZp> prods = new AllProductsCache<>(modularFactors);
+        FactorDecomposition<lMultivariatePolynomialZp> trueFactors = FactorDecomposition.empty(factory);
+        UnivariatePolynomial<lUnivariatePolynomialZp> fRest = poly;
         int s = 1;
 
         factor_combinations:
@@ -293,17 +299,22 @@ public final class MultivariateFactorization {
             for (int[] combination : combinations) {
                 int[] indexes = select(modIndexes, combination);
 
-                lMultivariatePolynomialZp mFactor = fRest.lc(0);
+                UnivariatePolynomial<lUnivariatePolynomialZp> mFactor = lcInSeries(fRest);
                 for (int i : indexes)
-                    mFactor = mFactor.multiply(modularFactors[i]);
-//                lMultivariatePolynomialZp mFactor = prods.multiply(indexes).clone().multiply(fRest.lc(0));
-                mFactor = evaluation.modImage(mFactor, 1, liftDegree);
-                lMultivariatePolynomialZp factor = mFactor.primitivePart(1);
+                    // todo:
+                    // implement IUnivariatePolynomial#multiplyLow(int)
+                    // and replace truncate(int) with multiplyLow(int)
+                    mFactor = mFactor.multiply(modularFactors[i]).truncate(liftDegree - 1);
 
-                lMultivariatePolynomialZp[] qd = MultivariateReduction.divideAndRemainder(fRest, factor);
-                if (qd[1].isZero()) {
+                // get primitive part in first variable (remove R[y] content)
+                UnivariatePolynomial<lUnivariatePolynomialZp> factor =
+                        changeDenseRepresentation(
+                                changeDenseRepresentation(mFactor).primitivePart());
+
+                UnivariatePolynomial<lUnivariatePolynomialZp>[] qd = DivisionWithRemainder.divideAndRemainder(fRest, factor, true);
+                if (qd != null && qd[1].isZero()) {
                     modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
-                    trueFactors.addFactor(factor, 1);
+                    trueFactors.addFactor(HenselLifting.denseSeriesToPoly(factory, factor, 1, evaluation), 1);
                     fRest = qd[0];
                     continue factor_combinations;
                 }
@@ -313,10 +324,95 @@ public final class MultivariateFactorization {
         }
 
         if (!fRest.isConstant())
-            trueFactors.addFactor(fRest, 1);
+            trueFactors.addFactor(HenselLifting.denseSeriesToPoly(factory, fRest, 1, evaluation), 1);
 
         return trueFactors;
     }
+
+    /** Given poly as R[x][y] transform it to R[y][x] */
+    private static UnivariatePolynomial<lUnivariatePolynomialZp>
+    changeDenseRepresentation(UnivariatePolynomial<lUnivariatePolynomialZp> poly) {
+        int xDegree = -1;
+        for (int i = 0; i <= poly.degree(); i++)
+            xDegree = Math.max(xDegree, poly.get(i).degree());
+
+        UnivariatePolynomial<lUnivariatePolynomialZp> result = poly.createZero();
+        for (int i = 0; i <= xDegree; i++)
+            result.set(i, coefficientInSeries(i, poly));
+        return result;
+    }
+
+    /** Given poly as R[x][y] returns coefficient of x^xDegree which is R[y] */
+    private static lUnivariatePolynomialZp
+    coefficientInSeries(int xDegree, UnivariatePolynomial<lUnivariatePolynomialZp> poly) {
+        Domain<lUnivariatePolynomialZp> domain = poly.domain;
+        lUnivariatePolynomialZp result = domain.getZero();
+        for (int i = 0; i <= poly.degree(); i++)
+            result.set(i, poly.get(i).get(xDegree));
+        return result;
+    }
+
+    /**
+     * Given poly as R[x][y] returns leading coefficient of x which is R[y] viewed as R[x][y]
+     * (with all coefficients constant)
+     */
+    private static UnivariatePolynomial<lUnivariatePolynomialZp>
+    lcInSeries(UnivariatePolynomial<lUnivariatePolynomialZp> poly) {
+        Domain<lUnivariatePolynomialZp> domain = poly.domain;
+        UnivariatePolynomial<lUnivariatePolynomialZp> result = poly.createZero();
+        int xDegree = -1;
+        for (int i = 0; i <= poly.degree(); i++)
+            xDegree = Math.max(xDegree, poly.get(i).degree());
+
+        for (int i = 0; i <= poly.degree(); i++)
+            result.set(i, domain.valueOf(poly.get(i).get(xDegree)));
+        return result;
+    }
+
+
+//    /** naive recombination for factors */
+//    static FactorDecomposition<lMultivariatePolynomialZp> reconstructFactors(
+//            lMultivariatePolynomialZp poly,
+//            lMultivariatePolynomialZp[] modularFactors,
+//            lEvaluation evaluation,
+//            int liftDegree) {
+//
+//        int[] modIndexes = naturalSequenceRef(modularFactors.length);
+//        FactorDecomposition<lMultivariatePolynomialZp> trueFactors = FactorDecomposition.empty(poly);
+//        lMultivariatePolynomialZp fRest = poly;
+////        AllProductsCache<lMultivariatePolynomialZp> prods = new AllProductsCache<>(modularFactors);
+//        int s = 1;
+//
+//        factor_combinations:
+//        while (2 * s <= modIndexes.length) {
+//            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
+//            for (int[] combination : combinations) {
+//                int[] indexes = select(modIndexes, combination);
+//
+//                lMultivariatePolynomialZp mFactor = fRest.lc(0);
+//                for (int i : indexes)
+//                    mFactor = mFactor.multiply(modularFactors[i]);
+////                lMultivariatePolynomialZp mFactor = prods.multiply(indexes).clone().multiply(fRest.lc(0));
+//                mFactor = evaluation.modImage(mFactor, 1, liftDegree);
+//                lMultivariatePolynomialZp factor = mFactor.primitivePart(1);
+//
+//                lMultivariatePolynomialZp[] qd = MultivariateReduction.divideAndRemainder(fRest, factor);
+//                if (qd[1].isZero()) {
+//                    modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
+//                    trueFactors.addFactor(factor, 1);
+//                    fRest = qd[0];
+//                    continue factor_combinations;
+//                }
+//
+//            }
+//            ++s;
+//        }
+//
+//        if (!fRest.isConstant())
+//            trueFactors.addFactor(fRest, 1);
+//
+//        return trueFactors;
+//    }
 
 //    static FactorDecomposition<lMultivariatePolynomialZp> reconstructFactors(
 //            lMultivariatePolynomialZp poly,

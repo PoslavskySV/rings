@@ -664,6 +664,30 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return res;
     }
 
+
+    @Override
+    public UnivariatePolynomial<E> composition(UnivariatePolynomial<E> value) {
+        if (value.isOne())
+            return this.clone();
+        if (value.isZero())
+            return ccAsPoly();
+
+        UnivariatePolynomial<E> result = createZero();
+        for (int i = degree; i >= 0; --i)
+            result = result.multiply(value).add(data[i]);
+        return result;
+    }
+
+    /**
+     * Shifts variables x -> x + value and returns the result (new instance)
+     *
+     * @param value shift amount
+     * @return a copy of this with x -> x + value
+     */
+    public UnivariatePolynomial<E> shift(E value) {
+        return composition(createLinear(value, domain.getOne()));
+    }
+
     /**
      * Add constant to this.
      *

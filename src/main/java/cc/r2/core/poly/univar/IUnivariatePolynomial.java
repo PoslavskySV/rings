@@ -120,5 +120,13 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     @Override
     Poly clone();
 
+    /**
+     * Composition of this(oth)
+     *
+     * @param value polynomial
+     * @return this(oth)
+     */
+    Poly composition(Poly value);
+
     void ensureInternalCapacity(int desiredCapacity);
 }

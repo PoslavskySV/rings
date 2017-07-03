@@ -411,6 +411,29 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return res;
     }
 
+    @Override
+    public final lPoly composition(lPoly value) {
+        if (value.isOne())
+            return this.clone();
+        if (value.isZero())
+            return ccAsPoly();
+
+        lPoly result = createZero();
+        for (int i = degree; i >= 0; --i)
+            result = result.multiply(value).add(data[i]);
+        return result;
+    }
+
+    /**
+     * Shifts variables x -> x + value and returns the result (new instance)
+     *
+     * @param value shift amount
+     * @return a copy of this with x -> x + value
+     */
+    public final lPoly shift(long value) {
+        return composition(createLinear(value, 1));
+    }
+
     /**
      * Sets {@code this} to its monic part multiplied by the {@code factor};
      *

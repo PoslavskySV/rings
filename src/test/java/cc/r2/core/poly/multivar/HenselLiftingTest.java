@@ -15,6 +15,7 @@ import cc.r2.core.poly.univar.UnivariateGCD;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.test.Benchmark;
+import cc.r2.core.util.ArraysUtil;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -702,6 +703,26 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(lifted), 1, degree));
         }
+    }
+
+    @Test
+    public void testBivariateLifting2() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(62653);
+        String[] vars = {"a", "b"};
+
+        lMultivariatePolynomialZp[] factors = {
+                lMultivariatePolynomialZp.parse("17096+6578*a*b^2+54905*a^3", domain, vars),
+                lMultivariatePolynomialZp.parse("43370+32368*a^2*b^2+45712*a^2*b^4+52302*a^4+23776*a^4*b^2", domain, vars)
+        };
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        lEvaluation evaluation = new lEvaluation(2, new long[]{0}, domain, base.ordering);
+
+        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+
+        int degree = base.degree(1) + 1;
+        HenselLifting.bivariateLift(base, uFactors, evaluation, degree);
+        Assert.assertTrue(evaluation.modImage(base.clone().subtract(base.createOne().multiply(uFactors)), 1, degree).isZero());
     }
 
     private static <Poly extends AMultivariatePolynomial> boolean allCoprime(Poly... factors) {
