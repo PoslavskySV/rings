@@ -928,6 +928,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return monic(other.lc());
     }
 
+    @Override
+    public UnivariatePolynomial<E> multiplyByBigInteger(BigInteger factor) {
+        return multiply(domain.valueOfBigInteger(factor));
+    }
+
     /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
@@ -1020,8 +1025,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Applies transformation function to this and returns the result. This method is equaivalent of
-     * {@code stream().map(mapper::apply).collect(new PolynomialCollector<>(domain))}.
+     * Applies transformation function to this and returns the result. This method is equivalent of
+     * {@code stream().map(mapper).collect(new PolynomialCollector<>(domain))}.
      *
      * @param domain domain of the new polynomial
      * @param mapper function that maps coefficients of this to coefficients of the result

@@ -14,6 +14,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.LongFunction;
 
 /**
  * @author Stanislav Poslavsky
@@ -1217,6 +1219,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return multiply(other.lc());
     }
 
+    @Override
+    public lMultivariatePolynomialZp multiplyByBigInteger(BigInteger factor) {
+        return multiply(factor.mod(BigInteger.valueOf(domain.modulus)).longValueExact());
+    }
+
     /** {@inheritDoc} */
     @Override
     public lMultivariatePolynomialZp multiply(lMonomialTerm term) {
@@ -1368,6 +1375,33 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);
+    }
+
+    /**
+     * Maps terms of this using specified mapping function
+     *
+     * @param newDomain the new domain
+     * @param mapper    mapping
+     * @param <T>       new element type
+     * @return a new polynomial with terms obtained by applying mapper to this terms
+     */
+    public <T> MultivariatePolynomial<T> mapTerms(Domain<T> newDomain, Function<lMonomialTerm, MonomialTerm<T>> mapper) {
+        return terms.values()
+                .stream()
+                .map(mapper)
+                .collect(new MultivariatePolynomial.PolynomialCollector<>(nVariables, newDomain, ordering));
+    }
+
+    /**
+     * Maps coefficients of this using specified mapping function
+     *
+     * @param newDomain the new domain
+     * @param mapper    mapping
+     * @param <T>       new element type
+     * @return a new polynomial with terms obtained by applying mapper to this terms (only coefficients are changed)
+     */
+    public <T> MultivariatePolynomial<T> mapCoefficients(Domain<T> newDomain, LongFunction<T> mapper) {
+        return mapTerms(newDomain, t -> new MonomialTerm<>(t.exponents, t.totalDegree, mapper.apply(t.coefficient)));
     }
 
     @Override

@@ -285,6 +285,14 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
     Poly multiply(long factor);
 
     /**
+     * Raises {@code this} by the {@code factor}
+     *
+     * @param factor the factor
+     * @return {@code this * factor}
+     */
+    Poly multiplyByBigInteger(BigInteger factor);
+
+    /**
      * Squares {@code this}
      *
      * @return {@code this * this}

@@ -1,11 +1,14 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.util.ArraysUtil;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.Arrays;
+import java.util.function.LongFunction;
+import java.util.stream.LongStream;
 
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
@@ -655,6 +658,30 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     public String toStringForCopy() {
         String s = ArraysUtil.toString(data, 0, degree + 1);
         return "create(" + s.substring(1, s.length() - 1) + ")";
+    }
+
+    /**
+     * Returns a sequential {@code Stream} with coefficients of this as its source.
+     *
+     * @return a sequential {@code Stream} over the coefficients in this polynomial
+     */
+    public final LongStream stream() {
+        return Arrays.stream(data, 0, degree + 1);
+    }
+
+    /**
+     * Applies transformation function to this and returns the result. This method is equivalent of
+     * {@code stream().mapToObj(mapper).collect(new PolynomialCollector<>(domain))}.
+     *
+     * @param domain domain of the new polynomial
+     * @param mapper function that maps coefficients of this to coefficients of the result
+     * @param <T>    result elements type
+     * @return a new polynomial with the coefficients obtained from this by applying {@code mapper}
+     */
+    public final <T> UnivariatePolynomial<T> mapElements(Domain<T> domain, LongFunction<T> mapper) {
+        return stream()
+                .mapToObj(mapper)
+                .collect(new UnivariatePolynomial.PolynomialCollector<T>(domain));
     }
 
     @Override

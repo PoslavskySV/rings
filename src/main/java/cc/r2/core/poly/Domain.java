@@ -37,7 +37,7 @@ public interface Domain<E> extends Comparator<E> {
      *
      * @return whether the cardinality is a perfect power
      */
-     boolean isPerfectPower();
+    boolean isPerfectPower();
 
     /**
      * Returns {@code base} so that {@code cardinality == base^exponent} or null if cardinality is not finite
@@ -80,7 +80,7 @@ public interface Domain<E> extends Comparator<E> {
      */
     E add(E a, E b);
 
-    default E add(E... vals){
+    default E add(E... vals) {
         E r = vals[0];
         for (int i = 1; i < vals.length; i++)
             r = add(r, vals[i]);
@@ -286,6 +286,14 @@ public interface Domain<E> extends Comparator<E> {
      * @return domain element associated with specified {@code long}
      */
     E valueOf(long val);
+
+    /**
+     * Returns domain element associated with specified integer
+     *
+     * @param val integer
+     * @return domain element associated with specified integer
+     */
+    E valueOfBigInteger(BigInteger val);
 
     /**
      * Converts array of machine integers to domain elements via {@link #valueOf(long)}

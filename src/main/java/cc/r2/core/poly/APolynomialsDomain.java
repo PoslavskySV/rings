@@ -67,6 +67,11 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     public final Poly valueOf(long val) {return factory.createOne().multiply(val);}
 
     @Override
+    public Poly valueOfBigInteger(BigInteger val) {
+        return factory.createOne().multiplyByBigInteger(val);
+    }
+
+    @Override
     public final Poly valueOf(Poly val) {return val;}
 
     @Override

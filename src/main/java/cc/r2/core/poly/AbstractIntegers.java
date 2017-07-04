@@ -46,17 +46,22 @@ abstract class AbstractIntegers extends ADomain<BigInteger> {
     public final int compare(BigInteger o1, BigInteger o2) {return o1.compareTo(o2);}
 
     @Override
-    public BigInteger[] createArray(int length) {
+    public final BigInteger[] createArray(int length) {
         return new BigInteger[length];
     }
 
     @Override
-    public BigInteger[][] createArray2d(int length) {
+    public final BigInteger[][] createArray2d(int length) {
         return new BigInteger[length][];
     }
 
     @Override
-    public BigInteger[][] createArray2d(int m, int n) {
+    public final BigInteger[][] createArray2d(int m, int n) {
         return new BigInteger[m][n];
+    }
+
+    @Override
+    public final BigInteger valueOfBigInteger(BigInteger val) {
+        return valueOf(val);
     }
 }

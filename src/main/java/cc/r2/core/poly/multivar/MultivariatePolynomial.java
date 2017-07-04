@@ -7,12 +7,15 @@ import cc.r2.core.util.ArraysUtil;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 import static cc.r2.core.poly.Integers.Integers;
 
@@ -1343,6 +1346,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public MultivariatePolynomial<E> multiplyByBigInteger(BigInteger factor) {
+        return multiply(domain.valueOfBigInteger(factor));
+    }
+
+    @Override
     public MultivariatePolynomial<E> multiply(MultivariatePolynomial<E> oth) {
         checkSameDomainWith(oth);
         MonomialsSet<MonomialTerm<E>> newMap = new MonomialsSet<>(ordering);
@@ -1410,6 +1418,15 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
+    static <E> E seriesCoefficientFactor2(int exponent, int order, Domain<E> domain) {
+        BigInteger factor = BigInteger.ONE;
+        for (int i = 0; i < order; ++i)
+            factor = factor.multiply(BigInteger.valueOf(exponent - i));
+        factor = factor.divideExact(Integers.factorial(order));
+        return domain.valueOfBigInteger(factor);
+    }
+
+    /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
     @SuppressWarnings("unchecked")
     static <E> E seriesCoefficientFactor(int exponent, int order, Domain<E> domain) {
         if (domain instanceof IntegersModulo)
@@ -1418,7 +1435,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         if (characteristics == null || !characteristics.isInt() || characteristics.intValueExact() > order)
             return seriesCoefficientFactor1(exponent, order, domain);
 
-        throw new RuntimeException("Operation is not implemented for domains with such small characteristics");
+        return seriesCoefficientFactor2(exponent, order, domain);
     }
 
     @Override
@@ -1441,6 +1458,84 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             add(newTerms, new MonomialTerm<>(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
+    }
+
+    /**
+     * Returns a stream of coefficients of this
+     *
+     * @return stream of coefficients
+     */
+    public Stream<E> stream() {
+        return terms.values().stream().map(e -> e.coefficient);
+    }
+
+    /**
+     * Maps terms of this using specified mapping function
+     *
+     * @param newDomain the new domain
+     * @param mapper    mapping
+     * @param <T>       new element type
+     * @return a new polynomial with terms obtained by applying mapper to this terms
+     */
+    public <T> MultivariatePolynomial<T> mapTerms(Domain<T> newDomain, Function<MonomialTerm<E>, MonomialTerm<T>> mapper) {
+        return terms.values()
+                .stream()
+                .map(mapper)
+                .collect(new PolynomialCollector<>(nVariables, newDomain, ordering));
+    }
+
+    /**
+     * Maps coefficients of this using specified mapping function
+     *
+     * @param newDomain the new domain
+     * @param mapper    mapping
+     * @param <T>       new element type
+     * @return a new polynomial with terms obtained by applying mapper to this terms (only coefficients are changed)
+     */
+    public <T> MultivariatePolynomial<T> mapCoefficients(Domain<T> newDomain, Function<E, T> mapper) {
+        return mapTerms(newDomain, t -> new MonomialTerm<>(t.exponents, t.totalDegree, mapper.apply(t.coefficient)));
+    }
+
+    /**
+     * Collector which collects stream of element to a UnivariatePolynomial
+     */
+    public static final class PolynomialCollector<T>
+            implements Collector<MonomialTerm<T>, MultivariatePolynomial<T>, MultivariatePolynomial<T>> {
+        final Supplier<MultivariatePolynomial<T>> supplier;
+        final BiConsumer<MultivariatePolynomial<T>, MonomialTerm<T>> accumulator = MultivariatePolynomial::add;
+        final BinaryOperator<MultivariatePolynomial<T>> combiner = (l, r) -> {l.add(r); return l;};
+        final Function<MultivariatePolynomial<T>, MultivariatePolynomial<T>> finisher = Function.identity();
+        final Domain<T> domain;
+
+        public PolynomialCollector(int nVariable, Domain<T> domain, Comparator<DegreeVector> ordering) {
+            this.domain = domain;
+            this.supplier = () -> MultivariatePolynomial.zero(nVariable, domain, ordering);
+        }
+
+        @Override
+        public Supplier<MultivariatePolynomial<T>> supplier() {
+            return supplier;
+        }
+
+        @Override
+        public BiConsumer<MultivariatePolynomial<T>, MonomialTerm<T>> accumulator() {
+            return accumulator;
+        }
+
+        @Override
+        public BinaryOperator<MultivariatePolynomial<T>> combiner() {
+            return combiner;
+        }
+
+        @Override
+        public Function<MultivariatePolynomial<T>, MultivariatePolynomial<T>> finisher() {
+            return finisher;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return EnumSet.of(Characteristics.IDENTITY_FINISH);
+        }
     }
 
     @Override

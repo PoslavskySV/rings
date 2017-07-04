@@ -114,6 +114,11 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
+    public Rational valueOfBigInteger(BigInteger val) {
+        return new Rational(val);
+    }
+
+    @Override
     public Rational valueOf(Rational val) {
         return val;
     }

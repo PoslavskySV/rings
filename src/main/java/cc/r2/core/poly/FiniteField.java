@@ -147,6 +147,11 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     }
 
     @Override
+    public Poly valueOfBigInteger(BigInteger val) {
+        return getOne().multiplyByBigInteger(val);
+    }
+
+    @Override
     public Poly valueOf(Poly val) {
         return PolynomialArithmetics.polyMod(val, irreducible, inverseMod, true);
     }
@@ -178,7 +183,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
 
     @Override
     public Poly randomElement(RandomGenerator rnd) {
-        return valueOf(RandomPolynomials.randomPoly(irreducible, 2 * irreducible.degree(), rnd));
+        return valueOf(RandomPolynomials.randomPoly(irreducible, rnd.nextInt(2 * irreducible.degree()), rnd));
     }
 
     @Override

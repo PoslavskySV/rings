@@ -304,6 +304,11 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return divideOrNull(other.lc());
     }
 
+    @Override
+    public lUnivariatePolynomialZ multiplyByBigInteger(BigInteger factor) {
+        return multiply(factor.longValueExact());
+    }
+
     lUnivariatePolynomialZ multiplyUnsafe(long factor) {
         for (int i = degree; i >= 0; --i)
             data[i] *= factor;

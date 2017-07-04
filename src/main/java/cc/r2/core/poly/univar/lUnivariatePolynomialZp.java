@@ -335,6 +335,11 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
         return multiply(domain.reciprocal(val));
     }
 
+    @Override
+    public lUnivariatePolynomialZp multiplyByBigInteger(BigInteger factor) {
+        return multiply(factor.mod(BigInteger.valueOf(modulus())).longValueExact());
+    }
+
     /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZp multiply(lUnivariatePolynomialZp oth) {
