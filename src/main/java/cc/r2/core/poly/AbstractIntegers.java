@@ -6,7 +6,7 @@ import cc.r2.core.number.BigInteger;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-abstract class AbstractIntegers implements Domain<BigInteger> {
+abstract class AbstractIntegers extends ADomain<BigInteger> {
     @Override
     public final BigInteger getZero() {
         return BigInteger.ZERO;

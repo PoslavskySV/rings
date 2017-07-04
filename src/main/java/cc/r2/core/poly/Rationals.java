@@ -29,6 +29,21 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
+    public boolean isPerfectPower() {
+        return false;
+    }
+
+    @Override
+    public BigInteger perfectPowerBase() {
+        return null;
+    }
+
+    @Override
+    public BigInteger perfectPowerExponent() {
+        return null;
+    }
+
+    @Override
     public Rational add(Rational a, Rational b) {
         return a.add(b);
     }

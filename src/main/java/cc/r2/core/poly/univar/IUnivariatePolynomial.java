@@ -36,6 +36,14 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     Poly setFrom(int indexInThis, Poly poly, int indexInPoly);
 
     /**
+     * Returns i-th coefficient of this as a constant polynomial
+     *
+     * @param i index in this
+     * @return i-th coefficient of this as a constant polynomial
+     */
+    Poly getAsPoly(int i);
+
+    /**
      * Returns a set of exponents of non-zero terms
      *
      * @return a set of exponents of non-zero terms

@@ -8,7 +8,7 @@ import java.lang.reflect.Array;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> implements Domain<Poly> {
+abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends ADomain<Poly> {
     public final Poly factory;
 
     APolynomialsDomain(Poly factory) {

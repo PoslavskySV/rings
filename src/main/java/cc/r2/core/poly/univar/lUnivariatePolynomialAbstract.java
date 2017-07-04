@@ -81,6 +81,9 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     @Override
     public final lPoly ccAsPoly() {return createConstant(cc());}
 
+    @Override
+    public lPoly getAsPoly(int i) {return createConstant(get(i));}
+
     /**
      * Returns the constant coefficient of this poly
      *
@@ -649,7 +652,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return sb.toString();
     }
 
-    String toStringForCopy() {
+    public String toStringForCopy() {
         String s = ArraysUtil.toString(data, 0, degree + 1);
         return "create(" + s.substring(1, s.length() - 1) + ")";
     }

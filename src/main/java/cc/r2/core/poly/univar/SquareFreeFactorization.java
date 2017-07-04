@@ -1,5 +1,7 @@
 package cc.r2.core.poly.univar;
 
+import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.LongArithmetics;
 
@@ -242,6 +244,7 @@ public final class SquareFreeFactorization {
             throw new IllegalArgumentException("Too big modulus: " + poly.domain.modulus);
         int modulus = LongArithmetics.safeToInt(poly.domain.modulus);
         assert poly.degree % modulus == 0;
+        assert !poly.domain.isPerfectPower(); // just in case
         long[] rootData = new long[poly.degree / modulus + 1];
         Arrays.fill(rootData, 0);
         for (int i = poly.degree; i >= 0; --i)
@@ -256,14 +259,16 @@ public final class SquareFreeFactorization {
     private static <E> UnivariatePolynomial<E> pRoot(UnivariatePolynomial<E> poly) {
         if (!poly.coefficientDomainCharacteristics().isInt())
             throw new IllegalArgumentException("Infinite or too large domain: " + poly.domain);
-
+        Domain<E> domain = poly.domain;
+        // p^(m -1) used for computing p-th root of elements
+        BigInteger inverseFactor = domain.cardinality().divide(domain.characteristics());
         int modulus = poly.coefficientDomainCharacteristics().intValueExact();
         assert poly.degree % modulus == 0;
         E[] rootData = poly.domain.createZeroesArray(poly.degree / modulus + 1);
         for (int i = poly.degree; i >= 0; --i)
             if (!poly.domain.isZero(poly.data[i])) {
                 assert i % modulus == 0;
-                rootData[i / modulus] = poly.data[i];
+                rootData[i / modulus] = domain.pow(poly.data[i], inverseFactor); // pRoot(poly.data[i], domain);
             }
         return poly.createFromArray(rootData);
     }

@@ -149,26 +149,21 @@ public final class lIntegersModulo {
 
     /**
      * if modulus = a^b, a and b are stored in this array
-     * if perfectPowerDecomposition[0] ==  0   => the data is not yet initialized
-     * if perfectPowerDecomposition[0] == -1   => modulus is not a perfect power
-     * if perfectPowerDecomposition[0]  >  0   => modulus is a perfect power = a^b
-     * *                                          with a = perfectPowerDecomposition[0]
-     * *                                          and b = perfectPowerDecomposition[1]
      */
-    private final long[] perfectPowerDecomposition = new long[2];
+    private final long[] perfectPowerDecomposition = {-1, -1};
 
     private void checkPerfectPower() {
         // lazy initialization
-        if (perfectPowerDecomposition[0] == 0) {
+        if (perfectPowerDecomposition[0] == -1) {
             synchronized ( perfectPowerDecomposition ){
-                if (perfectPowerDecomposition[0] != 0)
+                if (perfectPowerDecomposition[0] != -1)
                     return;
 
                 long[] ipp = LongArithmetics.perfectPowerDecomposition(modulus);
                 if (ipp == null) {
                     // not a perfect power
-                    perfectPowerDecomposition[0] = -1;
-                    perfectPowerDecomposition[1] = -1;
+                    perfectPowerDecomposition[0] = modulus;
+                    perfectPowerDecomposition[1] = 1;
                     return;
                 }
                 perfectPowerDecomposition[0] = ipp[0];
@@ -183,8 +178,7 @@ public final class lIntegersModulo {
      * @return whether the modulus is a perfect power
      */
     public boolean isPerfectPower() {
-        checkPerfectPower();
-        return perfectPowerDecomposition[0] > 0;
+        return perfectPowerExponent() > 1;
     }
 
     /**

@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
+import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.univar.FactorizationTestUtil.RandomSource;
 import cc.r2.core.test.Benchmark;
@@ -277,5 +278,24 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
                 b = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, 6, 5, 4).modulus(7),
                 poly = a.square().multiply(b.square());
         assertFactorization(poly, SquareFreeFactorization(poly));
+    }
+
+    @Test
+    public void testFiniteField1() throws Exception {
+        lUnivariatePolynomialZp irreducible = lUnivariatePolynomialZ.create(1, 1, 0, 1).modulus(2);
+        FiniteField<lUnivariatePolynomialZp> domain = new FiniteField<>(irreducible);
+        UnivariatePolynomial<lUnivariatePolynomialZp> poly =
+                UnivariatePolynomial.create(domain,
+                        lUnivariatePolynomialZ.create(0, 0, 1).modulus(2),
+                        lUnivariatePolynomialZ.create(0, 1, 1).modulus(2),
+                        lUnivariatePolynomialZ.create(0, 0, 1).modulus(2),
+                        lUnivariatePolynomialZ.create(1).modulus(2),
+                        lUnivariatePolynomialZ.create(0, 0, 1).modulus(2),
+                        lUnivariatePolynomialZ.create(0).modulus(2),
+                        lUnivariatePolynomialZ.create(1, 0, 1).modulus(2),
+                        lUnivariatePolynomialZ.create(0, 0, 1).modulus(2));
+
+        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = SquareFreeFactorization.SquareFreeFactorization(poly);
+        assertFactorization(poly, factors);
     }
 }

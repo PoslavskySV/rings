@@ -586,6 +586,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         PrivateRandom.getRandom().setSeed(1232);
         String[] vars = {"a", "b"};
         IntegersModulo domain = new IntegersModulo(100011111111101L);
+//        IntegersModulo domain = new IntegersModulo(100019);
         MultivariatePolynomial<BigInteger>
                 a = parse("38*a^32*b^6 + 2147483093*a^52*b^26 + 357*a^36*b^34 + 44*a^8*b^39 + 19*a^52*b^40 + 563*a^42*b^41 + 613*a^48*b^55 + 2147483167*a^4*b^60 + 257*a^44*b^68 + 639*a^55*b^72", domain, LEX, vars),
                 b = parse("2147482723*a^4*b^5 + 627*a^67*b^8 + 243*a^60*b^15 + 555*a^62*b^20 + 394*a^27*b^22 + 2147483150*b^25 + 952*a^39*b^48 + 40*a^61*b^56 + 447*a^70*b^59 + 261*a^15*b^60", domain, LEX, vars),
@@ -608,7 +609,6 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             System.out.println(ZippelGCD(aL.clone().increment(), bL));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             System.out.println();
-//            System.out.println(TimeUnits.nanosecondsToString(MultivariateGCD.BROWN));
         }
     }
 

@@ -200,7 +200,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
                     factory.createMonomial(e.coefficient, e.exponents[variable]));
             MultivariatePolynomial.add(newData, eMonomialTerm, pDomain);
         }
-        return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
+        return new MultivariatePolynomial<>(nVariables, pDomain, ordering, newData);
     }
 
     @Override
@@ -419,6 +419,21 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
     @Override
     public BigInteger coefficientDomainCharacteristics() {return BigInteger.valueOf(domain.modulus);}
+
+    @Override
+    public boolean isOverPerfectPower() {
+        return domain.isPerfectPower();
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerBase() {
+        return BigInteger.valueOf(domain.perfectPowerBase());
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerExponent() {
+        return BigInteger.valueOf(domain.perfectPowerExponent());
+    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -707,6 +722,10 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     @Override
     public lMultivariatePolynomialZp monic() {
+        if (isMonic())
+            return this;
+        if (isZero())
+            return this;
         return divide(lc());
     }
 

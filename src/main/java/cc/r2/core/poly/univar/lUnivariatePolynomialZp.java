@@ -254,6 +254,21 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
     }
 
     @Override
+    public boolean isOverPerfectPower() {
+        return domain.isPerfectPower();
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerBase() {
+        return BigInteger.valueOf(domain.perfectPowerBase());
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerExponent() {
+        return BigInteger.valueOf(domain.perfectPowerExponent());
+    }
+
+    @Override
     long add(long a, long b) {
         return domain.add(a, b);
     }

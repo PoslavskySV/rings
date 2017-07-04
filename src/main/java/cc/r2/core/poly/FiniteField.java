@@ -11,7 +11,7 @@ import java.lang.reflect.Array;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> implements Domain<Poly> {
+public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends ADomain<Poly> {
     /** GF(3^3) */
     public static final FiniteField<lUnivariatePolynomialZp> GF27 = new FiniteField<>(lUnivariatePolynomialZ.create(-1, -1, 0, 1).modulus(3));
     /** GF(17^5) */

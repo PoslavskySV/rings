@@ -463,6 +463,21 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public BigInteger coefficientDomainCharacteristics() {return domain.characteristics();}
 
     @Override
+    public boolean isOverPerfectPower() {
+        return domain.isPerfectPower();
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerBase() {
+        return domain.perfectPowerBase();
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerExponent() {
+        return domain.perfectPowerExponent();
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E>[] arrayNewInstance(int length) {return new MultivariatePolynomial[length];}
 
@@ -768,6 +783,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     @Override
     public MultivariatePolynomial<E> monic() {
+        if (isZero())
+            return this;
         return divideOrNull(lc());
     }
 

@@ -33,6 +33,27 @@ public interface Domain<E> extends Comparator<E> {
     BigInteger characteristics();
 
     /**
+     * Returns whether the cardinality is a perfect power
+     *
+     * @return whether the cardinality is a perfect power
+     */
+     boolean isPerfectPower();
+
+    /**
+     * Returns {@code base} so that {@code cardinality == base^exponent} or null if cardinality is not finite
+     *
+     * @return {@code base} so that {@code cardinality == base^exponent} or null if cardinality is not finite
+     */
+    BigInteger perfectPowerBase();
+
+    /**
+     * Returns {@code base} so that {@code cardinality == base^exponent} or null if cardinality is not finite
+     *
+     * @return {@code base} so that {@code cardinality == base^exponent} or null if cardinality is not finite
+     */
+    BigInteger perfectPowerExponent();
+
+    /**
      * Returns whether this domain is finite
      *
      * @return whether this domain is finite
@@ -349,6 +370,19 @@ public interface Domain<E> extends Comparator<E> {
         E[] array = createArray(2);
         array[0] = a;
         array[1] = b;
+        return array;
+    }
+
+    /**
+     * Creates generic array with single element
+     *
+     * @param element the element
+     * @return array with single specified element
+     */
+    @SuppressWarnings("unchecked")
+    default E[] createArray(E element) {
+        E[] array = createArray(1);
+        array[0] = element;
         return array;
     }
 

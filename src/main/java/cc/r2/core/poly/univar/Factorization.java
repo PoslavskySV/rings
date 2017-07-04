@@ -91,6 +91,7 @@ public final class Factorization {
 
         //do square-free factorization
         FactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
+        //assert sqf.toPolynomial().equals(base.theRest) : base.toString();
         for (int i = 0; i < sqf.size(); ++i) {
             //for each square-free factor
             T sqfFactor = sqf.get(i);
@@ -98,6 +99,7 @@ public final class Factorization {
 
             //do distinct-degree factorization
             FactorDecomposition<T> ddf = DistinctDegreeFactorization(sqfFactor);
+            //assertDistinctDegreeFactorization(sqfFactor, ddf);
             for (int j = 0; j < ddf.size(); ++j) {
                 //for each distinct-degree factor
                 T ddfFactor = ddf.get(j);
@@ -110,6 +112,12 @@ public final class Factorization {
                     result.addFactor(irreducibleFactor.monic(), sqfExponent);
             }
         }
+    }
+
+    private static <T extends IUnivariatePolynomial<T>> void assertDistinctDegreeFactorization(T poly, FactorDecomposition<T> factorization) {
+        for (int i = 0; i < factorization.factors.size(); i++)
+            assert 0 == factorization.factors.get(i).degree() % factorization.exponents.get(i) : "Factor's degree is not divisible by d.d.f. exponent";
+        assert poly.equals(factorization.toPolynomialIgnoringExponents());
     }
 
     /* ************************** Factorization in Z[x] ************************** */

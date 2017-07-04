@@ -2,6 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.FactorDecomposition;
+import cc.r2.core.poly.LongArithmetics;
 
 import static cc.r2.core.poly.CommonUtils.ensureFiniteFieldDomain;
 
@@ -36,7 +37,11 @@ final class EqualDegreeFactorization {
     static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> CantorZassenhaus(Poly input, int d) {
         ensureFiniteFieldDomain(input);
         FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(input.lcAsPoly());
-        CantorZassenhaus(input, d, result);
+        if (!input.coefficientDomainCardinality().testBit(0))
+            //even characteristics => GF2p
+            CantorZassenhaus(input, d, result, input.coefficientDomainPerfectPowerExponent().intValueExact());
+        else
+            CantorZassenhaus(input, d, result, -1);
         return result;
     }
 
@@ -47,7 +52,7 @@ final class EqualDegreeFactorization {
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    private static <T extends IUnivariatePolynomial<T>> void CantorZassenhaus(T input, int d, FactorDecomposition<T> result) {
+    private static <T extends IUnivariatePolynomial<T>> void CantorZassenhaus(T input, int d, FactorDecomposition<T> result, int pPower) {
         assert input.degree() % d == 0;
         int nFactors = input.degree() / d;
         if (input.degree() == 1 || nFactors == 1) {
@@ -68,11 +73,14 @@ final class EqualDegreeFactorization {
 
             T factor;
             do {
-                factor = CantorZassenhaus0(poly, d);
+                if (pPower == -1)
+                    factor = CantorZassenhaus0(poly, d);
+                else
+                    factor = CantorZassenhausGF2p(poly, d, pPower);
             } while (factor == null);
 
             if (factor.degree() != d)
-                CantorZassenhaus(factor, d, result);
+                CantorZassenhaus(factor, d, result, pPower);
             else
                 result.addFactor(factor.monic(), 1);
             poly = DivisionWithRemainder.quotient(poly, factor, false);
@@ -80,7 +88,7 @@ final class EqualDegreeFactorization {
     }
 
     /**
-     * Plain Cantor-Zassenhaus algorithm
+     * Plain Cantor-Zassenhaus algorithm for odd characteristics
      *
      * @param poly the monic polynomial
      * @param d    distinct degree
@@ -106,5 +114,39 @@ final class EqualDegreeFactorization {
             return gcd2;
 
         return null;
+    }
+
+    /**
+     * Plain Cantor-Zassenhaus algorithm in GF2p
+     *
+     * @param poly the monic polynomial
+     * @param d    distinct degree
+     * @return irreducible factor of {@code poly}
+     */
+    private static <Poly extends IUnivariatePolynomial<Poly>> Poly CantorZassenhausGF2p(Poly poly, int d, int pPower) {
+        assert poly.isMonic();
+
+        Poly a = randomMonicPoly(poly);
+        if (a.isConstant())
+            return null;
+
+        Poly gcd1 = UnivariateGCD.PolynomialGCD(a, poly);
+        if (!gcd1.isConstant())
+            return gcd1;
+
+        DivisionWithRemainder.InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+        Poly b = tracePolyGF2(a, LongArithmetics.safeToInt(1L * pPower * d), poly, invMod);
+        Poly gcd2 = UnivariateGCD.PolynomialGCD(b.decrement(), poly);
+        if (!gcd2.isConstant() && !gcd2.equals(poly))
+            return gcd2;
+
+        return null;
+    }
+
+    static <Poly extends IUnivariatePolynomial<Poly>> Poly tracePolyGF2(Poly a, int m, Poly modulus, DivisionWithRemainder.InverseModMonomial<Poly> invMod) {
+        Poly result = a.createZero();
+        for (int i = 0; i < m; i++)
+            result.add(PolynomialArithmetics.polyPowMod(a, BigInteger.valueOf(1).shiftLeft(i), modulus, invMod, true));
+        return result;
     }
 }

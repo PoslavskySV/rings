@@ -112,6 +112,27 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
     BigInteger coefficientDomainCharacteristics();
 
     /**
+     * Returns whether the {@code coefficientDomainCardinality()} is a perfect power
+     *
+     * @return whether the {@code coefficientDomainCardinality()} is a perfect power
+     */
+    boolean isOverPerfectPower();
+
+    /**
+     * Returns {@code base} so that {@code coefficientDomainCardinality() == base^exponent} or null if cardinality is not finite
+     *
+     * @return {@code base} so that {@code coefficientDomainCardinality() == base^exponent} or null if cardinality is not finite
+     */
+    BigInteger coefficientDomainPerfectPowerBase();
+
+    /**
+     * Returns {@code exponent} so that {@code coefficientDomainCardinality() == base^exponent} or null if cardinality is not finite
+     *
+     * @return {@code exponent} so that {@code coefficientDomainCardinality() == base^exponent} or null if cardinality is not finite
+     */
+    BigInteger coefficientDomainPerfectPowerExponent();
+
+    /**
      * Sets {@code this} to its monic part (that is {@code this} divided by its leading coefficient), or returns
      * {@code null} (causing loss of internal data) if some of the elements can't be exactly
      * divided by the {@code lc()}. NOTE: if {@code null} is returned, the content of {@code this} is destroyed.

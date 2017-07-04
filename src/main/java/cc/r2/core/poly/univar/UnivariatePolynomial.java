@@ -6,7 +6,14 @@ import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.util.ArraysUtil;
 
-import java.util.Arrays;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static cc.r2.core.number.BigInteger.ONE;
 import static cc.r2.core.number.BigInteger.ZERO;
@@ -18,7 +25,7 @@ import static cc.r2.core.poly.Integers.Integers;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<UnivariatePolynomial<E>> {
+public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<UnivariatePolynomial<E>>, Iterable<E> {
     /** the domain */
     public final Domain<E> domain;
     /** list of coefficients { x^0, x^1, ... , x^degree } */
@@ -239,6 +246,9 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> ccAsPoly() {return createConstant(cc());}
+
+    @Override
+    public UnivariatePolynomial<E> getAsPoly(int i) {return createConstant(get(i));}
 
     /**
      * Returns the constant coefficient of the poly
@@ -465,6 +475,21 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public BigInteger coefficientDomainCharacteristics() {
         return domain.characteristics();
+    }
+
+    @Override
+    public boolean isOverPerfectPower() {
+        return domain.isPerfectPower();
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerBase() {
+        return domain.perfectPowerBase();
+    }
+
+    @Override
+    public BigInteger coefficientDomainPerfectPowerExponent() {
+        return domain.perfectPowerExponent();
     }
 
     /**
@@ -881,6 +906,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> monic() {
+        if (isZero())
+            return this;
         return divideOrNull(lc());
     }
 
@@ -971,6 +998,113 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public UnivariatePolynomial<E> clone() {
         return new UnivariatePolynomial<>(domain, data.clone(), degree);
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+        return new It();
+    }
+
+    /**
+     * Returns a sequential {@code Stream} with coefficients of this as its source.
+     *
+     * @return a sequential {@code Stream} over the coefficients in this polynomial
+     */
+    public Stream<E> stream() {
+        return StreamSupport.stream(spliterator(), false);
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return Arrays.spliterator(data, 0, degree + 1);
+    }
+
+    /**
+     * Applies transformation function to this and returns the result. This method is equaivalent of
+     * {@code stream().map(mapper::apply).collect(new PolynomialCollector<>(domain))}.
+     *
+     * @param domain domain of the new polynomial
+     * @param mapper function that maps coefficients of this to coefficients of the result
+     * @param <T>    result elements type
+     * @return a new polynomial with the coefficients obtained from this by applying {@code mapper}
+     */
+    public <T> UnivariatePolynomial<T> mapElements(Domain<T> domain, Function<E, T> mapper) {
+        return stream().map(mapper).collect(new PolynomialCollector<>(domain));
+    }
+
+    private static final class ListToPoly<E> implements Function<List<E>, UnivariatePolynomial<E>> {
+        final Domain<E> domain;
+
+        public ListToPoly(Domain<E> domain) {
+            this.domain = domain;
+        }
+
+        @Override
+        public UnivariatePolynomial<E> apply(List<E> es) {
+            return UnivariatePolynomial.create(domain, es.toArray(domain.createArray(es.size())));
+        }
+    }
+
+    /**
+     * Collector which collects stream of element to a UnivariatePolynomial
+     *
+     * @param <E> element type
+     */
+    public static final class PolynomialCollector<E>
+            implements Collector<E, List<E>, UnivariatePolynomial<E>> {
+        final Supplier<List<E>> supplier = ArrayList::new;
+        final BiConsumer<List<E>, E> accumulator = List::add;
+        final BinaryOperator<List<E>> combiner = (l, r) -> {l.addAll(r); return l;};
+        final Function<List<E>, UnivariatePolynomial<E>> finisher;
+        final Domain<E> domain;
+
+        public PolynomialCollector(Domain<E> domain) {
+            this.domain = domain;
+            this.finisher = new ListToPoly<>(domain);
+        }
+
+        @Override
+        public Supplier<List<E>> supplier() {
+            return supplier;
+        }
+
+        @Override
+        public BiConsumer<List<E>, E> accumulator() {
+            return accumulator;
+        }
+
+        @Override
+        public BinaryOperator<List<E>> combiner() {
+            return combiner;
+        }
+
+        @Override
+        public Function<List<E>, UnivariatePolynomial<E>> finisher() {
+            return finisher;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return Collections.emptySet();
+        }
+    }
+
+    private final class It implements Iterator<E> {
+        int index = 0;
+
+        @Override
+        public boolean hasNext() {
+            synchronized ( UnivariatePolynomial.this ){
+                return index <= degree;
+            }
+        }
+
+        @Override
+        public E next() {
+            synchronized ( UnivariatePolynomial.this ){
+                return data[index++];
+            }
+        }
     }
 
     public E[] getDataReferenceUnsafe() {return data;}
