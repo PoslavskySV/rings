@@ -34,6 +34,9 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
      */
     int degree();
 
+    /** see implementations */
+    int size();
+
     /**
      * Returns {@code true} if this is zero
      *

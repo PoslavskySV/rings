@@ -10,6 +10,11 @@ import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -193,8 +198,9 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     /**
      * Returns the number of terms in this polynomial
      *
-     * @return number of terms
+     * @return the number of terms
      */
+    @Override
     public final int size() {return terms.size();}
 
     @Override
@@ -849,4 +855,46 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * original {@code poly} with respect to all except {@code variable} variables
      */
     abstract Poly evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd);
+
+
+    /**
+     * Collector which collects stream of element to a UnivariatePolynomial
+     */
+    public static final class PolynomialCollector
+            <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+            implements Collector<Term, Poly, Poly> {
+        final Supplier<Poly> supplier;
+        final BiConsumer<Poly, Term> accumulator = Poly::add;
+        final BinaryOperator<Poly> combiner = (l, r) -> {l.add(r); return l;};
+        final Function<Poly, Poly> finisher = Function.identity();
+
+        public PolynomialCollector(Supplier<Poly> supplier) {
+            this.supplier = supplier;
+        }
+
+        @Override
+        public Supplier<Poly> supplier() {
+            return supplier;
+        }
+
+        @Override
+        public BiConsumer<Poly, Term> accumulator() {
+            return accumulator;
+        }
+
+        @Override
+        public BinaryOperator<Poly> combiner() {
+            return combiner;
+        }
+
+        @Override
+        public Function<Poly, Poly> finisher() {
+            return finisher;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return EnumSet.of(Characteristics.IDENTITY_FINISH);
+        }
+    }
 }

@@ -1389,7 +1389,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return terms.values()
                 .stream()
                 .map(mapper)
-                .collect(new MultivariatePolynomial.PolynomialCollector<>(nVariables, newDomain, ordering));
+                .collect(new PolynomialCollector<>(() -> MultivariatePolynomial.zero(nVariables, newDomain, ordering)));
     }
 
     /**

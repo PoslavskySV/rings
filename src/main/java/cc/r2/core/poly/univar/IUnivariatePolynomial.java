@@ -10,6 +10,16 @@ import gnu.trove.set.hash.TIntHashSet;
  */
 public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>> extends IGeneralPolynomial<Poly> {
     /**
+     * Returns the degree of this polynomial
+     *
+     * @return the degree of this polynomial
+     */
+    @Override
+    default int size() {
+        return degree();
+    }
+
+    /**
      * Returns whether i-th coefficient of this is zero
      *
      * @param i the position

@@ -2,18 +2,19 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.UnivariatePolynomials;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.univar.*;
 import cc.r2.core.util.ArraysUtil;
+import gnu.trove.set.hash.TLongHashSet;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static cc.r2.core.poly.multivar.AMultivariatePolynomial.asMultivariate;
 
@@ -122,6 +123,58 @@ public final class MultivariateFactorization {
     /** Number of univariate factorizations performed with different evaluation homomorphisms before doing Hensel lifting **/
     private static final long UNIVARIATE_FACTORIZATION_ATTEMPTS = 3;
 
+    /** starting extension field exponent */
+    private static final int EXTENSION_FIELD_EXPONENT = 3;
+
+    /**
+     * Factors primitive, square-free bivariate polynomial over Zp switching to extension field
+     *
+     * @param poly primitive, square-free bivariate polynomial over Zp
+     * @return factor decomposition
+     */
+    static FactorDecomposition<lMultivariatePolynomialZp>
+    bivariateDenseFactorSquareFreeSmallCardinality(lMultivariatePolynomialZp poly) {
+        lIntegersModulo domain = poly.domain;
+
+        int startingDegree = EXTENSION_FIELD_EXPONENT;
+        while (true) {
+            FiniteField<lUnivariatePolynomialZp> extensionField = new FiniteField<>(
+                    IrreduciblePolynomials.randomIrreduciblePolynomial(
+                            domain.modulus, startingDegree++, PrivateRandom.getRandom()));
+
+            FactorDecomposition<lMultivariatePolynomialZp> result =
+                    bivariateDenseFactorSquareFreeSmallCardinality(poly, extensionField);
+
+            if (result != null)
+                return result;
+        }
+    }
+
+    /**
+     * Factors primitive, square-free bivariate polynomial over Zp switching to extension field
+     *
+     * @param poly primitive, square-free bivariate polynomial over Zp
+     * @return factor decomposition
+     */
+    static FactorDecomposition<lMultivariatePolynomialZp>
+    bivariateDenseFactorSquareFreeSmallCardinality(lMultivariatePolynomialZp poly, FiniteField<lUnivariatePolynomialZp> extensionField) {
+        FactorDecomposition<MultivariatePolynomial<lUnivariatePolynomialZp>> factorization
+                = bivariateDenseFactorSquareFree(poly.mapCoefficients(extensionField, extensionField::valueOf), false);
+        if (factorization == null)
+            // too small extension
+            return null;
+        if (!factorization.constantFactor.cc().isConstant())
+            return null;
+
+        FactorDecomposition<lMultivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.createConstant(factorization.constantFactor.cc().cc()));
+        for (int i = 0; i < factorization.size(); i++) {
+            if (!factorization.get(i).stream().allMatch(p -> p.isConstant()))
+                return null;
+            result.addFactor(factorization.get(i).mapCoefficients(poly.domain, p -> p.cc()), factorization.getExponent(i));
+        }
+        return result;
+    }
+
     /**
      * Factors primitive, square-free bivariate polynomial over Zp
      *
@@ -130,13 +183,25 @@ public final class MultivariateFactorization {
      */
     static FactorDecomposition<lMultivariatePolynomialZp>
     bivariateDenseFactorSquareFree(lMultivariatePolynomialZp poly) {
-        assert poly.nVariables == 2;
+        return bivariateDenseFactorSquareFree(poly, true);
+    }
+
+    /**
+     * Factors primitive, square-free bivariate polynomial over Zp
+     *
+     * @param poly                   primitive, square-free bivariate polynomial over Zp
+     * @param switchToExtensionField whether to switch to extension field if domain cardinality is too small
+     * @return factor decomposition
+     */
+    static FactorDecomposition<lMultivariatePolynomialZp>
+    bivariateDenseFactorSquareFree(lMultivariatePolynomialZp poly, boolean switchToExtensionField) {
+        assert poly.nUsedVariables() <= 2 && IntStream.range(2, poly.nVariables).allMatch(i -> poly.degree(i) == 0);
 
         if (poly.isEffectiveUnivariate()) {
             int uVar = poly.univariateVariable();
             FactorDecomposition<lUnivariatePolynomialZp>
                     uFactors = Factorization.factor(poly.asUnivariate());
-            FactorDecomposition<lMultivariatePolynomialZp> result = FactorDecomposition.empty(poly);
+            FactorDecomposition<lMultivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.lcAsPoly());
             for (int i = 0; i < uFactors.size(); i++)
                 result.addFactor(
                         asMultivariate(uFactors.get(i), poly.nVariables, uVar, poly.ordering),
@@ -165,8 +230,13 @@ public final class MultivariateFactorization {
         lMultivariatePolynomialZp dGCD = MultivariateGCD.PolynomialGCD(xDerivative, reducedPoly);
         if (!dGCD.isConstant()) {
             FactorDecomposition<lMultivariatePolynomialZp>
-                    gcdFactorization = bivariateDenseFactorSquareFree(dGCD),
-                    restFactorization = bivariateDenseFactorSquareFree(MultivariateReduction.divideExact(reducedPoly, dGCD));
+                    gcdFactorization = bivariateDenseFactorSquareFree(dGCD, switchToExtensionField),
+                    restFactorization = bivariateDenseFactorSquareFree(MultivariateReduction.divideExact(reducedPoly, dGCD), switchToExtensionField);
+
+            if (gcdFactorization == null || restFactorization == null) {
+                assert !switchToExtensionField;
+                return null;
+            }
 
             gcdFactorization.addAll(restFactorization);
             if (swapVariables)
@@ -186,10 +256,27 @@ public final class MultivariateFactorization {
         // number of univariate factorizations tried
         int univariateFactorizations = 0;
         boolean tryZeroFirst = true;
+
+        TLongHashSet evaluationStack = new TLongHashSet();
+        RandomGenerator random = PrivateRandom.getRandom();
         while (univariateFactorizations < UNIVARIATE_FACTORIZATION_ATTEMPTS) {
-            // first try to substitute 0 for second variable, then use random values
-            long substitution = tryZeroFirst ? 0 : domain.randomElement(PrivateRandom.getRandom());
-            tryZeroFirst = false;
+            if (evaluationStack.size() == domain.modulus)
+                if (switchToExtensionField)
+                    // switch to extension field
+                    return bivariateDenseFactorSquareFreeSmallCardinality(poly);
+                else
+                    return null;
+
+            long substitution;
+            if (tryZeroFirst) {
+                // first try to substitute 0 for second variable, then use random values
+                substitution = 0;
+                tryZeroFirst = false;
+            } else
+                do {
+                    substitution = domain.randomElement(random);
+                } while (evaluationStack.contains(substitution));
+            evaluationStack.add(substitution);
 
             lMultivariatePolynomialZp image = reducedPoly.evaluate(1, substitution);
             if (image.degree() != degree)
@@ -236,7 +323,9 @@ public final class MultivariateFactorization {
         // in order to obtain correct factorization with monic factors mod (y - y0)^l
         // and then perform l.c. correction at the recombination stage
 
-        lEvaluation evaluation = new lEvaluation(2, new long[]{ySubstitution}, domain, reducedPoly.ordering);
+        long[] evals = new long[poly.nVariables - 1];
+        evals[0] = ySubstitution;
+        lEvaluation evaluation = new lEvaluation(poly.nVariables, evals, domain, reducedPoly.ordering);
         lMultivariatePolynomialZp lc = reducedPoly.lc(0);
         if (!lc.isConstant()) {
             // add lc to lifting factors
@@ -263,7 +352,7 @@ public final class MultivariateFactorization {
 
         if (!lc.isConstant())
             // drop auxiliary l.c. from factors
-            lifted = Arrays.copyOfRange(lifted, 1, factors.length);
+            lifted = Arrays.copyOfRange(lifted, 1, lifted.length);
 
         // factors are lifted => do recombination
         FactorDecomposition<lMultivariatePolynomialZp> result = denseBivariateRecombination(reducedPoly, baseSeries, lifted, evaluation, liftDegree);
@@ -282,6 +371,55 @@ public final class MultivariateFactorization {
     }
 
     /**
+     * Factors primitive, square-free bivariate polynomial over Zp switching to extension field
+     *
+     * @param poly primitive, square-free bivariate polynomial over Zp
+     * @return factor decomposition
+     */
+    static <E> FactorDecomposition<MultivariatePolynomial<E>>
+    bivariateDenseFactorSquareFreeSmallCardinality(MultivariatePolynomial<E> poly) {
+        Domain<E> domain = poly.domain;
+
+        int startingDegree = EXTENSION_FIELD_EXPONENT;
+        while (true) {
+            FiniteField<UnivariatePolynomial<E>> extensionField = new FiniteField<>(
+                    IrreduciblePolynomials.randomIrreduciblePolynomial(
+                            domain, startingDegree++, PrivateRandom.getRandom()));
+
+            FactorDecomposition<MultivariatePolynomial<E>> result =
+                    bivariateDenseFactorSquareFreeSmallCardinality(poly, extensionField);
+
+            if (result != null)
+                return result;
+        }
+    }
+
+    /**
+     * Factors primitive, square-free bivariate polynomial over Zp switching to extension field
+     *
+     * @param poly primitive, square-free bivariate polynomial over Zp
+     * @return factor decomposition
+     */
+    static <E> FactorDecomposition<MultivariatePolynomial<E>>
+    bivariateDenseFactorSquareFreeSmallCardinality(MultivariatePolynomial<E> poly, FiniteField<UnivariatePolynomial<E>> extensionField) {
+        FactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<E>>> factorization
+                = bivariateDenseFactorSquareFree(poly.mapCoefficients(extensionField, c -> UnivariatePolynomial.constant(poly.domain, c)), false);
+        if (factorization == null)
+            // too small extension
+            return null;
+        if (!factorization.constantFactor.cc().isConstant())
+            return null;
+
+        FactorDecomposition<MultivariatePolynomial<E>> result = FactorDecomposition.constantFactor(poly.createConstant(factorization.constantFactor.cc().cc()));
+        for (int i = 0; i < factorization.size(); i++) {
+            if (!factorization.get(i).stream().allMatch(UnivariatePolynomial::isConstant))
+                return null;
+            result.addFactor(factorization.get(i).mapCoefficients(poly.domain, UnivariatePolynomial::cc), factorization.getExponent(i));
+        }
+        return result;
+    }
+
+    /**
      * Factors primitive, square-free bivariate polynomial over Zp
      *
      * @param poly primitive, square-free bivariate polynomial over Zp
@@ -289,13 +427,25 @@ public final class MultivariateFactorization {
      */
     static <E> FactorDecomposition<MultivariatePolynomial<E>>
     bivariateDenseFactorSquareFree(MultivariatePolynomial<E> poly) {
-        assert poly.nVariables == 2;
+        return bivariateDenseFactorSquareFree(poly, true);
+    }
+
+    /**
+     * Factors primitive, square-free bivariate polynomial over Zp
+     *
+     * @param poly                   primitive, square-free bivariate polynomial over Zp
+     * @param switchToExtensionField whether to switch to extension field if domain cardinality is too small
+     * @return factor decomposition
+     */
+    static <E> FactorDecomposition<MultivariatePolynomial<E>>
+    bivariateDenseFactorSquareFree(MultivariatePolynomial<E> poly, boolean switchToExtensionField) {
+        assert poly.nUsedVariables() <= 2 && IntStream.range(2, poly.nVariables).allMatch(i -> poly.degree(i) == 0);
 
         if (poly.isEffectiveUnivariate()) {
             int uVar = poly.univariateVariable();
             FactorDecomposition<UnivariatePolynomial<E>>
                     uFactors = Factorization.factor(poly.asUnivariate());
-            FactorDecomposition<MultivariatePolynomial<E>> result = FactorDecomposition.empty(poly);
+            FactorDecomposition<MultivariatePolynomial<E>> result = FactorDecomposition.constantFactor(poly.lcAsPoly());
             for (int i = 0; i < uFactors.size(); i++)
                 result.addFactor(
                         asMultivariate(uFactors.get(i), poly.nVariables, uVar, poly.ordering),
@@ -324,8 +474,13 @@ public final class MultivariateFactorization {
         MultivariatePolynomial<E> dGCD = MultivariateGCD.PolynomialGCD(xDerivative, reducedPoly);
         if (!dGCD.isConstant()) {
             FactorDecomposition<MultivariatePolynomial<E>>
-                    gcdFactorization = bivariateDenseFactorSquareFree(dGCD),
-                    restFactorization = bivariateDenseFactorSquareFree(MultivariateReduction.divideExact(reducedPoly, dGCD));
+                    gcdFactorization = bivariateDenseFactorSquareFree(dGCD, switchToExtensionField),
+                    restFactorization = bivariateDenseFactorSquareFree(MultivariateReduction.divideExact(reducedPoly, dGCD), switchToExtensionField);
+
+            if (gcdFactorization == null || restFactorization == null) {
+                assert !switchToExtensionField;
+                return null;
+            }
 
             gcdFactorization.addAll(restFactorization);
             if (swapVariables)
@@ -345,10 +500,25 @@ public final class MultivariateFactorization {
         // number of univariate factorizations tried
         int univariateFactorizations = 0;
         boolean tryZeroFirst = true;
+        HashSet<E> evaluationStack = new HashSet<>();
         while (univariateFactorizations < UNIVARIATE_FACTORIZATION_ATTEMPTS) {
-            // first try to substitute 0 for second variable, then use random values
-            E substitution = tryZeroFirst ? domain.getZero() : domain.randomElement(PrivateRandom.getRandom());
-            tryZeroFirst = false;
+            if (domain.cardinality().isInt() && domain.cardinality().intValueExact() == evaluationStack.size())
+                if (switchToExtensionField)
+                    // switch to extension field
+                    return bivariateDenseFactorSquareFreeSmallCardinality(poly);
+                else
+                    return null;
+
+            E substitution;
+            if (tryZeroFirst) {
+                // first try to substitute 0 for second variable, then use random values
+                substitution = domain.getZero();
+                tryZeroFirst = false;
+            } else
+                do {
+                    substitution = domain.randomElement(PrivateRandom.getRandom());
+                } while (evaluationStack.contains(substitution));
+            evaluationStack.add(substitution);
 
             MultivariatePolynomial<E> image = reducedPoly.evaluate(1, substitution);
             if (image.degree() != degree)
@@ -394,7 +564,9 @@ public final class MultivariateFactorization {
         // in order to obtain correct factorization with monic factors mod (y - y0)^l
         // and then perform l.c. correction at the recombination stage
 
-        Evaluation<E> evaluation = new Evaluation<>(2, domain.createArray(ySubstitution), domain, reducedPoly.ordering);
+        E[] evals = domain.createZeroesArray(poly.nVariables - 1);
+        evals[0] = ySubstitution;
+        Evaluation<E> evaluation = new Evaluation<>(poly.nVariables, evals, domain, reducedPoly.ordering);
         MultivariatePolynomial<E> lc = reducedPoly.lc(0);
         if (!lc.isConstant()) {
             // add lc to lifting factors
@@ -463,7 +635,6 @@ public final class MultivariateFactorization {
         return r;
     }
 
-
     /**
      * Naive dense recombination for bivariate factors
      *
@@ -519,7 +690,7 @@ public final class MultivariateFactorization {
             ++s;
         }
 
-        if (!fRest.isConstant())
+        if (!fRest.isConstant() || !fRest.cc().isConstant())
             trueFactors.addFactor(HenselLifting.denseSeriesToPoly(factory, fRest, 1, evaluation), 1);
 
         return trueFactors;

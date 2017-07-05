@@ -7,14 +7,14 @@ import cc.r2.core.util.ArraysUtil;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
+import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.ToLongFunction;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import static cc.r2.core.poly.Integers.Integers;
@@ -1481,7 +1481,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return terms.values()
                 .stream()
                 .map(mapper)
-                .collect(new PolynomialCollector<>(nVariables, newDomain, ordering));
+                .collect(new PolynomialCollector<>(() -> zero(nVariables, newDomain, ordering)));
     }
 
     /**
@@ -1497,45 +1497,17 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Collector which collects stream of element to a UnivariatePolynomial
+     * Maps coefficients of this using specified mapping function
+     *
+     * @param newDomain the new domain
+     * @param mapper    mapping
+     * @return a new polynomial with terms obtained by applying mapper to this terms (only coefficients are changed)
      */
-    public static final class PolynomialCollector<T>
-            implements Collector<MonomialTerm<T>, MultivariatePolynomial<T>, MultivariatePolynomial<T>> {
-        final Supplier<MultivariatePolynomial<T>> supplier;
-        final BiConsumer<MultivariatePolynomial<T>, MonomialTerm<T>> accumulator = MultivariatePolynomial::add;
-        final BinaryOperator<MultivariatePolynomial<T>> combiner = (l, r) -> {l.add(r); return l;};
-        final Function<MultivariatePolynomial<T>, MultivariatePolynomial<T>> finisher = Function.identity();
-        final Domain<T> domain;
-
-        public PolynomialCollector(int nVariable, Domain<T> domain, Comparator<DegreeVector> ordering) {
-            this.domain = domain;
-            this.supplier = () -> MultivariatePolynomial.zero(nVariable, domain, ordering);
-        }
-
-        @Override
-        public Supplier<MultivariatePolynomial<T>> supplier() {
-            return supplier;
-        }
-
-        @Override
-        public BiConsumer<MultivariatePolynomial<T>, MonomialTerm<T>> accumulator() {
-            return accumulator;
-        }
-
-        @Override
-        public BinaryOperator<MultivariatePolynomial<T>> combiner() {
-            return combiner;
-        }
-
-        @Override
-        public Function<MultivariatePolynomial<T>, MultivariatePolynomial<T>> finisher() {
-            return finisher;
-        }
-
-        @Override
-        public Set<Characteristics> characteristics() {
-            return EnumSet.of(Characteristics.IDENTITY_FINISH);
-        }
+    public lMultivariatePolynomialZp mapCoefficients(lIntegersModulo newDomain, ToLongFunction<E> mapper) {
+        return terms.values()
+                .stream()
+                .map(t -> new lMonomialTerm(t.exponents, t.totalDegree, mapper.applyAsLong(t.coefficient)))
+                .collect(new PolynomialCollector<>(() -> lMultivariatePolynomialZp.zero(nVariables, newDomain, ordering)));
     }
 
     @Override

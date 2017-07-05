@@ -2289,22 +2289,4 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             assertTrue(value == domain.modulus(value));
         }
     }
-
-    @Test
-    public void safsadasd() throws Exception {
-        int[] degrees = {10, 11, 12, 13, 14, 15};
-        int[] sdegrees = {4, 3, 2, 1, 5, 0};
-        int[] variables = ArraysUtil.sequence(sdegrees.length);
-
-        ArraysUtil.quickSort(sdegrees, variables);
-
-        System.out.println(Arrays.toString(permute(degrees, variables)));
-    }
-
-    private static int[] permute(int[] array, int[] permutation) {
-        int[] result = new int[array.length];
-        for (int i = 0; i < array.length; i++)
-            result[i] = array[permutation[i]];
-        return result;
-    }
 }
