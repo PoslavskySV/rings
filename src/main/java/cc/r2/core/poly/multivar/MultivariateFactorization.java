@@ -117,7 +117,7 @@ public final class MultivariateFactorization {
         return new FactorizationInput<>(poly, domainCardinality, degreeBounds, variables, lastPresentVariable, finiteExtensionDegree);
     }
 
-    /* ====================================== Factorization over finite fields ====================================== */
+    /* ================================== Bivariate factorization over finite fields ================================= */
 
 
     /** Number of univariate factorizations performed with different evaluation homomorphisms before doing Hensel lifting **/

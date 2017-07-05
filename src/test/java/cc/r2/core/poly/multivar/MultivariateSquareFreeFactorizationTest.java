@@ -1,13 +1,19 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.*;
+import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.FactorDecomposition;
+import cc.r2.core.poly.FiniteField;
+import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.univar.IrreduciblePolynomials;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.TimeUnits;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
-import static org.junit.Assert.assertEquals;
+import static cc.r2.core.poly.multivar.DegreeVector.LEX;
 
 /**
  * @author Stanislav Poslavsky
@@ -64,5 +70,71 @@ public class MultivariateSquareFreeFactorizationTest extends AbstractPolynomialT
 //        891ms
 //        805ms
 //        613ms
+    }
+
+    @Test
+    public void test3() throws Exception {
+        IntegersModulo domain = new IntegersModulo(2);
+        MultivariatePolynomial<BigInteger>
+                a = MultivariatePolynomial.parse("11 + x^7*y^14 + z^7*x^14 + y^7", domain),
+                b = MultivariatePolynomial.parse("11 + 3*y^7*z^14 + 4*x^7*y^14 + 5*z^7", domain),
+                c = MultivariatePolynomial.parse("z*y^2*x^2 - 2*y^3*x - 1234*z^7*x^12*y^13", domain),
+                poly = a.square().multiply(b.square()).multiply(c.square());
+
+        lMultivariatePolynomialZp lPoly = MultivariatePolynomial.asLongPolyZp(poly);
+        assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
+    }
+
+    @Test
+    public void test4() throws Exception {
+        IntegersModulo domain = new IntegersModulo(17);
+        MultivariatePolynomial<BigInteger>
+                a = MultivariatePolynomial.parse("11 + x^7*y^14 + z^7*x^14 + y^7", domain),
+                b = MultivariatePolynomial.parse("11 + 3*y^7*z^14 + 4*x^7*y^14 + 5*z^7", domain),
+                c = MultivariatePolynomial.parse("z*y^2*x^2 - 2*y^3*x - 1234*z^7*x^12*y^13", domain),
+                poly = a.square().multiply(b.square()).multiply(c.square());
+
+        lMultivariatePolynomialZp lPoly = MultivariatePolynomial.asLongPolyZp(poly);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
+        assertFactorization(lPoly, decomposition);
+    }
+
+    @Test
+    public void test5() throws Exception {
+        IntegersModulo domain = new IntegersModulo(2);
+        MultivariatePolynomial<BigInteger>
+                a = MultivariatePolynomial.parse("1 + a^6*b^14 + a^2*b^4 + a^7", domain),
+                b = MultivariatePolynomial.parse("1 + a^3*b^4 + a + b", domain),
+                poly = a.square().multiply(b.square());
+
+        lMultivariatePolynomialZp lPoly = MultivariatePolynomial.asLongPolyZp(poly);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
+        assertFactorization(lPoly, decomposition);
+    }
+
+    @Test
+    public void test5_finiteField() throws Exception {
+        long modulus = 2;
+
+        FiniteField<lUnivariatePolynomialZp> field = new FiniteField<>(IrreduciblePolynomials.randomIrreduciblePolynomial(modulus, 4, getRandom()));
+        MultivariatePolynomial<lUnivariatePolynomialZp>
+                a = MultivariatePolynomial.zero(3, field, LEX)
+                .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5).modulus(modulus)), 1, 1, 3))
+                .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 3, 2, 13).modulus(modulus)), 3, 2, 1))
+                .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 13, 12, 13).modulus(modulus)), 0, 2, 1)),
+                b = MultivariatePolynomial.zero(3, field, LEX)
+                        .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5).modulus(modulus)), 1, 1, 13))
+                        .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 1, 2, 13).modulus(modulus)), 2, 2, 1))
+                        .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 113, 112, 13).modulus(modulus)), 10, 2, 1)),
+                c = MultivariatePolynomial.one(3, field, LEX)
+                        .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5, 12).modulus(modulus)), 11, 1, 13))
+                        .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(11, 2, 1, 1, 2, 13).modulus(modulus)), 21, 2, 1))
+                        .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(modulus)), 10, 12, 1))
+                        .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(modulus)), 0, 0, 1)),
+                poly = a.square().multiply(b.square()).multiply(c.square());
+
+
+        FactorDecomposition<MultivariatePolynomial<lUnivariatePolynomialZp>> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(poly);
+        assertFactorization(poly, decomposition);
     }
 }

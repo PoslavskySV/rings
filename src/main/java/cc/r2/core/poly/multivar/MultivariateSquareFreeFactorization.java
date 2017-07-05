@@ -1,7 +1,10 @@
 package cc.r2.core.poly.multivar;
 
+import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.IGeneralPolynomial;
+import cc.r2.core.poly.LongArithmetics;
 
 import java.util.Arrays;
 
@@ -64,7 +67,9 @@ public final class MultivariateSquareFreeFactorization {
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         FactorDecomposition<Poly> decomposition
-                = FactorDecomposition.constantFactor(content[0]).addFactor(content[1], 1);
+                = FactorDecomposition
+                .constantFactor(content[0])
+                .addFactor(content[1], 1);
         SquareFreeFactorizationYun0(poly, decomposition);
         return decomposition;
     }
@@ -114,7 +119,9 @@ public final class MultivariateSquareFreeFactorization {
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         FactorDecomposition<Poly> decomposition
-                = FactorDecomposition.constantFactor(content[0]).addFactor(content[1], 1);
+                = FactorDecomposition
+                .constantFactor(content[0])
+                .addFactor(content[1], 1);
         SquareFreeFactorizationMusserZeroCharacteristics0(poly, decomposition);
         return decomposition;
     }
@@ -158,9 +165,11 @@ public final class MultivariateSquareFreeFactorization {
 
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
+        Poly lc = poly.lcAsPoly();
         return SquareFreeFactorizationMusser0(poly)
                 .addFactor(content[1], 1)
-                .setConstantFactor(content[0]);
+                .addFactor(content[0], 1)
+                .addFactor(lc, 1);
     }
 
     /** {@code poly} will be destroyed */
@@ -213,11 +222,52 @@ public final class MultivariateSquareFreeFactorization {
     }
 
     /** p-th root of poly */
+    @SuppressWarnings("unchecked")
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly pRoot(Poly poly) {
+        if (poly instanceof MultivariatePolynomial)
+            return (Poly) pRoot((MultivariatePolynomial) poly);
+        else if (poly instanceof lMultivariatePolynomialZp)
+            return (Poly) pRoot((lMultivariatePolynomialZp) poly);
+        else
+            throw new RuntimeException();
+//        int modulus = poly.coefficientDomainCharacteristics().intValueExact();
+//        MonomialsSet<Term> pRoot = new MonomialsSet<>(poly.ordering);
+//        for (Term term : poly) {
+//            int[] exponents = term.exponents.clone();
+//            for (int i = 0; i < exponents.length; i++) {
+//                assert exponents[i] % modulus == 0;
+//                exponents[i] = exponents[i] / modulus;
+//            }
+//            poly.add(pRoot, term.setDegreeVector(exponents));
+//        }
+//        return poly.create(pRoot);
+    }
+
+    private static <E> MultivariatePolynomial<E> pRoot(MultivariatePolynomial<E> poly) {
+        Domain<E> domain = poly.domain;
+        // p^(m -1) used for computing p-th root of elements
+        BigInteger inverseFactor = domain.cardinality().divide(domain.characteristics());
         int modulus = poly.coefficientDomainCharacteristics().intValueExact();
-        MonomialsSet<Term> pRoot = new MonomialsSet<>(poly.ordering);
-        for (Term term : poly) {
+        MonomialsSet<MonomialTerm<E>> pRoot = new MonomialsSet<>(poly.ordering);
+
+        for (MonomialTerm<E> term : poly) {
+            int[] exponents = term.exponents.clone();
+            for (int i = 0; i < exponents.length; i++) {
+                assert exponents[i] % modulus == 0;
+                exponents[i] = exponents[i] / modulus;
+            }
+            poly.add(pRoot, new MonomialTerm<>(exponents, domain.pow(term.coefficient, inverseFactor)));
+        }
+        return poly.create(pRoot);
+    }
+
+    private static lMultivariatePolynomialZp pRoot(lMultivariatePolynomialZp poly) {
+        assert !poly.domain.isPerfectPower();
+        int modulus = LongArithmetics.safeToInt(poly.domain.modulus);
+        MonomialsSet<lMonomialTerm> pRoot = new MonomialsSet<>(poly.ordering);
+
+        for (lMonomialTerm term : poly) {
             int[] exponents = term.exponents.clone();
             for (int i = 0; i < exponents.length; i++) {
                 assert exponents[i] % modulus == 0;
