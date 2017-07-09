@@ -1,5 +1,11 @@
 package cc.r2.core.poly;
 
+import cc.r2.core.poly.multivar.AMultivariatePolynomial;
+import cc.r2.core.poly.multivar.MultivariateGCD;
+import cc.r2.core.poly.multivar.MultivariateReduction;
+import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.univar.IUnivariatePolynomial;
+import cc.r2.core.poly.univar.UnivariateGCD;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 /**
@@ -8,6 +14,37 @@ import gnu.trove.map.hash.TIntObjectHashMap;
  */
 public final class CommonPolynomialsArithmetics {
     private CommonPolynomialsArithmetics() {}
+
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IGeneralPolynomial<Poly>>
+    Poly PolynomialGCD(Poly a, Poly b) {
+        if (a instanceof IUnivariatePolynomial)
+            return (Poly) UnivariateGCD.PolynomialGCD((IUnivariatePolynomial) a, (IUnivariatePolynomial) b);
+        else if (a instanceof AMultivariatePolynomial)
+            return (Poly) MultivariateGCD.PolynomialGCD((AMultivariatePolynomial) a, (AMultivariatePolynomial) b);
+        else
+            throw new RuntimeException();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IGeneralPolynomial<Poly>>
+    Poly[] PolynomialDivideAndRemainder(Poly a, Poly b) {
+        if (a instanceof IUnivariatePolynomial)
+            return (Poly[]) DivisionWithRemainder.divideAndRemainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
+        else if (a instanceof AMultivariatePolynomial)
+            return (Poly[]) MultivariateReduction.divideAndRemainder((AMultivariatePolynomial) a, (AMultivariatePolynomial) b);
+        else
+            throw new RuntimeException();
+    }
+
+    public static <Poly extends IGeneralPolynomial<Poly>>
+    boolean coprimeQ(Poly... polynomials) {
+        for (int i = 0; i < polynomials.length - 1; i++)
+            for (int j = i + 1; j < polynomials.length; j++)
+                if (!PolynomialGCD(polynomials[i], polynomials[j]).isConstant())
+                    return false;
+        return true;
+    }
 
     /**
      * Returns {@code base} in a power of non-negative {@code e}

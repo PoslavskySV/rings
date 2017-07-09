@@ -77,11 +77,6 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
     }
 
     /** removes i-th variable from degree vector */
-    lMonomialTerm without(int i) {
-        return without(i, coefficient);
-    }
-
-    /** removes i-th variable from degree vector */
     lMonomialTerm without(int i, long coefficient) {
         if (exponents.length == 1) {
             assert i == 0;

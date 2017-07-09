@@ -5,6 +5,8 @@ import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.univar.IUnivariatePolynomial;
+import cc.r2.core.poly.univar.SquareFreeFactorization;
 
 import java.util.Arrays;
 
@@ -16,6 +18,15 @@ import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
  */
 public final class MultivariateSquareFreeFactorization {
     private MultivariateSquareFreeFactorization() {}
+
+    @SuppressWarnings("unchecked")
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    FactorDecomposition<Poly> factorUnivariate(Poly poly) {
+        int var = poly.univariateVariable();
+        return SquareFreeFactorization
+                .SquareFreeFactorization(poly.asUnivariate())
+                .map(p -> AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables, var, poly.ordering));
+    }
 
     /**
      * Performs square-free factorization of a {@code poly.
@@ -63,6 +74,9 @@ public final class MultivariateSquareFreeFactorization {
     FactorDecomposition<Poly> SquareFreeFactorizationYunZeroCharacteristics(Poly poly) {
         if (!poly.coefficientDomainCharacteristics().isZero())
             throw new IllegalArgumentException("Characteristics 0 expected");
+
+        if (poly.isEffectiveUnivariate())
+            return factorUnivariate(poly);
 
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
@@ -116,6 +130,9 @@ public final class MultivariateSquareFreeFactorization {
         if (!poly.coefficientDomainCharacteristics().isZero())
             throw new IllegalArgumentException("Characteristics 0 expected");
 
+        if (poly.isEffectiveUnivariate())
+            return factorUnivariate(poly);
+
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         FactorDecomposition<Poly> decomposition
@@ -162,6 +179,9 @@ public final class MultivariateSquareFreeFactorization {
     FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         if (poly.coefficientDomainCharacteristics().isZero())
             throw new IllegalArgumentException("Positive characteristics expected");
+
+        if (poly.isEffectiveUnivariate())
+            return factorUnivariate(poly);
 
         poly = poly.clone();
         Poly[] content = reduceContent(poly);

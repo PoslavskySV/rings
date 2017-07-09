@@ -127,7 +127,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         return r;
     }
 
-    abstract IUnivariatePolynomial asUnivariate();
+    public abstract IUnivariatePolynomial asUnivariate();
 
     /* private factory */
     final Poly create(MonomialsSet<Term> terms) {
@@ -231,6 +231,22 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         terms.putAll(map);
         release();
         return self;
+    }
+
+    /** Remove specified variable */
+    public final Poly dropVariable(int variable, boolean eliminate) {
+        MonomialsSet<Term> newData = new MonomialsSet<>(this.terms);
+        for (Map.Entry<DegreeVector, Term> e : newData.entrySet())
+            e.setValue(e.getValue().without(variable));
+        return create(eliminate ? nVariables - 1 : nVariables, newData);
+    }
+
+    /** Insert variable */
+    public final Poly insertVariable(int variable) {
+        MonomialsSet<Term> newData = new MonomialsSet<>(this.terms);
+        for (Map.Entry<DegreeVector, Term> e : newData.entrySet())
+            e.setValue(e.getValue().insert(variable));
+        return create(newData);
     }
 
     /**
@@ -464,6 +480,25 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return primitive part of this considered over univariate polynomial domain R[variable]
      */
     public abstract Poly primitivePart(int variable);
+
+    /**
+     * Gives the content of this considered over univariate polynomial domain R[variable]
+     *
+     * @param variable the variable
+     * @return the content of this considered over univariate polynomial domain R[variable]
+     */
+    public abstract IUnivariatePolynomial contentUnivariate(int variable);
+
+    /**
+     * Gives the content of this considered over univariate polynomial domain R[variable]
+     *
+     * @param variable the variable
+     * @return the content of this considered over univariate polynomial domain R[variable]
+     */
+    @SuppressWarnings("unchecked")
+    public final Poly content(int variable) {
+        return asMultivariate(contentUnivariate(variable), nVariables, variable, ordering);
+    }
 
     /**
      * Multiplies this by variable^exponent

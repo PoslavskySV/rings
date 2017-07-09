@@ -59,6 +59,20 @@ public final class ArraysUtil {
         return 0;
     };
 
+    /**
+     * Lexicographic order
+     */
+    public static final Comparator<long[]> COMPARATOR_LONG = (long[] a, long[] b) -> {
+        if (a.length != b.length)
+            throw new IllegalArgumentException();
+        for (int i = 0; i < a.length; ++i) {
+            int c = Long.compare(a[i], b[i]);
+            if (c != 0)
+                return c;
+        }
+        return 0;
+    };
+
     public static int[] arrayOf(int val, int len) {
         int[] r = new int[len];
         Arrays.fill(r, val);

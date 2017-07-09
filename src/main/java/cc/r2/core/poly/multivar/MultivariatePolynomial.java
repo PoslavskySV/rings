@@ -2,6 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.*;
+import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -715,6 +716,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<E> primitivePart(int variable) {
         return asNormalMultivariate(asOverUnivariateEliminate(variable).primitivePart(), variable);
+    }
+
+    @Override
+    public UnivariatePolynomial<E> contentUnivariate(int variable) {
+        return asOverUnivariate(variable).content();
     }
 
     @Override

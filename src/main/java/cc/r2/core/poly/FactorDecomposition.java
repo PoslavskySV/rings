@@ -6,6 +6,10 @@ import gnu.trove.list.array.TIntArrayList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static cc.r2.core.poly.CommonPolynomialsArithmetics.polyPow;
 
 /**
  * @author Stanislav Poslavsky
@@ -66,15 +70,23 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
     }
 
     /** add another factor */
+    public FactorDecomposition<Poly> addConstantFactor(Poly poly) {
+        if (!poly.isConstant())
+            throw new RuntimeException("not a constant");
+        constantFactor.multiply(poly);
+        return this;
+    }
+
+    /** add another factor */
     public FactorDecomposition<Poly> addFactor(Poly poly, int exponent) {
         if (poly.isConstant()) {
             if (exponent != 1)
                 throw new IllegalArgumentException("exponent != 1");
-            constantFactor.multiply(poly);
-        } else {
-            factors.add(poly);
-            exponents.add(exponent);
+            return addConstantFactor(poly);
         }
+
+        factors.add(poly);
+        exponents.add(exponent);
         return this;
     }
 
@@ -107,6 +119,27 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
             exponents.set(i, eTmp[i]);
         }
         return this;
+    }
+
+    public FactorDecomposition<Poly> withoutConstantFactor() {
+        return new FactorDecomposition<>(constantFactor.createOne(), factors, exponents);
+    }
+
+    public FactorDecomposition<Poly> monic() {
+        for (int i = 0; i < factors.size(); i++) {
+            Poly factor = factors.get(i);
+            addConstantFactor(polyPow(factor.lcAsPoly(), exponents.get(i), false));
+            factor.monic();
+        }
+        return this;
+    }
+
+    /** Map polynomials using mapper */
+    public <PolyT extends IGeneralPolynomial<PolyT>>
+    FactorDecomposition<PolyT> map(Function<Poly, PolyT> mapper) {
+        return new FactorDecomposition<>(mapper.apply(constantFactor),
+                factors.stream().map(mapper).collect(Collectors.toList()),
+                exponents);
     }
 
     @Override
@@ -176,6 +209,14 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
         return r;
     }
 
+    @Override
+    public FactorDecomposition<Poly> clone() {
+        return new FactorDecomposition<>(
+                constantFactor.clone(),
+                factors.stream().map(Poly::clone).collect(Collectors.toList()),
+                new TIntArrayList(exponents));
+    }
+
     /** decomposition with single numeric factor */
     public static <Poly extends IGeneralPolynomial<Poly>> FactorDecomposition<Poly> empty(Poly factor) {
         return new FactorDecomposition<>(factor.createOne());
@@ -201,7 +242,7 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
     }
 
     public static <Poly extends IGeneralPolynomial<Poly>> FactorDecomposition<Poly> create(List<Poly> factors) {
-        return create(factors.get(0).createOne(), factors);
+        return create(factors.get(0).createOne(), new ArrayList<>(factors));
     }
 
     public static <Poly extends IGeneralPolynomial<Poly>> FactorDecomposition<Poly> create(Poly constantFactor, List<Poly> factors) {

@@ -1,13 +1,14 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.FactorDecompositionTest;
+import cc.r2.core.poly.*;
 import cc.r2.core.poly.factorization.FactorizationTestData.FactorizationAlgorithm;
 import cc.r2.core.poly.factorization.FactorizationTestData.SampleDecomposition;
 import cc.r2.core.poly.factorization.FactorizationTestData.SampleDecompositionSource;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -18,7 +19,9 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static cc.r2.core.poly.multivar.MultivariateFactorization.GCDFreeBasis;
 import static cc.r2.core.poly.multivar.MultivariateFactorization.bivariateDenseFactorSquareFree;
+import static cc.r2.core.poly.multivar.MultivariateFactorization.factorSquareFree;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 
 /**
@@ -161,6 +164,53 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(10, 100),
                 FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"),
                 FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"));
+    }
+
+    @Ignore
+    @Benchmark
+    @Test
+    public void testBivariateBenchmarkSingular() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        lMultivariatePolynomialZp poly = lMultivariatePolynomialZp.parse("x^4120 + x^4118*y^2 + x^3708*y^400 + x^3706*y^402 + x^2781*y^1300 + x^2779*y^1302 + x^1339*y^2700 + x^927*y^3100 + y^4000 + x^7172*y^4167 + x^8349*y^4432 + x^8347*y^4434 + x^6760*y^4567 + x^5833*y^5467 + x^5568*y^7132 + x^11401*y^8599", domain);
+
+        for (int i = 0; i < 1000; i++) {
+            long start = System.nanoTime();
+            System.out.println(bivariateDenseFactorSquareFree(poly));
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start)); ;
+        }
+//        System.out.println(poly);
+    }
+
+    static <Poly extends IGeneralPolynomial<Poly>>
+    Poly multiply(Poly... factors) {
+        return factors[0].createOne().multiply(factors);
+    }
+
+    @Test
+    public void testGCDFreeBasis1() throws Exception {
+        long modulus = 17;
+        lUnivariatePolynomialZp
+                a = lUnivariatePolynomialZ.create(1, 2, 3).modulus(modulus),
+                b = lUnivariatePolynomialZ.create(3, 2, 1, 2).modulus(modulus),
+                c = lUnivariatePolynomialZ.create(1, 0, 0, 2, 3).modulus(modulus),
+                d = lUnivariatePolynomialZ.create(1, 11, 0, 12, 4).modulus(modulus);
+
+        FactorDecomposition<lUnivariatePolynomialZp>
+                d1 = FactorDecomposition.create(Arrays.asList(multiply(a, b, b, b), multiply(a, c, c), multiply(a, a, d))),
+                d2 = FactorDecomposition.create(Arrays.asList(multiply(a, c, b), multiply(b, d, c), multiply(d, c, d))),
+                d3 = FactorDecomposition.create(Arrays.asList(multiply(c, c, d), multiply(b, b, c), multiply(a, b, c, d)));
+
+        @SuppressWarnings("unchecked")
+        FactorDecomposition<lUnivariatePolynomialZp>[] decomps = new FactorDecomposition[]{
+                d1.clone(), d2.clone(), d3.clone()
+        };
+
+        GCDFreeBasis(decomps);
+
+        System.out.println(d1.toPolynomial().equals(decomps[0].toPolynomial()));
+        System.out.println(Arrays.toString(DivisionWithRemainder.divideAndRemainder(d1.toPolynomial(), decomps[0].toPolynomial(), true)));
+        for (FactorDecomposition<lUnivariatePolynomialZp> decomp : decomps)
+            System.out.println(decomp.size() + " => " + decomp);
     }
 
     /* ==================================== Test data =============================================== */

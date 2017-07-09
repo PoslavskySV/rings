@@ -69,11 +69,6 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
     }
 
     /** removes i-th variable from degree vector */
-    MonomialTerm<E> without(int i) {
-        return without(i, coefficient);
-    }
-
-    /** removes i-th variable from degree vector */
     MonomialTerm<E> without(int i, E coefficient) {
         if (exponents.length == 1) {
             assert i == 0;

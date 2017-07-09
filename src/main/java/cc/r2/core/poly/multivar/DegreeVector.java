@@ -112,6 +112,14 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
         return setDegreeVector(exs, totalDegree);
     }
 
+    public final MonomialTerm without(int variable) {
+        return setDegreeVector(ArraysUtil.remove(exponents, variable), totalDegree - exponents[variable]);
+    }
+
+    public final MonomialTerm insert(int variable) {
+        return setDegreeVector(ArraysUtil.insert(exponents, variable, 0), totalDegree);
+    }
+
     /** Set's exponent of i-th variable to specified value */
     public final MonomialTerm set(int i, int exponent) {
         int[] newExponents = exponents.clone();
