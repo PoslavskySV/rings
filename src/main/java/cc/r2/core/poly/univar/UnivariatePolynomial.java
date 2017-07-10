@@ -45,6 +45,13 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
+     * Parse string into polynomial
+     */
+    public static <E> UnivariatePolynomial<E> parse(Domain<E> domain, String string) {
+        return Parser.parse(domain, string);
+    }
+
+    /**
      * Creates new univariate polynomial over specified domain with the specified coefficients
      *
      * @param domain the domain
@@ -293,7 +300,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
         if (i != degree) {
             degree = i;
-            fillZeroes(data, degree + 1, data.length);
+            // not necessary to fillZeroes here!
+            // fillZeroes(data, degree + 1, data.length);
         }
     }
 
@@ -685,7 +693,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         point = domain.valueOf(point);
         E res = domain.getZero();
         for (int i = degree; i >= 0; --i)
-            res = domain.add(domain.multiply(res, point), data[i]);
+            res = domain.addMutable(domain.multiplyMutable(res, point), data[i]);
         return res;
     }
 
@@ -1006,6 +1014,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     @Override
+    public UnivariatePolynomial<E> parsePoly(String string) {
+        return Parser.parse(domain, string);
+    }
+
+    @Override
     public Iterator<E> iterator() {
         return new It();
     }
@@ -1131,27 +1144,46 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
-            if (domain.isZero(data[i]))
-                continue;
-            if (i != 0 && domain.isOne(data[i])) {
-                if (sb.length() != 0)
-                    sb.append("+");
-                sb.append("x^").append(i);
-            } else {
-                String c = String.valueOf(data[i]);
-                if (c.contains("+") || (c.contains("-") && !c.startsWith("-")))
-                    c = "(" + c + ")";
-                if (!c.startsWith("-") && sb.length() != 0)
-                    sb.append("+");
-                sb.append(c);
-                if (i != 0)
-                    sb.append("x^").append(i);
-            }
+            String str = termToString(i);
+            if (sb.length() == 0 && str.startsWith("+"))
+                str = str.substring(1);
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
+    private String termToString(int i) {
+        E el = data[i];
+        if (domain.isZero(el))
+            return "";
+        String coefficient;
+        boolean needSeparator;
+        if (domain.isOne(el)) {
+            coefficient = "";
+            needSeparator = false;
+        } else if (domain.isMinusOne(el)) {
+            coefficient = "-";
+            needSeparator = false;
+        } else {
+            coefficient = el.toString();
+            if (!coefficient.matches("[+\\-]?\\d+"))
+                coefficient = "(" + coefficient + ")";
+            needSeparator = true;
         }
 
-        if (sb.length() == 0)
-            return "0";
-        return sb.toString();
+        if (!coefficient.startsWith("-") && !coefficient.startsWith("+"))
+            coefficient = "+" + coefficient;
+
+        String m;
+        if (i == 0)
+            m = "";
+        else
+            m = ((needSeparator ? "*" : "") + "x" + (i == 1 ? "" : "^" + i));
+        if (m.isEmpty())
+            if (domain.isOne(el) || domain.isMinusOne(el))
+                coefficient = coefficient + "1";
+
+        return coefficient + m;
     }
 
     String toStringForCopy() {
@@ -1244,7 +1276,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             E c = a[aFrom + i];
             if (!domain.isZero(c))
                 for (int j = 0; j < bTo - bFrom; ++j)
-                    result[i + j] = domain.add(result[i + j], domain.multiply(c, b[bFrom + j]));
+                    result[i + j] = domain.addMutable(result[i + j], domain.multiply(c, b[bFrom + j]));
         }
     }
 
@@ -1286,7 +1318,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             E[] result = domain.createArray(3);
             //both a and b are linear
             result[0] = domain.multiply(f[fFrom], g[gFrom]);
-            result[1] = domain.add(domain.multiply(f[fFrom], g[gFrom + 1]), domain.multiply(f[fFrom + 1], g[gFrom]));
+            result[1] = domain.addMutable(domain.multiply(f[fFrom], g[gFrom + 1]), domain.multiply(f[fFrom + 1], g[gFrom]));
             result[2] = domain.multiply(f[fFrom + 1], g[gFrom + 1]);
             return result;
         }
@@ -1309,7 +1341,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             E[] result = Arrays.copyOf(f0g, newLen);
             fillZeroes(result, oldLen, newLen);
             for (int i = 0; i < f1g.length; i++)
-                result[i + split] = domain.add(result[i + split], f1g[i]);
+                result[i + split] = domain.addMutable(result[i + split], f1g[i]);
             return result;
         }
 
@@ -1322,14 +1354,14 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         fillZeroes(f0_plus_f1, fMid - fFrom, f0_plus_f1.length);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = domain.add(f0_plus_f1[i - fMid], f[i]);
+            f0_plus_f1[i - fMid] = domain.addMutable(f0_plus_f1[i - fMid], f[i]);
 
         //g0 + g1
         E[] g0_plus_g1 = domain.createArray(Math.max(gMid - gFrom, gTo - gMid));
         System.arraycopy(g, gFrom, g0_plus_g1, 0, gMid - gFrom);
         fillZeroes(g0_plus_g1, gMid - gFrom, g0_plus_g1.length);
         for (int i = gMid; i < gTo; ++i)
-            g0_plus_g1[i - gMid] = domain.add(g0_plus_g1[i - gMid], g[i]);
+            g0_plus_g1[i - gMid] = domain.addMutable(g0_plus_g1[i - gMid], g[i]);
 
         E[] mid = multiplyKaratsubaSafe(f0_plus_f1, 0, f0_plus_f1.length, g0_plus_g1, 0, g0_plus_g1.length);
 
@@ -1346,18 +1378,18 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
         //subtract f0g0, f1g1
         for (int i = 0; i < f0g0.length; ++i)
-            mid[i] = domain.subtract(mid[i], f0g0[i]);
+            mid[i] = domain.subtractMutable(mid[i], f0g0[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            mid[i] = domain.subtract(mid[i], f1g1[i]);
+            mid[i] = domain.subtractMutable(mid[i], f1g1[i]);
 
 
         int oldLen = f0g0.length;
         E[] result = Arrays.copyOf(f0g0, (fTo - fFrom) + (gTo - gFrom) - 1);
         fillZeroes(result, oldLen, result.length);
         for (int i = 0; i < mid.length; ++i)
-            result[i + split] = domain.add(result[i + split], mid[i]);
+            result[i + split] = domain.addMutable(result[i + split], mid[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            result[i + 2 * split] = domain.add(result[i + 2 * split], f1g1[i]);
+            result[i + 2 * split] = domain.addMutable(result[i + 2 * split], f1g1[i]);
 
         return result;
     }
@@ -1383,7 +1415,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             E c = data[from + i];
             if (!domain.isZero(c))
                 for (int j = 0; j < len; ++j)
-                    result[i + j] = domain.add(result[i + j], domain.multiply(c, data[from + j]));
+                    result[i + j] = domain.addMutable(result[i + j], domain.multiply(c, data[from + j]));
         }
     }
 
@@ -1406,7 +1438,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (fTo - fFrom == 2) {
             E[] result = domain.createArray(3);
             result[0] = domain.multiply(f[fFrom], f[fFrom]);
-            result[1] = domain.multiply(domain.valueOf(2), domain.multiply(f[fFrom], f[fFrom + 1]));
+            result[1] = domain.multiplyMutable(domain.multiply(f[fFrom], f[fFrom + 1]), domain.valueOf(2));
             result[2] = domain.multiply(f[fFrom + 1], f[fFrom + 1]);
             return result;
         }
@@ -1426,7 +1458,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         fillZeroes(f0_plus_f1, fMid - fFrom, f0_plus_f1.length);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = domain.add(f0_plus_f1[i - fMid], f[i]);
+            f0_plus_f1[i - fMid] = domain.addMutable(f0_plus_f1[i - fMid], f[i]);
 
         E[] mid = squareKaratsubaSafe(f0_plus_f1, 0, f0_plus_f1.length);
 
@@ -1444,18 +1476,18 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
         //subtract f0g0, f1g1
         for (int i = 0; i < f0g0.length; ++i)
-            mid[i] = domain.subtract(mid[i], f0g0[i]);
+            mid[i] = domain.subtractMutable(mid[i], f0g0[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            mid[i] = domain.subtract(mid[i], f1g1[i]);
+            mid[i] = domain.subtractMutable(mid[i], f1g1[i]);
 
 
         int oldLen = f0g0.length;
         E[] result = Arrays.copyOf(f0g0, 2 * (fTo - fFrom) - 1);
         fillZeroes(result, oldLen, result.length);
         for (int i = 0; i < mid.length; ++i)
-            result[i + split] = domain.add(result[i + split], mid[i]);
+            result[i + split] = domain.addMutable(result[i + split], mid[i]);
         for (int i = 0; i < f1g1.length; ++i)
-            result[i + 2 * split] = domain.add(result[i + 2 * split], f1g1[i]);
+            result[i + 2 * split] = domain.addMutable(result[i + 2 * split], f1g1[i]);
 
         return result;
     }

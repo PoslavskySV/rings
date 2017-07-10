@@ -1439,6 +1439,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, terms.clone());
     }
 
+    @Override
+    public lMultivariatePolynomialZp parsePoly(String string) {
+        return parse(string, domain, ordering);
+    }
+
     public String toString(String... vars) {
         StringBuilder sb = new StringBuilder();
         boolean first = true;

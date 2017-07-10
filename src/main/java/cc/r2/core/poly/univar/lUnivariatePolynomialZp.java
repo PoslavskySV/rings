@@ -32,6 +32,13 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
     }
 
     /**
+     * Parse string into polynomial
+     */
+    public static lUnivariatePolynomialZp parse(long modulus, String string) {
+        return lUnivariatePolynomialZ.parse(string).modulus(modulus);
+    }
+
+    /**
      * Creates poly with specified coefficients represented as signed integers reducing them modulo {@code modulus}
      *
      * @param modulus the modulus
@@ -427,6 +434,11 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
     @Override
     public lUnivariatePolynomialZp clone() {
         return new lUnivariatePolynomialZp(domain, data.clone(), degree);
+    }
+
+    @Override
+    public lUnivariatePolynomialZp parsePoly(String string) {
+        return lUnivariatePolynomialZ.parse(string).modulus(domain);
     }
 
     @Override

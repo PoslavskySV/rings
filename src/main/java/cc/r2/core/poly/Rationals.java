@@ -119,6 +119,11 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
+    public Rational copy(Rational element) {
+        return element;
+    }
+
+    @Override
     public Rational valueOf(Rational val) {
         return val;
     }

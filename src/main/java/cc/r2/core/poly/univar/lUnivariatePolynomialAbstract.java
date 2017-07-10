@@ -125,7 +125,8 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
 
         if (i != degree) {
             degree = i;
-            Arrays.fill(data, degree + 1, data.length, 0);
+            // unnecessary clearing
+            // Arrays.fill(data, degree + 1, data.length, 0);
         }
     }
 
@@ -631,28 +632,47 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
-            if (data[i] == 0)
-                continue;
-            if (i != 0 && data[i] == 1) {
-                if (sb.length() != 0)
-                    sb.append("+");
-                sb.append("x^").append(i);
-            } else {
-                String c = String.valueOf(data[i]);
-                if (!c.startsWith("-") && sb.length() != 0)
-                    sb.append("+");
-                sb.append(c);
-                if (i != 0)
-                    sb.append("x^").append(i);
-            }
+            String str = termToString(i);
+            if (sb.length() == 0 && str.startsWith("+"))
+                str = str.substring(1);
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+
+    private String termToString(int i) {
+        long el = data[i];
+        if (el == 0)
+            return "";
+        String coefficient;
+        boolean needSeparator;
+        if (el == 1) {
+            coefficient = "";
+            needSeparator = false;
+        } else if (el == -1) {
+            coefficient = "-";
+            needSeparator = false;
+        } else {
+            coefficient = Long.toString(el);
+            needSeparator = true;
         }
 
-        if (sb.length() == 0)
-            return "0";
-        return sb.toString();
+        if (!coefficient.startsWith("-") && !coefficient.startsWith("+"))
+            coefficient = "+" + coefficient;
+
+        String m;
+        if (i == 0)
+            m = "";
+        else
+            m = ((needSeparator ? "*" : "") + "x" + (i == 1 ? "" : "^" + i));
+        if (m.isEmpty())
+            if (el == 1 || el == -1)
+                coefficient = coefficient + "1";
+
+        return coefficient + m;
     }
 
     public String toStringForCopy() {

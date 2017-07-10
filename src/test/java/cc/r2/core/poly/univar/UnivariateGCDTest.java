@@ -3,12 +3,14 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
 import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.univar.UnivariateGCD.*;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -645,5 +647,17 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     static <T extends lUnivariatePolynomialAbstract<T>> void assertExtendedGCD(T[] eea, T a, T b) {
         assertEquals(eea[0], a.clone().multiply(eea[1]).add(b.clone().multiply(eea[2])));
         assertEquals(eea[0].degree, PolynomialGCD(a, b).degree);
+    }
+
+    @Ignore
+    @Test
+    public void testLargeFiniteField1() throws Exception {
+        // FIXME: GC overhead
+        FiniteField<lUnivariatePolynomialZp> ff = new FiniteField<>(
+                lUnivariatePolynomialZ.parse("1 + x^2 + x^6 + x^7 + x^9 + x^12 + x^13 + x^14 + x^17").modulus(2));
+        UnivariatePolynomial<lUnivariatePolynomialZp> a = Parser.parse(ff, "(1+x^2+x^3+x^4+x^6+x^7+x^10+x^12+x^13+x^14+x^15)+(1+x^1+x^2+x^3+x^4+x^6+x^7+x^8+x^9+x^12+x^13+x^14+x^15+x^16)*x^412+x^2x^1852+x^1854+(x^3+x^5+x^6+x^7+x^8+x^10+x^11+x^13+x^15)*x^4906+(x^3+x^4+x^5+x^9+x^15+x^16)*x^7420+(x^1+x^2+x^3+x^7+x^13+x^14)*x^7422+(x^1+x^9+x^12+x^14+x^16)*x^10474");
+        UnivariatePolynomial<lUnivariatePolynomialZp> b = Parser.parse(ff, "(1+x^8+x^9+x^11+x^16)+(1+x^1+x^4+x^5+x^7+x^9+x^14)*x^927+(x^1+x^2+x^4+x^5+x^7+x^8+x^11+x^14+x^16)*x^1339+(x^3+x^5+x^7+x^8+x^10+x^12+x^15+x^16)*x^2779+(x^1+x^3+x^5+x^6+x^8+x^10+x^13+x^14)*x^2781+(1+x^3+x^4+x^6+x^7+x^8+x^12+x^15+x^16)*x^3706+(1+x^1+x^2+x^6+x^7+x^11+x^12+x^13+x^14+x^15)*x^3708+x^2x^4118+x^4120+(x^4+x^5+x^6+x^9+x^10)*x^5568+(1+x^1+x^2+x^5+x^6+x^8+x^11+x^13+x^16)*x^5833+(1+x^4+x^6+x^10+x^11+x^13)*x^6760+(x^3+x^5+x^6+x^7+x^8+x^10+x^11+x^13+x^15)*x^7172+(1+x^1+x^5+x^6+x^7+x^8+x^10+x^11+x^13+x^15)*x^8347+(1+x^1+x^3+x^5+x^7+x^9+x^10+x^11+x^15+x^16)*x^8349+(x^2+x^4+x^5+x^6+x^9+x^10+x^11+x^12+x^13+x^15)*x^11401");
+
+        System.out.println(UnivariateGCD.PolynomialGCD(a, b));
     }
 }

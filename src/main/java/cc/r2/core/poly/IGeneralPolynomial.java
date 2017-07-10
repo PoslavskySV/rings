@@ -346,7 +346,6 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
     /** overcome Java generics... */
     Poly[] arrayNewInstance(int length);
 
-
     /** overcome Java generics... */
     Poly[][] arrayNewInstance2D(int length);
 
@@ -359,4 +358,12 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
         r[0] = a; r[1] = b;
         return r;
     }
+
+    /**
+     * Parse string representation of polynomial
+     *
+     * @param string string
+     * @return the polynomial corresponding to specified string
+     */
+    Poly parsePoly(String string);
 }

@@ -64,4 +64,9 @@ abstract class AbstractIntegers extends ADomain<BigInteger> {
     public final BigInteger valueOfBigInteger(BigInteger val) {
         return valueOf(val);
     }
+
+    @Override
+    public BigInteger copy(BigInteger element) {
+        return element;
+    }
 }

@@ -114,6 +114,48 @@ public interface Domain<E> extends Comparator<E> {
     E negate(E val);
 
     /**
+     * Adds two elements possibly destroing the content of {@code a}
+     *
+     * @param a the first element (may be destroyed)
+     * @param b the second element
+     * @return a + b
+     */
+    default E addMutable(E a, E b) {return add(a, b);}
+
+    default E addMutable(E... vals) {
+        E r = vals[0];
+        for (int i = 1; i < vals.length; i++)
+            r = addMutable(r, vals[i]);
+        return r;
+    }
+
+    /**
+     * Subtracts {@code b} from {@code a} possibly destroing the content of {@code a}
+     *
+     * @param a the first element (may be destroyed)
+     * @param b the second element
+     * @return a - b
+     */
+    default E subtractMutable(E a, E b) {return subtract(a, b);}
+
+    /**
+     * Multiplies two elements possibly destroing the content of {@code a}
+     *
+     * @param a the first element (may be destroyed)
+     * @param b the second element
+     * @return a * b
+     */
+    default E multiplyMutable(E a, E b) { return multiply(a, b);}
+
+    /**
+     * Negates the given element possibly destroing the content of {@code val}
+     *
+     * @param val the domain element (may be destroyed)
+     * @return -val
+     */
+    default E negateMutable(E val) { return negate(val);}
+
+    /**
      * Returns -1 if {@code a < 0}, 0 if {@code a == 0} and 1 if {@code a > 0}, where comparison is defined in terms
      * of {@link #compare(Object, Object)}
      *
@@ -406,17 +448,22 @@ public interface Domain<E> extends Comparator<E> {
         if (exponent < 0)
             throw new IllegalArgumentException();
 
+        if (exponent == 1)
+            return base;
+
         E result = getOne();
-        E k2p = base;
+        E k2p = copy(base); // <= copy the base (mutable operations are used below)
         for (; ; ) {
             if ((exponent&1) != 0)
-                result = multiply(result, k2p);
+                result = multiplyMutable(result, k2p);
             exponent = exponent >> 1;
             if (exponent == 0)
                 return result;
-            k2p = multiply(k2p, k2p);
+            k2p = multiplyMutable(k2p, k2p);
         }
     }
+
+    E copy(E element);
 
     /**
      * Returns {@code base} in a power of {@code exponent} (non negative)
@@ -430,15 +477,18 @@ public interface Domain<E> extends Comparator<E> {
         if (exponent < 0)
             throw new IllegalArgumentException();
 
+        if (exponent == 1)
+            return base;
+
         E result = getOne();
-        E k2p = base;
+        E k2p = copy(base); // <= copy the base (mutable operations are used below)
         for (; ; ) {
             if ((exponent&1) != 0)
-                result = multiply(result, k2p);
+                result = multiplyMutable(result, k2p);
             exponent = exponent >> 1;
             if (exponent == 0)
                 return result;
-            k2p = multiply(k2p, k2p);
+            k2p = multiplyMutable(k2p, k2p);
         }
     }
 
@@ -454,15 +504,18 @@ public interface Domain<E> extends Comparator<E> {
         if (exponent.signum() < 0)
             throw new IllegalArgumentException();
 
+        if (exponent.isOne())
+            return base;
+
         E result = getOne();
-        E k2p = base;
+        E k2p = copy(base); // <= copy the base (mutable operations are used below)
         for (; ; ) {
             if ((exponent.testBit(0)))
-                result = multiply(result, k2p);
+                result = multiplyMutable(result, k2p);
             exponent = exponent.shiftRight(1);
             if (exponent.isZero())
                 return result;
-            k2p = multiply(k2p, k2p);
+            k2p = multiplyMutable(k2p, k2p);
         }
     }
 
@@ -475,7 +528,7 @@ public interface Domain<E> extends Comparator<E> {
     default E factorial(long value) {
         E result = getOne();
         for (int i = 2; i <= value; ++i)
-            result = multiply(result, valueOf(i));
+            result = multiplyMutable(result, valueOf(i));
         return result;
     }
 

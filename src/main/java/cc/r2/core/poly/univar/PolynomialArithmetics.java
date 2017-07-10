@@ -3,8 +3,6 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.LongArithmetics;
-import cc.r2.core.poly.lIntegersModulo;
-import cc.redberry.libdivide4j.FastDivision;
 
 import static cc.r2.core.poly.univar.DivisionWithRemainder.remainder;
 
@@ -161,6 +159,7 @@ public final class PolynomialArithmetics {
     public static <T extends IUnivariatePolynomial<T>> T polyNegateMod(T m1,
                                                                        T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod,
                                                                        boolean copy) {
+        // FIXME: better implementation possible
         return polyMod((copy ? m1.clone() : m1).negate(), polyModulus, invMod, false);
     }
 

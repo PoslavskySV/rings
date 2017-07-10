@@ -37,6 +37,26 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     public final Poly negate(Poly val) {return val.clone().negate();}
 
     @Override
+    public Poly addMutable(Poly a, Poly b) {
+        return a.add(b);
+    }
+
+    @Override
+    public Poly subtractMutable(Poly a, Poly b) {
+        return a.subtract(b);
+    }
+
+    @Override
+    public Poly multiplyMutable(Poly a, Poly b) {
+        return a.multiply(b);
+    }
+
+    @Override
+    public Poly negateMutable(Poly val) {
+        return val.negate();
+    }
+
+    @Override
     public final int signum(Poly a) {return a.signum();}
 
     @Override
@@ -75,6 +95,11 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     public final Poly valueOf(Poly val) {return val;}
 
     @Override
+    public Poly copy(Poly element) {
+        return element.clone();
+    }
+
+    @Override
     public final int compare(Poly o1, Poly o2) {return o1.compareTo(o2);}
 
     @Override
@@ -105,5 +130,10 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     @Override
     public final int hashCode() {
         return factory.hashCode();
+    }
+
+    @Override
+    public Poly parse(String string) {
+        return factory.parsePoly(string);
     }
 }

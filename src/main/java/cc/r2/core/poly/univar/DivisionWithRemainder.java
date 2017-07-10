@@ -598,8 +598,8 @@ public final class DivisionWithRemainder {
         for (int i = dividend.degree; ; --i) {
             E tmp = dividend.data[i];
             if (i != dividend.degree)
-                quotient[i] = res;
-            res = domain.add(domain.multiply(res, cc), domain.multiply(raiseFactor, tmp));
+                quotient[i] = domain.copy(res);
+            res = domain.addMutable(domain.multiplyMutable(res, cc), domain.multiply(raiseFactor, tmp));
             if (i == 0)
                 break;
             E quot = domain.divideOrNull(domain.multiply(res, lcMultiplier), lcDivider);

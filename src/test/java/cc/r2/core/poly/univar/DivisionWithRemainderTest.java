@@ -2,10 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
-import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.*;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -722,5 +719,22 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         UnivariatePolynomial<BigInteger> divider = UnivariatePolynomial.create(Integers.Integers,
                 new BigInteger("-425784855629707210539690417657285596009748771201595246777393523226748147711074288140558389550043516613530500261798739170010747708483239470487926534197999795185337107301428405197650111401424401453281285342023506707519100774028143103154883688933695208217191334712115038212326510433566424650523293261999555565022871454564811453312766524934990529599572227820236569578196841210873189542906771110582428737577172320473113774712560826543606283857910494481715951013601677939588946090257941915294685671582476036525511342773894137847945807902831920328130096765066331366254244760254056538237885678798173308462659097285980035599674879837185559523111215792005945149771714839595770409009983341486144352570200746450022078747332821616059006090021772872988207037534463289442687034943036344354336745002436373485142219064592871177691253579923036133374333408048223917924387929466882231114740060638812996586535143719347485716399431436091507892979143097224033509341961137283167473128691774034159819704359664495382150875212794275998540147497752601895426653284077738548432459176682797681127140157440"));
         assertPseudoQuotientRemainder(dividend, divider, pseudoDivideAndRemainder(dividend, divider, true));
+    }
+
+    @Test
+    public void test27_finiteFields() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+
+        int
+                minDegree = 5,
+                maxDegree = 15;
+        for (int i = 0; i < its(100, 1000); i++) {
+            UnivariatePolynomial<lUnivariatePolynomialZp>
+                    dividend = RandomPolynomials.randomMonicPoly(rndd.nextInt(minDegree, maxDegree), FiniteField.GF17p5, rnd),
+                    divider = RandomPolynomials.randomMonicPoly(rndd.nextInt(1, dividend.degree + 1), FiniteField.GF17p5, rnd);
+
+            assertQuotientRemainder(dividend, divider, divideAndRemainder(dividend, divider, true));
+        }
     }
 }

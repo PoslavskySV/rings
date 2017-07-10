@@ -1545,6 +1545,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return new MultivariatePolynomial<>(nVariables, domain, ordering, terms.clone());
     }
 
+    @Override
+    public MultivariatePolynomial<E> parsePoly(String string) {
+        return parse(string, domain, ordering);
+    }
+
     private static final Pattern nonTrivialCoefficientString = Pattern.compile("[\\+\\-\\*]");
 
     private static <E> String coeffToString(E coeff) {

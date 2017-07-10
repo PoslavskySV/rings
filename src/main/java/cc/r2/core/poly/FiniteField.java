@@ -73,6 +73,26 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     }
 
     @Override
+    public Poly addMutable(Poly a, Poly b) {
+        return PolynomialArithmetics.polyAddMod(a, b, irreducible, inverseMod, false);
+    }
+
+    @Override
+    public Poly subtractMutable(Poly a, Poly b) {
+        return PolynomialArithmetics.polySubtractMod(a, b, irreducible, inverseMod, false);
+    }
+
+    @Override
+    public Poly multiplyMutable(Poly a, Poly b) {
+        return PolynomialArithmetics.polyMultiplyMod(a, b, irreducible, inverseMod, false);
+    }
+
+    @Override
+    public Poly negateMutable(Poly val) {
+        return PolynomialArithmetics.polyNegateMod(val, irreducible, inverseMod, false);
+    }
+
+    @Override
     public int signum(Poly a) {
         return a.signum();
     }
@@ -157,6 +177,11 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     }
 
     @Override
+    public Poly copy(Poly element) {
+        return element.clone();
+    }
+
+    @Override
     public Poly[] createArray(int length) {
         return irreducible.arrayNewInstance(length);
     }
@@ -184,6 +209,11 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     @Override
     public Poly randomElement(RandomGenerator rnd) {
         return valueOf(RandomPolynomials.randomPoly(irreducible, rnd.nextInt(2 * irreducible.degree()), rnd));
+    }
+
+    @Override
+    public Poly parse(String string) {
+        return valueOf(irreducible.parsePoly(string));
     }
 
     @Override

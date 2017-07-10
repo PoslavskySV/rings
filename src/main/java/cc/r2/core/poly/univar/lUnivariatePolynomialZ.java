@@ -30,6 +30,13 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     }
 
     /**
+     * Parse string into polynomial
+     */
+    public static lUnivariatePolynomialZ parse(String string) {
+        return UnivariatePolynomial.asLongPolyZ(Parser.parse(Integers.Integers, string));
+    }
+
+    /**
      * Creates Z[x] polynomial from the specified coefficients
      *
      * @param data coefficients
@@ -404,5 +411,10 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     @Override
     public lUnivariatePolynomialZ clone() {
         return new lUnivariatePolynomialZ(data.clone(), degree);
+    }
+
+    @Override
+    public lUnivariatePolynomialZ parsePoly(String string) {
+        return parse(string);
     }
 }

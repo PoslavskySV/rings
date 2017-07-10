@@ -21,7 +21,6 @@ import java.util.Arrays;
 
 import static cc.r2.core.poly.multivar.MultivariateFactorization.GCDFreeBasis;
 import static cc.r2.core.poly.multivar.MultivariateFactorization.bivariateDenseFactorSquareFree;
-import static cc.r2.core.poly.multivar.MultivariateFactorization.factorSquareFree;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 
 /**
