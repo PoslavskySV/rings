@@ -235,18 +235,18 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
 
     /** Remove specified variable */
     public final Poly dropVariable(int variable, boolean eliminate) {
-        MonomialsSet<Term> newData = new MonomialsSet<>(this.terms);
-        for (Map.Entry<DegreeVector, Term> e : newData.entrySet())
-            e.setValue(e.getValue().without(variable));
+        MonomialsSet<Term> newData = new MonomialsSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.without(variable));
         return create(eliminate ? nVariables - 1 : nVariables, newData);
     }
 
     /** Insert variable */
     public final Poly insertVariable(int variable) {
-        MonomialsSet<Term> newData = new MonomialsSet<>(this.terms);
-        for (Map.Entry<DegreeVector, Term> e : newData.entrySet())
-            e.setValue(e.getValue().insert(variable));
-        return create(newData);
+        MonomialsSet<Term> newData = new MonomialsSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.insert(variable));
+        return create(nVariables + 1, newData);
     }
 
     /**
@@ -498,6 +498,17 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     @SuppressWarnings("unchecked")
     public final Poly content(int variable) {
         return asMultivariate(contentUnivariate(variable), nVariables, variable, ordering);
+    }
+
+    /**
+     * Gives the content of this considered as R[x1, ... (except variable) ..., xN][variable]
+     *
+     * @param variable the variable
+     * @return the content of this considered as R[x1, ... (except variable) ..., xN][variable]
+     */
+    @SuppressWarnings("unchecked")
+    public final Poly contentExcept(int variable) {
+        return asUnivariate(variable).content();
     }
 
     /**

@@ -25,4 +25,14 @@ public final class MultivariatePolynomials<Poly extends AMultivariatePolynomial<
     public Poly gcd(Poly a, Poly b) {
         return MultivariateGCD.PolynomialGCD(a, b);
     }
+
+    @Override
+    public Poly gcd(Poly[] els) {
+        return MultivariateGCD.PolynomialGCD(els);
+    }
+
+    @Override
+    public Poly gcd(Iterable<Poly> els) {
+        return MultivariateGCD.PolynomialGCD(els);
+    }
 }

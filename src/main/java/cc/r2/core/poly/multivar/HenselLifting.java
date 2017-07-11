@@ -1,9 +1,6 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.IGeneralPolynomial;
-import cc.r2.core.poly.UnivariatePolynomials;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.PrecomputedPowersHolder;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.USubstitution;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lPrecomputedPowersHolder;
@@ -259,6 +256,8 @@ public final class HenselLifting {
                 return poly;
             }
         }
+
+        IEvaluation<Term, Poly> dropVariable(int variable);
     }
 
     static final class lEvaluation implements IEvaluation<lMonomialTerm, lMultivariatePolynomialZp> {
@@ -266,10 +265,14 @@ public final class HenselLifting {
         final int nVariables;
         final lPrecomputedPowersHolder precomputedPowers;
         final lUSubstitution[] linearPowers;
+        final lIntegersModulo domain;
+        final Comparator<DegreeVector> ordering;
 
         lEvaluation(int nVariables, long[] values, lIntegersModulo domain, Comparator<DegreeVector> ordering) {
             this.nVariables = nVariables;
             this.values = values;
+            this.domain = domain;
+            this.ordering = ordering;
             this.precomputedPowers = new lPrecomputedPowersHolder(nVariables, ArraysUtil.sequence(1, nVariables), values, domain);
             this.linearPowers = new lUSubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
@@ -299,6 +302,11 @@ public final class HenselLifting {
         public boolean isZeroSubstitution(int variable) {
             return values[variable - 1] == 0;
         }
+
+        @Override
+        public lEvaluation dropVariable(int variable) {
+            return new lEvaluation(nVariables - 1, ArraysUtil.remove(values, variable - 1), domain, ordering);
+        }
     }
 
     static final class Evaluation<E> implements IEvaluation<MonomialTerm<E>, MultivariatePolynomial<E>> {
@@ -307,12 +315,14 @@ public final class HenselLifting {
         final Domain<E> domain;
         final PrecomputedPowersHolder<E> precomputedPowers;
         final USubstitution<E>[] linearPowers;
+        final Comparator<DegreeVector> ordering;
 
         @SuppressWarnings("unchecked")
         Evaluation(int nVariables, E[] values, Domain<E> domain, Comparator<DegreeVector> ordering) {
             this.nVariables = nVariables;
             this.values = values;
             this.domain = domain;
+            this.ordering = ordering;
             this.precomputedPowers = new PrecomputedPowersHolder<>(nVariables, ArraysUtil.sequence(1, nVariables), values, domain);
             this.linearPowers = new USubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
@@ -341,6 +351,11 @@ public final class HenselLifting {
         @Override
         public boolean isZeroSubstitution(int variable) {
             return domain.isZero(values[variable - 1]);
+        }
+
+        @Override
+        public Evaluation<E> dropVariable(int variable) {
+            return new Evaluation<>(nVariables - 1, ArraysUtil.remove(values, variable - 1), domain, ordering);
         }
     }
 
@@ -551,6 +566,7 @@ public final class HenselLifting {
         final HashMap<BitSet, Poly> products = new HashMap<>();
 
         AllProductsCache(Poly[] factors) {
+            assert factors.length >= 1;
             this.factors = factors;
         }
 
@@ -562,6 +578,7 @@ public final class HenselLifting {
 
         Poly multiply(BitSet selector) {
             int cardinality = selector.cardinality();
+            assert cardinality > 0;
             if (cardinality == 1)
                 return factors[selector.nextSetBit(0)];
             Poly cached = products.get(selector);
@@ -722,6 +739,31 @@ public final class HenselLifting {
         }
     }
 
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftWang(Poly base, Poly[] factors, IEvaluation<Term, Poly> evaluation) {
+        Poly lc = base.lc(0);
+
+        if (lc.isConstant())
+            liftWang(base, factors, null, evaluation);
+        else {
+            // imposing leading coefficients
+            Poly lcCorrection = evaluation.evaluateFrom(lc, 1);
+            assert lcCorrection.isConstant();
+
+            for (Poly factor : factors) {
+                assert factor.lt().exponents[0] == factor.degree(0);
+                factor.monicWithLC(lcCorrection.lcAsPoly());
+            }
+
+            base = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, factors.length - 1, true));
+
+            liftWang(base, factors, ArraysUtil.arrayOf(lc, factors.length), evaluation);
+
+            for (Poly factor : factors)
+                factor.set(primitivePart(factor));
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void liftWang(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation) {
@@ -748,6 +790,57 @@ public final class HenselLifting {
                 (Poly[]) asMultivariate((IUnivariatePolynomial[]) uFactors.exceptArray(), base.nVariables, 0, base.ordering),
                 uSolver, degreeBounds);
         for (int liftingVariable = 1; liftingVariable < base.nVariables; ++liftingVariable) {
+            // base[x1, x2, ..., x(i), b(i+1), ..., bN]
+            Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
+            for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
+                Poly rhsDelta =
+                        baseImage.clone().subtract(base.createOne().multiply(factors));
+                rhsDelta = evaluation.evaluateFrom(rhsDelta, liftingVariable + 1);
+                if (rhsDelta.isZero())
+                    break;
+                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
+                assert rhsDelta.nUsedVariables() <= liftingVariable;
+
+                dSolver.solve(rhsDelta, liftingVariable - 1);
+
+                // (x_i - b_i) ^ degree
+                Poly idPower = evaluation.linearPower(liftingVariable, degree);
+                for (int i = 0; i < factors.length; i++)
+                    factors[i].add(dSolver.solution[i].multiply(idPower));
+            }
+
+            if (liftingVariable < base.nVariables) // don't perform on the last step
+                // update tmp images for the next cycle
+                dSolver.images[liftingVariable] =
+                        new AllProductsCache<>(evaluation.evaluateFrom(factors, liftingVariable + 1))
+                                .exceptArray();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftWangFromBivariate(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation, int[] degreeBounds) {
+        if (factorsLC != null)
+            for (int i = 0; i < factors.length; i++)
+                if (factorsLC[i] != null)
+                    factors[i].setLC(0, factorsLC[i]);
+
+        if (degreeBounds == null)
+            degreeBounds = base.degrees();
+
+        AllProductsCache uFactors = new AllProductsCache(asUnivariate(evaluation.evaluateFrom(factors, 1), evaluation));
+        // univariate multifactor diophantine solver
+        UMultiDiophantineSolver<?> uSolver = new UMultiDiophantineSolver<>(uFactors);
+        // initialize multivariate multifactor diophantine solver
+        MultiDiophantineSolver<Term, Poly, ? extends IUnivariatePolynomial> dSolver = new MultiDiophantineSolver<>(
+                evaluation,
+                (Poly[]) asMultivariate((IUnivariatePolynomial[]) uFactors.exceptArray(), base.nVariables, 0, base.ordering),
+                uSolver, degreeBounds);
+        dSolver.images[1] =
+                new AllProductsCache<>(evaluation.evaluateFrom(factors, 2))
+                        .exceptArray();
+
+        for (int liftingVariable = 2; liftingVariable < base.nVariables; ++liftingVariable) {
             // base[x1, x2, ..., x(i), b(i+1), ..., bN]
             Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
             for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {

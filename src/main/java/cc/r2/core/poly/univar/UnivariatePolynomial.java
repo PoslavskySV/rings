@@ -630,10 +630,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public E content() {
         if (degree == 0)
             return data[0];
-        E gcd = data[degree];
-        for (int i = degree - 1; i >= 0; --i)
-            gcd = domain.gcd(gcd, data[i]);
-        return gcd;
+        return domain.gcd(this);
+//        E gcd = data[degree];
+//        for (int i = degree - 1; i >= 0; --i)
+//            gcd = domain.gcd(gcd, data[i]);
+//        return gcd;
     }
 
     /** {@inheritDoc} */

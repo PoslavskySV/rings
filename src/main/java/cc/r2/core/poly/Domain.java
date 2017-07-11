@@ -4,6 +4,7 @@ import cc.r2.core.number.BigInteger;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.Comparator;
 
 /**
@@ -244,6 +245,16 @@ public interface Domain<E> extends Comparator<E> {
      * @return gcd
      */
     E gcd(E a, E b);
+
+    /**
+     * Returns greatest common divisor of specified elements
+     *
+     * @param els the elements
+     * @return gcd
+     */
+    default E gcd(E... els) {
+        return gcd(Arrays.asList(els));
+    }
 
     /**
      * Returns greatest common divisor of specified elements

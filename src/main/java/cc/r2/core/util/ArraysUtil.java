@@ -85,6 +85,14 @@ public final class ArraysUtil {
         return r;
     }
 
+    public static <T> T[] arrayOf(T val, int len) {
+        @SuppressWarnings("unchecked")
+        T[] r = (T[]) Array.newInstance(val.getClass(), len);
+        Arrays.fill(r, val);
+        return r;
+    }
+
+
     public static int[] negate(int[] arr) {
         for (int i = 0; i < arr.length; i++)
             arr[i] = -arr[i];
@@ -571,6 +579,21 @@ public final class ArraysUtil {
         } else if (array.length == 2)
             return new int[]{array[1^i]};
         int[] newArray = new int[array.length - 1];
+        System.arraycopy(array, 0, newArray, 0, i);
+        if (i != array.length - 1)
+            System.arraycopy(array, i + 1, newArray, i, array.length - i - 1);
+        return newArray;
+    }
+
+    public static long[] remove(long[] array, int i) {
+        if (i >= array.length)
+            throw new ArrayIndexOutOfBoundsException();
+        if (array.length == 1) {
+            assert i == 0;
+            return new long[0];
+        } else if (array.length == 2)
+            return new long[]{array[1^i]};
+        long[] newArray = new long[array.length - 1];
         System.arraycopy(array, 0, newArray, 0, i);
         if (i != array.length - 1)
             System.arraycopy(array, i + 1, newArray, i, array.length - i - 1);

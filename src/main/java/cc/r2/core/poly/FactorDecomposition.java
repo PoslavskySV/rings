@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static cc.r2.core.poly.CommonPolynomialsArithmetics.polyPow;
 
@@ -134,12 +135,28 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
         return this;
     }
 
+    public FactorDecomposition<Poly> moveConstantFactorTo(int iFactor) {
+        if (size() >= 1) {
+            factors.get(iFactor).multiplyByLC(constantFactor);
+            constantFactor.set(constantFactor.createOne());
+        }
+        return this;
+    }
+
     /** Map polynomials using mapper */
     public <PolyT extends IGeneralPolynomial<PolyT>>
     FactorDecomposition<PolyT> map(Function<Poly, PolyT> mapper) {
         return new FactorDecomposition<>(mapper.apply(constantFactor),
                 factors.stream().map(mapper).collect(Collectors.toList()),
                 exponents);
+    }
+
+    public Stream<Poly> stream() {
+        return Stream.concat(Stream.of(constantFactor), factors.stream());
+    }
+
+    public Stream<Poly> streamWithoutConstant() {
+        return factors.stream();
     }
 
     @Override
@@ -191,13 +208,18 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
     }
 
     /** multiply factors */
-    public final Poly toPolynomial() {
+    public Poly toPolynomial() {
         return toPolynomial(false);
     }
 
     /** multiply DDF factors */
-    public final Poly toPolynomialIgnoringExponents() {
+    public Poly toPolynomialIgnoringExponents() {
         return toPolynomial(true);
+    }
+
+    /** square-free part */
+    public Poly squareFreePart() {
+        return toPolynomialIgnoringExponents();
     }
 
     private Poly toPolynomial(boolean ignoreExps) {
