@@ -2,7 +2,6 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.*;
-import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
@@ -1482,6 +1481,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     @Override
     public String toString() {
         return toString(defaultVars(nVariables));
+    }
+
+    @Override
+    public String coefficientDomainToString() {
+        return domain.toString();
     }
 
     static String[] defaultVars(int nVars) {

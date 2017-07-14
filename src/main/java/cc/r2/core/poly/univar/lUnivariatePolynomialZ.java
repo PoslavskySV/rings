@@ -417,4 +417,9 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     public lUnivariatePolynomialZ parsePoly(String string) {
         return parse(string);
     }
+
+    @Override
+    public String coefficientDomainToString() {
+        return "Z";
+    }
 }

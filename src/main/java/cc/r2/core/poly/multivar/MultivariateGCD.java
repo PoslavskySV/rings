@@ -7,6 +7,7 @@ import cc.r2.core.number.ChineseRemainders;
 import cc.r2.core.number.primes.PrimesIterator;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
+import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.lInterpolation;
@@ -3040,6 +3041,7 @@ public final class MultivariateGCD {
         int ugcdDegree = Integer.MAX_VALUE;
 
         EZGCDEvaluations evaluations = new EZGCDEvaluations(a, b, nUsedVariables, rnd);
+        lEvaluation evaluation = new lEvaluation(a.nVariables, ArraysUtil.arrayOf(0L, a.nVariables - 1), a.domain, a.ordering);
         choose_evaluation:
         while (true) {
             // set new evaluation point (true returned if base variable has changed)
@@ -3140,7 +3142,7 @@ public final class MultivariateGCD {
                                 gcdCoFactor = lMultivariatePolynomialZp.asMultivariate(
                                         DivisionWithRemainder.divideExact(uSquareFreeGCD, ugcd, false), a.nVariables, 0, a.ordering);
 
-                        HenselLifting.liftPair(squareFreeGCD, mgcd, gcdCoFactor);
+                        liftPairAutomaticLC(squareFreeGCD, mgcd, gcdCoFactor, evaluation);
 
                         squareFreeGCD = mgcd.clone();
                         uSquareFreeGCD = squareFreeGCD.evaluateAtZeroAllExcept(0);
@@ -3160,7 +3162,9 @@ public final class MultivariateGCD {
             assert ZippelGCD(a.lc(0), b.lc(0)).monic(lcCorrection.lc()).equals(lcCorrection) : "\n" + a.lc(0) + "  \n " + b.lc(0);
 
             if (lcCorrection.isOne()) {
-                HenselLifting.liftPair0(base, gcd, coFactor, null, null);
+                assert gcd.isMonic();
+                assert evaluation.evaluateFrom(base, 1).equals(gcd.clone().multiply(coFactor));
+                liftPair(base, gcd, coFactor, null, base.lc(0), evaluation);
             } else {
                 long lcCorrectionMod = lcCorrection.cc(); // substitute all zeros
                 assert lcCorrectionMod != 0;
@@ -3168,7 +3172,7 @@ public final class MultivariateGCD {
                 coFactor = coFactor.multiply(gcd.lc());
                 gcd = gcd.monic(lcCorrectionMod);
 
-                HenselLifting.liftPair0(base.clone().multiply(lcCorrection), gcd, coFactor, lcCorrection, coFactorLC);
+                liftPair(base.clone().multiply(lcCorrection), gcd, coFactor, lcCorrection, coFactorLC, evaluation);
                 assert gcd.lc(0).equals(lcCorrection);
                 gcd = HenselLifting.primitivePart(gcd);
             }
@@ -3176,6 +3180,26 @@ public final class MultivariateGCD {
             if (dividesQ(b, gcd) && dividesQ(a, gcd))
                 return evaluations.reconstruct(gcd);
         }
+    }
+
+    private static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftPair(Poly base, Poly a, Poly b, Poly aLC, Poly bLC, IEvaluation<Term, Poly> evaluation) {
+        HenselLifting.multivariateLift0(base,
+                base.arrayNewInstance(a, b),
+                base.arrayNewInstance(aLC, bLC),
+                evaluation,
+                base.degrees());
+    }
+
+    private static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    void liftPairAutomaticLC(Poly base, Poly a, Poly b, IEvaluation<Term, Poly> evaluation) {
+        HenselLifting.multivariateLiftAutomaticLC(base,
+                base.arrayNewInstance(a, b),
+                evaluation);
     }
 
     static ZeroVariables commonPossibleZeroes(lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, int nVariables) {
@@ -3546,7 +3570,7 @@ public final class MultivariateGCD {
             for (int j = 0; j < substitutions.length; j++)
                 substitutions[j] = lFactory.domain.randomNonZeroElement(rnd);
 
-            return (IEvaluation<Term, Poly>) new HenselLifting.lEvaluation(lFactory.nVariables, substitutions, lFactory.domain, lFactory.ordering);
+            return (IEvaluation<Term, Poly>) new lEvaluation(lFactory.nVariables, substitutions, lFactory.domain, lFactory.ordering);
         } else if (factory instanceof MultivariatePolynomial) {
             MultivariatePolynomial lFactory = (MultivariatePolynomial) factory;
             // set new evaluation point
@@ -3665,7 +3689,7 @@ public final class MultivariateGCD {
                                 gcdCoFactor = (Poly) AMultivariatePolynomial.asMultivariate(
                                         DivisionWithRemainder.divideExact(uSquareFreeGCD, ugcd, false), a.nVariables, 0, a.ordering);
 
-                        HenselLifting.liftWang(squareFreeGCD, mgcd, gcdCoFactor, evaluation);
+                        liftPairAutomaticLC(squareFreeGCD, mgcd, gcdCoFactor, evaluation);
 
                         squareFreeGCD = mgcd.clone();
                         uSquareFreeGCD = evaluation.evaluateFrom(squareFreeGCD, 1).asUnivariate();
@@ -3685,7 +3709,7 @@ public final class MultivariateGCD {
             //assert ZippelGCD(a.lc(0), b.lc(0)).monic(lcCorrection.lc()).equals(lcCorrection) : "\n" + a.lc(0) + "  \n " + b.lc(0);
 
             if (lcCorrection.isOne()) {
-                HenselLifting.liftWang(base, gcd, coFactor, null, base.lc(0), evaluation);
+                liftPair(base, gcd, coFactor, null, base.lc(0), evaluation);
             } else {
                 Poly lcCorrectionMod = evaluation.evaluateFrom(lcCorrection, 1);
                 assert lcCorrectionMod.isConstant();
@@ -3693,7 +3717,7 @@ public final class MultivariateGCD {
                 coFactor = coFactor.multiplyByLC(gcd);
                 gcd = gcd.monicWithLC(lcCorrectionMod);
 
-                HenselLifting.liftWang(base.clone().multiply(lcCorrection), gcd, coFactor, lcCorrection, coFactorLC, evaluation);
+                liftPair(base.clone().multiply(lcCorrection), gcd, coFactor, lcCorrection, coFactorLC, evaluation);
                 assert gcd.lc(0).equals(lcCorrection);
                 gcd = HenselLifting.primitivePart(gcd);
             }

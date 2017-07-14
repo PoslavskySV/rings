@@ -366,4 +366,6 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
      * @return the polynomial corresponding to specified string
      */
     Poly parsePoly(String string);
+
+    String coefficientDomainToString();
 }

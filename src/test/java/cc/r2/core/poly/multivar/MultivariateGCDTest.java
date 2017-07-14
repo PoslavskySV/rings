@@ -7,7 +7,6 @@ import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
-import cc.r2.core.util.ArraysUtil;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.RandomUtil;
 import cc.r2.core.util.TimeUnits;
@@ -1588,10 +1587,40 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testEZGCD18() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(592346501);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("56*b+47*b*c+37*a*b*c^2+43*a^2*b*c", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("26*b*c^2+54*a*c+4*a^2*b+2*a^2*b*c+42*a^2*b*c^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("13*c+50*a*b+51*a^2*b*c+65*a^2*b^2*c^3+33*a^3*b^2", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
+    public void testEZGCD19() throws Exception {
+        PrivateRandom.getRandom().setSeed(50);
+        lIntegersModulo domain = new lIntegersModulo(592346501);
+        String[] vars = {"a", "b"};
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("125427093 + 287292359*a + 259899124*a^2 + 224214583*b + 423992120*a*b + 1221*a^2*b + 522309957*b^2 + 1419*a*b^2", domain, LEX, vars),
+                b = lMultivariatePolynomialZp.parse("364341910 + 56968290*a + 134477777*a^2 + 264733241*b + 223672725*a*b + 365910146*a^2*b + 448183856*b^2 + 56041492*a*b^2 + 1386*a^2*b^2", domain, LEX, vars),
+                gcd = lMultivariatePolynomialZp.parse("8864159 + 332216825*a + 307171438*a^2 + 574396609*a^3 + b", domain, LEX, vars);
+        a = a.multiply(gcd);
+        b = b.multiply(gcd);
+        System.out.println(EZGCD(a, b));
+        assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
+    }
+
+    @Test
     public void testEEZGCD_random1() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 4, minDegree = 2, maxDegree = 3, minSize = 5, maxSize = 7;
-        int nIterations = its(100, 1000);
+        int nIterations = its(1000, 1000);
 
         lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
         testGCDAlgorithms(sampleData, nIterations,
@@ -1820,6 +1849,16 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             this.domain = (gcd instanceof lMultivariatePolynomialZp)
                     ? ((lMultivariatePolynomialZp) gcd).domain
                     : ((MultivariatePolynomial) gcd).domain;
+        }
+
+        @Override
+        public String toString() {
+            return new StringBuilder()
+                    .append("\naCoFactor = " + aCoFactor)
+                    .append("\nbCoFactor = " + bCoFactor)
+                    .append("\ngcd       = " + gcd)
+                    .append("\ndomain    = " + domain)
+                    .toString();
         }
     }
 

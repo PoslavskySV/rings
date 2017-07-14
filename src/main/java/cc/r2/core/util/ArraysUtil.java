@@ -79,6 +79,12 @@ public final class ArraysUtil {
         return r;
     }
 
+    public static long[] arrayOf(long val, int len) {
+        long[] r = new long[len];
+        Arrays.fill(r, val);
+        return r;
+    }
+
     public static char[] arrayOf(char val, int len) {
         char[] r = new char[len];
         Arrays.fill(r, val);

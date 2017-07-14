@@ -358,7 +358,7 @@ public final class MultivariateFactorization {
 
         // lifted factors (each factor represented as series around y = y0)
         UnivariatePolynomial<lUnivariatePolynomialZp>[] lifted =
-                HenselLifting.bivariateLift(baseSeries, factors, liftDegree);
+                HenselLifting.bivariateLiftDense(baseSeries, factors, liftDegree);
 
         if (!lc.isConstant())
             // drop auxiliary l.c. from factors
@@ -591,7 +591,7 @@ public final class MultivariateFactorization {
 
         // lifted factors (each factor represented as series around y = y0)
         UnivariatePolynomial<UnivariatePolynomial<E>>[] lifted =
-                HenselLifting.bivariateLift(baseSeries, factors, liftDegree);
+                HenselLifting.bivariateLiftDense(baseSeries, factors, liftDegree);
 
         if (!lc.isConstant())
             // drop auxiliary l.c. from factors
@@ -879,7 +879,7 @@ public final class MultivariateFactorization {
                 lcSqFreeContent = lcSqFreePart.contentExcept(0),
                 lcSqFreePrimitive = MultivariateReduction.divideExact(lcSqFreePart, lcSqFreeContent);
 
-        EvaluationLoop evaluations = new EvaluationLoop(polynomial);
+        lEvaluationLoop evaluations = new lEvaluationLoop(polynomial);
         // number of attempts to find a suitable evaluation point
         int nAttempts = 0;
         // maximal number of bivariate factors
@@ -938,65 +938,72 @@ public final class MultivariateFactorization {
             // FIXME: lc is monomial => special case
             if (!lc.isConstant()) { // <= leading coefficients reconstruction
 
-                lEvaluation evaluation2 = evaluation.dropVariable(1);
-                // square free decomposition of evaluated l.c.
-                lUnivariatePolynomialZp ulcSqFreePart =
-                        evaluation2.evaluateFrom(lcSqFreePart, 1).asUnivariate();
-
-                // check whether the univariate image of square-free part of l.c. is also square-free
-                if (!SquareFreeFactorization.isSquareFree(ulcSqFreePart)) {
-
-                    // extraneous l.c. factors occurred
-                    // => no way to reconstruct true leading coefficients
-
-                    // FIXME: may be just set commonFactor to lc^#factors ?
-                    continue;
-                }
-
-                // square-free decomposition of the leading coefficients of bivariate factors
-                FactorDecomposition<lUnivariatePolynomialZp>[] ulcFactors =
-                        bivariateFactors.factors
-                                .stream()
-                                .map(f -> SquareFreeFactorization.SquareFreeFactorization(f.lc(0).asUnivariate()))
-                                .toArray(FactorDecomposition[]::new);
-
-                // move to GCD-free basis of sq.-f. decomposition (univariate, because fast)
-                GCDFreeBasis(ulcFactors);
-
-                // map to multivariate factors for further Hensel lifting
-                FactorDecomposition<lMultivariatePolynomialZp>[]
-                        lcFactors = Arrays.stream(ulcFactors)
-                        .map(decomposition ->
-                                decomposition.map(p -> (lMultivariatePolynomialZp)
-                                        asMultivariate(p, polynomial.nVariables - 1, 0, polynomial.ordering)))
-                        .map(decomposition -> decomposition.moveConstantFactorTo(0))
-                        .toArray(FactorDecomposition[]::new);
-
-                assert Arrays.stream(lcFactors).flatMap(d -> d.factors.stream()).noneMatch(lMultivariatePolynomialZp::isConstant);
-                // now we lift the l.c. decomposition
-                lMultivariatePolynomialZp[] lcContent = Arrays.stream(lcFactors)
-                        .flatMap(FactorDecomposition::stream)
-                        .toArray(lMultivariatePolynomialZp[]::new);
-
                 lMultivariatePolynomialZp lcRest = lc;
                 lMultivariatePolynomialZp[] factorsLC = new lMultivariatePolynomialZp[bivariateFactors.size()];
-                if (Arrays.stream(lcContent).allMatch(lMultivariatePolynomialZp::isConstant)) {
+                if (lc.isMonomial()) {
+                    // no way to reconstruct l.c. of factors
                     for (int i = 0; i < factorsLC.length; i++)
                         factorsLC[i] = polynomial.createOne();
                 } else {
-                    lMultivariatePolynomialZp ulcSqFreePrimitive = evaluation2.evaluateFrom(lcSqFreePrimitive, 1);
-                    assert ulcSqFreePrimitive.equals(lcContent[0].createOne().multiply(lcContent));
+                    lEvaluation evaluation2 = evaluation.dropVariable(1);
+                    // square free decomposition of evaluated l.c.
+                    lUnivariatePolynomialZp ulcSqFreePart =
+                            evaluation2.evaluateFrom(lcSqFreePart, 1).asUnivariate();
+
+                    // check whether the univariate image of square-free part of l.c. is also square-free
+                    if (!SquareFreeFactorization.isSquareFree(ulcSqFreePart)) {
+
+                        // extraneous l.c. factors occurred
+                        // => no way to reconstruct true leading coefficients
+
+                        // FIXME: may be just set commonFactor to lc^#factors ?
+                        continue;
+                    }
+
+                    // square-free decomposition of the leading coefficients of bivariate factors
+                    FactorDecomposition<lUnivariatePolynomialZp>[] ulcFactors =
+                            bivariateFactors.factors
+                                    .stream()
+                                    .map(f -> SquareFreeFactorization.SquareFreeFactorization(f.lc(0).asUnivariate()))
+                                    .toArray(FactorDecomposition[]::new);
+
+                    // move to GCD-free basis of sq.-f. decomposition (univariate, because fast)
+                    GCDFreeBasis(ulcFactors);
+
+                    // map to multivariate factors for further Hensel lifting
+                    FactorDecomposition<lMultivariatePolynomialZp>[]
+                            lcFactors = Arrays.stream(ulcFactors)
+                            .map(decomposition ->
+                                    decomposition.map(p -> (lMultivariatePolynomialZp)
+                                            asMultivariate(p, polynomial.nVariables - 1, 0, polynomial.ordering)))
+                            .map(decomposition -> decomposition.moveConstantFactorTo(0))
+                            .toArray(FactorDecomposition[]::new);
+
+                    assert Arrays.stream(lcFactors).flatMap(d -> d.factors.stream()).noneMatch(lMultivariatePolynomialZp::isConstant);
+                    // now we lift the l.c. decomposition
+                    lMultivariatePolynomialZp[] lcContent = Arrays.stream(lcFactors)
+                            .flatMap(FactorDecomposition::stream)
+                            .toArray(lMultivariatePolynomialZp[]::new);
 
 
-                    if (lcContent.length == 1)
-                        lcContent[0].set(lcSqFreePrimitive);
-                    else if (lcContent.length > 1)
-                        HenselLifting.liftWang(lcSqFreePrimitive, lcContent, evaluation2);
+                    if (Arrays.stream(lcContent).allMatch(lMultivariatePolynomialZp::isConstant)) {
+                        for (int i = 0; i < factorsLC.length; i++)
+                            factorsLC[i] = polynomial.createOne();
+                    } else {
+                        lMultivariatePolynomialZp ulcSqFreePrimitive = evaluation2.evaluateFrom(lcSqFreePrimitive, 1);
+                        assert ulcSqFreePrimitive.equals(lcContent[0].createOne().multiply(lcContent));
 
 
-                    for (int i = 0; i < factorsLC.length; i++) {
-                        factorsLC[i] = lcFactors[i].toPolynomial().insertVariable(0);
-                        lcRest = MultivariateReduction.divideExact(lcRest, factorsLC[i]);
+                        if (lcContent.length == 1)
+                            lcContent[0].set(lcSqFreePrimitive);
+                        else if (lcContent.length > 1)
+                            HenselLifting.multivariateLiftAutomaticLC(lcSqFreePrimitive, lcContent, evaluation2);
+
+
+                        for (int i = 0; i < factorsLC.length; i++) {
+                            factorsLC[i] = lcFactors[i].toPolynomial().insertVariable(0);
+                            lcRest = MultivariateReduction.divideExact(lcRest, factorsLC[i]);
+                        }
                     }
                 }
 
@@ -1006,7 +1013,7 @@ public final class MultivariateFactorization {
                     lMultivariatePolynomialZp base = polynomial.clone().divideByLC(evaluation.evaluateFrom(lc, 1));
                     Arrays.stream(factorsLC).forEach(p -> p.divideByLC(evaluation.evaluateFrom(p, 1)));
 
-                    HenselLifting.liftWangFromBivariate(base, biFactors, factorsLC, evaluation, polynomial.degrees());
+                    HenselLifting.multivariateLift0(base, biFactors, factorsLC, evaluation, polynomial.degrees(), 2);
                 } else {
                     lMultivariatePolynomialZp lcCorrection = evaluation.evaluateFrom(lcRest, 1);
 
@@ -1017,12 +1024,18 @@ public final class MultivariateFactorization {
 
                     lMultivariatePolynomialZp base = polynomial.clone().multiply(CommonPolynomialsArithmetics.polyPow(lcRest, biFactors.length - 1, true));
 
-                    HenselLifting.liftWangFromBivariate(base, biFactors, ArraysUtil.arrayOf(lcRest, biFactors.length), evaluation, base.degrees());
+//                    assert polynomial.createOne().multiply(
+//                            Arrays.stream(biFactors).map(biFactor -> biFactor.clone().setLC(0, tmp)).toArray(lMultivariatePolynomialZp[]::new))
+//                            .equals(evaluation.evaluateFrom(base, 2));
+                    for (lMultivariatePolynomialZp factorLC : factorsLC)
+                        factorLC.multiply(lcRest);
+
+                    HenselLifting.multivariateLift0(base, biFactors, factorsLC, evaluation, base.degrees(), 2);
                     for (lMultivariatePolynomialZp factor : biFactors)
                         factor.set(HenselLifting.primitivePart(factor));
                 }
             } else {
-                HenselLifting.liftWangFromBivariate(polynomial, biFactors, null, evaluation, polynomial.degrees());
+                HenselLifting.multivariateLift0(polynomial, biFactors, null, evaluation, polynomial.degrees(), 2);
             }
 
             FactorDecomposition<lMultivariatePolynomialZp> factorization
@@ -1041,16 +1054,23 @@ public final class MultivariateFactorization {
         }
     }
 
-    private static final class EvaluationLoop {
+    interface IEvaluationLoop<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        IEvaluation<Term, Poly> next();
+    }
+
+    static final class lEvaluationLoop implements IEvaluationLoop<lMonomialTerm, lMultivariatePolynomialZp> {
         final lMultivariatePolynomialZp factory;
         final RandomGenerator rnd = PrivateRandom.getRandom();
         final TreeSet<long[]> tried = new TreeSet<>(ArraysUtil.COMPARATOR_LONG);
 
-        EvaluationLoop(lMultivariatePolynomialZp factory) {
+        lEvaluationLoop(lMultivariatePolynomialZp factory) {
             this.factory = factory;
         }
 
-        lEvaluation next() {
+        @Override
+        public lEvaluation next() {
             long[] point = new long[factory.nVariables - 1];
             do {
                 for (int i = 0; i < point.length; i++)

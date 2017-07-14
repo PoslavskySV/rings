@@ -6,12 +6,9 @@ import cc.r2.core.poly.multivar.MultivariatePolynomial.USubstitution;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lPrecomputedPowersHolder;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lUSubstitution;
 import cc.r2.core.poly.univar.*;
-import cc.r2.core.poly.univar.DivisionWithRemainder.*;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.*;
-
-import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
 
 /**
  * @author Stanislav Poslavsky
@@ -19,7 +16,6 @@ import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
  */
 public final class HenselLifting {
     private HenselLifting() {}
-
 
     /** runs xgcd for coprime polynomials ensuring that gcd is 1 (not another constant) */
     private static <PolyZp extends IUnivariatePolynomial<PolyZp>>
@@ -38,136 +34,13 @@ public final class HenselLifting {
         return xgcd;
     }
 
-    /** solves a * x + b * y = rhs */
-    static <PolyZp extends IUnivariatePolynomial<PolyZp>>
-    PolyZp[] solveDiophantine(PolyZp a, PolyZp b, PolyZp rhs) {
-        PolyZp[] xgcd = monicExtendedEuclid(a, b);
-        PolyZp
-                x = xgcd[1].multiply(rhs),
-                y = xgcd[2].multiply(rhs);
-
-        PolyZp[] qd = divideAndRemainder(x, b, false);
-        x = qd[1];
-        y = y.add(qd[0].multiply(a));
-
-//        PolyZp[] qd = divideAndRemainder(x, b, false);
-//        x = qd[1];
-//        qd = divideAndRemainder(y, a, false);
-//        y = qd[1];
-
-        qd[0] = x;
-        qd[1] = y;
-        return qd;
-    }
-
-    /* ======================================= 2-factor simple EZ lifting ========================================= */
-
-
-    static void liftPair(lMultivariatePolynomialZp base,
-                         lMultivariatePolynomialZp a,
-                         lMultivariatePolynomialZp b) {
-        lMultivariatePolynomialZp lc = base.lc(0);
-
-        if (lc.isConstant())
-            liftPair0(base, a, b, null, null);
-        else {
-            // imposing leading coefficients
-            lMultivariatePolynomialZp lcCorrection = lc.ccAsPoly();
-
-            assert a.lt().exponents[0] == a.degree(0);
-            assert b.lt().exponents[0] == b.degree(0);
-
-            a.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
-            b.monic(lcCorrection.lc()); // <- monic in x^n (depends on ordering!)
-            base = base.clone().multiply(lc);
-
-            liftPair0(base, a, b, lc, lc);
-
-            a.set(primitivePart(a));
-            b.set(primitivePart(b));
-        }
-    }
-
+    /**
+     * Gives primitive part of poly considered as R[x2,x3,...,xN][x0]
+     */
     static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly primitivePart(Poly poly) {
         // multivariate GCDs will be used for calculation of primitive part
         return AMultivariatePolynomial.asMultivariate(poly.asUnivariate(0).primitivePart(), 0);
-    }
-
-    /** Lift equation base = a * b mod x2 to actual solution */
-    static void liftPair0(lMultivariatePolynomialZp base,
-                          lMultivariatePolynomialZp a,
-                          lMultivariatePolynomialZp b,
-                          lMultivariatePolynomialZp aLC,
-                          lMultivariatePolynomialZp bLC) {
-        // a and b are coprime univariate polynomials over x1
-        // we lift them up to the solution in (x1, x2)
-
-        assert a.univariateVariable() == 0 && b.univariateVariable() == 0 : a.univariateVariable() + "  " + b.univariateVariable();
-        assert modImage(base.clone(), 1).equals(a.clone().multiply(b));
-
-        lUnivariatePolynomialZp
-                ua = a.asUnivariate(),
-                ub = b.asUnivariate();
-
-        if (aLC != null) {
-            // replace lc trick
-            a.setLC(0, aLC);
-            assert modImage(a.clone(), 1).asUnivariate().equals(ua);
-        }
-
-        if (bLC != null) {
-            // replace lc trick
-            b.setLC(0, bLC);
-            assert modImage(b.clone(), 1).asUnivariate().equals(ub);
-        }
-
-        assert modImage(base.clone(), 1).equals(modImage(a.clone().multiply(b), 1));
-
-        // solution of ua * s + ub * t = 1
-        lUnivariatePolynomialZp
-                eGCD[] = monicExtendedEuclid(ua, ub),
-                uaCoFactor = eGCD[1],
-                ubCoFactor = eGCD[2];
-
-        InverseModMonomial<lUnivariatePolynomialZp>
-                uaInvMod = fastDivisionPreConditioningWithLCCorrection(ua);
-
-        int maxDegree = ArraysUtil.sum(base.degrees(), 1);
-        for (int degree = 1; degree <= maxDegree; ++degree) {
-            // reduce a and b mod degree to make things faster
-            lMultivariatePolynomialZp
-                    aMod = a.clone(),
-                    bMod = b.clone();
-            modImage(aMod, degree + 1);
-            modImage(bMod, degree + 1);
-
-            lMultivariatePolynomialZp rhs = base.clone().subtract(aMod.multiply(bMod));
-            if (rhs.isZero())
-                break;
-
-            modImage(rhs, degree + 1);
-            MultivariatePolynomial<lUnivariatePolynomialZp> rhsMod = rhs.asOverUnivariate(0);
-            for (MonomialTerm<lUnivariatePolynomialZp> term : rhsMod) {
-                lUnivariatePolynomialZp urhs = term.coefficient;
-
-                lUnivariatePolynomialZp
-                        aUpdate = ubCoFactor.clone().multiply(urhs),
-                        bUpdate = uaCoFactor.clone().multiply(urhs);
-
-                lUnivariatePolynomialZp[] qd = divideAndRemainderFast(aUpdate, ua, uaInvMod, false);
-                aUpdate = qd[1];
-                bUpdate = bUpdate.add(qd[0].multiply(ub));
-
-                a.add(lMultivariatePolynomialZp
-                        .asMultivariate(aUpdate, base.nVariables, 0, base.ordering)
-                        .multiplyByDegreeVector(term));
-
-                b.add(lMultivariatePolynomialZp
-                        .asMultivariate(bUpdate, base.nVariables, 0, base.ordering)
-                        .multiplyByDegreeVector(term));
-            }
-        }
     }
 
     /**
@@ -188,8 +61,6 @@ public final class HenselLifting {
         return poly;
     }
 
-    /* ================================ 2-factor variable-by-variable EEZ lifting ================================== */
-
     /**
      * Holds a substitution x2 -> b2, ..., xN -> bN
      */
@@ -208,6 +79,9 @@ public final class HenselLifting {
          */
         Poly evaluate(Poly poly, int variable);
 
+        /**
+         * Sequentially evaliate all elements
+         */
         default Poly[] evaluateFrom(Poly[] array, int variable) {
             Poly[] result = array[0].arrayNewInstance(array.length);
             for (int i = 0; i < result.length; i++)
@@ -257,9 +131,16 @@ public final class HenselLifting {
             }
         }
 
+        default Poly modImage(Poly poly, int[] degreeBounds) {
+            for (int i = 1; i < degreeBounds.length; i++)
+                poly = modImage(poly, i, degreeBounds[i] + 1);
+            return poly;
+        }
+
         IEvaluation<Term, Poly> dropVariable(int variable);
     }
 
+    /** Evaluations for {@link lMultivariatePolynomialZp} */
     static final class lEvaluation implements IEvaluation<lMonomialTerm, lMultivariatePolynomialZp> {
         final long[] values;
         final int nVariables;
@@ -309,6 +190,7 @@ public final class HenselLifting {
         }
     }
 
+    /** Generic evaluations */
     static final class Evaluation<E> implements IEvaluation<MonomialTerm<E>, MultivariatePolynomial<E>> {
         final E[] values;
         final int nVariables;
@@ -359,208 +241,9 @@ public final class HenselLifting {
         }
     }
 
-    /** solves a * x + b * y = rhs for given univariate a, b and r (a and b are coprime) and unknown x and y */
-    static final class UDiophantineSolver<uPoly extends IUnivariatePolynomial<uPoly>> {
-        /** the given factors */
-        final uPoly a, b;
-        /** Bezout's factors: a * aCoFactor + b * bCoFactor = 1 */
-        final uPoly aCoFactor, bCoFactor;
-
-        UDiophantineSolver(uPoly a, uPoly b) {
-            this.a = a;
-            this.b = b;
-            uPoly[] xgcd = monicExtendedEuclid(a, b);
-            this.aCoFactor = xgcd[1];
-            this.bCoFactor = xgcd[2];
-        }
-
-        /** the solution */
-        uPoly x, y;
-
-        void solve(uPoly rhs) {
-            x = aCoFactor.clone().multiply(rhs);
-            y = bCoFactor.clone().multiply(rhs);
-
-            uPoly[] qd = DivisionWithRemainder.divideAndRemainder(x, b, false);
-            x = qd[1];
-            y = y.add(qd[0].multiply(a));
-        }
-    }
-
-    /** solves a * x + b * y = rhs for given multivariate a, b and r (a and b are coprime) and unknown x and y */
-    static final class DiophantineSolver<
-            Term extends DegreeVector<Term>,
-            Poly extends AMultivariatePolynomial<Term, Poly>,
-            uPoly extends IUnivariatePolynomial<uPoly>> {
-        final IEvaluation<Term, Poly> evaluation;
-        final Poly[] aImages, bImages;
-        final UDiophantineSolver<uPoly> uSolver;
-        final int[] degreeBounds;
-
-        @SuppressWarnings("unchecked")
-        public DiophantineSolver(Poly a,
-                                 Poly b,
-                                 IEvaluation<Term, Poly> evaluation,
-                                 int[] degreeBounds) {
-            this.evaluation = evaluation;
-            this.degreeBounds = degreeBounds;
-
-            aImages = a.arrayNewInstance(a.nVariables);
-            bImages = a.arrayNewInstance(a.nVariables);
-
-            for (int i = 0; i < a.nVariables; i++) {
-                aImages[i] = evaluation.evaluateFrom(a, i + 1);
-                bImages[i] = evaluation.evaluateFrom(b, i + 1);
-            }
-
-            uSolver = new UDiophantineSolver<>((uPoly) aImages[0].asUnivariate(), (uPoly) bImages[0].asUnivariate());
-        }
-
-        /** the solution */
-        Poly x, y;
-
-        @SuppressWarnings("unchecked")
-        void solve(Poly rhs, int liftingVariable) {
-            rhs = evaluation.evaluateFrom(rhs, liftingVariable + 1);
-            if (liftingVariable == 0) {
-                uSolver.solve((uPoly) rhs.asUnivariate());
-                x = AMultivariatePolynomial.asMultivariate(uSolver.x, rhs.nVariables, 0, rhs.ordering);
-                y = AMultivariatePolynomial.asMultivariate(uSolver.y, rhs.nVariables, 0, rhs.ordering);
-                return;
-            }
-
-            // solve equation with x_i replaced with b_i:
-            // a[x1, ..., x(i-1), b(i), ... b(N)] * x[x1, ..., x(i-1), b(i), ... b(N)]
-            //    + b[x1, ..., x(i-1), b(i), ... b(N)] * y[x1, ..., x(i-1), b(i), ... b(N)]
-            //         = rhs[x1, ..., x(i-1), b(i), ... b(N)]
-            solve(rhs, liftingVariable - 1);
-
-            // <- x and y are now:
-            // x = x[x1, ..., x(i-1), b(i), ... b(N)]
-            // y = y[x1, ..., x(i-1), b(i), ... b(N)]
-
-            Poly
-                    xSolution = x.clone(),
-                    ySolution = y.clone();
-
-            for (int degree = 1; degree <= degreeBounds[liftingVariable]; degree++) {
-                // Δ = (rhs - a * x - b * y) mod (x_i - b_i)^degree
-                Poly rhsDelta = rhs.clone().subtract(
-                        aImages[liftingVariable].clone().multiply(xSolution)
-                                .add(bImages[liftingVariable].clone().multiply(ySolution)));
-
-                if (rhsDelta.isZero())
-                    // we are done
-                    break;
-
-                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
-
-                solve(rhsDelta, liftingVariable - 1);
-                //assert x.isZero() || (x.degree(0) < b.degree(0)) : "\na:" + a + "\nb:" + b + "\nx:" + x + "\ny:" + y;
-
-                // (x_i - b_i) ^ degree
-                Poly idPower = evaluation.linearPower(liftingVariable, degree);
-                xSolution.add(x.multiply(idPower));
-                ySolution.add(y.multiply(idPower));
-            }
-
-            x = xSolution;
-            y = ySolution;
-
-            //assert assertSolution(rhs, liftingVariable);
-        }
-
-        boolean assertSolution(Poly rhs, int liftingVariable) {
-            Poly delta = aImages[liftingVariable].clone().multiply(x).add(bImages[liftingVariable].clone().multiply(y)).subtract(rhs);
-            for (int i = 0; i <= degreeBounds[liftingVariable]; i++)
-                if (!evaluation.taylorCoefficient(delta, liftingVariable, i).isZero())
-                    return false;
-            return true;
-        }
-    }
-
     /**
-     * Lifts factorization base = a * b mod <(x2-b2), ... , (xN-bN)>
+     * Effectively holds all possible combinations of product of elements [p1,p2,...,pN]
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void liftWang(Poly base, Poly a, Poly b, IEvaluation<Term, Poly> evaluation) {
-        Poly lc = base.lc(0);
-
-        if (lc.isConstant())
-            liftWang(base, a, b, null, null, evaluation);
-        else {
-            // imposing leading coefficients
-            Poly lcCorrection = evaluation.evaluateFrom(lc, 1);
-
-            assert !lcCorrection.isZero();
-            assert a.lt().exponents[0] == a.degree(0);
-            assert b.lt().exponents[0] == b.degree(0);
-
-            a.monicWithLC(lcCorrection); // <- monic in x^n (depends on ordering!)
-            b.monicWithLC(lcCorrection); // <- monic in x^n (depends on ordering!)
-            base = base.clone().multiply(lc);
-
-            liftWang(base, a, b, lc, lc, evaluation);
-
-            a.set(primitivePart(a));
-            b.set(primitivePart(b));
-        }
-    }
-
-    static final boolean USE_MULTIFACTOR_LIFTING = true;
-
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void liftWang(Poly base, Poly a, Poly b, Poly aLC, Poly bLC, IEvaluation<Term, Poly> evaluation) {
-        if (USE_MULTIFACTOR_LIFTING) {
-            liftWang(base, a.arrayNewInstance(a, b), a.arrayNewInstance(aLC, bLC), evaluation);
-            return;
-        }
-
-        // a and b are coprime univariate polynomials over x1
-        // we lift them up to the solution in (x1, x2, ..., xN)
-        assert a.univariateVariable() == 0 && b.univariateVariable() == 0 : a.univariateVariable() + "  " + b.univariateVariable();
-        assert evaluation.evaluateFrom(base, 1).equals(evaluation.evaluateFrom(a.clone().multiply(b), 1))
-                : "\n base: " + base + "\n a: " + a + "\n b: " + b;
-
-        if (aLC != null) {
-            // replace lc trick
-            a.setLC(0, aLC);
-        }
-
-        if (bLC != null) {
-            // replace lc trick
-            b.setLC(0, bLC);
-        }
-
-        int[] degreeBounds = base.degrees();
-        for (int liftingVariable = 1; liftingVariable < base.nVariables; ++liftingVariable) {
-            DiophantineSolver<Term, Poly, ?> dSolver = new DiophantineSolver<>(
-                    evaluation.evaluateFrom(a, liftingVariable),
-                    evaluation.evaluateFrom(b, liftingVariable), evaluation, degreeBounds);
-
-            // base[x1, x2, ..., x(i), b(i+1), ..., bN]
-            Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
-            for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
-                Poly rhsDelta =
-                        baseImage.clone().subtract(a.clone().multiply(b.clone()));
-                rhsDelta = evaluation.evaluateFrom(rhsDelta, liftingVariable + 1);
-                if (rhsDelta.isZero())
-                    break;
-                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
-                assert rhsDelta.nUsedVariables() <= liftingVariable;
-
-                dSolver.solve(rhsDelta, liftingVariable);
-
-                // (x_i - b_i) ^ degree
-                Poly idPower = evaluation.linearPower(liftingVariable, degree);
-                a.add(dSolver.y.multiply(idPower));
-                b.add(dSolver.x.multiply(idPower));
-            }
-        }
-    }
-
-    /*=============================== Multi-factor variable-by-variable EEZ lifting =================================*/
-
     static final class AllProductsCache<Poly extends IGeneralPolynomial<Poly>> {
         final Poly[] factors;
         final HashMap<BitSet, Poly> products = new HashMap<>();
@@ -640,6 +323,39 @@ public final class HenselLifting {
         }
     }
 
+    /**
+     * Solves a * x + b * y = rhs for given univariate a, b and r (a and b are coprime) and unknown x and y
+     */
+    static final class UDiophantineSolver<uPoly extends IUnivariatePolynomial<uPoly>> {
+        /** the given factors */
+        final uPoly a, b;
+        /** Bezout's factors: a * aCoFactor + b * bCoFactor = 1 */
+        final uPoly aCoFactor, bCoFactor;
+
+        UDiophantineSolver(uPoly a, uPoly b) {
+            this.a = a;
+            this.b = b;
+            uPoly[] xgcd = monicExtendedEuclid(a, b);
+            this.aCoFactor = xgcd[1];
+            this.bCoFactor = xgcd[2];
+        }
+
+        /** the solution */
+        uPoly x, y;
+
+        void solve(uPoly rhs) {
+            x = aCoFactor.clone().multiply(rhs);
+            y = bCoFactor.clone().multiply(rhs);
+
+            uPoly[] qd = DivisionWithRemainder.divideAndRemainder(x, b, false);
+            x = qd[1];
+            y = y.add(qd[0].multiply(a));
+        }
+    }
+
+    /**
+     * Solves a1 * x1 + a2 * x2 + ... = rhs for given univariate a1, a2, ... and rhs (all a_i are coprime) and unknown x_i
+     */
     static final class UMultiDiophantineSolver<uPoly extends IUnivariatePolynomial<uPoly>> {
         /** the given factors */
         final AllProductsCache<uPoly> factors;
@@ -666,6 +382,9 @@ public final class HenselLifting {
         }
     }
 
+    /**
+     * Solves a1 * x1 + a2 * x2 + ... = rhs for given multivariate a1, a2, ... and rhs (all a_i are coprime) and unknown x_i
+     */
     static final class MultiDiophantineSolver<
             Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
@@ -676,18 +395,21 @@ public final class HenselLifting {
         final Poly[][] images;
         final int[] degreeBounds;
 
-        public MultiDiophantineSolver(IEvaluation<Term, Poly> evaluation,
-                                      Poly[] factors,
-                                      UMultiDiophantineSolver<uPoly> uSolver,
-                                      int[] degreeBounds) {
+        MultiDiophantineSolver(IEvaluation<Term, Poly> evaluation,
+                               Poly[] factors,
+                               UMultiDiophantineSolver<uPoly> uSolver,
+                               int[] degreeBounds,
+                               int from) {
+            assert from >= 1;
             this.evaluation = evaluation;
             this.uSolver = uSolver;
             this.degreeBounds = degreeBounds;
-
             Poly factory = factors[0];
             this.solution = factory.arrayNewInstance(factors.length);
             this.images = factory.arrayNewInstance2D(factory.nVariables, factors.length);
-            this.images[0] = factors;
+            this.images[from - 1] = factors;
+            for (int i = from - 2; i >= 0; --i)
+                this.images[i] = evaluation.evaluateFrom(this.images[i + 1], i + 1);
         }
 
         @SuppressWarnings("unchecked")
@@ -739,134 +461,131 @@ public final class HenselLifting {
         }
     }
 
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void liftWang(Poly base, Poly[] factors, IEvaluation<Term, Poly> evaluation) {
-        Poly lc = base.lc(0);
+    static <Poly extends IGeneralPolynomial<Poly>> void correctUnit(Poly poly, Poly[] factors) {
+        Poly lc = poly.lcAsPoly();
+        Poly flc = Arrays.stream(factors)
+                .map(IGeneralPolynomial::lcAsPoly)
+                .reduce(poly.createOne(), IGeneralPolynomial::multiply);
+        assert lc.isConstant();
+        assert flc.isConstant();
 
-        if (lc.isConstant())
-            liftWang(base, factors, null, evaluation);
-        else {
-            // imposing leading coefficients
-            Poly lcCorrection = evaluation.evaluateFrom(lc, 1);
-            assert lcCorrection.isConstant();
+        factors[0].multiplyByLC(lc.divideByLC(flc));
+    }
 
-            for (Poly factor : factors) {
-                assert factor.lt().exponents[0] == factor.degree(0);
-                factor.monicWithLC(lcCorrection.lcAsPoly());
-            }
+    /**
+     * Fast bivariate Hensel lifting which uses dense representation for bivariate polynomials and without leading
+     * coefficient correction (so the obtained factors may be not true factors but factorization mod I^bound holds)
+     *
+     * @param baseSeries  base bivariate polynomial in dense representation
+     * @param factors     univariate factors
+     * @param degreeBound bound on lifting degree
+     * @return lifted bivariate factors in dense representation
+     */
+    @SuppressWarnings("unchecked")
+    static <uPoly extends IUnivariatePolynomial<uPoly>>
+    UnivariatePolynomial<uPoly>[] bivariateLiftDense(
+            UnivariatePolynomial<uPoly> baseSeries, uPoly[] factors, int degreeBound) {
+        AllProductsCache<uPoly> uFactors = new AllProductsCache(factors);
+        // univariate multifactor diophantine solver
+        UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
 
-            base = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, factors.length - 1, true));
-
-            liftWang(base, factors, ArraysUtil.arrayOf(lc, factors.length), evaluation);
-
-            for (Poly factor : factors)
-                factor.set(primitivePart(factor));
+        UnivariatePolynomial<uPoly>[] solution = new UnivariatePolynomial[factors.length];
+        for (int i = 0; i < solution.length; i++) {
+            solution[i] = UnivariatePolynomial.constant(baseSeries.domain, uFactors.factors[i]);
+            solution[i].ensureInternalCapacity(degreeBound + 1);
         }
+
+        BernardinsTrickWithoutLCCorrection<uPoly> factorsProduct
+                = new BernardinsTrickWithoutLCCorrection<>(solution);
+        for (int degree = 1; degree <= degreeBound; ++degree) {
+            uPoly rhsDelta = baseSeries.get(degree).clone().subtract(factorsProduct.fullProduct().get(degree));
+            uSolver.solve(rhsDelta);
+            factorsProduct.update(uSolver.solution);
+        }
+
+        return solution;
     }
 
+    /**
+     * Fast bivariate Hensel lifting which uses dense representation for bivariate polynomials
+     *
+     * @param base        the product
+     * @param factors     univariate factors which will be lifted to true bivariate factors
+     * @param evaluation  evaluation point
+     * @param degreeBound bound on lifting degree
+     */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void liftWang(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation) {
-        liftWang(base, factors, factorsLC, evaluation, null);
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    void bivariateLiftNoLCCorrection0(Poly base, Poly[] factors,
+                                      IEvaluation<Term, Poly> evaluation, int degreeBound) {
+        Domain<uPoly> uDomain = new UnivariatePolynomials<>((uPoly) factors[0].asUnivariate());
+        UnivariatePolynomial<uPoly>[] res =
+                bivariateLiftDense(seriesExpansionDense(uDomain, base, 1, evaluation),
+                        asUnivariate(factors, evaluation), degreeBound);
+        for (int i = 0; i < res.length; i++)
+            factors[i].set(denseSeriesToPoly(base, res[i], 1, evaluation));
     }
 
-    @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void liftWang(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation, int[] degreeBounds) {
+    /**
+     * Impose leading coefficients on factors
+     *
+     * @param factors   the factors
+     * @param factorsLC the correct leading coefficients
+     */
+    private static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    void imposeLeadingCoefficients(Poly[] factors, Poly[] factorsLC) {
         if (factorsLC != null)
             for (int i = 0; i < factors.length; i++)
                 if (factorsLC[i] != null)
                     factors[i].setLC(0, factorsLC[i]);
-
-        if (degreeBounds == null)
-            degreeBounds = base.degrees();
-
-        AllProductsCache uFactors = new AllProductsCache(asUnivariate(factors, evaluation));
-        // univariate multifactor diophantine solver
-        UMultiDiophantineSolver<?> uSolver = new UMultiDiophantineSolver<>(uFactors);
-        // initialize multivariate multifactor diophantine solver
-        MultiDiophantineSolver<Term, Poly, ? extends IUnivariatePolynomial> dSolver = new MultiDiophantineSolver<>(
-                evaluation,
-                (Poly[]) asMultivariate((IUnivariatePolynomial[]) uFactors.exceptArray(), base.nVariables, 0, base.ordering),
-                uSolver, degreeBounds);
-        for (int liftingVariable = 1; liftingVariable < base.nVariables; ++liftingVariable) {
-            // base[x1, x2, ..., x(i), b(i+1), ..., bN]
-            Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
-            for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
-                Poly rhsDelta =
-                        baseImage.clone().subtract(base.createOne().multiply(factors));
-                rhsDelta = evaluation.evaluateFrom(rhsDelta, liftingVariable + 1);
-                if (rhsDelta.isZero())
-                    break;
-                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
-                assert rhsDelta.nUsedVariables() <= liftingVariable;
-
-                dSolver.solve(rhsDelta, liftingVariable - 1);
-
-                // (x_i - b_i) ^ degree
-                Poly idPower = evaluation.linearPower(liftingVariable, degree);
-                for (int i = 0; i < factors.length; i++)
-                    factors[i].add(dSolver.solution[i].multiply(idPower));
-            }
-
-            if (liftingVariable < base.nVariables) // don't perform on the last step
-                // update tmp images for the next cycle
-                dSolver.images[liftingVariable] =
-                        new AllProductsCache<>(evaluation.evaluateFrom(factors, liftingVariable + 1))
-                                .exceptArray();
-        }
     }
 
+    /**
+     * Fast bivariate Hensel lifting which uses dense representation for bivariate polynomials
+     *
+     * @param base        the product
+     * @param factors     univariate factors which will be lifted to true bivariate factors
+     * @param factorsLC   leading coefficients (may be null)
+     * @param evaluation  evaluation point
+     * @param degreeBound bound on lifting degree
+     */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void liftWangFromBivariate(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation, int[] degreeBounds) {
-        if (factorsLC != null)
-            for (int i = 0; i < factors.length; i++)
-                if (factorsLC[i] != null)
-                    factors[i].setLC(0, factorsLC[i]);
+    static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    void bivariateLift0(Poly base, Poly[] factors, Poly[] factorsLC,
+                        IEvaluation<Term, Poly> evaluation, int degreeBound) {
+        imposeLeadingCoefficients(factors, factorsLC);
 
-        if (degreeBounds == null)
-            degreeBounds = base.degrees();
-
-        AllProductsCache uFactors = new AllProductsCache(asUnivariate(evaluation.evaluateFrom(factors, 1), evaluation));
+        AllProductsCache<uPoly> uFactors = new AllProductsCache(asUnivariate(factors, evaluation));
         // univariate multifactor diophantine solver
-        UMultiDiophantineSolver<?> uSolver = new UMultiDiophantineSolver<>(uFactors);
-        // initialize multivariate multifactor diophantine solver
-        MultiDiophantineSolver<Term, Poly, ? extends IUnivariatePolynomial> dSolver = new MultiDiophantineSolver<>(
-                evaluation,
-                (Poly[]) asMultivariate((IUnivariatePolynomial[]) uFactors.exceptArray(), base.nVariables, 0, base.ordering),
-                uSolver, degreeBounds);
-        dSolver.images[1] =
-                new AllProductsCache<>(evaluation.evaluateFrom(factors, 2))
-                        .exceptArray();
+        UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
 
-        for (int liftingVariable = 2; liftingVariable < base.nVariables; ++liftingVariable) {
-            // base[x1, x2, ..., x(i), b(i+1), ..., bN]
-            Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
-            for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
-                Poly rhsDelta =
-                        baseImage.clone().subtract(base.createOne().multiply(factors));
-                rhsDelta = evaluation.evaluateFrom(rhsDelta, liftingVariable + 1);
-                if (rhsDelta.isZero())
-                    break;
-                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
-                assert rhsDelta.nUsedVariables() <= liftingVariable;
-
-                dSolver.solve(rhsDelta, liftingVariable - 1);
-
-                // (x_i - b_i) ^ degree
-                Poly idPower = evaluation.linearPower(liftingVariable, degree);
-                for (int i = 0; i < factors.length; i++)
-                    factors[i].add(dSolver.solution[i].multiply(idPower));
-            }
-
-            if (liftingVariable < base.nVariables) // don't perform on the last step
-                // update tmp images for the next cycle
-                dSolver.images[liftingVariable] =
-                        new AllProductsCache<>(evaluation.evaluateFrom(factors, liftingVariable + 1))
-                                .exceptArray();
+        Domain<uPoly> uDomain = new UnivariatePolynomials<>(uFactors.get(0));
+        UnivariatePolynomial<uPoly> baseSeries = seriesExpansionDense(uDomain, base, 1, evaluation);
+        UnivariatePolynomial<uPoly>[] solution = new UnivariatePolynomial[factors.length];
+        for (int i = 0; i < solution.length; i++) {
+            solution[i] = seriesExpansionDense(uDomain, factors[i], 1, evaluation);
+            solution[i].ensureInternalCapacity(degreeBound + 1);
         }
+
+        BernardinsTrick<uPoly> product = createBernardinsTrick(solution, degreeBound);
+        for (int degree = 1; degree <= degreeBound; ++degree) {
+            uPoly rhsDelta = baseSeries.get(degree).clone().subtract(product.fullProduct().get(degree));
+            uSolver.solve(rhsDelta);
+            product.update(uSolver.solution);
+        }
+
+        for (int i = 0; i < solution.length; i++)
+            factors[i].set(denseSeriesToPoly(base, solution[i], 1, evaluation));
     }
+
 
     @SuppressWarnings("unchecked")
     private static <
@@ -896,65 +615,200 @@ public final class HenselLifting {
         return res;
     }
 
-
-    /*=============================== Bivariate dense lifting with Bernardin's trick =================================*/
-
-
+    /**
+     * Generates a power series expansion for poly about the point specified by variable and evaluation
+     */
     @SuppressWarnings("unchecked")
     public static <
             Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
-    void bivariateLift(Poly base, Poly[] factors, IEvaluation<Term, Poly> evaluation, int degreeBound) {
+    UnivariatePolynomial<uPoly> seriesExpansionDense(Domain<uPoly> domain, Poly poly, int variable, IEvaluation<Term, Poly> evaluate) {
+        int degree = poly.degree(variable);
+        uPoly[] coefficients = domain.createArray(degree + 1);
+        for (int i = 0; i <= degree; i++)
+            coefficients[i] = (uPoly) evaluate.taylorCoefficient(poly, variable, i).asUnivariate();
+        return UnivariatePolynomial.create(domain, coefficients);
+    }
+
+    /**
+     * Converts power series {@link #seriesExpansionDense(Domain, AMultivariatePolynomial, int, IEvaluation)}
+     * back to multivariate polynomial
+     */
+    static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    Poly denseSeriesToPoly(Poly factory, UnivariatePolynomial<uPoly> series, int seriesVariable, IEvaluation<Term, Poly> evaluation) {
+        Poly result = factory.createZero();
+        for (int i = 0; i <= series.degree(); i++) {
+            Poly mPoly = AMultivariatePolynomial.asMultivariate(series.get(i), factory.nVariables, 0, factory.ordering);
+            result = result.add(mPoly.multiply(evaluation.linearPower(seriesVariable, i)));
+        }
+        return result;
+    }
+
+    /**
+     * Multivariate lift with automatic leading coefficient correction
+     *
+     * @param base       the product
+     * @param factors    univariate factors which will be lifted to true bivariate factors
+     * @param evaluation evaluation point
+     */
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    void multivariateLiftAutomaticLC(Poly base,
+                                     Poly[] factors,
+                                     IEvaluation<Term, Poly> evaluation) {
+        Poly lc = base.lc(0);
+
+        if (lc.isConstant())
+            multivariateLift0(base, factors, null, evaluation, base.degrees());
+        else {
+            // imposing leading coefficients
+            Poly lcCorrection = evaluation.evaluateFrom(lc, 1);
+            assert lcCorrection.isConstant();
+
+            for (Poly factor : factors) {
+                assert factor.lt().exponents[0] == factor.degree(0);
+                factor.monicWithLC(lcCorrection.lcAsPoly());
+            }
+
+            base = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, factors.length - 1, true));
+
+            multivariateLift0(base, factors, ArraysUtil.arrayOf(lc, factors.length), evaluation, base.degrees());
+
+            for (Poly factor : factors)
+                factor.set(primitivePart(factor));
+        }
+    }
+
+
+    /**
+     * Multifactor multivariate Hensel lifting
+     *
+     * @param base         the product
+     * @param factors      univariate factors which will be lifted to true bivariate factors
+     * @param factorsLC    leading coefficients (may be null)
+     * @param evaluation   evaluation point
+     * @param degreeBounds bound on lifting degrees
+     */
+    @SuppressWarnings("unchecked")
+    static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    void multivariateLift0(Poly base,
+                           Poly[] factors, Poly[] factorsLC,
+                           IEvaluation<Term, Poly> evaluation,
+                           int[] degreeBounds) {
+        multivariateLift0(base, factors, factorsLC, evaluation, degreeBounds, 1);
+    }
+
+    /**
+     * Multifactor multivariate Hensel lifting
+     *
+     * @param base         the product
+     * @param factors      univariate factors which will be lifted to true bivariate factors
+     * @param factorsLC    leading coefficients (may be null)
+     * @param evaluation   evaluation point
+     * @param degreeBounds bound on lifting degrees
+     * @param from         variable to start lifting with
+     */
+    @SuppressWarnings("unchecked")
+    static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>,
+            uPoly extends IUnivariatePolynomial<uPoly>>
+    void multivariateLift0(Poly base,
+                           Poly[] factors, Poly[] factorsLC,
+                           IEvaluation<Term, Poly> evaluation,
+                           int[] degreeBounds,
+                           int from) {
+        if (base.nVariables == 2) {
+            bivariateLift0(base, factors, factorsLC, evaluation, degreeBounds[1]);
+            return;
+        }
+
+        imposeLeadingCoefficients(factors, factorsLC);
+
         AllProductsCache<uPoly> uFactors = new AllProductsCache(asUnivariate(factors, evaluation));
         // univariate multifactor diophantine solver
         UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
 
-        Domain<uPoly> uDomain = new UnivariatePolynomials<>(uFactors.get(0));
-        UnivariatePolynomial<uPoly> baseSeries = seriesExpansionDense(uDomain, base, 1, evaluation);
-        UnivariatePolynomial<uPoly>[] solution = new UnivariatePolynomial[factors.length];
-        for (int i = 0; i < solution.length; i++) {
-            solution[i] = UnivariatePolynomial.constant(baseSeries.domain, uFactors.factors[i]);
-            solution[i].ensureInternalCapacity(degreeBound + 1);
-        }
+        // initialize multivariate multifactor diophantine solver
+        MultiDiophantineSolver<Term, Poly, ? extends IUnivariatePolynomial> dSolver = new MultiDiophantineSolver<>(
+                evaluation,
+                from == 1
+                        ? (Poly[]) asMultivariate((IUnivariatePolynomial[]) uFactors.exceptArray(), base.nVariables, 0, base.ordering)
+                        : new AllProductsCache<>(factors).exceptArray(),
+                uSolver, degreeBounds, from);
 
-        BernardinsTrick<uPoly> product = new BernardinsTrick<>(solution);
-        for (int degree = 1; degree <= degreeBound; ++degree) {
-            uPoly rhsDelta = baseSeries.get(degree).clone().subtract(product.fullProduct().get(degree));
-            uSolver.solve(rhsDelta);
-            product.update(uSolver.solution);
-        }
+        Domain<Poly> mDomain = new MultivariatePolynomials<>(factors[0]);
+        for (int liftingVariable = from; liftingVariable < base.nVariables; ++liftingVariable) {
+            Poly baseImage = evaluation.evaluateFrom(base, liftingVariable + 1);
+            UnivariatePolynomial<Poly> baseSeries = seriesExpansion(mDomain, baseImage, liftingVariable, evaluation);
+            UnivariatePolynomial<Poly>[] solution = new UnivariatePolynomial[factors.length];
+            for (int i = 0; i < solution.length; i++) {
+                solution[i] = seriesExpansion(mDomain, factors[i], liftingVariable, evaluation);
+                solution[i].ensureInternalCapacity(degreeBounds[liftingVariable] + 1);
+            }
 
-        for (int i = 0; i < solution.length; i++)
-            factors[i] = denseSeriesToPoly(base, solution[i], 1, evaluation);
+            BernardinsTrick<Poly> product = createBernardinsTrick(solution, degreeBounds[liftingVariable]);
+            for (int degree = 1; degree <= degreeBounds[liftingVariable]; ++degree) {
+                Poly rhsDelta = baseSeries.get(degree).clone().subtract(product.fullProduct().get(degree));
+                dSolver.solve(rhsDelta, liftingVariable - 1);
+                product.update(dSolver.solution);
+            }
+
+            for (int i = 0; i < solution.length; i++)
+                factors[i].set(seriesToPoly(base, solution[i], liftingVariable, evaluation));
+
+            if (liftingVariable < base.nVariables) {// don't perform on the last step
+                dSolver.images[liftingVariable] = new AllProductsCache<>(
+                        evaluation.evaluateFrom(factors, liftingVariable + 1))
+                        .exceptArray();
+            }
+        }
     }
 
+    /**
+     * Generates a power series expansion for poly about the point specified by variable and evaluation
+     */
     @SuppressWarnings("unchecked")
-    static <uPoly extends IUnivariatePolynomial<uPoly>>
-    UnivariatePolynomial<uPoly>[] bivariateLift(
-            UnivariatePolynomial<uPoly> baseSeries, uPoly[] factors, int degreeBound) {
-        AllProductsCache<uPoly> uFactors = new AllProductsCache(factors);
-        // univariate multifactor diophantine solver
-        UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
-
-        UnivariatePolynomial<uPoly>[] solution = new UnivariatePolynomial[factors.length];
-        for (int i = 0; i < solution.length; i++) {
-            solution[i] = UnivariatePolynomial.constant(baseSeries.domain, uFactors.factors[i]);
-            solution[i].ensureInternalCapacity(degreeBound + 1);
-        }
-
-        BernardinsTrick<uPoly> product = new BernardinsTrick<>(solution);
-        for (int degree = 1; degree <= degreeBound; ++degree) {
-            uPoly rhsDelta = baseSeries.get(degree).clone().subtract(product.fullProduct().get(degree));
-            uSolver.solve(rhsDelta);
-            product.update(uSolver.solution);
-        }
-
-        return solution;
+    static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    UnivariatePolynomial<Poly> seriesExpansion(Domain<Poly> domain, Poly poly, int variable, IEvaluation<Term, Poly> evaluate) {
+        int degree = poly.degree(variable);
+        Poly[] coefficients = domain.createArray(degree + 1);
+        for (int i = 0; i <= degree; i++)
+            coefficients[i] = evaluate.taylorCoefficient(poly, variable, i);
+        return UnivariatePolynomial.create(domain, coefficients);
     }
 
-    /** Bernardin's trick for fast f_0 * f_1 * ... * f_N computing */
-    static final class BernardinsTrick<Poly extends IGeneralPolynomial<Poly>> {
+    /**
+     * Converts power series {@link #seriesExpansion(Domain, AMultivariatePolynomial, int, IEvaluation)}
+     * back to multivariate polynomial
+     */
+    static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly seriesToPoly(Poly factory, UnivariatePolynomial<Poly> series, int seriesVariable, IEvaluation<Term, Poly> evaluation) {
+        Poly result = factory.createZero();
+        for (int i = 0; i <= series.degree(); i++) {
+            Poly mPoly = series.get(i);
+            result = result.add(mPoly.multiply(evaluation.linearPower(seriesVariable, i)));
+        }
+        return result;
+    }
+
+    /*=========================== Bernardin's trick for fast error computation in lifting =============================*/
+
+    static <Poly extends IGeneralPolynomial<Poly>>
+    BernardinsTrick<Poly> createBernardinsTrick(UnivariatePolynomial<Poly>[] factors, int degreeBound) {
+        if (Arrays.stream(factors).allMatch(UnivariatePolynomial::isConstant))
+            return new BernardinsTrickWithoutLCCorrection<>(factors);
+        else
+            return new BernardinsTrickWithLCCorrection<>(factors, degreeBound);
+    }
+
+    static abstract class BernardinsTrick<Poly extends IGeneralPolynomial<Poly>> {
         // the factors
         final UnivariatePolynomial<Poly>[] factors;
         // partial products: {factor[0] * factor[1], (factor[0] * factor[1]) * factor[2], ... }
@@ -971,13 +825,29 @@ public final class HenselLifting {
                 partialProducts[i] = partialProducts[i - 1].clone().multiply(factors[i + 1]);
         }
 
+        /** update products */
+        abstract void update(Poly... updates);
+
         /** get's (f_0 * f_1 * ... * f_N) mod y^(degree + 1) */
-        UnivariatePolynomial<Poly> fullProduct() {return partialProducts[partialProducts.length - 1];}
+        final UnivariatePolynomial<Poly> fullProduct() {return partialProducts[partialProducts.length - 1];}
+
+        final UnivariatePolynomial<Poly> partialProduct(int i) {
+            return partialProducts[i];
+        }
+    }
+
+    /** Bernardin's trick for fast f_0 * f_1 * ... * f_N computing (leading coefficients are discarded) */
+    static final class BernardinsTrickWithoutLCCorrection<Poly extends IGeneralPolynomial<Poly>>
+            extends BernardinsTrick<Poly> {
+        public BernardinsTrickWithoutLCCorrection(UnivariatePolynomial<Poly>[] factors) {
+            super(factors);
+        }
 
         // current lift, so that factors are known mod I^pDegree
         private int pDegree = 0;
 
         /** update products */
+        @Override
         void update(Poly... updates) {
             ++pDegree;
             // update factors
@@ -1019,33 +889,47 @@ public final class HenselLifting {
         }
     }
 
-    /**
-     * Generates a power series expansion for poly about the point specified by variable and evaluation
-     */
-    @SuppressWarnings("unchecked")
-    public static <
-            Term extends DegreeVector<Term>,
-            Poly extends AMultivariatePolynomial<Term, Poly>,
-            uPoly extends IUnivariatePolynomial<uPoly>>
-    UnivariatePolynomial<uPoly> seriesExpansionDense(Domain<uPoly> domain, Poly poly, int variable, IEvaluation<Term, Poly> evaluate) {
-        int degree = poly.degree(variable);
-        uPoly[] coefficients = domain.createArray(degree + 1);
-        for (int i = 0; i <= degree; i++)
-            coefficients[i] = (uPoly) evaluate.taylorCoefficient(poly, variable, i).asUnivariate();
-        return UnivariatePolynomial.create(domain, coefficients);
-    }
+    /** Bernardin's trick for fast f_0 * f_1 * ... * f_N computing (leading coefficients are took into account) */
+    static final class BernardinsTrickWithLCCorrection<Poly extends IGeneralPolynomial<Poly>>
+            extends BernardinsTrick<Poly> {
+        final int degreeBound;
 
-    static <
-            Term extends DegreeVector<Term>,
-            Poly extends AMultivariatePolynomial<Term, Poly>,
-            uPoly extends IUnivariatePolynomial<uPoly>>
-    Poly denseSeriesToPoly(Poly factory, UnivariatePolynomial<uPoly> series, int seriesVariable, IEvaluation<Term, Poly> evaluation) {
-        Poly result = factory.createZero();
-        for (int i = 0; i <= series.degree(); i++) {
-            Poly mPoly = AMultivariatePolynomial.asMultivariate(series.get(i), factory.nVariables, 0, factory.ordering);
-            result = result.add(mPoly.multiply(evaluation.linearPower(seriesVariable, i)));
+        public BernardinsTrickWithLCCorrection(UnivariatePolynomial<Poly>[] factors, int degreeBound) {
+            super(factors);
+            this.degreeBound = degreeBound;
         }
-        return result;
+
+        // current lift, so that factors are known mod I^pDegree
+        private int pDegree = 0;
+
+        private void updatePair(int iFactor, Poly leftUpdate, Poly rightUpdate, int degree) {
+            // update factors
+            UnivariatePolynomial<Poly>
+                    left = iFactor == 0 ? factors[0] : partialProducts[iFactor - 1],
+                    right = (iFactor + 1 < factors.length) ? factors[iFactor + 1] : null;
+
+            if (leftUpdate != null) {
+                left.addMonomial(leftUpdate, degree);
+                if (iFactor < (factors.length - 1))
+                    for (int i = degree; i <= Math.min(degreeBound, degree + right.degree()); i++)
+                        updatePair(iFactor + 1, right.get(i - degree).clone().multiply(leftUpdate), null, i);
+            }
+
+            if (rightUpdate != null) {
+                right.addMonomial(rightUpdate, degree);
+                if (iFactor < (factors.length - 1))
+                    for (int i = degree; i <= Math.min(degreeBound, degree + left.degree()); i++)
+                        updatePair(iFactor + 1, left.get(i - degree).clone().multiply(rightUpdate), null, i);
+            }
+        }
+
+        @Override
+        void update(Poly... updates) {
+            ++pDegree;
+            updatePair(0, updates[0], updates[1], pDegree);
+            for (int i = 0; i < factors.length - 2; i++)
+                updatePair(i + 1, null, updates[i + 2], pDegree);
+        }
     }
 }
 

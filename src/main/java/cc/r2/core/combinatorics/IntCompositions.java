@@ -1,6 +1,8 @@
 package cc.r2.core.combinatorics;
 
 /**
+ * Implementation note: {@link https://stackoverflow.com/a/6609080/946635}
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */

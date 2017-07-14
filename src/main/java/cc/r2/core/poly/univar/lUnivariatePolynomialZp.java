@@ -491,4 +491,9 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
             result[i] = domain.modulus(acc);
         }
     }
+
+    @Override
+    public String coefficientDomainToString() {
+        return domain.toString();
+    }
 }
