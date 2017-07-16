@@ -19,6 +19,20 @@ import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
 public final class MultivariateSquareFreeFactorization {
     private MultivariateSquareFreeFactorization() {}
 
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void addMonomial(FactorDecomposition<Poly> decomposition, Poly poly) {
+        assert poly.isMonomial();
+        decomposition.addConstantFactor(poly.lcAsPoly());
+        poly = poly.monic();
+
+        Term term = poly.lt();
+        for (int i = 0; i < poly.nVariables; i++) {
+            if (term.exponents[i] > 0)
+                decomposition.addFactor(poly.create(term.singleVar(i)), term.exponents[i]);
+
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorDecomposition<Poly> factorUnivariate(Poly poly) {
@@ -82,8 +96,8 @@ public final class MultivariateSquareFreeFactorization {
         Poly[] content = reduceContent(poly);
         FactorDecomposition<Poly> decomposition
                 = FactorDecomposition
-                .constantFactor(content[0])
-                .addFactor(content[1], 1);
+                .constantFactor(content[0]);
+        addMonomial(decomposition, content[1]);
         SquareFreeFactorizationYun0(poly, decomposition);
         return decomposition;
     }
@@ -137,8 +151,8 @@ public final class MultivariateSquareFreeFactorization {
         Poly[] content = reduceContent(poly);
         FactorDecomposition<Poly> decomposition
                 = FactorDecomposition
-                .constantFactor(content[0])
-                .addFactor(content[1], 1);
+                .constantFactor(content[0]);
+        addMonomial(decomposition, content[1]);
         SquareFreeFactorizationMusserZeroCharacteristics0(poly, decomposition);
         return decomposition;
     }
@@ -186,8 +200,9 @@ public final class MultivariateSquareFreeFactorization {
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         Poly lc = poly.lcAsPoly();
-        return SquareFreeFactorizationMusser0(poly)
-                .addFactor(content[1], 1)
+        FactorDecomposition<Poly> fct = SquareFreeFactorizationMusser0(poly);
+        addMonomial(fct, content[1]);
+        return fct
                 .addFactor(content[0], 1)
                 .addFactor(lc, 1);
     }

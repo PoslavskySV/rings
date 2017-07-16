@@ -57,7 +57,7 @@ public final class CommonPolynomialsArithmetics {
     public static <T extends IGeneralPolynomial<T>> T polyPow(final T base, long exponent, boolean copy) {
         if (exponent < 0)
             throw new IllegalArgumentException();
-        if (exponent == 1)
+        if (exponent == 1 || base.isOne())
             return copy ? base.clone() : base;
         T result = base.createOne();
         T k2p = copy ? base.clone() : base;

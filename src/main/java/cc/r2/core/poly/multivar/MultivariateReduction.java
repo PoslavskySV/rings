@@ -119,7 +119,7 @@ public final class MultivariateReduction {
     Poly divideExact(Poly dividend, Poly divider) {
         Poly[] qd = divideAndRemainder(dividend, divider);
         if (qd == null || !qd[1].isZero())
-            throw new ArithmeticException("not divisible");
+            throw new ArithmeticException("not divisible: " + dividend + " / " + divider);
         return qd[0];
     }
 

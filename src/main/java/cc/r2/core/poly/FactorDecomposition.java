@@ -135,14 +135,6 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
         return this;
     }
 
-    public FactorDecomposition<Poly> moveConstantFactorTo(int iFactor) {
-        if (size() >= 1) {
-            factors.get(iFactor).multiplyByLC(constantFactor);
-            constantFactor.set(constantFactor.createOne());
-        }
-        return this;
-    }
-
     /** Map polynomials using mapper */
     public <PolyT extends IGeneralPolynomial<PolyT>>
     FactorDecomposition<PolyT> map(Function<Poly, PolyT> mapper) {
@@ -240,8 +232,8 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
     }
 
     /** decomposition with single numeric factor */
-    public static <Poly extends IGeneralPolynomial<Poly>> FactorDecomposition<Poly> empty(Poly factor) {
-        return new FactorDecomposition<>(factor.createOne());
+    public static <Poly extends IGeneralPolynomial<Poly>> FactorDecomposition<Poly> empty(Poly factory) {
+        return new FactorDecomposition<>(factory.createOne());
     }
 
     /** decomposition with single numeric factor */

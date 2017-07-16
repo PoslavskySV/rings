@@ -27,6 +27,20 @@ public final class lMonomialTerm extends DegreeVector<lMonomialTerm> {
         this.coefficient = coefficient;
     }
 
+    @Override
+    lMonomialTerm select(int i) {
+        int[] newExponents = new int[exponents.length];
+        newExponents[i] = exponents[i];
+        return new lMonomialTerm(newExponents, exponents[i], coefficient);
+    }
+
+    @Override
+    lMonomialTerm singleVar(int i) {
+        int[] newExponents = new int[exponents.length];
+        newExponents[i] = 1;
+        return new lMonomialTerm(newExponents, 1, coefficient);
+    }
+
     /** Set's the coefficient to {@code newDomain.valueOf(coefficient) } */
     lMonomialTerm setDomain(lIntegersModulo newDomain) {
         long e = newDomain.modulus(coefficient);

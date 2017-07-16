@@ -43,7 +43,7 @@ public final class SquareFreeFactorization {
 
         Poly expFree = poly.getRange(exponent, poly.degree() + 1);
         FactorDecomposition<Poly> fd = SquareFreeFactorizationYun0(expFree);
-        fd.addFactor(poly.createMonomial(exponent), 1);
+        fd.addFactor(poly.createMonomial(1), exponent);
         return fd;
     }
 
@@ -173,7 +173,7 @@ public final class SquareFreeFactorization {
         else {
             Poly expFree = poly.getRange(exponent, poly.degree() + 1);
             factorization = SquareFreeFactorizationMusser0(expFree);
-            factorization.addFactor(poly.createMonomial(exponent), 1);
+            factorization.addFactor(poly.createMonomial(1), exponent);
         }
 
         return factorization.setConstantFactor(lc);

@@ -51,6 +51,10 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     /** set i-th exponent to zero and return new Monomial */
     abstract MonomialTerm setZero(int[] vars);
 
+    abstract MonomialTerm select(int i);
+
+    abstract MonomialTerm singleVar(int i);
+
     /** Divide degree vector */
     final MonomialTerm divide(DegreeVector oth) {
         int[] newExponents = new int[exponents.length];

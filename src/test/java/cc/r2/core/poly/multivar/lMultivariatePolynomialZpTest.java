@@ -423,6 +423,16 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
         }
     }
 
+    @Test
+    public void testSetLC1() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(Integer.MAX_VALUE);
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                poly = parse("a^2*b^2*c + a*c + 1", domain, vars),
+                lc = parse("c^2*b + 1", domain, vars);
+        assertEquals(poly.setLC(0, lc).lc(0), lc);
+    }
+
     private static void assertDescending(int[] arr) {
         for (int i = 1; i < arr.length; i++)
             assertTrue(arr[i - 1] >= arr[i]);

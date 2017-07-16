@@ -26,6 +26,20 @@ public final class MonomialTerm<E> extends DegreeVector<MonomialTerm<E>> {
     }
 
     @Override
+    MonomialTerm<E> select(int i) {
+        int[] newExponents = new int[exponents.length];
+        newExponents[i] = exponents[i];
+        return new MonomialTerm<>(newExponents, exponents[i], coefficient);
+    }
+
+    @Override
+    MonomialTerm<E> singleVar(int i) {
+        int[] newExponents = new int[exponents.length];
+        newExponents[i] = 1;
+        return new MonomialTerm<>(newExponents, 1, coefficient);
+    }
+
+    @Override
     protected MonomialTerm<E> setDegreeVector(int[] newDegree, int newTotalDegree) {
         return new MonomialTerm<E>(newDegree, newTotalDegree, coefficient);
     }

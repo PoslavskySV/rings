@@ -683,6 +683,42 @@ public final class HenselLifting {
         }
     }
 
+    /**
+     * Multivariate lift with automatic leading coefficient correction
+     *
+     * @param base       the product
+     * @param factors    univariate factors which will be lifted to true bivariate factors
+     * @param evaluation evaluation point
+     */
+    public static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    void multivariateLiftAutomaticLC(Poly base,
+                                     Poly[] factors,
+                                     IEvaluation<Term, Poly> evaluation,
+                                     int from) {
+        Poly lc = base.lc(0);
+
+        if (lc.isConstant())
+            multivariateLift0(base, factors, null, evaluation, base.degrees());
+        else {
+            // imposing leading coefficients
+            Poly lcCorrection = evaluation.evaluateFrom(lc, from);
+
+            for (Poly factor : factors) {
+                assert factor.lt().exponents[0] == factor.degree(0);
+                factor.multiply(MultivariateReduction.divideExact(lcCorrection, factor.lc(0)));
+            }
+
+            base = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, factors.length - 1, true));
+
+            multivariateLift0(base, factors, ArraysUtil.arrayOf(lc, factors.length), evaluation, base.degrees(), from);
+
+            for (Poly factor : factors)
+                factor.set(primitivePart(factor));
+        }
+    }
+
 
     /**
      * Multifactor multivariate Hensel lifting

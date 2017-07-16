@@ -2,6 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.*;
+import cc.r2.core.poly.factorization.FactorizationTestData;
 import cc.r2.core.poly.factorization.FactorizationTestData.FactorizationAlgorithm;
 import cc.r2.core.poly.factorization.FactorizationTestData.SampleDecomposition;
 import cc.r2.core.poly.factorization.FactorizationTestData.SampleDecompositionSource;
@@ -219,6 +220,20 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(decomp.size() + " => " + decomp);
     }
 
+    @Test
+    public void testMultivariateFactorizationRandom1() throws Exception {
+        MultivariateFactorizationTest.lSampleDecompositionSource source = new MultivariateFactorizationTest.lSampleDecompositionSource(
+                2, 4,
+                3, 5,
+                5, 5,
+                3, 3);
+        source.minModulusBits = 15;
+        source.maxModulusBits = 30;
+        testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(1000, 100),
+                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorSquareFree, "Bivariate dense factorization"),
+                null);
+    }
+
     /* ==================================== Test data =============================================== */
 
     public static void
@@ -247,19 +262,22 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             FactorDecomposition<lMultivariatePolynomialZp> lDecomposition = null;
             FactorDecomposition<MultivariatePolynomial<BigInteger>> bDecomposition = null;
             try {
-                long start = System.nanoTime();
-                lDecomposition = lAlgorithm.algorithm.apply(sample.poly);
-                lTiming.addValue(System.nanoTime() - start);
-                sample.assertFactorization(lDecomposition);
+                long start;
+                if (lAlgorithm != null) {
+                    start = System.nanoTime();
+                    lDecomposition = lAlgorithm.algorithm.apply(sample.poly);
+                    lTiming.addValue(System.nanoTime() - start);
+                    sample.assertFactorization(lDecomposition);
+                }
 
-
-                SampleDecomposition<MultivariatePolynomial<BigInteger>>
-                        bSample = toBigPoly(sample);
-                start = System.nanoTime();
-                bDecomposition = bAlgorithm.algorithm.apply(bSample.poly);
-                bTiming.addValue(System.nanoTime() - start);
-                bSample.assertFactorization(bDecomposition);
-
+                if (bAlgorithm != null) {
+                    SampleDecomposition<MultivariatePolynomial<BigInteger>>
+                            bSample = toBigPoly(sample);
+                    start = System.nanoTime();
+                    bDecomposition = bAlgorithm.algorithm.apply(bSample.poly);
+                    bTiming.addValue(System.nanoTime() - start);
+                    bSample.assertFactorization(bDecomposition);
+                }
             } catch (Throwable throwable) {
                 System.out.println("============ Error ============");
                 System.out.println("Domain: " + sample.poly.domain);

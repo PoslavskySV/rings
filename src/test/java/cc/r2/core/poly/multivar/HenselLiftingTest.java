@@ -3,6 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.poly.CommonPolynomialsArithmetics;
 import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.factorization.FactorizationTestData;
@@ -13,6 +14,7 @@ import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.multivar.MultivariateFactorization.IEvaluationLoop;
 import cc.r2.core.poly.multivar.MultivariateFactorization.lEvaluationLoop;
 import cc.r2.core.test.Benchmark;
+import cc.r2.core.util.ArraysUtil;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
@@ -312,9 +314,80 @@ public class HenselLiftingTest {
                 evaluation,
                 base.degrees());
         Assert.assertEquals(base, multiply(uFactors));
+    }
 
-        System.out.println(a);
-        System.out.println(b);
+    @Test
+    public void test5() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        parse("a^15*b*c^2 + 2*a*b^4 - 3*b + 2 + b^2*a - b^4", domain, vars),
+                        parse("a^5*b^6*c^3 + a*b^2 - 3*b^2 + b + 2 - a^3*b^6", domain, vars),
+                        //parse("a^3*b*c + a*b^2 + 1", domain, vars)
+                },
+                base = multiply(factors);
+
+        assert MultivariateGCD.PolynomialGCD(factors).isConstant();
+
+        lEvaluation evaluation = new lEvaluation(base.nVariables, new long[]{1, 2}, domain, base.ordering);
+
+        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        HenselLifting.multivariateLiftAutomaticLC(base, uFactors, evaluation);
+        Assert.assertEquals(base, multiply(uFactors));
+
+        lMultivariatePolynomialZp[] biFactors = evaluation.evaluateFrom(factors, 2);
+        HenselLifting.multivariateLiftAutomaticLC(base, biFactors, evaluation, 2);
+        Assert.assertEquals(base, multiply(biFactors));
+    }
+
+    @Test
+    public void test5a() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        String[] vars = {"a", "b", "c"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        parse("a^15*b*c^2 + 2*a*b^4 - 3*b + 2 + b^2*a - b^4", domain, vars),
+                        parse("a^5*b^6*c^3 + a*b^2 - 3*b^2 + b + 2 - a^3*b^6", domain, vars),
+                        //parse("a^3*b*c + a*b^2 + 1", domain, vars)
+                },
+                base = multiply(factors);
+
+        assert MultivariateGCD.PolynomialGCD(factors).isConstant();
+
+        lEvaluation evaluation = new lEvaluation(base.nVariables, new long[]{1, 2}, domain, base.ordering);
+
+
+        lMultivariatePolynomialZp[] biFactors = evaluation.evaluateFrom(factors, 2);
+        lMultivariatePolynomialZp lc = base.lc(0);
+
+//         imposing leading coefficients
+        lMultivariatePolynomialZp lcCorrection = evaluation.evaluateFrom(lc, 2);
+//        assert lcCorrection.isConstant();
+
+        System.out.println(Arrays.stream(biFactors).map(p -> p.lc(0)).reduce(base.createOne(), (a, b) -> a.clone().multiply(b)));
+        System.out.println(evaluation.evaluateFrom(base.lc(0), 2));
+
+        for (lMultivariatePolynomialZp factor : biFactors) {
+            lMultivariatePolynomialZp r = MultivariateReduction.divideExact(lcCorrection, factor.lc(0));
+            factor.multiply(r);
+//            assert factor.lt().exponents[0] == factor.degree(0);
+//            factor.setLC(0, evaluation.evaluateFrom(factor.lc(0), 1));
+//            factor.monicWithLC(lcCorrection.lcAsPoly());
+        }
+
+        lMultivariatePolynomialZp tmp = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, biFactors.length - 1, true));
+
+        HenselLifting.multivariateLift0(tmp, biFactors, ArraysUtil.arrayOf(lc, biFactors.length), evaluation, base.degrees(), 2);
+
+        for (lMultivariatePolynomialZp factor : biFactors)
+            factor.set(HenselLifting.primitivePart(factor));
+
+        System.out.println(Arrays.toString(factors));
+        System.out.println(Arrays.toString(biFactors));
+        Assert.assertEquals(base, multiply(biFactors));
     }
 
     /* ==================================== Test data =============================================== */

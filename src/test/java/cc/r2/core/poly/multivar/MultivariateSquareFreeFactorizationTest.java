@@ -1,10 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.FiniteField;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.IrreduciblePolynomials;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
@@ -12,8 +9,11 @@ import cc.r2.core.util.TimeUnits;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
 import static cc.r2.core.poly.multivar.DegreeVector.LEX;
+import static cc.r2.core.poly.multivar.MultivariateSquareFreeFactorization.SquareFreeFactorization;
 
 /**
  * @author Stanislav Poslavsky
@@ -136,5 +136,20 @@ public class MultivariateSquareFreeFactorizationTest extends AbstractPolynomialT
 
         FactorDecomposition<MultivariatePolynomial<lUnivariatePolynomialZp>> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(poly);
         assertFactorization(poly, decomposition);
+    }
+
+    @Test
+    public void test6() throws Exception {
+        String[] vars = {"a", "b", "c", "d", "e", "f", "g", "h"};
+        for (Domain<BigInteger> domain : Arrays.<Domain<BigInteger>>asList(new IntegersModulo(2), Integers.Integers)) {
+            MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.parse("a^2*b^4*c*e^5", domain, vars);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> expected = FactorDecomposition.empty(poly);
+            expected.addFactor(MultivariatePolynomial.parse("a", domain, vars), 2);
+            expected.addFactor(MultivariatePolynomial.parse("b", domain, vars), 4);
+            expected.addFactor(MultivariatePolynomial.parse("c", domain, vars), 1);
+            expected.addFactor(MultivariatePolynomial.parse("e", domain, vars), 5);
+
+            Assert.assertEquals(expected, SquareFreeFactorization(poly));
+        }
     }
 }

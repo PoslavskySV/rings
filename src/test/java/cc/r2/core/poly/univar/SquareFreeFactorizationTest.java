@@ -298,4 +298,20 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
         FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = SquareFreeFactorization.SquareFreeFactorization(poly);
         assertFactorization(poly, factors);
     }
+
+    @Test
+    public void test12() throws Exception {
+        for (int i = 1; i < 11; i++) {
+            lUnivariatePolynomialZ poly = lUnivariatePolynomialZ.monomial(1, i);
+            FactorDecomposition<lUnivariatePolynomialZ> fct = SquareFreeFactorization(poly);
+            assertEquals(1, fct.size());
+            assertEquals(i, fct.getExponent(0));
+            assertEquals(1, fct.get(0).degree);
+
+            FactorDecomposition<lUnivariatePolynomialZp> mfct = SquareFreeFactorization(poly.modulus(2));
+            assertEquals(1, mfct.size());
+            assertEquals(i, mfct.getExponent(0));
+            assertEquals(1, mfct.get(0).degree);
+        }
+    }
 }
