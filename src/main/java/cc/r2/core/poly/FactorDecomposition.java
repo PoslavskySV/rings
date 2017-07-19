@@ -151,6 +151,11 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
         return factors.stream();
     }
 
+    public Poly[] factorsArrayWithoutLC() {
+        Poly[] array = constantFactor.arrayNewInstance(size());
+        return factors.toArray(array);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -158,6 +163,7 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
 
         FactorDecomposition<?> that = (FactorDecomposition<?>) o;
 
+        if (!constantFactor.equals(that.constantFactor)) return false;
         if (factors != null ? !factors.equals(that.factors) : that.factors != null) return false;
         return exponents != null ? exponents.equals(that.exponents) : that.exponents == null;
     }

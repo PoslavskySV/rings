@@ -63,8 +63,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param newVariables the new variables
      * @return renamed polynomial
      */
-    static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>> P
-    renameVariables(P poly, int[] newVariables) {
+    static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>>
+    P renameVariables(P poly, int[] newVariables) {
         return renameVariables(poly, newVariables, poly.ordering);
     }
 
@@ -247,6 +247,16 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         for (Term term : terms)
             newData.add(term.insert(variable));
         return create(nVariables + 1, newData);
+    }
+
+    /** auxiliary method */
+    final Poly setNVariables(int newNVariables) {
+        if (newNVariables == nVariables)
+            return self;
+        MonomialsSet<Term> newData = new MonomialsSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.setDegreeVector(Arrays.copyOf(term.exponents, newNVariables)));
+        return create(newNVariables, newData);
     }
 
     /**

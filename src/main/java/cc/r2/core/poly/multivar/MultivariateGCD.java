@@ -157,7 +157,7 @@ public final class MultivariateGCD {
     /* ============================================== Auxiliary methods ============================================= */
 
     /** calculates the inverse permutation */
-    private static int[] inversePermutation(int[] permutation) {
+    static int[] inversePermutation(int[] permutation) {
         final int[] inv = new int[permutation.length];
         for (int i = permutation.length - 1; i >= 0; --i)
             inv[permutation[i]] = i;

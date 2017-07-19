@@ -75,6 +75,12 @@ public final class HenselLifting {
         Poly evaluateFrom(Poly poly, int variable);
 
         /**
+         * Substitutes all variables starting from specified variable {@code from} (inclusive)
+         * and except specified variable
+         */
+        Poly evaluateFromExcept(Poly poly, int from, int except);
+
+        /**
          * Substitute value for variable
          */
         Poly evaluate(Poly poly, int variable);
@@ -138,6 +144,8 @@ public final class HenselLifting {
         }
 
         IEvaluation<Term, Poly> dropVariable(int variable);
+
+        IEvaluation<Term, Poly> renameVariables(int[] newVariablesExceptFirst);
     }
 
     /** Evaluations for {@link lMultivariatePolynomialZp} */
@@ -175,6 +183,23 @@ public final class HenselLifting {
         }
 
         @Override
+        public lMultivariatePolynomialZp evaluateFromExcept(lMultivariatePolynomialZp poly, int from, int except) {
+            if (from >= poly.nVariables)
+                return poly.clone();
+            if (from == 1 && poly.univariateVariable() == 0)
+                return poly.clone();
+
+            int[] vars = new int[poly.nVariables - from - 1];
+            int c = 0;
+            for (int i = from; i < except; i++)
+                vars[c++] = i;
+            for (int i = except + 1; i < nVariables; i++)
+                vars[c++] = i;
+
+            return poly.evaluate(precomputedPowers, vars);
+        }
+
+        @Override
         public lMultivariatePolynomialZp linearPower(int variable, int exponent) {
             return linearPowers[variable - 1].pow(exponent);
         }
@@ -188,6 +213,18 @@ public final class HenselLifting {
         public lEvaluation dropVariable(int variable) {
             return new lEvaluation(nVariables - 1, ArraysUtil.remove(values, variable - 1), domain, ordering);
         }
+
+        @Override
+        public lEvaluation renameVariables(int[] variablesExceptFirst) {
+            return new lEvaluation(nVariables, map(values, variablesExceptFirst), domain, ordering);
+        }
+    }
+
+    private static long[] map(long[] oldArray, int[] mapping) {
+        long[] newArray = new long[oldArray.length];
+        for (int i = 0; i < oldArray.length; i++)
+            newArray[i] = oldArray[mapping[i]];
+        return newArray;
     }
 
     /** Generic evaluations */
@@ -226,6 +263,23 @@ public final class HenselLifting {
         }
 
         @Override
+        public MultivariatePolynomial<E> evaluateFromExcept(MultivariatePolynomial<E> poly, int from, int except) {
+            if (from >= poly.nVariables)
+                return poly.clone();
+            if (from == 1 && poly.univariateVariable() == 0)
+                return poly.clone();
+
+            int[] vars = new int[poly.nVariables - from - 1];
+            int c = 0;
+            for (int i = from; i < except; i++)
+                vars[c++] = i;
+            for (int i = except + 1; i < nVariables; i++)
+                vars[c++] = i;
+
+            return poly.evaluate(precomputedPowers, vars);
+        }
+
+        @Override
         public MultivariatePolynomial<E> linearPower(int variable, int exponent) {
             return linearPowers[variable - 1].pow(exponent);
         }
@@ -239,6 +293,18 @@ public final class HenselLifting {
         public Evaluation<E> dropVariable(int variable) {
             return new Evaluation<>(nVariables - 1, ArraysUtil.remove(values, variable - 1), domain, ordering);
         }
+
+        @Override
+        public Evaluation<E> renameVariables(int[] variablesExceptFirst) {
+            return new Evaluation<>(nVariables, map(domain, values, variablesExceptFirst), domain, ordering);
+        }
+    }
+
+    private static <E> E[] map(Domain<E> domain, E[] oldArray, int[] mapping) {
+        E[] newArray = domain.createArray(oldArray.length);
+        for (int i = 0; i < oldArray.length; i++)
+            newArray[i] = oldArray[mapping[i]];
+        return newArray;
     }
 
     /**

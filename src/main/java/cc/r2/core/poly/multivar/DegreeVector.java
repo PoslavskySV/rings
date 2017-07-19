@@ -21,16 +21,22 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     DegreeVector(int[] exponents, int totalDegree) {
         this.exponents = exponents;
         this.totalDegree = totalDegree;
+        //assertions();
     }
 
     DegreeVector(int nVariables, int position, int exponent) {
         this.exponents = new int[nVariables];
         this.exponents[position] = exponent;
         this.totalDegree = exponent;
+        //assertions();
     }
 
     DegreeVector(int[] exponents) {
         this(exponents, ArraysUtil.sum(exponents));
+    }
+
+    private void assertions() {
+        assert ArraysUtil.sum(exponents) == totalDegree;
     }
 
     /** internal method */
@@ -118,6 +124,13 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
 
     public final MonomialTerm without(int variable) {
         return setDegreeVector(ArraysUtil.remove(exponents, variable), totalDegree - exponents[variable]);
+    }
+
+    @SuppressWarnings("unchecked")
+    final MonomialTerm dropFrom(int variable) {
+        if (variable == exponents.length - 1)
+            return (MonomialTerm) this;
+        return setDegreeVector(Arrays.copyOf(exponents, variable));
     }
 
     public final MonomialTerm insert(int variable) {

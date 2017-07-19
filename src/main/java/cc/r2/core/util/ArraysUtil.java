@@ -73,6 +73,20 @@ public final class ArraysUtil {
         return 0;
     };
 
+    /**
+     * Lexicographic order
+     */
+    public static final Comparator<Comparable[]> COMPARATOR_GENERIC = (Comparable[] a, Comparable[] b) -> {
+        if (a.length != b.length)
+            throw new IllegalArgumentException();
+        for (int i = 0; i < a.length; ++i) {
+            int c = a[i].compareTo(b[i]);
+            if (c != 0)
+                return c;
+        }
+        return 0;
+    };
+
     public static int[] arrayOf(int val, int len) {
         int[] r = new int[len];
         Arrays.fill(r, val);
@@ -424,6 +438,16 @@ public final class ArraysUtil {
             if (element.equals(array[i]))
                 return i;
         return -1;
+    }
+
+    public static int indexOfMax(int[] array) {
+        int index = 0, max = array[index];
+        for (int i = 1; i < array.length; i++)
+            if (array[i] > max) {
+                max = array[i];
+                index = i;
+            }
+        return index;
     }
 
 
