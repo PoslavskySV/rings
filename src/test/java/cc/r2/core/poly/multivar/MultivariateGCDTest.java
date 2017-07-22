@@ -1069,9 +1069,9 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void testRationals1() throws Exception {
         MultivariatePolynomial<Rational>
-                a = parse("-2/3*a*b*c - 7/6*a^3*c^4 + 2/3*b^3", Rationals),
-                b = parse("2/3*a^2*b*c + 1/6*a^3*c^4 + 2/13*c^3", Rationals),
-                gcd = parse("12/3*a^2*b*c^2 - 11/6*a^3*b*c^4 + 2/11*c", Rationals);
+                a = parse("-(2/3)*a*b*c - (7/6)*a^3*c^4 + (2/3)*b^3", Rationals),
+                b = parse("(2/3)*a^2*b*c + (1/6)*a^3*c^4 + (2/13)*c^3", Rationals),
+                gcd = parse("(12/3)*a^2*b*c^2 - (11/6)*a^3*b*c^4 + (2/11)*c", Rationals);
 
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
