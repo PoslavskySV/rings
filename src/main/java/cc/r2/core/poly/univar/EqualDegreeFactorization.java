@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.LongArithmetics;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import static cc.r2.core.poly.CommonUtils.ensureFiniteFieldDomain;
 
@@ -17,13 +18,15 @@ final class EqualDegreeFactorization {
     private EqualDegreeFactorization() {}
 
     @SuppressWarnings("unchecked")
-    private static <T extends IUnivariatePolynomial<T>> T randomMonicPoly(T factory) {
+    static <T extends IUnivariatePolynomial<T>> T randomMonicPoly(T factory) {
+        RandomGenerator rnd = PrivateRandom.getRandom();
+        int degree = Math.max(1, rnd.nextInt(2 * factory.degree() + 1));
         if (factory instanceof lUnivariatePolynomialZp) {
             lUnivariatePolynomialZp fm = (lUnivariatePolynomialZp) factory;
-            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.domain.modulus, PrivateRandom.getRandom());
+            return (T) RandomPolynomials.randomMonicPoly(degree, fm.domain.modulus, rnd);
         } else {
             UnivariatePolynomial fm = (UnivariatePolynomial) factory;
-            return (T) RandomPolynomials.randomMonicPoly(fm.degree - 1, fm.domain, PrivateRandom.getRandom());
+            return (T) RandomPolynomials.randomMonicPoly(degree, fm.domain, rnd);
         }
     }
 
@@ -98,11 +101,11 @@ final class EqualDegreeFactorization {
         assert poly.isMonic();
 
         Poly a = randomMonicPoly(poly);
-        if (a.isConstant())
+        if (a.isConstant() || a.equals(poly))
             return null;
 
         Poly gcd1 = UnivariateGCD.PolynomialGCD(a, poly);
-        if (!gcd1.isConstant())
+        if (!gcd1.isConstant() && !gcd1.equals(poly))
             return gcd1;
 
         // (modulus^d - 1) / 2
@@ -117,7 +120,7 @@ final class EqualDegreeFactorization {
     }
 
     /**
-     * Plain Cantor-Zassenhaus algorithm in GF2p
+     * Plain Cantor-Zassenhaus algorithm in GF2p.
      *
      * @param poly the monic polynomial
      * @param d    distinct degree
@@ -127,16 +130,17 @@ final class EqualDegreeFactorization {
         assert poly.isMonic();
 
         Poly a = randomMonicPoly(poly);
-        if (a.isConstant())
+        if (a.isConstant() || a.equals(poly))
             return null;
 
         Poly gcd1 = UnivariateGCD.PolynomialGCD(a, poly);
-        if (!gcd1.isConstant())
+        if (!gcd1.isConstant() && !gcd1.equals(poly))
             return gcd1;
 
         DivisionWithRemainder.InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
         Poly b = tracePolyGF2(a, LongArithmetics.safeToInt(1L * pPower * d), poly, invMod);
-        Poly gcd2 = UnivariateGCD.PolynomialGCD(b.decrement(), poly);
+
+        Poly gcd2 = UnivariateGCD.PolynomialGCD(b, poly);
         if (!gcd2.isConstant() && !gcd2.equals(poly))
             return gcd2;
 
@@ -144,9 +148,13 @@ final class EqualDegreeFactorization {
     }
 
     static <Poly extends IUnivariatePolynomial<Poly>> Poly tracePolyGF2(Poly a, int m, Poly modulus, DivisionWithRemainder.InverseModMonomial<Poly> invMod) {
-        Poly result = a.createZero();
-        for (int i = 0; i < m; i++)
-            result.add(PolynomialArithmetics.polyPowMod(a, BigInteger.valueOf(1).shiftLeft(i), modulus, invMod, true));
+        Poly tmp = a.clone();
+        Poly result = a.clone();
+        for (int i = 0; i < (m - 1); i++) {
+            tmp = PolynomialArithmetics.polyMultiplyMod(tmp, tmp, modulus, invMod, false);
+            result.add(tmp);
+        }
+
         return result;
     }
 }

@@ -1,9 +1,10 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;
+
+import java.util.Iterator;
 
 /**
  * @author Stanislav Poslavsky
@@ -106,6 +107,27 @@ public final class IntegersModulo extends AbstractIntegers {
 
     @Override
     public BigInteger randomElement(RandomGenerator rnd) {return RandomUtil.randomInt(modulus, rnd);}
+
+    @Override
+    public Iterator<BigInteger> iterator() {
+        return new It();
+    }
+
+    private final class It implements Iterator<BigInteger> {
+        private BigInteger val = BigInteger.ZERO;
+        
+        @Override
+        public boolean hasNext() {
+            return val.compareTo(modulus) < 0;
+        }
+
+        @Override
+        public BigInteger next() {
+            BigInteger r = val;
+            val = val.increment();
+            return r;
+        }
+    }
 
     /** domain for perfectPowerBase() */
     private IntegersModulo ppBaseDomain = null;

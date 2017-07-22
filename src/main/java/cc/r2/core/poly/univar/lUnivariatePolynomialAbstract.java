@@ -296,6 +296,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     public final lPoly set(lPoly oth) {
         this.data = oth.data.clone();
         this.degree = oth.degree;
+        assert data.length > 0;
         return self;
     }
 
@@ -363,6 +364,8 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     /** {@inheritDoc} */
     @Override
     public final lPoly primitivePart() {
+        if (isZero())
+            return self;
         long content = content();
         if (lc() < 0)
             content = -content;

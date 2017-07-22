@@ -4,6 +4,8 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import java.util.Iterator;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -169,5 +171,10 @@ public final class Rationals implements Domain<Rational> {
         if (nd.length == 1)
             return new Rational(new BigInteger(nd[0]));
         return new Rational(new BigInteger(nd[0]), new BigInteger(nd[1]));
+    }
+
+    @Override
+    public Iterator<Rational> iterator() {
+        throw new UnsupportedOperationException("Domain of infinite cardinality.");
     }
 }

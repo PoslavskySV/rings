@@ -1,9 +1,9 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.*;
+import cc.r2.core.poly.multivar.DegreeVector;
+import cc.r2.core.poly.multivar.lMultivariatePolynomialZp;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,7 +53,23 @@ public class UnivariatePolynomialTest extends AbstractPolynomialTest {
         Assert.assertEquals(0, UnivariatePolynomial.create(1).firstNonZeroCoefficientPosition());
         Assert.assertEquals(1, UnivariatePolynomial.create(0, 1).firstNonZeroCoefficientPosition());
     }
-//
+
+    @Test
+    public void test4() throws Exception {
+        UnivariatePolynomial<lUnivariatePolynomialZp> poly = UnivariatePolynomial.create(FiniteField.GF17p5, lUnivariatePolynomialZ.zero().modulus(17));
+        Assert.assertEquals("0", poly.toString());
+    }
+
+    @Test
+    public void test5() throws Exception {
+        lIntegersModulo lDomain = new lIntegersModulo(11);
+        MultivariatePolynomials<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(4, lDomain, DegreeVector.LEX));
+        UnivariatePolynomial<lMultivariatePolynomialZp> poly = UnivariatePolynomial.parse(domain, "(6*c)+(10*b*c^2*d^2)*x^3");
+        for (int i = 0; i < 10000; i++)
+            Assert.assertFalse(poly.content().isZero());
+    }
+
+    //
 //    @Test
 //    public void test3() throws Exception {
 //        BigInteger modulus = new BigInteger("998427238390739620139");

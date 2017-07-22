@@ -56,8 +56,14 @@ public class FactorizationTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
 
-        int nIterations = its(1000, 3000);
+        int nIterations = its(10000, 10000);
+        int prevPercent = -1, currPercent;
         for (int n = 0; n < nIterations; n++) {
+            if ((currPercent = (int) (100. * n / nIterations)) != prevPercent) {
+                prevPercent = currPercent;
+                System.out.print(">");
+                System.out.flush();
+            }
             int nFactors = rndd.nextInt(4, 8);
             long modulus = getModulusRandom(rndd.nextInt(2, 31));
             lUnivariatePolynomialZp poly = lUnivariatePolynomialZp.constant(modulus, rndd.nextLong(1, modulus - 1));
@@ -92,12 +98,48 @@ public class FactorizationTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void test4_randomZp_a() throws Exception {
+    public void test4a() throws Exception {
         long modulus = 59;
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(46, 16, 1, 54, 16, 57, 22, 15, 31, 21).modulus(modulus);
         FactorDecomposition<lUnivariatePolynomialZp> fct = factorInFiniteField(poly);
+        assertFactorization(poly, fct);
         assertEquals(5, fct.size());
         assertEquals(6, fct.sumExponents());
+    }
+
+    @Test
+    public void test4b() throws Exception {
+        for (int i = 0; i < 100; i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            long modulus = 3;
+            lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.parse("2*x^2+2*x^3+2*x^5+x^7+2*x^9+2*x^10+x^11+2*x^12+x^13+2*x^14+x^16+x^18+x^19+2*x^20+2*x^21").modulus(modulus);
+            FactorDecomposition<lUnivariatePolynomialZp> fct = factorInFiniteField(poly);
+            assertFactorization(poly, fct);
+            assertEquals(6, fct.size());
+            assertEquals(15, fct.sumExponents());
+        }
+    }
+
+    @Test
+    public void test4c() throws Exception {
+        PrivateRandom.getRandom().setSeed(76);
+        long modulus = 3;
+        lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.parse("2*x^2+2*x^3+2*x^5+x^7+2*x^9+2*x^10+x^11+2*x^12+x^13+2*x^14+x^16+x^18+x^19+2*x^20+2*x^21").modulus(modulus);
+        FactorDecomposition<lUnivariatePolynomialZp> fct = factorInFiniteField(poly);
+        assertFactorization(poly, fct);
+        assertEquals(6, fct.size());
+        assertEquals(15, fct.sumExponents());
+    }
+
+    @Test
+    public void test4e() throws Exception {
+        PrivateRandom.getRandom().setSeed(4178);
+        long modulus = 29;
+        lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.parse("10+25*x+23*x^2+7*x^3+21*x^4+9*x^5+9*x^6+16*x^7+10*x^8+24*x^9+3*x^10+24*x^11+8*x^12").modulus(modulus);
+        FactorDecomposition<lUnivariatePolynomialZp> fct = factorInFiniteField(poly);
+        assertFactorization(poly, fct);
+        assertEquals(8, fct.size());
+        assertEquals(9, fct.sumExponents());
     }
 
     @Test
@@ -341,5 +383,44 @@ public class FactorizationTest extends AbstractPolynomialTest {
 
         FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = Factorization.factorInFiniteField(poly);
         assertFactorization(poly, factors);
+    }
+
+    @Test
+    public void testFiniteField3a() throws Exception {
+        lUnivariatePolynomialZp irreducible = lUnivariatePolynomialZ.create(1, 1, 1, 1, 1).modulus(2);
+        FiniteField<lUnivariatePolynomialZp> domain = new FiniteField<>(irreducible);
+        UnivariatePolynomial<lUnivariatePolynomialZp> input = UnivariatePolynomial.parse(domain, "(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6");
+        PrivateRandom.getRandom().setSeed(1);
+        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = factor(input);
+        assertEquals(2, factors.size());
+        assertFactorization(input, factors);
+    }
+
+    @Test
+    public void testFiniteField3b() throws Exception {
+        lUnivariatePolynomialZp irreducible = lUnivariatePolynomialZ.create(1, 1, 1, 1, 1).modulus(2);
+        FiniteField<lUnivariatePolynomialZp> domain = new FiniteField<>(irreducible);
+        UnivariatePolynomial<lUnivariatePolynomialZp> input = UnivariatePolynomial.parse(domain, "(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6");
+        PrivateRandom.getRandom().setSeed(43);
+        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = factor(input);
+        assertEquals(2, factors.size());
+        assertFactorization(input, factors);
+    }
+
+    @Test
+    public void testFiniteField3() throws Exception {
+        lUnivariatePolynomialZp irreducible = lUnivariatePolynomialZ.create(1, 1, 1, 1, 1).modulus(2);
+        FiniteField<lUnivariatePolynomialZp> domain = new FiniteField<>(irreducible);
+        UnivariatePolynomial<lUnivariatePolynomialZp> input = UnivariatePolynomial.parse(domain, "(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6");
+        for (int i = 0; i < 1000; i++) {
+            System.out.println("----");
+            System.out.println(i);
+            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = factor(input);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertEquals(2, factors.size());
+            assertFactorization(input, factors);
+        }
     }
 }

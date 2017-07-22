@@ -21,12 +21,14 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         this.data = data;
         this.degree = data.length - 1;
         fixDegree();
+        assert data.length > 0;
     }
 
     /** copy constructor */
     private lUnivariatePolynomialZ(long[] data, int degree) {
         this.data = data;
         this.degree = degree;
+        assert data.length > 0;
     }
 
     /**

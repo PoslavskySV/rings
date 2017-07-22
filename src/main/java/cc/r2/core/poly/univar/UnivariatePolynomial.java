@@ -37,6 +37,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         this.domain = domain;
         this.data = data;
         this.degree = degree;
+        assert data.length > 0;
     }
 
     private UnivariatePolynomial(Domain<E> domain, E[] data) {
@@ -661,6 +662,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     private UnivariatePolynomial<E> primitivePart0(E content) {
+        if (isZero())
+            return this;
         if (domain.isOne(content))
             return this;
         for (int i = degree; i >= 0; --i) {
@@ -1148,6 +1151,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public String toString() {
+        if (isZero())
+            return "0";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
             String str = termToString(i);
@@ -1167,7 +1172,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (domain.isOne(el)) {
             coefficient = "";
             needSeparator = false;
-        } else if (domain.isMinusOne(el)) {
+        } else if (!(domain instanceof IntegersModulo) && domain.isMinusOne(el)) {
             coefficient = "-";
             needSeparator = false;
         } else {
@@ -1186,7 +1191,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         else
             m = ((needSeparator ? "*" : "") + "x" + (i == 1 ? "" : "^" + i));
         if (m.isEmpty())
-            if (domain.isOne(el) || domain.isMinusOne(el))
+            if (domain.isOne(el) || (!(domain instanceof IntegersModulo) && domain.isMinusOne(el)))
                 coefficient = coefficient + "1";
 
         return coefficient + m;

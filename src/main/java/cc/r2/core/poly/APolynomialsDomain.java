@@ -3,6 +3,7 @@ package cc.r2.core.poly;
 import cc.r2.core.number.BigInteger;
 
 import java.lang.reflect.Array;
+import java.util.Iterator;
 
 /**
  * @author Stanislav Poslavsky
@@ -135,5 +136,10 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     @Override
     public Poly parse(String string) {
         return factory.parsePoly(string);
+    }
+
+    @Override
+    public Iterator<Poly> iterator() {
+        throw new UnsupportedOperationException("Domain of infinite cardinality.");
     }
 }

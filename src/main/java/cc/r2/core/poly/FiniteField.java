@@ -6,6 +6,8 @@ import cc.r2.core.poly.univar.*;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * @author Stanislav Poslavsky
@@ -49,7 +51,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
 
     @Override
     public BigInteger characteristics() {
-        return irreducible.coefficientDomainCardinality();
+        return irreducible.coefficientDomainCharacteristics();
     }
 
     @Override
@@ -109,6 +111,8 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
 
     @Override
     public Poly reciprocal(Poly a) {
+        if (a.isZero())
+            throw new ArithmeticException("divide by zero");
         Poly
                 t = getZero(),
                 newt = getOne(),
@@ -127,7 +131,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
             newt = tmp.clone().subtract(quotient.clone().multiply(newt));
         }
         if (r.degree() > 0)
-            throw new IllegalArgumentException("Either p is not irreducible or a is a multiple of p");
+            throw new IllegalArgumentException("Either p is not irreducible or a is a multiple of p, p =  " + irreducible + ", a = " + a);
         return t.divideByLC(r);
     }
 
@@ -214,6 +218,104 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     @Override
     public Poly parse(String string) {
         return valueOf(irreducible.parsePoly(string));
+    }
+
+    /**
+     * Returns iterator over all field elements
+     *
+     * @return iterator over all field elements
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public Iterator<Poly> iterator() {
+        if (irreducible instanceof UnivariatePolynomial)
+            return (Iterator<Poly>) new It(((UnivariatePolynomial) irreducible).domain, irreducible.degree());
+        else if (irreducible instanceof lUnivariatePolynomialZp)
+            return (Iterator<Poly>) new lIt(((lUnivariatePolynomialZp) irreducible).domain, irreducible.degree());
+        throw new RuntimeException();
+    }
+
+    private static final class It<E> implements Iterator<UnivariatePolynomial<E>> {
+        final Domain<E> domain;
+        final E[] data;
+        final Iterator<E>[] iterators;
+
+        @SuppressWarnings("unchecked")
+        It(Domain<E> domain, int degree) {
+            this.domain = domain;
+            this.data = domain.createArray(degree);
+            this.iterators = new Iterator[degree];
+            for (int i = 0; i < iterators.length; i++)
+                iterators[i] = domain.iterator();
+            for (int i = 0; i < data.length; i++)
+                data[i] = iterators[i].next();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return Arrays.stream(iterators).anyMatch(Iterator::hasNext);
+        }
+
+        private boolean first = true;
+
+        @Override
+        public UnivariatePolynomial<E> next() {
+            if (first) {
+                first = false;
+                return UnivariatePolynomial.create(domain, data.clone());
+            }
+            int i = 0;
+            if (!iterators[i].hasNext())
+                while (i < iterators.length && !iterators[i].hasNext()) {
+                    iterators[i] = domain.iterator();
+                    data[i] = iterators[i].next();
+                    ++i;
+                }
+
+            if (i >= iterators.length)
+                return null;
+
+            data[i] = iterators[i].next();
+            return UnivariatePolynomial.create(domain, data.clone());
+        }
+    }
+
+    private static final class lIt implements Iterator<lUnivariatePolynomialZp> {
+        final lIntegersModulo domain;
+        final long[] data;
+
+        @SuppressWarnings("unchecked")
+        lIt(lIntegersModulo domain, int degree) {
+            this.domain = domain;
+            this.data = new long[degree];
+        }
+
+        @Override
+        public boolean hasNext() {
+            return Arrays.stream(data).anyMatch(l -> l < (domain.modulus - 1));
+        }
+
+        private boolean first = true;
+
+        @Override
+        public lUnivariatePolynomialZp next() {
+            if (first) {
+                first = false;
+                return lUnivariatePolynomialZp.createUnsafe(domain, data.clone());
+            }
+            int i = 0;
+            if (data[i] >= domain.modulus - 1)
+                while (i < data.length && data[i] >= domain.modulus - 1) {
+                    data[i] = 0;
+                    ++i;
+                }
+
+            if (i >= data.length)
+                return null;
+
+            ++data[i];
+            return lUnivariatePolynomialZp.createUnsafe(domain, data.clone());
+        }
     }
 
     @Override

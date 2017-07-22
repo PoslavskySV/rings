@@ -19,6 +19,7 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
         this.domain = domain;
         this.data = data;
         this.degree = degree;
+        assert data.length > 0;
     }
 
     private lUnivariatePolynomialZp(lIntegersModulo domain, long[] data) {

@@ -2,6 +2,8 @@ package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
 
+import java.util.Iterator;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -68,4 +70,9 @@ public final class Integers extends AbstractIntegers {
 
     @Override
     public String toString() {return "Z";}
+
+    @Override
+    public Iterator<BigInteger> iterator() {
+        throw new UnsupportedOperationException("Domain of infinite cardinality.");
+    }
 }

@@ -6,12 +6,13 @@ import org.apache.commons.math3.random.RandomGenerator;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface Domain<E> extends Comparator<E> {
+public interface Domain<E> extends Comparator<E>, Iterable<E> {
     /**
      * Returns whether this domain is a field
      *
@@ -551,6 +552,12 @@ public interface Domain<E> extends Comparator<E> {
 //     * @return next element
 //     */
 //    E nextElement(E element);
+
+    /**
+     * Returns iterator over domain elements (for finite domains, otherwise throws exception)
+     */
+    @Override
+    Iterator<E> iterator();
 
     /**
      * Returns a random element from this domain

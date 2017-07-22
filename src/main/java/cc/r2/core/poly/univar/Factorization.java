@@ -87,7 +87,8 @@ public final class Factorization {
 
     private static <T extends IUnivariatePolynomial<T>> void factorInFiniteField(T poly, FactorDecomposition<T> result) {
         FactorMonomial<T> base = factorOutMonomial(poly);
-        result.addFactor(base.monomial, 1);
+        if (!base.monomial.isConstant())
+            result.addFactor(poly.createMonomial(1), base.monomial.degree());
 
         //do square-free factorization
         FactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
@@ -455,7 +456,8 @@ public final class Factorization {
 
     private static <T extends IUnivariatePolynomial<T>> void factorInZ(T poly, FactorDecomposition<T> result) {
         FactorMonomial<T> base = factorOutMonomial(poly);
-        result.addFactor(base.monomial, 1);
+        if (!base.monomial.isConstant())
+            result.addFactor(poly.createMonomial(1), base.monomial.degree());
 
         //do square-free factorization
         FactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
