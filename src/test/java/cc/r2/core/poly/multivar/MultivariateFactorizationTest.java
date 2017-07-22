@@ -642,7 +642,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             FactorDecompositionTest.assertFactorization(base, decomposition);
         }
     }
-    
+
     @Test
     public void testMultivariateFactorizationRandom1() throws Exception {
         MultivariateFactorizationTest.lSampleDecompositionSource source = new MultivariateFactorizationTest.lSampleDecompositionSource(
@@ -652,7 +652,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 3, 3);
         source.minModulusBits = 15;
         source.maxModulusBits = 30;
-        testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(100, 100),
+        testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 100),
                 FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"),
                 FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"));
     }
@@ -666,7 +666,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 3, 3);
         source.minModulusBits = 15;
         source.maxModulusBits = 30;
-        testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(100, 100),
+        testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 100),
                 FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"),
                 FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"));
     }
@@ -680,9 +680,346 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 3, 3);
         source.minModulusBits = 15;
         source.maxModulusBits = 30;
-        testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(100, 100),
+        testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 100),
                 FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"),
                 FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"));
+    }
+
+    @Test
+    public void testMultivariateFactorization18_SmallDomain() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c", "d"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+71543*b*c+89032*b*c*d+101233*b^2*c+69912*b^2*c^2*d^2+122146*a*c^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+62395*b*c^2*d^2+111331*a*b*c*d^2+13129*a^3*b^2*c^2*d^2+54277*a^3*b^3*c^2+36488*a^3*b^3*c^2*d^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+64768*a*b^2*d+66817*a*b^3*c*d+19563*a^2+13861*a^3*b*c^3+76958*a^3*b^3*d", domain, vars),
+                };
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        PrivateRandom.getRandom().setSeed(0);
+        for (int i = 0; i < its(10, 30); i++) {
+            //long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(3, decomposition.size());
+            FactorDecompositionTest.assertFactorization(base, decomposition);
+        }
+    }
+
+    @Test
+    public void testMultivariateFactorizationRandom4_SmallDomain() throws Exception {
+        MultivariateFactorizationTest.lSampleDecompositionSource source = new MultivariateFactorizationTest.lSampleDecompositionSource(
+                2, 4,
+                5, 6,
+                5, 5,
+                3, 3);
+        source.minModulusBits = 2;
+        source.maxModulusBits = 5;
+        testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(10, 100),
+                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields (small domain)"),
+                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields (small domain)"));
+    }
+
+    @Test
+    public void testMultivariateFactorization18() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(11);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+3*c^3*d^2+9*a*c*e^3+a^2*b*c^3*d^2*e^2+2*a^2*b^2*c^3*d*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+5*a*b*c*d^3*e^3+6*a^3*d^2*e^2+5*a^3*b*c^2*d*e+9*a^3*b^2*c*d^2*e^2+2*a^3*b^3*c*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+8*b^3*c^2*d+2*a^2*c*e^3+6*a^2*c^2*d^3*e+10*a^3*c^3*d^2+7*a^3*b*c^3*d^3*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+4*a*b^2*c^2*d^3*e^3+4*a^2*b*c*d^2+3*a^3*b*c^3*e^3+3*a^3*b^2*c^2*d^3*e^2", domain, vars),
+                };
+
+        //System.out.println(FactorDecomposition.create(Arrays.asList(factors)));
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        for (int i = 0; i < its(10, 10); i++) {
+            //System.out.println(i);
+            //PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(4, decomposition.size());
+            FactorDecompositionTest.assertFactorization(base, decomposition);
+        }
+        // 3s
+        // 1529ms
+        // 1494ms
+        // 1465ms
+        // 622ms
+        // 1464ms
+        // 1243ms
+        // 1107ms
+        // 1092ms
+        // 1037ms
+    }
+
+    @Test
+    public void testMultivariateFactorization18a() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(11);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+3*c^3*d^2+9*a*c*e^3+a^2*b*c^3*d^2*e^2+2*a^2*b^2*c^3*d*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+5*a*b*c*d^3*e^3+6*a^3*d^2*e^2+5*a^3*b*c^2*d*e+9*a^3*b^2*c*d^2*e^2+2*a^3*b^3*c*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+8*b^3*c^2*d+2*a^2*c*e^3+6*a^2*c^2*d^3*e+10*a^3*c^3*d^2+7*a^3*b*c^3*d^3*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+4*a*b^2*c^2*d^3*e^3+4*a^2*b*c*d^2+3*a^3*b*c^3*e^3+3*a^3*b^2*c^2*d^3*e^2", domain, vars),
+                };
+
+        //System.out.println(FactorDecomposition.create(Arrays.asList(factors)));
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        PrivateRandom.getRandom().setSeed(9);
+
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        Assert.assertEquals(4, decomposition.size());
+        FactorDecompositionTest.assertFactorization(base, decomposition);
+    }
+
+
+    @Test
+    public void testMultivariateFactorization19() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+a*b^3*d^2*e+a*b^3*c^2*d^2+a^3*b^2*c*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+b^3*d^3*e^2+a*d^3*e^3+a^2*b*c^3*d^2*e^3+a^3*b^3*c^2*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+c*d^3+b*c^2*d^2*e^2+a^3*b^2*c*d^3*e^2", domain, vars),
+                };
+
+        //System.out.println(FactorDecomposition.create(Arrays.asList(factors)));
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+
+        // sho
+        for (int i = 0; i < its(10, 10); i++) {
+            //cc.r2.core.poly.univar.PrivateRandom.getRandom().setSeed(i);
+            //PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(3, decomposition.size());
+            FactorDecompositionTest.assertFactorization(base, decomposition);
+        }
+
+        // Timings:
+
+        // 127ms
+        // 124ms
+        // 126ms
+        // 244ms
+        // 88ms
+        // 64ms
+        // 152ms
+        // 174ms
+        // 285ms
+    }
+
+    @Test
+    public void testMultivariateFactorization19a() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+a*b^3*d^2*e+a*b^3*c^2*d^2+a^3*b^2*c*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+b^3*d^3*e^2+a*d^3*e^3+a^2*b*c^3*d^2*e^3+a^3*b^3*c^2*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+c*d^3+b*c^2*d^2*e^2+a^3*b^2*c*d^3*e^2", domain, vars),
+                };
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        PrivateRandom.getRandom().setSeed(5);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        Assert.assertEquals(3, decomposition.size());
+        FactorDecompositionTest.assertFactorization(base, decomposition);
+    }
+
+    @Test
+    public void testMultivariateFactorization19b() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+a*b^3*d^2*e+a*b^3*c^2*d^2+a^3*b^2*c*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+b^3*d^3*e^2+a*d^3*e^3+a^2*b*c^3*d^2*e^3+a^3*b^3*c^2*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+c*d^3+b*c^2*d^2*e^2+a^3*b^2*c*d^3*e^2", domain, vars),
+                };
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        PrivateRandom.getRandom().setSeed(2);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        Assert.assertEquals(3, decomposition.size());
+        FactorDecompositionTest.assertFactorization(base, decomposition);
+    }
+
+    @Test
+    public void testMultivariateFactorization19c() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+a*b^3*d^2*e+a*b^3*c^2*d^2+a^3*b^2*c*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+b^3*d^3*e^2+a*d^3*e^3+a^2*b*c^3*d^2*e^3+a^3*b^3*c^2*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+c*d^3+b*c^2*d^2*e^2+a^3*b^2*c*d^3*e^2", domain, vars),
+                };
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        PrivateRandom.getRandom().setSeed(7);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        Assert.assertEquals(3, decomposition.size());
+    }
+
+    @Test//(timeout = 10000L)
+    public void testMultivariateFactorization19d() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+a*b^3*d^2*e+a*b^3*c^2*d^2+a^3*b^2*c*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+b^3*d^3*e^2+a*d^3*e^3+a^2*b*c^3*d^2*e^3+a^3*b^3*c^2*d^2*e^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+c*d^3+b*c^2*d^2*e^2+a^3*b^2*c*d^3*e^2", domain, vars),
+                };
+
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        //cc.r2.core.poly.univar.PrivateRandom.getRandom().setSeed(10);
+        PrivateRandom.getRandom().setSeed(10);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        Assert.assertEquals(3, decomposition.size());
+    }
+
+    @Test
+    public void testMultivariateFactorization20() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(3);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+b^3*e^2+2*a*b*c^3*d*e^2+a^2*b^2*c^2*e+a^3*b^3*c^3*d^3*e", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+2*b^3*c*e^2+2*b^3*c^2*d*e^2+a^2*b*d^2*e^3+2*a^3*b^2*c^2*d^2", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+2*b*c^3*d^2*e+a^2*b*c*e^3+a^3*b*c^3*d^3+a^3*b^3*c^3*d^2*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+c^2*e+b^3*c^2*d^2*e+2*a*b^3*c^3*d^2*e+2*a^2*c^2*d*e^3+a^3*c^3*d^2", domain, vars),
+                };
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        for (int i = 0; i < its(2, 2); i++) {
+            //long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            Assert.assertEquals(4, decomposition.size());
+            //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    public void testMultivariateFactorization21() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(3);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+2*a*c*d^2+a^2*b*c^2*d^3+2*a^2*b^3*d*e", domain, vars),
+                        lMultivariatePolynomialZp.parse("b^3*c*e+2*a*d^3+2*a^3*b^3*c*e^2", domain, vars),
+                };
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        for (int i = 0; i < its(20, 20); i++) {
+            //long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            Assert.assertEquals(2, decomposition.size());
+            //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    public void test22() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(3);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+a*b^2*c^2*d+a*b^3*c^3+a^2*b^2*c*d^2+2*a^2*b^3*c*d^2*e", domain, vars),
+                        lMultivariatePolynomialZp.parse("c^2*d+2*a^3*b^3*e", domain, vars),
+                };
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        //System.out.println(factorToPrimitive(base));
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        for (int i = 0; i < its(20, 20); i++) {
+            //long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            Assert.assertEquals(2, decomposition.size());
+            //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    public void test23() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(3);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+2*a*b*c*e^2+a^2*b^2*c^3*e+a^3*d^3*e^3+a^3*b^2*c^2*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+d*e^3+a^3*b*e^2+a^3*b*d^3*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+b^2*c^2*d*e+2*b^2*c^3*d*e^2+a^3*c^3*d*e^2+a^3*b^3*c^3*d*e^3", domain, vars),
+                        lMultivariatePolynomialZp.parse("2*b^3*c*d^3*e+2*a*b^2*c^2*e^3+2*a^2*c^3*e+2*a^2*b*c^2*d^3*e^2+a^3*b^3*d^2", domain, vars),
+                };
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        for (int i = 0; i < its(20, 20); i++) {
+            //long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+            Assert.assertEquals(4, decomposition.size());
+            //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    public void test24() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(2);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        lMultivariatePolynomialZp
+                factors[] =
+                {
+                        lMultivariatePolynomialZp.parse("1+a*b^3*d+a^3*c*d*e^3+a^3*b*c^2*e^3+a^3*b^2*c^3*d*e", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+a^2*b*c*d*e^3+a^3*b^2*c*d", domain, vars),
+                        lMultivariatePolynomialZp.parse("1+b*c^2*e^2+a^3*b*c^2*e+a^3*b^3*c^3*d*e^2", domain, vars)
+                };
+        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        for (int i = 0; i < its(20, 20); i++) {
+            long start = System.nanoTime();
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+            Assert.assertEquals(3, decomposition.size());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+
+        // 577ms
+        // 534ms
+        // 177ms
+        // 220ms
+        // 414ms
+        // 365ms
+        // 202ms
+        // 194ms
+        // 322ms
     }
 
     /* ==================================== Test data =============================================== */
@@ -710,6 +1047,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 System.out.flush();
             }
             SampleDecomposition<lMultivariatePolynomialZp> sample = source.next();
+//            System.out.println(sample.poly.domain);
+//            System.out.println(FactorDecomposition.create(Arrays.asList(sample.factors)));
             FactorDecomposition<lMultivariatePolynomialZp> lDecomposition = null;
             FactorDecomposition<MultivariatePolynomial<BigInteger>> bDecomposition = null;
             try {
@@ -795,6 +1134,24 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             @Override
             public String toString() {
                 return super.toString() + " (content filtered)";
+            }
+        };
+    }
+
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    SampleDecompositionSource<Poly> filterNonPrimitive(SampleDecompositionSource<Poly> source) {
+        return new SampleDecompositionSource<Poly>() {
+            @Override
+            public SampleDecomposition<Poly> next0() {
+                SampleDecomposition<Poly> sample = source.next0();
+                if (MultivariateFactorization.factorToPrimitive(sample.poly).isTrivial())
+                    return sample;
+                else return next0();
+            }
+
+            @Override
+            public String toString() {
+                return super.toString() + " (square-free)";
             }
         };
     }

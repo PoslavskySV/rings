@@ -14,7 +14,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static cc.r2.core.poly.Integers.Integers;
@@ -1546,18 +1545,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> parsePoly(String string) {
-        return parse(string, domain, ordering);
+        MultivariatePolynomial<E> r = parse(string, domain, ordering, defaultVars(nVariables));
+        if (r.nVariables != nVariables)
+            throw new IllegalArgumentException("not from this field");
+        return r;
     }
-
-    private static final Pattern nonTrivialCoefficientString = Pattern.compile("[\\+\\-\\*]");
 
     private static <E> String coeffToString(E coeff) {
         String cfs = coeff.toString();
-        if (coeff instanceof BigInteger)
+        if (cfs.matches("\\d+"))
             return cfs;
-        if (nonTrivialCoefficientString.matcher(cfs).find())
+        if (cfs.startsWith("(") && cfs.endsWith(")"))
+            return cfs;
+        else
             return "(" + cfs + ")";
-        else return cfs;
     }
 
     public String toString(String... vars) {

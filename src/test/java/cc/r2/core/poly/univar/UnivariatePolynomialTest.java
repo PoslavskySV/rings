@@ -65,7 +65,7 @@ public class UnivariatePolynomialTest extends AbstractPolynomialTest {
         lIntegersModulo lDomain = new lIntegersModulo(11);
         MultivariatePolynomials<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(4, lDomain, DegreeVector.LEX));
         UnivariatePolynomial<lMultivariatePolynomialZp> poly = UnivariatePolynomial.parse(domain, "(6*c)+(10*b*c^2*d^2)*x^3");
-        for (int i = 0; i < 10000; i++)
+        for (int i = 0; i < 1000; i++)
             Assert.assertFalse(poly.content().isZero());
     }
 

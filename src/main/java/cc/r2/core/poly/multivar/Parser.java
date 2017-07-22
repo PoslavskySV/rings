@@ -104,29 +104,53 @@ final class Parser {
             coefficient = domain.negate(coefficient);
             expression = expression.substring(1);
         }
-        String[] elements = expression.split("\\*");
+        String[] elements = splitMultipliers(expression);
 
         ArrayList<String> variables = new ArrayList<>();
         TIntArrayList exponents = new TIntArrayList();
         for (String element : elements) {
             String el = element.trim();
-            try {
-                coefficient = domain.multiply(coefficient, domain.parse(el));
-                continue;
-            } catch (Exception e) {}  // not a coefficient
+            if (el.startsWith("(") || el.matches("\\d+")) {
+                if (el.startsWith("(") && el.endsWith(")"))
+                    el = el.substring(1, el.length() - 1);
+                try {
+                    coefficient = domain.multiply(coefficient, domain.parse(el));
+                    continue;
+                } catch (Exception e) {}  // not a coefficient
+            }
 
             // variable with exponent
             String[] varExp = el.split("\\^");
+            String var = varExp[0].trim();
             if (varExp.length == 2) {
-                try {
-                    coefficient = domain.multiply(coefficient, domain.pow(domain.parse(varExp[0].trim()), Integer.parseInt(varExp[1].trim())));
-                    continue;
-                } catch (Exception e) {}
+                if (var.startsWith("(") || var.matches("\\d+"))
+                    try {
+                        coefficient = domain.multiply(coefficient, domain.pow(domain.parse(var), Integer.parseInt(varExp[1].trim())));
+                        continue;
+                    } catch (Exception e) {}
             }
-            variables.add(varExp[0].trim());
+            variables.add(var);
             exponents.add(varExp.length == 1 ? 1 : Integer.parseInt(varExp[1].trim()));
         }
 
         return new TMonomialTerm<>(variables.toArray(new String[variables.size()]), coefficient, exponents.toArray());
+    }
+
+    private static String[] splitMultipliers(String str) {
+        List<String> result = new ArrayList<>();
+        int bracketsLevel = 0;
+        int prevPosition = 0;
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == '(')
+                ++bracketsLevel;
+            else if (str.charAt(i) == ')')
+                --bracketsLevel;
+            else if (str.charAt(i) == '*' && bracketsLevel == 0) {
+                result.add(str.substring(prevPosition, i));
+                prevPosition = i + 1;
+            }
+        }
+        result.add(str.substring(prevPosition, str.length()));
+        return result.toArray(new String[result.size()]);
     }
 }

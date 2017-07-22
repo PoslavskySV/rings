@@ -636,6 +636,8 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
 
     @Override
     public String toString() {
+        if (isZero())
+            return "0";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
             String str = termToString(i);

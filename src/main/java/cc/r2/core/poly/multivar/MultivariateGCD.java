@@ -49,6 +49,17 @@ public final class MultivariateGCD {
         return PolynomialGCD(arr, MultivariateGCD::PolynomialGCD);
     }
 
+    @SuppressWarnings("unchecked")
+    private static <Poly extends AMultivariatePolynomial> Poly[] nonZeroElements(Poly[] arr) {
+        List<Poly> res = new ArrayList<>(arr.length);
+        for (Poly el : arr)
+            if (!el.isZero())
+                res.add(el);
+        if (res.isEmpty())
+            res.add(arr[0]);
+        return res.toArray((Poly[]) arr[0].arrayNewInstance(res.size()));
+    }
+
     /**
      * Calculates greatest common divisor for array of polynomials
      *
@@ -58,9 +69,19 @@ public final class MultivariateGCD {
      */
     @SuppressWarnings("unchecked")
     static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly[] arr, BiFunction<Poly, Poly, Poly> algorithm) {
+        arr = nonZeroElements(arr);
+        assert arr.length > 0;
+
+        if (arr.length == 1)
+            return arr[0];
+
+        if (arr.length == 2)
+            return algorithm.apply(arr[0], arr[1]);
+
         //choose poly of minimal total degree
         int iMin = 0, degSum = arr[0].degreeSum();
         for (int i = 1; i < arr.length; ++i) {
+            //fixme pick monomial!
             int t = arr[i].degreeSum();
             if (t < degSum) {
                 iMin = i;
@@ -70,35 +91,71 @@ public final class MultivariateGCD {
 
         ArraysUtil.swap(arr, 0, iMin);
         AMultivariatePolynomial
-                a = arr[0],
-                b = arr[1].clone();
+                // the base (minimal total degree)
+                base = arr[0],
+                // sum of other polynomials
+                sum = arr[1].clone();
+
+        List<Poly>
+                // the list of polys which we do not put in the sum b
+                polysNotInSum = new ArrayList<>(),
+                // the list of polys which we put in the sum b
+                polysInSum = new ArrayList<>();
+
+        polysInSum.add(arr[1]);
 
         RandomGenerator rnd = PrivateRandom.getRandom();
+        int[] sumDegrees = sum.degrees();
+        int nFails = 0; // #tries to add a poly
         for (int i = 2; i < arr.length; i++) {
-            long factor;
-            do { factor = rnd.nextInt(2048); } while (factor == 0);
-            b = b.add((AMultivariatePolynomial) arr[i].clone().multiply(factor));
+            AMultivariatePolynomial tmp;
+            do {
+                tmp = (AMultivariatePolynomial) arr[i].clone().multiply(rnd.nextInt(2048));
+            } while (tmp.isZero());
+
+            boolean shouldHaveCC = !arr[i].ccAsPoly().isZero() || !sum.ccAsPoly().isZero();
+            int[] expectedDegrees = ArraysUtil.max(sumDegrees, tmp.degrees());
+            sum = sum.add(tmp);
+            if (!Arrays.equals(expectedDegrees, sum.degrees()) || (shouldHaveCC && sum.ccAsPoly().isZero())) {
+                // adding of a non-zero factor reduced the degree of the result
+                // the common reason is that the cardinality is very small (e.g. 2, so that x + x = 0)
+                if (nFails == 2) {
+                    nFails = 0;
+                    polysNotInSum.add(arr[i]);
+                } else {
+                    // try once more
+                    ++nFails;
+                    --i;
+                }
+                sum = sum.subtract(tmp);
+            } else {
+                polysInSum.add(arr[i]);
+                sumDegrees = expectedDegrees;
+            }
         }
 
-        AMultivariatePolynomial gcd = algorithm.apply((Poly) a, (Poly) b);
+        assert polysInSum.size() + polysNotInSum.size() + 1 == arr.length;
+
+        Poly gcd = algorithm.apply((Poly) base, (Poly) sum);
         if (gcd.isConstant()) {
             ArraysUtil.swap(arr, 0, iMin); // <-restore
-            return (Poly) gcd;
+            return gcd;
         }
 
-        ArrayList<AMultivariatePolynomial> remainders = new ArrayList<>();
-        for (int i = 1; i < arr.length; i++) {
-            if (!dividesQ(arr[i], gcd))
-                remainders.add(arr[i]);
-        }
+        for (Poly notInSum : polysNotInSum)
+            gcd = algorithm.apply(gcd, notInSum);
 
-        if (!remainders.isEmpty()) {
-            remainders.add(gcd);
-            gcd = PolynomialGCD((Poly[]) remainders.toArray((Poly[]) a.arrayNewInstance(remainders.size())), algorithm);
-        }
+        ArrayList<Poly> remainders = new ArrayList<>();
+        for (Poly inSum : polysInSum)
+            if (!dividesQ(inSum, gcd))
+                remainders.add(inSum);
+
+        if (!remainders.isEmpty())
+            for (Poly remainder : remainders)
+                gcd = algorithm.apply(gcd, remainder);
 
         ArraysUtil.swap(arr, 0, iMin); // <-restore
-        return (Poly) gcd;
+        return gcd;
     }
 
     /**

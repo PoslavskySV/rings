@@ -5,6 +5,7 @@ import cc.r2.core.number.Rational;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.*;
+import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.RandomDataGenerator;
@@ -1227,7 +1228,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
-    public void testMultipleGCD1() throws Exception {
+    public void testArrayGCD1() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
         lMultivariatePolynomialZp
                 gcd = lMultivariatePolynomialZp.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, LEX),
@@ -1241,6 +1242,61 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         lMultivariatePolynomialZp aGcd = MultivariateGCD.PolynomialGCD(arr);
         assertEquals(gcd, aGcd);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testArrayGCD2() throws Exception {
+        // very tricky example with recursive finite fields modulo 2
+        FiniteField<lUnivariatePolynomialZp> minorDomain = new FiniteField<>(lUnivariatePolynomialZ.create(1, 0, 1, 1).modulus(2));
+        FiniteField<UnivariatePolynomial<lUnivariatePolynomialZp>> domain = new FiniteField<>(UnivariatePolynomial.parse(minorDomain, "(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3"));
+        MultivariatePolynomial<lUnivariatePolynomialZp>
+                arr[] = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("((y)*x^0)*b+((y+y^2)*x^0)*b^2+b^3+((1+y)*x^0)*b^4", domain),
+                MultivariatePolynomial.parse("((1+y+y^2)*x^0)*b^4+((1+y)*x^0)*b^8", domain),
+                MultivariatePolynomial.parse("((y+y^2)*x^0)*b^3+((1+y)*x^0)*b^4+((1+y^2)*x^0)*b^5", domain),
+                MultivariatePolynomial.parse("((y)*x^0)*b^2+((y+y^2)*x^0)*b^3+((y)*x^0)*b^4+((y^2)*x^0)*b^5+((1+y+y^2)*x^0)*b^6", domain),
+                MultivariatePolynomial.parse("((y^2)*x^0)+b+((y)*x^0)*b^3+((y+y^2)*x^0)*b^4+((1+y)*x^0)*b^6+((1+y^2)*x^0)*b^7", domain),
+                MultivariatePolynomial.parse("((y+y^2)*x^0)*b^7", domain),
+                MultivariatePolynomial.parse("((1+y^2)*x^0)*b^5", domain),
+                MultivariatePolynomial.parse("((1+y+y^2)*x^0)*b^4+((1+y)*x^0)*b^8", domain),
+                MultivariatePolynomial.parse("((1+y)*x^0)*b^4+((y^2)*x^0)*b^5+((y+y^2)*x^0)*b^6+((y^2)*x^0)*b^7", domain),
+                MultivariatePolynomial.parse("((y+y^2)*x^0)*b^3+((1+y)*x^0)*b^4+((1+y^2)*x^0)*b^5", domain),
+                MultivariatePolynomial.parse("b^2+((y+y^2)*x^0)*b^3+((1+y+y^2)*x^0)*b^5+((y^2)*x^0)*b^6+b^7+((y)*x^0)*b^8", domain),
+                MultivariatePolynomial.parse("((y)*x^0)*b^2+((y+y^2)*x^0)*b^3+((y)*x^0)*b^4+((y^2)*x^0)*b^5+((1+y+y^2)*x^0)*b^6", domain),
+                MultivariatePolynomial.parse("((y+y^2)*x^0)*b^7", domain),
+                MultivariatePolynomial.parse("((y^2)*x^0)+b+((y)*x^0)*b^3+((y+y^2)*x^0)*b^4+((1+y)*x^0)*b^6+((1+y^2)*x^0)*b^7", domain),
+                MultivariatePolynomial.parse("((1+y^2)*x^0)+((y)*x^0)*b+b^3+((1+y)*x^0)*b^4", domain),
+        };
+        for (int i = 0; i < 100; i++)
+            assertTrue(MultivariateGCD.PolynomialGCD(arr).isOne());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testArrayGCD3() throws Exception {
+        // very tricky example with recursive finite fields modulo 2
+        FiniteField<lUnivariatePolynomialZp> minorDomain = new FiniteField<>(lUnivariatePolynomialZ.create(1, 0, 1, 1).modulus(2));
+        FiniteField<UnivariatePolynomial<lUnivariatePolynomialZp>> domain = new FiniteField<>(UnivariatePolynomial.parse(minorDomain, "(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3"));
+        MultivariatePolynomial<lUnivariatePolynomialZp>
+                arr[] = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("(x)*b+(x+x^2)*b^2+b^3+(1+x)*b^4", domain),
+                MultivariatePolynomial.parse("(1+x+x^2)*b^4+(1+x)*b^8", domain),
+                MultivariatePolynomial.parse("(x+x^2)*b^3+(1+x)*b^4+(1+x^2)*b^5", domain),
+                MultivariatePolynomial.parse("(x)*b^2+(x+x^2)*b^3+(x)*b^4+(x^2)*b^5+(1+x+x^2)*b^6", domain),
+                MultivariatePolynomial.parse("(x^2)+b+(x)*b^3+(x+x^2)*b^4+(1+x)*b^6+(1+x^2)*b^7", domain),
+                MultivariatePolynomial.parse("(x+x^2)*b^7", domain),
+                MultivariatePolynomial.parse("(1+x^2)*b^5", domain),
+                MultivariatePolynomial.parse("(1+x+x^2)*b^4+(1+x)*b^8", domain),
+                MultivariatePolynomial.parse("(1+x)*b^4+(x^2)*b^5+(x+x^2)*b^6+(x^2)*b^7", domain),
+                MultivariatePolynomial.parse("(x+x^2)*b^3+(1+x)*b^4+(1+x^2)*b^5", domain),
+                MultivariatePolynomial.parse("b^2+(x+x^2)*b^3+(1+x+x^2)*b^5+(x^2)*b^6+b^7+(x)*b^8", domain),
+                MultivariatePolynomial.parse("(x)*b^2+(x+x^2)*b^3+(x)*b^4+(x^2)*b^5+(1+x+x^2)*b^6", domain),
+                MultivariatePolynomial.parse("(x+x^2)*b^7", domain),
+                MultivariatePolynomial.parse("(x^2)+b+(x)*b^3+(x+x^2)*b^4+(1+x)*b^6+(1+x^2)*b^7", domain),
+                MultivariatePolynomial.parse("(1+x^2)+(x)*b+b^3+(1+x)*b^4", domain),
+        };
+        assertTrue(MultivariateGCD.PolynomialGCD(arr).isOne());
     }
 
     @Test
@@ -1822,7 +1878,6 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         for (int i = 0; i < 10; i++)
             assertEquals(gcd, PolynomialGCD(a, b));
     }
-
 
     /* =============================================== Test data =============================================== */
 
