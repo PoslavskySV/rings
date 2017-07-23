@@ -458,8 +458,9 @@ public final class HenselLifting {
         final IEvaluation<Term, Poly> evaluation;
         final UMultiDiophantineSolver<uPoly> uSolver;
         final Poly[] solution;
-        final Poly[][] images;
         final int[] degreeBounds;
+        final Domain<Poly> mDomain;
+        final UnivariatePolynomial<Poly>[][] imageSeries;
 
         MultiDiophantineSolver(IEvaluation<Term, Poly> evaluation,
                                Poly[] factors,
@@ -472,14 +473,25 @@ public final class HenselLifting {
             this.degreeBounds = degreeBounds;
             Poly factory = factors[0];
             this.solution = factory.arrayNewInstance(factors.length);
-            this.images = factory.arrayNewInstance2D(factory.nVariables, factors.length);
-            this.images[from - 1] = factors;
-            for (int i = from - 2; i >= 0; --i)
-                this.images[i] = evaluation.evaluateFrom(this.images[i + 1], i + 1);
+            this.mDomain = new MultivariatePolynomials<>(factors[0]);
+            this.imageSeries = new UnivariatePolynomial[factory.nVariables][factors.length];
+            for (int i = from - 1; i >= 1; --i)
+                for (int j = 0; j < factors.length; j++)
+                    this.imageSeries[i][j] = seriesExpansion(mDomain, evaluation.evaluateFrom(factors[j], i + 1), i, evaluation);
+        }
+
+        void updateImageSeries(int liftingVariable, Poly[] factors) {
+            for (int i = 0; i < factors.length; i++)
+                imageSeries[liftingVariable][i] = seriesExpansion(mDomain, factors[i], liftingVariable, evaluation);
         }
 
         @SuppressWarnings("unchecked")
         void solve(Poly rhs, int liftingVariable) {
+            if (rhs.isZero()) {
+                for (int i = 0; i < solution.length; i++)
+                    solution[i] = rhs.createZero();
+                return;
+            }
             rhs = evaluation.evaluateFrom(rhs, liftingVariable + 1);
             if (liftingVariable == 0) {
                 uSolver.solve((uPoly) rhs.asUnivariate());
@@ -498,32 +510,31 @@ public final class HenselLifting {
             // x = x[x1, ..., x(i-1), b(i), ... b(N)]
             // y = y[x1, ..., x(i-1), b(i), ... b(N)]
 
-            Poly[] tmpSolution = solution[0].arrayNewInstance(solution.length);
+            UnivariatePolynomial<Poly> rhsSeries = seriesExpansion(mDomain, rhs, liftingVariable, evaluation);
+            UnivariatePolynomial<Poly>[] tmpSolution = new UnivariatePolynomial[solution.length];
             for (int i = 0; i < tmpSolution.length; i++)
-                tmpSolution[i] = solution[i].clone();
+                tmpSolution[i] = seriesExpansion(mDomain, solution[i], liftingVariable, evaluation);
+
+            BernardinsTrick<Poly>[] pProducts = new BernardinsTrick[solution.length];
+            for (int i = 0; i < solution.length; i++)
+                pProducts[i] = createBernardinsTrick(new UnivariatePolynomial[]{tmpSolution[i], imageSeries[liftingVariable][i]}, degreeBounds[liftingVariable]);
 
             for (int degree = 1; degree <= degreeBounds[liftingVariable]; degree++) {
                 // Δ = (rhs - a * x - b * y) mod (x_i - b_i)^degree
-                Poly rhsDelta = rhs.clone();
+                Poly rhsDelta = rhsSeries.get(degree);
                 for (int i = 0; i < solution.length; i++)
-                    rhsDelta = rhsDelta.subtract(images[liftingVariable][i].clone().multiply(tmpSolution[i]));
-
-                if (rhsDelta.isZero())
-                    // we are done
-                    break;
-
-                rhsDelta = evaluation.taylorCoefficient(rhsDelta, liftingVariable, degree);
+                    rhsDelta = rhsDelta.subtract(pProducts[i].fullProduct().get(degree));
 
                 solve(rhsDelta, liftingVariable - 1);
                 //assert x.isZero() || (x.degree(0) < b.degree(0)) : "\na:" + a + "\nb:" + b + "\nx:" + x + "\ny:" + y;
 
                 // (x_i - b_i) ^ degree
-                Poly idPower = evaluation.linearPower(liftingVariable, degree);
-                for (int i = 0; i < tmpSolution.length; i++)
-                    tmpSolution[i].add(solution[i].multiply(idPower));
+                for (int i = 0; i < solution.length; i++)
+                    pProducts[i].update(solution[i], rhs.createZero());
             }
 
-            System.arraycopy(tmpSolution, 0, solution, 0, tmpSolution.length);
+            for (int i = 0; i < solution.length; i++)
+                solution[i] = seriesToPoly(rhs, tmpSolution[i], liftingVariable, evaluation);
         }
     }
 
@@ -863,11 +874,10 @@ public final class HenselLifting {
             for (int i = 0; i < solution.length; i++)
                 factors[i].set(seriesToPoly(base, solution[i], liftingVariable, evaluation));
 
-            if (liftingVariable < base.nVariables) {// don't perform on the last step
-                dSolver.images[liftingVariable] = new AllProductsCache<>(
+            if (liftingVariable < base.nVariables) // don't perform on the last step
+                dSolver.updateImageSeries(liftingVariable, new AllProductsCache<>(
                         evaluation.evaluateFrom(factors, liftingVariable + 1))
-                        .exceptArray();
-            }
+                        .exceptArray());
         }
     }
 

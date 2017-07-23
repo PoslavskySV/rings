@@ -42,6 +42,10 @@ public class RandomMultivariatePolynomial {
         return MultivariatePolynomial.create(nVars, domain, ordering, terms);
     }
 
+    public static lMultivariatePolynomialZp randomPolynomial(int nVars, int degree, int size, lIntegersModulo domain, RandomGenerator rnd) {
+        return randomPolynomial(nVars, degree, size, domain, DegreeVector.LEX, rnd);
+    }
+
     public static lMultivariatePolynomialZp randomPolynomial(int nVars, int degree, int size, lIntegersModulo domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
         int nd = 3 * degree / 2;
         @SuppressWarnings("unchecked")

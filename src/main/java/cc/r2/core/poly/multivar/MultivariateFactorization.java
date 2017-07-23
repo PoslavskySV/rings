@@ -1024,6 +1024,9 @@ public final class MultivariateFactorization {
             return gcdFactorization.addAll(restFactorization);
         }
 
+        // whether domain cardinality is less than 1024
+        boolean isSmallCardinality = poly.coefficientDomainCardinality().bitLength() <= 10;
+
         // the leading coefficient
         Poly lc = poly.lc(0);
         LeadingCoefficientData<Term, Poly> lcData = new LeadingCoefficientData<>(lc);
@@ -1038,7 +1041,7 @@ public final class MultivariateFactorization {
             // choose next evaluation
             IEvaluation<Term, Poly> evaluation = evaluations.next();
 
-            if (evaluation == null || nAttempts++ > N_FAILS_BEFORE_SWITCH_TO_EXTENSION) {
+            if (evaluation == null || (nAttempts++ > N_FAILS_BEFORE_SWITCH_TO_EXTENSION && isSmallCardinality)) {
                 // switch to field extension
                 if (switchToExtensionField)
                     return factorInExtensionFieldGeneric(poly, MultivariateFactorization::factorPrimitive0);
@@ -1246,6 +1249,8 @@ public final class MultivariateFactorization {
                     else
                         // <= lifting leading coefficients
                         HenselLifting.multivariateLiftAutomaticLC(base, ilcFactorsSqFree, ilcEvaluation);
+
+                    //assert multiply(ilcFactorsSqFree).monic().equals(base.clone().monic());
 
                     // l.c. has content in x2
                     for (int jFactor = 0; jFactor < lcFactors.length; jFactor++) {
