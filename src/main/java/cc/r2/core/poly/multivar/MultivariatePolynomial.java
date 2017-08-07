@@ -501,6 +501,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public MultivariatePolynomial<E> setDomainFrom(MultivariatePolynomial<E> poly) {
+        return setDomain(poly.domain);
+    }
+
+    @Override
     boolean isZeroMonomial(MonomialTerm<E> a) {
         return domain.isZero(a.coefficient);
     }
@@ -533,6 +538,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return a copy of this reduced to the domain specified by {@code newDomain}
      */
     public MultivariatePolynomial<E> setDomain(Domain<E> newDomain) {
+        if (domain == newDomain)
+            return clone();
         MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
         for (MonomialTerm<E> e : terms)
             add(newData, e.setDomain(newDomain));

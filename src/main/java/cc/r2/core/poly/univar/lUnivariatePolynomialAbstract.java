@@ -300,6 +300,11 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
+    @Override
+    public final lPoly setDomainFrom(lPoly poly) {
+        return clone();
+    }
+
     /** {@inheritDoc} */
     @Override
     public final lPoly shiftLeft(int offset) {

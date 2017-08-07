@@ -225,6 +225,8 @@ public interface Domain<E> extends Comparator<E>, Iterable<E> {
         if (isOne(divider))
             return dividend;
         E[] qd = divideAndRemainder(dividend, divider);
+        if (qd == null)
+            return null;
         if (!isZero(qd[1]))
             return null;
         return qd[0];

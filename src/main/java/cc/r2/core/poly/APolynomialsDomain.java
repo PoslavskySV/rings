@@ -93,7 +93,12 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     }
 
     @Override
-    public final Poly valueOf(Poly val) {return val;}
+    public final Poly valueOf(Poly val) {
+        if (factory.sameDomainWith(val))
+            return val;
+        else
+            return val.setDomainFrom(factory);
+    }
 
     @Override
     public Poly copy(Poly element) {

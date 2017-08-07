@@ -22,8 +22,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static cc.r2.core.poly.multivar.AMultivariatePolynomial.renameVariables;
-import static cc.r2.core.poly.multivar.MultivariateFactorization.GCDFreeBasis;
-import static cc.r2.core.poly.multivar.MultivariateFactorization.bivariateDenseFactorSquareFree;
+import static cc.r2.core.poly.multivar.MultivariateFactorization.*;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static cc.r2.core.util.ArraysUtil.negate;
 
@@ -1081,21 +1080,49 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                         lMultivariatePolynomialZp.parse("24999489*c^6*d^5*g^7+31605719*b^5*c^5*d^4*e^3*g^6+33475465*b^8*c^5*d^6*f^7+21150942*a*c^4*d^4*e^3*f^3*g+30544835*a*b^3*d^7*e*f^8*g^5+8725705*a*b^8*c^6*d^5*e^4*f*g+3830207*a^2*d^2*e*f^7*g^8+31725230*a^2*b^8*c*e*f^8*g^2+5924640*a^3*c*d^4*e^8+14191319*a^3*b*c^3*e^7*f^3*g^8+5482302*a^3*b^2*c^2*d^5*f^8*g^2+350050*a^4*b^3*c^6*d^6*e^7*f^6+246147*a^4*b^4*c^3*d^7*e^5*g^8+27052604*a^5*c^4*d^4*f+2073523*a^5*b^4*c^4*d^7*e^4*f^2*g^5+21322895*a^5*b^5*c*d^3*e^5*f^5*g^4+19375356*a^5*b^6*c^7*e^3*f^2*g^6+15676776*a^6*b^7*c^3*d^8*e^3*f^6*g^6+9971731*a^7*b^4*c^3*d*e^5*f*g^5+16734963*a^8*b^8*c^7*d^4*e*g^7", domain, vars),
                         lMultivariatePolynomialZp.parse("21113415*b^5*c^6*d^4*e^4*f^2*g^3+20864231*b^8*c*d^6*e^5*f^8*g^5+33448448*a*b^3*c^6*d*e^4*f^7*g^2+31133965*a*b^4*c^2*d^2*e^7*f^6*g^2+27612593*a*b^5*d^5*e^2*f^7*g^4+17128197*a*b^7*c^3*d^6*e^2+4469686*a^2*b^5*c^4*d^8*e^4*f^4*g^7+1374035*a^3*c^8*e^7*f*g^5+10414621*a^3*b^6*c^5*d^7*e^7*f^6*g^6+10872067*a^3*b^8*c^3*d*e^4*f^8*g^4+6381772*a^4*b^2*c^6*d^6*e^6*f^3*g^3+26978581*a^4*b^5*d^6*e^5*f^7+30602413*a^4*b^8*c^8*d^4*e^5*f^3*g^3+13372094*a^5*b^3*c^3*d^7*e^5*f^8*g^3+25263857*a^5*b^5*c*d^7*e^6*g^5+4204332*a^6*c^2*d^2*e*f^6*g^2+13228578*a^6*b^2*c^5*d^7*e^6*f^8*g^6+17934510*a^6*b^8*c^4*d^5*e^3*f^4+17371834*a^7*b^4*c^2*d^8*e^4*f^2*g+8745908*a^8*b*c^4*d^7*e^5*f*g^6", domain, vars)
                 };
-        System.out.println(FactorDecomposition.create(Arrays.asList(factors)));
-
-//        for (int i = 0; i < factors.length; i++) {
-//            factors[i] = AMultivariatePolynomial.swapVariables(factors[i], 2, 3);
-//            factors[i] = AMultivariatePolynomial.swapVariables(factors[i], 0, 2);
-//        }
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
-        System.out.println(Arrays.toString(base.degrees()));
 
-        assert MultivariateSquareFreeFactorization.isSquareFree(base);
-        for (int i = 0; i < its(20, 20); i++) {
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+        Assert.assertEquals(3, decomposition.size());
+    }
+
+    @Test
+    public void test27() throws Exception {
+        MultivariatePolynomial<BigInteger>
+                a = MultivariatePolynomial.parse("a^5 + a^4*b^2 + 11 + b^3"),
+                b = MultivariatePolynomial.parse("a^6 + 66*b + 17*b^2 + 1"),
+                c = MultivariatePolynomial.parse("a^4 + a + b*a^3 + 1"),
+                d = MultivariatePolynomial.parse("a^5 + b^5*a^2 + b^2 + 3"),
+                base = a.clone().multiply(b, c, d);
+
+        System.out.println(base);
+        for (int i = 0; i < its(10, 10); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
-            Assert.assertEquals(3, decomposition.size());
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            System.out.println(factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            FactorDecompositionTest.assertFactorization(base, factors);
+            Assert.assertEquals(4, factors.size());
+        }
+    }
+
+    @Test
+    public void test28() throws Exception {
+        MultivariatePolynomial<BigInteger>
+                a = MultivariatePolynomial.parse("a^5*b + a^4*b^2 + 11 + b^3"),
+                b = MultivariatePolynomial.parse("a^6 + 66*b + 17*b^2 + 1"),
+                c = MultivariatePolynomial.parse("a^4 + a + b*a^3 + 1"),
+                d = MultivariatePolynomial.parse("2*a^5*b^2 + a^5 + b^5*a^2 + b^2 + 3"),
+                base = a.clone().multiply(b, c, d);
+
+        System.out.println(base);
+        for (int i = 0; i < its(10, 10); i++) {
+            long start = System.nanoTime();
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            System.out.println(factors);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            FactorDecompositionTest.assertFactorization(base, factors);
+            Assert.assertEquals(4, factors.size());
         }
     }
 

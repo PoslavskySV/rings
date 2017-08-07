@@ -2,6 +2,8 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.number.BigIntegerArithmetics;
+import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
@@ -636,6 +638,343 @@ public final class MultivariateFactorization {
             trueFactors.addFactor(HenselLifting.denseSeriesToPoly(factory, fRest, 1, evaluation), 1);
 
         return trueFactors.monic();
+    }
+
+    /**
+     * Factors primitive, square-free bivariate polynomial over Z
+     *
+     * @param poly primitive, square-free bivariate polynomial over Zp
+     * @return factor decomposition
+     */
+    static FactorDecomposition<MultivariatePolynomial<BigInteger>>
+    bivariateDenseFactorSquareFreeZ(MultivariatePolynomial<BigInteger> poly) {
+        assert poly.nUsedVariables() <= 2 && IntStream.range(2, poly.nVariables).allMatch(i -> poly.degree(i) == 0);
+
+        if (poly.isEffectiveUnivariate())
+            return factorUnivariate(poly);
+
+        MultivariatePolynomial<BigInteger> reducedPoly = poly;
+        int[] degreeBounds = reducedPoly.degrees();
+
+        // use main variable with maximal degree
+        boolean swapVariables = false;
+        if (degreeBounds[1] > degreeBounds[0]) {
+            swapVariables = true;
+            reducedPoly = AMultivariatePolynomial.swapVariables(reducedPoly, 0, 1);
+            ArraysUtil.swap(degreeBounds, 0, 1);
+        }
+
+        MultivariatePolynomial<BigInteger> xDerivative = reducedPoly.derivative(0);
+        if (xDerivative.isZero()) {
+            reducedPoly = AMultivariatePolynomial.swapVariables(reducedPoly, 0, 1);
+            swapVariables = !swapVariables;
+            xDerivative = reducedPoly.derivative(0);
+        }
+
+        MultivariatePolynomial<BigInteger> dGCD = MultivariateGCD.PolynomialGCD(xDerivative, reducedPoly);
+        if (!dGCD.isConstant()) {
+            FactorDecomposition<MultivariatePolynomial<BigInteger>>
+                    gcdFactorization = bivariateDenseFactorSquareFreeZ(dGCD),
+                    restFactorization = bivariateDenseFactorSquareFreeZ(divideExact(reducedPoly, dGCD));
+
+            gcdFactorization.addAll(restFactorization);
+            if (swapVariables)
+                swap(gcdFactorization);
+
+            return gcdFactorization;
+        }
+
+        // degree in main variable
+        int degree = reducedPoly.degree(0);
+        // substitution value for second variable
+        BigInteger ySubstitution = null;
+        // univariate factorization
+        FactorDecomposition<UnivariatePolynomial<BigInteger>> uFactorization = null;
+
+        // number of univariate factorizations tried
+        int univariateFactorizations = 0;
+        boolean tryZeroFirst = true;
+        UnivariatePolynomial<BigInteger> uImage = null;
+        while (univariateFactorizations < UNIVARIATE_FACTORIZATION_ATTEMPTS) {
+            BigInteger substitution;
+            if (tryZeroFirst) {
+                // first try to substitute 0 for second variable, then use random values
+                substitution = BigInteger.ZERO;
+                tryZeroFirst = false;
+            } else
+                substitution = BigInteger.valueOf(PrivateRandom.getRandom().nextInt());
+
+            MultivariatePolynomial<BigInteger> image = reducedPoly.evaluate(1, substitution);
+            if (image.degree() != degree)
+                // unlucky substitution
+                continue;
+
+            if (image.cc().isZero())
+                // c.c. must not be zero since input is primitive
+                // => unlucky substitution
+                continue;
+
+            uImage = image.asUnivariate();
+            if (!SquareFreeFactorization.isSquareFree(uImage))
+                // ensure that univariate image is also square free
+                continue;
+
+            FactorDecomposition<UnivariatePolynomial<BigInteger>> factorization = Factorization.factor(uImage);
+            if (factorization.size() == 1)
+                // irreducible polynomial
+                return FactorDecomposition.singleFactor(poly);
+
+
+            if (uFactorization == null || factorization.size() < uFactorization.size()) {
+                // better univariate factorization found
+                uFactorization = factorization;
+                ySubstitution = substitution;
+            }
+
+            ++univariateFactorizations;
+        }
+
+        // univariate factors are calculated
+        assert ySubstitution != null;
+
+        // choose appropriate prime modulus
+        int basePrime = 1 << 22;
+        BigInteger bBasePrime;
+        while (true) {
+            basePrime = SmallPrimes.nextPrime(basePrime);
+            bBasePrime = BigInteger.valueOf(basePrime);
+            if (uImage.lc().mod(bBasePrime).isZero() || uImage.cc().mod(bBasePrime).isZero())
+                continue;
+
+            IntegersModulo moduloDomain = new IntegersModulo(bBasePrime);
+            // ensure that univariate factors are still co-prime
+            if (!CommonPolynomialsArithmetics.coprimeQ(uFactorization.map(f -> f.setDomain(moduloDomain)).factors))
+                continue;
+
+            break;
+        }
+
+        // chose prime**k which exceeds the coefficient bound
+
+        BigInteger bound2 = coefficientsBound(poly).shiftLeft(1);
+        BigInteger modulus = bBasePrime;
+        while (modulus.compareTo(bound2) < 0)
+            modulus = modulus.multiply(bBasePrime);
+        IntegersModulo zpDomain = new IntegersModulo(modulus);
+
+        @SuppressWarnings("unchecked")
+        List<UnivariatePolynomial<BigInteger>> factorsListZp = uFactorization.map(f -> f.setDomain(zpDomain)).monic().factors;
+        MultivariatePolynomial<BigInteger>
+                baseZp = reducedPoly.setDomain(zpDomain),
+                lcZp = baseZp.lc(0);
+        baseZp = baseZp.divideOrNull(lcZp.evaluate(1, ySubstitution).lc());
+        assert baseZp != null;
+
+        // we don't precompute correct leading coefficients of bivariate factors
+        // instead, we add the l.c. of the product to a list of lifting factors
+        // in order to obtain correct factorization with monic factors mod (y - y0)^l
+        // and then perform l.c. correction at the recombination stage
+
+        Evaluation<BigInteger> evaluation = new Evaluation<>(poly.nVariables, new BigInteger[]{ySubstitution}, zpDomain, baseZp.ordering);
+        if (!lcZp.isConstant()) {
+            // add lc to lifting factors
+            assert evaluation.evaluateFrom(lcZp, 1).isConstant();
+            factorsListZp.add(0, factorsListZp.get(0).createOne());
+        }
+
+        // final factors to lift
+        @SuppressWarnings("unchecked")
+        UnivariatePolynomial<BigInteger>[] factorsZp = factorsListZp.toArray(new UnivariatePolynomial[factorsListZp.size()]);
+
+        // lift univariate factorization
+        int liftDegree = baseZp.degree(1) + 1;
+
+        // series expansion around y = y0 for initial poly
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> baseSeriesZp =
+                HenselLifting.seriesExpansionDense(UnivariatePolynomials.overZp(modulus), baseZp, 1, evaluation);
+
+        // lifted factors (each factor represented as series around y = y0)
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] liftedZp =
+                HenselLifting.bivariateLiftDense(baseSeriesZp, factorsZp, liftDegree);
+
+        if (!lcZp.isConstant())
+            // drop auxiliary l.c. from factors
+            liftedZp = Arrays.copyOfRange(liftedZp, 1, factorsZp.length);
+
+        // factors are lifted => do recombination
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> baseSeriesZ =
+                seriesExpansionDenseZ(reducedPoly, ySubstitution);
+        FactorDecomposition<MultivariatePolynomial<BigInteger>> result = denseBivariateRecombinationZ(
+                reducedPoly, baseZp, baseSeriesZ, liftedZp, evaluation, ySubstitution, zpDomain, liftDegree);
+
+//        MultivariatePolynomial<BigInteger> tmp = baseZp.clone();
+//        FactorDecomposition<MultivariatePolynomial<BigInteger>> result = denseBivariateRecombinationZ(
+//                reducedPoly, Arrays.stream(liftedZp).map(p -> HenselLifting.denseSeriesToPoly(tmp, p, 1, evaluation)).toArray(MultivariatePolynomial[]::new), evaluation, liftDegree);
+
+        if (swapVariables)
+            // reconstruct original variables order
+            for (int i = 0; i < result.factors.size(); i++)
+                result.factors.set(i, AMultivariatePolynomial.swapVariables(result.get(i), 0, 1));
+
+        return result;
+    }
+
+    static BigInteger coefficientsBound(MultivariatePolynomial<BigInteger> poly) {
+        BigInteger uniformNorm = BigInteger.ZERO;
+        for (BigInteger c : poly.coefficients())
+            if (c.compareTo(uniformNorm) > 0)
+                uniformNorm = c;
+
+        int[] degrees = poly.degrees();
+        int degreeSum = 0;
+        BigInteger bound = BigInteger.ONE;
+        for (int d : degrees) {
+            degreeSum += d;
+            bound = bound.multiply(BigInteger.valueOf(d).increment());
+        }
+        bound = bound.divide(BigInteger.ONE.shiftLeft(degrees.length));
+        bound = BigIntegerArithmetics.sqrtCeil(bound);
+        bound = bound.multiply(BigInteger.ONE.shiftLeft(degreeSum));
+        bound = bound.multiply(uniformNorm);
+
+        return bound;
+    }
+
+//    /**
+//     * Naive dense recombination for bivariate factors
+//     *
+//     * @param base           multivariate polynomial factory (over Z)
+//     * @param poly           series around y = y0 for base polynomial (which we attempt to factor) (over Z)
+//     * @param modularFactors univariate factors mod (y-y0)^liftDegree (over Z/p)
+//     * @param liftDegree     lifting degree (ideal power)
+//     * @return true factorization
+//     */
+//    static FactorDecomposition<MultivariatePolynomial<BigInteger>> denseBivariateRecombinationZ(
+//            MultivariatePolynomial<BigInteger> base,
+//            MultivariatePolynomial<BigInteger>[] modularFactors,
+//            Evaluation<BigInteger> evaluation,
+//            int liftDegree) {
+//
+//
+//        int[] modIndexes = naturalSequenceRef(modularFactors.length);
+//        FactorDecomposition<MultivariatePolynomial<BigInteger>> trueFactors = FactorDecomposition.empty(base);
+//        MultivariatePolynomial<BigInteger> fRest = base;
+//        int s = 1;
+//
+//        factor_combinations:
+//        while (2 * s <= modIndexes.length) {
+//            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
+//            for (int[] combination : combinations) {
+//                int[] indexes = select(modIndexes, combination);
+//
+//                MultivariatePolynomial<BigInteger> factor = fRest.lc(0).setDomainFrom(modularFactors[0]);
+//
+//                for (int i : indexes)
+//                    // todo:
+//                    // implement IUnivariatePolynomial#multiplyLow(int)
+//                    // and replace truncate(int) with multiplyLow(int)
+//                    factor = evaluation.modImage(factor.multiply(modularFactors[i]), 1, liftDegree);//.truncate(liftDegree - 1);
+//
+//                factor = MultivariatePolynomial.asPolyZSymmetric(factor);
+//
+//                // get primitive part in first variable (remove R[y] content)
+//                factor = factor.primitivePart(1);
+//
+//                MultivariatePolynomial<BigInteger>[] qd = MultivariateReduction.divideAndRemainder(fRest, factor);
+//                if (qd != null && qd[1].isZero()) {
+//                    modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
+//                    trueFactors.addFactor(factor, 1);
+//                    fRest = qd[0];
+//                    continue factor_combinations;
+//                }
+//            }
+//            ++s;
+//        }
+//
+//        if (!fRest.isConstant() || !fRest.isConstant())
+//            trueFactors.addFactor(fRest, 1);
+//
+//        return trueFactors;
+//    }
+
+    static FactorDecomposition<MultivariatePolynomial<BigInteger>> denseBivariateRecombinationZ(
+            MultivariatePolynomial<BigInteger> baseZ,
+            MultivariatePolynomial<BigInteger> baseZp,
+            UnivariatePolynomial<UnivariatePolynomial<BigInteger>> baseSeriesZ,
+            UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] modularFactorsZp,
+            Evaluation<BigInteger> evaluation,
+            BigInteger ySubstitution,
+            Domain<BigInteger> modulus,
+            int liftDegree) {
+
+        int[] modIndexes = naturalSequenceRef(modularFactorsZp.length);
+        FactorDecomposition<MultivariatePolynomial<BigInteger>> trueFactors = FactorDecomposition.empty(baseZ);
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> fRest = baseSeriesZ;
+        int s = 1;
+
+        MultivariatePolynomial.USubstitution<BigInteger> lPowersZ = new MultivariatePolynomial.USubstitution<>(
+                UnivariatePolynomial.create(Integers.Integers, ySubstitution.negate(), BigInteger.ONE),
+                1, 2, baseZ.ordering);
+
+        UnivariatePolynomials<UnivariatePolynomial<BigInteger>> moduloDomain = UnivariatePolynomials.overDomain(modulus);
+
+        assert baseZ.equals(denseSeriesToPolyZ(baseZ, baseSeriesZ, lPowersZ));
+
+        factor_combinations:
+        while (2 * s <= modIndexes.length) {
+            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
+            for (int[] combination : combinations) {
+                int[] indexes = select(modIndexes, combination);
+
+                UnivariatePolynomial<UnivariatePolynomial<BigInteger>> factor = lcInSeries(fRest).setDomain(moduloDomain);
+
+                for (int i : indexes)
+                    // todo:
+                    // implement IUnivariatePolynomial#multiplyLow(int)
+                    // and replace truncate(int) with multiplyLow(int)
+                    factor = factor.multiply(modularFactorsZp[i]).truncate(liftDegree - 1);
+
+                factor = seriesExpansionDenseZ(MultivariatePolynomial.asPolyZSymmetric(HenselLifting.denseSeriesToPoly(baseZp, factor, 1, evaluation)).primitivePart(1), ySubstitution);
+                UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] qd = DivisionWithRemainder.divideAndRemainder(fRest, factor, true);
+                if (qd != null && qd[1].isZero()) {
+                    modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
+                    trueFactors.addFactor(denseSeriesToPolyZ(baseZ, factor, lPowersZ), 1);
+                    fRest = qd[0];
+                    continue factor_combinations;
+                }
+            }
+            ++s;
+        }
+
+        if (!fRest.isConstant() || !fRest.cc().isConstant())
+            if (trueFactors.size() == 0)
+                trueFactors.addFactor(baseZ, 1);
+            else
+                trueFactors.addFactor(denseSeriesToPolyZ(baseZ, fRest, lPowersZ), 1);
+
+        return trueFactors;
+    }
+
+    private static UnivariatePolynomial<UnivariatePolynomial<BigInteger>> seriesExpansionDenseZ(
+            MultivariatePolynomial<BigInteger> poly,
+            BigInteger ySubstitution) {
+        int degree = poly.degree(1);
+        UnivariatePolynomial<BigInteger>[] coefficients = UnivariatePolynomials.POLYNOMIALS_OVER_Z.createArray(degree + 1);
+        for (int i = 0; i <= degree; i++)
+            coefficients[i] = poly.seriesCoefficient(1, i).evaluate(1, ySubstitution).asUnivariate();
+        return UnivariatePolynomial.create(UnivariatePolynomials.POLYNOMIALS_OVER_Z, coefficients);
+    }
+
+    private static MultivariatePolynomial<BigInteger> denseSeriesToPolyZ(
+            MultivariatePolynomial<BigInteger> factory,
+            UnivariatePolynomial<UnivariatePolynomial<BigInteger>> series,
+            MultivariatePolynomial.USubstitution<BigInteger> linearPowers) {
+        MultivariatePolynomial<BigInteger> result = factory.createZero();
+        for (int i = 0; i <= series.degree(); i++) {
+            MultivariatePolynomial<BigInteger> mPoly = AMultivariatePolynomial.asMultivariate(series.get(i), factory.nVariables, 0, factory.ordering);
+            result = result.add(mPoly.multiply(linearPowers.pow(i)));
+        }
+        return result;
     }
 
     /** Given poly as R[x][y] transform it to R[y][x] */

@@ -457,6 +457,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
+    public lMultivariatePolynomialZp setDomainFrom(lMultivariatePolynomialZp lMonomialTerms) {
+        return clone();
+    }
+
+    @Override
     boolean isZeroMonomial(lMonomialTerm a) {
         return a.coefficient == 0L;
     }

@@ -18,6 +18,14 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> exten
     boolean sameDomainWith(Poly oth);
 
     /**
+     * Set the domain from specified poly
+     *
+     * @param poly the polynomial
+     * @return a copy of this with domain taken from {@code poly}
+     */
+    Poly setDomainFrom(Poly poly);
+
+    /**
      * Checks whether {@code oth} and {@code this} have the same coefficients domain, if not exception will be thrown
      *
      * @param oth other polynomial

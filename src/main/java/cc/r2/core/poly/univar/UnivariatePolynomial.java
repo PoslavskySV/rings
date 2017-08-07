@@ -231,6 +231,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return a copy of this with specified new domain
      */
     public UnivariatePolynomial<E> setDomain(Domain<E> newDomain) {
+        if (domain == newDomain)
+            return clone();
         E[] newData = Arrays.copyOf(data, degree + 1);
         newDomain.setToValueOf(newData);
         return new UnivariatePolynomial<>(newDomain, newData);
@@ -342,6 +344,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public boolean sameDomainWith(UnivariatePolynomial<E> oth) {
         return domain.equals(oth.domain);
+    }
+
+    @Override
+    public UnivariatePolynomial<E> setDomainFrom(UnivariatePolynomial<E> poly) {
+        return setDomain(poly.domain);
     }
 
     /**

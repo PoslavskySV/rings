@@ -8,6 +8,8 @@ import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.UnivariateGCD;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
+import java.util.stream.StreamSupport;
+
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -44,6 +46,14 @@ public final class CommonPolynomialsArithmetics {
                 if (!PolynomialGCD(polynomials[i], polynomials[j]).isConstant())
                     return false;
         return true;
+    }
+
+    public static <Poly extends IGeneralPolynomial<Poly>>
+    boolean coprimeQ(Iterable<Poly> polynomials) {
+        if (!polynomials.iterator().hasNext())
+            throw new IllegalArgumentException();
+        Poly factory = polynomials.iterator().next();
+        return coprimeQ(StreamSupport.stream(polynomials.spliterator(), false).toArray(factory::arrayNewInstance));
     }
 
     /**
