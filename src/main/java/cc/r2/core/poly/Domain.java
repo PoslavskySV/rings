@@ -250,6 +250,19 @@ public interface Domain<E> extends Comparator<E>, Iterable<E> {
     E gcd(E a, E b);
 
     /**
+     * Returns least common multiple of two elements
+     *
+     * @param a the first element
+     * @param b the second element
+     * @return lcm
+     */
+    default E lcm(E a, E b) {
+        if (isZero(a) || isZero(b))
+            return getZero();
+        return multiply(divideExact(a, gcd(a, b)), b);
+    }
+
+    /**
      * Returns greatest common divisor of specified elements
      *
      * @param els the elements

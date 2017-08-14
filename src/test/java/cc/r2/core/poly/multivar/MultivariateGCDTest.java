@@ -28,6 +28,7 @@ import static cc.r2.core.poly.multivar.DegreeVector.LEX;
 import static cc.r2.core.poly.multivar.MultivariateGCD.*;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.asLongPolyZp;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
+import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
 import static cc.r2.core.poly.multivar.MultivariateReduction.dividesQ;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
 import static org.junit.Assert.*;
@@ -996,6 +997,39 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 gcd = parse("15477332*a^10*b^13*c^5+7*a^14*b^5*c^3+6*a^19*b^12*c^5+2*a^19*b^12*c^13+15477329*a^20*b*c^19+15477332*a^20*b^8*c^12+7*a^21*b^8*c^2");
         assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
+
+    @Test
+    public void testModularGCD9() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("428678675174997*b - 576309141757314*c - 1799929908190992*b*c + 43581966762456*b^2*c + 2155012404966050*c^2 + 1356161027210220*b*c^2 - 162945010788840*b^2*c^2 - 579102861059775*b^6*c^2 + 667785318790236*b^5*c^3 + 569898197386650*b^6*c^3 - 41635029186864*b^7*c^3", vars),
+                b = parse("-c", vars),
+                gcd = parse("-2287341106126463750*b^7*c^5 + 1532098182980478300*b^8*c^5 - 946030127950514950*b^4*c^6 + 633666328207734108*b^5*c^6 + 723818682898978700*b^6*c^6 - 2410587259891460925*b^7*c^6 + 67657454221929000*b^8*c^6 + 299366928422627212*b^3*c^7 - 997003974528718653*b^4*c^7 + 27982704417344040*b^5*c^7 + 31963832309981000*b^6*c^7 - 101990974478857750*b^7*c^7 + 13220043258527560*b^3*c^8 - 42182835947642390*b^4*c^8", vars);
+        assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
+    }
+//
+//    @Test
+//    public void testModularGCD9a() throws Exception {
+//        String[] vars = {"a", "b", "c"};
+//        lIntegersModulo domain = new lIntegersModulo(1033);
+//        lMultivariatePolynomialZp
+//                a = lMultivariatePolynomialZp.parse("788*b^3+694*b^4+812*b^5+539*a*b^2+1023*a*b^3+681*a*b^4+666*a*b^5+441*a^2*b+625*a^2*b^2+223*a^2*b^3+574*a^2*b^4+431*a^2*b^5+881*a^3*b+181*a^3*b^2+337*a^3*b^3+988*a^3*b^4+504*a^3*b^5+584*a^4*b+388*a^4*b^2+948*a^4*b^3+263*a^4*b^4+290*a^5+842*a^5*b+669*a^5*b^2+689*a^5*b^3+260*a^5*b^4+185*a^5*b^5+186*a^5*b^6+577*a^6+682*a^6*b+963*a^6*b^2+821*a^6*b^3+636*a^6*b^4+285*a^6*b^5+771*a^6*b^6+221*a^7*b+847*a^7*b^2+346*a^7*b^3+360*a^7*b^4+778*a^7*b^5+937*a^7*b^6+825*a^8*b^3+959*a^8*b^4+663*a^8*b^5+540*a^8*b^6+471*a^9*b^3+95*a^9*b^4+823*a^9*b^5+125*a^10*b^2+47*a^10*b^3+268*a^10*b^4+745*a^10*b^5+409*a^11*b^2+179*a^11*b^3+315*a^11*b^4+587*a^11*b^5+819*a^12*b^3+695*a^12*b^4", domain, vars),
+//                b = lMultivariatePolynomialZp.parse("427*b^2+742*b^3+733*a*b+544*a*b^2+306*a*b^3+258*a^2*b+533*a^2*b^2+248*a^3*b+160*a^3*b^2+133*a^4+599*a^4*b+918*a^4*b^2+774*a^5+566*a^5*b", domain, vars),
+//                skeleton = lMultivariatePolynomialZp.parse("943*b^2+976*b^3+899*a*b+212*a*b^2+764*a*b^3+26*a^2*b+274*a^2*b^2+921*a^3*b+189*a^3*b^2+866*a^4+265*a^4*b+955*a^4*b^2+548*a^5+858*a^5*b", domain, vars),
+//                content = lMultivariatePolynomialZp.parse("673+b", domain, vars);
+//
+//        System.out.println(b.sameSkeleton(skeleton));
+//        System.out.println(b.clone().setAllCoefficientsToUnit());
+//
+////        a = divideExact(a, content);
+//        b = divideExact(b, content);
+//
+//        skeleton = skeleton.setAllCoefficientsToUnit();
+//        content = content.setAllCoefficientsToUnit();
+//        System.out.println(skeleton);
+//        System.out.println(content);
+//        skeleton = divideSkeletonExact(skeleton, content);
+//    }
 
     @Test
     public void testModularGCD_random1() throws Exception {

@@ -112,6 +112,11 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
                 poly = CommonPolynomialsArithmetics.polyPow(poly, eTmp[i], false);
                 assert poly.isMonomial();
             }
+            if (poly.signum() < 0) {
+                poly.negate();
+                if (eTmp[i] % 2 == 1)
+                    constantFactor.negate();
+            }
         }
 
         ArraysUtil.quickSort(fTmp, eTmp);
@@ -122,6 +127,13 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
         return this;
     }
 
+    public int signum() {
+        int signum = constantFactor.signum();
+        for (int i = 0; i < factors.size(); i++)
+            signum *= exponents.get(i) % 2 == 0 ? 1 : factors.get(i).signum();
+        return signum;
+    }
+
     public FactorDecomposition<Poly> withoutConstantFactor() {
         return new FactorDecomposition<>(constantFactor.createOne(), factors, exponents);
     }
@@ -130,9 +142,30 @@ public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> im
         for (int i = 0; i < factors.size(); i++) {
             Poly factor = factors.get(i);
             addConstantFactor(polyPow(factor.lcAsPoly(), exponents.get(i), false));
-            factor.monic();
+            factor = factor.monic();
+            assert factor != null;
         }
         return this;
+    }
+
+    public FactorDecomposition<Poly> primitive() {
+        for (int i = 0; i < factors.size(); i++) {
+            Poly factor = factors.get(i);
+            Poly content = factor.contentAsPoly();
+            addConstantFactor(polyPow(content, exponents.get(i), false));
+            factor = factor.divideByLC(content);
+            assert factor != null;
+            if (factor.signum() < 0) {
+                factor.negate();
+                if (exponents.get(i) % 2 == 1)
+                    constantFactor.negate();
+            }
+        }
+        return this;
+    }
+
+    public FactorDecomposition<Poly> reduceConstantContent() {
+        return constantFactor.isOverField() ? monic() : primitive();
     }
 
     /** Map polynomials using mapper */

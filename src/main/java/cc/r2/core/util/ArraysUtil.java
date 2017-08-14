@@ -343,6 +343,15 @@ public final class ArraysUtil {
         return newArray;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T[] insert(T[] array, int position, T value) {
+        T[] newArray = (T[]) Array.newInstance(value.getClass(), array.length + 1);
+        System.arraycopy(array, 0, newArray, 0, position);
+        System.arraycopy(array, position, newArray, position + 1, array.length - position);
+        newArray[position] = value;
+        return newArray;
+    }
+
     public static void reverse(long[] array, int from, int to) {
         for (int i = 0; i < (to - from) / 2; ++i)
             swap(array, from + i, to - 1 - i);

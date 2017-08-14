@@ -107,7 +107,7 @@ public final class HenselLifting {
             return evaluate(poly.seriesCoefficient(variable, order), variable);
         }
 
-        /** @return (x_i - b_i)^exponent */
+        /** @return {@code (x_i - b_i)^exponent} */
         Poly linearPower(int variable, int exponent);
 
         default Poly modImage(Poly poly, int variable, int idealExponent) {
@@ -246,6 +246,10 @@ public final class HenselLifting {
             this.linearPowers = new USubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
                 linearPowers[i] = new USubstitution<>(UnivariatePolynomial.create(domain, domain.negate(values[i]), domain.getOne()), i + 1, nVariables, ordering);
+        }
+
+        Evaluation<E> setDomain(Domain<E> domain) {
+            return new Evaluation<>(nVariables, values, domain, ordering);
         }
 
         @Override

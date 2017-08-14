@@ -640,10 +640,12 @@ public final class MultivariateFactorization {
         return trueFactors.monic();
     }
 
+    /* ======================================= Bivariate factorization over Z ======================================= */
+
     /**
      * Factors primitive, square-free bivariate polynomial over Z
      *
-     * @param poly primitive, square-free bivariate polynomial over Zp
+     * @param poly primitive, square-free bivariate polynomial over Z
      * @return factor decomposition
      */
     static FactorDecomposition<MultivariatePolynomial<BigInteger>>
@@ -653,7 +655,8 @@ public final class MultivariateFactorization {
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
 
-        MultivariatePolynomial<BigInteger> reducedPoly = poly;
+        MultivariatePolynomial<BigInteger> content = poly.contentAsPoly();
+        MultivariatePolynomial<BigInteger> reducedPoly = content.isOne() ? poly : poly.clone().divideByLC(content);
         int[] degreeBounds = reducedPoly.degrees();
 
         // use main variable with maximal degree
@@ -665,12 +668,7 @@ public final class MultivariateFactorization {
         }
 
         MultivariatePolynomial<BigInteger> xDerivative = reducedPoly.derivative(0);
-        if (xDerivative.isZero()) {
-            reducedPoly = AMultivariatePolynomial.swapVariables(reducedPoly, 0, 1);
-            swapVariables = !swapVariables;
-            xDerivative = reducedPoly.derivative(0);
-        }
-
+        assert !xDerivative.isZero();
         MultivariatePolynomial<BigInteger> dGCD = MultivariateGCD.PolynomialGCD(xDerivative, reducedPoly);
         if (!dGCD.isConstant()) {
             FactorDecomposition<MultivariatePolynomial<BigInteger>>
@@ -724,7 +722,6 @@ public final class MultivariateFactorization {
                 // irreducible polynomial
                 return FactorDecomposition.singleFactor(poly);
 
-
             if (uFactorization == null || factorization.size() < uFactorization.size()) {
                 // better univariate factorization found
                 uFactorization = factorization;
@@ -743,7 +740,7 @@ public final class MultivariateFactorization {
         while (true) {
             basePrime = SmallPrimes.nextPrime(basePrime);
             bBasePrime = BigInteger.valueOf(basePrime);
-            if (uImage.lc().mod(bBasePrime).isZero() || uImage.cc().mod(bBasePrime).isZero())
+            if (!isGoodPrime(bBasePrime, uImage.lc(), uImage.cc()))
                 continue;
 
             IntegersModulo moduloDomain = new IntegersModulo(bBasePrime);
@@ -756,7 +753,9 @@ public final class MultivariateFactorization {
 
         // chose prime**k which exceeds the coefficient bound
 
-        BigInteger bound2 = coefficientsBound(poly).shiftLeft(1);
+        // prime bound is 2 * bound(poly) * bound(poly.lc(0)) (lc must be included since we don't
+        // precompute correct lc but use instead exhaustive lifting and recombination)
+        BigInteger bound2 = coefficientsBound(reducedPoly).multiply(coefficientsBound(reducedPoly.lc(0))).shiftLeft(1);
         BigInteger modulus = bBasePrime;
         while (modulus.compareTo(bound2) < 0)
             modulus = modulus.multiply(bBasePrime);
@@ -775,7 +774,9 @@ public final class MultivariateFactorization {
         // in order to obtain correct factorization with monic factors mod (y - y0)^l
         // and then perform l.c. correction at the recombination stage
 
-        Evaluation<BigInteger> evaluation = new Evaluation<>(poly.nVariables, new BigInteger[]{ySubstitution}, zpDomain, baseZp.ordering);
+        BigInteger[] evals = Integers.Integers.createZeroesArray(poly.nVariables - 1);
+        evals[0] = ySubstitution;
+        Evaluation<BigInteger> evaluation = new Evaluation<>(poly.nVariables, evals, zpDomain, baseZp.ordering);
         if (!lcZp.isConstant()) {
             // add lc to lifting factors
             assert evaluation.evaluateFrom(lcZp, 1).isConstant();
@@ -807,23 +808,31 @@ public final class MultivariateFactorization {
         FactorDecomposition<MultivariatePolynomial<BigInteger>> result = denseBivariateRecombinationZ(
                 reducedPoly, baseZp, baseSeriesZ, liftedZp, evaluation, ySubstitution, zpDomain, liftDegree);
 
-//        MultivariatePolynomial<BigInteger> tmp = baseZp.clone();
-//        FactorDecomposition<MultivariatePolynomial<BigInteger>> result = denseBivariateRecombinationZ(
-//                reducedPoly, Arrays.stream(liftedZp).map(p -> HenselLifting.denseSeriesToPoly(tmp, p, 1, evaluation)).toArray(MultivariatePolynomial[]::new), evaluation, liftDegree);
-
         if (swapVariables)
             // reconstruct original variables order
             for (int i = 0; i < result.factors.size(); i++)
                 result.factors.set(i, AMultivariatePolynomial.swapVariables(result.get(i), 0, 1));
 
-        return result;
+        return result.addConstantFactor(content);
+    }
+
+    private static boolean isGoodPrime(BigInteger prime, BigInteger ulc, BigInteger ucc) {
+        if (!ulc.isOne() && (prime.compareTo(ulc) > 0 ? prime.remainder(ulc) : ulc.remainder(prime)).isZero())
+            return false;
+        if (!ucc.isOne() && (prime.compareTo(ucc) > 0 ? prime.remainder(ucc) : ucc.remainder(prime)).isZero())
+            return false;
+        return true;
     }
 
     static BigInteger coefficientsBound(MultivariatePolynomial<BigInteger> poly) {
-        BigInteger uniformNorm = BigInteger.ZERO;
-        for (BigInteger c : poly.coefficients())
-            if (c.compareTo(uniformNorm) > 0)
-                uniformNorm = c;
+        BigInteger maxNorm = BigInteger.ZERO;
+        for (BigInteger c : poly.coefficients()) {
+            BigInteger abs = c.abs();
+            if (abs.compareTo(maxNorm) > 0)
+                maxNorm = abs;
+        }
+
+        assert maxNorm.signum() > 0;
 
         int[] degrees = poly.degrees();
         int degreeSum = 0;
@@ -832,74 +841,19 @@ public final class MultivariateFactorization {
             degreeSum += d;
             bound = bound.multiply(BigInteger.valueOf(d).increment());
         }
-        bound = bound.divide(BigInteger.ONE.shiftLeft(degrees.length));
+        bound = bound.divide(BigInteger.ONE.shiftLeft(degrees.length)).increment();
         bound = BigIntegerArithmetics.sqrtCeil(bound);
         bound = bound.multiply(BigInteger.ONE.shiftLeft(degreeSum));
-        bound = bound.multiply(uniformNorm);
+        bound = bound.multiply(maxNorm);
 
+        assert bound.signum() > 0;
         return bound;
     }
 
-//    /**
-//     * Naive dense recombination for bivariate factors
-//     *
-//     * @param base           multivariate polynomial factory (over Z)
-//     * @param poly           series around y = y0 for base polynomial (which we attempt to factor) (over Z)
-//     * @param modularFactors univariate factors mod (y-y0)^liftDegree (over Z/p)
-//     * @param liftDegree     lifting degree (ideal power)
-//     * @return true factorization
-//     */
-//    static FactorDecomposition<MultivariatePolynomial<BigInteger>> denseBivariateRecombinationZ(
-//            MultivariatePolynomial<BigInteger> base,
-//            MultivariatePolynomial<BigInteger>[] modularFactors,
-//            Evaluation<BigInteger> evaluation,
-//            int liftDegree) {
-//
-//
-//        int[] modIndexes = naturalSequenceRef(modularFactors.length);
-//        FactorDecomposition<MultivariatePolynomial<BigInteger>> trueFactors = FactorDecomposition.empty(base);
-//        MultivariatePolynomial<BigInteger> fRest = base;
-//        int s = 1;
-//
-//        factor_combinations:
-//        while (2 * s <= modIndexes.length) {
-//            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
-//            for (int[] combination : combinations) {
-//                int[] indexes = select(modIndexes, combination);
-//
-//                MultivariatePolynomial<BigInteger> factor = fRest.lc(0).setDomainFrom(modularFactors[0]);
-//
-//                for (int i : indexes)
-//                    // todo:
-//                    // implement IUnivariatePolynomial#multiplyLow(int)
-//                    // and replace truncate(int) with multiplyLow(int)
-//                    factor = evaluation.modImage(factor.multiply(modularFactors[i]), 1, liftDegree);//.truncate(liftDegree - 1);
-//
-//                factor = MultivariatePolynomial.asPolyZSymmetric(factor);
-//
-//                // get primitive part in first variable (remove R[y] content)
-//                factor = factor.primitivePart(1);
-//
-//                MultivariatePolynomial<BigInteger>[] qd = MultivariateReduction.divideAndRemainder(fRest, factor);
-//                if (qd != null && qd[1].isZero()) {
-//                    modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
-//                    trueFactors.addFactor(factor, 1);
-//                    fRest = qd[0];
-//                    continue factor_combinations;
-//                }
-//            }
-//            ++s;
-//        }
-//
-//        if (!fRest.isConstant() || !fRest.isConstant())
-//            trueFactors.addFactor(fRest, 1);
-//
-//        return trueFactors;
-//    }
-
+    /** naive recombination for lifting to factorization in Z */
     static FactorDecomposition<MultivariatePolynomial<BigInteger>> denseBivariateRecombinationZ(
             MultivariatePolynomial<BigInteger> baseZ,
-            MultivariatePolynomial<BigInteger> baseZp,
+            MultivariatePolynomial<BigInteger> factoryZp,
             UnivariatePolynomial<UnivariatePolynomial<BigInteger>> baseSeriesZ,
             UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] modularFactorsZp,
             Evaluation<BigInteger> evaluation,
@@ -914,10 +868,11 @@ public final class MultivariateFactorization {
 
         MultivariatePolynomial.USubstitution<BigInteger> lPowersZ = new MultivariatePolynomial.USubstitution<>(
                 UnivariatePolynomial.create(Integers.Integers, ySubstitution.negate(), BigInteger.ONE),
-                1, 2, baseZ.ordering);
+                1, baseZ.nVariables, baseZ.ordering);
 
         UnivariatePolynomials<UnivariatePolynomial<BigInteger>> moduloDomain = UnivariatePolynomials.overDomain(modulus);
 
+        assert baseZ.lc(0).equals(denseSeriesToPolyZ(baseZ, lcInSeries(fRest), lPowersZ));
         assert baseZ.equals(denseSeriesToPolyZ(baseZ, baseSeriesZ, lPowersZ));
 
         factor_combinations:
@@ -934,7 +889,7 @@ public final class MultivariateFactorization {
                     // and replace truncate(int) with multiplyLow(int)
                     factor = factor.multiply(modularFactorsZp[i]).truncate(liftDegree - 1);
 
-                factor = seriesExpansionDenseZ(MultivariatePolynomial.asPolyZSymmetric(HenselLifting.denseSeriesToPoly(baseZp, factor, 1, evaluation)).primitivePart(1), ySubstitution);
+                factor = seriesExpansionDenseZ(MultivariatePolynomial.asPolyZSymmetric(HenselLifting.denseSeriesToPoly(factoryZp, factor, 1, evaluation)).primitivePart(1), ySubstitution);
                 UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] qd = DivisionWithRemainder.divideAndRemainder(fRest, factor, true);
                 if (qd != null && qd[1].isZero()) {
                     modIndexes = ArraysUtil.intSetDifference(modIndexes, indexes);
@@ -1252,6 +1207,7 @@ public final class MultivariateFactorization {
 
                 int[] cDegrees = content.degrees();
                 int[] variables = ArraysUtil.sequence(0, cDegrees.length);
+                // use stable sort
                 ArraysUtil.insertionSort(ArraysUtil.negate(cDegrees), variables);
 
                 int iMax = 0;
@@ -1277,16 +1233,21 @@ public final class MultivariateFactorization {
             this.lcSplits = splits.toArray(new SplitContent[splits.size()]);
             this.fullyReconstructable = content.isConstant();
 
-            // assert that for domains of large characteristics, l.c. is always can be fully reconstructed
-            assert lc.coefficientDomainCharacteristics().shiftRight(16).signum() == 0 || fullyReconstructable;
+            // assert that for domains of large characteristics l.c. always can be fully reconstructed
+            assert fullyReconstructable || lc.coefficientDomainCharacteristics().shiftRight(16).signum() == 0;
         }
     }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     boolean isPPower(Poly p, int variable) {
         BigInteger characteristics = p.coefficientDomainCharacteristics();
-        if (!characteristics.isInt())
+        if (characteristics.isZero())
+            // poly over Z
             return false;
+        if (!characteristics.isInt())
+            // characteristics is larger than maximal possible exponent
+            return false;
+
         int modulus = characteristics.intValueExact();
         if (modulus > p.degree())
             return false;
@@ -1687,7 +1648,7 @@ public final class MultivariateFactorization {
         assert biFactors.exponents.sum() == biFactors.size();
 
         uPoly[] uFactorsArray = biFactors.map(p -> (uPoly) evaluation.evaluateFrom(p, 1).asUnivariate())
-                .monic().factorsArrayWithoutLC();
+                .reduceConstantContent().factorsArrayWithoutLC();
         Poly[] biFactorsArray = biFactors.factorsArrayWithoutLC();
         ArraysUtil.quickSort(uFactorsArray, biFactorsArray);
 
@@ -1835,8 +1796,11 @@ public final class MultivariateFactorization {
         main:
         for (int i = decomposition.factors.size() - 1; i >= 0; --i) {
             Poly factor = decomposition.get(i).clone();
-            decomposition.addConstantFactor(polyPow(factor.lcAsPoly(), decomposition.getExponent(i), false));
-            factor.monic();
+            Poly content = factor.isOverField() ? factor.lcAsPoly() : factor.contentAsPoly();
+            decomposition.addConstantFactor(polyPow(content, decomposition.getExponent(i), false));
+            factor = factor.divideByLC(content);
+            assert factor != null;
+
 
             if (factor.isOne()) {
                 decomposition.factors.remove(i);
@@ -1883,5 +1847,385 @@ public final class MultivariateFactorization {
                 decomposition.addFactor(gcd, decomposition.getExponent(indexes.get(i)));
             }
         }
+    }
+
+    /* ===================================== Multivariate factorization over Z ====================================== */
+
+    /**
+     * Factor primitive square-free multivariate polynomial over Z
+     *
+     * @param polynomial the primitive square-free polynomial over Z
+     * @return factor decomposition
+     */
+    @SuppressWarnings("unchecked")
+    static FactorDecomposition<MultivariatePolynomial<BigInteger>> factorPrimitiveZ(
+            MultivariatePolynomial<BigInteger> polynomial) {
+
+        if (polynomial.isEffectiveUnivariate())
+            return factorUnivariate(polynomial);
+
+        // order the polynomial by degrees
+        OrderByDegrees<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> input = orderByDegrees(polynomial, true, -1);
+        FactorDecomposition<MultivariatePolynomial<BigInteger>> decomposition = factorPrimitiveZ0(input.ordered);
+        if (decomposition == null)
+            return null;
+        return decomposition.map(input::restoreOrder);
+    }
+
+    /**
+     * The main factorization algorithm in Z
+     */
+    @SuppressWarnings("unchecked")
+    static FactorDecomposition<MultivariatePolynomial<BigInteger>> factorPrimitiveZ0(
+            final MultivariatePolynomial<BigInteger> poly) {
+
+        // assert that poly is at least bivariate
+        assert poly.nUsedVariables() >= 2;
+        // assert that degrees of variables are in the descending order
+        assert poly.degree(1) > 0 && poly.degree(0) > 0;
+        // assert poly is primitive
+        assert poly.content().isOne();
+
+        if (poly.nUsedVariables() == 2)
+            // bivariate case
+            return bivariateDenseFactorSquareFreeZ(poly);
+
+        // the leading coefficient
+        MultivariatePolynomial<BigInteger> lc = poly.lc(0);
+        BigInteger lcContent = lc.content();
+        MultivariatePolynomial<BigInteger> lcPrimitive = lc.clone().divideOrNull(lcContent);
+
+        LeadingCoefficientData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> lcData = new LeadingCoefficientData<>(lcPrimitive);
+        // for characteristics 0 l.c. can be always fully reconstructed
+        assert lcData.fullyReconstructable;
+
+        // coefficients bound
+        BigInteger bound2 = coefficientsBound(poly).multiply(coefficientsBound(lc)).shiftLeft(1);
+
+        IEvaluationLoop<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> evaluations = getEvaluations(poly);
+
+        // maximal number of bivariate factors
+        int nBivariateFactors = Integer.MAX_VALUE;
+        main:
+        while (true) {
+            // choose next evaluation
+            Evaluation<BigInteger> evaluation = (Evaluation<BigInteger>) evaluations.next();
+
+            if (evaluation == null /*|| (nAttempts++ > N_FAILS_BEFORE_SWITCH_TO_EXTENSION && isSmallCardinality )*/) {
+                // <= not possible to reach this point
+                throw new RuntimeException();
+            }
+
+            // check that evaluation does not change the rest degrees
+            MultivariatePolynomial<BigInteger>[] images = poly.arrayNewInstance(poly.nVariables - 1);
+            for (int i = 0; i < images.length; i++) {
+                int variable = poly.nVariables - i - 1;
+                images[i] = evaluation.evaluate(i == 0 ? poly : images[i - 1], variable);
+                if (images[i].degree(variable - 1) != poly.degree(variable - 1))
+                    continue main;
+            }
+
+            MultivariatePolynomial<BigInteger>
+                    bivariateImage = images[images.length - 2],
+                    univariateImage = images[images.length - 1];
+
+            assert bivariateImage.degree(0) == poly.degree(0) && bivariateImage.degree(1) == poly.degree(1);
+
+            // check that l.c. of bivariate image has same degree in second variable
+            // as the original l.c.
+            if (lc.degree(1) != bivariateImage.lc(0).degree(1))
+                continue;
+
+            // check that univariate image is also square-free
+            if (!SquareFreeFactorization.isSquareFree(univariateImage.asUnivariate()))
+                continue;
+
+            // check that bivariate image is also primitive
+            if (!bivariateImage.contentUnivariate(1).isConstant())
+                continue;
+
+            // factor bivariate image
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> biFactorsMain =
+                    bivariateDenseFactorSquareFreeZ(bivariateImage);
+
+            if (biFactorsMain.size() == 1)
+                return FactorDecomposition.singleFactor(poly);
+
+            if (biFactorsMain.size() > nBivariateFactors)
+                // bad evaluation
+                continue;
+
+            nBivariateFactors = biFactorsMain.size();
+
+            // choose prime power p**k > bound2
+            int basePrime = 1 << 22;
+            BigInteger bBasePrime;
+            while (true) {
+                basePrime = SmallPrimes.nextPrime(basePrime);
+                bBasePrime = BigInteger.valueOf(basePrime);
+                if (!isGoodPrime(bBasePrime, univariateImage.lc(), univariateImage.cc()))
+                    continue;
+
+                IntegersModulo moduloDomain = new IntegersModulo(bBasePrime);
+                // ensure that univariate factors are still co-prime
+                // todo: do we really need this check?
+                if (!CommonPolynomialsArithmetics.coprimeQ(biFactorsMain.map(f -> f.setDomain(moduloDomain)).factors))
+                    continue;
+
+                break;
+            }
+            BigInteger modulus = bBasePrime;
+            while (modulus.compareTo(bound2) < 0)
+                modulus = modulus.multiply(bBasePrime);
+            IntegersModulo zpDomain = new IntegersModulo(modulus);
+
+            // evaluation for Zp domain
+            Evaluation<BigInteger> evaluationZp = evaluation.setDomain(zpDomain);
+
+            // array of bivariate factors for lifting
+            // (polynomials in F[x1, x2])
+            MultivariatePolynomial<BigInteger>[] biFactorsArrayMainZ;
+            if (!lc.isConstant()) { // <= leading coefficients reconstruction
+
+                // bring main bivariate factorization in canonical order
+                // (required for one-to-one correspondence between different bivariate factorizations)
+                toCanonicalSort(biFactorsMain, evaluation);
+                biFactorsArrayMainZ = biFactorsMain.factors.toArray(poly.arrayNewInstance(biFactorsMain.size()));
+
+                // the rest of l.c. (lc/lcFactors), will be constant at the end
+                MultivariatePolynomial<BigInteger> lcRest = lc.clone();
+                // the true leading coefficients (to be calculated)
+                MultivariatePolynomial<BigInteger>[] lcFactors = poly.arrayNewInstance(biFactorsMain.size());
+                // initialize lcFactors with constants (correct ones!)
+                for (int i = 0; i < lcFactors.length; i++)
+                    lcFactors[i] = poly.createOne();
+
+                // we perform additional bivariate factorizations in F[x1, x_i] for i = (3,..., N) (in special order)
+                lc_reconstruction:
+                for (int i = 0; i < lcData.lcSplits.length && !lcRest.isConstant(); i++) {
+                    SplitContent<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> lcSplit = lcData.lcSplits[i];
+                    // x_i -- the variable to leave unevaluated in addition to the main variable x_1
+                    // (+1 required to obtain indexing as in the original poly)
+                    int freeVariable = 1 + lcSplit.variable;
+
+                    Evaluation<BigInteger>
+                            // original evaluation with shuffled variables
+                            iEvaluation = evaluation.renameVariables(lcSplit.ppOrdered.variablesSorted),
+                            // the evaluation for l.c. (x1 dropped)
+                            ilcEvaluation = iEvaluation.dropVariable(1);
+
+                    // target for lifting
+                    MultivariatePolynomial<BigInteger> ppPart = lcSplit.ppOrdered.ordered;
+                    if (!SquareFreeFactorization.isSquareFree(ilcEvaluation.evaluateFrom(ppPart, 1).asUnivariate())) {
+                        // univariate image may be non square-free for because of bad evaluation (for characteristics 0)
+                        // <= try another evaluation
+                        continue main;
+                    }
+
+                    // bivariate factors in F[x1, x_i]
+                    FactorDecomposition<MultivariatePolynomial<BigInteger>> biFactors;
+                    if (freeVariable == 1)
+                        biFactors = biFactorsMain;
+                    else {
+                        // good image must have
+                        //  - the same degree in the main variable
+                        //  - the same degree in freeVariable
+                        //  - l.c. with the same degree in freeVariable
+                        MultivariatePolynomial<BigInteger> biImage = evaluation.evaluateFromExcept(poly, 1, freeVariable);
+                        if (biImage.degree(0) != poly.degree(0)
+                                || biImage.degree(freeVariable) != poly.degree(freeVariable)
+                                || biImage.lc(0).degree(freeVariable) != lc.degree(freeVariable))
+                            continue main;
+
+                        // bivariate factors in F[x1, x_i]
+                        biFactors = bivariateDenseFactorSquareFreeZ(
+                                orderByDegrees(biImage, false, -1).ordered);
+                        // bring in one-to-one correspondence with biFactorsMain
+                        toCanonicalSort(biFactors, iEvaluation);
+                    }
+
+                    if (biFactors.size() != biFactorsMain.size()) {
+                        // number of factors should be the same since polynomial is primitive
+                        // => bad evaluation occurred
+                        nBivariateFactors = Math.min(biFactors.size(), biFactorsMain.size());
+                        continue main;
+                    }
+
+                    assert biFactors
+                            .map(p -> iEvaluation.evaluateFrom(p, 1).asUnivariate()).primitive().canonicalForm()
+                            .equals(biFactorsMain.map(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).primitive().canonicalForm());
+
+                    // square-free decomposition of the leading coefficients of bivariate factors
+                    FactorDecomposition[] ulcFactors = (FactorDecomposition[])
+                            biFactors.factors.stream()
+                                    .map(f -> SquareFreeFactorization.SquareFreeFactorization(f.lc(0).asUnivariate()))
+                                    .toArray(FactorDecomposition[]::new);
+
+                    // move to GCD-free basis of sq.-f. decomposition (univariate, because fast)
+                    GCDFreeBasis(ulcFactors);
+
+                    // map to multivariate factors for further Hensel lifting
+                    FactorDecomposition<MultivariatePolynomial<BigInteger>>[]
+                            ilcFactors = Arrays.stream(ulcFactors)
+                            .map(decomposition -> decomposition.map(p -> (MultivariatePolynomial<BigInteger>)
+                                    asMultivariate((IUnivariatePolynomial) p, poly.nVariables - 1, 0, poly.ordering)))
+                            .toArray(FactorDecomposition[]::new);
+
+                    // pick unique factors from lc decompositions (complete square-free)
+                    Set<MultivariatePolynomial<BigInteger>> ilcFactorsSet = Arrays.stream(ilcFactors)
+                            .flatMap(FactorDecomposition::streamWithoutConstant)
+                            .collect(Collectors.toSet());
+                    MultivariatePolynomial<BigInteger>[] ilcFactorsSqFree = ilcFactorsSet
+                            .toArray(poly.arrayNewInstance(ilcFactorsSet.size()));
+
+                    assert ilcFactorsSqFree.length > 0;
+                    assert Arrays.stream(ilcFactorsSqFree).noneMatch(MultivariatePolynomial::isConstant);
+
+                    // the sum of degrees of all unique factors in univariate gcd-free decomposition
+                    // must be equal to the degree of primitive part we want to lift to
+                    assert Arrays.stream(ilcFactorsSqFree).mapToInt(AMultivariatePolynomial::degree).reduce(0, (a, b) -> a + b)
+                            == ppPart.degree(0);
+
+                    // we need to correct lcSqFreePrimitive (obtain correct numerical l.c.)
+                    MultivariatePolynomial<BigInteger> ppPartLC = ilcEvaluation.evaluateFrom(ppPart.lc(0), 1);
+                    MultivariatePolynomial<BigInteger> realLC = Arrays.stream(ilcFactorsSqFree)
+                            .map(MultivariatePolynomial::lcAsPoly)
+                            .reduce(ilcFactorsSqFree[0].createOne(), MultivariatePolynomial::multiply);
+
+                    assert ppPartLC.isConstant();
+                    assert realLC.isConstant();
+
+                    MultivariatePolynomial<BigInteger> base = ppPart.clone();
+                    BigInteger baseDivide = BigInteger.ONE;
+                    if (!realLC.cc().equals(ppPartLC.cc())) {
+                        BigInteger
+                                lcm = Integers.Integers.lcm(realLC.cc(), ppPartLC.cc()),
+                                factorCorrection = lcm.divideExact(realLC.cc()),
+                                baseCorrection = lcm.divideExact(ppPartLC.cc());
+                        base = base.multiply(baseCorrection);
+                        baseDivide = baseDivide.multiply(factorCorrection);
+                    }
+
+                    if (!baseDivide.isOne())
+                        adjustConstants(baseDivide, base, ilcFactorsSqFree, null);
+
+                    if (ilcFactorsSqFree.length == 1)
+                        ilcFactorsSqFree[0].set(base);
+                    else {
+                        MultivariatePolynomial[] ilcFactorsSqFreeZp = Arrays.stream(ilcFactorsSqFree)
+                                .map(f -> f.setDomain(zpDomain))
+                                .toArray(MultivariatePolynomial[]::new);
+
+                        // <= lifting leading coefficients
+                        HenselLifting.multivariateLiftAutomaticLC(base.setDomain(zpDomain), ilcFactorsSqFreeZp, ilcEvaluation.setDomain(zpDomain));
+
+                        for (int j = 0; j < ilcFactorsSqFreeZp.length; j++)
+                            ilcFactorsSqFree[j].set(MultivariatePolynomial.asPolyZSymmetric(ilcFactorsSqFreeZp[j]).primitivePart());
+                    }
+
+                    //assert multiply(ilcFactorsSqFree).monic().equals(base.clone().monic());
+
+                    // l.c. has content in x2
+                    for (int jFactor = 0; jFactor < lcFactors.length; jFactor++) {
+                        MultivariatePolynomial<BigInteger> obtainedLcFactor = renameVariables(
+                                ilcFactors[jFactor].toPolynomial(), lcSplit.ppOrdered.variablesMapping)
+                                .insertVariable(0);
+                        MultivariatePolynomial<BigInteger> commonPart = MultivariateGCD.PolynomialGCD(obtainedLcFactor, lcFactors[jFactor]);
+                        MultivariatePolynomial<BigInteger> addon = MultivariateReduction.divideExact(obtainedLcFactor, commonPart);
+                        // make addon monic when evaluated with evaluation
+                        addon = addon.primitivePart();
+                        lcFactors[jFactor] = lcFactors[jFactor].multiply(addon);
+                        lcRest = divideExact(lcRest, addon);
+                    }
+                }
+
+                assert lcRest.isConstant();
+
+                //BigInteger biFactorsCF = biFactorsMain.constantFactor.cc();
+                for (int i = 0; i < lcFactors.length; i++) {
+                    assert evaluation.evaluateFrom(biFactorsArrayMainZ[i].lc(0), 1).isConstant();
+                    assert evaluation.evaluateFrom(lcFactors[i], 1).isConstant();
+
+                    BigInteger
+                            lcInMain = evaluation.evaluateFrom(biFactorsArrayMainZ[i].lc(0), 1).cc(),
+                            lcTrue = evaluation.evaluateFrom(lcFactors[i], 1).cc();
+
+                    if (!lcInMain.equals(lcTrue)) {
+                        BigInteger
+                                lcm = Integers.Integers.lcm(lcInMain, lcTrue),
+                                factorCorrection = lcm.divideExact(lcInMain),
+                                lcCorrection = lcm.divideExact(lcTrue);
+
+                        biFactorsArrayMainZ[i].multiply(factorCorrection);
+                        //biFactorsCF = biFactorsCF.divideExact(factorCorrection);
+                        lcFactors[i].multiply(lcCorrection);
+
+                        lcRest = lcRest.divideOrNull(lcCorrection);
+                        assert lcRest != null;
+                    }
+                }
+
+                // switch to Z/p and lift
+
+                MultivariatePolynomial<BigInteger> base = poly.clone();
+                if (!lcRest.isOne())
+                    adjustConstants(lcRest.cc(), base, biFactorsArrayMainZ, lcFactors);
+
+                base = base.setDomain(zpDomain);
+                biFactorsArrayMainZ = liftZ(base, zpDomain, evaluationZp, biFactorsArrayMainZ, lcFactors);
+            } else {
+                // switch to Z/p and lift
+                MultivariatePolynomial<BigInteger> base = poly.setDomain(zpDomain);
+                if (!biFactorsMain.constantFactor.isOne())
+                    base.divideByLC(biFactorsMain.constantFactor);
+
+                biFactorsArrayMainZ = liftZ(base, zpDomain, evaluationZp,
+                        biFactorsMain.factors.toArray(base.arrayNewInstance(biFactorsMain.size())), null);
+            }
+
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factorization
+                    = FactorDecomposition.create(Arrays.asList(biFactorsArrayMainZ))
+                    .primitive();
+
+            if (factorization.signum() != poly.signum())
+                factorization = factorization.addConstantFactor(poly.createOne().negate());
+
+            MultivariatePolynomial<BigInteger>
+                    lcNumeric = factorization.factors.stream().reduce(factorization.constantFactor.clone(), (a, b) -> a.lcAsPoly().multiply(b.lcAsPoly())),
+                    ccNumeric = factorization.factors.stream().reduce(factorization.constantFactor.clone(), (a, b) -> a.ccAsPoly().multiply(b.ccAsPoly()));
+            if (!lcNumeric.equals(poly.lcAsPoly()) || !ccNumeric.equals(poly.ccAsPoly()) || !factorization.toPolynomial().equals(poly)) {
+                // bad bivariate factorization => recombination required
+                // instead of recombination we try again with another evaluation
+                // searching for good enough bivariate factorization
+                nBivariateFactors = factorization.size() - 1;
+                continue;
+            }
+            return factorization.primitive();
+        }
+    }
+
+    /** lift multivariate factors to factorization in Z */
+    private static MultivariatePolynomial<BigInteger>[] liftZ(MultivariatePolynomial<BigInteger> base, IntegersModulo zpDomain, Evaluation<BigInteger> evaluationZp,
+                                                              MultivariatePolynomial<BigInteger>[] biFactorsArrayMainZ, MultivariatePolynomial<BigInteger>[] lcFactors) {
+        biFactorsArrayMainZ = Arrays.stream(biFactorsArrayMainZ).map(f -> f.setDomain(zpDomain)).toArray(base::arrayNewInstance);
+        if (lcFactors != null)
+            lcFactors = Arrays.stream(lcFactors).map(f -> f.setDomain(zpDomain)).toArray(base::arrayNewInstance);
+
+        HenselLifting.multivariateLift0(base, biFactorsArrayMainZ, lcFactors, evaluationZp, base.degrees(), 2);
+
+        for (int i = 0; i < biFactorsArrayMainZ.length; i++)
+            biFactorsArrayMainZ[i] = MultivariatePolynomial.asPolyZSymmetric(biFactorsArrayMainZ[i]).primitivePart();
+        return biFactorsArrayMainZ;
+    }
+
+    private static void adjustConstants(BigInteger constant, MultivariatePolynomial<BigInteger> base,
+                                        MultivariatePolynomial<BigInteger>[] factors,
+                                        MultivariatePolynomial<BigInteger>[] lcs) {
+        base.multiply(BigIntegerArithmetics.pow(constant, factors.length - 1));
+        for (MultivariatePolynomial<BigInteger> factor : factors)
+            factor.multiply(constant);
+        if (lcs != null)
+            for (MultivariatePolynomial<BigInteger> factor : lcs)
+                factor.multiply(constant);
     }
 }

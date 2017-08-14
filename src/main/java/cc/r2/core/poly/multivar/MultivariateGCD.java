@@ -138,6 +138,9 @@ public final class MultivariateGCD {
 
         Poly gcd = algorithm.apply((Poly) base, (Poly) sum);
         if (gcd.isConstant()) {
+            // content gcd
+            for (int i = 1; i < arr.length; i++)
+                gcd = algorithm.apply(gcd, (Poly) arr[i].contentAsPoly());
             ArraysUtil.swap(arr, 0, iMin); // <-restore
             return gcd;
         }
@@ -569,7 +572,9 @@ public final class MultivariateGCD {
         if (a.isConstant() || b.isConstant())
             return a.createConstant(contentGCD);
 
-        return ModularGCD0(a.clone().divideOrNull(aContent), b.clone().divideOrNull(bContent)).multiply(contentGCD);
+        a = a.clone().divideOrNull(aContent);
+        b = b.clone().divideOrNull(bContent);
+        return ModularGCD0(a, b).multiply(contentGCD);
     }
 
     static MultivariatePolynomial<BigInteger> ModularGCD0(
@@ -583,6 +588,13 @@ public final class MultivariateGCD {
 
         a = gcdInput.aReduced;
         b = gcdInput.bReduced;
+
+        MultivariatePolynomial<BigInteger> pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCD);
+        if (!pContentGCD.isConstant()) {
+            a = divideExact(a, pContentGCD);
+            b = divideExact(b, pContentGCD);
+            return gcdInput.restoreGCD(ModularGCD(a, b).multiply(pContentGCD));
+        }
 
         BigInteger lcGCD = BigIntegerArithmetics.gcd(a.lc(), b.lc());
 
@@ -819,10 +831,12 @@ public final class MultivariateGCD {
         a.checkSameDomainWith(b);
         a.checkSameDomainWith(skeleton);
 
-        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
-        a = divideExact(a, content);
-        b = divideExact(b, content);
-        skeleton = divideSkeletonExact(skeleton, content);
+        // a and b must be content-free
+        assert contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant();
+//        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
+//        a = divideExact(a, content);
+//        b = divideExact(b, content);
+//        skeleton = divideSkeletonExact(skeleton, content);
 
         lSparseInterpolation interpolation = createInterpolation(-1, a, b, skeleton, rnd);
         if (interpolation == null)
@@ -831,7 +845,7 @@ public final class MultivariateGCD {
         if (gcd == null)
             return null;
 
-        return gcd.multiply(content);
+        return gcd;//.multiply(content);
     }
 
     static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> Poly divideSkeletonExact(Poly dividend, Poly divider) {
