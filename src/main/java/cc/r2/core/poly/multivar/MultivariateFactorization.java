@@ -679,7 +679,7 @@ public final class MultivariateFactorization {
             if (swapVariables)
                 swap(gcdFactorization);
 
-            return gcdFactorization;
+            return gcdFactorization.addConstantFactor(content);
         }
 
         // degree in main variable
@@ -693,14 +693,20 @@ public final class MultivariateFactorization {
         int univariateFactorizations = 0;
         boolean tryZeroFirst = true;
         UnivariatePolynomial<BigInteger> uImage = null;
+        HashSet<BigInteger> usedSubstitutions = new HashSet<>();
         while (univariateFactorizations < UNIVARIATE_FACTORIZATION_ATTEMPTS) {
             BigInteger substitution;
             if (tryZeroFirst) {
                 // first try to substitute 0 for second variable, then use random values
                 substitution = BigInteger.ZERO;
                 tryZeroFirst = false;
-            } else
-                substitution = BigInteger.valueOf(PrivateRandom.getRandom().nextInt());
+            } else {
+                int bound = 10 * (univariateFactorizations / 5 + 1);
+                do {
+                    substitution = BigInteger.valueOf(PrivateRandom.getRandom().nextInt(bound));
+                } while (usedSubstitutions.contains(substitution));
+                usedSubstitutions.add(substitution);
+            }
 
             MultivariatePolynomial<BigInteger> image = reducedPoly.evaluate(1, substitution);
             if (image.degree() != degree)
@@ -1164,9 +1170,6 @@ public final class MultivariateFactorization {
         return decomposition.map(input::restoreOrder);
     }
 
-    /** number of attempts to factor in base domain before switching to extension */
-    private static final int N_FAILS_BEFORE_SWITCH_TO_EXTENSION = 32;
-
     static final class LeadingCoefficientData<
             Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
@@ -1225,9 +1228,10 @@ public final class MultivariateFactorization {
 
                     splits.add(new SplitContent<>(maxDegreeVariable, pContent, primitivePart));
                     content = content.contentExcept(maxDegreeVariable);
-                    break;
+                    continue main;
                 }
-
+                // content is pPower in each variables => nothing more can be done
+                break;
             }
 
             this.lcSplits = splits.toArray(new SplitContent[splits.size()]);
@@ -1288,6 +1292,21 @@ public final class MultivariateFactorization {
         }
     }
 
+    /** number of attempts to factor in base domain before switching to extension */
+    private static final int N_FAILS_BEFORE_SWITCH_TO_EXTENSION = 32;
+
+    /**
+     * number of attempts to factor which lead to inconsistent bivariate factorizations over different
+     * variables (e.g. incompatible factorization patterns) before switch to extension field (take place only
+     * for domains of very small characteristics)
+     */
+    private static final int N_INCONSISTENT_BIFACTORS_BEFORE_SWITCH_TO_EXTENSION = 32;
+
+    /**
+     * number of attempts to factor which lead to superfluous bivariate factors (#factors > #expected_factors)
+     */
+    private static final int N_SUPERFLUOUS_FACTORS_BEFORE_TRY_OTHER_VAR = 8;
+
     /**
      * The main factorization algorithm in finite fields
      */
@@ -1297,15 +1316,30 @@ public final class MultivariateFactorization {
     FactorDecomposition<Poly> factorPrimitive0(
             final Poly poly,
             boolean switchToExtensionField) {
+        return factorPrimitive0(poly, -1, switchToExtensionField);
+    }
+
+    /**
+     * The main factorization algorithm in finite fields
+     */
+    @SuppressWarnings("unchecked")
+    static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    FactorDecomposition<Poly> factorPrimitive0(
+            final Poly initialPoly,
+            final int fixSecondVar,
+            boolean switchToExtensionField) {
 
         // assert that poly is at least bivariate
-        assert poly.nUsedVariables() >= 2;
+        assert initialPoly.nUsedVariables() >= 2;
         // assert that degrees of variables are in the descending order
-        assert poly.degree(1) > 0 && poly.degree(0) > 0;
+        assert initialPoly.degree(1) > 0 && initialPoly.degree(0) > 0;
 
-        if (poly.nUsedVariables() == 2)
+        if (initialPoly.nUsedVariables() == 2)
             // bivariate case
-            return bivariateDenseFactorSquareFree(poly, switchToExtensionField);
+            return bivariateDenseFactorSquareFree(initialPoly, switchToExtensionField);
+
+        final Poly poly = swapSecondVar(initialPoly, fixSecondVar);
 
         Poly xDerivative = poly.derivative(0);
         assert !xDerivative.isZero();
@@ -1321,7 +1355,7 @@ public final class MultivariateFactorization {
                 return null;
             }
 
-            return gcdFactorization.addAll(restFactorization);
+            return swapSecondVar(gcdFactorization.addAll(restFactorization), fixSecondVar);
         }
 
         // whether domain cardinality is less than 1024
@@ -1336,6 +1370,11 @@ public final class MultivariateFactorization {
         int nAttempts = 0;
         // maximal number of bivariate factors
         int nBivariateFactors = Integer.MAX_VALUE;
+        // number of attempts to factor which lead to incompatible factorization patterns over
+        // different second variable
+        int[] nInconsistentBiFactorizations = new int[poly.nVariables];
+        // number of fails due to bifactorsMain.size() > nBivariateFactors
+        int nFailedWithSuperfluousFactors = 0;
         main:
         while (true) {
             // choose next evaluation
@@ -1344,7 +1383,7 @@ public final class MultivariateFactorization {
             if (evaluation == null || (nAttempts++ > N_FAILS_BEFORE_SWITCH_TO_EXTENSION && isSmallCardinality)) {
                 // switch to field extension
                 if (switchToExtensionField)
-                    return factorInExtensionFieldGeneric(poly, MultivariateFactorization::factorPrimitive0);
+                    return factorInExtensionFieldGeneric(initialPoly, MultivariateFactorization::factorPrimitive0);
 
                 return null;
             }
@@ -1382,16 +1421,25 @@ public final class MultivariateFactorization {
                     bivariateDenseFactorSquareFree(bivariateImage, false);
             if (biFactorsMain == null)
                 if (switchToExtensionField)
-                    return factorInExtensionFieldGeneric(poly, MultivariateFactorization::factorPrimitive0);
+                    return factorInExtensionFieldGeneric(initialPoly, MultivariateFactorization::factorPrimitive0);
                 else
                     return null;
 
             if (biFactorsMain.size() == 1)
-                return FactorDecomposition.singleFactor(poly);
+                return FactorDecomposition.singleFactor(initialPoly);
 
-            if (biFactorsMain.size() > nBivariateFactors)
+            if (biFactorsMain.size() > nBivariateFactors) {
+                ++nFailedWithSuperfluousFactors;
+                if (nFailedWithSuperfluousFactors > N_SUPERFLUOUS_FACTORS_BEFORE_TRY_OTHER_VAR) {
+                    // so we have that for any evaluation f[x1, x2, b3, ..., bN] has more factors than the initial poly
+                    // we try another second variable
+                    return factorPrimitive0(initialPoly, fixSecondVar + 1, switchToExtensionField);
+                }
                 // bad evaluation
                 continue;
+            }
+            // release counter
+            nFailedWithSuperfluousFactors = 0;
 
             nBivariateFactors = biFactorsMain.size();
 
@@ -1469,7 +1517,7 @@ public final class MultivariateFactorization {
                                 orderByDegrees(biImage, false, -1).ordered, false);
                         if (biFactors == null)
                             if (switchToExtensionField)
-                                return factorInExtensionFieldGeneric(poly, MultivariateFactorization::factorPrimitive0);
+                                return factorInExtensionFieldGeneric(initialPoly, MultivariateFactorization::factorPrimitive0);
                             else
                                 return null;
                         // bring in one-to-one correspondence with biFactorsMain
@@ -1479,13 +1527,48 @@ public final class MultivariateFactorization {
                     if (biFactors.size() != biFactorsMain.size()) {
                         // number of factors should be the same since polynomial is primitive
                         // => bad evaluation occurred
-                        nBivariateFactors = Math.min(biFactors.size(), biFactorsMain.size());
-                        continue main;
+                        if (biFactors.size() > biFactorsMain.size()) {
+                            ++nInconsistentBiFactorizations[freeVariable];
+                            if (nInconsistentBiFactorizations[freeVariable] > N_INCONSISTENT_BIFACTORS_BEFORE_SWITCH_TO_EXTENSION) {
+                                assert isSmallCharacteristics(poly);
+                                // bad factorization pattern (very rare)
+                                if (switchToExtensionField)
+                                    return factorInExtensionFieldGeneric(initialPoly, MultivariateFactorization::factorPrimitive0);
+                                else
+                                    return null;
+                            } else
+                                // bad evaluation occurred
+                                continue main;
+                        } else {
+                            nBivariateFactors = biFactors.size();
+                            continue main;
+                        }
                     }
 
-                    assert biFactors
-                            .map(p -> iEvaluation.evaluateFrom(p, 1).asUnivariate()).monic()
-                            .equals(biFactorsMain.map(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).monic());
+                    // check that bivariate factorizations are compatible
+                    if (biFactors != biFactorsMain
+                            && !biFactors.map(p -> iEvaluation.evaluateFrom(p, 1).asUnivariate()).monic()
+                            .equals(biFactorsMain.map(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).monic())) {
+
+                        // very rare event occurs only for domains of small cardinality and typically means that
+                        // actual factorization has smaller number of factors than found in biFactorsMain
+
+                        ++nInconsistentBiFactorizations[freeVariable];
+                        if (nInconsistentBiFactorizations[freeVariable] > N_INCONSISTENT_BIFACTORS_BEFORE_SWITCH_TO_EXTENSION) {
+                            assert isSmallCharacteristics(poly);
+                            // bad factorization pattern (very rare)
+                            if (switchToExtensionField)
+                                return factorInExtensionFieldGeneric(initialPoly, MultivariateFactorization::factorPrimitive0);
+                            else
+                                return null;
+                        } else
+                            // bad evaluation occurred
+                            continue main;
+                    }
+
+                    //assert biFactors
+                    //        .map(p -> iEvaluation.evaluateFrom(p, 1).asUnivariate()).monic()
+                    //        .equals(biFactorsMain.map(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).monic());
 
                     // square-free decomposition of the leading coefficients of bivariate factors
                     FactorDecomposition[] ulcFactors = (FactorDecomposition[])
@@ -1559,13 +1642,18 @@ public final class MultivariateFactorization {
                                 .insertVariable(0);
                         Poly commonPart = MultivariateGCD.PolynomialGCD(obtainedLcFactor, lcFactors[jFactor]);
                         Poly addon = MultivariateReduction.divideExact(obtainedLcFactor, commonPart);
+                        // ensure that lcRest is divisible by addon
+                        Poly addonR = MultivariateGCD.PolynomialGCD(addon, lcRest);
+                        // either lcRest is divisible by addon or we are in very small characteristics
+                        assert addon.clone().monic().equals(addonR.clone().monic()) || isSmallCharacteristics(poly);
+                        addon = addonR;
+
                         // make addon monic when evaluated with evaluation
                         addon = addon.divideByLC(evaluation.evaluateFrom(addon, 1));
                         lcFactors[jFactor] = lcFactors[jFactor].multiply(addon);
                         lcRest = divideExact(lcRest, addon);
                     }
                 }
-
 
                 if (lcRest.isConstant()) {
                     // <= here we must be in _most_ cases
@@ -1581,7 +1669,7 @@ public final class MultivariateFactorization {
                 } else {
                     // <= very rare event (very small characteristics)
 
-                    assert !lcData.fullyReconstructable;
+                    assert !lcData.fullyReconstructable || isSmallCharacteristics(poly);
 
                     // Poly lcCorrection = evaluation.evaluateFrom(lcRest, 2);
                     for (int i = 0; i < biFactorsMain.size(); i++) {
@@ -1629,8 +1717,28 @@ public final class MultivariateFactorization {
                 nBivariateFactors = factorization.size() - 1;
                 continue;
             }
-            return factorization;
+            return swapSecondVar(factorization, fixSecondVar);
         }
+    }
+
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly swapSecondVar(final Poly initialPoly, final int fixSecondVar) {
+        if (fixSecondVar == -1)
+            return initialPoly;
+        else
+            return AMultivariatePolynomial.swapVariables(initialPoly, 1, fixSecondVar + 2);
+    }
+
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    FactorDecomposition<Poly> swapSecondVar(final FactorDecomposition<Poly> factors, final int fixSecondVar) {
+        if (fixSecondVar == -1)
+            return factors;
+        else
+            return factors.map(p -> AMultivariatePolynomial.swapVariables(p, 1, fixSecondVar + 2));
+    }
+
+    private static boolean isSmallCharacteristics(IGeneralPolynomial poly) {
+        return poly.coefficientDomainCharacteristics().bitLength() <= 5;
     }
 
     /**
@@ -1730,26 +1838,25 @@ public final class MultivariateFactorization {
             tried.add(array);
             return new Evaluation<>(factory.nVariables, point, factory.domain, factory.ordering);
         }
-
-        private static class ArrayRef<T> {
-            final T[] data;
-
-            ArrayRef(T[] data) {this.data = data;}
-
-            @Override
-            public boolean equals(Object o) {
-                if (this == o) return true;
-                return !(o == null || getClass() != o.getClass())
-                        && Arrays.equals(data, ((ArrayRef<?>) o).data);
-            }
-
-            @Override
-            public int hashCode() {
-                return Arrays.hashCode(data);
-            }
-        }
     }
 
+    private static class ArrayRef<T> {
+        final T[] data;
+
+        ArrayRef(T[] data) {this.data = data;}
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            return !(o == null || getClass() != o.getClass())
+                    && Arrays.equals(data, ((ArrayRef<?>) o).data);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(data);
+        }
+    }
 
     static <Poly extends IGeneralPolynomial<Poly>>
     void GCDFreeBasis(FactorDecomposition<Poly>[] decompositions) {
@@ -1851,6 +1958,39 @@ public final class MultivariateFactorization {
 
     /* ===================================== Multivariate factorization over Z ====================================== */
 
+    /** specialized evaluations which tries small integers first */
+    static final class EvaluationLoopZ implements IEvaluationLoop<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> {
+        final MultivariatePolynomial<BigInteger> factory;
+        final RandomGenerator rnd = PrivateRandom.getRandom();
+        final HashSet<ArrayRef<BigInteger>> tried = new HashSet<>();
+
+        EvaluationLoopZ(MultivariatePolynomial<BigInteger> factory) {
+            this.factory = factory;
+        }
+
+        private int counter = 0;
+
+        @Override
+        public Evaluation<BigInteger> next() {
+            BigInteger[] point = factory.domain.createArray(factory.nVariables - 1);
+            ArrayRef<BigInteger> array = new ArrayRef<>(point);
+            int tries = 0;
+            do {
+                if (tries > N_DIFF_EVALUATIONS_FAIL) {
+                    counter += 5;
+                    return next();
+                }
+                for (int i = 0; i < point.length; i++)
+                    point[i] = BigInteger.valueOf(rnd.nextInt(10 * (counter / 5 + 1)));
+                ++tries;
+            } while (tried.contains(array));
+
+            tried.add(array);
+            ++counter;
+            return new Evaluation<>(factory.nVariables, point, factory.domain, factory.ordering);
+        }
+    }
+
     /**
      * Factor primitive square-free multivariate polynomial over Z
      *
@@ -1902,7 +2042,7 @@ public final class MultivariateFactorization {
         // coefficients bound
         BigInteger bound2 = coefficientsBound(poly).multiply(coefficientsBound(lc)).shiftLeft(1);
 
-        IEvaluationLoop<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> evaluations = getEvaluations(poly);
+        IEvaluationLoop<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> evaluations = new EvaluationLoopZ(poly); //getEvaluations(poly);
 
         // maximal number of bivariate factors
         int nBivariateFactors = Integer.MAX_VALUE;

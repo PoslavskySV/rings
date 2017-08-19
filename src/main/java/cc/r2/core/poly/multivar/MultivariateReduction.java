@@ -124,6 +124,22 @@ public final class MultivariateReduction {
     }
 
     /**
+     * Divides {@code dividend} by {@code divider} or returns null if exact division is not possible
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return {@code dividend / divider} or null if exact division is not possible
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly divideOrNull(Poly dividend, Poly divider) {
+        Poly[] qd = divideAndRemainder(dividend, divider);
+        if (qd == null || !qd[1].isZero())
+            return null;
+        return qd[0];
+    }
+
+    /**
      * Tests whether {@code divisor} is a divisor of {@code poly}
      *
      * @param dividend the polynomial
