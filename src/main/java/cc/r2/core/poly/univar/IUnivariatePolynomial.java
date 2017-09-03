@@ -139,6 +139,14 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     Poly clone();
 
     /**
+     * Sets the content of this to {@code oth} and destroys oth
+     *
+     * @param oth the polynomial (will be destroyed)
+     * @return this := oth
+     */
+    Poly setAndDestroy(Poly oth);
+
+    /**
      * Composition of this(oth)
      *
      * @param value polynomial

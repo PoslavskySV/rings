@@ -3,14 +3,14 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
 import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.LongArithmetics;
 import cc.r2.core.poly.univar.UnivariateGCD.*;
 import cc.r2.core.test.Benchmark;
+import cc.r2.core.util.RandomDataGenerator;
+import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
         lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
 
-        PolynomialRemainders<lUnivariatePolynomialZp> prs = UnivariateGCD.Euclid(a, b);
+        PolynomialRemainders<lUnivariatePolynomialZp> prs = UnivariateGCD.EuclidRemainders(a, b);
         lUnivariatePolynomialZp gcd = prs.gcd();
         assertEquals(3, gcd.degree);
         assertTrue(divideAndRemainder(a, gcd, true)[1].isZero());
@@ -248,7 +248,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
                     continue;
                 lUnivariatePolynomialZp a = dividend.modulus(prime);
                 lUnivariatePolynomialZp b = divider.modulus(prime);
-                PolynomialRemainders<lUnivariatePolynomialZp> euclid = Euclid(a, b);
+                PolynomialRemainders<lUnivariatePolynomialZp> euclid = EuclidRemainders(a, b);
                 assertPolynomialRemainders(a, b, euclid);
             }
         }
@@ -372,8 +372,8 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         assertEquals(a, SubresultantEuclid(b, a).gcd());
         assertEquals(a, PseudoEuclid(a, b, true).gcd());
         assertEquals(a, PseudoEuclid(b, a, true).gcd());
-        assertEquals(a, Euclid(a, b).gcd());
-        assertEquals(a, Euclid(b, a).gcd());
+        assertEquals(a, EuclidGCD(a, b));
+        assertEquals(a, EuclidGCD(b, a));
         assertEquals(a, PolynomialGCD(a, b));
         assertEquals(a, PolynomialGCD(b, a));
     }
@@ -388,8 +388,8 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         assertEquals(b, PseudoEuclid(b, a, true).gcd());
         assertEquals(b, PseudoEuclid(a, b, false).gcd());
         assertEquals(b, PseudoEuclid(b, a, false).gcd());
-        assertEquals(b, Euclid(a, b).gcd());
-        assertEquals(b, Euclid(b, a).gcd());
+        assertEquals(b, EuclidGCD(a, b));
+        assertEquals(b, EuclidGCD(b, a));
         assertEquals(b, PolynomialGCD(a, b));
         assertEquals(b, PolynomialGCD(b, a));
     }
@@ -555,7 +555,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
                 IntegersModulo domain = new IntegersModulo(prime);
                 UnivariatePolynomial<BigInteger> a = dividend.setDomain(domain);
                 UnivariatePolynomial<BigInteger> b = divider.setDomain(domain);
-                PolynomialRemainders<UnivariatePolynomial<BigInteger>> euclid = Euclid(a, b);
+                PolynomialRemainders<UnivariatePolynomial<BigInteger>> euclid = EuclidRemainders(a, b);
                 assertPolynomialRemainders(a, b, euclid);
             }
         }
@@ -611,8 +611,8 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         IntegersModulo domain = new IntegersModulo(modulus);
         UnivariatePolynomial<BigInteger> aMod = a.setDomain(domain).monic(poly.lc());
         UnivariatePolynomial<BigInteger> bMod = b.setDomain(domain).monic();
-        UnivariatePolynomial<BigInteger>[] xgcd = UnivariateGCD.ExtendedEuclid(aMod, bMod);
-        lUnivariatePolynomialZp[] lxgcd = UnivariateGCD.ExtendedEuclid(asLongPolyZp(aMod), asLongPolyZp(bMod));
+        UnivariatePolynomial<BigInteger>[] xgcd = UnivariateGCD.ExtendedEuclidGCD(aMod, bMod);
+        lUnivariatePolynomialZp[] lxgcd = UnivariateGCD.ExtendedEuclidGCD(asLongPolyZp(aMod), asLongPolyZp(bMod));
         assertEquals(asLongPolyZp(xgcd[0]), lxgcd[0]);
         assertEquals(asLongPolyZp(xgcd[1]), lxgcd[1]);
         assertEquals(asLongPolyZp(xgcd[2]), lxgcd[2]);
@@ -640,24 +640,152 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         assertGCD(a, b, PolynomialGCD(a, b));
     }
 
-    static <T extends lUnivariatePolynomialAbstract<T>> void assertExtendedGCD(T a, T b) {
-        assertExtendedGCD(ExtendedEuclid(a, b), a, b);
-    }
-
-    static <T extends lUnivariatePolynomialAbstract<T>> void assertExtendedGCD(T[] eea, T a, T b) {
-        assertEquals(eea[0], a.clone().multiply(eea[1]).add(b.clone().multiply(eea[2])));
-        assertEquals(eea[0].degree, PolynomialGCD(a, b).degree);
-    }
-
-    @Ignore
     @Test
-    public void testLargeFiniteField1() throws Exception {
-        // FIXME: GC overhead
-        FiniteField<lUnivariatePolynomialZp> ff = new FiniteField<>(
-                lUnivariatePolynomialZ.parse("1 + x^2 + x^6 + x^7 + x^9 + x^12 + x^13 + x^14 + x^17").modulus(2));
-        UnivariatePolynomial<lUnivariatePolynomialZp> a = Parser.parse(ff, "(1+x^2+x^3+x^4+x^6+x^7+x^10+x^12+x^13+x^14+x^15)+(1+x^1+x^2+x^3+x^4+x^6+x^7+x^8+x^9+x^12+x^13+x^14+x^15+x^16)*x^412+x^2x^1852+x^1854+(x^3+x^5+x^6+x^7+x^8+x^10+x^11+x^13+x^15)*x^4906+(x^3+x^4+x^5+x^9+x^15+x^16)*x^7420+(x^1+x^2+x^3+x^7+x^13+x^14)*x^7422+(x^1+x^9+x^12+x^14+x^16)*x^10474");
-        UnivariatePolynomial<lUnivariatePolynomialZp> b = Parser.parse(ff, "(1+x^8+x^9+x^11+x^16)+(1+x^1+x^4+x^5+x^7+x^9+x^14)*x^927+(x^1+x^2+x^4+x^5+x^7+x^8+x^11+x^14+x^16)*x^1339+(x^3+x^5+x^7+x^8+x^10+x^12+x^15+x^16)*x^2779+(x^1+x^3+x^5+x^6+x^8+x^10+x^13+x^14)*x^2781+(1+x^3+x^4+x^6+x^7+x^8+x^12+x^15+x^16)*x^3706+(1+x^1+x^2+x^6+x^7+x^11+x^12+x^13+x^14+x^15)*x^3708+x^2x^4118+x^4120+(x^4+x^5+x^6+x^9+x^10)*x^5568+(1+x^1+x^2+x^5+x^6+x^8+x^11+x^13+x^16)*x^5833+(1+x^4+x^6+x^10+x^11+x^13)*x^6760+(x^3+x^5+x^6+x^7+x^8+x^10+x^11+x^13+x^15)*x^7172+(1+x^1+x^5+x^6+x^7+x^8+x^10+x^11+x^13+x^15)*x^8347+(1+x^1+x^3+x^5+x^7+x^9+x^10+x^11+x^15+x^16)*x^8349+(x^2+x^4+x^5+x^6+x^9+x^10+x^11+x^12+x^13+x^15)*x^11401");
+    public void test26() throws Exception {
+        lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(1, 2, 3, 1, 2, 3, 4, 3, 2, 1).modulus(29);//.square
+        // ().square().square().square().square().square().square().square().square().square();
+        lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(1, 2, 3, 1, 1, 2, 3, 3).modulus(29);
+        assertArrayEquals(ExtendedEuclidGCD(a, b), ExtendedHalfGCD(a, b));
+    }
 
-        System.out.println(UnivariateGCD.PolynomialGCD(a, b));
+    @Test
+    public void test27() throws Exception {
+        // assert java heap
+        lUnivariatePolynomialZp a = RandomPolynomials.randomMonicPoly(15_000, 19, getRandom());
+        lUnivariatePolynomialZp b = RandomPolynomials.randomMonicPoly(15_000, 19, getRandom());
+        assertExtendedGCD(ExtendedEuclidGCD(a, b), a, b);
+    }
+
+    @Test
+    public void test29_randomHalfGCD() throws Exception {
+        int
+                minimalDegree = UnivariateGCD.SWITCH_TO_HALF_GCD_ALGORITHM_DEGREE,
+                maximalDegree = minimalDegree * 4,
+                nIterations = its(1000, 10000);
+        testHalfGCDRandom(minimalDegree, maximalDegree, nIterations);
+    }
+
+    @Benchmark(runAnyway = true)
+    @Test
+    public void test30_randomHalfGCD() throws Exception {
+        int
+                minimalDegree = 5 * UnivariateGCD.SWITCH_TO_HALF_GCD_ALGORITHM_DEGREE,
+                maximalDegree = minimalDegree * 4,
+                nIterations = its(100, 100);
+        testHalfGCDRandom(minimalDegree, maximalDegree, nIterations);
+    }
+
+    private static void testHalfGCDRandom(int minimalDegree, int maximalDegree, int nIterations) throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        DescriptiveStatistics
+                euclid = new DescriptiveStatistics(),
+                half = new DescriptiveStatistics();
+        int nonTrivGCD = 0;
+        for (int i = 0; i < nIterations; i++) {
+            if (i == nIterations / 10) {
+                euclid.clear();
+                half.clear();
+            }
+
+            long modulus = getModulusRandom(rndd.nextInt(2, 20));
+            lUnivariatePolynomialZp a = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
+            lUnivariatePolynomialZp b = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
+            try {
+                long start;
+
+                start = System.nanoTime();
+                lUnivariatePolynomialZp expected = EuclidGCD(a, b).monic();
+                euclid.addValue(System.nanoTime() - start);
+
+                start = System.nanoTime();
+                lUnivariatePolynomialZp actual = HalfGCD(a, b).monic();
+                half.addValue(System.nanoTime() - start);
+
+                assertEquals(expected, actual);
+
+                if (!expected.isConstant())
+                    ++nonTrivGCD;
+            } catch (Throwable tr) {
+                System.out.println("lUnivariatePolynomialZ." + a.toStringForCopy() + ".modulus(" + modulus + ");");
+                System.out.println("lUnivariatePolynomialZ." + b.toStringForCopy() + ".modulus(" + modulus + ");");
+                throw tr;
+            }
+        }
+        System.out.println("Non-trivial gcds: " + nonTrivGCD);
+        System.out.println("Euclid:  " + TimeUnits.statisticsNanotime(euclid));
+        System.out.println("HalfGCD: " + TimeUnits.statisticsNanotime(half));
+    }
+
+    @Test
+    public void test31_randomExtendedHalfGCD() throws Exception {
+        int
+                minimalDegree = UnivariateGCD.SWITCH_TO_HALF_GCD_ALGORITHM_DEGREE,
+                maximalDegree = minimalDegree * 4,
+                nIterations = its(1000, 2000);
+        testExtendedHalfGCDRandom(minimalDegree, maximalDegree, nIterations);
+    }
+
+    @Benchmark(runAnyway = true)
+    @Test
+    public void test32_randomExtendedHalfGCD() throws Exception {
+        int
+                minimalDegree = 5 * UnivariateGCD.SWITCH_TO_HALF_GCD_ALGORITHM_DEGREE,
+                maximalDegree = minimalDegree * 4,
+                nIterations = its(100, 100);
+        testExtendedHalfGCDRandom(minimalDegree, maximalDegree, nIterations);
+    }
+
+    private static void testExtendedHalfGCDRandom(int minimalDegree, int maximalDegree, int nIterations) throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        DescriptiveStatistics
+                euclid = new DescriptiveStatistics(),
+                half = new DescriptiveStatistics();
+        int nonTrivGCD = 0;
+        for (int i = 0; i < nIterations; i++) {
+            if (i == nIterations / 10) {
+                euclid.clear();
+                half.clear();
+            }
+
+            long modulus = getModulusRandom(rndd.nextInt(2, 20));
+            lUnivariatePolynomialZp a = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
+                    modulus, rnd).multiply(1 + rnd.nextLong());
+            lUnivariatePolynomialZp b = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
+                    modulus, rnd).multiply(1 + rnd.nextLong());
+            try {
+                long start;
+
+                start = System.nanoTime();
+                lUnivariatePolynomialZp[] expected = ExtendedEuclidGCD(a, b);
+                euclid.addValue(System.nanoTime() - start);
+
+                start = System.nanoTime();
+                lUnivariatePolynomialZp[] actual = ExtendedHalfGCD(a, b);
+                half.addValue(System.nanoTime() - start);
+
+                assertArrayEquals(expected, actual);
+
+                if (!expected[0].isConstant())
+                    ++nonTrivGCD;
+            } catch (Throwable tr) {
+                System.out.println("lUnivariatePolynomialZ." + a.toStringForCopy() + ".modulus(" + modulus + ");");
+                System.out.println("lUnivariatePolynomialZ." + b.toStringForCopy() + ".modulus(" + modulus + ");");
+                throw tr;
+            }
+        }
+        System.out.println("Non-trivial gcds: " + nonTrivGCD);
+        System.out.println("Euclid:  " + TimeUnits.statisticsNanotime(euclid));
+        System.out.println("HalfGCD: " + TimeUnits.statisticsNanotime(half));
+    }
+
+    static <T extends IUnivariatePolynomial<T>> void assertExtendedGCD(T a, T b) {
+        assertExtendedGCD(ExtendedEuclidGCD(a, b), a, b);
+    }
+
+    static <T extends IUnivariatePolynomial<T>> void assertExtendedGCD(T[] eea, T a, T b) {
+        assertEquals(eea[0], a.clone().multiply(eea[1]).add(b.clone().multiply(eea[2])));
+        assertEquals(eea[0].degree(), PolynomialGCD(a, b).degree());
     }
 }

@@ -9,6 +9,7 @@ import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -22,7 +23,7 @@ import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
 import static cc.r2.core.poly.univar.UnivariatePolynomial.*;
 
 /**
- * Polynomial GCD and sub-resultant sequence for univariate polynomials with single-precision coefficients.
+ * Polynomial GCD and sub-resultant sequence for univariate polynomials.
  *
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -37,9 +38,9 @@ public final class UnivariateGCD {
      * @param b poly
      * @return polynomial remainder sequence (the last element is GCD)
      */
-    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> Euclid(final T a, final T b) {
+    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> EuclidRemainders(final T a, final T b) {
         if (a.degree() < b.degree())
-            return Euclid(b, a);
+            return EuclidRemainders(b, a);
 
         ArrayList<T> prs = new ArrayList<>();
         prs.add(a.clone()); prs.add(b.clone());
@@ -62,17 +63,52 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Runs extended Euclidean algorithm to compute {@code [gcd(a,b), x, y]} such that {@code x * a + y * b = gcd(a, b)}
+     * Euclidean algorithm
+     *
+     * @param a poly
+     * @param b poly
+     * @return the GCD (monic if a and b are over field)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T EuclidGCD(final T a, final T b) {
+        if (a.degree() < b.degree())
+            return EuclidGCD(b, a);
+
+        if (a.isZero()) return normalizeGCD(b.clone());
+        if (b.isZero()) return normalizeGCD(a.clone());
+
+        T x = a, y = b, r;
+        while (true) {
+            r = remainder(x, y, true);
+            if (r == null)
+                throw new IllegalArgumentException("Not divisible: (" + x + ") / (" + y + ")");
+
+            if (r.isZero())
+                break;
+            x = y;
+            y = r;
+        }
+        return normalizeGCD(y == a ? y.clone() : (y == b ? y.clone() : y));
+    }
+
+    private static <T extends IUnivariatePolynomial<T>> T normalizeGCD(T gcd) {
+        if (gcd.isOverField())
+            return gcd.monic();
+        else
+            return gcd;
+    }
+
+    /**
+     * Runs extended Euclidean algorithm to compute {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
      *
      * @param a the polynomial
      * @param b the polynomial
-     * @return array of {@code [gcd(a,b), x, y]} such that {@code x * a + y * b = gcd(a, b)}
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
      */
     @SuppressWarnings("unchecked")
-    public static <T extends IUnivariatePolynomial<T>> T[] ExtendedEuclid(final T a, final T b) {
+    public static <T extends IUnivariatePolynomial<T>> T[] ExtendedEuclidGCD(final T a, final T b) {
         T s = a.createZero(), old_s = a.createOne();
         T t = a.createOne(), old_t = a.createZero();
-        T r = b, old_r = a;
+        T r = b.clone(), old_r = a.clone();
 
         T q;
         T tmp;
@@ -93,13 +129,304 @@ public final class UnivariateGCD {
             old_t = t;
             t = tmp.clone().subtract(q.clone().multiply(t));
         }
-        assert old_r.equals(a.clone().multiply(old_s).add(b.clone().multiply(old_t)));
+        assert old_r.equals(a.clone().multiply(old_s).add(b.clone().multiply(old_t))) : a.clone().multiply(old_s).add
+                (b.clone().multiply(old_t));
 
         T[] result = a.arrayNewInstance(3);
         result[0] = old_r;
         result[1] = old_s;
         result[2] = old_t;
-        return result;
+        return normalizeExtendedGCD(result);
+    }
+
+    private static <T extends IUnivariatePolynomial<T>> T[] normalizeExtendedGCD(T[] xgcd) {
+        if (!xgcd[0].isOverField())
+            return xgcd;
+
+        if (xgcd[0].isZero())
+            return xgcd;
+        xgcd[1].divideByLC(xgcd[0]);
+        xgcd[2].divideByLC(xgcd[0]);
+        xgcd[0].monic();
+        return xgcd;
+    }
+
+    /** for polynomial degrees larger than this a Half-GCD algorithm will be used */
+    static int SWITCH_TO_HALF_GCD_ALGORITHM_DEGREE = 180;
+    /** for polynomial degrees larger than this a Half-GCD algorithm for hMatrix will be used */
+    static int SWITCH_TO_HALF_GCD_H_MATRIX_DEGREE = 25;
+
+    /**
+     * Half-GCD algorithm. The algorithm automatically switches to Euclidean.
+     *
+     * @param a poly
+     * @param b poly
+     * @return the GCD (monic)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T HalfGCD(T a, T b) {
+        if (a.degree() < b.degree())
+            return HalfGCD(b, a);
+
+        if (a.degree() == b.degree())
+            b = remainder(b, a, true);
+
+        while (a.degree() > SWITCH_TO_HALF_GCD_ALGORITHM_DEGREE && !b.isZero()) {
+            T[] col = reduceHalfGCD(a, b);
+            a = col[0];
+            b = col[1];
+
+            if (!b.isZero()) {
+                T remainder = remainder(a, b, true);
+                a = b;
+                b = remainder;
+            }
+        }
+        return UnivariateGCD.EuclidGCD(a, b);
+    }
+
+    /**
+     * Runs extended Half-GCD algorithm to compute {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
+     *
+     * @param a the polynomial
+     * @param b the polynomial
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T[] ExtendedHalfGCD(T a, T b) {
+        if (a.degree() < b.degree()) {
+            T[] r = ExtendedHalfGCD(b, a);
+            ArraysUtil.swap(r, 1, 2);
+            return r;
+        }
+
+        if (b.isZero()) {
+            T[] result = a.arrayNewInstance(3);
+            result[0] = a.clone();
+            result[1] = a.createOne();
+            result[2] = a.createZero();
+            return normalizeExtendedGCD(result);
+        }
+
+        a = a.clone();
+        b = b.clone();
+
+        T quotient = null;
+        if (a.degree() == b.degree()) {
+            T[] qd = divideAndRemainder(a, b, true);
+            quotient = qd[0];
+            T remainder = qd[1];
+            a = b;
+            b = remainder;
+        }
+
+        T[][] hMatrix = reduceExtendedHalfGCD(a, b, a.degree() + 1);
+        T gcd = a, s, t;
+
+        if (quotient != null) {
+            s = hMatrix[0][1];
+            t = quotient.multiply(hMatrix[0][1]);
+            t = hMatrix[0][0].subtract(t);
+        } else {
+            s = hMatrix[0][0];
+            t = hMatrix[0][1];
+        }
+
+        T[] result = a.arrayNewInstance(3);
+        result[0] = gcd;
+        result[1] = s;
+        result[2] = t;
+        return normalizeExtendedGCD(result);
+    }
+
+    /**
+     * @param reduce whether to reduce a and b inplace
+     */
+    private static <T extends IUnivariatePolynomial<T>> T[][] hMatrixPlain(T a, T b, int degreeToReduce, boolean reduce) {
+        T[][] hMatrix = unitMatrix(a);
+        int goal = a.degree() - degreeToReduce;
+        if (b.degree() <= goal)
+            return hMatrix;
+
+        T tmpA = a, tmpB = b;
+        while (tmpB.degree() > goal && !tmpB.isZero()) {
+            T[] qd = divideAndRemainder(tmpA, tmpB, true);
+            T quotient = qd[0], remainder = qd[1];
+
+            T tmp;
+            tmp = quotient.clone().multiply(hMatrix[1][0]);
+            tmp = hMatrix[0][0].clone().subtract(tmp);
+
+            hMatrix[0][0] = hMatrix[1][0];
+            hMatrix[1][0] = tmp;
+
+            tmp = quotient.clone().multiply(hMatrix[1][1]);
+            tmp = hMatrix[0][1].clone().subtract(tmp);
+
+            hMatrix[0][1] = hMatrix[1][1];
+            hMatrix[1][1] = tmp;
+
+            tmpA = tmpB;
+            tmpB = remainder;
+        }
+
+        if (reduce) {
+            a.setAndDestroy(tmpA);
+            b.setAndDestroy(tmpB);
+        }
+
+        return hMatrix;
+    }
+
+    private static <T extends IUnivariatePolynomial<T>> T[][] hMatrixHalfGCD(T a, T b, int d) {
+        if (b.isZero() || b.degree() <= a.degree() - d)
+            return unitMatrix(a);
+
+        int n = a.degree() - 2 * d + 2;
+        if (n < 0) n = 0;
+
+        T a1 = a.clone().shiftLeft(n);
+        T b1 = b.clone().shiftLeft(n);
+
+        if (d <= SWITCH_TO_HALF_GCD_H_MATRIX_DEGREE)
+            return hMatrixPlain(a1, b1, d, false);
+
+        int dR = (d + 1) / 2;
+        if (dR < 1)
+            dR = 1;
+        if (dR >= d)
+            dR = d - 1;
+
+        T[][] hMatrixR = hMatrixHalfGCD(a1, b1, dR);
+        T[] col = columnMultiply(hMatrixR, a1, b1);
+        a1 = col[0];
+        b1 = col[1];
+
+
+        int dL = b1.degree() - a.degree() + n + d;
+        if (b1.isZero() || dL <= 0)
+            return hMatrixR;
+
+        T[] qd = divideAndRemainder(a1, b1, false);
+        T quotient = qd[0], remainder = qd[1];
+        T[][] hMatrixL = hMatrixHalfGCD(b1, remainder, dL);
+
+        T tmp;
+        tmp = quotient.clone().multiply(hMatrixR[1][0]);
+        tmp = hMatrixR[0][0].clone().subtract(tmp);
+        hMatrixR[0][0] = hMatrixR[1][0];
+        hMatrixR[1][0] = tmp;
+
+        tmp = quotient.clone().multiply(hMatrixR[1][1]);
+        tmp = hMatrixR[0][1].clone().subtract(tmp);
+        hMatrixR[0][1] = hMatrixR[1][1];
+        hMatrixR[1][1] = tmp;
+
+        return matrixMultiply(hMatrixL, hMatrixR);
+    }
+
+    /** a and b will be modified */
+    static <T extends IUnivariatePolynomial<T>> T[][] reduceExtendedHalfGCD(T a, T b, int d) {
+        assert a.degree() >= b.degree();
+        if (b.isZero() || b.degree() <= a.degree() - d)
+            return unitMatrix(a);
+
+        int aDegree = a.degree();
+        if (d <= SWITCH_TO_HALF_GCD_H_MATRIX_DEGREE)
+            return hMatrixPlain(a, b, d, true);
+
+        int dL = (d + 1) / 2;
+        if (dL < 1)
+            dL = 1;
+        if (dL >= d)
+            dL = d - 1;
+
+        T[][] hMatrixR = hMatrixHalfGCD(a, b, dL);
+        T[] col = columnMultiply(hMatrixR, a, b);
+        a.setAndDestroy(col[0]);
+        b.setAndDestroy(col[1]);
+
+        int dR = b.degree() - aDegree + d;
+        if (b.isZero() || dR <= 0)
+            return hMatrixR;
+
+        T[] qd = divideAndRemainder(a, b, true);
+        T quotient = qd[0], remainder = qd[1];
+
+        a.setAndDestroy(b);
+        b.setAndDestroy(remainder);
+        T[][] hMatrixL = reduceExtendedHalfGCD(a, b, dR);
+
+        T tmp;
+        tmp = quotient.clone().multiply(hMatrixR[1][0]);
+        tmp = hMatrixR[0][0].clone().subtract(tmp);
+
+        hMatrixR[0][0] = hMatrixR[1][0];
+        hMatrixR[1][0] = tmp;
+
+
+        tmp = quotient.clone().multiply(hMatrixR[1][1]);
+        tmp = hMatrixR[0][1].clone().subtract(tmp);
+        hMatrixR[0][1] = hMatrixR[1][1];
+        hMatrixR[1][1] = tmp;
+
+        return matrixMultiply(hMatrixL, hMatrixR);
+    }
+
+    /** a and b will be modified */
+    static <T extends IUnivariatePolynomial<T>> T[] reduceHalfGCD(T a, T b) {
+        int d = (a.degree() + 1) / 2;
+
+        if (b.isZero() || b.degree() <= a.degree() - d)
+            return a.arrayNewInstance(a, b);
+
+        int aDegree = a.degree();
+
+        int d1 = (d + 1) / 2;
+        if (d1 < 1)
+            d1 = 1;
+        if (d1 >= d)
+            d1 = d - 1;
+
+
+        T[][] hMatrix = hMatrixHalfGCD(a, b, d1);
+        T[] col = columnMultiply(hMatrix, a, b);
+        a = col[0];
+        b = col[1];
+
+        int d2 = b.degree() - aDegree + d;
+
+        if (b.isZero() || d2 <= 0)
+            return a.arrayNewInstance(a, b);
+
+        T remainder = remainder(a, b, true);
+        a = b;
+        b = remainder;
+
+        return columnMultiply(hMatrixHalfGCD(a, b, d2), a, b);
+    }
+
+    private static <T extends IUnivariatePolynomial<T>> T[][] matrixMultiply(T[][] matrix1, T[][] matrix2) {
+        T[][] r = matrix1[0][0].arrayNewInstance2D(2, 2);
+        r[0][0] = matrix1[0][0].clone().multiply(matrix2[0][0]).add(matrix1[0][1].clone().multiply(matrix2[1][0]));
+        r[0][1] = matrix1[0][0].clone().multiply(matrix2[0][1]).add(matrix1[0][1].clone().multiply(matrix2[1][1]));
+        r[1][0] = matrix1[1][0].clone().multiply(matrix2[0][0]).add(matrix1[1][1].clone().multiply(matrix2[1][0]));
+        r[1][1] = matrix1[1][0].clone().multiply(matrix2[0][1]).add(matrix1[1][1].clone().multiply(matrix2[1][1]));
+        return r;
+    }
+
+    private static <T extends IUnivariatePolynomial<T>> T[] columnMultiply(T[][] hMatrix, T row1, T row2) {
+        T[] resultColumn = row1.arrayNewInstance(2);
+        resultColumn[0] = hMatrix[0][0].clone().multiply(row1).add(hMatrix[0][1].clone().multiply(row2));
+        resultColumn[1] = hMatrix[1][0].clone().multiply(row1).add(hMatrix[1][1].clone().multiply(row2));
+        return resultColumn;
+    }
+
+    private static <T extends IUnivariatePolynomial<T>> T[][] unitMatrix(T factory) {
+        T[][] m = factory.arrayNewInstance2D(2, 2);
+        m[0][0] = factory.createOne();
+        m[0][1] = factory.createZero();
+        m[1][0] = factory.createZero();
+        m[1][1] = factory.createOne();
+        return m;
     }
 
     /**
@@ -408,7 +735,7 @@ public final class UnivariateGCD {
                 continue;
 
             lUnivariatePolynomialZp aMod = a.modulus(prime), bMod = b.modulus(prime);
-            lUnivariatePolynomialZp modularGCD = Euclid(aMod, bMod).gcd();
+            lUnivariatePolynomialZp modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -475,7 +802,8 @@ public final class UnivariateGCD {
      * @return GCD of two polynomials
      */
     @SuppressWarnings("ConstantConditions")
-    public static UnivariatePolynomial<BigInteger> ModularGCD(UnivariatePolynomial<BigInteger> a, UnivariatePolynomial<BigInteger> b) {
+    public static UnivariatePolynomial<BigInteger> ModularGCD(UnivariatePolynomial<BigInteger> a,
+                                                              UnivariatePolynomial<BigInteger> b) {
         if (a.domain != Integers.Integers)
             throw new IllegalArgumentException("Only polynomials over integers domain are allowed; " + a.domain);
         if (a == b)
@@ -495,7 +823,8 @@ public final class UnivariateGCD {
 
     /** modular GCD for primitive polynomials */
     @SuppressWarnings("ConstantConditions")
-    private static UnivariatePolynomial<BigInteger> ModularGCD0(UnivariatePolynomial<BigInteger> a, UnivariatePolynomial<BigInteger> b) {
+    private static UnivariatePolynomial<BigInteger> ModularGCD0(UnivariatePolynomial<BigInteger> a,
+                                                                UnivariatePolynomial<BigInteger> b) {
         assert a.degree >= b.degree;
 
         BigInteger lcGCD = BigIntegerArithmetics.gcd(a.lc(), b.lc());
@@ -520,7 +849,7 @@ public final class UnivariateGCD {
 
             IntegersModulo bPrimeDomain = new IntegersModulo(bPrime);
             lUnivariatePolynomialZp aMod = asLongPolyZp(a.setDomain(bPrimeDomain)), bMod = asLongPolyZp(b.setDomain(bPrimeDomain));
-            lUnivariatePolynomialZp modularGCD = Euclid(aMod, bMod).gcd();
+            lUnivariatePolynomialZp modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -596,7 +925,7 @@ public final class UnivariateGCD {
 
             IntegersModulo bPrimeDomain = new IntegersModulo(bPrime);
             lUnivariatePolynomialZp aMod = asLongPolyZp(a.setDomain(bPrimeDomain)), bMod = asLongPolyZp(b.setDomain(bPrimeDomain));
-            lUnivariatePolynomialZp modularGCD = Euclid(aMod, bMod).gcd();
+            lUnivariatePolynomialZp modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -664,27 +993,34 @@ public final class UnivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T a, T b) {
-        T gcd;
+        if (a.isOverField())
+            return HalfGCD(a, b);
 
-        if (a instanceof lUnivariatePolynomialZp)
-            gcd = (T) Euclid((lUnivariatePolynomialZp) a, (lUnivariatePolynomialZp) b).gcd();
-        else if (a instanceof lUnivariatePolynomialZ)
-            gcd = (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
+        if (a instanceof lUnivariatePolynomialZ)
+            return (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
         else if (a instanceof UnivariatePolynomial) {
             Domain domain = ((UnivariatePolynomial) a).domain;
-            if (domain.isField())
-                gcd = (T) Euclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
-            else if (domain == Integers.Integers)
-                gcd = (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+            if (domain == Integers.Integers)
+                return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
             else
-                gcd = (T) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+                return (T) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
         } else
             throw new RuntimeException(a.getClass().toString());
+    }
 
-        if (gcd.isOverField())
-            gcd = gcd.monicExact();
-
-        return gcd;
+    /**
+     * Computes {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
+     *
+     * @param a the polynomial
+     * @param b the polynomial
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IUnivariatePolynomial<T>> T[] PolynomialExtendedGCD(T a, T b) {
+        if (a.isOverField())
+            return ExtendedHalfGCD(a, b);
+        else
+            throw new IllegalArgumentException("Polynomial over field is expected");
     }
 
     /**

@@ -26,6 +26,8 @@ import static cc.r2.core.poly.Integers.Integers;
  * @since 1.0
  */
 public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<UnivariatePolynomial<E>>, Iterable<E> {
+    private static final long serialVersionUID = 1L;
+
     /** the domain */
     public final Domain<E> domain;
     /** list of coefficients { x^0, x^1, ... , x^degree } */
@@ -582,6 +584,16 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public UnivariatePolynomial<E> set(UnivariatePolynomial<E> oth) {
         this.data = oth.data.clone();
         this.degree = oth.degree;
+        return this;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public final UnivariatePolynomial<E> setAndDestroy(UnivariatePolynomial<E> oth) {
+        this.data = oth.data;
+        oth.data = null; // destroy
+        this.degree = oth.degree;
+        assert data.length > 0;
         return this;
     }
 
@@ -1372,14 +1384,14 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         fillZeroes(f0_plus_f1, fMid - fFrom, f0_plus_f1.length);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = domain.addMutable(f0_plus_f1[i - fMid], f[i]);
+            f0_plus_f1[i - fMid] = domain.add(f0_plus_f1[i - fMid], f[i]);
 
         //g0 + g1
         E[] g0_plus_g1 = domain.createArray(Math.max(gMid - gFrom, gTo - gMid));
         System.arraycopy(g, gFrom, g0_plus_g1, 0, gMid - gFrom);
         fillZeroes(g0_plus_g1, gMid - gFrom, g0_plus_g1.length);
         for (int i = gMid; i < gTo; ++i)
-            g0_plus_g1[i - gMid] = domain.addMutable(g0_plus_g1[i - gMid], g[i]);
+            g0_plus_g1[i - gMid] = domain.add(g0_plus_g1[i - gMid], g[i]);
 
         E[] mid = multiplyKaratsubaSafe(f0_plus_f1, 0, f0_plus_f1.length, g0_plus_g1, 0, g0_plus_g1.length);
 
@@ -1476,7 +1488,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         System.arraycopy(f, fFrom, f0_plus_f1, 0, fMid - fFrom);
         fillZeroes(f0_plus_f1, fMid - fFrom, f0_plus_f1.length);
         for (int i = fMid; i < fTo; ++i)
-            f0_plus_f1[i - fMid] = domain.addMutable(f0_plus_f1[i - fMid], f[i]);
+            f0_plus_f1[i - fMid] = domain.add(f0_plus_f1[i - fMid], f[i]);
 
         E[] mid = squareKaratsubaSafe(f0_plus_f1, 0, f0_plus_f1.length);
 

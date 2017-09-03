@@ -300,6 +300,16 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public final lPoly setAndDestroy(lPoly oth) {
+        this.data = oth.data;
+        oth.data = null; // destroy
+        this.degree = oth.degree;
+        assert data.length > 0;
+        return self;
+    }
+
     @Override
     public final lPoly setDomainFrom(lPoly poly) {
         return clone();
@@ -732,7 +742,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         int result = 1;
         for (int i = degree; i >= 0; --i) {
             long element = data[i];
-            int elementHash = (int) (element^(element >>> 32));
+            int elementHash = (int) (element ^ (element >>> 32));
             result = 31 * result + elementHash;
         }
         return result;

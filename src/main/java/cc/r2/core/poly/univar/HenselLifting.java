@@ -269,7 +269,7 @@ public final class HenselLifting {
 
     /** runs xgcd for coprime polynomials ensuring that gcd is 1 (not another constant) */
     private static <PolyZp extends IUnivariatePolynomial<PolyZp>> PolyZp[] monicExtendedEuclid(PolyZp a, PolyZp b) {
-        PolyZp[] xgcd = UnivariateGCD.ExtendedEuclid(a, b);
+        PolyZp[] xgcd = UnivariateGCD.ExtendedEuclidGCD(a, b);
         if (xgcd[0].isOne())
             return xgcd;
 

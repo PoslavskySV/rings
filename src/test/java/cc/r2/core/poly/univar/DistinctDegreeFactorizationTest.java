@@ -435,7 +435,7 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
             FactorDecomposition<lUnivariatePolynomialZp> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);
             long time = System.nanoTime() - start;
-            boolean b = UnivariateGCD.Euclid(bigPoly.toBigPoly().square(), bigPoly.toBigPoly().square().derivative()).gcd().isConstant();
+            boolean b = UnivariateGCD.EuclidGCD(bigPoly.toBigPoly().square(), bigPoly.toBigPoly().square().derivative()).isConstant();
             System.out.println(i + "" + b + " Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.domain.modulus + "): " + TimeUnits.nanosecondsToString(time));
         }
     }

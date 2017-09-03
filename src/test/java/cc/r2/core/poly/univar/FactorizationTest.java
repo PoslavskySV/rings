@@ -412,9 +412,7 @@ public class FactorizationTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZp irreducible = lUnivariatePolynomialZ.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<lUnivariatePolynomialZp> domain = new FiniteField<>(irreducible);
         UnivariatePolynomial<lUnivariatePolynomialZp> input = UnivariatePolynomial.parse(domain, "(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6");
-        for (int i = 0; i < 1000; i++) {
-            System.out.println("----");
-            System.out.println(i);
+        for (int i = 0; i < its(10,10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
             FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = factor(input);

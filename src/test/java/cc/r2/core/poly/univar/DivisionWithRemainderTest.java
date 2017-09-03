@@ -29,7 +29,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
         lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
 
-        UnivariateGCD.PolynomialRemainders<lUnivariatePolynomialZp> prs = UnivariateGCD.Euclid(a, b);
+        UnivariateGCD.PolynomialRemainders<lUnivariatePolynomialZp> prs = UnivariateGCD.EuclidRemainders(a, b);
         lUnivariatePolynomialZp gcd = prs.gcd();
         assertEquals(3, gcd.degree);
         assertTrue(DivisionWithRemainder.divideAndRemainder(a, gcd, true)[1].isZero());
