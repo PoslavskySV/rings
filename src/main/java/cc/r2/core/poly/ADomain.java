@@ -8,6 +8,8 @@ import cc.r2.core.number.BigIntegerArithmetics;
  * @since 1.0
  */
 abstract class ADomain<E> implements Domain<E> {
+    private static final long serialVersionUID = 1L;
+    
     /**
      * if modulus = a^b, a and b are stored in this array
      */

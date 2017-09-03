@@ -12,6 +12,8 @@ import java.util.Arrays;
  * @since 1.0
  */
 public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract<lUnivariatePolynomialZp> {
+    private static final long serialVersionUID = 1L;
+
     /** the domain */
     public final lIntegersModulo domain;
 

@@ -1,7 +1,10 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.univar.IrreduciblePolynomials;
+import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.Well19937c;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -12,7 +15,46 @@ import java.util.Iterator;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface Domain<E> extends Comparator<E>, Iterable<E> {
+public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializable {
+
+    /* ================================================== Domains ================================================== */
+
+    /**
+     * Domain of integers (Z)
+     */
+    static Integers Z = Integers.Integers;
+
+    /**
+     * Domain of rationals (Q)
+     */
+    static Rationals Q = Rationals.Rationals;
+
+    /**
+     * Z/p domain
+     *
+     * @param modulus the modulus
+     */
+    static IntegersModulo Zp(BigInteger modulus) {return new IntegersModulo(modulus);}
+
+    /**
+     * Z/p domain
+     *
+     * @param modulus the modulus
+     */
+    static IntegersModulo Zp(long modulus) {return new IntegersModulo(modulus);}
+
+    /**
+     * Z/p domain
+     *
+     * @param modulus the modulus
+     */
+    static FiniteField<lUnivariatePolynomialZp> FiniteField(long modulus, int exponent) {
+        return new FiniteField<>(IrreduciblePolynomials.randomIrreduciblePolynomial(modulus, exponent, new Well19937c(0x77f3d)));
+    }
+
+
+    /* ==================================================== API ==================================================== */
+
     /**
      * Returns whether this domain is a field
      *

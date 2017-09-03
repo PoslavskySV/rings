@@ -8,7 +8,8 @@ import java.util.Collection;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>> extends Comparable<Poly> {
+public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
+        extends Comparable<Poly>, java.io.Serializable {
     /**
      * Returns whether {@code oth} and {@code this} have the same coefficients domain
      *

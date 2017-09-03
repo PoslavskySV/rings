@@ -9,7 +9,8 @@ import static cc.redberry.libdivide4j.FastDivision.*;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class lIntegersModulo {
+public final class lIntegersModulo implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     /** the modulus */
     public final long modulus;
     /** magic **/

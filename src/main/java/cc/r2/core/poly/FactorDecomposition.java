@@ -16,7 +16,8 @@ import static cc.r2.core.poly.CommonPolynomialsArithmetics.polyPow;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> implements Iterable<Poly> {
+public final class FactorDecomposition<Poly extends IGeneralPolynomial<Poly>> implements Iterable<Poly>, java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     /** Holds a numerical factor */
     public final Poly constantFactor;
     /** Factors */

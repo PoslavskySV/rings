@@ -2,6 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.util.ArraysUtil;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -12,7 +13,8 @@ import java.util.stream.Collectors;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
+public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     /** exponents */
     final int[] exponents;
     /** sum of all exponents */
@@ -194,32 +196,36 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> {
     /**
      * Lexicographic monomial order
      */
-    public static final Comparator<DegreeVector> LEX = (DegreeVector a, DegreeVector b) -> {
-        for (int i = 0; i < a.exponents.length; ++i) {
-            int c = Integer.compare(a.exponents[i], b.exponents[i]);
-            if (c != 0)
-                return c;
-        }
-        return 0;
-    };
+    public static final Comparator<DegreeVector> LEX = (Comparator<DegreeVector> & Serializable)
+            (DegreeVector a, DegreeVector b) -> {
+                for (int i = 0; i < a.exponents.length; ++i) {
+                    int c = Integer.compare(a.exponents[i], b.exponents[i]);
+                    if (c != 0)
+                        return c;
+                }
+                return 0;
+            };
 
     /**
      * Antilexicographic monomial order
      */
-    public static final Comparator<DegreeVector> ALEX = (DegreeVector a, DegreeVector b) -> LEX.compare(b, a);
+    public static final Comparator<DegreeVector> ALEX = (Comparator<DegreeVector> & Serializable)
+            (DegreeVector a, DegreeVector b) -> LEX.compare(b, a);
 
     /**
      * Graded lexicographic monomial order
      */
-    public static final Comparator<DegreeVector> GRLEX = (DegreeVector a, DegreeVector b) -> {
-        int c = Integer.compare(a.totalDegree, b.totalDegree);
-        return c != 0 ? c : LEX.compare(a, b);
-    };
+    public static final Comparator<DegreeVector> GRLEX = (Comparator<DegreeVector> & Serializable)
+            (DegreeVector a, DegreeVector b) -> {
+                int c = Integer.compare(a.totalDegree, b.totalDegree);
+                return c != 0 ? c : LEX.compare(a, b);
+            };
 
     /**
      * Graded reverse lexicographic monomial order
      */
-    public static final Comparator<DegreeVector> GREVLEX = (DegreeVector a, DegreeVector b) -> {
+    public static final Comparator<DegreeVector> GREVLEX = (Comparator<DegreeVector> & Serializable)
+            (Comparator<DegreeVector> & Serializable) (DegreeVector a, DegreeVector b) -> {
         int c = Integer.compare(a.totalDegree, b.totalDegree);
         if (c != 0)
             return c;

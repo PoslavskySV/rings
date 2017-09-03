@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -3181,10 +3182,11 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
      */
     public BigInteger divideExact(BigInteger val) {
         BigInteger[] qd = divideAndRemainder(val);
-        if(!qd[1].isZero())
+        if (!qd[1].isZero())
             throw new ArithmeticException("not divisible " + this + " / " + val);
         return qd[0];
     }
+
     /**
      * Returns a BigInteger whose value is {@code (this / val)}.
      *
@@ -5810,13 +5812,24 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
 
         static {
             try {
-                unsafe = sun.misc.Unsafe.getUnsafe();
+                unsafe = getUnsafe();// sun.misc.Unsafe.getUnsafe();
                 signumOffset = unsafe.objectFieldOffset
                         (BigInteger.class.getDeclaredField("signum"));
                 magOffset = unsafe.objectFieldOffset
                         (BigInteger.class.getDeclaredField("mag"));
             } catch (Exception ex) {
                 throw new ExceptionInInitializerError(ex);
+            }
+        }
+
+        @SuppressWarnings("restriction")
+        private static sun.misc.Unsafe getUnsafe() {
+            try {
+                Field workaround = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+                workaround.setAccessible(true);
+                return (sun.misc.Unsafe) workaround.get(null);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
 

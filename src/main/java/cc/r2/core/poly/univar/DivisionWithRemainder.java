@@ -622,7 +622,8 @@ public final class DivisionWithRemainder {
     }
 
     /** Holds {@code poly^(-1) mod x^i } */
-    public static final class InverseModMonomial<Poly extends IUnivariatePolynomial<Poly>> {
+    public static final class InverseModMonomial<Poly extends IUnivariatePolynomial<Poly>>
+            implements java.io.Serializable {
         final Poly poly;
 
         private InverseModMonomial(Poly poly) {
