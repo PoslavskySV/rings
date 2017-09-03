@@ -4,7 +4,7 @@ jdk:
 sudo: required
 
 before_install:
-  - cd libdivide4j && mvn clean install -DskipTests
+  - cd libdivide4j && mvn clean install -DskipTests && cd ../
 
 script:
   - sudo apt-get update && sudo apt-get install oracle-java8-installer
