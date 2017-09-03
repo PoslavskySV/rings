@@ -5,4 +5,5 @@ sudo: required
 
 script:
   - sudo apt-get update && sudo apt-get install oracle-java8-installer
+  - cd libdivide4j && mvn clean install -DskipTests && cd ../
   - mvn test -DrunLongTests=true -B
