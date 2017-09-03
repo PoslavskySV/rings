@@ -310,8 +310,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeZ, "Bivariate dense factorization over Z"));
     }
 
-//    @Ignore
-//    @Benchmark
+    @Ignore
+    @Benchmark
     @Test
     public void testBivariateBenchmarkSingular() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(2);
