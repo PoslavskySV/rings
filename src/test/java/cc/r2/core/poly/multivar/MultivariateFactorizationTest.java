@@ -217,7 +217,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 2, 2,
                 2, 6,
                 1, 5));
-        testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(50, 500),
+        testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 500),
                 FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeZ, "Bivariate dense factorization over Z"));
     }
 
@@ -310,8 +310,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeZ, "Bivariate dense factorization over Z"));
     }
 
-    @Ignore
-    @Benchmark
+//    @Ignore
+//    @Benchmark
     @Test
     public void testBivariateBenchmarkSingular() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(2);
