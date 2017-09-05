@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 /**
+ * A domain of elements.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
@@ -49,9 +51,9 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
      * @param modulus the modulus
      */
     static FiniteField<lUnivariatePolynomialZp> FiniteField(long modulus, int exponent) {
-        return new FiniteField<>(IrreduciblePolynomials.randomIrreduciblePolynomial(modulus, exponent, new Well19937c(0x77f3d)));
+        // provide random generator with fixed seed to make the behavior predictable
+        return new FiniteField<>(IrreduciblePolynomials.randomIrreduciblePolynomial(modulus, exponent, new Well19937c(0x77f3dfae)));
     }
-
 
     /* ==================================================== API ==================================================== */
 
@@ -129,6 +131,14 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
         for (int i = 1; i < vals.length; i++)
             r = add(r, vals[i]);
         return r;
+    }
+
+    default E increment(E val){
+        return add(val, getOne());
+    }
+
+    default E decrement(E val){
+        return subtract(val, getOne());
     }
 
     /**
@@ -523,7 +533,7 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
         E result = getOne();
         E k2p = copy(base); // <= copy the base (mutable operations are used below)
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result = multiplyMutable(result, k2p);
             exponent = exponent >> 1;
             if (exponent == 0)
@@ -552,7 +562,7 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
         E result = getOne();
         E k2p = copy(base); // <= copy the base (mutable operations are used below)
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result = multiplyMutable(result, k2p);
             exponent = exponent >> 1;
             if (exponent == 0)

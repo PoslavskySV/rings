@@ -218,6 +218,11 @@ public final class HenselLifting {
         public lEvaluation renameVariables(int[] variablesExceptFirst) {
             return new lEvaluation(nVariables, map(values, variablesExceptFirst), domain, ordering);
         }
+
+        @Override
+        public String toString() {
+            return Arrays.toString(values);
+        }
     }
 
     private static long[] map(long[] oldArray, int[] mapping) {
@@ -301,6 +306,11 @@ public final class HenselLifting {
         @Override
         public Evaluation<E> renameVariables(int[] variablesExceptFirst) {
             return new Evaluation<>(nVariables, map(domain, values, variablesExceptFirst), domain, ordering);
+        }
+
+        @Override
+        public String toString() {
+            return Arrays.toString(values);
         }
     }
 

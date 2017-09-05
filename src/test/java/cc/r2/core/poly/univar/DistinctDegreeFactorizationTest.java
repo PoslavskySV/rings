@@ -19,9 +19,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
 import static cc.r2.core.poly.univar.DistinctDegreeFactorization.DistinctDegreeFactorization;
 import static cc.r2.core.poly.univar.FactorizationTestUtil.assertDistinctDegreeFactorization;
-import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -418,7 +418,7 @@ public class DistinctDegreeFactorizationTest extends AbstractPolynomialTest {
     public void test5c() throws Exception {
         long modulus = Integer.MAX_VALUE;
         for (int i = 0; i < its(10, 50); i++) {
-            lUnivariatePolynomialZp bigPoly =  this.bigPoly.setModulus(modulus);
+            lUnivariatePolynomialZp bigPoly = this.bigPoly.setModulus(modulus);
             long start = System.nanoTime();
             FactorDecomposition<lUnivariatePolynomialZp> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);

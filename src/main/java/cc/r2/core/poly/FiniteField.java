@@ -337,4 +337,9 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
         result = 31 * result + cardinality.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "(" + irreducible.coefficientDomainToString() + ")[x]/<" + irreducible + "> (GF" + cardinality + ")";
+    }
 }

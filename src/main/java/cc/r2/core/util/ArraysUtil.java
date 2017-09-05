@@ -87,6 +87,19 @@ public final class ArraysUtil {
         return 0;
     };
 
+    public static int[] flatten(int[][] array) {
+        int len = 0;
+        for (int[] e : array)
+            len += e.length;
+        int[] result = new int[len];
+        int pointer = 0;
+        for (int[] e : array) {
+            System.arraycopy(e, 0, result, pointer, e.length);
+            pointer += e.length;
+        }
+        return result;
+    }
+
     public static int[] arrayOf(int val, int len) {
         int[] r = new int[len];
         Arrays.fill(r, val);
@@ -616,7 +629,7 @@ public final class ArraysUtil {
             assert i == 0;
             return new int[0];
         } else if (array.length == 2)
-            return new int[]{array[1^i]};
+            return new int[]{array[1 ^ i]};
         int[] newArray = new int[array.length - 1];
         System.arraycopy(array, 0, newArray, 0, i);
         if (i != array.length - 1)
@@ -631,7 +644,7 @@ public final class ArraysUtil {
             assert i == 0;
             return new long[0];
         } else if (array.length == 2)
-            return new long[]{array[1^i]};
+            return new long[]{array[1 ^ i]};
         long[] newArray = new long[array.length - 1];
         System.arraycopy(array, 0, newArray, 0, i);
         if (i != array.length - 1)
@@ -877,7 +890,7 @@ public final class ArraysUtil {
         int r = 17;
         for (int i = from; i < to; i++) {
             int h = data[i].hashCode();
-            r *= h + 29^h;
+            r *= h + 29 ^ h;
         }
         return r;
     }
@@ -901,7 +914,7 @@ public final class ArraysUtil {
     public static int commutativeHashCode(int[] data, int from, int to) {
         int r = 17;
         for (int i = from; i < to; i++)
-            r *= data[i] + 29^data[i];
+            r *= data[i] + 29 ^ data[i];
         return r;
     }
 

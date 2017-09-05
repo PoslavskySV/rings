@@ -78,7 +78,7 @@ public final class LongArithmetics {
         long r = x * y;
         long ax = Math.abs(x);
         long ay = Math.abs(y);
-        if (((ax|ay) >>> 31 != 0)) {
+        if (((ax | ay) >>> 31 != 0)) {
             // Some bits greater than 2^31 that might cause overflow
             // Check the result using the divide operator
             // and check for the special case of Long.MIN_VALUE * -1
@@ -93,7 +93,7 @@ public final class LongArithmetics {
     public static boolean isOverflowAdd(long x, long y) {
         long r = x + y;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
-        if (((x^r)&(y^r)) < 0) {
+        if (((x ^ r) & (y ^ r)) < 0) {
             return true;
         }
         return false;
@@ -114,7 +114,7 @@ public final class LongArithmetics {
         long result = 1L;
         long k2p = base;
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result = safeMultiply(result, k2p);
             exponent = exponent >> 1;
             if (exponent == 0)
@@ -137,7 +137,7 @@ public final class LongArithmetics {
         long result = 1L;
         long k2p = base;
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result *= k2p;
             exponent = exponent >> 1;
             if (exponent == 0)
@@ -174,7 +174,7 @@ public final class LongArithmetics {
         } // make v negative
         // B1. [Find power of 2]
         int k = 0;
-        while ((u&1) == 0 && (v&1) == 0 && k < 63) { // while u and v are
+        while ((u & 1) == 0 && (v & 1) == 0 && k < 63) { // while u and v are
             // both even...
             u /= 2;
             v /= 2;
@@ -185,13 +185,13 @@ public final class LongArithmetics {
         }
         // B2. Initialize: u and v have been divided by 2^k and at least
         // one is odd.
-        long t = ((u&1) == 1) ? v : -(u / 2)/* B3 */;
+        long t = ((u & 1) == 1) ? v : -(u / 2)/* B3 */;
         // t negative: u was odd, v may be even (t replaces v)
         // t positive: u was even, v is odd (t replaces u)
         do {
             /* assert u<0 && v<0; */
             // B4/B3: cast out twos from t.
-            while ((t&1) == 0) { // while t is even..
+            while ((t & 1) == 0) { // while t is even..
                 t /= 2; // cast out twos
             }
             // B5 [reset max(u,v)]
@@ -207,6 +207,133 @@ public final class LongArithmetics {
         } while (t != 0);
         return -u * (1L << k); // gcd is u*2^k
     }
+
+    /**
+     * Computes the greatest common divisor of the absolute value of two
+     * numbers, using a modified version of the "binary gcd" method.
+     * See Knuth 4.5.2 algorithm B.
+     * The algorithm is due to Josef Stein (1961).
+     * <br/>
+     * Special cases:
+     * <ul>
+     * <li>The invocations
+     * {@code gcd(Integer.MIN_VALUE, Integer.MIN_VALUE)},
+     * {@code gcd(Integer.MIN_VALUE, 0)} and
+     * {@code gcd(0, Integer.MIN_VALUE)} throw an
+     * {@code ArithmeticException}, because the result would be 2^31, which
+     * is too large for an int value.</li>
+     * <li>The result of {@code gcd(x, x)}, {@code gcd(0, x)} and
+     * {@code gcd(x, 0)} is the absolute value of {@code x}, except
+     * for the special cases above.</li>
+     * <li>The invocation {@code gcd(0, 0)} is the only one which returns
+     * {@code 0}.</li>
+     * </ul>
+     *
+     * @param p Number.
+     * @param q Number.
+     * @return the greatest common divisor (never negative).
+     */
+    public static int gcd(int p, int q) {
+        int a = p;
+        int b = q;
+        if (a == 0 || b == 0) {
+            if (a == Integer.MIN_VALUE || b == Integer.MIN_VALUE)
+                throw new IllegalArgumentException("int overflow");
+            return Math.abs(a + b);
+        }
+
+        long al = a;
+        long bl = b;
+        boolean useLong = false;
+        if (a < 0) {
+            if (Integer.MIN_VALUE == a)
+                useLong = true;
+            else
+                a = -a;
+            al = -al;
+        }
+        if (b < 0) {
+            if (Integer.MIN_VALUE == b)
+                useLong = true;
+            else
+                b = -b;
+            bl = -bl;
+        }
+        if (useLong) {
+            if (al == bl)
+                throw new IllegalArgumentException("int overflow");
+
+            long blbu = bl;
+            bl = al;
+            al = blbu % al;
+            if (al == 0) {
+                if (bl > Integer.MAX_VALUE)
+                    throw new IllegalArgumentException("int overflow");
+                return (int) bl;
+            }
+            blbu = bl;
+
+            // Now "al" and "bl" fit in an "int".
+            b = (int) al;
+            a = (int) (blbu % al);
+        }
+
+        return gcdPositive(a, b);
+    }
+
+    /**
+     * Computes the greatest common divisor of two <em>positive</em> numbers
+     * (this precondition is <em>not</em> checked and the result is undefined
+     * if not fulfilled) using the "binary gcd" method which avoids division
+     * and modulo operations.
+     * See Knuth 4.5.2 algorithm B.
+     * The algorithm is due to Josef Stein (1961).
+     * <br/>
+     * Special cases:
+     * <ul>
+     * <li>The result of {@code gcd(x, x)}, {@code gcd(0, x)} and
+     * {@code gcd(x, 0)} is the value of {@code x}.</li>
+     * <li>The invocation {@code gcd(0, 0)} is the only one which returns
+     * {@code 0}.</li>
+     * </ul>
+     *
+     * @param a Positive number.
+     * @param b Positive number.
+     * @return the greatest common divisor.
+     */
+    private static int gcdPositive(int a, int b) {
+        if (a == 0)
+            return b;
+
+        else if (b == 0)
+            return a;
+
+        // Make "a" and "b" odd, keeping track of common power of 2.
+        int aTwos = Integer.numberOfTrailingZeros(a);
+        a >>= aTwos;
+        int bTwos = Integer.numberOfTrailingZeros(b);
+        b >>= bTwos;
+        int shift = Math.min(aTwos, bTwos);
+
+        // "a" and "b" are positive.
+        // If a > b then "gdc(a, b)" is equal to "gcd(a - b, b)".
+        // If a < b then "gcd(a, b)" is equal to "gcd(b - a, a)".
+        // Hence, in the successive iterations:
+        //  "a" becomes the absolute difference of the current values,
+        //  "b" becomes the minimum of the current values.
+        while (a != b) {
+            int delta = a - b;
+            b = Math.min(a, b);
+            a = Math.abs(delta);
+
+            // Remove any power of 2 in "a" ("b" is guaranteed to be odd).
+            a >>= Integer.numberOfTrailingZeros(a);
+        }
+
+        // Recover the common power of 2.
+        return a << shift;
+    }
+
 
     /**
      * Runs extended Euclidean algorithm to compute {@code [gcd(a,b), x, y]} such that {@code x * a + y * b = gcd(a, b)}
@@ -256,6 +383,19 @@ public final class LongArithmetics {
     }
 
     /**
+     * Returns the least common multiple of two integers
+     *
+     * @param a a number
+     * @param b a number
+     * @return least common multiple of {@code a} and {@code b}
+     */
+    public static int lcm(int a, int b) {
+        if (a == 0 || b == 0)
+            return 0;
+        return (a / gcd(a, b)) *  b;
+    }
+
+    /**
      * Returns the greatest common an array of longs
      *
      * @param integers array of longs
@@ -284,6 +424,38 @@ public final class LongArithmetics {
      * @return greatest common divisor of array
      */
     public static long gcd(final long... integers) {
+        return gcd(integers, 0, integers.length);
+    }
+
+    /**
+     * Returns the greatest common an array of integers
+     *
+     * @param integers array of integers
+     * @param from     from position (inclusive)
+     * @param to       to position (exclusive)
+     * @return greatest common divisor of array
+     */
+    public static long gcd(final int[] integers, int from, int to) {
+        if (integers.length < 2)
+            throw new IllegalArgumentException();
+        long gcd = gcd(integers[from], integers[from + 1]);
+        if (gcd == 1)
+            return gcd;
+        for (int i = from + 2; i < to; i++) {
+            gcd = gcd(integers[i], gcd);
+            if (gcd == 1)
+                return gcd;
+        }
+        return gcd;
+    }
+
+    /**
+     * Returns the greatest common an array of integers
+     *
+     * @param integers array of integers
+     * @return greatest common divisor of array
+     */
+    public static long gcd(final int... integers) {
         return gcd(integers, 0, integers.length);
     }
 
@@ -386,7 +558,7 @@ public final class LongArithmetics {
         long result = 1;
         long k2p = FastDivision.modSignedFast(base, magic);
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result = FastDivision.modSignedFast(result * k2p, magic);
             exponent = exponent >> 1;
             if (exponent == 0)
@@ -412,7 +584,7 @@ public final class LongArithmetics {
         long result = 1;
         long k2p = FastDivision.modUnsignedFast(base, magic);
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result = FastDivision.modUnsignedFast(result * k2p, magic);
             exponent = exponent >> 1;
             if (exponent == 0)
@@ -439,7 +611,7 @@ public final class LongArithmetics {
             return ipp;
         }
 
-        if ((-n&n) == n)
+        if ((-n & n) == n)
             return new long[]{2, 63 - Long.numberOfLeadingZeros(n)};
 
         int lgn = 1 + (64 - Long.numberOfLeadingZeros(n));
