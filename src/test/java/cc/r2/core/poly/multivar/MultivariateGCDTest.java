@@ -1270,6 +1270,32 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField));
     }
 
+
+    @Test
+    public void testSmallDomain2() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(3);
+        String[] vars = {"a", "b", "c", "d", "e"};
+
+        lMultivariatePolynomialZp arr[] = {
+                lMultivariatePolynomialZp.parse("1+2*c^3*d^2+2*b^3*c^3*d^3*e+a*c^3*d*e+2*a^2*b^3*c^2*d^2*e^3+a^2*b^3*c^3*e^2", domain, vars),
+                lMultivariatePolynomialZp.parse("1+b^3*c^2*d^3*e^3+a*c^3*d*e^2+2*a^3*e^3+2*a^3*b^3*d*e^3+2*a^3*b^3*c*d^3*e", domain, vars),
+                lMultivariatePolynomialZp.parse("1+2*a*b^3*c+a^2*d^3*e", domain, vars),
+                lMultivariatePolynomialZp.parse("1+2*b^3*c^3*d^3*e+2*a*b^2*c*d^2*e^3+a*b^3*c^2*d*e^2+a^3*b^2*c^3*d^2", domain, vars),
+        }, base = arr[0].createOne().multiply(arr);
+
+        lMultivariatePolynomialZp a = base;
+        lMultivariatePolynomialZp b = a.derivative(1);
+
+        for (int i = 0; i < its(5, 5); i++) {
+            timestamp();
+            lMultivariatePolynomialZp gcd = ModularGCDFiniteField(a, b);
+            timeElapsed();
+
+            assertTrue(dividesQ(a, gcd));
+            assertTrue(dividesQ(b, gcd));
+        }
+    }
+
     @Test
     public void testArrayGCD1() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
@@ -2085,7 +2111,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         }
 
         final GCDSample<Term, Poly> nextSample(boolean primitive, boolean monic) {
-            GCDSample<Term, Poly> sample = nextSample0(primitive, monic);
+            GCDSample<Term, Poly> sample;
+            do {sample = nextSample0(primitive, monic);} while (sample.gcd.isZero());
             medFactorsDegree.addValue(sample.a.degreeSum());
             medFactorsDegree.addValue(sample.b.degreeSum());
             medGCDDegree.addValue(sample.gcd.degreeSum());

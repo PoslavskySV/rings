@@ -284,6 +284,8 @@ public final class MultivariateGCD {
             return gcdWithMonomial(a.lt(), b);
         if (b.size() == 1)
             return gcdWithMonomial(b.lt(), a);
+        if (a.equals(b))
+            return a.clone();
         return null;
     }
 
@@ -951,44 +953,56 @@ public final class MultivariateGCD {
         MultivariatePolynomial<E> a = gcdInput.aReduced;
         MultivariatePolynomial<E> b = gcdInput.bReduced;
 
-        int uVariable = a.nVariables - 1;
-        if (a.domain instanceof IntegersModulo && a.coefficientDomainCardinality().isLong()) {
-            // use machine integers
-            @SuppressWarnings("unchecked")
-            MultivariatePolynomial<lUnivariatePolynomialZp>
-                    ua = asOverUnivariate0((MultivariatePolynomial<BigInteger>) a, uVariable),
-                    ub = asOverUnivariate0((MultivariatePolynomial<BigInteger>) b, uVariable);
+//        MultivariatePolynomial<E> pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDFiniteField);
+//        if (!pContentGCD.isConstant()) {
+//            a = divideExact(a, pContentGCD);
+//            b = divideExact(b, pContentGCD);
+//            return gcdInput.restoreGCD(ModularGCDFiniteField(a, b).multiply(pContentGCD));
+//        }
 
-            lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
-            lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
+        for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable)
+            if (a.domain instanceof IntegersModulo && a.coefficientDomainCardinality().isLong()) {
+                // use machine integers
+                @SuppressWarnings("unchecked")
+                MultivariatePolynomial<lUnivariatePolynomialZp>
+                        ua = asOverUnivariate0((MultivariatePolynomial<BigInteger>) a, uVariable),
+                        ub = asOverUnivariate0((MultivariatePolynomial<BigInteger>) b, uVariable);
 
-            ua = ua.divideOrNull(aContent);
-            ub = ub.divideOrNull(bContent);
+                lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
+                lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
 
-            MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
-                    ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
-            ugcd = ugcd.multiply(contentGCD);
+                ua = ua.divideOrNull(aContent);
+                ub = ub.divideOrNull(bContent);
 
-            @SuppressWarnings("unchecked")
-            MultivariatePolynomial<E> r = gcdInput.restoreGCD((MultivariatePolynomial<E>) asNormalMultivariate0(ugcd, uVariable));
-            return r;
-        } else {
-            MultivariatePolynomial<UnivariatePolynomial<E>>
-                    ua = a.asOverUnivariateEliminate(uVariable),
-                    ub = b.asOverUnivariateEliminate(uVariable);
+                MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
+                        ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
+                if (ugcd == null)
+                    continue;
+                ugcd = ugcd.multiply(contentGCD);
 
-            UnivariatePolynomial<E> aContent = ua.content(), bContent = ub.content();
-            UnivariatePolynomial<E> contentGCD = ua.domain.gcd(aContent, bContent);
+                @SuppressWarnings("unchecked")
+                MultivariatePolynomial<E> r = gcdInput.restoreGCD((MultivariatePolynomial<E>) asNormalMultivariate0(ugcd, uVariable));
+                return r;
+            } else {
+                MultivariatePolynomial<UnivariatePolynomial<E>>
+                        ua = a.asOverUnivariateEliminate(uVariable),
+                        ub = b.asOverUnivariateEliminate(uVariable);
 
-            ua = ua.divideOrNull(aContent);
-            ub = ub.divideOrNull(bContent);
+                UnivariatePolynomial<E> aContent = ua.content(), bContent = ub.content();
+                UnivariatePolynomial<E> contentGCD = ua.domain.gcd(aContent, bContent);
 
-            MultivariatePolynomial<UnivariatePolynomial<E>> ugcd =
-                    ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
-            ugcd = ugcd.multiply(contentGCD);
+                ua = ua.divideOrNull(aContent);
+                ub = ub.divideOrNull(bContent);
 
-            return gcdInput.restoreGCD(MultivariatePolynomial.asNormalMultivariate(ugcd, uVariable));
-        }
+                MultivariatePolynomial<UnivariatePolynomial<E>> ugcd =
+                        ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
+                if (ugcd == null)
+                    continue;
+                ugcd = ugcd.multiply(contentGCD);
+
+                return gcdInput.restoreGCD(MultivariatePolynomial.asNormalMultivariate(ugcd, uVariable));
+            }
+        throw new RuntimeException();
     }
 
     private static MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariate0(MultivariatePolynomial<BigInteger> poly, int variable) {
@@ -1054,25 +1068,37 @@ public final class MultivariateGCD {
         lMultivariatePolynomialZp a = gcdInput.aReduced;
         lMultivariatePolynomialZp b = gcdInput.bReduced;
 
-        int uVariable = a.nVariables - 1;
-        MultivariatePolynomial<lUnivariatePolynomialZp>
-                ua = a.asOverUnivariateEliminate(uVariable),
-                ub = b.asOverUnivariateEliminate(uVariable);
+//        lMultivariatePolynomialZp pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDFiniteField);
+//        if (!pContentGCD.isConstant()) {
+//            a = divideExact(a, pContentGCD);
+//            b = divideExact(b, pContentGCD);
+//            return gcdInput.restoreGCD(ModularGCDFiniteField(a, b).multiply(pContentGCD));
+//        }
 
-        lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
-        lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
+        for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable) {
+            MultivariatePolynomial<lUnivariatePolynomialZp>
+                    ua = a.asOverUnivariateEliminate(uVariable),
+                    ub = b.asOverUnivariateEliminate(uVariable);
 
-        ua = ua.divideOrNull(aContent);
-        ub = ub.divideOrNull(bContent);
+            lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
+            lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
 
-        MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
-                ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
-        ugcd = ugcd.multiply(contentGCD);
+            ua = ua.divideOrNull(aContent);
+            ub = ub.divideOrNull(bContent);
 
-        return gcdInput.restoreGCD(lMultivariatePolynomialZp.asNormalMultivariate(ugcd, uVariable));
+            MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
+                    ModularGCDFiniteField0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
+            if (ugcd == null)
+                // bad variable choosen
+                continue;
+
+            ugcd = ugcd.multiply(contentGCD);
+            return gcdInput.restoreGCD(lMultivariatePolynomialZp.asNormalMultivariate(ugcd, uVariable));
+        }
+        throw new RuntimeException();
     }
 
-    private static final int MAX_OVER_ITERATIONS = 16;
+    private static final int MAX_OVER_ITERATIONS = 8;
 
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     MultivariatePolynomial<uPoly> ModularGCDFiniteField0(
@@ -1116,7 +1142,15 @@ public final class MultivariateGCD {
             // over all primes
             while (true) {
                 if (basePrime.degree() >= uDegreeBound + MAX_OVER_ITERATIONS)
-                    throw new RuntimeException();
+                    // fixme:
+                    // probably this should not ever happen, but it happens (extremely rare, only for small
+                    // characteristics and independently on the particular value of MAX_OVER_ITERATIONS)
+                    // the current workaround is to switch to another variable in R[x_N][x1....x_(N-1)]
+                    // representation and try again
+                    //
+                    // UPDATE: when increasing NUMBER_OF_UNDER_DETERMINED_RETRIES the problem seems to be disappeared
+                    // (at the expense of longer time spent in LinZip)
+                    return null;
 
                 uPoly prime = primesLoop.next();
                 fField = new FiniteField<>(prime);
@@ -1223,10 +1257,12 @@ public final class MultivariateGCD {
         a.checkSameDomainWith(b);
         a.checkSameDomainWith(skeleton);
 
-        MultivariatePolynomial<E> content = contentGCD(a, b, 0, MultivariateGCD::ZippelGCD);
-        a = divideExact(a, content);
-        b = divideExact(b, content);
-        skeleton = divideSkeletonExact(skeleton, content);
+        // a and b must be content-free
+        assert contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant();
+//        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
+//        a = divideExact(a, content);
+//        b = divideExact(b, content);
+//        skeleton = divideSkeletonExact(skeleton, content);
 
         SparseInterpolation<E> interpolation = createInterpolation(-1, a, b, skeleton, rnd);
         if (interpolation == null)
@@ -1235,7 +1271,7 @@ public final class MultivariateGCD {
         if (gcd == null)
             return null;
 
-        return gcd.multiply(content);
+        return gcd;//.multiply(content);
     }
 
     /* ===================================== Multivariate GCD over finite fields ==================================== */
@@ -1802,7 +1838,9 @@ public final class MultivariateGCD {
     }
 
     /** Number of retries when raise condition occurs; then drop up with new homomorphism */
-    private static final int NUMBER_OF_UNDER_DETERMINED_RETRIES = 8;
+    private static final int
+            NUMBER_OF_UNDER_DETERMINED_RETRIES = 8,
+            NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD = 24;
 
     static final class LinZipInterpolation<E> extends ASparseInterpolation<E> {
         LinZipInterpolation(Domain<E> domain, int variable, MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomial<E>> univarSkeleton, int[] sparseUnivarDegrees, int[] evaluationVariables, E[] evaluationPoint, PrecomputedPowersHolder<E> powers, RandomGenerator rnd) {
@@ -1825,7 +1863,11 @@ public final class MultivariateGCD {
             int nUnknowns = globalSkeleton.size(), nUnknownScalings = -1;
             int raiseFactor = 0;
 
-            for (int nTries = 0; nTries < NUMBER_OF_UNDER_DETERMINED_RETRIES; ++nTries) {
+            // choose dynamically, depending on the cardinality of cyclic group (equal to domain.characteristics)
+            int nTries = domain.characteristics().bitLength() < 10
+                    ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
+                    : NUMBER_OF_UNDER_DETERMINED_RETRIES;
+            for (int iTry = 0; iTry < nTries; ++iTry) {
                 int previousFreeVars = -1, underDeterminedTries = 0;
                 for (; ; ) {
                     // increment at each loop!
@@ -1859,7 +1901,7 @@ public final class MultivariateGCD {
                         break;
 
 
-                    if (underDeterminedTries > NUMBER_OF_UNDER_DETERMINED_RETRIES) {
+                    if (underDeterminedTries > nTries) {
                         // raise condition: new equations does not fix enough variables
                         return null;
                     }
@@ -1875,11 +1917,9 @@ public final class MultivariateGCD {
 
                 MultivariatePolynomial<E> result = a.createZero();
                 SystemInfo info = solveLinZip(a, systems, nUnknownScalings, result);
-                if (info == SystemInfo.UnderDetermined) {
+                if (info == SystemInfo.UnderDetermined)
                     //try to generate more equations
                     continue;
-                }
-
                 if (info == SystemInfo.Consistent)
                     //well done
                     return result;
@@ -2744,7 +2784,10 @@ public final class MultivariateGCD {
             int nUnknowns = globalSkeleton.size(), nUnknownScalings = -1;
             int raiseFactor = 0;
 
-            for (int nTries = 0; nTries < NUMBER_OF_UNDER_DETERMINED_RETRIES; ++nTries) {
+            int nTries = domain.modulus < 1024
+                    ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
+                    : NUMBER_OF_UNDER_DETERMINED_RETRIES;
+            for (int iTry = 0; iTry < nTries; ++iTry) {
                 int previousFreeVars = -1, underDeterminedTries = 0;
                 for (; ; ) {
                     // increment at each loop!
@@ -2778,7 +2821,7 @@ public final class MultivariateGCD {
                         break;
 
 
-                    if (underDeterminedTries > NUMBER_OF_UNDER_DETERMINED_RETRIES) {
+                    if (underDeterminedTries > nTries) {
                         // raise condition: new equations does not fix enough variables
                         return null;
                     }
@@ -2794,11 +2837,9 @@ public final class MultivariateGCD {
 
                 lMultivariatePolynomialZp result = a.createZero();
                 SystemInfo info = solveLinZip(a, systems, nUnknownScalings, result);
-                if (info == SystemInfo.UnderDetermined) {
+                if (info == SystemInfo.UnderDetermined)
                     //try to generate more equations
                     continue;
-                }
-
                 if (info == SystemInfo.Consistent)
                     //well done
                     return result;
