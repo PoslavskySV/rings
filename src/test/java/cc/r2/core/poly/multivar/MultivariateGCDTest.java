@@ -1297,6 +1297,21 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     @Test
+    public void testSmallDomain3() throws Exception {
+        lIntegersModulo domain = new lIntegersModulo(5);
+        lMultivariatePolynomialZp
+                a = lMultivariatePolynomialZp.parse("2*a*c^3*d^2+4*a*b*c^2*d", domain),
+                b = lMultivariatePolynomialZp.parse("a*c^4*d+a^3*b^2*c*d^4+3*a^3*b^2*c^2*d^3+2*a^3*b^3*d^3", domain);
+
+        for (int i = 0; i < 10; i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            timestamp();
+            assertTrue(PolynomialGCD(a, b).isMonomial());
+            timeElapsed();
+        }
+    }
+
+    @Test
     public void testArrayGCD1() throws Exception {
         lIntegersModulo domain = new lIntegersModulo(BigPrimes.nextPrime(1321323));
         lMultivariatePolynomialZp
