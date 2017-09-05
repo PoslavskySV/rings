@@ -1,6 +1,7 @@
 package cc.r2.core.test;
 
 import cc.r2.core.util.RandomDataGenerator;
+import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well44497b;
 import org.junit.Assume;
@@ -37,7 +38,7 @@ public class AbstractTest {
 
     /** Seeds random */
     protected static RandomGenerator getRandom() {
-        synchronized ( privateRandom ){
+        synchronized (privateRandom) {
             privateRandom.setSeed(System.nanoTime());
             return privateRandom;
         }
@@ -82,6 +83,16 @@ public class AbstractTest {
         return runTimeConsumingTests() ? nLarge : nSmall;
     }
 
+
+    private volatile long lastTimestamp;
+
+    public final void timestamp() {
+        lastTimestamp = System.nanoTime();
+    }
+
+    public final void timeElapsed() {
+        System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - lastTimestamp));
+    }
 
 //    @Test
 //    public void testLT() throws Exception {

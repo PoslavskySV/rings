@@ -953,12 +953,12 @@ public final class MultivariateGCD {
         MultivariatePolynomial<E> a = gcdInput.aReduced;
         MultivariatePolynomial<E> b = gcdInput.bReduced;
 
-//        MultivariatePolynomial<E> pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDFiniteField);
-//        if (!pContentGCD.isConstant()) {
-//            a = divideExact(a, pContentGCD);
-//            b = divideExact(b, pContentGCD);
-//            return gcdInput.restoreGCD(ModularGCDFiniteField(a, b).multiply(pContentGCD));
-//        }
+        MultivariatePolynomial<E> pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDFiniteField);
+        if (!pContentGCD.isConstant()) {
+            a = divideExact(a, pContentGCD);
+            b = divideExact(b, pContentGCD);
+            return gcdInput.restoreGCD(ModularGCDFiniteField(a, b).multiply(pContentGCD));
+        }
 
         for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable)
             if (a.domain instanceof IntegersModulo && a.coefficientDomainCardinality().isLong()) {
@@ -1068,12 +1068,12 @@ public final class MultivariateGCD {
         lMultivariatePolynomialZp a = gcdInput.aReduced;
         lMultivariatePolynomialZp b = gcdInput.bReduced;
 
-//        lMultivariatePolynomialZp pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDFiniteField);
-//        if (!pContentGCD.isConstant()) {
-//            a = divideExact(a, pContentGCD);
-//            b = divideExact(b, pContentGCD);
-//            return gcdInput.restoreGCD(ModularGCDFiniteField(a, b).multiply(pContentGCD));
-//        }
+        lMultivariatePolynomialZp pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDFiniteField);
+        if (!pContentGCD.isConstant()) {
+            a = divideExact(a, pContentGCD);
+            b = divideExact(b, pContentGCD);
+            return gcdInput.restoreGCD(ModularGCDFiniteField(a, b).multiply(pContentGCD));
+        }
 
         for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable) {
             MultivariatePolynomial<lUnivariatePolynomialZp>
