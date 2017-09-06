@@ -30,7 +30,7 @@ jobs:
             - ~/.m2
           key: dependencies-{{ checksum "pom.xml" }}
 
-      - run: mvn clean test
+      - run: mvn clean test -DrunLongTests=true -e -ff
 
       - store_test_results:
           path: target/surefire-reports
