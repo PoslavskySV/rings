@@ -1,0 +1,36 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk
+
+    working_directory: ~/repo
+
+    environment:
+      MAVEN_OPTS: -Xmx1024m
+
+    steps:
+      - checkout
+
+      - run:
+          command: |
+              git submodule sync --recursive
+              git submodule update --init --recursive
+              cd libdivide4j
+              mvn clean install -DskipTests
+      - restore_cache:
+          keys:
+          - dependencies-{{ checksum "pom.xml" }}
+          - dependencies-
+
+      - run: mvn dependency:go-offline
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: dependencies-{{ checksum "pom.xml" }}
+
+      - run: mvn clean test
+
+      - store_test_results:
+          path: target/surefire-reports
