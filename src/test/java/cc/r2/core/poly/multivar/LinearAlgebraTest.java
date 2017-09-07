@@ -3,7 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.test.AbstractTest;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.ArraysUtil;
@@ -196,7 +196,7 @@ public class LinearAlgebraTest extends AbstractTest {
             long[][] lhs = new long[size][size];
             for (int i = 0; i < size; i++)
                 for (int j = 0; j < size; j++)
-                    lhs[i][j] = LongArithmetics.powMod(k[i], j, modulus);
+                    lhs[i][j] = MachineArithmetic.powMod(k[i], j, modulus);
 
 
             long[] rhs = new long[size];

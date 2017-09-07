@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 
 import static cc.r2.core.poly.univar.DivisionWithRemainder.remainder;
 
@@ -329,20 +329,20 @@ public final class PolynomialArithmetics {
 
     /** plain create and reduce */
     static <T extends IUnivariatePolynomial<T>> T smallMonomial(long exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
-        return PolynomialArithmetics.polyMod(polyModulus.createMonomial(LongArithmetics.safeToInt(exponent)), polyModulus, invMod, false);
+        return PolynomialArithmetics.polyMod(polyModulus.createMonomial(MachineArithmetic.safeToInt(exponent)), polyModulus, invMod, false);
     }
 
     /** repeated squaring */
     static <T extends IUnivariatePolynomial<T>> T largeMonomial(long exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
         return polyPowMod(polyModulus.createMonomial(1), exponent, polyModulus, invMod, false);
 //        T base = PolynomialArithmetics.polyMod(
-//                polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
+//                polyModulus.monomial(MachineArithmetic.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
 //                polyModulus, invMod, false);
 //
 //        T result = base.clone();
 //        long exp = MONOMIAL_MOD_EXPONENT_THRESHOLD;
 //        for (; ; ) {
-//            if (LongArithmetics.isOverflowAdd(exp, exp) || exp + exp > exponent)
+//            if (MachineArithmetic.isOverflowAdd(exp, exp) || exp + exp > exponent)
 //                break;
 //            result = PolynomialArithmetics.polyMultiplyMod(result, result, polyModulus, invMod, false);
 //            exp += exp;
@@ -356,7 +356,7 @@ public final class PolynomialArithmetics {
     static <T extends IUnivariatePolynomial<T>> T largeMonomial(BigInteger exponent, T polyModulus, DivisionWithRemainder.InverseModMonomial<T> invMod) {
         return polyPowMod(polyModulus.createMonomial(1), exponent, polyModulus, invMod, false);
 //        T base = PolynomialArithmetics.polyMod(
-//                polyModulus.createMonomial(LongArithmetics.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
+//                polyModulus.monomial(MachineArithmetic.safeToInt(MONOMIAL_MOD_EXPONENT_THRESHOLD)),
 //                polyModulus, invMod, false);
 //
 //        T result = base.clone();

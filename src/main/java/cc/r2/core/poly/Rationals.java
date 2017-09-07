@@ -7,10 +7,15 @@ import org.apache.commons.math3.random.RandomGenerator;
 import java.util.Iterator;
 
 /**
+ * The domain of rationals (Q).
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
 public final class Rationals implements Domain<Rational> {
+    private static final long serialVersionUID = 1L;
+
+    /** The domain of rationals (Q) */
     public static final Rationals Rationals = new Rationals();
 
     private Rationals() {}
@@ -61,13 +66,13 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
-    public Rational negate(Rational val) {
-        return val.negate();
+    public Rational negate(Rational element) {
+        return element.negate();
     }
 
     @Override
-    public int signum(Rational a) {
-        return a.signum();
+    public int signum(Rational element) {
+        return element.signum();
     }
 
     @Override
@@ -76,8 +81,8 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
-    public Rational reciprocal(Rational a) {
-        return a.reciprocal();
+    public Rational reciprocal(Rational element) {
+        return element.reciprocal();
     }
 
     @Override
@@ -96,18 +101,18 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
-    public boolean isZero(Rational rational) {
-        return rational.isZero();
+    public boolean isZero(Rational element) {
+        return element.isZero();
     }
 
     @Override
-    public boolean isOne(Rational rational) {
-        return rational.isOne();
+    public boolean isOne(Rational element) {
+        return element.isOne();
     }
 
     @Override
-    public boolean isUnit(Rational rational) {
-        return !isZero(rational);
+    public boolean isUnit(Rational element) {
+        return !isZero(element);
     }
 
     @Override

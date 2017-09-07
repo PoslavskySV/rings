@@ -14,11 +14,11 @@ import java.util.stream.StreamSupport;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class CommonPolynomialsArithmetics {
-    private CommonPolynomialsArithmetics() {}
+public final class PolynomialMethods {
+    private PolynomialMethods() {}
 
     @SuppressWarnings("unchecked")
-    public static <Poly extends IGeneralPolynomial<Poly>>
+    public static <Poly extends IPolynomial<Poly>>
     Poly PolynomialGCD(Poly a, Poly b) {
         if (a instanceof IUnivariatePolynomial)
             return (Poly) UnivariateGCD.PolynomialGCD((IUnivariatePolynomial) a, (IUnivariatePolynomial) b);
@@ -29,7 +29,7 @@ public final class CommonPolynomialsArithmetics {
     }
 
     @SuppressWarnings("unchecked")
-    public static <Poly extends IGeneralPolynomial<Poly>>
+    public static <Poly extends IPolynomial<Poly>>
     Poly[] PolynomialDivideAndRemainder(Poly a, Poly b) {
         if (a instanceof IUnivariatePolynomial)
             return (Poly[]) DivisionWithRemainder.divideAndRemainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
@@ -39,7 +39,7 @@ public final class CommonPolynomialsArithmetics {
             throw new RuntimeException();
     }
 
-    public static <Poly extends IGeneralPolynomial<Poly>>
+    public static <Poly extends IPolynomial<Poly>>
     boolean coprimeQ(Poly... polynomials) {
         for (int i = 0; i < polynomials.length - 1; i++)
             for (int j = i + 1; j < polynomials.length; j++)
@@ -48,12 +48,12 @@ public final class CommonPolynomialsArithmetics {
         return true;
     }
 
-    public static <Poly extends IGeneralPolynomial<Poly>>
+    public static <Poly extends IPolynomial<Poly>>
     boolean coprimeQ(Iterable<Poly> polynomials) {
         if (!polynomials.iterator().hasNext())
             throw new IllegalArgumentException();
         Poly factory = polynomials.iterator().next();
-        return coprimeQ(StreamSupport.stream(polynomials.spliterator(), false).toArray(factory::arrayNewInstance));
+        return coprimeQ(StreamSupport.stream(polynomials.spliterator(), false).toArray(factory::createArray));
     }
 
     /**
@@ -64,7 +64,7 @@ public final class CommonPolynomialsArithmetics {
      * @param copy     whether to clone {@code base}; if not the data of {@code base} will be lost
      * @return {@code base} in a power of {@code e}
      */
-    public static <T extends IGeneralPolynomial<T>> T polyPow(final T base, long exponent, boolean copy) {
+    public static <T extends IPolynomial<T>> T polyPow(final T base, long exponent, boolean copy) {
         if (exponent < 0)
             throw new IllegalArgumentException();
         if (exponent == 1 || base.isOne())
@@ -72,7 +72,7 @@ public final class CommonPolynomialsArithmetics {
         T result = base.createOne();
         T k2p = copy ? base.clone() : base;
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result = result.multiply(k2p);
             exponent = exponent >> 1;
             if (exponent == 0)
@@ -90,8 +90,8 @@ public final class CommonPolynomialsArithmetics {
      * @param cache    cache to store all intermediate powers
      * @return {@code base} in a power of {@code e}
      */
-    public static <T extends IGeneralPolynomial<T>> T polyPow(final T base, int exponent, boolean copy,
-                                                              TIntObjectHashMap<T> cache) {
+    public static <T extends IPolynomial<T>> T polyPow(final T base, int exponent, boolean copy,
+                                                       TIntObjectHashMap<T> cache) {
         if (exponent < 0)
             throw new IllegalArgumentException();
         if (exponent == 1)
@@ -105,7 +105,7 @@ public final class CommonPolynomialsArithmetics {
         T k2p = copy ? base.clone() : base;
         int rExp = 0, kExp = 1;
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 cache.put(rExp += kExp, result.multiply(k2p).clone());
             exponent = exponent >> 1;
             if (exponent == 0) {

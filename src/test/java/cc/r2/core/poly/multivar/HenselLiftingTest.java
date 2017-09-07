@@ -3,8 +3,8 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.CommonPolynomialsArithmetics;
-import cc.r2.core.poly.IGeneralPolynomial;
+import cc.r2.core.poly.PolynomialMethods;
+import cc.r2.core.poly.IPolynomial;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.factorization.FactorizationTestData;
 import cc.r2.core.poly.lIntegersModulo;
@@ -379,7 +379,7 @@ public class HenselLiftingTest {
 //            factor.monicWithLC(lcCorrection.lcAsPoly());
         }
 
-        lMultivariatePolynomialZp tmp = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, biFactors.length - 1, true));
+        lMultivariatePolynomialZp tmp = base.clone().multiply(PolynomialMethods.polyPow(lc, biFactors.length - 1, true));
 
         HenselLifting.multivariateLift0(tmp, biFactors, ArraysUtil.arrayOf(lc, biFactors.length), evaluation, base.degrees(), 2);
 
@@ -505,14 +505,14 @@ public class HenselLiftingTest {
 
                 for (int nAttempt = 0; nAttempt < 64; nAttempt++) {
                     IEvaluation<Term, Poly> evaluation = evaluations.next();
-                    Poly[] uFactors = Arrays.stream(sample.factors).map(p -> evaluation.evaluateFrom(p, from)).toArray(factory::arrayNewInstance);
+                    Poly[] uFactors = Arrays.stream(sample.factors).map(p -> evaluation.evaluateFrom(p, from)).toArray(factory::createArray);
                     if (!allCoprime(uFactors))
                         continue;
 
                     if (!IntStream.range(0, uFactors.length).allMatch(i -> sample.factors[i].degree(0) == uFactors[i].degree(0)))
                         continue;
 
-                    Poly[] factorsLC = Arrays.stream(sample.factors).map(p -> p.lc(0)).toArray(factory::arrayNewInstance);
+                    Poly[] factorsLC = Arrays.stream(sample.factors).map(p -> p.lc(0)).toArray(factory::createArray);
 
                     long start = System.nanoTime();
                     algorithm.lift(sample.poly, uFactors, correctLC ? factorsLC : null, evaluation, sample.poly.degrees(), from);
@@ -541,7 +541,7 @@ public class HenselLiftingTest {
         System.out.println("Stats: " + TimeUnits.statisticsNanotime(timing));
     }
 
-    static <Poly extends IGeneralPolynomial<Poly>> Poly multiply(Poly... p) {
+    static <Poly extends IPolynomial<Poly>> Poly multiply(Poly... p) {
         return p[0].createOne().multiply(p);
     }
 

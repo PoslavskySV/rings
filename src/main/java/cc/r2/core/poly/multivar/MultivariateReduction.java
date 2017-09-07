@@ -20,7 +20,7 @@ public final class MultivariateReduction {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] divideAndRemainder(Poly dividend, Poly... dividers) {
-        Poly[] quotients = dividend.arrayNewInstance(dividers.length + 1);
+        Poly[] quotients = dividend.createArray(dividers.length + 1);
         int i = 0;
         int constDivider = -1;
         for (; i < dividers.length; i++) {
@@ -88,7 +88,7 @@ public final class MultivariateReduction {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Collection<Poly> dividers) {
-        Poly[] r = divideAndRemainder(dividend, dividers.toArray(dividend.arrayNewInstance(dividers.size())));
+        Poly[] r = divideAndRemainder(dividend, dividers.toArray(dividend.createArray(dividers.size())));
         return r[r.length - 1];
     }
 

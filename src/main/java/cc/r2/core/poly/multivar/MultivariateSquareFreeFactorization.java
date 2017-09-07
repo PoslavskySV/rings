@@ -3,8 +3,8 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.IGeneralPolynomial;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.IPolynomial;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.SquareFreeFactorization;
 
@@ -62,16 +62,16 @@ public final class MultivariateSquareFreeFactorization {
         poly = poly.divideOrNull(monomialContent);
 
         Poly constantContent = poly.contentAsPoly();
-        if (poly.signum() < 0)
+        if (poly.signumOfLC() < 0)
             constantContent = constantContent.negate();
 
         poly = poly.divideByLC(constantContent);
-        return poly.arrayNewInstance(constantContent, poly.create(monomialContent));
+        return poly.createArray(constantContent, poly.create(monomialContent));
     }
 
     @SuppressWarnings("unchecked")
     private static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly poly, Poly[] arr) {
-        Poly[] all = (Poly[]) poly.arrayNewInstance(arr.length + 1);
+        Poly[] all = (Poly[]) poly.createArray(arr.length + 1);
         all[0] = poly;
         System.arraycopy(arr, 0, all, 1, arr.length);
         return MultivariateGCD.PolynomialGCD(all);
@@ -112,7 +112,7 @@ public final class MultivariateSquareFreeFactorization {
         }
 
         Poly quot = divideExact(poly, gcd); // safely destroy (cloned) poly (not used further)
-        Poly[] dQuot = poly.arrayNewInstance(derivative.length);
+        Poly[] dQuot = poly.createArray(derivative.length);
         for (int i = 0; i < derivative.length; i++)
             dQuot[i] = divideExact(derivative[i], gcd);
 
@@ -219,7 +219,7 @@ public final class MultivariateSquareFreeFactorization {
             return FactorDecomposition.singleFactor(poly.createOne(), poly);
 
         Poly[] derivative = poly.derivative();
-        if (!Arrays.stream(derivative).allMatch(IGeneralPolynomial::isZero)) {
+        if (!Arrays.stream(derivative).allMatch(IPolynomial::isZero)) {
             Poly gcd = PolynomialGCD(poly, derivative);
             if (gcd.isConstant())
                 return FactorDecomposition.singleFactor(poly.createOne(), poly);
@@ -299,7 +299,7 @@ public final class MultivariateSquareFreeFactorization {
 
     private static lMultivariatePolynomialZp pRoot(lMultivariatePolynomialZp poly) {
         assert !poly.domain.isPerfectPower();
-        int modulus = LongArithmetics.safeToInt(poly.domain.modulus);
+        int modulus = MachineArithmetic.safeToInt(poly.domain.modulus);
         MonomialsSet<lMonomialTerm> pRoot = new MonomialsSet<>(poly.ordering);
 
         for (lMonomialTerm term : poly) {

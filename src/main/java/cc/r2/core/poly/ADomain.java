@@ -4,12 +4,14 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
 
 /**
+ * Abstract domain which holds perfect power decomposition of its cardinality.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-abstract class ADomain<E> implements Domain<E> {
+public abstract class ADomain<E> implements Domain<E> {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * if modulus = a^b, a and b are stored in this array
      */
@@ -19,7 +21,7 @@ abstract class ADomain<E> implements Domain<E> {
     private void checkPerfectPower() {
         // lazy initialization
         if (!initialized) {
-            synchronized ( perfectPowerDecomposition ){
+            synchronized (perfectPowerDecomposition) {
                 if (initialized)
                     return;
 

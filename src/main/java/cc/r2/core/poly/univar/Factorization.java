@@ -11,8 +11,8 @@ import cc.r2.core.util.ArraysUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static cc.r2.core.poly.LongArithmetics.fits32bitWord;
-import static cc.r2.core.poly.LongArithmetics.safeMultiply;
+import static cc.r2.core.poly.MachineArithmetic.fits32bitWord;
+import static cc.r2.core.poly.MachineArithmetic.safeMultiply;
 import static cc.r2.core.poly.univar.DistinctDegreeFactorization.DistinctDegreeFactorization;
 import static cc.r2.core.poly.univar.EqualDegreeFactorization.CantorZassenhaus;
 import static cc.r2.core.poly.univar.SquareFreeFactorization.SquareFreeFactorization;
@@ -76,7 +76,7 @@ public final class Factorization {
      * @return factor decomposition
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> factorInFiniteField(Poly poly) {
-        CommonUtils.ensureFiniteFieldDomain(poly);
+        Util.ensureFiniteFieldDomain(poly);
         FactorDecomposition<Poly> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
@@ -312,7 +312,7 @@ public final class Factorization {
         assert poly.lc().signum() > 0;
 
         BigInteger bound2 = BigInteger.TWO.multiply(mignotteBound(poly)).multiply(poly.lc().abs());
-        if (bound2.compareTo(LongArithmetics.b_MAX_SUPPORTED_MODULUS) < 0) {
+        if (bound2.compareTo(MachineArithmetic.b_MAX_SUPPORTED_MODULUS) < 0) {
             FactorDecomposition<lUnivariatePolynomialZ> tryLong = factorInZSquareFree0(asLongPolyZ(poly));
             if (tryLong != null)
                 return convertFactorizationToBigIntegers(tryLong);
@@ -411,9 +411,9 @@ public final class Factorization {
         int henselIterations = 0;
         long liftedModulus = modulus;
         while (liftedModulus < bound2) {
-            if (LongArithmetics.isOverflowMultiply(liftedModulus, liftedModulus))
+            if (MachineArithmetic.isOverflowMultiply(liftedModulus, liftedModulus))
                 return null;
-            liftedModulus = LongArithmetics.safeMultiply(liftedModulus, liftedModulus);
+            liftedModulus = MachineArithmetic.safeMultiply(liftedModulus, liftedModulus);
             ++henselIterations;
         }
 
@@ -436,7 +436,7 @@ public final class Factorization {
                     poly.isMonic() ? poly : poly.clone().primitivePart());
 
         PolyZ content = poly.contentAsPoly();
-        if (poly.signum() < 0)
+        if (poly.signumOfLC() < 0)
             content = content.negate();
         return factorInZSquareFree0(poly.clone().divideByLC(content)).setConstantFactor(content);
     }
@@ -471,7 +471,7 @@ public final class Factorization {
 
         FactorDecomposition<Poly> result = FactorDecomposition.empty(poly);
         Poly content = poly.contentAsPoly();
-        if (poly.signum() < 0)
+        if (poly.signumOfLC() < 0)
             content = content.negate();
         factorInZ(poly.clone().divideByLC(content), result);
         return result.setConstantFactor(content);

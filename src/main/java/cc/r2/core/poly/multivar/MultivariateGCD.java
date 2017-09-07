@@ -57,7 +57,7 @@ public final class MultivariateGCD {
                 res.add(el);
         if (res.isEmpty())
             res.add(arr[0]);
-        return res.toArray((Poly[]) arr[0].arrayNewInstance(res.size()));
+        return res.toArray((Poly[]) arr[0].createArray(res.size()));
     }
 
     /**
@@ -186,7 +186,7 @@ public final class MultivariateGCD {
             list.add(iterator.next());
         if (list.isEmpty())
             throw new IllegalArgumentException("Empty iterable");
-        Poly[] array = (Poly[]) list.get(0).arrayNewInstance(list.size());
+        Poly[] array = (Poly[]) list.get(0).createArray(list.size());
         return PolynomialGCD(list.toArray(array), algorithm);
     }
 
@@ -199,7 +199,7 @@ public final class MultivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly a, Poly b) {
-        a.checkSameDomainWith(b);
+        a.assertSameDomainWith(b);
         if (a instanceof lMultivariatePolynomialZp)
             return (Poly) ZippelGCD((lMultivariatePolynomialZp) a, (lMultivariatePolynomialZp) b);
         else if (a instanceof MultivariatePolynomial) {
@@ -531,7 +531,7 @@ public final class MultivariateGCD {
     /** coefficients specified variable as multivariate polynomials */
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] multivariateCoefficients(Poly poly, int variable) {
-        return Arrays.stream(poly.degrees(variable)).mapToObj(d -> poly.coefficientOf(variable, d)).toArray(poly::arrayNewInstance);
+        return Arrays.stream(poly.degrees(variable)).mapToObj(d -> poly.coefficientOf(variable, d)).toArray(poly::createArray);
     }
 
     /** gcd of content of a and b with respect to specified variable */
@@ -540,7 +540,7 @@ public final class MultivariateGCD {
         Poly[] aCfs = multivariateCoefficients(a, variable);
         Poly[] bCfs = multivariateCoefficients(b, variable);
 
-        Poly[] all = a.arrayNewInstance(aCfs.length + bCfs.length);
+        Poly[] all = a.createArray(aCfs.length + bCfs.length);
         System.arraycopy(aCfs, 0, all, 0, aCfs.length);
         System.arraycopy(bCfs, 0, all, aCfs.length, bCfs.length);
 
@@ -561,7 +561,7 @@ public final class MultivariateGCD {
      */
     @SuppressWarnings("ConstantConditions")
     public static MultivariatePolynomial<BigInteger> ModularGCD(MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b) {
-        CommonUtils.ensureZDomain(a, b);
+        Util.ensureZDomain(a, b);
         if (a == b)
             return a.clone();
         if (a.isZero()) return b.clone();
@@ -677,13 +677,13 @@ public final class MultivariateGCD {
                 if (modularGCD.degree(0) > base.degree(0))
                     continue;
 
-                if (LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > LongArithmetics.MAX_SUPPORTED_MODULUS)
+                if (MachineArithmetic.isOverflowMultiply(basePrime, prime) || basePrime * prime > MachineArithmetic.MAX_SUPPORTED_MODULUS)
                     break;
 
                 //lifting
                 long newBasePrime = basePrime * prime;
                 long monicFactor = modularGCD.domain.multiply(
-                        LongArithmetics.modInverse(modularGCD.lc(), prime),
+                        MachineArithmetic.modInverse(modularGCD.lc(), prime),
                         lcGCD.mod(bPrime).longValueExact());
 
                 ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
@@ -830,8 +830,8 @@ public final class MultivariateGCD {
     }
 
     static lMultivariatePolynomialZp interpolateGCD(lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, lMultivariatePolynomialZp skeleton, RandomGenerator rnd) {
-        a.checkSameDomainWith(b);
-        a.checkSameDomainWith(skeleton);
+        a.assertSameDomainWith(b);
+        a.assertSameDomainWith(skeleton);
 
         // a and b must be content-free
         assert contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant();
@@ -933,7 +933,7 @@ public final class MultivariateGCD {
     public static <E> MultivariatePolynomial<E> ModularGCDFiniteField(
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
-        CommonUtils.ensureFiniteFieldDomain(a, b);
+        Util.ensureFiniteFieldDomain(a, b);
         if (a == b)
             return a.clone();
         if (a.isZero()) return b.clone();
@@ -1048,7 +1048,7 @@ public final class MultivariateGCD {
     public static lMultivariatePolynomialZp ModularGCDFiniteField(
             lMultivariatePolynomialZp a,
             lMultivariatePolynomialZp b) {
-        CommonUtils.ensureFiniteFieldDomain(a, b);
+        Util.ensureFiniteFieldDomain(a, b);
         if (a == b)
             return a.clone();
         if (a.isZero()) return b.clone();
@@ -1257,8 +1257,8 @@ public final class MultivariateGCD {
     }
 
     static <E> MultivariatePolynomial<E> interpolateGCD(MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, MultivariatePolynomial<E> skeleton, RandomGenerator rnd) {
-        a.checkSameDomainWith(b);
-        a.checkSameDomainWith(skeleton);
+        a.assertSameDomainWith(b);
+        a.assertSameDomainWith(skeleton);
 
         // a and b must be content-free
         assert contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant();
@@ -1290,7 +1290,7 @@ public final class MultivariateGCD {
     public static <E> MultivariatePolynomial<E> BrownGCD(
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
-        CommonUtils.ensureFieldDomain(a, b);
+        Util.ensureFieldDomain(a, b);
 
         // prepare input and test for early termination
         GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::BrownGCD);
@@ -1468,7 +1468,7 @@ public final class MultivariateGCD {
     public static <E> MultivariatePolynomial<E> ZippelGCD(
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
-        CommonUtils.ensureFieldDomain(a, b);
+        Util.ensureFieldDomain(a, b);
 
         // prepare input and test for early termination
         GCDInput<MonomialTerm<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
@@ -3302,8 +3302,8 @@ public final class MultivariateGCD {
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void liftPair(Poly base, Poly a, Poly b, Poly aLC, Poly bLC, IEvaluation<Term, Poly> evaluation) {
         HenselLifting.multivariateLift0(base,
-                base.arrayNewInstance(a, b),
-                base.arrayNewInstance(aLC, bLC),
+                base.createArray(a, b),
+                base.createArray(aLC, bLC),
                 evaluation,
                 base.degrees());
     }
@@ -3313,7 +3313,7 @@ public final class MultivariateGCD {
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void liftPairAutomaticLC(Poly base, Poly a, Poly b, IEvaluation<Term, Poly> evaluation) {
         HenselLifting.multivariateLiftAutomaticLC(base,
-                base.arrayNewInstance(a, b),
+                base.createArray(a, b),
                 evaluation);
     }
 

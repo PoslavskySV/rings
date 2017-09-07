@@ -1,6 +1,6 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.poly.IGeneralPolynomial;
+import cc.r2.core.poly.IPolynomial;
 import cc.r2.core.poly.MultivariatePolynomials;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-        implements IGeneralPolynomial<Poly>, Iterable<Term> {
+        implements IPolynomial<Poly>, Iterable<Term> {
     /** number of variables */
     final int nVariables;
     /** the ordering */
@@ -111,7 +111,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
             Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] asMultivariate(IUnivariatePolynomial[] polys, int nVariables, int variable, Comparator<DegreeVector> ordering) {
         Poly p = asMultivariate(polys[0], nVariables, variable, ordering);
-        Poly[] r = p.arrayNewInstance(polys.length);
+        Poly[] r = p.createArray(polys.length);
         r[0] = p;
         for (int i = 1; i < polys.length; i++)
             r[i] = asMultivariate(polys[i], nVariables, variable, ordering);
@@ -222,7 +222,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
 
     @Override
     public final Poly set(Poly oth) {
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         return loadFrom(oth.terms);
     }
 
@@ -671,7 +671,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final Poly add(Poly oth) {
         if (terms == oth.terms)
             return multiply(2);
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         if (oth.isZero())
             return self;
         for (Term term : oth.terms)
@@ -684,7 +684,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final Poly subtract(Poly oth) {
         if (terms == oth.terms)
             return toZero();
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         if (oth.isZero())
             return self;
         for (Term term : oth.terms)
@@ -874,7 +874,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return derivative vector
      */
     public final Poly[] derivative() {
-        Poly[] result = arrayNewInstance(nVariables);
+        Poly[] result = createArray(nVariables);
         for (int i = 0; i < nVariables; ++i)
             result[i] = derivative(i);
         return result;

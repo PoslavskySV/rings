@@ -6,7 +6,9 @@ import cc.r2.core.number.BigInteger;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-abstract class AbstractIntegers extends ADomain<BigInteger> {
+abstract class AIntegers extends ADomain<BigInteger> {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public final BigInteger getZero() {
         return BigInteger.ZERO;
@@ -18,13 +20,13 @@ abstract class AbstractIntegers extends ADomain<BigInteger> {
     }
 
     @Override
-    public final boolean isZero(BigInteger bigInteger) {
-        return bigInteger.isZero();
+    public final boolean isZero(BigInteger element) {
+        return element.isZero();
     }
 
     @Override
-    public final boolean isOne(BigInteger bigInteger) {
-        return bigInteger.isOne();
+    public final boolean isOne(BigInteger element) {
+        return element.isOne();
     }
 
     @Override
@@ -38,8 +40,8 @@ abstract class AbstractIntegers extends ADomain<BigInteger> {
     }
 
     @Override
-    public final int signum(BigInteger val) {
-        return val.signum();
+    public final int signum(BigInteger element) {
+        return element.signum();
     }
 
     @Override

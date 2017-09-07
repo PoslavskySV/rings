@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Integers;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.lIntegersModulo;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
@@ -12,10 +12,18 @@ import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
 /**
+ * Univariate polynomial over plain machine integers in range [-2^63, 2^63]. <b>NOTE:</b> this class is used in some
+ * internal routines for performance reasons, users should use {@link UnivariatePolynomial} over BigIntegers.
+ * <p>
+ * Arithmetic operations on instances of this type may cause long overflow in which case a proper {@link ArithmeticException}
+ * will be thrown.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
 public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<lUnivariatePolynomialZ> {
+    private static final long serialVersionUID = 1L;
+
     /** main constructor */
     private lUnivariatePolynomialZ(long[] data) {
         this.data = data;
@@ -62,7 +70,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     }
 
     /**
-     * Returns zero polynomial
+     * Creates zero polynomial
      *
      * @return zero polynomial
      */
@@ -71,50 +79,50 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     }
 
     /**
-     * Returns 1
+     * Creates unit polynomial
      *
-     * @return 1
+     * @return unit polynomial
      */
     public static lUnivariatePolynomialZ one() {
         return new lUnivariatePolynomialZ(new long[]{1}, 0);
     }
 
     /**
-     * Returns constant
+     * Returns constant with specified value
      *
-     * @return constant
+     * @return constant with specified value
      */
     public static lUnivariatePolynomialZ constant(long value) {
         return new lUnivariatePolynomialZ(new long[]{value}, 0);
     }
 
     /**
-     * Reduces polynomial modulo {@code modulus} and returns Zp[x] result.
+     * Reduces this polynomial modulo {@code modulus} and returns the result.
      *
      * @param modulus the modulus
-     * @param copy    whether to copy the internal data or reduce inplace
-     * @return Zp[x] polynomial from this
+     * @param copy    whether to copy the internal data or reduce inplace (in which case the data of this will be lost)
+     * @return this modulo {@code modulus}
      */
     public lUnivariatePolynomialZp modulus(long modulus, boolean copy) {
         return lUnivariatePolynomialZp.create(modulus, copy ? data.clone() : data);
     }
 
     /**
-     * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
+     * Reduces (copied) polynomial modulo {@code modulus} and returns the result.
      *
      * @param modulus the modulus
-     * @return Zp[x] polynomial from this
+     * @return a copy of this modulo {@code modulus}
      */
     public lUnivariatePolynomialZp modulus(long modulus) {
         return modulus(modulus, true);
     }
 
     /**
-     * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
+     * Reduces this polynomial modulo {@code modulus} and returns the result.
      *
      * @param domain the modulus
-     * @param copy   whether to copy the data
-     * @return Zp[x] polynomial from this
+     * @param copy   whether to copy the internal data or reduce inplace (in which case the data of this will be lost)
+     * @return this modulo {@code modulus}
      */
     public lUnivariatePolynomialZp modulus(lIntegersModulo domain, boolean copy) {
         long[] data = copy ? this.data.clone() : this.data;
@@ -124,20 +132,24 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     }
 
     /**
-     * Reduces (copied) polynomial modulo {@code modulus} and returns Zp[x] result.
+     * Reduces (copied) polynomial modulo {@code modulus} and returns the result.
      *
      * @param domain the modulus
-     * @return Zp[x] polynomial from this
+     * @return a copy of this modulo {@code modulus}
      */
     public lUnivariatePolynomialZp modulus(lIntegersModulo domain) {
         return modulus(domain, true);
     }
 
+    /** INTERNAL API */
     lUnivariatePolynomialZp modulusUnsafe(long modulus) {
         return lUnivariatePolynomialZp.createUnsafe(modulus, data);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}.
+     * The domain of the result is {@link cc.r2.core.poly.Domains#Z}
+     */
     @Override
     public UnivariatePolynomial<BigInteger> toBigPoly() {
         return UnivariatePolynomial.createUnsafe(Integers.Integers, dataToBigIntegers());
@@ -175,61 +187,51 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return res;
     }
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ getRange(int from, int to) {
         return new lUnivariatePolynomialZ(Arrays.copyOfRange(data, from, to));
     }
 
-    /** {@inheritDoc} */
     @Override
-    public lUnivariatePolynomialZ[] arrayNewInstance(int length) {
+    public lUnivariatePolynomialZ[] createArray(int length) {
         return new lUnivariatePolynomialZ[length];
     }
 
     @Override
-    public lUnivariatePolynomialZ[][] arrayNewInstance2D(int length) {
+    public lUnivariatePolynomialZ[][] createArray2d(int length) {
         return new lUnivariatePolynomialZ[length][];
     }
 
     @Override
-    public lUnivariatePolynomialZ[][] arrayNewInstance2D(int length1, int length2) {
+    public lUnivariatePolynomialZ[][] createArray2d(int length1, int length2) {
         return new lUnivariatePolynomialZ[length1][length2];
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean sameDomainWith(lUnivariatePolynomialZ oth) {return true;}
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ createFromArray(long[] data) {
         return new lUnivariatePolynomialZ(data);
     }
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ createMonomial(long coefficient, int degree) {
         return monomial(coefficient, degree);
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean isOverField() {return false;}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isOverFiniteField() {return false;}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isOverZ() {return true;}
 
-    /** {@inheritDoc} */
     @Override
     public BigInteger coefficientDomainCardinality() {return null;}
 
-    /** {@inheritDoc} */
     @Override
     public BigInteger coefficientDomainCharacteristics() {
         return BigInteger.ZERO;
@@ -251,13 +253,13 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     }
 
     @Override
-    long add(long a, long b) {return LongArithmetics.safeAdd(a, b);}
+    long add(long a, long b) {return MachineArithmetic.safeAdd(a, b);}
 
     @Override
-    long subtract(long a, long b) {return LongArithmetics.safeSubtract(a, b);}
+    long subtract(long a, long b) {return MachineArithmetic.safeSubtract(a, b);}
 
     @Override
-    long multiply(long a, long b) {return LongArithmetics.safeMultiply(a, b);}
+    long multiply(long a, long b) {return MachineArithmetic.safeMultiply(a, b);}
 
     @Override
     long negate(long a) {return -a;}
@@ -265,7 +267,6 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     @Override
     long valueOf(long a) {return a;}
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ monic() {
         if (isZero())
@@ -276,7 +277,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
     @Override
     public lUnivariatePolynomialZ monic(long factor) {
         long lc = lc();
-        long gcd = LongArithmetics.gcd(lc, factor);
+        long gcd = MachineArithmetic.gcd(lc, factor);
         factor = factor / gcd;
         lc = lc / gcd;
         lUnivariatePolynomialZ r = divideOrNull(lc);
@@ -307,7 +308,6 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ divideByLC(lUnivariatePolynomialZ other) {
         return divideOrNull(other.lc());
@@ -318,13 +318,13 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return multiply(factor.longValueExact());
     }
 
+    /** INTERNAL API */
     lUnivariatePolynomialZ multiplyUnsafe(long factor) {
         for (int i = degree; i >= 0; --i)
             data[i] *= factor;
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ multiply(lUnivariatePolynomialZ oth) {
         if (isZero())
@@ -355,6 +355,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return this;
     }
 
+    /** INTERNAL API */
     lUnivariatePolynomialZ multiplyUnsafe(lUnivariatePolynomialZ oth) {
         if (isZero())
             return this;
@@ -378,7 +379,6 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ square() {
         if (isZero())
@@ -399,7 +399,6 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public lUnivariatePolynomialZ derivative() {
         if (isConstant())

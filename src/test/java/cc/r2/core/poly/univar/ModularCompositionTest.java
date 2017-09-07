@@ -45,7 +45,7 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
         ArrayList<lUnivariatePolynomialZp> xPowers = ModularComposition.xPowers(polyModulus, fastDivisionPreConditioning(polyModulus));
         for (int i = 0; i < xPowers.size(); i++) {
             lUnivariatePolynomialZp expected = PolynomialArithmetics.polyPowMod(
-                    lUnivariatePolynomialZp.createMonomial(polyModulus.domain.modulus, 1, (int) polyModulus.domain.modulus),
+                    lUnivariatePolynomialZp.monomial(polyModulus.domain.modulus, 1, (int) polyModulus.domain.modulus),
                     i, polyModulus, false);
             assertEquals(expected, xPowers.get(i));
         }

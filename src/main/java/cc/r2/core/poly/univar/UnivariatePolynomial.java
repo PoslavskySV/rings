@@ -22,12 +22,13 @@ import static cc.r2.core.number.BigIntegerArithmetics.max;
 import static cc.r2.core.poly.Integers.Integers;
 
 /**
+ * Univariate polynomial over generic domain.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
 public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<UnivariatePolynomial<E>>, Iterable<E> {
     private static final long serialVersionUID = 1L;
-
     /** the domain */
     public final Domain<E> domain;
     /** list of coefficients { x^0, x^1, ... , x^degree } */
@@ -55,7 +56,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Creates new univariate polynomial over specified domain with the specified coefficients
+     * Creates new univariate polynomial over specified domain with the specified coefficients. Note: the array
+     * {@code data} will not be copied.
      *
      * @param domain the domain
      * @param data   the coefficients
@@ -66,12 +68,13 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return new UnivariatePolynomial<>(domain, data);
     }
 
+    /** skips {@code domain.setToValueOf(data)} */
     public static <E> UnivariatePolynomial<E> createUnsafe(Domain<E> domain, E... data) {
         return new UnivariatePolynomial<>(domain, data);
     }
 
     /**
-     * Creates new univariate polynomial over specified domain with the specified coefficients
+     * Creates univariate polynomial over specified domain (with integer elements) with the specified coefficients
      *
      * @param domain the domain
      * @param data   the coefficients
@@ -128,7 +131,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      *
      * @param poly the polynomial over BigIntegers
      * @return machine-sized polynomial in Z
-     * @throws ArithmeticException if some of {@code poly} elements is out of long range
+     * @throws ArithmeticException if some of coefficients is out of long range
      */
     public static lUnivariatePolynomialZ asLongPolyZ(UnivariatePolynomial<BigInteger> poly) {
         long[] data = new long[poly.degree + 1];
@@ -138,7 +141,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Converts Z/p poly over BigIntegers to machine-sized polynomial in Z/p
+     * Converts Zp[x] poly over BigIntegers to machine-sized polynomial in Zp
      *
      * @param poly the Z/p polynomial over BigIntegers
      * @return machine-sized polynomial in Z/p
@@ -152,17 +155,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         for (int i = 0; i < data.length; i++)
             data[i] = poly.data[i].longValueExact();
         return lUnivariatePolynomialZp.create(((IntegersModulo) poly.domain).modulus.longValueExact(), data);
-    }
-
-    /**
-     * Returns Z[x] polynomial formed from the coefficients of the poly.
-     *
-     * @param poly the polynomial
-     * @param copy whether to copy the internal data
-     * @return Z[x] version of the poly
-     */
-    public static UnivariatePolynomial<BigInteger> asPolyZ(UnivariatePolynomial<BigInteger> poly, boolean copy) {
-        return UnivariatePolynomial.createUnsafe(Integers, copy ? poly.data.clone() : poly.data);
     }
 
     /**
@@ -183,17 +175,16 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return UnivariatePolynomial.create(Integers, newData);
     }
 
-    /** {@inheritDoc} */
     @Override
     public int degree() {return degree;}
 
     /**
-     * Returns i-th element of this poly
+     * Returns i-th coefficient of this poly
      */
     public E get(int i) { return i > degree ? domain.getZero() : data[i];}
 
     /**
-     * Sets i-th element of this poly
+     * Sets i-th coefficient of this poly with specified value
      */
     public UnivariatePolynomial<E> set(int i, E el) {
         el = domain.valueOf(el);
@@ -211,13 +202,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Sets hte leading coefficient of this poly and returns the previous value
+     * Sets the leading coefficient of this poly
      */
     public UnivariatePolynomial<E> setLC(E lc) {
         return set(degree, lc);
     }
 
-    /** {@inheritDoc} */
     @Override
     public int firstNonZeroCoefficientPosition() {
         if (isZero()) return -1;
@@ -227,10 +217,10 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Returns a copy of this over a new domain
+     * Returns a copy of this with elements reduced to a new domain
      *
      * @param newDomain the new domain
-     * @return a copy of this with specified new domain
+     * @return a copy of this with elements reduced to a new domain
      */
     public UnivariatePolynomial<E> setDomain(Domain<E> newDomain) {
         if (domain == newDomain)
@@ -240,22 +230,21 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return new UnivariatePolynomial<>(newDomain, newData);
     }
 
+    /** INTERNAL API */
     public UnivariatePolynomial<E> setDomainUnsafe(Domain<E> newDomain) {
         return new UnivariatePolynomial<>(newDomain, data, degree);
     }
 
     /**
-     * Returns the leading coefficient of the poly
+     * Returns the leading coefficient
      *
      * @return leading coefficient
      */
     public E lc() {return data[degree];}
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> lcAsPoly() {return createConstant(lc());}
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> ccAsPoly() {return createConstant(cc());}
 
@@ -263,7 +252,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public UnivariatePolynomial<E> getAsPoly(int i) {return createConstant(get(i));}
 
     /**
-     * Returns the constant coefficient of the poly
+     * Returns the constant coefficient
      *
      * @return constant coefficient
      */
@@ -310,39 +299,35 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         }
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> getRange(int from, int to) {
         return new UnivariatePolynomial<>(domain, Arrays.copyOfRange(data, from, to));
     }
 
-    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
-    public UnivariatePolynomial<E>[] arrayNewInstance(int length) {
+    public UnivariatePolynomial<E>[] createArray(int length) {
         return new UnivariatePolynomial[length];
     }
 
-    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
-    public UnivariatePolynomial<E>[] arrayNewInstance(UnivariatePolynomial<E> a, UnivariatePolynomial<E> b) {
+    public UnivariatePolynomial<E>[] createArray(UnivariatePolynomial<E> a, UnivariatePolynomial<E> b) {
         return new UnivariatePolynomial[]{a, b};
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public UnivariatePolynomial<E>[][] arrayNewInstance2D(int length) {
+    public UnivariatePolynomial<E>[][] createArray2d(int length) {
         return new UnivariatePolynomial[length][];
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public UnivariatePolynomial<E>[][] arrayNewInstance2D(int length1, int length2) {
+    public UnivariatePolynomial<E>[][] createArray2d(int length1, int length2) {
         return new UnivariatePolynomial[length1][length2];
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean sameDomainWith(UnivariatePolynomial<E> oth) {
         return domain.equals(oth.domain);
@@ -354,7 +339,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Factory
+     * Creates new poly with the specified coefficients (over the same domain)
      *
      * @param data the data
      * @return polynomial
@@ -364,12 +349,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return new UnivariatePolynomial<>(domain, data);
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> createMonomial(int degree) {return createMonomial(domain.getOne(), degree);}
 
     /**
-     * Creates linear polynomial of form {@code cc + x * lc}
+     * Creates linear polynomial of form {@code cc + x * lc} (over the same domain)
      *
      * @param cc the  constant coefficient
      * @param lc the  leading coefficient
@@ -380,7 +364,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Creates monomial {@code coefficient * x^degree}
+     * Creates monomial {@code coefficient * x^degree} (over the same domain)
      *
      * @param coefficient monomial coefficient
      * @param degree      monomial degree
@@ -394,7 +378,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Creates constant polynomial with specified value
+     * Creates constant polynomial with specified value (over the same domain)
      *
      * @param val the value
      * @return constant polynomial with specified value
@@ -405,15 +389,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return createFromArray(array);
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> createZero() {return createConstant(domain.getZero());}
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> createOne() {return createConstant(domain.getOne());}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isZeroAt(int i) {return i >= data.length || domain.isZero(data[i]);}
 
@@ -432,27 +413,21 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean isZero() {return domain.isZero(data[degree]);}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isOne() {return degree == 0 && domain.isOne(data[0]);}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isMonic() {return domain.isOne(lc());}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isUnitCC() {return domain.isOne(cc());}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isConstant() {return degree == 0;}
 
-    /** {@inheritDoc} */
     @Override
     public boolean isMonomial() {
         for (int i = degree - 1; i >= 0; --i)
@@ -461,35 +436,29 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return true;
     }
 
-    /** {@inheritDoc} */
     @Override
-    public int signum() {
+    public int signumOfLC() {
         return domain.signum(lc());
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean isOverField() {
         return domain.isField();
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean isOverFiniteField() {
         return domain.isFinite();
     }
 
-    /** {@inheritDoc} */
     @Override
     public boolean isOverZ() {return domain.equals(Integers);}
 
-    /** {@inheritDoc} */
     @Override
     public BigInteger coefficientDomainCardinality() {
         return domain.cardinality();
     }
 
-    /** {@inheritDoc} */
     @Override
     public BigInteger coefficientDomainCharacteristics() {
         return domain.characteristics();
@@ -571,7 +540,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             data[i] = domain.getZero(); //invoke getZero() at each cycle
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> toZero() {
         fillZeroes(data, 0, degree + 1);
@@ -579,7 +547,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> set(UnivariatePolynomial<E> oth) {
         this.data = oth.data.clone();
@@ -587,7 +554,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final UnivariatePolynomial<E> setAndDestroy(UnivariatePolynomial<E> oth) {
         this.data = oth.data;
@@ -597,7 +563,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> shiftLeft(int offset) {
         if (offset == 0)
@@ -611,7 +576,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> shiftRight(int offset) {
         if (offset == 0)
@@ -623,7 +587,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> truncate(int newDegree) {
         if (newDegree >= degree)
@@ -634,7 +597,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> reverse() {
         ArraysUtil.reverse(data, 0, degree + 1);
@@ -657,24 +619,21 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 //        return gcd;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> contentAsPoly() {
         return createConstant(content());
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> primitivePart() {
         E content = content();
-        if (domain.signum(lc()) < 0)
+        if (signumOfLC() < 0)
             content = domain.negate(content);
         if (domain.isMinusOne(content))
             return negate();
         return primitivePart0(content);
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> primitivePartSameSign() {
         return primitivePart0(content());
@@ -720,7 +679,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return res;
     }
 
-
     @Override
     public UnivariatePolynomial<E> composition(UnivariatePolynomial<E> value) {
         if (value.isOne())
@@ -735,7 +693,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Shifts variables x -> x + value and returns the result (new instance)
+     * Shifts variable x -> x + value and returns the result (new instance)
      *
      * @param value shift amount
      * @return a copy of this with x -> x + value
@@ -756,19 +714,16 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> decrement() {
         return subtract(createOne());
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> increment() {
         return add(createOne());
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> add(UnivariatePolynomial<E> oth) {
         if (oth.isZero())
@@ -776,7 +731,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (isZero())
             return set(oth);
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = domain.add(data[i], oth.data[i]);
@@ -816,7 +771,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (domain.isZero(factor))
             return this;
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = domain.add(data[i], domain.multiply(factor, oth.data[i]));
@@ -824,7 +779,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> subtract(UnivariatePolynomial<E> oth) {
         if (oth.isZero())
@@ -832,7 +786,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (isZero())
             return set(oth).negate();
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = domain.subtract(data[i], oth.data[i]);
@@ -856,7 +810,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (domain.isZero(factor))
             return this;
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         for (int i = oth.degree + exponent; i >= exponent; --i)
             data[i] = domain.subtract(data[i], domain.multiply(factor, oth.data[i - exponent]));
 
@@ -864,7 +818,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> negate() {
         for (int i = degree; i >= 0; --i)
@@ -897,13 +850,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return multiply(other.lc());
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> multiply(long factor) {
         return multiply(domain.valueOf(factor));
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> divideByLC(UnivariatePolynomial<E> other) {
         return divideOrNull(other.lc());
@@ -934,7 +885,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> monic() {
         if (isZero())
@@ -964,7 +914,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return multiply(domain.valueOfBigInteger(factor));
     }
 
-    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
     public UnivariatePolynomial<E> multiply(UnivariatePolynomial<E> oth) {
@@ -998,7 +947,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
     public UnivariatePolynomial<E> square() {
@@ -1019,7 +967,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> derivative() {
         if (isConstant())
@@ -1030,7 +977,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return createFromArray(newData);
     }
 
-    /** {@inheritDoc} */
     @Override
     public UnivariatePolynomial<E> clone() {
         return new UnivariatePolynomial<>(domain, data.clone(), degree);
@@ -1135,19 +1081,20 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
         @Override
         public boolean hasNext() {
-            synchronized ( UnivariatePolynomial.this ){
+            synchronized (UnivariatePolynomial.this) {
                 return index <= degree;
             }
         }
 
         @Override
         public E next() {
-            synchronized ( UnivariatePolynomial.this ){
+            synchronized (UnivariatePolynomial.this) {
                 return data[index++];
             }
         }
     }
 
+    /** INTERNAL API */
     public E[] getDataReferenceUnsafe() {return data;}
 
     @Override

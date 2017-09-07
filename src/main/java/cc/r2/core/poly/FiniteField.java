@@ -3,6 +3,7 @@ package cc.r2.core.poly;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.poly.univar.*;
+import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
@@ -10,6 +11,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 /**
+ * Galois field.
+ *
+ * @param <Poly> particular type of polynomials representing elements of this Galois field
  * @author Stanislav Poslavsky
  * @since 1.0
  */
@@ -22,14 +26,16 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     public static final FiniteField<lUnivariatePolynomialZp> GF17p5 = new FiniteField<>(lUnivariatePolynomialZ.create(11, 11, 0, 3, 9, 9).modulus(17).monic());
 
     /** Irreducible polynomial that generates this finite field */
-    public final Poly irreducible;
-    private final DivisionWithRemainder.InverseModMonomial<Poly> inverseMod;
+    private final Poly irreducible;
+    /** Precomputed inverses */
+    private final InverseModMonomial<Poly> inverseMod;
+    /** Domain cardinality */
     private final BigInteger cardinality;
 
     /**
      * Constructs finite field from the specified irreducible polynomial. NOTE: irreducibility test for the input
      * polynomial is not performed here, use {@link cc.r2.core.poly.univar.IrreduciblePolynomials#irreducibleQ(IUnivariatePolynomial)}
-     * to test irreducibility
+     * to test irreducibility.
      *
      * @param irreducible irreducible polynomial
      */
@@ -72,8 +78,8 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     }
 
     @Override
-    public Poly negate(Poly val) {
-        return PolynomialArithmetics.polyNegateMod(val, irreducible, inverseMod, true);
+    public Poly negate(Poly element) {
+        return PolynomialArithmetics.polyNegateMod(element, irreducible, inverseMod, true);
     }
 
     @Override
@@ -92,18 +98,13 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     }
 
     @Override
-    public Poly negateMutable(Poly val) {
-        return PolynomialArithmetics.polyNegateMod(val, irreducible, inverseMod, false);
-    }
-
-    @Override
-    public int signum(Poly a) {
-        return a.signum();
+    public Poly negateMutable(Poly element) {
+        return PolynomialArithmetics.polyNegateMod(element, irreducible, inverseMod, false);
     }
 
     @Override
     public Poly[] divideAndRemainder(Poly a, Poly b) {
-        return a.arrayNewInstance(multiply(a, reciprocal(b)), getZero());
+        return a.createArray(multiply(a, reciprocal(b)), getZero());
     }
 
     @Override
@@ -112,14 +113,14 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     }
 
     @Override
-    public Poly reciprocal(Poly a) {
-        if (a.isZero())
+    public Poly reciprocal(Poly element) {
+        if (element.isZero())
             throw new ArithmeticException("divide by zero");
         Poly
                 t = getZero(),
                 newt = getOne(),
                 r = irreducible.clone(),
-                newr = a.clone();
+                newr = element.clone();
         Poly tmp;
         while (!newr.isZero()) {
             Poly quotient = DivisionWithRemainder.quotient(r, newr, true);
@@ -133,7 +134,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
             newt = tmp.clone().subtract(quotient.clone().multiply(newt));
         }
         if (r.degree() > 0)
-            throw new IllegalArgumentException("Either p is not irreducible or a is a multiple of p, p =  " + irreducible + ", a = " + a);
+            throw new IllegalArgumentException("Either p is not irreducible or a is a multiple of p, p =  " + irreducible + ", a = " + element);
         return t.divideByLC(r);
     }
 
@@ -153,18 +154,18 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     }
 
     @Override
-    public boolean isZero(Poly poly) {
-        return poly.isZero();
+    public boolean isZero(Poly element) {
+        return element.isZero();
     }
 
     @Override
-    public boolean isOne(Poly poly) {
-        return poly.isOne();
+    public boolean isOne(Poly element) {
+        return element.isOne();
     }
 
     @Override
-    public boolean isUnit(Poly poly) {
-        return !isZero(poly);
+    public boolean isUnit(Poly element) {
+        return !isZero(element);
     }
 
     @Override
@@ -189,7 +190,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
 
     @Override
     public Poly[] createArray(int length) {
-        return irreducible.arrayNewInstance(length);
+        return irreducible.createArray(length);
     }
 
     @Override

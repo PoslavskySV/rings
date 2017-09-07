@@ -2,13 +2,13 @@ package cc.r2.core.poly.univar;
 
 
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.lIntegersModulo;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.ArrayList;
 
-import static cc.r2.core.poly.LongArithmetics.*;
+import static cc.r2.core.poly.MachineArithmetic.*;
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
@@ -183,7 +183,7 @@ public final class DivisionWithRemainder {
             if (remainder.degree == divider.degree + i) {
                 long quot = divideSignedFast(remainder.lc(), magic);
                 if (quot * divider.lc() != remainder.lc()) {
-                    long gcd = LongArithmetics.gcd(remainder.lc(), divider.lc());
+                    long gcd = MachineArithmetic.gcd(remainder.lc(), divider.lc());
                     long factor = divider.lc() / gcd;
                     remainder.multiply(factor);
                     for (int j = i + 1; j < quotient.length; ++j)
@@ -218,7 +218,7 @@ public final class DivisionWithRemainder {
             if (i == 0) break;
             long quot = divideSignedFast(res, magic);
             if (quot * lc != res) {
-                long gcd = LongArithmetics.gcd(res, lc), f = lc / gcd;
+                long gcd = MachineArithmetic.gcd(res, lc), f = lc / gcd;
                 factor = safeMultiply(factor, f);
                 res = safeMultiply(res, f);
                 if (i != dividend.degree)
@@ -400,7 +400,7 @@ public final class DivisionWithRemainder {
                                                                 final lUnivariatePolynomialZp divider,
                                                                 final boolean copy) {
         assert dividend.degree >= divider.degree;
-        dividend.checkSameDomainWith(divider);
+        dividend.assertSameDomainWith(divider);
 
         lUnivariatePolynomialZp remainder = copy ? dividend.clone() : dividend;
         long[] quotient = new long[dividend.degree - divider.degree + 1];
@@ -420,7 +420,7 @@ public final class DivisionWithRemainder {
     static lUnivariatePolynomialZp[] divideAndRemainderLinearDividerModulus(lUnivariatePolynomialZp dividend, lUnivariatePolynomialZp divider, boolean copy) {
         assert divider.degree == 1;
         assert dividend.degree > 0;
-        dividend.checkSameDomainWith(divider);
+        dividend.assertSameDomainWith(divider);
 
         //apply Horner's method
 
@@ -450,14 +450,14 @@ public final class DivisionWithRemainder {
                                                                                final boolean copy) {
         checkZeroDivider(divider);
         if (dividend.isZero())
-            return dividend.arrayNewInstance(dividend.createZero(), dividend.createZero());
+            return dividend.createArray(dividend.createZero(), dividend.createZero());
         if (dividend.degree < divider.degree)
-            return dividend.arrayNewInstance(dividend.createZero(), copy ? dividend.clone() : dividend);
+            return dividend.createArray(dividend.createZero(), copy ? dividend.clone() : dividend);
         if (divider.degree == 0) {
             UnivariatePolynomial<E> div = copy ? dividend.clone() : dividend;
             div = div.divideOrNull(divider.lc());
             if (div == null) return null;
-            return dividend.arrayNewInstance(div, dividend.createZero());
+            return dividend.createArray(div, dividend.createZero());
         } if (divider.degree == 1)
             return divideAndRemainderLinearDivider(dividend, divider, copy);
         return null;
@@ -499,12 +499,12 @@ public final class DivisionWithRemainder {
                                                                          final boolean copy) {
         checkZeroDivider(divider);
         if (dividend.isZero())
-            return dividend.arrayNewInstance(dividend.createZero(), dividend.createZero());
+            return dividend.createArray(dividend.createZero(), dividend.createZero());
         if (dividend.degree < divider.degree)
-            return dividend.arrayNewInstance(dividend.createZero(), copy ? dividend.clone() : dividend);
+            return dividend.createArray(dividend.createZero(), copy ? dividend.clone() : dividend);
         E factor = dividend.domain.pow(divider.lc(), dividend.degree - divider.degree + 1);
         if (divider.degree == 0)
-            return dividend.arrayNewInstance((copy ? dividend.clone() : dividend).multiply(dividend.domain.divideExact(factor, divider.lc())), dividend.createZero());
+            return dividend.createArray((copy ? dividend.clone() : dividend).multiply(dividend.domain.divideExact(factor, divider.lc())), dividend.createZero());
         if (divider.degree == 1)
             return divideAndRemainderLinearDivider0(dividend, divider, factor, copy);
         return divideAndRemainderClassic0(dividend, divider, factor, copy);
@@ -561,7 +561,7 @@ public final class DivisionWithRemainder {
             } else quotient[i] = domain.getZero();
         }
 
-        return dividend.arrayNewInstance(dividend.createFromArray(quotient), remainder);
+        return dividend.createArray(dividend.createFromArray(quotient), remainder);
     }
 
     /** Fast division with remainder for divider of the form f(x) = x - u **/
@@ -579,7 +579,7 @@ public final class DivisionWithRemainder {
     static <E> UnivariatePolynomial<E>[] divideAndRemainderLinearDivider0(UnivariatePolynomial<E> dividend, UnivariatePolynomial<E> divider, E raiseFactor, boolean copy) {
         assert divider.degree == 1;
         assert dividend.degree > 0;
-        dividend.checkSameDomainWith(divider);
+        dividend.assertSameDomainWith(divider);
 
         //apply Horner's method
 
@@ -608,7 +608,7 @@ public final class DivisionWithRemainder {
             res = quot;
         }
         if (!copy) quotient[dividend.degree] = domain.getZero();
-        return dividend.arrayNewInstance(dividend.createFromArray(quotient), dividend.createConstant(res));
+        return dividend.createArray(dividend.createFromArray(quotient), dividend.createConstant(res));
     }
 
 
@@ -686,7 +686,7 @@ public final class DivisionWithRemainder {
         if (q.degree() < m)
             q.shiftRight(m - q.degree());
         Poly r = (copy ? dividend.clone() : dividend).subtract(divider.clone().multiply(q));
-        return dividend.arrayNewInstance(q, r);
+        return dividend.createArray(q, r);
     }
 
     /* ********************************* Machine-precision fast division in Zp[x]  ******************************** */
@@ -898,7 +898,7 @@ public final class DivisionWithRemainder {
                                                        final lUnivariatePolynomialZp divider,
                                                        final boolean copy) {
         assert dividend.degree >= divider.degree;
-        dividend.checkSameDomainWith(divider);
+        dividend.assertSameDomainWith(divider);
 
         lUnivariatePolynomialZp remainder = copy ? dividend.clone() : dividend;
         long lcInverse = dividend.domain.reciprocal(divider.lc());
@@ -1020,7 +1020,7 @@ public final class DivisionWithRemainder {
                                                            final UnivariatePolynomial<E> divider,
                                                            final boolean copy) {
         assert dividend.degree >= divider.degree;
-        dividend.checkSameDomainWith(divider);
+        dividend.assertSameDomainWith(divider);
 
         UnivariatePolynomial<E> remainder = copy ? dividend.clone() : dividend;
         Domain<E> domain = dividend.domain;

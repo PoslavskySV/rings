@@ -481,17 +481,17 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     @SuppressWarnings("unchecked")
-    public MultivariatePolynomial<E>[] arrayNewInstance(int length) {return new MultivariatePolynomial[length];}
+    public MultivariatePolynomial<E>[] createArray(int length) {return new MultivariatePolynomial[length];}
 
     @Override
     @SuppressWarnings("unchecked")
-    public MultivariatePolynomial<E>[][] arrayNewInstance2D(int length) {
+    public MultivariatePolynomial<E>[][] createArray2d(int length) {
         return new MultivariatePolynomial[length][];
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public MultivariatePolynomial<E>[][] arrayNewInstance2D(int length1, int length2) {
+    public MultivariatePolynomial<E>[][] createArray2d(int length1, int length2) {
         return new MultivariatePolynomial[length1][length2];
     }
 
@@ -600,7 +600,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public int signum() {
+    public int signumOfLC() {
         return domain.signum(lc());
     }
 
@@ -738,7 +738,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<E> primitivePartSameSign() {
         E c = content();
-        if (domain.signum(c) < 0)
+        if (signumOfLC() < 0)
             c = domain.negate(c);
         MultivariatePolynomial<E> r = divideOrNull(c);
         assert r != null;
@@ -1044,7 +1044,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             E k2p = value;
             int rExp = 0, kExp = 1;
             for (; ; ) {
-                if ((exponent&1) != 0)
+                if ((exponent & 1) != 0)
                     precomputedPowers[rExp += kExp] = result = domain.multiply(result, k2p);
                 exponent = exponent >> 1;
                 if (exponent == 0)
@@ -1229,7 +1229,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             MultivariatePolynomial<E> cached = mCache.get(exponent);
             if (cached != null)
                 return cached.clone();
-            UnivariatePolynomial<E> r = CommonPolynomialsArithmetics.polyPow(base, exponent, true, uCache);
+            UnivariatePolynomial<E> r = PolynomialMethods.polyPow(base, exponent, true, uCache);
             mCache.put(exponent, cached = asMultivariate(r, nVariables, variable, ordering));
             return cached.clone();
         }
@@ -1245,7 +1245,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
         @Override
         public MultivariatePolynomial<E> pow(int exponent) {
-            return CommonPolynomialsArithmetics.polyPow(base, exponent, true, cache);
+            return PolynomialMethods.polyPow(base, exponent, true, cache);
         }
     }
 
@@ -1363,7 +1363,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> multiply(MultivariatePolynomial<E> oth) {
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         MonomialsSet<MonomialTerm<E>> newMap = new MonomialsSet<>(ordering);
         for (MonomialTerm<E> othElement : oth.terms)
             for (MonomialTerm<E> thisElement : terms)

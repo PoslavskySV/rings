@@ -225,7 +225,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
             for (long modulus : getSmallModulusArray(10)) {
                 do {
                     divider = lUnivariatePolynomialZ.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
-                } while (divider.degree == 0 || LongArithmetics.gcd(divider.lc(), modulus) != 1);
+                } while (divider.degree == 0 || MachineArithmetic.gcd(divider.lc(), modulus) != 1);
 
                 lUnivariatePolynomialZp dividendMod = dividend.modulus(modulus), dividerMod = divider.modulus(modulus);
                 if (dividendMod.degree == 0) {
@@ -253,7 +253,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
             actual = DivisionWithRemainder.pseudoDivideAndRemainderLinearDivider(dividend, divider, true);
             fastPseudo.addValue(System.nanoTime() - start);
             start = System.nanoTime();
-            long factor = LongArithmetics.safePow(divider.lc(), dividend.degree - divider.degree + 1);
+            long factor = MachineArithmetic.safePow(divider.lc(), dividend.degree - divider.degree + 1);
             expected = DivisionWithRemainder.divideAndRemainderClassic0(dividend, divider, factor, true);
             genPseudo.addValue(System.nanoTime() - start);
             assertArrayEquals(expected, actual);
@@ -350,7 +350,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
     }
 
     static void assertInverseModMonomial(lUnivariatePolynomialZp poly, lUnivariatePolynomialZp invMod, int monomialDegree) {
-        assertTrue(polyMultiplyMod(poly, invMod, lUnivariatePolynomialZp.createMonomial(poly.domain.modulus, 1, monomialDegree), true).isOne());
+        assertTrue(polyMultiplyMod(poly, invMod, lUnivariatePolynomialZp.monomial(poly.domain.modulus, 1, monomialDegree), true).isOne());
     }
 
     /**
@@ -449,7 +449,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZp f = lUnivariatePolynomialZ.create(0, 2, 3, 4, -5, 1).modulus(modulus).reverse();
         int modDegree = f.degree;
         lUnivariatePolynomialZp invmod = inverseModMonomial0(f, modDegree);
-        lUnivariatePolynomialZp r = polyMultiplyMod(f, invmod, lUnivariatePolynomialZp.createMonomial(modulus, 1, modDegree), true);
+        lUnivariatePolynomialZp r = polyMultiplyMod(f, invmod, lUnivariatePolynomialZp.monomial(modulus, 1, modDegree), true);
         assertTrue(r.isOne());
     }
 
@@ -459,7 +459,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZp f = lUnivariatePolynomialZ.create(7, 12, 12, 12, 13, 2, 7, 10, 7, 15, 13, 1, 10, 16, 6, 1).modulus(modulus).reverse();
         int modDegree = 9;
         lUnivariatePolynomialZp invmod = inverseModMonomial0(f, modDegree);
-        lUnivariatePolynomialZp r = polyMultiplyMod(f, invmod, lUnivariatePolynomialZp.createMonomial(modulus, 1, modDegree), true);
+        lUnivariatePolynomialZp r = polyMultiplyMod(f, invmod, lUnivariatePolynomialZp.monomial(modulus, 1, modDegree), true);
         assertTrue(r.isOne());
     }
 

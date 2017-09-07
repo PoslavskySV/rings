@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.CommonUtils;
+import cc.r2.core.poly.Util;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
 import cc.r2.core.util.ArraysUtil;
@@ -24,7 +24,7 @@ public final class IrreduciblePolynomials {
      * @return whether {@code poly} is an irreducible polynomial
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> boolean irreducibleQ(Poly poly) {
-        CommonUtils.ensureFiniteFieldDomain(poly);
+        Util.ensureFiniteFieldDomain(poly);
         if (poly.degree() <= 1)
             return true;
 

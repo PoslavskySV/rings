@@ -3,7 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 
 import java.util.Arrays;
 
@@ -59,7 +59,7 @@ public final class SquareFreeFactorization {
             return FactorDecomposition.constantFactor(poly);
 
         Poly content = poly.contentAsPoly();
-        if (poly.signum() < 0)
+        if (poly.signumOfLC() < 0)
             content = content.negate();
 
         poly = poly.clone().divideByLC(content);
@@ -110,7 +110,7 @@ public final class SquareFreeFactorization {
             return FactorDecomposition.constantFactor(poly);
 
         Poly content = poly.contentAsPoly();
-        if (poly.signum() < 0)
+        if (poly.signumOfLC() < 0)
             content = content.negate();
 
         poly = poly.clone().divideByLC(content);
@@ -242,7 +242,7 @@ public final class SquareFreeFactorization {
     private static lUnivariatePolynomialZp pRoot(lUnivariatePolynomialZp poly) {
         if (poly.domain.modulus > Integer.MAX_VALUE)
             throw new IllegalArgumentException("Too big modulus: " + poly.domain.modulus);
-        int modulus = LongArithmetics.safeToInt(poly.domain.modulus);
+        int modulus = MachineArithmetic.safeToInt(poly.domain.modulus);
         assert poly.degree % modulus == 0;
         assert !poly.domain.isPerfectPower(); // just in case
         long[] rootData = new long[poly.degree / modulus + 1];

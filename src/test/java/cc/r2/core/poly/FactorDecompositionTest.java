@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class FactorDecompositionTest {
 
-    public static <T extends IGeneralPolynomial<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {
+    public static <T extends IPolynomial<T>> void assertFactorization(T poly, FactorDecomposition<T> factorization) {
         assertEquals(poly, factorization.toPolynomial());
     }
 }

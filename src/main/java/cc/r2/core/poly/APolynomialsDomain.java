@@ -1,6 +1,7 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;
@@ -9,7 +10,9 @@ import java.util.Iterator;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends ADomain<Poly> {
+abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomain<Poly> {
+    private static final long serialVersionUID = 1L;
+
     public final Poly factory;
 
     APolynomialsDomain(Poly factory) {
@@ -35,7 +38,7 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     public final Poly multiply(Poly a, Poly b) {return a.clone().multiply(b);}
 
     @Override
-    public final Poly negate(Poly val) {return val.clone().negate();}
+    public final Poly negate(Poly element) {return element.clone().negate();}
 
     @Override
     public Poly addMutable(Poly a, Poly b) {
@@ -53,18 +56,15 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     }
 
     @Override
-    public Poly negateMutable(Poly val) {
-        return val.negate();
+    public Poly negateMutable(Poly element) {
+        return element.negate();
     }
 
     @Override
-    public final int signum(Poly a) {return a.signum();}
-
-    @Override
-    public final Poly reciprocal(Poly a) {
-        if (a.isConstant())
-            return divideExact(getOne(), a);
-        throw new ArithmeticException("not divisible: 1 / " + a);
+    public final Poly reciprocal(Poly element) {
+        if (element.isConstant())
+            return divideExact(getOne(), element);
+        throw new ArithmeticException("not divisible: 1 / " + element);
     }
 
     @Override
@@ -74,14 +74,14 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
     public final Poly getOne() {return factory.createOne();}
 
     @Override
-    public final boolean isZero(Poly poly) {return poly.isZero();}
+    public final boolean isZero(Poly element) {return element.isZero();}
 
     @Override
-    public final boolean isOne(Poly poly) {return poly.isOne();}
+    public final boolean isOne(Poly element) {return element.isOne();}
 
     @Override
-    public boolean isUnit(Poly poly) {
-        return poly.isOverField() ? poly.isConstant() : isOne(poly);
+    public boolean isUnit(Poly element) {
+        return element.isOverField() ? element.isConstant() : isOne(element);
     }
 
     @Override
@@ -107,21 +107,6 @@ abstract class APolynomialsDomain<Poly extends IGeneralPolynomial<Poly>> extends
 
     @Override
     public final int compare(Poly o1, Poly o2) {return o1.compareTo(o2);}
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public final Poly[][] createArray2d(int length) {
-        Poly[] array = createArray(0);
-        return (Poly[][]) Array.newInstance(array.getClass(), length);
-    }
-
-    @Override
-    public final Poly[][] createArray2d(int m, int n) {
-        Poly[][] arr = createArray2d(m);
-        for (int i = 0; i < arr.length; i++)
-            arr[i] = createArray(n);
-        return arr;
-    }
 
     @Override
     @SuppressWarnings("unchecked")

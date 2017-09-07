@@ -89,7 +89,7 @@ public final class HenselLifting {
          * Sequentially evaliate all elements
          */
         default Poly[] evaluateFrom(Poly[] array, int variable) {
-            Poly[] result = array[0].arrayNewInstance(array.length);
+            Poly[] result = array[0].createArray(array.length);
             for (int i = 0; i < result.length; i++)
                 result[i] = evaluateFrom(array[i], variable);
             return result;
@@ -324,7 +324,7 @@ public final class HenselLifting {
     /**
      * Effectively holds all possible combinations of product of elements [p1,p2,...,pN]
      */
-    static final class AllProductsCache<Poly extends IGeneralPolynomial<Poly>> {
+    static final class AllProductsCache<Poly extends IPolynomial<Poly>> {
         final Poly[] factors;
         final HashMap<BitSet, Poly> products = new HashMap<>();
 
@@ -390,7 +390,7 @@ public final class HenselLifting {
         }
 
         Poly[] exceptArray() {
-            Poly[] arr = factors[0].arrayNewInstance(factors.length);
+            Poly[] arr = factors[0].createArray(factors.length);
             for (int i = 0; i < arr.length; i++)
                 arr[i] = except(i);
             return arr;
@@ -448,7 +448,7 @@ public final class HenselLifting {
             this.biSolvers = new UDiophantineSolver[factors.size() - 1];
             for (int i = 0; i < biSolvers.length; i++)
                 biSolvers[i] = new UDiophantineSolver<>(factors.get(i), factors.from(i + 1));
-            this.solution = factors.factors[0].arrayNewInstance(factors.factors.length);
+            this.solution = factors.factors[0].createArray(factors.factors.length);
         }
 
         void solve(uPoly rhs) {
@@ -486,7 +486,7 @@ public final class HenselLifting {
             this.uSolver = uSolver;
             this.degreeBounds = degreeBounds;
             Poly factory = factors[0];
-            this.solution = factory.arrayNewInstance(factors.length);
+            this.solution = factory.createArray(factors.length);
             this.mDomain = new MultivariatePolynomials<>(factors[0]);
             this.imageSeries = new UnivariatePolynomial[factory.nVariables][factors.length];
             for (int i = from - 1; i >= 1; --i)
@@ -552,11 +552,11 @@ public final class HenselLifting {
         }
     }
 
-    static <Poly extends IGeneralPolynomial<Poly>> void correctUnit(Poly poly, Poly[] factors) {
+    static <Poly extends IPolynomial<Poly>> void correctUnit(Poly poly, Poly[] factors) {
         Poly lc = poly.lcAsPoly();
         Poly flc = Arrays.stream(factors)
-                .map(IGeneralPolynomial::lcAsPoly)
-                .reduce(poly.createOne(), IGeneralPolynomial::multiply);
+                .map(IPolynomial::lcAsPoly)
+                .reduce(poly.createOne(), IPolynomial::multiply);
         assert lc.isConstant();
         assert flc.isConstant();
 
@@ -685,7 +685,7 @@ public final class HenselLifting {
             uPoly extends IUnivariatePolynomial<uPoly>>
     uPoly[] asUnivariate(Poly[] array, IEvaluation<Term, Poly> evaluation) {
         uPoly u0 = (uPoly) evaluation.evaluateFrom(array[0], 1).asUnivariate();
-        uPoly[] res = u0.arrayNewInstance(array.length);
+        uPoly[] res = u0.createArray(array.length);
         res[0] = u0;
         for (int i = 1; i < array.length; i++)
             res[i] = (uPoly) evaluation.evaluateFrom(array[i], 1).asUnivariate();
@@ -699,7 +699,7 @@ public final class HenselLifting {
             uPoly extends IUnivariatePolynomial<uPoly>>
     Poly[] asMultivariate(uPoly[] array, int nVariables, int variable, Comparator<DegreeVector> ordering) {
         Poly u0 = AMultivariatePolynomial.asMultivariate(array[0], nVariables, variable, ordering);
-        Poly[] res = u0.arrayNewInstance(array.length);
+        Poly[] res = u0.createArray(array.length);
         res[0] = u0;
         for (int i = 1; i < array.length; i++)
             res[i] = AMultivariatePolynomial.asMultivariate(array[i], nVariables, variable, ordering);
@@ -765,7 +765,7 @@ public final class HenselLifting {
                 factor.monicWithLC(lcCorrection.lcAsPoly());
             }
 
-            base = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, factors.length - 1, true));
+            base = base.clone().multiply(PolynomialMethods.polyPow(lc, factors.length - 1, true));
 
             multivariateLift0(base, factors, ArraysUtil.arrayOf(lc, factors.length), evaluation, base.degrees());
 
@@ -801,7 +801,7 @@ public final class HenselLifting {
                 factor.multiply(MultivariateReduction.divideExact(lcCorrection, factor.lc(0)));
             }
 
-            base = base.clone().multiply(CommonPolynomialsArithmetics.polyPow(lc, factors.length - 1, true));
+            base = base.clone().multiply(PolynomialMethods.polyPow(lc, factors.length - 1, true));
 
             multivariateLift0(base, factors, ArraysUtil.arrayOf(lc, factors.length), evaluation, base.degrees(), from);
 
@@ -926,7 +926,7 @@ public final class HenselLifting {
 
     /*=========================== Bernardin's trick for fast error computation in lifting =============================*/
 
-    static <Poly extends IGeneralPolynomial<Poly>>
+    static <Poly extends IPolynomial<Poly>>
     BernardinsTrick<Poly> createBernardinsTrick(UnivariatePolynomial<Poly>[] factors, int degreeBound) {
         if (Arrays.stream(factors).allMatch(UnivariatePolynomial::isConstant))
             return new BernardinsTrickWithoutLCCorrection<>(factors);
@@ -934,7 +934,7 @@ public final class HenselLifting {
             return new BernardinsTrickWithLCCorrection<>(factors, degreeBound);
     }
 
-    static abstract class BernardinsTrick<Poly extends IGeneralPolynomial<Poly>> {
+    static abstract class BernardinsTrick<Poly extends IPolynomial<Poly>> {
         // the factors
         final UnivariatePolynomial<Poly>[] factors;
         // partial products: {factor[0] * factor[1], (factor[0] * factor[1]) * factor[2], ... }
@@ -943,7 +943,7 @@ public final class HenselLifting {
 
         BernardinsTrick(UnivariatePolynomial<Poly>... factors) {
             this.factors = factors;
-            this.partialProducts = factors[0].arrayNewInstance(factors.length - 1);
+            this.partialProducts = factors[0].createArray(factors.length - 1);
             this.domain = factors[0].domain;
 
             partialProducts[0] = factors[0].clone().multiply(factors[1]);
@@ -963,7 +963,7 @@ public final class HenselLifting {
     }
 
     /** Bernardin's trick for fast f_0 * f_1 * ... * f_N computing (leading coefficients are discarded) */
-    static final class BernardinsTrickWithoutLCCorrection<Poly extends IGeneralPolynomial<Poly>>
+    static final class BernardinsTrickWithoutLCCorrection<Poly extends IPolynomial<Poly>>
             extends BernardinsTrick<Poly> {
         public BernardinsTrickWithoutLCCorrection(UnivariatePolynomial<Poly>[] factors) {
             super(factors);
@@ -1016,7 +1016,7 @@ public final class HenselLifting {
     }
 
     /** Bernardin's trick for fast f_0 * f_1 * ... * f_N computing (leading coefficients are took into account) */
-    static final class BernardinsTrickWithLCCorrection<Poly extends IGeneralPolynomial<Poly>>
+    static final class BernardinsTrickWithLCCorrection<Poly extends IPolynomial<Poly>>
             extends BernardinsTrick<Poly> {
         final int degreeBound;
 

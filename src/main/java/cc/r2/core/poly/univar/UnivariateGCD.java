@@ -8,7 +8,7 @@ import cc.r2.core.number.primes.PrimesIterator;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
-import static cc.r2.core.poly.LongArithmetics.safeMultiply;
-import static cc.r2.core.poly.LongArithmetics.safePow;
+import static cc.r2.core.poly.MachineArithmetic.safeMultiply;
+import static cc.r2.core.poly.MachineArithmetic.safePow;
 import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
 import static cc.r2.core.poly.univar.UnivariatePolynomial.*;
 
@@ -132,7 +132,7 @@ public final class UnivariateGCD {
         assert old_r.equals(a.clone().multiply(old_s).add(b.clone().multiply(old_t))) : a.clone().multiply(old_s).add
                 (b.clone().multiply(old_t));
 
-        T[] result = a.arrayNewInstance(3);
+        T[] result = a.createArray(3);
         result[0] = old_r;
         result[1] = old_s;
         result[2] = old_t;
@@ -199,7 +199,7 @@ public final class UnivariateGCD {
         }
 
         if (b.isZero()) {
-            T[] result = a.arrayNewInstance(3);
+            T[] result = a.createArray(3);
             result[0] = a.clone();
             result[1] = a.createOne();
             result[2] = a.createZero();
@@ -230,7 +230,7 @@ public final class UnivariateGCD {
             t = hMatrix[0][1];
         }
 
-        T[] result = a.arrayNewInstance(3);
+        T[] result = a.createArray(3);
         result[0] = gcd;
         result[1] = s;
         result[2] = t;
@@ -376,7 +376,7 @@ public final class UnivariateGCD {
         int d = (a.degree() + 1) / 2;
 
         if (b.isZero() || b.degree() <= a.degree() - d)
-            return a.arrayNewInstance(a, b);
+            return a.createArray(a, b);
 
         int aDegree = a.degree();
 
@@ -395,7 +395,7 @@ public final class UnivariateGCD {
         int d2 = b.degree() - aDegree + d;
 
         if (b.isZero() || d2 <= 0)
-            return a.arrayNewInstance(a, b);
+            return a.createArray(a, b);
 
         T remainder = remainder(a, b, true);
         a = b;
@@ -405,7 +405,7 @@ public final class UnivariateGCD {
     }
 
     private static <T extends IUnivariatePolynomial<T>> T[][] matrixMultiply(T[][] matrix1, T[][] matrix2) {
-        T[][] r = matrix1[0][0].arrayNewInstance2D(2, 2);
+        T[][] r = matrix1[0][0].createArray2d(2, 2);
         r[0][0] = matrix1[0][0].clone().multiply(matrix2[0][0]).add(matrix1[0][1].clone().multiply(matrix2[1][0]));
         r[0][1] = matrix1[0][0].clone().multiply(matrix2[0][1]).add(matrix1[0][1].clone().multiply(matrix2[1][1]));
         r[1][0] = matrix1[1][0].clone().multiply(matrix2[0][0]).add(matrix1[1][1].clone().multiply(matrix2[1][0]));
@@ -414,14 +414,14 @@ public final class UnivariateGCD {
     }
 
     private static <T extends IUnivariatePolynomial<T>> T[] columnMultiply(T[][] hMatrix, T row1, T row2) {
-        T[] resultColumn = row1.arrayNewInstance(2);
+        T[] resultColumn = row1.createArray(2);
         resultColumn[0] = hMatrix[0][0].clone().multiply(row1).add(hMatrix[0][1].clone().multiply(row2));
         resultColumn[1] = hMatrix[1][0].clone().multiply(row1).add(hMatrix[1][1].clone().multiply(row2));
         return resultColumn;
     }
 
     private static <T extends IUnivariatePolynomial<T>> T[][] unitMatrix(T factory) {
-        T[][] m = factory.arrayNewInstance2D(2, 2);
+        T[][] m = factory.createArray2d(2, 2);
         m[0][0] = factory.createOne();
         m[0][1] = factory.createZero();
         m[1][0] = factory.createZero();
@@ -467,7 +467,7 @@ public final class UnivariateGCD {
         if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
 
         long aContent = a.content(), bContent = b.content();
-        long contentGCD = LongArithmetics.gcd(aContent, bContent);
+        long contentGCD = MachineArithmetic.gcd(aContent, bContent);
         lUnivariatePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
         PolynomialRemainders<lUnivariatePolynomialZ> res = PseudoEuclid0(aPP, bPP, primitivePRS);
         res.gcd().primitivePartSameSign().multiply(contentGCD);
@@ -557,7 +557,7 @@ public final class UnivariateGCD {
 
 
         long aContent = a.content(), bContent = b.content();
-        long contentGCD = LongArithmetics.gcd(aContent, bContent);
+        long contentGCD = MachineArithmetic.gcd(aContent, bContent);
         lUnivariatePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
 
         ArrayList<lUnivariatePolynomialZ> prs = new ArrayList<>();
@@ -707,7 +707,7 @@ public final class UnivariateGCD {
         if (a.degree < b.degree)
             return ModularGCD(b, a);
         long aContent = a.content(), bContent = b.content();
-        long contentGCD = LongArithmetics.gcd(aContent, bContent);
+        long contentGCD = MachineArithmetic.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
             return lUnivariatePolynomialZ.create(contentGCD);
 
@@ -719,7 +719,7 @@ public final class UnivariateGCD {
     private static lUnivariatePolynomialZ ModularGCD0(lUnivariatePolynomialZ a, lUnivariatePolynomialZ b) {
         assert a.degree >= b.degree;
 
-        long lcGCD = LongArithmetics.gcd(a.lc(), b.lc());
+        long lcGCD = MachineArithmetic.gcd(a.lc(), b.lc());
         double bound = Math.max(a.mignotteBound(), b.mignotteBound()) * lcGCD;
 
         lUnivariatePolynomialZ previousBase = null;
@@ -761,7 +761,7 @@ public final class UnivariateGCD {
             long newBasePrime = safeMultiply(basePrime, prime);
             long monicFactor =
                     modularGCD.multiply(
-                            LongArithmetics.modInverse(modularGCD.lc(), prime),
+                            MachineArithmetic.modInverse(modularGCD.lc(), prime),
                             modularGCD.domain.modulus(lcGCD));
             ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
             for (int i = 0; i <= base.degree; ++i) {
@@ -872,13 +872,13 @@ public final class UnivariateGCD {
             if (base.degree < modularGCD.degree)
                 continue;
 
-            if (LongArithmetics.isOverflowMultiply(basePrime, prime) || basePrime * prime > LongArithmetics.MAX_SUPPORTED_MODULUS)
+            if (MachineArithmetic.isOverflowMultiply(basePrime, prime) || basePrime * prime > MachineArithmetic.MAX_SUPPORTED_MODULUS)
                 break;
 
             //lifting
             long newBasePrime = basePrime * prime;
             long monicFactor = modularGCD.multiply(
-                    LongArithmetics.modInverse(modularGCD.lc(), prime),
+                    MachineArithmetic.modInverse(modularGCD.lc(), prime),
                     lcGCD.mod(bPrime).longValueExact());
             ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
             for (int i = 0; i <= base.degree; ++i) {
@@ -951,7 +951,7 @@ public final class UnivariateGCD {
             //lifting
             BigInteger newBasePrime = bBasePrime.multiply(bPrime);
             long monicFactor = modularGCD.multiply(
-                    LongArithmetics.modInverse(modularGCD.lc(), prime),
+                    MachineArithmetic.modInverse(modularGCD.lc(), prime),
                     lcGCD.mod(bPrime).longValueExact());
             for (int i = 0; i <= bBase.degree; ++i) {
                 //this is monic modularGCD multiplied by lcGCD mod prime

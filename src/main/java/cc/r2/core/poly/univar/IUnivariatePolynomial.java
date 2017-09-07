@@ -1,14 +1,18 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.poly.IGeneralPolynomial;
-import gnu.trove.set.TIntSet;
+import cc.r2.core.poly.IPolynomial;
 import gnu.trove.set.hash.TIntHashSet;
 
 /**
+ * Parent interface for univariate polynomials. Dense representation (array of coefficients) is used to hold univariate
+ * polynomials. Positional operations treat index in such order so that i-th coefficient corresponds to
+ * {@code x^i} monomial.
+ *
+ * @param <Poly> the type of polynomial (self type)
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>> extends IGeneralPolynomial<Poly> {
+public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>> extends IPolynomial<Poly> {
     /**
      * Returns the degree of this polynomial
      *
@@ -58,7 +62,7 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      *
      * @return a set of exponents of non-zero terms
      */
-    default TIntSet exponents() {
+    default TIntHashSet exponents() {
         TIntHashSet degrees = new TIntHashSet();
         for (int i = degree(); i >= 0; --i)
             if (!isZeroAt(i))
@@ -91,8 +95,8 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     Poly shiftRight(int offset);
 
     /**
-     * Returns the remainder {@code this rem x^(newDegree + 1)}, it is polynomial with the coefficient list truncated
-     * to the new degree {@code newDegree}.
+     * Returns the remainder {@code this rem x^(newDegree + 1)}, it is polynomial formed by coefficients of this from
+     * zero to {@code newDegree} (both inclusive)
      *
      * @param newDegree new degree
      * @return remainder {@code this rem x^(newDegree + 1)}
@@ -104,7 +108,7 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      *
      * @param from the initial index of the range to be copied, inclusive
      * @param to   the final index of the range to be copied, exclusive.
-     * @return polynomial formed from the range of coefficients
+     * @return polynomial formed from the range of coefficients of this
      */
     Poly getRange(int from, int to);
 
@@ -116,30 +120,26 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     Poly reverse();
 
     /**
-     * Creates monomial {@code x^degree}
+     * Creates new monomial {@code x^degree} (with the same coefficient domain)
      *
      * @param degree monomial degree
-     * @return {@code coefficient * x^degree}
+     * @return new monomial {@code coefficient * x^degree}
      */
     Poly createMonomial(int degree);
 
     /**
-     * Returns the formal derivative of this poly
+     * Returns the formal derivative of this poly (new instance, so the content of this is not changed)
      *
      * @return the formal derivative
      */
     Poly derivative();
 
-    /**
-     * Deep copy of this
-     *
-     * @return deep copy of this
-     */
+    /** {@inheritDoc} */
     @Override
     Poly clone();
 
     /**
-     * Sets the content of this to {@code oth} and destroys oth
+     * Sets the content of this with {@code oth} and destroys oth
      *
      * @param oth the polynomial (will be destroyed)
      * @return this := oth
@@ -147,12 +147,13 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     Poly setAndDestroy(Poly oth);
 
     /**
-     * Composition of this(oth)
+     * Calculates the composition of this(oth) (new instance, so the content of this is not changed))
      *
      * @param value polynomial
-     * @return this(oth)
+     * @return composition {@code this(oth)}
      */
     Poly composition(Poly value);
 
+    /** ensures that internal storage has enough size to store {@code desiredCapacity} elements */
     void ensureInternalCapacity(int desiredCapacity);
 }

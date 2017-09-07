@@ -12,7 +12,7 @@ import java.io.Serializable;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class CommonUtilsTest {
+public class UtilTest {
     @Test
     public void testsSerialization1() throws Exception {
         assertSerialization(lUnivariatePolynomialZ.create(1, 2, 3));
@@ -23,8 +23,8 @@ public class CommonUtilsTest {
     }
 
     private static <T extends Serializable> void assertSerialization(T object) {
-        String compressed = CommonUtils.compress(object);
-        T uncomressed = CommonUtils.uncompress(compressed);
+        String compressed = Util.compress(object);
+        T uncomressed = Util.uncompress(compressed);
         Assert.assertEquals(object, uncomressed);
     }
 }

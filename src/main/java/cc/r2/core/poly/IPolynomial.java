@@ -5,16 +5,24 @@ import cc.r2.core.number.BigInteger;
 import java.util.Collection;
 
 /**
+ * Parent interface for all polynomials. All polynomial instances are supposed to be mutable, so all structural
+ * operations except those where it is stated explicitly will in general modify this instance. All arithmetic
+ * operations ({@code add(oth), multiply(oth), monic()} etc.) apply the operation to {@code this} inplace and return
+ * {@code this} reference ( so e.g. {@code (poly == poly.add(other))}).
+ * <p>
+ * <b>Note:</b> modifier operations are not synchronized.
+ *
+ * @param <Poly> the type of polynomial (self type)
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
+public interface IPolynomial<Poly extends IPolynomial<Poly>>
         extends Comparable<Poly>, java.io.Serializable {
     /**
-     * Returns whether {@code oth} and {@code this} have the same coefficients domain
+     * Returns whether {@code oth} and {@code this} have the same coefficient domain
      *
      * @param oth other polynomial
-     * @return whether this and oth are over the same coefficients domain
+     * @return whether this and oth are over the same coefficient domain
      */
     boolean sameDomainWith(Poly oth);
 
@@ -22,28 +30,33 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
      * Set the domain from specified poly
      *
      * @param poly the polynomial
-     * @return a copy of this with domain taken from {@code poly}
+     * @return a copy of this with the domain taken from {@code poly}
      */
     Poly setDomainFrom(Poly poly);
 
     /**
-     * Checks whether {@code oth} and {@code this} have the same coefficients domain, if not exception will be thrown
+     * Checks whether {@code oth} and {@code this} have the same coefficient domain, if not exception will be thrown
      *
      * @param oth other polynomial
+     * @throws IllegalArgumentException if this and oth have different coefficient domain
      */
-    default void checkSameDomainWith(Poly oth) {
+    default void assertSameDomainWith(Poly oth) {
         if (!sameDomainWith(oth))
             throw new IllegalArgumentException("Mixing polynomials over different coefficient domains.");
     }
 
     /**
-     * Return the degree of this polynomial
+     * Returns the degree of this polynomial
      *
      * @return the degree
      */
     int degree();
 
-    /** see implementations */
+    /**
+     * Returns the size of this polynomial
+     *
+     * @return the size
+     */
     int size();
 
     /**
@@ -68,9 +81,9 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
     boolean isMonic();
 
     /**
-     * Returns true if constant term is a unit
+     * Returns true if constant term is equal to one
      *
-     * @return whether constant term is unit
+     * @return whether constant term is 1
      */
     boolean isUnitCC();
 
@@ -84,7 +97,7 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
     /**
      * Returns {@code true} if this polynomial has only one monomial term
      *
-     * @return whether {@code this} has the form {@code c*x^i} (one term)
+     * @return whether {@code this} has only one monomial term
      */
     boolean isMonomial();
 
@@ -110,16 +123,16 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
     boolean isOverFiniteField();
 
     /**
-     * Returns cardinality of the coefficients domain of this poly
+     * Returns cardinality of the coefficient domain of this poly
      *
-     * @return cardinality of the coefficients domain
+     * @return cardinality of the coefficient domain
      */
     BigInteger coefficientDomainCardinality();
 
     /**
-     * Returns characteristics of the coefficients domain of this poly
+     * Returns characteristics of the coefficient domain of this poly
      *
-     * @return characteristics of the coefficients domain
+     * @return characteristics of the coefficient domain
      */
     BigInteger coefficientDomainCharacteristics();
 
@@ -155,16 +168,16 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
 
     /**
      * Sets {@code this} to its monic part (that is {@code this} divided by its leading coefficient), or throws
-     * {@code ArithmeticsException} if some of the elements can't be exactly divided by the {@code lc()}.
+     * {@code ArithmeticException} if some of the elements can't be exactly divided by the l.c.
      *
      * @return monic {@code this} or {@code null}
-     * @throws ArithmeticException if some of the elements can't be exactly divided by the {@code lc()}
+     * @throws ArithmeticException if some of the elements can't be exactly divided by the l.c.
      */
     default Poly monicExact() {
-        Poly monic = monic();
-        if (monic == null)
+        Poly self = monic();
+        if (self == null)
             throw new ArithmeticException("Not divisible by lc.");
-        return monic;
+        return self;
     }
 
     /**
@@ -172,7 +185,7 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
      *
      * @return signum of the leading coefficient
      */
-    int signum();
+    int signumOfLC();
 
     /**
      * Sets this to zero
@@ -218,14 +231,14 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
     Poly decrement();
 
     /**
-     * Returns 0 (new instance)
+     * Returns the new instance of zero polynomial (with the same coefficient domain)
      *
      * @return new instance of 0
      */
     Poly createZero();
 
     /**
-     * Returns 1 (new instance)
+     * Returns the new instance of unit polynomial (with the same coefficient domain)
      *
      * @return new instance of 1
      */
@@ -311,18 +324,25 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
      */
     Poly square();
 
-    /** content as a constant poly */
+    /**
+     * Returns the content of this (gcd of coefficients) viewed as a constant poly
+     */
     Poly contentAsPoly();
 
-    /** leading coefficient as a constant poly */
+    /**
+     * Returns the leading coefficient viewed as a constant poly
+     */
     Poly lcAsPoly();
 
-    /** leading coefficient as a constant poly */
+    /**
+     * Returns the constant coefficient viewed as a constant poly
+     */
     Poly ccAsPoly();
 
     /**
-     * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
-     * divided by the {@code other.lc()}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
+     * Divides this polynomial by the leading coefficient of {@code other} or returns {@code null} (causing loss of internal data)
+     * if some of the elements can't be exactly divided by the {@code other.lc()}. NOTE: if {@code null} is returned,
+     * the content of {@code this} is destroyed.
      *
      * @param other the polynomial
      * @return {@code this} divided by the {@code other.lc()} or {@code null} if exact division is not possible
@@ -333,7 +353,8 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
      * Sets {@code this} to its monic part multiplied by the leading coefficient of {@code other};
      *
      * @param other other polynomial
-     * @return monic part multiplied by the leading coefficient of {@code other};
+     * @return monic part multiplied by the leading coefficient of {@code other} or null if exact division by the reduced
+     * leading coefficient is not possible
      */
     Poly monicWithLC(Poly other);
 
@@ -353,17 +374,17 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
     Poly clone();
 
     /** overcome Java generics... */
-    Poly[] arrayNewInstance(int length);
+    Poly[] createArray(int length);
 
     /** overcome Java generics... */
-    Poly[][] arrayNewInstance2D(int length);
+    Poly[][] createArray2d(int length);
 
     /** overcome Java generics... */
-    Poly[][] arrayNewInstance2D(int length1, int length2);
+    Poly[][] createArray2d(int length1, int length2);
 
     /** overcome Java generics... */
-    default Poly[] arrayNewInstance(Poly a, Poly b) {
-        Poly[] r = arrayNewInstance(2);
+    default Poly[] createArray(Poly a, Poly b) {
+        Poly[] r = createArray(2);
         r[0] = a; r[1] = b;
         return r;
     }
@@ -376,5 +397,8 @@ public interface IGeneralPolynomial<Poly extends IGeneralPolynomial<Poly>>
      */
     Poly parsePoly(String string);
 
+    /**
+     * String representation of the coefficient domain of this
+     */
     String coefficientDomainToString();
 }

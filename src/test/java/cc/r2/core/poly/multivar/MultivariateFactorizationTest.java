@@ -354,7 +354,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         }
     }
 
-    static <Poly extends IGeneralPolynomial<Poly>>
+    static <Poly extends IPolynomial<Poly>>
     Poly multiply(Poly... factors) {
         return factors[0].createOne().multiply(factors);
     }
@@ -2059,7 +2059,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 return new SampleDecomposition<>(
                         Arrays.stream(sample.factors)
                                 .map(p -> renameVariables(p, variables))
-                                .toArray(sample.poly::arrayNewInstance));
+                                .toArray(sample.poly::createArray));
             }
 
             @Override

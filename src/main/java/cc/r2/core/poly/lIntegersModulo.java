@@ -6,7 +6,10 @@ import org.apache.commons.math3.random.RandomGenerator;
 import static cc.redberry.libdivide4j.FastDivision.*;
 
 /**
+ * Zp domain over machine numbers which provide fast modular arithmetics.
+ *
  * @author Stanislav Poslavsky
+ * @see cc.redberry.libdivide4j.FastDivision
  * @since 1.0
  */
 public final class lIntegersModulo implements java.io.Serializable {
@@ -25,8 +28,13 @@ public final class lIntegersModulo implements java.io.Serializable {
         this.modulusFits32 = modulusFits32;
     }
 
+    /**
+     * Creates the domain.
+     *
+     * @param modulus the modulus
+     */
     public lIntegersModulo(long modulus) {
-        this(modulus, magicSigned(modulus), magic32ForMultiplyMod(modulus), LongArithmetics.fits31bitWord(modulus));
+        this(modulus, magicSigned(modulus), magic32ForMultiplyMod(modulus), MachineArithmetic.fits31bitWord(modulus));
     }
 
     /** Returns {@code val % this.modulus} */
@@ -54,7 +62,7 @@ public final class lIntegersModulo implements java.io.Serializable {
     /** Subtract mod operation */
     public long subtract(long a, long b) {
         long r = a - b;
-        return r + ((r >> 63)&modulus);
+        return r + ((r >> 63) & modulus);
     }
 
     /** Subtract mod operation */
@@ -64,7 +72,7 @@ public final class lIntegersModulo implements java.io.Serializable {
 
     /** Returns modular inverse of {@code val} */
     public long reciprocal(long val) {
-        return LongArithmetics.modInverse(val, modulus);
+        return MachineArithmetic.modInverse(val, modulus);
     }
 
     /** Negate mod operation */
@@ -102,7 +110,7 @@ public final class lIntegersModulo implements java.io.Serializable {
         long result = 1;
         long k2p = base;
         for (; ; ) {
-            if ((exponent&1) != 0)
+            if ((exponent & 1) != 0)
                 result = multiply(result, k2p);
             exponent = exponent >> 1;
             if (exponent == 0)
@@ -156,11 +164,11 @@ public final class lIntegersModulo implements java.io.Serializable {
     private void checkPerfectPower() {
         // lazy initialization
         if (perfectPowerDecomposition[0] == -1) {
-            synchronized ( perfectPowerDecomposition ){
+            synchronized (perfectPowerDecomposition) {
                 if (perfectPowerDecomposition[0] != -1)
                     return;
 
-                long[] ipp = LongArithmetics.perfectPowerDecomposition(modulus);
+                long[] ipp = MachineArithmetic.perfectPowerDecomposition(modulus);
                 if (ipp == null) {
                     // not a perfect power
                     perfectPowerDecomposition[0] = modulus;
@@ -212,7 +220,7 @@ public final class lIntegersModulo implements java.io.Serializable {
      */
     public lIntegersModulo perfectPowerBaseDomain() {
         if (ppBaseDomain == null) {
-            synchronized ( this ){
+            synchronized (this) {
                 if (ppBaseDomain == null) {
                     long base = perfectPowerBase();
                     if (base == -1)
@@ -241,6 +249,6 @@ public final class lIntegersModulo implements java.io.Serializable {
 
     @Override
     public int hashCode() {
-        return (int) (modulus^(modulus >>> 32));
+        return (int) (modulus ^ (modulus >>> 32));
     }
 }

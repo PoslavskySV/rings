@@ -439,15 +439,15 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
     @Override
     @SuppressWarnings("unchecked")
-    public lMultivariatePolynomialZp[] arrayNewInstance(int length) {return new lMultivariatePolynomialZp[length];}
+    public lMultivariatePolynomialZp[] createArray(int length) {return new lMultivariatePolynomialZp[length];}
 
     @Override
-    public lMultivariatePolynomialZp[][] arrayNewInstance2D(int length) {
+    public lMultivariatePolynomialZp[][] createArray2d(int length) {
         return new lMultivariatePolynomialZp[length][];
     }
 
     @Override
-    public lMultivariatePolynomialZp[][] arrayNewInstance2D(int length1, int length2) {
+    public lMultivariatePolynomialZp[][] createArray2d(int length1, int length2) {
         return new lMultivariatePolynomialZp[length1][length2];
     }
 
@@ -580,7 +580,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
-    public int signum() {
+    public int signumOfLC() {
         return Long.signum(lc());
     }
 
@@ -657,7 +657,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             if (gcd == -1)
                 gcd = term.coefficient;
             else
-                gcd = LongArithmetics.gcd(gcd, term.coefficient);
+                gcd = MachineArithmetic.gcd(gcd, term.coefficient);
         }
         return gcd;
     }
@@ -1126,7 +1126,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             lMultivariatePolynomialZp cached = mCache.get(exponent);
             if (cached != null)
                 return cached.clone();
-            lUnivariatePolynomialZp r = CommonPolynomialsArithmetics.polyPow(base, exponent, true, uCache);
+            lUnivariatePolynomialZp r = PolynomialMethods.polyPow(base, exponent, true, uCache);
             mCache.put(exponent, cached = asMultivariate(r, nVariables, variable, ordering));
             return cached.clone();
         }
@@ -1142,7 +1142,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
         @Override
         public lMultivariatePolynomialZp pow(int exponent) {
-            return CommonPolynomialsArithmetics.polyPow(base, exponent, true, cache);
+            return PolynomialMethods.polyPow(base, exponent, true, cache);
         }
     }
 
@@ -1255,7 +1255,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
     @Override
     public lMultivariatePolynomialZp multiply(lMultivariatePolynomialZp oth) {
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         if (oth.isZero())
             return toZero();
         if (isZero())

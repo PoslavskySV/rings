@@ -5,10 +5,15 @@ import cc.r2.core.number.BigInteger;
 import java.util.Iterator;
 
 /**
+ * The domain of integers (Z).
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class Integers extends AbstractIntegers {
+public final class Integers extends AIntegers {
+    private static final long serialVersionUID = 1L;
+
+    /** The domain of integers (Z) */
     public static final Integers Integers = new Integers();
 
     private Integers() {}
@@ -23,8 +28,8 @@ public final class Integers extends AbstractIntegers {
     public BigInteger characteristics() {return BigInteger.ZERO;}
 
     @Override
-    public boolean isUnit(BigInteger a) {
-        return isOne(a);
+    public boolean isUnit(BigInteger element) {
+        return isOne(element);
     }
 
     @Override
@@ -34,7 +39,7 @@ public final class Integers extends AbstractIntegers {
     public BigInteger subtract(BigInteger a, BigInteger b) {return a.subtract(b);}
 
     @Override
-    public BigInteger negate(BigInteger val) {return val.negate();}
+    public BigInteger negate(BigInteger element) {return element.negate();}
 
     @Override
     public BigInteger multiply(BigInteger a, BigInteger b) {return a.multiply(b);}
@@ -48,9 +53,9 @@ public final class Integers extends AbstractIntegers {
     }
 
     @Override
-    public BigInteger reciprocal(BigInteger a) {
-        if (isOne(a))
-            return a;
+    public BigInteger reciprocal(BigInteger element) {
+        if (isOne(element))
+            return element;
         throw new UnsupportedOperationException();
     }
 

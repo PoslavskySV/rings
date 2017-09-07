@@ -7,16 +7,32 @@ import org.apache.commons.math3.random.RandomGenerator;
 import java.util.Iterator;
 
 /**
+ * Domain of integers modulo some {@code modulus}.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class IntegersModulo extends AbstractIntegers {
+public final class IntegersModulo extends AIntegers {
+    private static final long serialVersionUID = 1L;
+    /**
+     * The modulus.
+     */
     public final BigInteger modulus;
 
+    /**
+     * Creates Zp domain for specified modulus.
+     *
+     * @param modulus the modulus
+     */
     public IntegersModulo(BigInteger modulus) {
         this.modulus = modulus;
     }
 
+    /**
+     * Creates Zp domain for specified modulus.
+     *
+     * @param modulus the modulus
+     */
     public IntegersModulo(long modulus) {
         this(BigInteger.valueOf(modulus));
     }
@@ -31,8 +47,8 @@ public final class IntegersModulo extends AbstractIntegers {
     public BigInteger characteristics() {return modulus;}
 
     @Override
-    public boolean isUnit(BigInteger a) {
-        return !modulus.divideAndRemainder(a)[1].isZero();
+    public boolean isUnit(BigInteger element) {
+        return !modulus.divideAndRemainder(element)[1].isZero();
     }
 
     /**
@@ -75,7 +91,7 @@ public final class IntegersModulo extends AbstractIntegers {
     }
 
     @Override
-    public BigInteger negate(BigInteger val) {return val.isZero() ? val : modulus.subtract(val);}
+    public BigInteger negate(BigInteger element) {return element.isZero() ? element : modulus.subtract(element);}
 
     @Override
     public BigInteger multiply(BigInteger a, BigInteger b) {return modulus(a.multiply(b));}
@@ -95,8 +111,8 @@ public final class IntegersModulo extends AbstractIntegers {
     }
 
     @Override
-    public BigInteger reciprocal(BigInteger a) {
-        return a.modInverse(modulus);
+    public BigInteger reciprocal(BigInteger element) {
+        return element.modInverse(modulus);
     }
 
     @Override
@@ -115,7 +131,7 @@ public final class IntegersModulo extends AbstractIntegers {
 
     private final class It implements Iterator<BigInteger> {
         private BigInteger val = BigInteger.ZERO;
-        
+
         @Override
         public boolean hasNext() {
             return val.compareTo(modulus) < 0;
@@ -139,7 +155,7 @@ public final class IntegersModulo extends AbstractIntegers {
      */
     public IntegersModulo perfectPowerBaseDomain() {
         if (ppBaseDomain == null) {
-            synchronized ( this ){
+            synchronized (this) {
                 if (ppBaseDomain == null) {
                     BigInteger base = perfectPowerBase();
                     if (base == null)
@@ -164,7 +180,7 @@ public final class IntegersModulo extends AbstractIntegers {
         if (!modulus.isLong())
             return null;
         if (lDomain == null)
-            synchronized ( this ){
+            synchronized (this) {
                 if (lDomain == null)
                     lDomain = new lIntegersModulo(modulus.longValueExact());
             }

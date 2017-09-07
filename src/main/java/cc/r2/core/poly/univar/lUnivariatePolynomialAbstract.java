@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.util.ArraysUtil;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
@@ -14,11 +14,11 @@ import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
 /**
- * Univariate polynomials over Z ({@link lUnivariatePolynomialZ}) or Zp ({@link lUnivariatePolynomialZp}).
- * All operations (except where it is specifically stated) changes the content of this.
+ * Univariate polynomials over machine integers.
  */
 abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomialAbstract<lPoly>> implements IUnivariatePolynomial<lPoly> {
-    /** list of coefficients { x^0, x^1, ... , x^degree } */
+    private static final long serialVersionUID = 1L;
+    /** array of coefficients { x^0, x^1, ... , x^degree } */
     long[] data;
     /** points to the last non zero element in the data array */
     int degree;
@@ -31,14 +31,14 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     public final int degree() {return degree;}
 
     /**
-     * Returns i-th element of this poly
+     * Returns the i-th coefficient of this poly (coefficient before x^i)
      */
     public final long get(int i) { return i > degree ? 0 : data[i];}
 
     /**
-     * Sets i-th element of this poly and returns the previous value
+     * Sets i-th element of this poly with the specified value
      */
-    public lPoly set(int i, long el) {
+    public final lPoly set(int i, long el) {
         el = valueOf(el);
         if (el == 0) {
             if (i > degree)
@@ -54,9 +54,9 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     }
 
     /**
-     * Sets hte leading coefficient of this poly and returns the previous value
+     * Sets hte leading coefficient of this poly with specified value
      */
-    public lPoly setLC(long lc) {
+    public final lPoly setLC(long lc) {
         return set(degree, lc);
     }
 
@@ -76,11 +76,9 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
      */
     public final long lc() {return data[degree];}
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly lcAsPoly() {return createConstant(lc());}
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly ccAsPoly() {return createConstant(cc());}
 
@@ -138,19 +136,18 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     public abstract UnivariatePolynomial<BigInteger> toBigPoly();
 
     /**
-     * Factory
+     * Creates new poly with the specified coefficients (over the same domain)
      *
      * @param data the data
      * @return polynomial
      */
     public abstract lPoly createFromArray(long[] data);
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly createMonomial(int degree) {return createMonomial(1L, degree);}
 
     /**
-     * Creates linear polynomial of form {@code cc + x * lc}
+     * Creates linear polynomial of form {@code cc + x * lc}  (with the same coefficient domain)
      *
      * @param cc the  constant coefficient
      * @param lc the  leading coefficient
@@ -161,7 +158,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     }
 
     /**
-     * Creates monomial {@code coefficient * x^degree}
+     * Creates monomial {@code coefficient * x^degree} (with the same coefficient domain)
      *
      * @param coefficient monomial coefficient
      * @param degree      monomial degree
@@ -170,7 +167,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     public abstract lPoly createMonomial(long coefficient, int degree);
 
     /**
-     * Creates constant polynomial with specified value
+     * Creates constant polynomial with specified value (with the same coefficient domain)
      *
      * @param val the value
      * @return constant polynomial with specified value
@@ -179,11 +176,9 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return createFromArray(new long[]{val});
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly createZero() {return createConstant(0);}
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly createOne() {return createConstant(1);}
 
@@ -205,27 +200,21 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final boolean isZero() {return data[degree] == 0;}
 
-    /** {@inheritDoc} */
     @Override
     public final boolean isOne() {return degree == 0 && data[0] == 1;}
 
-    /** {@inheritDoc} */
     @Override
     public final boolean isMonic() {return lc() == 1;}
 
-    /** {@inheritDoc} */
     @Override
     public final boolean isUnitCC() {return cc() == 1;}
 
-    /** {@inheritDoc} */
     @Override
     public final boolean isConstant() {return degree == 0;}
 
-    /** {@inheritDoc} */
     @Override
     public final boolean isMonomial() {
         for (int i = degree - 1; i >= 0; --i)
@@ -234,9 +223,8 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return true;
     }
 
-    /** {@inheritDoc} */
     @Override
-    public final int signum() {
+    public final int signumOfLC() {
         return Long.signum(lc());
     }
 
@@ -283,7 +271,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return max;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly toZero() {
         Arrays.fill(data, 0, degree + 1, 0);
@@ -291,7 +278,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly set(lPoly oth) {
         this.data = oth.data.clone();
@@ -300,7 +286,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly setAndDestroy(lPoly oth) {
         this.data = oth.data;
@@ -315,7 +300,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return clone();
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly shiftLeft(int offset) {
         if (offset == 0)
@@ -329,7 +313,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly shiftRight(int offset) {
         if (offset == 0)
@@ -341,7 +324,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly truncate(int newDegree) {
         if (newDegree >= degree)
@@ -352,7 +334,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly reverse() {
         ArraysUtil.reverse(data, 0, degree + 1);
@@ -361,14 +342,14 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
     }
 
     /**
-     * Returns the content of this poly
+     * Returns the content of this poly (gcd of its coefficients)
      *
      * @return polynomial content
      */
     public final long content() {
         if (degree == 0)
             return data[0];
-        return LongArithmetics.gcd(data, 0, degree + 1);
+        return MachineArithmetic.gcd(data, 0, degree + 1);
     }
 
     @Override
@@ -376,7 +357,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return createConstant(content());
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly primitivePart() {
         if (isZero())
@@ -389,7 +369,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return primitivePart0(content);
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly primitivePartSameSign() {
         return primitivePart0(content());
@@ -484,19 +463,16 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly decrement() {
         return subtract(createOne());
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly increment() {
         return add(createOne());
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly add(lPoly oth) {
         if (oth.isZero())
@@ -504,7 +480,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         if (isZero())
             return set(oth);
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = add(data[i], oth.data[i]);
@@ -544,7 +520,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         if (factor == 0)
             return self;
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = add(data[i], multiply(factor, oth.data[i]));
@@ -552,7 +528,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly subtract(lPoly oth) {
         if (oth.isZero())
@@ -560,7 +535,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         if (isZero())
             return set(oth).negate();
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         ensureCapacity(oth.degree);
         for (int i = oth.degree; i >= 0; --i)
             data[i] = subtract(data[i], oth.data[i]);
@@ -584,7 +559,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         if (factor == 0)
             return self;
 
-        checkSameDomainWith(oth);
+        assertSameDomainWith(oth);
         for (int i = oth.degree + exponent; i >= exponent; --i)
             data[i] = subtract(data[i], multiply(factor, oth.data[i - exponent]));
 
@@ -592,7 +567,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return self;
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly negate() {
         for (int i = degree; i >= 0; --i)
@@ -605,7 +579,6 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return multiply(other.lc());
     }
 
-    /** {@inheritDoc} */
     @Override
     public final lPoly multiply(long factor) {
         factor = valueOf(factor);
@@ -631,7 +604,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return bData;
     }
 
-    /** direct unsafe access to internal storage */
+    /** INTERNAL API >>> direct unsafe access to internal storage */
     public final long[] getDataReferenceUnsafe() {
         return data;
     }
@@ -748,7 +721,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return result;
     }
 
-    /* =========================== Multiplication with safe arithmetics =========================== */
+    /* =========================== Multiplication with safe arithmetic =========================== */
 
     /** switch to classical multiplication */
     static final long KARATSUBA_THRESHOLD = 2048L;

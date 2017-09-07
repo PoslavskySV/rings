@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static cc.r2.core.poly.CommonPolynomialsArithmetics.polyPow;
+import static cc.r2.core.poly.PolynomialMethods.polyPow;
 import static cc.r2.core.poly.multivar.AMultivariatePolynomial.asMultivariate;
 import static cc.r2.core.poly.multivar.AMultivariatePolynomial.renameVariables;
 import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
@@ -286,7 +286,7 @@ public final class MultivariateFactorization {
         if (np.length == 2) {
             int xDeg = Integer.max(np[0][0], np[1][0]);
             int yDeg = Integer.max(np[0][1], np[1][1]);
-            return LongArithmetics.gcd(xDeg, yDeg) == 1;
+            return MachineArithmetic.gcd(xDeg, yDeg) == 1;
         } else if (np.length == 3) {
             // if np of form (n, 0), (0, m), (u, v)
 
@@ -303,7 +303,7 @@ public final class MultivariateFactorization {
             }
 
             return n != -1 && m != -1 && u != -1 && v != -1
-                    && LongArithmetics.gcd(n, m, u, v) == 1;
+                    && MachineArithmetic.gcd(n, m, u, v) == 1;
         } else
             return false;
     }
@@ -910,7 +910,7 @@ public final class MultivariateFactorization {
 
             IntegersModulo moduloDomain = new IntegersModulo(bBasePrime);
             // ensure that univariate factors are still co-prime
-            if (!CommonPolynomialsArithmetics.coprimeQ(uFactorization.map(f -> f.setDomain(moduloDomain)).factors))
+            if (!PolynomialMethods.coprimeQ(uFactorization.map(f -> f.setDomain(moduloDomain)).factors))
                 continue;
 
             break;
@@ -957,7 +957,7 @@ public final class MultivariateFactorization {
 
         // series expansion around y = y0 for initial poly
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> baseSeriesZp =
-                HenselLifting.seriesExpansionDense(UnivariatePolynomials.overZp(modulus), baseZp, 1, evaluation);
+                HenselLifting.seriesExpansionDense(Domains.PolynomialsZp(modulus), baseZp, 1, evaluation);
 
         // lifted factors (each factor represented as series around y = y0)
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] liftedZp =
@@ -1037,7 +1037,7 @@ public final class MultivariateFactorization {
                 UnivariatePolynomial.create(Integers.Integers, ySubstitution.negate(), BigInteger.ONE),
                 1, baseZ.nVariables, baseZ.ordering);
 
-        UnivariatePolynomials<UnivariatePolynomial<BigInteger>> moduloDomain = UnivariatePolynomials.overDomain(modulus);
+        UnivariatePolynomials<UnivariatePolynomial<BigInteger>> moduloDomain = Domains.Polynomials(modulus);
 
         assert baseZ.lc(0).equals(denseSeriesToPolyZ(baseZ, lcInSeries(fRest), lPowersZ));
         assert baseZ.equals(denseSeriesToPolyZ(baseZ, baseSeriesZ, lPowersZ));
@@ -1081,10 +1081,10 @@ public final class MultivariateFactorization {
             MultivariatePolynomial<BigInteger> poly,
             BigInteger ySubstitution) {
         int degree = poly.degree(1);
-        UnivariatePolynomial<BigInteger>[] coefficients = UnivariatePolynomials.POLYNOMIALS_OVER_Z.createArray(degree + 1);
+        UnivariatePolynomial<BigInteger>[] coefficients = Domains.PolynomialsZ.createArray(degree + 1);
         for (int i = 0; i <= degree; i++)
             coefficients[i] = poly.seriesCoefficient(1, i).evaluate(1, ySubstitution).asUnivariate();
-        return UnivariatePolynomial.create(UnivariatePolynomials.POLYNOMIALS_OVER_Z, coefficients);
+        return UnivariatePolynomial.create(Domains.PolynomialsZ, coefficients);
     }
 
     private static MultivariatePolynomial<BigInteger> denseSeriesToPolyZ(
@@ -1550,7 +1550,7 @@ public final class MultivariateFactorization {
             }
 
             // check that evaluation does not change the rest degrees
-            Poly[] images = poly.arrayNewInstance(poly.nVariables - 1);
+            Poly[] images = poly.createArray(poly.nVariables - 1);
             for (int i = 0; i < images.length; i++) {
                 int variable = poly.nVariables - i - 1;
                 images[i] = evaluation.evaluate(i == 0 ? poly : images[i - 1], variable);
@@ -1612,12 +1612,12 @@ public final class MultivariateFactorization {
                 // bring main bivariate factorization in canonical order
                 // (required for one-to-one correspondence between different bivariate factorizations)
                 toCanonicalSort(biFactorsMain, evaluation);
-                biFactorsArrayMain = biFactorsMain.factors.toArray(poly.arrayNewInstance(biFactorsMain.size()));
+                biFactorsArrayMain = biFactorsMain.factors.toArray(poly.createArray(biFactorsMain.size()));
 
                 // the rest of l.c. (lc/lcFactors), will be constant at the end
                 Poly lcRest = lc.clone();
                 // the true leading coefficients (to be calculated)
-                Poly[] lcFactors = poly.arrayNewInstance(biFactorsMain.size());
+                Poly[] lcFactors = poly.createArray(biFactorsMain.size());
                 // initialize lcFactors with constants (correct ones!)
                 for (int i = 0; i < lcFactors.length; i++) {
                     lcFactors[i] = evaluation.evaluateFrom(biFactorsArrayMain[i].lc(0), 1);
@@ -1774,7 +1774,7 @@ public final class MultivariateFactorization {
                             .flatMap(FactorDecomposition::streamWithoutConstant)
                             .collect(Collectors.toSet());
                     Poly[] ilcFactorsSqFree = ilcFactorsSet
-                            .toArray(poly.arrayNewInstance(ilcFactorsSet.size()));
+                            .toArray(poly.createArray(ilcFactorsSet.size()));
 
                     assert ilcFactorsSqFree.length > 0;
                     assert Arrays.stream(ilcFactorsSqFree).noneMatch(Poly::isConstant);
@@ -1881,7 +1881,7 @@ public final class MultivariateFactorization {
                     base.divideByLC(biFactorsMain.constantFactor);
                 }
 
-                biFactorsArrayMain = biFactorsMain.factors.toArray(poly.arrayNewInstance(biFactorsMain.size()));
+                biFactorsArrayMain = biFactorsMain.factors.toArray(poly.createArray(biFactorsMain.size()));
                 HenselLifting.multivariateLift0(base, biFactorsArrayMain, null, evaluation, poly.degrees(), 2);
             }
 
@@ -1920,7 +1920,7 @@ public final class MultivariateFactorization {
             return factors.map(p -> AMultivariatePolynomial.swapVariables(p, 1, fixSecondVar + 2));
     }
 
-    private static boolean isSmallCharacteristics(IGeneralPolynomial poly) {
+    private static boolean isSmallCharacteristics(IPolynomial poly) {
         return poly.coefficientDomainCharacteristics().bitLength() <= 5;
     }
 
@@ -1948,7 +1948,7 @@ public final class MultivariateFactorization {
         biFactors.factors.addAll(Arrays.asList(biFactorsArray));
     }
 
-    private static <Poly extends IGeneralPolynomial<Poly>> Poly multiply(Poly... p) {
+    private static <Poly extends IPolynomial<Poly>> Poly multiply(Poly... p) {
         return p[0].createOne().multiply(p);
     }
 
@@ -2042,7 +2042,7 @@ public final class MultivariateFactorization {
         }
     }
 
-    static <Poly extends IGeneralPolynomial<Poly>>
+    static <Poly extends IPolynomial<Poly>>
     void GCDFreeBasis(FactorDecomposition<Poly>[] decompositions) {
         ArrayList<FactorRef<Poly>> allFactors = new ArrayList<>();
         for (FactorDecomposition<Poly> decomposition : decompositions)
@@ -2055,13 +2055,13 @@ public final class MultivariateFactorization {
                         a = allFactors.get(i),
                         b = allFactors.get(j);
 
-                Poly gcd = CommonPolynomialsArithmetics.PolynomialGCD(a.factor(), b.factor());
+                Poly gcd = PolynomialMethods.PolynomialGCD(a.factor(), b.factor());
                 if (gcd.isConstant())
                     continue;
 
                 Poly
-                        aReduced = CommonPolynomialsArithmetics.PolynomialDivideAndRemainder(a.factor(), gcd)[0],
-                        bReduced = CommonPolynomialsArithmetics.PolynomialDivideAndRemainder(b.factor(), gcd)[0];
+                        aReduced = PolynomialMethods.PolynomialDivideAndRemainder(a.factor(), gcd)[0],
+                        bReduced = PolynomialMethods.PolynomialDivideAndRemainder(b.factor(), gcd)[0];
 
                 if (bReduced.isConstant())
                     allFactors.remove(j);
@@ -2082,7 +2082,7 @@ public final class MultivariateFactorization {
         Arrays.stream(decompositions).forEach(MultivariateFactorization::normalizeGCDFreeDecomposition);
     }
 
-    private static <Poly extends IGeneralPolynomial<Poly>>
+    private static <Poly extends IPolynomial<Poly>>
     void normalizeGCDFreeDecomposition(FactorDecomposition<Poly> decomposition) {
         main:
         for (int i = decomposition.factors.size() - 1; i >= 0; --i) {
@@ -2112,7 +2112,7 @@ public final class MultivariateFactorization {
         }
     }
 
-    private static final class FactorRef<Poly extends IGeneralPolynomial<Poly>> {
+    private static final class FactorRef<Poly extends IPolynomial<Poly>> {
         final List<FactorDecomposition<Poly>> decompositions;
         final TIntArrayList indexes;
 
@@ -2241,7 +2241,7 @@ public final class MultivariateFactorization {
             }
 
             // check that evaluation does not change the rest degrees
-            MultivariatePolynomial<BigInteger>[] images = poly.arrayNewInstance(poly.nVariables - 1);
+            MultivariatePolynomial<BigInteger>[] images = poly.createArray(poly.nVariables - 1);
             for (int i = 0; i < images.length; i++) {
                 int variable = poly.nVariables - i - 1;
                 images[i] = evaluation.evaluate(i == 0 ? poly : images[i - 1], variable);
@@ -2293,7 +2293,7 @@ public final class MultivariateFactorization {
                 IntegersModulo moduloDomain = new IntegersModulo(bBasePrime);
                 // ensure that univariate factors are still co-prime
                 // todo: do we really need this check?
-                if (!CommonPolynomialsArithmetics.coprimeQ(biFactorsMain.map(f -> f.setDomain(moduloDomain)).factors))
+                if (!PolynomialMethods.coprimeQ(biFactorsMain.map(f -> f.setDomain(moduloDomain)).factors))
                     continue;
 
                 break;
@@ -2314,12 +2314,12 @@ public final class MultivariateFactorization {
                 // bring main bivariate factorization in canonical order
                 // (required for one-to-one correspondence between different bivariate factorizations)
                 toCanonicalSort(biFactorsMain, evaluation);
-                biFactorsArrayMainZ = biFactorsMain.factors.toArray(poly.arrayNewInstance(biFactorsMain.size()));
+                biFactorsArrayMainZ = biFactorsMain.factors.toArray(poly.createArray(biFactorsMain.size()));
 
                 // the rest of l.c. (lc/lcFactors), will be constant at the end
                 MultivariatePolynomial<BigInteger> lcRest = lc.clone();
                 // the true leading coefficients (to be calculated)
-                MultivariatePolynomial<BigInteger>[] lcFactors = poly.arrayNewInstance(biFactorsMain.size());
+                MultivariatePolynomial<BigInteger>[] lcFactors = poly.createArray(biFactorsMain.size());
                 // initialize lcFactors with constants (correct ones!)
                 for (int i = 0; i < lcFactors.length; i++)
                     lcFactors[i] = poly.createOne();
@@ -2400,7 +2400,7 @@ public final class MultivariateFactorization {
                             .flatMap(FactorDecomposition::streamWithoutConstant)
                             .collect(Collectors.toSet());
                     MultivariatePolynomial<BigInteger>[] ilcFactorsSqFree = ilcFactorsSet
-                            .toArray(poly.arrayNewInstance(ilcFactorsSet.size()));
+                            .toArray(poly.createArray(ilcFactorsSet.size()));
 
                     assert ilcFactorsSqFree.length > 0;
                     assert Arrays.stream(ilcFactorsSqFree).noneMatch(MultivariatePolynomial::isConstant);
@@ -2504,14 +2504,14 @@ public final class MultivariateFactorization {
                     base.divideByLC(biFactorsMain.constantFactor);
 
                 biFactorsArrayMainZ = liftZ(base, zpDomain, evaluationZp,
-                        biFactorsMain.factors.toArray(base.arrayNewInstance(biFactorsMain.size())), null);
+                        biFactorsMain.factors.toArray(base.createArray(biFactorsMain.size())), null);
             }
 
             FactorDecomposition<MultivariatePolynomial<BigInteger>> factorization
                     = FactorDecomposition.create(Arrays.asList(biFactorsArrayMainZ))
                     .primitive();
 
-            if (factorization.signum() != poly.signum())
+            if (factorization.signum() != poly.signumOfLC())
                 factorization = factorization.addConstantFactor(poly.createOne().negate());
 
             MultivariatePolynomial<BigInteger>
@@ -2531,9 +2531,9 @@ public final class MultivariateFactorization {
     /** lift multivariate factors to factorization in Z */
     private static MultivariatePolynomial<BigInteger>[] liftZ(MultivariatePolynomial<BigInteger> base, IntegersModulo zpDomain, Evaluation<BigInteger> evaluationZp,
                                                               MultivariatePolynomial<BigInteger>[] biFactorsArrayMainZ, MultivariatePolynomial<BigInteger>[] lcFactors) {
-        biFactorsArrayMainZ = Arrays.stream(biFactorsArrayMainZ).map(f -> f.setDomain(zpDomain)).toArray(base::arrayNewInstance);
+        biFactorsArrayMainZ = Arrays.stream(biFactorsArrayMainZ).map(f -> f.setDomain(zpDomain)).toArray(base::createArray);
         if (lcFactors != null)
-            lcFactors = Arrays.stream(lcFactors).map(f -> f.setDomain(zpDomain)).toArray(base::arrayNewInstance);
+            lcFactors = Arrays.stream(lcFactors).map(f -> f.setDomain(zpDomain)).toArray(base::createArray);
 
         HenselLifting.multivariateLift0(base, biFactorsArrayMainZ, lcFactors, evaluationZp, base.degrees(), 2);
 

@@ -6,7 +6,7 @@ import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
 import java.util.ArrayList;
 
 import static cc.r2.core.poly.univar.DivisionWithRemainder.quotient;
-import static cc.r2.core.poly.CommonUtils.ensureFiniteFieldDomain;
+import static cc.r2.core.poly.Util.ensureFiniteFieldDomain;
 import static cc.r2.core.poly.univar.ModularComposition.*;
 import static cc.r2.core.poly.univar.PolynomialArithmetics.polyMultiplyMod;
 import static cc.r2.core.poly.univar.UnivariateGCD.PolynomialGCD;

@@ -1,7 +1,7 @@
 package cc.r2.core.poly.factorization;
 
 import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.IGeneralPolynomial;
+import cc.r2.core.poly.IPolynomial;
 import cc.r2.core.util.TimeUnits;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
@@ -16,15 +16,15 @@ import java.util.function.Function;
 public final class FactorizationTestData {
 
     /** Sample factorization */
-    public static class SampleDecomposition<Poly extends IGeneralPolynomial<Poly>> {
+    public static class SampleDecomposition<Poly extends IPolynomial<Poly>> {
         public final Poly[] factors;
         public final Poly poly;
 
         public SampleDecomposition(Poly[] factors) {
             this.factors = factors;
             this.poly = factors[0].createOne().multiply(factors);
-            assert Arrays.stream(factors).noneMatch(IGeneralPolynomial::isConstant);
-            assert Arrays.stream(factors).noneMatch(IGeneralPolynomial::isMonomial);
+            assert Arrays.stream(factors).noneMatch(IPolynomial::isConstant);
+            assert Arrays.stream(factors).noneMatch(IPolynomial::isMonomial);
         }
 
         public void assertFactorization(FactorDecomposition<Poly> factorization) {
@@ -34,7 +34,7 @@ public final class FactorizationTestData {
     }
 
     /** Source of the data */
-    public static abstract class SampleDecompositionSource<Poly extends IGeneralPolynomial<Poly>> {
+    public static abstract class SampleDecompositionSource<Poly extends IPolynomial<Poly>> {
         public final DescriptiveStatistics
                 nFactorsStats = new DescriptiveStatistics(),
                 factorsSizeStats = new DescriptiveStatistics(),
@@ -74,7 +74,7 @@ public final class FactorizationTestData {
         }
     }
 
-    public static class FactorizationAlgorithm<Poly extends IGeneralPolynomial<Poly>> {
+    public static class FactorizationAlgorithm<Poly extends IPolynomial<Poly>> {
         public final Function<Poly, FactorDecomposition<Poly>> algorithm;
         public final String name;
 
@@ -88,7 +88,7 @@ public final class FactorizationTestData {
             return name;
         }
 
-        public static <Poly extends IGeneralPolynomial<Poly>>
+        public static <Poly extends IPolynomial<Poly>>
         FactorizationAlgorithm<Poly> named(Function<Poly, FactorDecomposition<Poly>> algorithm, String name) {
             return new FactorizationAlgorithm<>(algorithm, name);
         }
@@ -99,7 +99,7 @@ public final class FactorizationTestData {
         return !o.toString().equals(def);
     }
 
-    public static <Poly extends IGeneralPolynomial<Poly>>
+    public static <Poly extends IPolynomial<Poly>>
     void testFactorizationAlgorithms(SampleDecompositionSource<Poly> source,
                                      int nIterations,
                                      FactorizationAlgorithm<Poly>... algorithms) {

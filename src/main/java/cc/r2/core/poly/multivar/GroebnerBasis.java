@@ -21,7 +21,7 @@ public final class GroebnerBasis {
         List<Poly> temporary = new ArrayList<>();
         while (true) {
             temporary.clear();
-            Poly[] groebnerArray = groebner.toArray(factory.arrayNewInstance(groebner.size()));
+            Poly[] groebnerArray = groebner.toArray(factory.createArray(groebner.size()));
             for (int i = 0; i < groebner.size() - 1; ++i) {
                 for (int j = i + 1; j < groebner.size(); ++j) {
                     Poly syzygy = remainder(syzygy(groebner.get(i), groebner.get(j)), groebnerArray);

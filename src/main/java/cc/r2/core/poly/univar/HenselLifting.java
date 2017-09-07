@@ -3,7 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -291,7 +291,7 @@ public final class HenselLifting {
         int nIterations = 0;
         long tmp = modulus;
         while (tmp < desiredBound) {
-            tmp = LongArithmetics.safeMultiply(tmp, quadratic ? tmp : modulus);
+            tmp = MachineArithmetic.safeMultiply(tmp, quadratic ? tmp : modulus);
             ++nIterations;
         }
         return new long[]{nIterations, tmp};
@@ -694,7 +694,7 @@ public final class HenselLifting {
 
         @Override
         void prepare() {
-            modulus = LongArithmetics.safeMultiply(modulus, modulus);
+            modulus = MachineArithmetic.safeMultiply(modulus, modulus);
             aFactor = aFactor.setModulusUnsafe(modulus);
             bFactor = bFactor.setModulusUnsafe(modulus);
             aCoFactor = aCoFactor.setModulusUnsafe(modulus);
@@ -862,13 +862,13 @@ public final class HenselLifting {
         public void lift() {
             liftFactors();
             liftCoFactors();
-            modulus = LongArithmetics.safeMultiply(modulus, initialModulus);
+            modulus = MachineArithmetic.safeMultiply(modulus, initialModulus);
         }
 
         @Override
         public void liftLast() {
             liftFactors();
-            modulus = LongArithmetics.safeMultiply(modulus, initialModulus);
+            modulus = MachineArithmetic.safeMultiply(modulus, initialModulus);
             aCoFactor = bCoFactor = null;
         }
     }

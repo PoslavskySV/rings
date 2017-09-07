@@ -4,19 +4,20 @@ import cc.r2.core.number.BigInteger;
 import cc.redberry.libdivide4j.FastDivision;
 
 /**
- * Helper methods for arithmetics with {@code longs}.
+ * Helper methods for arithmetic with machine numbers.
  *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class LongArithmetics {
+public final class MachineArithmetic {
+    private MachineArithmetic() {}
+
     /** Max supported modulus bits */
     public static final int MAX_SUPPORTED_MODULUS_BITS = 62;
     /** Max supported modulus */
     public static final long MAX_SUPPORTED_MODULUS = (1L << MAX_SUPPORTED_MODULUS_BITS) - 1L;
+    /** Max supported modulus */
     public static final BigInteger b_MAX_SUPPORTED_MODULUS = BigInteger.valueOf(MAX_SUPPORTED_MODULUS);
-
-    private LongArithmetics() {}
 
     /**
      * Returns true if {@code val} fits into 32-bit machine word (unsigned) and false otherwise
@@ -74,6 +75,9 @@ public final class LongArithmetics {
         return Math.subtractExact(a, b);
     }
 
+    /**
+     * Tests whether the multiplication of {@code x*y} will cause long overflow
+     */
     public static boolean isOverflowMultiply(long x, long y) {
         long r = x * y;
         long ax = Math.abs(x);
@@ -90,6 +94,9 @@ public final class LongArithmetics {
         return false;
     }
 
+    /**
+     * Tests whether the addition of {@code x + y} will cause long overflow
+     */
     public static boolean isOverflowAdd(long x, long y) {
         long r = x + y;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
@@ -392,7 +399,7 @@ public final class LongArithmetics {
     public static int lcm(int a, int b) {
         if (a == 0 || b == 0)
             return 0;
-        return (a / gcd(a, b)) *  b;
+        return (a / gcd(a, b)) * b;
     }
 
     /**
@@ -621,7 +628,7 @@ public final class LongArithmetics {
             long higha = 1L << (lgn / b + 1);
             while (lowa < higha - 1) {
                 long mida = (lowa + higha) >> 1;
-                long ab = LongArithmetics.unsafePow(mida, b);
+                long ab = MachineArithmetic.unsafePow(mida, b);
                 if (ab > n)
                     higha = mida;
                 else if (ab < n)

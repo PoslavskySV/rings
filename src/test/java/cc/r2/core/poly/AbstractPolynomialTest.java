@@ -13,8 +13,9 @@ import org.junit.Test;
  */
 public class AbstractPolynomialTest extends AbstractTest {
 
+    /** random prime number with specified number of bits */
     public static long getModulusRandom(int nBits) {
-        if (nBits <= 1 || nBits > LongArithmetics.MAX_SUPPORTED_MODULUS_BITS)
+        if (nBits <= 1 || nBits > MachineArithmetic.MAX_SUPPORTED_MODULUS_BITS)
             throw new IllegalArgumentException();
         return BigPrimes.nextPrime(getRandomData().nextLong(1L << (nBits - 1), (1L << nBits) - 1));
     }

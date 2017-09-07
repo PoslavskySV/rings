@@ -1,7 +1,6 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.IGeneralPolynomial;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -89,7 +88,7 @@ public final class FactorizationTestUtil {
         @Override
         public lUnivariatePolynomialZp take(long modulus) {
             int degree = minDegree + rnd.nextInt(maxDegree - minDegree + 1);
-            return lUnivariatePolynomialZp.createMonomial(modulus, 1, degree).addMonomial(1, 1).addMonomial(1, 0);
+            return lUnivariatePolynomialZp.monomial(modulus, 1, degree).addMonomial(1, 1).addMonomial(1, 0);
         }
     }
 

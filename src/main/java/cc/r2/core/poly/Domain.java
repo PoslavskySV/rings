@@ -1,10 +1,7 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.univar.IrreduciblePolynomials;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well19937c;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -12,51 +9,15 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 /**
- * A domain of elements.
+ * Domain of elements. Mathematical operations defined in {@code Domain} cover all <i>field</i> operations, though the
+ * particular implementations may describe actually a more restricted sets (rings both Euclidean or not etc.), in
+ * which case some unsupported field operations (e.g. reciprocal) will throw exception.
  *
+ * @param <E> the type of objects that may be operated by this domain
  * @author Stanislav Poslavsky
  * @since 1.0
  */
 public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializable {
-
-    /* ================================================== Domains ================================================== */
-
-    /**
-     * Domain of integers (Z)
-     */
-    static Integers Z = Integers.Integers;
-
-    /**
-     * Domain of rationals (Q)
-     */
-    static Rationals Q = Rationals.Rationals;
-
-    /**
-     * Z/p domain
-     *
-     * @param modulus the modulus
-     */
-    static IntegersModulo Zp(BigInteger modulus) {return new IntegersModulo(modulus);}
-
-    /**
-     * Z/p domain
-     *
-     * @param modulus the modulus
-     */
-    static IntegersModulo Zp(long modulus) {return new IntegersModulo(modulus);}
-
-    /**
-     * Z/p domain
-     *
-     * @param modulus the modulus
-     */
-    static FiniteField<lUnivariatePolynomialZp> FiniteField(long modulus, int exponent) {
-        // provide random generator with fixed seed to make the behavior predictable
-        return new FiniteField<>(IrreduciblePolynomials.randomIrreduciblePolynomial(modulus, exponent, new Well19937c(0x77f3dfae)));
-    }
-
-    /* ==================================================== API ==================================================== */
-
     /**
      * Returns whether this domain is a field
      *
@@ -72,9 +33,9 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     BigInteger cardinality();
 
     /**
-     * Returns characteristics of this ring
+     * Returns characteristics of this domain
      *
-     * @return characteristics of this ring
+     * @return characteristics of this domain
      */
     BigInteger characteristics();
 
@@ -93,9 +54,9 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     BigInteger perfectPowerBase();
 
     /**
-     * Returns {@code base} so that {@code cardinality == base^exponent} or null if cardinality is not finite
+     * Returns {@code exponent} so that {@code cardinality == base^exponent} or null if cardinality is not finite
      *
-     * @return {@code base} so that {@code cardinality == base^exponent} or null if cardinality is not finite
+     * @return {@code exponent} so that {@code cardinality == base^exponent} or null if cardinality is not finite
      */
     BigInteger perfectPowerExponent();
 
@@ -118,7 +79,7 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     }
 
     /**
-     * Adds two elements
+     * Add two elements
      *
      * @param a the first element
      * @param b the second element
@@ -126,19 +87,37 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
      */
     E add(E a, E b);
 
-    default E add(E... vals) {
-        E r = vals[0];
-        for (int i = 1; i < vals.length; i++)
-            r = add(r, vals[i]);
+    /**
+     * Sum the array of elements
+     *
+     * @param elements elements to sum
+     * @return sum of the array
+     */
+    default E add(E... elements) {
+        E r = elements[0];
+        for (int i = 1; i < elements.length; i++)
+            r = add(r, elements[i]);
         return r;
     }
 
-    default E increment(E val){
-        return add(val, getOne());
+    /**
+     * Returns {@code element + 1}
+     *
+     * @param element the element
+     * @return {@code element + 1}
+     */
+    default E increment(E element) {
+        return add(element, getOne());
     }
 
-    default E decrement(E val){
-        return subtract(val, getOne());
+    /**
+     * Returns {@code element - 1}
+     *
+     * @param element the element
+     * @return {@code element - 1}
+     */
+    default E decrement(E element) {
+        return subtract(element, getOne());
     }
 
     /**
@@ -160,15 +139,28 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     E multiply(E a, E b);
 
     /**
-     * Negates the given element
+     * Multiplies the array of elements
      *
-     * @param val the domain element
-     * @return -val
+     * @param elements the elements
+     * @return product of the array
      */
-    E negate(E val);
+    default E multiply(E... elements) {
+        E r = elements[0];
+        for (int i = 1; i < elements.length; i++)
+            r = multiply(r, elements[i]);
+        return r;
+    }
 
     /**
-     * Adds two elements possibly destroing the content of {@code a}
+     * Negates the given element
+     *
+     * @param element the domain element
+     * @return -val
+     */
+    E negate(E element);
+
+    /**
+     * Adds two elements and destroys the initial content of {@code a}.
      *
      * @param a the first element (may be destroyed)
      * @param b the second element
@@ -176,15 +168,8 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
      */
     default E addMutable(E a, E b) {return add(a, b);}
 
-    default E addMutable(E... vals) {
-        E r = vals[0];
-        for (int i = 1; i < vals.length; i++)
-            r = addMutable(r, vals[i]);
-        return r;
-    }
-
     /**
-     * Subtracts {@code b} from {@code a} possibly destroing the content of {@code a}
+     * Subtracts {@code b} from {@code a} and destroys the initial content of {@code a}
      *
      * @param a the first element (may be destroyed)
      * @param b the second element
@@ -193,7 +178,7 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     default E subtractMutable(E a, E b) {return subtract(a, b);}
 
     /**
-     * Multiplies two elements possibly destroing the content of {@code a}
+     * Multiplies two elements and destroys the initial content of {@code a}
      *
      * @param a the first element (may be destroyed)
      * @param b the second element
@@ -202,21 +187,32 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     default E multiplyMutable(E a, E b) { return multiply(a, b);}
 
     /**
-     * Negates the given element possibly destroing the content of {@code val}
+     * Negates the given element and destroys the initial content of {@code element}
      *
-     * @param val the domain element (may be destroyed)
-     * @return -val
+     * @param element the domain element (may be destroyed)
+     * @return -element
      */
-    default E negateMutable(E val) { return negate(val);}
+    default E negateMutable(E element) { return negate(element);}
 
     /**
-     * Returns -1 if {@code a < 0}, 0 if {@code a == 0} and 1 if {@code a > 0}, where comparison is defined in terms
-     * of {@link #compare(Object, Object)}
+     * Makes a deep copy of the specified element when element is mutable or returns element as is if it is represented
+     * by immutable type.
      *
-     * @param a the element
-     * @return -1 if {@code a < 0}, 0 if {@code a == 0} and 1 otherwise
+     * @param element the element
+     * @return deep copy of specified element
      */
-    int signum(E a);
+    E copy(E element);
+
+    /**
+     * Returns -1 if {@code element < 0}, 0 if {@code element == 0} and 1 if {@code element > 0}, where comparison is
+     * specified by {@link #compare(Object, Object)}
+     *
+     * @param element the element
+     * @return -1 if {@code element < 0}, 0 if {@code element == 0} and 1 otherwise
+     */
+    default int signum(E element) {
+        return Integer.compare(compare(element, getZero()), 0);
+    }
 
     /**
      * Returns quotient and remainder of {@code dividend / divider}
@@ -250,23 +246,6 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     }
 
     /**
-     * Divides {@code dividend} by {@code divider} or throws {@code ArithmeticException} if exact division is not possible
-     *
-     * @param dividend the dividend
-     * @param divider  the divider
-     * @return {@code dividend / divider}
-     * @throws ArithmeticException if exact division is not possible
-     */
-    default E divideExact(E dividend, E divider) {
-        if (isOne(divider))
-            return dividend;
-        E[] qd = divideAndRemainder(dividend, divider);
-        if (!isZero(qd[1]))
-            throw new ArithmeticException("not divisible: " + dividend + " / " + divider);
-        return qd[0];
-    }
-
-    /**
      * Divides {@code dividend} by {@code divider} or returns {@code null} if exact division is not possible
      *
      * @param dividend the dividend
@@ -285,12 +264,27 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     }
 
     /**
-     * Gives the inverse element a^-1
+     * Divides {@code dividend} by {@code divider} or throws {@code ArithmeticException} if exact division is not possible
      *
-     * @param a the element
-     * @return a^-1
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return {@code dividend / divider}
+     * @throws ArithmeticException if exact division is not possible
      */
-    E reciprocal(E a);
+    default E divideExact(E dividend, E divider) {
+        E result = divideOrNull(dividend, divider);
+        if (result == null)
+            throw new ArithmeticException("not divisible: " + dividend + " / " + divider);
+        return result;
+    }
+
+    /**
+     * Gives the inverse element {@code element ^ (-1) }
+     *
+     * @param element the element
+     * @return {@code element ^ (-1)}
+     */
+    E reciprocal(E element);
 
     /**
      * Returns greatest common divisor of two elements
@@ -317,22 +311,22 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     /**
      * Returns greatest common divisor of specified elements
      *
-     * @param els the elements
+     * @param elements the elements
      * @return gcd
      */
-    default E gcd(E... els) {
-        return gcd(Arrays.asList(els));
+    default E gcd(E... elements) {
+        return gcd(Arrays.asList(elements));
     }
 
     /**
      * Returns greatest common divisor of specified elements
      *
-     * @param els the elements
+     * @param elements the elements
      * @return gcd
      */
-    default E gcd(Iterable<E> els) {
+    default E gcd(Iterable<E> elements) {
         E gcd = null;
-        for (E e : els) {
+        for (E e : elements) {
             if (gcd == null)
                 gcd = e;
             else
@@ -342,21 +336,21 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     }
 
     /**
-     * Domain element representing zero
+     * Returns zero element of this domain
      *
      * @return 0
      */
     E getZero();
 
     /**
-     * Domain element representing unit
+     * Returns unit element of this domain (one)
      *
      * @return 1
      */
     E getOne();
 
     /**
-     * Domain element representing negative unit
+     * Returns negative unit element of this domain (minus one)
      *
      * @return -1
      */
@@ -367,28 +361,28 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     /**
      * Tests whether specified element is zero
      *
-     * @param e the domain element
+     * @param element the domain element
      * @return whether specified element is zero
      */
-    boolean isZero(E e);
+    boolean isZero(E element);
 
     /**
      * Tests whether specified element is one (exactly)
      *
-     * @param e the domain element
-     * @return whether specified element is one (exactly)
+     * @param element the domain element
+     * @return whether specified element is exactly one
      * @see #isUnit(Object)
      */
-    boolean isOne(E e);
+    boolean isOne(E element);
 
     /**
      * Tests whether specified element is a ring unit
      *
-     * @param e the domain element
+     * @param element the domain element
      * @return whether specified element is a ring unit
      * @see #isOne(Object)
      */
-    boolean isUnit(E e);
+    boolean isUnit(E element);
 
     /**
      * Tests whether specified element is minus one
@@ -419,13 +413,13 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     /**
      * Converts array of machine integers to domain elements via {@link #valueOf(long)}
      *
-     * @param vals array of machine integers
+     * @param elements array of machine integers
      * @return array of domain elements
      */
-    default E[] valueOf(long[] vals) {
-        E[] array = createArray(vals.length);
-        for (int i = 0; i < vals.length; i++)
-            array[i] = valueOf(vals[i]);
+    default E[] valueOf(long[] elements) {
+        E[] array = createArray(elements.length);
+        for (int i = 0; i < elements.length; i++)
+            array[i] = valueOf(elements[i]);
         return array;
     }
 
@@ -440,11 +434,11 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     /**
      * Applies {@link #valueOf(Object)} inplace to the specified array
      *
-     * @param data the array
+     * @param elements the array
      */
-    default void setToValueOf(E[] data) {
-        for (int i = 0; i < data.length; i++)
-            data[i] = valueOf(data[i]);
+    default void setToValueOf(E[] elements) {
+        for (int i = 0; i < elements.length; i++)
+            elements[i] = valueOf(elements[i]);
     }
 
     /**
@@ -468,9 +462,28 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
         return (E[]) Array.newInstance(getOne().getClass(), length);
     }
 
-    E[][] createArray2d(int length);
+    /**
+     * Creates 2d array of domain elements of specified length
+     *
+     * @param length array length
+     * @return 2d array of domain elements of specified {@code length}
+     */
+    @SuppressWarnings("unchecked")
+    default E[][] createArray2d(int length) {
+        return (E[][]) Array.newInstance(createArray(0).getClass(), length);
+    }
 
-    E[][] createArray2d(int m, int n);
+    /**
+     * Creates 2d array of domain elements of specified shape
+     *
+     * @param m result length
+     * @param n length of each array in the result
+     * @return 2d array E[m][n]
+     */
+    @SuppressWarnings("unchecked")
+    default E[][] createArray2d(int m, int n) {
+        return (E[][]) Array.newInstance(getOne().getClass(), m, n);
+    }
 
     /**
      * Creates array filled with zero elements
@@ -521,7 +534,6 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
      * @param base     base
      * @param exponent exponent (non negative)
      * @return {@code base} in a power of {@code exponent}
-     * @throws ArithmeticException if the result overflows a long
      */
     default E pow(E base, int exponent) {
         if (exponent < 0)
@@ -542,15 +554,12 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
         }
     }
 
-    E copy(E element);
-
     /**
      * Returns {@code base} in a power of {@code exponent} (non negative)
      *
      * @param base     base
      * @param exponent exponent (non negative)
      * @return {@code base} in a power of {@code exponent}
-     * @throws ArithmeticException if the result overflows a long
      */
     default E pow(E base, long exponent) {
         if (exponent < 0)
@@ -577,7 +586,6 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
      * @param base     base
      * @param exponent exponent (non negative)
      * @return {@code base} in a power of {@code exponent}
-     * @throws ArithmeticException if the result overflows a long
      */
     default E pow(E base, BigInteger exponent) {
         if (exponent.signum() < 0)
@@ -599,14 +607,14 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     }
 
     /**
-     * Gives value!
+     * Gives a product of {@code valueOf(1) * valueOf(2) * .... * valueOf(num) }
      *
-     * @param value the number
-     * @return value!
+     * @param num the number
+     * @return {@code valueOf(1) * valueOf(2) * .... * valueOf(num) }
      */
-    default E factorial(long value) {
+    default E factorial(long num) {
         E result = getOne();
-        for (int i = 2; i <= value; ++i)
+        for (int i = 2; i <= num; ++i)
             result = multiplyMutable(result, valueOf(i));
         return result;
     }

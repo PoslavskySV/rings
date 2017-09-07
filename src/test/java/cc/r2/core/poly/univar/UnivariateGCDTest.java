@@ -4,7 +4,7 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
 import cc.r2.core.poly.AbstractPolynomialTest;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.univar.UnivariateGCD.*;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.RandomDataGenerator;
@@ -347,13 +347,13 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void test16() throws Exception {
         lUnivariatePolynomialZ poly = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
-        poly.multiply(LongArithmetics.safePow(5, poly.degree));
+        poly.multiply(MachineArithmetic.safePow(5, poly.degree));
 
         assertEquals(3045900, poly.evaluateAtRational(1, 5));
         assertEquals(-74846713560L, poly.evaluateAtRational(13, 5));
         assertEquals(40779736470L, poly.evaluateAtRational(13, -5));
 
-        poly.divideOrNull(LongArithmetics.safePow(5, poly.degree));
+        poly.divideOrNull(MachineArithmetic.safePow(5, poly.degree));
         poly.multiply(512);
         assertEquals(-654063683625L, poly.evaluateAtRational(17, 2));
     }

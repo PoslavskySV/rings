@@ -2,10 +2,10 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import static cc.r2.core.poly.CommonUtils.ensureFiniteFieldDomain;
+import static cc.r2.core.poly.Util.ensureFiniteFieldDomain;
 
 
 /**
@@ -138,7 +138,7 @@ final class EqualDegreeFactorization {
             return gcd1;
 
         DivisionWithRemainder.InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
-        Poly b = tracePolyGF2(a, LongArithmetics.safeToInt(1L * pPower * d), poly, invMod);
+        Poly b = tracePolyGF2(a, MachineArithmetic.safeToInt(1L * pPower * d), poly, invMod);
 
         Poly gcd2 = UnivariateGCD.PolynomialGCD(b, poly);
         if (!gcd2.isConstant() && !gcd2.equals(poly))

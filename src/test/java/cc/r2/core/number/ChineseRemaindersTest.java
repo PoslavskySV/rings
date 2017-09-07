@@ -3,7 +3,7 @@ package cc.r2.core.number;
 import cc.r2.core.number.primes.SieveOfAtkin;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.LongArithmetics;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.UnivariatePolynomials;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
@@ -122,7 +122,7 @@ public class ChineseRemaindersTest extends AbstractTest {
             long prime1 = bPrime1.longValueExact();
             long prime2 = bPrime2.longValueExact();
 
-            if (LongArithmetics.isOverflowMultiply(prime1, prime2)) {
+            if (MachineArithmetic.isOverflowMultiply(prime1, prime2)) {
                 --i;
                 continue;
             }
