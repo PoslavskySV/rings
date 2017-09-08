@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.FiniteField;
 import cc.r2.core.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class ParserTest extends AbstractPolynomialTest {
+public class ParserTest extends APolynomialTest {
     @Test
     public void test1() throws Exception {
         Assert.assertEquals(
@@ -65,7 +65,7 @@ public class ParserTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
         for (int i = 0; i < its(1000, 1000); i++) {
-            lUnivariatePolynomialZ lPoly = RandomPolynomials.randomPoly(rndd.nextInt(1, 20), rnd);
+            lUnivariatePolynomialZ lPoly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), rnd);
             UnivariatePolynomial<BigInteger> bPoly = lPoly.toBigPoly();
 
             for (String str : new String[]{lPoly.toString(), bPoly.toString()})
@@ -78,7 +78,7 @@ public class ParserTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
         for (int i = 0; i < its(100, 1000); i++) {
-            UnivariatePolynomial<lUnivariatePolynomialZp> poly = RandomPolynomials.randomPoly(rndd.nextInt(1, 20), FiniteField.GF17p5, rnd);
+            UnivariatePolynomial<lUnivariatePolynomialZp> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), FiniteField.GF17p5, rnd);
             Assert.assertEquals(poly, Parser.parse(poly.domain, poly.toString()));
         }
     }

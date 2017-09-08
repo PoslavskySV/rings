@@ -11,6 +11,8 @@ import cc.r2.core.util.ArraysUtil;
 import java.util.*;
 
 /**
+ * Hensel lifting.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
@@ -50,9 +52,9 @@ public final class HenselLifting {
     static lMultivariatePolynomialZp modImage(lMultivariatePolynomialZp poly, int degree) {
         if (degree == 0)
             return poly.ccAsPoly();
-        Iterator<Map.Entry<DegreeVector, lMonomialTerm>> it = poly.terms.entrySet().iterator();
+        Iterator<Map.Entry<DegreeVector, lMonomialZp>> it = poly.terms.entrySet().iterator();
         while (it.hasNext()) {
-            lMonomialTerm term = it.next().getValue();
+            lMonomialZp term = it.next().getValue();
             if (ArraysUtil.sum(term.exponents, 1) >= degree) {
                 it.remove();
                 poly.release();
@@ -149,7 +151,7 @@ public final class HenselLifting {
     }
 
     /** Evaluations for {@link lMultivariatePolynomialZp} */
-    static final class lEvaluation implements IEvaluation<lMonomialTerm, lMultivariatePolynomialZp> {
+    static final class lEvaluation implements IEvaluation<lMonomialZp, lMultivariatePolynomialZp> {
         final long[] values;
         final int nVariables;
         final lPrecomputedPowersHolder precomputedPowers;
@@ -233,7 +235,7 @@ public final class HenselLifting {
     }
 
     /** Generic evaluations */
-    static final class Evaluation<E> implements IEvaluation<MonomialTerm<E>, MultivariatePolynomial<E>> {
+    static final class Evaluation<E> implements IEvaluation<Monomial<E>, MultivariatePolynomial<E>> {
         final E[] values;
         final int nVariables;
         final Domain<E> domain;
@@ -427,7 +429,7 @@ public final class HenselLifting {
             x = aCoFactor.clone().multiply(rhs);
             y = bCoFactor.clone().multiply(rhs);
 
-            uPoly[] qd = DivisionWithRemainder.divideAndRemainder(x, b, false);
+            uPoly[] qd = UnivariateDivision.divideAndRemainder(x, b, false);
             x = qd[1];
             y = y.add(qd[0].multiply(a));
         }
@@ -798,7 +800,7 @@ public final class HenselLifting {
 
             for (Poly factor : factors) {
                 assert factor.lt().exponents[0] == factor.degree(0);
-                factor.multiply(MultivariateReduction.divideExact(lcCorrection, factor.lc(0)));
+                factor.multiply(MultivariateDivision.divideExact(lcCorrection, factor.lc(0)));
             }
 
             base = base.clone().multiply(PolynomialMethods.polyPow(lc, factors.length - 1, true));

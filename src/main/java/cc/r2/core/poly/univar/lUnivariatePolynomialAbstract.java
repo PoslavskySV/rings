@@ -604,7 +604,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return bData;
     }
 
-    /** INTERNAL API >>> direct unsafe access to internal storage */
+    /** internal API >>> direct unsafe access to internal storage */
     public final long[] getDataReferenceUnsafe() {
         return data;
     }
@@ -670,7 +670,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
 
     public String toStringForCopy() {
         String s = ArraysUtil.toString(data, 0, degree + 1);
-        return "create(" + s.substring(1, s.length() - 1) + ")";
+        return "of(" + s.substring(1, s.length() - 1) + ")";
     }
 
     /**

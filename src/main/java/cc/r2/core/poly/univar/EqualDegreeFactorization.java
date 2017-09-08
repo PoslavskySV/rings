@@ -9,7 +9,7 @@ import static cc.r2.core.poly.Util.ensureFiniteFieldDomain;
 
 
 /**
- * Equal-degree factorization of univariate polynomials over finite fields with single-precision coefficients.
+ * Equal-degree factorization of univariate polynomials over finite fields.
  *
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -23,10 +23,10 @@ final class EqualDegreeFactorization {
         int degree = Math.max(1, rnd.nextInt(2 * factory.degree() + 1));
         if (factory instanceof lUnivariatePolynomialZp) {
             lUnivariatePolynomialZp fm = (lUnivariatePolynomialZp) factory;
-            return (T) RandomPolynomials.randomMonicPoly(degree, fm.domain.modulus, rnd);
+            return (T) RandomUnivariatePolynomials.randomMonicPoly(degree, fm.domain.modulus, rnd);
         } else {
             UnivariatePolynomial fm = (UnivariatePolynomial) factory;
-            return (T) RandomPolynomials.randomMonicPoly(degree, fm.domain, rnd);
+            return (T) RandomUnivariatePolynomials.randomMonicPoly(degree, fm.domain, rnd);
         }
     }
 
@@ -86,7 +86,7 @@ final class EqualDegreeFactorization {
                 CantorZassenhaus(factor, d, result, pPower);
             else
                 result.addFactor(factor.monic(), 1);
-            poly = DivisionWithRemainder.quotient(poly, factor, false);
+            poly = UnivariateDivision.quotient(poly, factor, false);
         }
     }
 
@@ -110,7 +110,7 @@ final class EqualDegreeFactorization {
 
         // (modulus^d - 1) / 2
         BigInteger exponent = poly.coefficientDomainCardinality().pow(d).decrement().shiftRight(1);
-        Poly b = PolynomialArithmetics.polyPowMod(a, exponent, poly, DivisionWithRemainder.fastDivisionPreConditioning(poly), true);
+        Poly b = UnivariatePolynomialArithmetic.polyPowMod(a, exponent, poly, UnivariateDivision.fastDivisionPreConditioning(poly), true);
 
         Poly gcd2 = UnivariateGCD.PolynomialGCD(b.decrement(), poly);
         if (!gcd2.isConstant() && !gcd2.equals(poly))
@@ -137,7 +137,7 @@ final class EqualDegreeFactorization {
         if (!gcd1.isConstant() && !gcd1.equals(poly))
             return gcd1;
 
-        DivisionWithRemainder.InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+        UnivariateDivision.InverseModMonomial<Poly> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
         Poly b = tracePolyGF2(a, MachineArithmetic.safeToInt(1L * pPower * d), poly, invMod);
 
         Poly gcd2 = UnivariateGCD.PolynomialGCD(b, poly);
@@ -147,11 +147,11 @@ final class EqualDegreeFactorization {
         return null;
     }
 
-    static <Poly extends IUnivariatePolynomial<Poly>> Poly tracePolyGF2(Poly a, int m, Poly modulus, DivisionWithRemainder.InverseModMonomial<Poly> invMod) {
+    static <Poly extends IUnivariatePolynomial<Poly>> Poly tracePolyGF2(Poly a, int m, Poly modulus, UnivariateDivision.InverseModMonomial<Poly> invMod) {
         Poly tmp = a.clone();
         Poly result = a.clone();
         for (int i = 0; i < (m - 1); i++) {
-            tmp = PolynomialArithmetics.polyMultiplyMod(tmp, tmp, modulus, invMod, false);
+            tmp = UnivariatePolynomialArithmetic.polyMultiplyMod(tmp, tmp, modulus, invMod, false);
             result.add(tmp);
         }
 

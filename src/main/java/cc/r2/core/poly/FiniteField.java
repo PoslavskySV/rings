@@ -3,7 +3,7 @@ package cc.r2.core.poly;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.poly.univar.*;
-import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
+import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
@@ -43,7 +43,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
         if (!irreducible.isOverField())
             throw new IllegalArgumentException();
         this.irreducible = irreducible;
-        this.inverseMod = DivisionWithRemainder.fastDivisionPreConditioning(irreducible);
+        this.inverseMod = UnivariateDivision.fastDivisionPreConditioning(irreducible);
         this.cardinality = BigIntegerArithmetics.pow(irreducible.coefficientDomainCardinality(), irreducible.degree());
     }
 
@@ -64,42 +64,42 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
 
     @Override
     public Poly add(Poly a, Poly b) {
-        return PolynomialArithmetics.polyAddMod(a, b, irreducible, inverseMod, true);
+        return UnivariatePolynomialArithmetic.polyAddMod(a, b, irreducible, inverseMod, true);
     }
 
     @Override
     public Poly subtract(Poly a, Poly b) {
-        return PolynomialArithmetics.polySubtractMod(a, b, irreducible, inverseMod, true);
+        return UnivariatePolynomialArithmetic.polySubtractMod(a, b, irreducible, inverseMod, true);
     }
 
     @Override
     public Poly multiply(Poly a, Poly b) {
-        return PolynomialArithmetics.polyMultiplyMod(a, b, irreducible, inverseMod, true);
+        return UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, irreducible, inverseMod, true);
     }
 
     @Override
     public Poly negate(Poly element) {
-        return PolynomialArithmetics.polyNegateMod(element, irreducible, inverseMod, true);
+        return UnivariatePolynomialArithmetic.polyNegateMod(element, irreducible, inverseMod, true);
     }
 
     @Override
     public Poly addMutable(Poly a, Poly b) {
-        return PolynomialArithmetics.polyAddMod(a, b, irreducible, inverseMod, false);
+        return UnivariatePolynomialArithmetic.polyAddMod(a, b, irreducible, inverseMod, false);
     }
 
     @Override
     public Poly subtractMutable(Poly a, Poly b) {
-        return PolynomialArithmetics.polySubtractMod(a, b, irreducible, inverseMod, false);
+        return UnivariatePolynomialArithmetic.polySubtractMod(a, b, irreducible, inverseMod, false);
     }
 
     @Override
     public Poly multiplyMutable(Poly a, Poly b) {
-        return PolynomialArithmetics.polyMultiplyMod(a, b, irreducible, inverseMod, false);
+        return UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, irreducible, inverseMod, false);
     }
 
     @Override
     public Poly negateMutable(Poly element) {
-        return PolynomialArithmetics.polyNegateMod(element, irreducible, inverseMod, false);
+        return UnivariatePolynomialArithmetic.polyNegateMod(element, irreducible, inverseMod, false);
     }
 
     @Override
@@ -123,7 +123,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
                 newr = element.clone();
         Poly tmp;
         while (!newr.isZero()) {
-            Poly quotient = DivisionWithRemainder.quotient(r, newr, true);
+            Poly quotient = UnivariateDivision.quotient(r, newr, true);
 
             tmp = r;
             r = newr;
@@ -180,7 +180,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
 
     @Override
     public Poly valueOf(Poly val) {
-        return PolynomialArithmetics.polyMod(val, irreducible, inverseMod, true);
+        return UnivariatePolynomialArithmetic.polyMod(val, irreducible, inverseMod, true);
     }
 
     @Override
@@ -215,7 +215,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
 
     @Override
     public Poly randomElement(RandomGenerator rnd) {
-        return valueOf(RandomPolynomials.randomPoly(irreducible, rnd.nextInt(2 * irreducible.degree()), rnd));
+        return valueOf(RandomUnivariatePolynomials.randomPoly(irreducible, rnd.nextInt(2 * irreducible.degree()), rnd));
     }
 
     @Override

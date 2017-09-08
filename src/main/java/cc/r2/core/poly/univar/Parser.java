@@ -9,6 +9,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Parser for univariate polynomials.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */

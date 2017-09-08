@@ -4,6 +4,7 @@ import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -13,10 +14,16 @@ import java.util.stream.Stream;
 import static cc.r2.core.poly.PolynomialMethods.polyPow;
 
 /**
+ * Factor decomposition of polynomial. All operations will modify this instance.
+ * <p>
+ * <i>Iterable</i> specification allows to iterate only over non-constant factors; to iterate over all factors
+ * including the constant factor use {@link #iterableWithConstant()}
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implements Iterable<Poly>, java.io.Serializable {
+public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
+        implements Iterable<Poly>, java.io.Serializable {
     private static final long serialVersionUID = 1L;
     /** Holds a numerical factor */
     public final Poly constantFactor;
@@ -37,9 +44,27 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         this.exponents = exponents;
     }
 
+    /**
+     * Iterator over all non-constant factors
+     *
+     * @return iterator over all non-constant factors
+     */
     @Override
     public Iterator<Poly> iterator() {
         return factors.iterator();
+    }
+
+    /**
+     * Iterator over all factors including constant one
+     *
+     * @return iterator over all factors including constant one
+     */
+    public Iterable<Poly> iterableWithConstant() {
+        ArrayList<Poly> it = new ArrayList<>();
+        if (!constantFactor.isOne())
+            it.add(constantFactor);
+        it.addAll(factors);
+        return it;
     }
 
     /** Returns i-th factor */
@@ -48,16 +73,16 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
     /** Exponent of i-th factor */
     public int getExponent(int i) { return exponents.get(i); }
 
-    /** Number of factors */
+    /** Number of non-constant factors */
     public int size() { return factors.size(); }
 
-    /** The constant factor */
+    /** Sets the constant factor */
     public FactorDecomposition<Poly> setConstantFactor(Poly constantFactor) {
         this.constantFactor.set(constantFactor);
         return this;
     }
 
-    /** Whether there are no non-trivial factors */
+    /** Whether this is a non-trivial factorization (more than one factor) */
     public boolean isTrivial() { return size() == 1;}
 
     /** Sum all exponents */
@@ -80,19 +105,27 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
     }
 
     /** add another factor */
-    public FactorDecomposition<Poly> addFactor(Poly poly, int exponent) {
-        if (poly.isConstant()) {
-            if (exponent != 1)
-                throw new IllegalArgumentException("exponent != 1");
-            return addConstantFactor(poly);
-        }
-
-        factors.add(poly);
-        exponents.add(exponent);
+    public FactorDecomposition<Poly> addConstantFactor(Poly poly, int exponent) {
+        if (!poly.isConstant())
+            throw new RuntimeException("not a constant");
+        constantFactor.multiply(PolynomialMethods.polyPow(poly, exponent, true));
         return this;
     }
 
     /** add another factor */
+    public FactorDecomposition<Poly> addFactor(Poly factor, int exponent) {
+        if (factor.isConstant()) {
+            if (exponent != 1)
+                throw new IllegalArgumentException("exponent != 1");
+            return addConstantFactor(factor);
+        }
+
+        factors.add(factor);
+        exponents.add(exponent);
+        return this;
+    }
+
+    /** join two factorizations */
     public FactorDecomposition<Poly> addAll(FactorDecomposition<Poly> other) {
         factors.addAll(other.factors);
         exponents.addAll(other.exponents);
@@ -100,11 +133,15 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         return this;
     }
 
-    /** Canonical form of factor list */
+    /**
+     * Puts this factor decomposition into the canonical form (shifts constant content to constant factor and sorts
+     * factors in natural order)
+     */
     @SuppressWarnings("unchecked")
     public FactorDecomposition<Poly> canonicalForm() {
         if (factors.size() == 0)
             return this;
+        reduceConstantContent();
         Poly[] fTmp = factors.toArray(factors.get(0).createArray(factors.size()));
         int[] eTmp = exponents.toArray();
         for (int i = fTmp.length - 1; i >= 0; --i) {
@@ -128,6 +165,11 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         return this;
     }
 
+    /**
+     * Calculates the signum of the polynomial constituted by this decomposition
+     *
+     * @return the signum of the polynomial constituted by this decomposition
+     */
     public int signum() {
         int signum = constantFactor.signumOfLC();
         for (int i = 0; i < factors.size(); i++)
@@ -135,10 +177,16 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         return signum;
     }
 
+    /**
+     * Drops constant factor from this (new instance returned)
+     */
     public FactorDecomposition<Poly> withoutConstantFactor() {
         return new FactorDecomposition<>(constantFactor.createOne(), factors, exponents);
     }
 
+    /**
+     * Makes each factor monic (moving leading coefficients to the {@link #constantFactor})
+     */
     public FactorDecomposition<Poly> monic() {
         for (int i = 0; i < factors.size(); i++) {
             Poly factor = factors.get(i);
@@ -149,6 +197,9 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         return this;
     }
 
+    /**
+     * Makes each factor primitive (moving contents to the {@link #constantFactor})
+     */
     public FactorDecomposition<Poly> primitive() {
         for (int i = 0; i < factors.size(); i++) {
             Poly factor = factors.get(i);
@@ -165,11 +216,14 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         return this;
     }
 
+    /**
+     * Calls {@link #monic()} if the coefficient domain is field and {@link #primitive()} otherwise
+     */
     public FactorDecomposition<Poly> reduceConstantContent() {
         return constantFactor.isOverField() ? monic() : primitive();
     }
 
-    /** Map polynomials using mapper */
+    /** Maps all factors using specified mapping function */
     public <PolyT extends IPolynomial<PolyT>>
     FactorDecomposition<PolyT> map(Function<Poly, PolyT> mapper) {
         return new FactorDecomposition<>(mapper.apply(constantFactor),
@@ -177,17 +231,49 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
                 exponents);
     }
 
+    /** Stream of all factors */
     public Stream<Poly> stream() {
         return Stream.concat(Stream.of(constantFactor), factors.stream());
     }
 
+    /** Stream of all factors except {@link #constantFactor} */
     public Stream<Poly> streamWithoutConstant() {
         return factors.stream();
     }
 
-    public Poly[] factorsArrayWithoutLC() {
+    /** Array of factors without constant factor */
+    public Poly[] toArrayWithoutConstant() {
         Poly[] array = constantFactor.createArray(size());
         return factors.toArray(array);
+    }
+
+    /**
+     * Array of exponents (constant factor is not taken into account)
+     */
+    public int[] toArrayExponentsArrayWithoutConstant() {
+        return exponents.toArray();
+    }
+
+    /** Array of factors (constant factor is last in the array) */
+    public Poly[] toArray() {
+        if (constantFactor.isOne())
+            return toArrayWithoutConstant();
+        Poly[] array = constantFactor.createArray(size() + 1);
+        array = factors.toArray(array);
+        array[array.length - 1] = constantFactor;
+        return array;
+    }
+
+    /**
+     * Array of exponents
+     */
+    public int[] toArrayExponents() {
+        if (constantFactor.isOne())
+            return toArrayExponentsArrayWithoutConstant();
+        int[] r = new int[size() + 1];
+        r = exponents.toArray(r);
+        r[r.length - 1] = 1;
+        return r;
     }
 
     @Override
@@ -239,17 +325,17 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         }
     }
 
-    /** multiply factors */
+    /** Multiply factors */
     public Poly toPolynomial() {
         return toPolynomial(false);
     }
 
-    /** multiply DDF factors */
+    /** Multiply DDF factors (same as squareFreePart) */
     public Poly toPolynomialIgnoringExponents() {
         return toPolynomial(true);
     }
 
-    /** square-free part */
+    /** Square-free part */
     public Poly squareFreePart() {
         return toPolynomialIgnoringExponents();
     }
@@ -271,12 +357,12 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
                 new TIntArrayList(exponents));
     }
 
-    /** decomposition with single numeric factor */
+    /** decomposition of unit */
     public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> empty(Poly factory) {
         return new FactorDecomposition<>(factory.createOne());
     }
 
-    /** decomposition with single numeric factor */
+    /** decomposition with single constant factor */
     public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> constantFactor(Poly factor) {
         return new FactorDecomposition<>(factor);
     }
@@ -295,15 +381,23 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>> implement
         return singleFactor(poly.createOne(), poly);
     }
 
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> create(List<Poly> factors) {
-        return create(factors.get(0).createOne(), new ArrayList<>(factors));
+    /** decomposition with specified factors */
+    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> of(List<Poly> factors) {
+        return of(factors.get(0).createOne(), new ArrayList<>(factors));
     }
 
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> create(Poly constantFactor, List<Poly> factors) {
-        return create(constantFactor, factors, new TIntArrayList(ArraysUtil.arrayOf(1, factors.size())));
+    /** decomposition with specified factors */
+    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> of(Poly... factors) {
+        return of(Arrays.asList(factors));
     }
 
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> create(Poly constantFactor, List<Poly> factors, TIntArrayList exponents) {
+    /** decomposition with specified factors */
+    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> of(Poly constantFactor, List<Poly> factors) {
+        return of(constantFactor, factors, new TIntArrayList(ArraysUtil.arrayOf(1, factors.size())));
+    }
+
+    /** decomposition with specified factors and exponents */
+    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> of(Poly constantFactor, List<Poly> factors, TIntArrayList exponents) {
         return new FactorDecomposition<>(constantFactor, factors, exponents);
     }
 }

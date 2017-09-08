@@ -2,8 +2,8 @@ package cc.r2.core.poly;
 
 import cc.r2.core.poly.multivar.AMultivariatePolynomial;
 import cc.r2.core.poly.multivar.MultivariateGCD;
-import cc.r2.core.poly.multivar.MultivariateReduction;
-import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.multivar.MultivariateDivision;
+import cc.r2.core.poly.univar.UnivariateDivision;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.UnivariateGCD;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -32,9 +32,9 @@ public final class PolynomialMethods {
     public static <Poly extends IPolynomial<Poly>>
     Poly[] PolynomialDivideAndRemainder(Poly a, Poly b) {
         if (a instanceof IUnivariatePolynomial)
-            return (Poly[]) DivisionWithRemainder.divideAndRemainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
+            return (Poly[]) UnivariateDivision.divideAndRemainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
         else if (a instanceof AMultivariatePolynomial)
-            return (Poly[]) MultivariateReduction.divideAndRemainder((AMultivariatePolynomial) a, (AMultivariatePolynomial) b);
+            return (Poly[]) MultivariateDivision.divideAndRemainder((AMultivariatePolynomial) a, (AMultivariatePolynomial) b);
         else
             throw new RuntimeException();
     }

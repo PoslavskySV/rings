@@ -1,9 +1,9 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
+import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
 import cc.r2.core.util.RandomDataGenerator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -13,13 +13,13 @@ import org.junit.Test;
 
 import static cc.r2.core.number.BigIntegerArithmetics.safePow;
 import static cc.r2.core.poly.univar.IrreduciblePolynomials.irreducibleQ;
-import static cc.r2.core.poly.univar.PolynomialArithmetics.createMonomialMod;
+import static cc.r2.core.poly.univar.UnivariatePolynomialArithmetic.createMonomialMod;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class IrreduciblePolynomialsTest extends AbstractPolynomialTest {
+public class IrreduciblePolynomialsTest extends APolynomialTest {
     @Test
     public void testIrreducibleRandom1() throws Exception {
         RandomGenerator rnd = getRandom();
@@ -27,8 +27,8 @@ public class IrreduciblePolynomialsTest extends AbstractPolynomialTest {
         int nIterations = its(5000, 1000);
         for (int i = 0; i < nIterations; i++) {
             long modulus = getModulusRandom(rndd.nextInt(5, 15));
-            lUnivariatePolynomialZp poly = RandomPolynomials.randomMonicPoly(rndd.nextInt(5, 15), modulus, rnd);
-            FactorDecomposition<lUnivariatePolynomialZp> factors = Factorization.factor(poly);
+            lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 15), modulus, rnd);
+            FactorDecomposition<lUnivariatePolynomialZp> factors = UnivariateFactorization.factor(poly);
             try {
                 Assert.assertEquals(factors.size() == 1, irreducibleQ(poly));
             } catch (Throwable e) {
@@ -50,7 +50,7 @@ public class IrreduciblePolynomialsTest extends AbstractPolynomialTest {
     @Test
     public void test2() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(42, 73, 0, 79, 47, 1).modulus(89);
-        Assert.assertTrue(Factorization.factor(poly).toString(), irreducibleQ(poly));
+        Assert.assertTrue(UnivariateFactorization.factor(poly).toString(), irreducibleQ(poly));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class IrreduciblePolynomialsTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(952, 1768, 349, 1839, 1538, 1851, 941, 167, 1).modulus(1861);
         int exponent = 7;
 
-        InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+        InverseModMonomial<lUnivariatePolynomialZp> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
         lUnivariatePolynomialZp xq = createMonomialMod(poly.modulus(), poly, invMod);
         TIntObjectMap<lUnivariatePolynomialZp> cache = new TIntObjectHashMap<>();
 
@@ -85,9 +85,9 @@ public class IrreduciblePolynomialsTest extends AbstractPolynomialTest {
             if (i % 10 == 0)
                 System.out.println(i);
             long modulus = getModulusRandom(rndd.nextInt(5, 15));
-            lUnivariatePolynomialZp poly = RandomPolynomials.randomMonicPoly(rndd.nextInt(5, 10), modulus, rnd);
+            lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 10), modulus, rnd);
 
-            InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+            InverseModMonomial<lUnivariatePolynomialZp> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
             lUnivariatePolynomialZp xq = createMonomialMod(poly.modulus(), poly, invMod);
             TIntObjectMap<lUnivariatePolynomialZp> cache = new TIntObjectHashMap<>();
 

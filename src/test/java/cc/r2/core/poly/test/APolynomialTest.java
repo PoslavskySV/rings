@@ -1,7 +1,8 @@
-package cc.r2.core.poly;
+package cc.r2.core.poly.test;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.test.AbstractTest;
 import cc.r2.core.test.TimeConsuming;
 import org.junit.Assert;
@@ -11,7 +12,7 @@ import org.junit.Test;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class AbstractPolynomialTest extends AbstractTest {
+public class APolynomialTest extends AbstractTest {
 
     /** random prime number with specified number of bits */
     public static long getModulusRandom(int nBits) {

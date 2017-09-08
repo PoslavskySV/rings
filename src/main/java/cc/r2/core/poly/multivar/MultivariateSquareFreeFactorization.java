@@ -6,11 +6,11 @@ import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.IPolynomial;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
-import cc.r2.core.poly.univar.SquareFreeFactorization;
+import cc.r2.core.poly.univar.UnivariateSquareFreeFactorization;
 
 import java.util.Arrays;
 
-import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
+import static cc.r2.core.poly.multivar.MultivariateDivision.divideExact;
 
 /**
  * @author Stanislav Poslavsky
@@ -18,6 +18,42 @@ import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
  */
 public final class MultivariateSquareFreeFactorization {
     private MultivariateSquareFreeFactorization() {}
+
+    /**
+     * Performs square-free factorization of a {@code poly.
+     *
+     * @param poly the polynomial
+     * @return square-free decomposition
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    FactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
+        if (poly.coefficientDomainCharacteristics().isZero())
+            return SquareFreeFactorizationYunZeroCharacteristics(poly);
+        else
+            return SquareFreeFactorizationMusser(poly);
+    }
+
+    /**
+     * Tests whether the given {@code poly} is square free.
+     *
+     * @param poly the polynomial
+     * @return whether the given {@code poly} is square free
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    boolean isSquareFree(Poly poly) {
+        return PolynomialGCD(poly, poly.derivative()).isConstant();
+    }
+
+    /**
+     * Returns square-free part of the {@code poly}
+     *
+     * @param poly the polynomial
+     * @return square free part
+     */
+    public static<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly SquareFreePart(Poly poly) {
+        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), Poly::multiply);
+    }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void addMonomial(FactorDecomposition<Poly> decomposition, Poly poly) {
@@ -37,23 +73,9 @@ public final class MultivariateSquareFreeFactorization {
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorDecomposition<Poly> factorUnivariate(Poly poly) {
         int var = poly.univariateVariable();
-        return SquareFreeFactorization
+        return UnivariateSquareFreeFactorization
                 .SquareFreeFactorization(poly.asUnivariate())
                 .map(p -> AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables, var, poly.ordering));
-    }
-
-    /**
-     * Performs square-free factorization of a {@code poly.
-     *
-     * @param poly the polynomial
-     * @return square-free decomposition
-     */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
-        if (poly.coefficientDomainCharacteristics().isZero())
-            return SquareFreeFactorizationYunZeroCharacteristics(poly);
-        else
-            return SquareFreeFactorizationMusser(poly);
     }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
@@ -183,7 +205,7 @@ public final class MultivariateSquareFreeFactorization {
 
 
     /**
-     * Performs square-free factorization of a {@code poly} which coefficient domain has non zero characteristic
+     * Performs square-free factorization of a {@code poly} which coefficient domain has any characteristic
      * using Musser's algorithm.
      *
      * @param poly the polynomial
@@ -267,7 +289,7 @@ public final class MultivariateSquareFreeFactorization {
         else
             throw new RuntimeException();
 //        int modulus = poly.coefficientDomainCharacteristics().intValueExact();
-//        MonomialsSet<Term> pRoot = new MonomialsSet<>(poly.ordering);
+//        MonomialSet<Term> pRoot = new MonomialSet<>(poly.ordering);
 //        for (Term term : poly) {
 //            int[] exponents = term.exponents.clone();
 //            for (int i = 0; i < exponents.length; i++) {
@@ -284,15 +306,15 @@ public final class MultivariateSquareFreeFactorization {
         // p^(m -1) used for computing p-th root of elements
         BigInteger inverseFactor = domain.cardinality().divide(domain.characteristics());
         int modulus = poly.coefficientDomainCharacteristics().intValueExact();
-        MonomialsSet<MonomialTerm<E>> pRoot = new MonomialsSet<>(poly.ordering);
+        MonomialSet<Monomial<E>> pRoot = new MonomialSet<>(poly.ordering);
 
-        for (MonomialTerm<E> term : poly) {
+        for (Monomial<E> term : poly) {
             int[] exponents = term.exponents.clone();
             for (int i = 0; i < exponents.length; i++) {
                 assert exponents[i] % modulus == 0;
                 exponents[i] = exponents[i] / modulus;
             }
-            poly.add(pRoot, new MonomialTerm<>(exponents, domain.pow(term.coefficient, inverseFactor)));
+            poly.add(pRoot, new Monomial<>(exponents, domain.pow(term.coefficient, inverseFactor)));
         }
         return poly.create(pRoot);
     }
@@ -300,9 +322,9 @@ public final class MultivariateSquareFreeFactorization {
     private static lMultivariatePolynomialZp pRoot(lMultivariatePolynomialZp poly) {
         assert !poly.domain.isPerfectPower();
         int modulus = MachineArithmetic.safeToInt(poly.domain.modulus);
-        MonomialsSet<lMonomialTerm> pRoot = new MonomialsSet<>(poly.ordering);
+        MonomialSet<lMonomialZp> pRoot = new MonomialSet<>(poly.ordering);
 
-        for (lMonomialTerm term : poly) {
+        for (lMonomialZp term : poly) {
             int[] exponents = term.exponents.clone();
             for (int i = 0; i < exponents.length; i++) {
                 assert exponents[i] % modulus == 0;
@@ -311,16 +333,5 @@ public final class MultivariateSquareFreeFactorization {
             poly.add(pRoot, term.setDegreeVector(exponents));
         }
         return poly.create(pRoot);
-    }
-
-    /**
-     * Tests whether the given {@code poly} is square free.
-     *
-     * @param poly the polynomial
-     * @return whether the given {@code poly} is square free
-     */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    boolean isSquareFree(Poly poly) {
-        return PolynomialGCD(poly, poly.derivative()).isConstant();
     }
 }

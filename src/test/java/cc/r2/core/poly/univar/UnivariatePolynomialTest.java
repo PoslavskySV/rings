@@ -2,8 +2,9 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.*;
-import cc.r2.core.poly.multivar.DegreeVector;
+import cc.r2.core.poly.multivar.MonomialOrder;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp;
+import cc.r2.core.poly.test.APolynomialTest;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +14,7 @@ import static cc.r2.core.poly.univar.UnivariatePolynomial.asLongPolyZp;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class UnivariatePolynomialTest extends AbstractPolynomialTest {
+public class UnivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void test1() throws Exception {
@@ -63,7 +64,7 @@ public class UnivariatePolynomialTest extends AbstractPolynomialTest {
     @Test
     public void test5() throws Exception {
         lIntegersModulo lDomain = new lIntegersModulo(11);
-        MultivariatePolynomials<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(4, lDomain, DegreeVector.LEX));
+        MultivariatePolynomials<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(4, lDomain, MonomialOrder.LEX));
         UnivariatePolynomial<lMultivariatePolynomialZp> poly = UnivariatePolynomial.parse(domain, "(6*c)+(10*b*c^2*d^2)*x^3");
         for (int i = 0; i < 1000; i++)
             Assert.assertFalse(poly.content().isZero());

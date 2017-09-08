@@ -13,13 +13,13 @@ import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
 
 /**
- * Algorithms for division with remainder.
+ * Division with remainder of univariate polynomials.
  *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class DivisionWithRemainder {
-    private DivisionWithRemainder() {}
+public final class UnivariateDivision {
+    private UnivariateDivision() {}
 
     /* **************************************** Common methods  *************************************** */
 

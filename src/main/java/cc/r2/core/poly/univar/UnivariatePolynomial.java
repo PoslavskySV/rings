@@ -230,7 +230,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return new UnivariatePolynomial<>(newDomain, newData);
     }
 
-    /** INTERNAL API */
+    /** internal API */
     public UnivariatePolynomial<E> setDomainUnsafe(Domain<E> newDomain) {
         return new UnivariatePolynomial<>(newDomain, data, degree);
     }
@@ -1094,7 +1094,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         }
     }
 
-    /** INTERNAL API */
+    /** internal API */
     public E[] getDataReferenceUnsafe() {return data;}
 
     @Override
@@ -1165,7 +1165,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     String toStringForCopy() {
         String s = ArraysUtil.toString(data, 0, degree + 1, x -> "new BigInteger(\"" + x + "\")");
-        return "create(" + s.substring(1, s.length() - 1) + ")";
+        return "of(" + s.substring(1, s.length() - 1) + ")";
     }
 
     @Override

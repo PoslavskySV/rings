@@ -19,20 +19,91 @@ import java.util.Arrays;
 import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.poly.MachineArithmetic.safeMultiply;
 import static cc.r2.core.poly.MachineArithmetic.safePow;
-import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
+import static cc.r2.core.poly.univar.UnivariateDivision.*;
 import static cc.r2.core.poly.univar.UnivariatePolynomial.*;
 
 /**
- * Polynomial GCD and sub-resultant sequence for univariate polynomials.
+ * Univariate polynomial GCD and sub-resultant sequences
  *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
 public final class UnivariateGCD {
     private UnivariateGCD() {}
+    
+    /**
+     * Calculates the GCD of two polynomials. Depending on the coefficient domain, the algorithm switches
+     * between Half-GCD (polys over finite fields), modular GCD (polys over Z and Q) and subresultant Euclid (other domains).
+     *
+     * @param a the first polynomial
+     * @param b the second polynomial
+     * @return GCD of two polynomials
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T a, T b) {
+        a.assertSameDomainWith(b);
+        if (a.isOverField())
+            return HalfGCD(a, b);
+        else if (a instanceof lUnivariatePolynomialZ)
+            return (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
+        else if (a instanceof UnivariatePolynomial) {
+            Domain domain = ((UnivariatePolynomial) a).domain;
+            if (domain == Integers.Integers)
+                return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+            else
+                return (T) EuclidSubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+        } else
+            throw new RuntimeException(a.getClass().toString());
+    }
 
     /**
-     * Euclidean algorithm
+     * Computes {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}. Half-GCD algorithm is used.
+     *
+     * @param a the polynomial
+     * @param b the polynomial
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
+     * @see #ExtendedHalfGCD(IUnivariatePolynomial, IUnivariatePolynomial)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IUnivariatePolynomial<T>> T[] PolynomialExtendedGCD(T a, T b) {
+        if (a.isOverField())
+            return ExtendedHalfGCD(a, b);
+        else
+            throw new IllegalArgumentException("Polynomial over field is expected");
+    }
+
+    /**
+     * Returns GCD of a list of polynomials.
+     *
+     * @param polynomials a set of polynomials
+     * @return GCD of polynomials
+     */
+    public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T... polynomials) {
+        T gcd = polynomials[0];
+        for (int i = 1; i < polynomials.length; i++)
+            gcd = PolynomialGCD(gcd, polynomials[i]);
+        return gcd;
+    }
+
+    /**
+     * Returns GCD of a list of polynomials.
+     *
+     * @param polynomials a set of polynomials
+     * @return GCD of polynomials
+     */
+    public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(Iterable<T> polynomials) {
+        T gcd = null;
+        for (T poly : polynomials)
+            gcd = gcd == null ? poly : PolynomialGCD(gcd, poly);
+        return gcd;
+    }
+
+    /* ========================================== implementation ==================================================== */
+
+    /**
+     * Returns the remainder sequence produced by Euclidean algorithm. If coefficient domain of the input is not a field (and thus
+     * polynomials does not form an integral domain), {@code ArithmeticException} may be thrown in case when some
+     * exact divisions are not possible.
      *
      * @param a poly
      * @param b poly
@@ -51,7 +122,7 @@ public final class UnivariateGCD {
         while (true) {
             r = remainder(x, y, true);
             if (r == null)
-                throw new IllegalArgumentException("Not divisible: (" + x + ") / (" + y + ")");
+                throw new ArithmeticException("Not divisible with remainder: (" + x + ") / (" + y + ")");
 
             if (r.isZero())
                 break;
@@ -63,7 +134,9 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Euclidean algorithm
+     * Returns the GCD calculated with Euclidean algorithm. If coefficient domain of the input is not a field (and thus
+     * polynomials does not form an integral domain), {@code ArithmeticException} may be thrown in case when some
+     * exact divisions are not possible.
      *
      * @param a poly
      * @param b poly
@@ -80,7 +153,7 @@ public final class UnivariateGCD {
         while (true) {
             r = remainder(x, y, true);
             if (r == null)
-                throw new IllegalArgumentException("Not divisible: (" + x + ") / (" + y + ")");
+                throw new ArithmeticException("Not divisible with remainder: (" + x + ") / (" + y + ")");
 
             if (r.isZero())
                 break;
@@ -98,7 +171,9 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Runs extended Euclidean algorithm to compute {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
+     * Runs extended Euclidean algorithm to compute {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}.
+     * If coefficient domain of the input is not a field (and thus polynomials does not form an integral domain),
+     * {@code ArithmeticException} may be thrown in case when some exact divisions are not possible.
      *
      * @param a the polynomial
      * @param b the polynomial
@@ -115,7 +190,7 @@ public final class UnivariateGCD {
         while (!r.isZero()) {
             q = quotient(old_r, r, true);
             if (q == null)
-                throw new IllegalArgumentException("Not divisible: (" + old_r + ") / (" + r + ")");
+                throw new ArithmeticException("Not divisible with remainder: (" + old_r + ") / (" + r + ")");
 
             tmp = old_r;
             old_r = r;
@@ -157,7 +232,9 @@ public final class UnivariateGCD {
     static int SWITCH_TO_HALF_GCD_H_MATRIX_DEGREE = 25;
 
     /**
-     * Half-GCD algorithm. The algorithm automatically switches to Euclidean.
+     * Half-GCD algorithm. The algorithm automatically switches to Euclidean algorithm for small input. If coefficient
+     * domain of the input is not a field (and thus polynomials does not form an integral domain),
+     * {@code ArithmeticException} may be thrown in case when some exact divisions are not possible.
      *
      * @param a poly
      * @param b poly
@@ -177,6 +254,8 @@ public final class UnivariateGCD {
 
             if (!b.isZero()) {
                 T remainder = remainder(a, b, true);
+                if (remainder == null)
+                    throw new ArithmeticException("Not divisible with remainder: (" + a + ") / (" + b + ")");
                 a = b;
                 b = remainder;
             }
@@ -185,7 +264,9 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Runs extended Half-GCD algorithm to compute {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
+     * Runs extended Half-GCD algorithm to compute {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}.
+     * If coefficient domain of the input is not a field (and thus polynomials does not form an integral domain),
+     * {@code ArithmeticException} may be thrown in case when some exact divisions are not possible.
      *
      * @param a the polynomial
      * @param b the polynomial
@@ -212,6 +293,8 @@ public final class UnivariateGCD {
         T quotient = null;
         if (a.degree() == b.degree()) {
             T[] qd = divideAndRemainder(a, b, true);
+            if (qd == null)
+                throw new ArithmeticException("Not divisible with remainder: (" + a + ") / (" + b + ")");
             quotient = qd[0];
             T remainder = qd[1];
             a = b;
@@ -249,6 +332,8 @@ public final class UnivariateGCD {
         T tmpA = a, tmpB = b;
         while (tmpB.degree() > goal && !tmpB.isZero()) {
             T[] qd = divideAndRemainder(tmpA, tmpB, true);
+            if (qd == null)
+                throw new ArithmeticException("Not divisible with remainder: (" + tmpA + ") / (" + tmpB + ")");
             T quotient = qd[0], remainder = qd[1];
 
             T tmp;
@@ -306,6 +391,8 @@ public final class UnivariateGCD {
             return hMatrixR;
 
         T[] qd = divideAndRemainder(a1, b1, false);
+        if (qd == null)
+            throw new ArithmeticException("Not divisible with remainder: (" + a1 + ") / (" + b1 + ")");
         T quotient = qd[0], remainder = qd[1];
         T[][] hMatrixL = hMatrixHalfGCD(b1, remainder, dL);
 
@@ -349,6 +436,8 @@ public final class UnivariateGCD {
             return hMatrixR;
 
         T[] qd = divideAndRemainder(a, b, true);
+        if (qd == null)
+            throw new ArithmeticException("Not divisible with remainder: (" + a + ") / (" + b + ")");
         T quotient = qd[0], remainder = qd[1];
 
         a.setAndDestroy(b);
@@ -398,6 +487,8 @@ public final class UnivariateGCD {
             return a.createArray(a, b);
 
         T remainder = remainder(a, b, true);
+        if (remainder == null)
+            throw new ArithmeticException("Not divisible with remainder: (" + a + ") / (" + b + ")");
         a = b;
         b = remainder;
 
@@ -438,13 +529,13 @@ public final class UnivariateGCD {
      * @return polynomial remainder sequence (the last element is GCD)
      */
     @SuppressWarnings("unchecked")
-    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> PseudoEuclid(final T a,
-                                                                                            final T b,
-                                                                                            boolean primitivePRS) {
+    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> EuclidPseudoRemainders(final T a,
+                                                                                                      final T b,
+                                                                                                      boolean primitivePRS) {
         if (a instanceof lUnivariatePolynomialZ)
-            return (PolynomialRemainders<T>) PseudoEuclid((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b, primitivePRS);
+            return (PolynomialRemainders<T>) EuclidPseudoRemainders((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b, primitivePRS);
         else if (a instanceof UnivariatePolynomial)
-            return (PolynomialRemainders<T>) PseudoEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b, primitivePRS);
+            return (PolynomialRemainders<T>) EuclidPseudoRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b, primitivePRS);
         else
             throw new RuntimeException("Not a Z[x] polynomials: " + a.getClass());
     }
@@ -457,11 +548,11 @@ public final class UnivariateGCD {
      * @param primitivePRS whether to build primitive polynomial remainders or not
      * @return polynomial remainder sequence (the last element is GCD)
      */
-    public static PolynomialRemainders<lUnivariatePolynomialZ> PseudoEuclid(final lUnivariatePolynomialZ a,
-                                                                            final lUnivariatePolynomialZ b,
-                                                                            boolean primitivePRS) {
+    public static PolynomialRemainders<lUnivariatePolynomialZ> EuclidPseudoRemainders(final lUnivariatePolynomialZ a,
+                                                                                      final lUnivariatePolynomialZ b,
+                                                                                      boolean primitivePRS) {
         if (a.degree < b.degree)
-            return PseudoEuclid(b, a, primitivePRS);
+            return EuclidPseudoRemainders(b, a, primitivePRS);
 
 
         if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
@@ -469,7 +560,7 @@ public final class UnivariateGCD {
         long aContent = a.content(), bContent = b.content();
         long contentGCD = MachineArithmetic.gcd(aContent, bContent);
         lUnivariatePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
-        PolynomialRemainders<lUnivariatePolynomialZ> res = PseudoEuclid0(aPP, bPP, primitivePRS);
+        PolynomialRemainders<lUnivariatePolynomialZ> res = EuclidPseudoRemainders0(aPP, bPP, primitivePRS);
         res.gcd().primitivePartSameSign().multiply(contentGCD);
         return res;
     }
@@ -483,11 +574,11 @@ public final class UnivariateGCD {
      * @return polynomial remainder sequence (the last element is GCD)
      */
     @SuppressWarnings("unchecked")
-    public static <E> PolynomialRemainders<UnivariatePolynomial<E>> PseudoEuclid(final UnivariatePolynomial<E> a,
-                                                                                 final UnivariatePolynomial<E> b,
-                                                                                 boolean primitivePRS) {
+    public static <E> PolynomialRemainders<UnivariatePolynomial<E>> EuclidPseudoRemainders(final UnivariatePolynomial<E> a,
+                                                                                           final UnivariatePolynomial<E> b,
+                                                                                           boolean primitivePRS) {
         if (a.degree < b.degree)
-            return PseudoEuclid(b, a, primitivePRS);
+            return EuclidPseudoRemainders(b, a, primitivePRS);
 
         if (a.isZero() || b.isZero())
             return new PolynomialRemainders<>(a.clone(), b.clone());
@@ -495,21 +586,21 @@ public final class UnivariateGCD {
         E aContent = a.content(), bContent = b.content();
         E contentGCD = a.domain.gcd(aContent, bContent);
         UnivariatePolynomial<E> aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
-        PolynomialRemainders<UnivariatePolynomial<E>> res = PseudoEuclid0(aPP, bPP, primitivePRS);
+        PolynomialRemainders<UnivariatePolynomial<E>> res = EuclidPseudoRemainders0(aPP, bPP, primitivePRS);
         res.gcd().primitivePartSameSign().multiply(contentGCD);
         return res;
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> PseudoEuclid0(final T aPP,
-                                                                                              final T bPP,
-                                                                                              boolean primitivePRS) {
+    private static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> EuclidPseudoRemainders0(final T aPP,
+                                                                                                        final T bPP,
+                                                                                                        boolean primitivePRS) {
         ArrayList<T> prs = new ArrayList<>();
         prs.add(aPP); prs.add(bPP);
 
         T x = aPP, y = bPP, r;
         while (true) {
-            T[] tmp = DivisionWithRemainder.pseudoDivideAndRemainder(x, y, true);
+            T[] tmp = UnivariateDivision.pseudoDivideAndRemainder(x, y, true);
             assert tmp != null && tmp[0] != null && tmp[1] != null;
             r = tmp[1];
             if (r.isZero())
@@ -524,34 +615,34 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Euclidean algorithm for polynomials over Z that builds subresultants sequence
+     * Euclidean algorithm for polynomials over Z that produces subresultants sequence
      *
      * @param a poly
      * @param b poly
      * @return subresultant sequence (the last element is GCD)
      */
     @SuppressWarnings("unchecked")
-    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> SubresultantEuclid(final T a,
-                                                                                                  final T b) {
+    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T>
+    EuclidSubresultantRemainders(final T a, final T b) {
         if (a instanceof lUnivariatePolynomialZ)
-            return (PolynomialRemainders<T>) SubresultantEuclid((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
+            return (PolynomialRemainders<T>) EuclidSubresultantRemainders((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
         else if (a instanceof UnivariatePolynomial)
-            return (PolynomialRemainders<T>) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+            return (PolynomialRemainders<T>) EuclidSubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b);
         else
             throw new RuntimeException("Not a Z[x] polynomials: " + a.getClass());
     }
 
     /**
-     * Euclidean algorithm for polynomials over Z that builds subresultants sequence
+     * Euclidean algorithm for polynomials over Z that produces subresultants sequence
      *
      * @param a poly
      * @param b poly
      * @return subresultant sequence (the last element is GCD)
      */
-    public static PolynomialRemainders<lUnivariatePolynomialZ> SubresultantEuclid(final lUnivariatePolynomialZ a,
-                                                                                  final lUnivariatePolynomialZ b) {
+    public static PolynomialRemainders<lUnivariatePolynomialZ>
+    EuclidSubresultantRemainders(final lUnivariatePolynomialZ a, final lUnivariatePolynomialZ b) {
         if (b.degree > a.degree)
-            return SubresultantEuclid(b, a);
+            return EuclidSubresultantRemainders(b, a);
 
         if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
 
@@ -586,7 +677,7 @@ public final class UnivariateGCD {
                 cBeta = safeMultiply(-curr.lc(), safePow(cPsi, delta));
             }
 
-            lUnivariatePolynomialZ q = DivisionWithRemainder.pseudoDivideAndRemainder(curr, next, true)[1];
+            lUnivariatePolynomialZ q = UnivariateDivision.pseudoDivideAndRemainder(curr, next, true)[1];
             if (q.isZero())
                 break;
 
@@ -603,17 +694,17 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Euclidean algorithm for polynomials over Z that builds subresultants sequence
+     * Euclidean algorithm for polynomials over Z that produces subresultants sequence
      *
      * @param a poly
      * @param b poly
      * @return subresultant sequence (the last element is GCD)
      */
     @SuppressWarnings("unchecked")
-    public static <E> PolynomialRemainders<UnivariatePolynomial<E>> SubresultantEuclid(final UnivariatePolynomial<E> a,
-                                                                                       final UnivariatePolynomial<E> b) {
+    public static <E> PolynomialRemainders<UnivariatePolynomial<E>>
+    EuclidSubresultantRemainders(final UnivariatePolynomial<E> a, final UnivariatePolynomial<E> b) {
         if (b.degree > a.degree)
-            return SubresultantEuclid(b, a);
+            return EuclidSubresultantRemainders(b, a);
 
         if (a.isZero() || b.isZero())
             return new PolynomialRemainders<>(a.clone(), b.clone());
@@ -667,7 +758,7 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Polynomial remainder sequence produced by the Euclidean algorithm
+     * Polynomial remainder sequence
      */
     public static final class PolynomialRemainders<T extends IUnivariatePolynomial<T>> {
         /** actual data */
@@ -780,11 +871,11 @@ public final class UnivariateGCD {
                 previousBase = candidate;
                 //first check b since b is less degree
                 lUnivariatePolynomialZ[] div;
-                div = DivisionWithRemainder.divideAndRemainder(b, candidate, true);
+                div = UnivariateDivision.divideAndRemainder(b, candidate, true);
                 if (div == null || !div[1].isZero())
                     continue;
 
-                div = DivisionWithRemainder.divideAndRemainder(a, candidate, true);
+                div = UnivariateDivision.divideAndRemainder(a, candidate, true);
                 if (div == null || !div[1].isZero())
                     continue;
 
@@ -981,71 +1072,5 @@ public final class UnivariateGCD {
             }
             bPreviousBase = candidate;
         }
-    }
-
-    /**
-     * Returns GCD of two polynomials. Modular GCD algorithm is used for Z[x], plain Euclid is used for Zp[x] and
-     * subresultant used for other domains.
-     *
-     * @param a the first polynomial
-     * @param b the second polynomial
-     * @return GCD of two polynomials
-     */
-    @SuppressWarnings("unchecked")
-    public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T a, T b) {
-        if (a.isOverField())
-            return HalfGCD(a, b);
-
-        if (a instanceof lUnivariatePolynomialZ)
-            return (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
-        else if (a instanceof UnivariatePolynomial) {
-            Domain domain = ((UnivariatePolynomial) a).domain;
-            if (domain == Integers.Integers)
-                return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-            else
-                return (T) SubresultantEuclid((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
-        } else
-            throw new RuntimeException(a.getClass().toString());
-    }
-
-    /**
-     * Computes {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
-     *
-     * @param a the polynomial
-     * @param b the polynomial
-     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
-     */
-    @SuppressWarnings("unchecked")
-    public static <T extends IUnivariatePolynomial<T>> T[] PolynomialExtendedGCD(T a, T b) {
-        if (a.isOverField())
-            return ExtendedHalfGCD(a, b);
-        else
-            throw new IllegalArgumentException("Polynomial over field is expected");
-    }
-
-    /**
-     * Returns GCD of a list of polynomials.
-     *
-     * @param polynomials a set of polynomials
-     * @return GCD of polynomials
-     */
-    public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T... polynomials) {
-        T gcd = polynomials[0];
-        for (int i = 1; i < polynomials.length; i++)
-            gcd = PolynomialGCD(gcd, polynomials[i]);
-        return gcd;
-    }
-
-    /**
-     * Returns GCD of a list of polynomials.
-     *
-     * @param polynomials a set of polynomials
-     * @return GCD of polynomials
-     */
-    public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(Iterable<T> polynomials) {
-        T gcd = null;
-        for (T poly : polynomials)
-            gcd = gcd == null ? poly : PolynomialGCD(gcd, poly);
-        return gcd;
     }
 }

@@ -1,8 +1,8 @@
 package cc.r2.core.poly;
 
-import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.univar.UnivariateDivision;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
-import cc.r2.core.poly.univar.RandomPolynomials;
+import cc.r2.core.poly.univar.RandomUnivariatePolynomials;
 import cc.r2.core.poly.univar.UnivariateGCD;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -25,10 +25,10 @@ public final class UnivariatePolynomials<Poly extends IUnivariatePolynomial<Poly
     public UnivariatePolynomials(Poly factory) { super(factory); }
 
     @Override
-    public Poly remainder(Poly a, Poly b) {return DivisionWithRemainder.remainder(a, b, true);}
+    public Poly remainder(Poly a, Poly b) {return UnivariateDivision.remainder(a, b, true);}
 
     @Override
-    public Poly[] divideAndRemainder(Poly a, Poly b) {return DivisionWithRemainder.divideAndRemainder(a, b, true);}
+    public Poly[] divideAndRemainder(Poly a, Poly b) {return UnivariateDivision.divideAndRemainder(a, b, true);}
 
     @Override
     public Poly gcd(Poly a, Poly b) {return UnivariateGCD.PolynomialGCD(a, b);}
@@ -42,10 +42,10 @@ public final class UnivariatePolynomials<Poly extends IUnivariatePolynomial<Poly
      * @param rnd       the source of randomness
      * @return random univariate polynomial with the degree randomly picked from {@code minDegree} (inclusive)
      * to {@code maxDegree} (exclusive)
-     * @see cc.r2.core.poly.univar.RandomPolynomials
+     * @see RandomUnivariatePolynomials
      */
     public Poly randomElement(int minDegree, int maxDegree, RandomGenerator rnd) {
-        return RandomPolynomials.randomPoly(factory, minDegree +
+        return RandomUnivariatePolynomials.randomPoly(factory, minDegree +
                 minDegree == maxDegree ? 0 : rnd.nextInt(maxDegree - minDegree), rnd);
     }
 

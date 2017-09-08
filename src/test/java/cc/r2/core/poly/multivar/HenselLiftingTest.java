@@ -6,7 +6,7 @@ import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.PolynomialMethods;
 import cc.r2.core.poly.IPolynomial;
 import cc.r2.core.poly.IntegersModulo;
-import cc.r2.core.poly.factorization.FactorizationTestData;
+import cc.r2.core.poly.test.FactorizationInput;
 import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
@@ -186,7 +186,7 @@ public class HenselLiftingTest {
                 1, 4);
         baseSource.minModulusBits = 15;
         baseSource.maxModulusBits = 30;
-        FactorizationTestData.SampleDecompositionSource<lMultivariatePolynomialZp> source
+        FactorizationInput.SampleDecompositionSource<lMultivariatePolynomialZp> source
                 = orderVarsByDegree(
                 filterMonomialContent(
                         filterNonSquareFree(baseSource)));
@@ -253,7 +253,7 @@ public class HenselLiftingTest {
                 1, 4);
         baseSource.minModulusBits = 15;
         baseSource.maxModulusBits = 30;
-        FactorizationTestData.SampleDecompositionSource<lMultivariatePolynomialZp> source
+        FactorizationInput.SampleDecompositionSource<lMultivariatePolynomialZp> source
                 = orderVarsByDegree(
                 filterMonomialContent(
                         filterNonSquareFree(baseSource)));
@@ -271,7 +271,7 @@ public class HenselLiftingTest {
                 1, 4);
         baseSource.minModulusBits = 15;
         baseSource.maxModulusBits = 30;
-        FactorizationTestData.SampleDecompositionSource<lMultivariatePolynomialZp> source
+        FactorizationInput.SampleDecompositionSource<lMultivariatePolynomialZp> source
                 = orderVarsByDegree(
                 filterMonomialContent(
                         filterNonSquareFree(baseSource)));
@@ -372,7 +372,7 @@ public class HenselLiftingTest {
         System.out.println(evaluation.evaluateFrom(base.lc(0), 2));
 
         for (lMultivariatePolynomialZp factor : biFactors) {
-            lMultivariatePolynomialZp r = MultivariateReduction.divideExact(lcCorrection, factor.lc(0));
+            lMultivariatePolynomialZp r = MultivariateDivision.divideExact(lcCorrection, factor.lc(0));
             factor.multiply(r);
 //            assert factor.lt().exponents[0] == factor.degree(0);
 //            factor.setLC(0, evaluation.evaluateFrom(factor.lc(0), 1));
@@ -444,7 +444,7 @@ public class HenselLiftingTest {
 //        assert MultivariateSquareFreeFactorization.isSquareFree(base);
 //        for (int i = 0; i < its(20, 20); i++) {
 //            long start = System.nanoTime();
-//            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+//            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInGF(base);
 //            Assert.assertEquals(3, decomposition.size());
 //            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
 //        }
@@ -470,7 +470,7 @@ public class HenselLiftingTest {
     }
 
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void testHenselLift(FactorizationTestData.SampleDecompositionSource<Poly> source, int nIterations,
+    void testHenselLift(FactorizationInput.SampleDecompositionSource<Poly> source, int nIterations,
                         Function<Poly, IEvaluationLoop<Term, Poly>> evalFactory,
                         Lifting<Term, Poly> algorithm, boolean correctLC, int from) {
         System.out.println("Testing Hensel lifting ");
@@ -489,7 +489,7 @@ public class HenselLiftingTest {
                 System.out.print(">");
                 System.out.flush();
             }
-            FactorizationTestData.SampleDecomposition<Poly> sample = source.next();
+            FactorizationInput.SampleDecomposition<Poly> sample = source.next();
             if (!allCoprime(sample.factors)) {
                 --n;
                 continue;

@@ -1,7 +1,7 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.univar.Factorization;
+import cc.r2.core.poly.univar.UnivariateFactorization;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
@@ -42,7 +42,7 @@ public class FiniteFieldTest {
                 poly = poly1.clone().multiply(poly2).multiply(poly1.clone().add(poly2));
 
 //        System.out.println(poly1.monic());
-        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = Factorization.factorInFiniteField(poly);
+        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = UnivariateFactorization.factorInGF(poly);
         System.out.println(factors);
         System.out.println(poly);
         System.out.println(factors.toPolynomial());

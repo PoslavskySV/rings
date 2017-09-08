@@ -7,18 +7,52 @@ import cc.r2.core.poly.MachineArithmetic;
 
 import java.util.Arrays;
 
-import static cc.r2.core.poly.univar.DivisionWithRemainder.divideAndRemainder;
+import static cc.r2.core.poly.univar.UnivariateDivision.divideAndRemainder;
 import static cc.r2.core.poly.univar.UnivariateGCD.PolynomialGCD;
 
 
 /**
- * Square-free factorization of univariate polynomials over Z and Zp with single-precision coefficients.
+ * Square-free factorization of univariate polynomials over Z and Zp.
  *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class SquareFreeFactorization {
-    private SquareFreeFactorization() {}
+public final class UnivariateSquareFreeFactorization {
+    private UnivariateSquareFreeFactorization() {}
+
+    /**
+     * Returns {@code true} if {@code poly} is square-free and {@code false} otherwise
+     *
+     * @param poly the polynomial
+     * @return {@code true} if {@code poly} is square-free and {@code false} otherwise
+     */
+    public static <T extends IUnivariatePolynomial<T>> boolean isSquareFree(T poly) {
+        return PolynomialGCD(poly, poly.derivative()).isConstant();
+    }
+
+    /**
+     * Performs square-free factorization of a {@code poly}.
+     *
+     * @param poly the polynomial
+     * @return square-free decomposition
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IUnivariatePolynomial<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
+        if (poly.coefficientDomainCharacteristics().isZero())
+            return SquareFreeFactorizationYunZeroCharacteristics(poly);
+        else
+            return SquareFreeFactorizationMusser(poly);
+    }
+
+    /**
+     * Returns square-free part of the {@code poly}
+     *
+     * @param poly the polynomial
+     * @return square free part
+     */
+    public static <T extends IUnivariatePolynomial<T>> T SquareFreePart(T poly) {
+        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), IUnivariatePolynomial<T>::multiply);
+    }
 
     /**
      * Performs square-free factorization of a {@code poly} which coefficient domain has zero characteristic
@@ -271,39 +305,5 @@ public final class SquareFreeFactorization {
                 rootData[i / modulus] = domain.pow(poly.data[i], inverseFactor); // pRoot(poly.data[i], domain);
             }
         return poly.createFromArray(rootData);
-    }
-
-    /**
-     * Returns {@code true} if {@code poly} is square-free and {@code false} otherwise
-     *
-     * @param poly the polynomial
-     * @return {@code true} if {@code poly} is square-free and {@code false} otherwise
-     */
-    public static <T extends IUnivariatePolynomial<T>> boolean isSquareFree(T poly) {
-        return PolynomialGCD(poly, poly.derivative()).isConstant();
-    }
-
-    /**
-     * Performs square-free factorization of a {@code poly}.
-     *
-     * @param poly the polynomial
-     * @return square-free decomposition
-     */
-    @SuppressWarnings("unchecked")
-    public static <T extends IUnivariatePolynomial<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
-        if (poly.coefficientDomainCharacteristics().isZero())
-            return SquareFreeFactorizationYunZeroCharacteristics(poly);
-        else
-            return SquareFreeFactorizationMusser(poly);
-    }
-
-    /**
-     * Returns square-free part of the {@code poly}
-     *
-     * @param poly the polynomial
-     * @return square free part
-     */
-    public static <T extends IUnivariatePolynomial<T>> T SquareFreePart(T poly) {
-        return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), IUnivariatePolynomial<T>::multiply);
     }
 }

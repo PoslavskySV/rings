@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * lift to p<sup>2^N</sup> while linear just to p<sup>N</sup>. While quadratic lift converges much
  * faster, it works with BigIntegers in all intermediate steps, so each step is quite expensive. Linear lift is
  * implemented so that it starts with machine-word modulus, and perform all hard intermediate calculations with
- * machine-word arithmetics, converting to BigIntegers only a few times. In this way, a single step of linear lift is
+ * machine-word arithmetic, converting to BigIntegers only a few times. In this way, a single step of linear lift is
  * very cheap, but the convergence is worse. The actual lifting used in factorization switches between linear
  * and quadratic lift in order to obtain the best trade-off.
  *
@@ -614,7 +614,7 @@ public final class HenselLifting {
         private void henselStep0(PolyZp baseMod) {
             PolyZp e = baseMod.subtract(aFactor.clone().multiply(bFactor));
 
-            PolyZp[] qr = DivisionWithRemainder.divideAndRemainder(
+            PolyZp[] qr = UnivariateDivision.divideAndRemainder(
                     aCoFactor.clone().multiply(e),
                     bFactor, false);
             PolyZp q = qr[0], r = qr[1];
@@ -629,7 +629,7 @@ public final class HenselLifting {
                     .add(bCoFactor.clone().multiply(bFactorNew))
                     .decrement();
 
-            PolyZp[] cd = DivisionWithRemainder.divideAndRemainder(
+            PolyZp[] cd = UnivariateDivision.divideAndRemainder(
                     aCoFactor.clone().multiply(b),
                     bFactorNew, false);
             PolyZp c = cd[0], d = cd[1];
@@ -653,7 +653,7 @@ public final class HenselLifting {
         private void henselLastStep0(PolyZp baseMod) {
             PolyZp e = baseMod.subtract(aFactor.clone().multiply(bFactor));
 
-            PolyZp[] qr = DivisionWithRemainder.divideAndRemainder(
+            PolyZp[] qr = UnivariateDivision.divideAndRemainder(
                     aCoFactor.multiply(e),
                     bFactor, false);
             PolyZp q = qr[0], r = qr[1];
@@ -743,7 +743,7 @@ public final class HenselLifting {
         /** initial modular data */
         final lUnivariatePolynomialZp aFactorMod, aFactorModMonic, bFactorMod, aCoFactorMod, bCoFactorMod;
         /** precomputed inverses */
-        final DivisionWithRemainder.InverseModMonomial<lUnivariatePolynomialZp> aFactorModMonicInv, bFactorModInv;
+        final UnivariateDivision.InverseModMonomial<lUnivariatePolynomialZp> aFactorModMonicInv, bFactorModInv;
 
         public LinearLiftAbstract(PolyZ poly,
                                   PolyZ aFactor, PolyZ bFactor, PolyZ aCoFactor, PolyZ bCoFactor,
@@ -760,34 +760,34 @@ public final class HenselLifting {
             this.bFactorMod = bFactorMod;
             this.aCoFactorMod = aCoFactorMod;
             this.bCoFactorMod = bCoFactorMod;
-            this.aFactorModMonicInv = DivisionWithRemainder.fastDivisionPreConditioning(aFactorModMonic);
-            this.bFactorModInv = DivisionWithRemainder.fastDivisionPreConditioning(bFactorMod);
+            this.aFactorModMonicInv = UnivariateDivision.fastDivisionPreConditioning(aFactorModMonic);
+            this.bFactorModInv = UnivariateDivision.fastDivisionPreConditioning(bFactorMod);
         }
 
         protected lUnivariatePolynomialZp aAdd, bAdd;
 
         final void calculateFactorsDiff(lUnivariatePolynomialZp diff) {
             aAdd = diff.clone();
-            aAdd = PolynomialArithmetics.polyMod(aAdd, aFactorModMonic, aFactorModMonicInv, false);
+            aAdd = UnivariatePolynomialArithmetic.polyMod(aAdd, aFactorModMonic, aFactorModMonicInv, false);
             aAdd = aAdd.multiply(bCoFactorMod);
-            aAdd = PolynomialArithmetics.polyMod(aAdd, aFactorModMonic, aFactorModMonicInv, false);
+            aAdd = UnivariatePolynomialArithmetic.polyMod(aAdd, aFactorModMonic, aFactorModMonicInv, false);
 
             bAdd = diff.clone();
-            bAdd = PolynomialArithmetics.polyMod(bAdd, bFactorMod, bFactorModInv, false);
+            bAdd = UnivariatePolynomialArithmetic.polyMod(bAdd, bFactorMod, bFactorModInv, false);
             bAdd = bAdd.multiply(aCoFactorMod);
-            bAdd = PolynomialArithmetics.polyMod(bAdd, bFactorMod, bFactorModInv, false);
+            bAdd = UnivariatePolynomialArithmetic.polyMod(bAdd, bFactorMod, bFactorModInv, false);
         }
 
         final void calculateCoFactorsDiff(lUnivariatePolynomialZp diff) {
             aAdd = diff.clone();
-            aAdd = PolynomialArithmetics.polyMod(aAdd, bFactorMod, bFactorModInv, false);
+            aAdd = UnivariatePolynomialArithmetic.polyMod(aAdd, bFactorMod, bFactorModInv, false);
             aAdd = aAdd.multiply(aCoFactorMod);
-            aAdd = PolynomialArithmetics.polyMod(aAdd, bFactorMod, bFactorModInv, false);
+            aAdd = UnivariatePolynomialArithmetic.polyMod(aAdd, bFactorMod, bFactorModInv, false);
 
             bAdd = diff.clone();
-            bAdd = PolynomialArithmetics.polyMod(bAdd, aFactorModMonic, aFactorModMonicInv, false);
+            bAdd = UnivariatePolynomialArithmetic.polyMod(bAdd, aFactorModMonic, aFactorModMonicInv, false);
             bAdd = bAdd.multiply(bCoFactorMod);
-            bAdd = PolynomialArithmetics.polyMod(bAdd, aFactorModMonic, aFactorModMonicInv, false);
+            bAdd = UnivariatePolynomialArithmetic.polyMod(bAdd, aFactorModMonic, aFactorModMonicInv, false);
         }
     }
 

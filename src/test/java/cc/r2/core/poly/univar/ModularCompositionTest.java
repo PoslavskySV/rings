@@ -2,8 +2,8 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.AbstractPolynomialTest;
-import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
+import cc.r2.core.poly.test.APolynomialTest;
+import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 
-import static cc.r2.core.poly.univar.DivisionWithRemainder.fastDivisionPreConditioning;
+import static cc.r2.core.poly.univar.UnivariateDivision.fastDivisionPreConditioning;
 import static cc.r2.core.poly.univar.ModularComposition.*;
 import static cc.r2.core.poly.univar.UnivariatePolynomial.asLongPolyZp;
 import static org.junit.Assert.assertEquals;
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by poslavsky on 26/02/2017.
  */
-public class ModularCompositionTest extends AbstractPolynomialTest {
+public class ModularCompositionTest extends APolynomialTest {
     @Test
     public void testXPowers1() throws Exception {
         long modulus = 43;
@@ -38,13 +38,13 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
     public void testXPowers3Random() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(100, 300); i++)
-            assertXPowers(RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), getModulusRandom(getRandomData().nextInt(2, 6)), rnd));
+            assertXPowers(RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), getModulusRandom(getRandomData().nextInt(2, 6)), rnd));
     }
 
     static void assertXPowers(lUnivariatePolynomialZp polyModulus) {
         ArrayList<lUnivariatePolynomialZp> xPowers = ModularComposition.xPowers(polyModulus, fastDivisionPreConditioning(polyModulus));
         for (int i = 0; i < xPowers.size(); i++) {
-            lUnivariatePolynomialZp expected = PolynomialArithmetics.polyPowMod(
+            lUnivariatePolynomialZp expected = UnivariatePolynomialArithmetic.polyPowMod(
                     lUnivariatePolynomialZp.monomial(polyModulus.domain.modulus, 1, (int) polyModulus.domain.modulus),
                     i, polyModulus, false);
             assertEquals(expected, xPowers.get(i));
@@ -72,8 +72,8 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         for (long modulus : getModulusArray(3, 2, 45)) {
             for (int i = 0; i < its(100, 300); i++) {
-                lUnivariatePolynomialZp poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
-                lUnivariatePolynomialZp polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+                lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+                lUnivariatePolynomialZp polyModulus = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 assertPolyPowers(poly, polyModulus, 10);
             }
         }
@@ -82,7 +82,7 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
     static void assertPolyPowers(lUnivariatePolynomialZp poly, lUnivariatePolynomialZp polyModulus, int nIterations) {
         ArrayList<lUnivariatePolynomialZp> hPowers = polyPowers(poly, polyModulus, fastDivisionPreConditioning(polyModulus), nIterations);
         for (int i = 0; i < hPowers.size(); i++) {
-            lUnivariatePolynomialZp expected = PolynomialArithmetics.polyPowMod(poly, i, polyModulus, true);
+            lUnivariatePolynomialZp expected = UnivariatePolynomialArithmetic.polyPowMod(poly, i, polyModulus, true);
             assertEquals(expected, hPowers.get(i));
         }
     }
@@ -106,8 +106,8 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         for (long modulus : getModulusArray(3, 2, 45)) {
             for (int i = 0; i < its(50, 300); i++) {
-                lUnivariatePolynomialZp poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
-                lUnivariatePolynomialZp polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+                lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+                lUnivariatePolynomialZp polyModulus = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 assertPowModulusMod(poly, polyModulus);
             }
         }
@@ -115,7 +115,7 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
 
     static void assertPowModulusMod(lUnivariatePolynomialZp poly, lUnivariatePolynomialZp polyModulus) {
         InverseModMonomial invMod = fastDivisionPreConditioning(polyModulus);
-        assertEquals(PolynomialArithmetics.polyPowMod(poly, poly.domain.modulus, polyModulus, true), powModulusMod(poly, polyModulus, invMod, xPowers(polyModulus, invMod)));
+        assertEquals(UnivariatePolynomialArithmetic.polyPowMod(poly, poly.domain.modulus, polyModulus, true), powModulusMod(poly, polyModulus, invMod, xPowers(polyModulus, invMod)));
     }
 
     @Test
@@ -148,9 +148,9 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         for (long modulus : getSmallModulusArray(5)) {
             for (int i = 0; i < 100; i++) {
-                lUnivariatePolynomialZp poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
-                lUnivariatePolynomialZp point = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
-                lUnivariatePolynomialZp polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+                lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+                lUnivariatePolynomialZp point = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+                lUnivariatePolynomialZp polyModulus = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
                 assertComposition(poly, point, polyModulus);
             }
         }
@@ -176,9 +176,9 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
                 hornerStats.clear();
                 brenKungStats.clear();
             }
-            lUnivariatePolynomialZp poly = RandomPolynomials.randomMonicPoly(55 + rnd.nextInt(10), modulus, rnd);
-            lUnivariatePolynomialZp point = RandomPolynomials.randomMonicPoly(55 + rnd.nextInt(10), modulus, rnd);
-            lUnivariatePolynomialZp polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
+            lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(55 + rnd.nextInt(10), modulus, rnd);
+            lUnivariatePolynomialZp point = RandomUnivariatePolynomials.randomMonicPoly(55 + rnd.nextInt(10), modulus, rnd);
+            lUnivariatePolynomialZp polyModulus = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), modulus, rnd);
 
 //            System.out.println("====");
             long start = System.nanoTime();
@@ -205,9 +205,9 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
         for (long modulus : getSmallModulusArray(50)) {
             BigInteger bModulus = BigInteger.valueOf(modulus);
             for (int i = 0; i < 5; i++) {
-                UnivariatePolynomial<BigInteger> poly = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
-                UnivariatePolynomial<BigInteger> point = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
-                UnivariatePolynomial<BigInteger> polyModulus = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
+                UnivariatePolynomial<BigInteger> poly = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
+                UnivariatePolynomial<BigInteger> point = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
+                UnivariatePolynomial<BigInteger> polyModulus = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
                 UnivariatePolynomial<BigInteger> bComp = compositionBrentKung(poly, point, polyModulus, fastDivisionPreConditioning(polyModulus));
                 lUnivariatePolynomialZp lPolyModulus = asLongPolyZp(polyModulus);
                 lUnivariatePolynomialZp lComp = compositionBrentKung(asLongPolyZp(poly), asLongPolyZp(point), lPolyModulus, fastDivisionPreConditioning(lPolyModulus));
@@ -227,7 +227,7 @@ public class ModularCompositionTest extends AbstractPolynomialTest {
     private static lUnivariatePolynomialZp plainComposition(lUnivariatePolynomialZp poly, lUnivariatePolynomialZp point, lUnivariatePolynomialZp polyModulus) {
         lUnivariatePolynomialZp res = poly.createZero();
         for (int i = 0; i <= poly.degree; i++)
-            res = PolynomialArithmetics.polyMod(res.add(PolynomialArithmetics.polyPowMod(point, i, polyModulus, true).multiply(poly.data[i])), polyModulus, false);
+            res = UnivariatePolynomialArithmetic.polyMod(res.add(UnivariatePolynomialArithmetic.polyPowMod(point, i, polyModulus, true).multiply(poly.data[i])), polyModulus, false);
         return res;
     }
 }

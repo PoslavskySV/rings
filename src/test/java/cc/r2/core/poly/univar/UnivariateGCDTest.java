@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.univar.UnivariateGCD.*;
@@ -19,8 +19,8 @@ import java.util.List;
 
 import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.Rationals.Rationals;
-import static cc.r2.core.poly.univar.DivisionWithRemainder.divideAndRemainder;
-import static cc.r2.core.poly.univar.RandomPolynomials.randomPoly;
+import static cc.r2.core.poly.univar.UnivariateDivision.divideAndRemainder;
+import static cc.r2.core.poly.univar.RandomUnivariatePolynomials.randomPoly;
 import static cc.r2.core.poly.univar.UnivariateGCD.*;
 import static cc.r2.core.poly.univar.UnivariatePolynomial.asLongPolyZp;
 import static org.junit.Assert.*;
@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 /**
  * Created by poslavsky on 15/02/2017.
  */
-public class UnivariateGCDTest extends AbstractPolynomialTest {
+public class UnivariateGCDTest extends APolynomialTest {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void test1() throws Exception {
@@ -48,7 +48,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         //test long overflow
         lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(0, 14, 50, 93, 108, 130, 70);
         lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(63, 92, 143, 245, 146, 120, 90);
-        lUnivariatePolynomialZ gcd = PseudoEuclid(dividend, divider, true).gcd();
+        lUnivariatePolynomialZ gcd = EuclidPseudoRemainders(dividend, divider, true).gcd();
         lUnivariatePolynomialZ expected = lUnivariatePolynomialZ.create(7, 4, 10, 10);
         assertEquals(expected, gcd);
     }
@@ -58,7 +58,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         //test long overflow
         lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, -7, 0, 1);
         lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(-7, 0, 3);
-        PolynomialRemainders<lUnivariatePolynomialZ> naive = PseudoEuclid(dividend.clone(), divider.clone(), false);
+        PolynomialRemainders<lUnivariatePolynomialZ> naive = EuclidPseudoRemainders(dividend.clone(), divider.clone(), false);
         List<lUnivariatePolynomialZ> expectedNaive = new ArrayList<>();
         expectedNaive.add(dividend);
         expectedNaive.add(divider);
@@ -66,7 +66,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         expectedNaive.add(lUnivariatePolynomialZ.create(1L));
         assertEquals(expectedNaive, naive.remainders);
 
-        PolynomialRemainders<lUnivariatePolynomialZ> primitive = PseudoEuclid(dividend.clone(), divider.clone(), true);
+        PolynomialRemainders<lUnivariatePolynomialZ> primitive = EuclidPseudoRemainders(dividend.clone(), divider.clone(), true);
         List<lUnivariatePolynomialZ> expectedPrimitive = new ArrayList<>();
         expectedPrimitive.add(dividend);
         expectedPrimitive.add(divider);
@@ -74,7 +74,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         expectedPrimitive.add(lUnivariatePolynomialZ.create(1L));
         assertEquals(expectedPrimitive, primitive.remainders);
 
-        PolynomialRemainders<lUnivariatePolynomialZ> subresultant = SubresultantEuclid(dividend.clone(), divider.clone());
+        PolynomialRemainders<lUnivariatePolynomialZ> subresultant = EuclidSubresultantRemainders(dividend.clone(), divider.clone());
         List<lUnivariatePolynomialZ> expectedSubresultant = new ArrayList<>();
         expectedSubresultant.add(dividend);
         expectedSubresultant.add(divider);
@@ -88,7 +88,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         for (long sign = -1; sign <= 2; sign += 2) {
             lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(sign);
             lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(6, 7, 9, 8, 3).multiply(sign);
-            PolynomialRemainders<lUnivariatePolynomialZ> subresultant = SubresultantEuclid(dividend, divider);
+            PolynomialRemainders<lUnivariatePolynomialZ> subresultant = EuclidSubresultantRemainders(dividend, divider);
             List<lUnivariatePolynomialZ> expectedSubresultant = new ArrayList<>();
             expectedSubresultant.add(dividend);
             expectedSubresultant.add(divider);
@@ -106,7 +106,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
             for (long sign2 = -1; sign2 <= 2; sign2 += 2) {
                 lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(1, 1, 6, -3, 5).multiply(sign1);
                 lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(-9, -3, -10, 2, 8).multiply(sign2);
-                PolynomialRemainders<lUnivariatePolynomialZ> subresultant = SubresultantEuclid(dividend, divider);
+                PolynomialRemainders<lUnivariatePolynomialZ> subresultant = EuclidSubresultantRemainders(dividend, divider);
                 List<lUnivariatePolynomialZ> expectedSubresultant = new ArrayList<>();
                 expectedSubresultant.add(dividend);
                 expectedSubresultant.add(divider);
@@ -122,7 +122,7 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     public void test5() throws Exception {
         //test long overflow
         lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2);
-        UnivariateGCD.PolynomialRemainders prs = PseudoEuclid(dividend.clone(), dividend.clone(), false);
+        UnivariateGCD.PolynomialRemainders prs = EuclidPseudoRemainders(dividend.clone(), dividend.clone(), false);
 
         assertEquals(2, prs.remainders.size());
         assertEquals(dividend, prs.gcd());
@@ -136,16 +136,16 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         PolynomialRemainders<lUnivariatePolynomialZ> prs;
 
         for (boolean prim : new boolean[]{true, false}) {
-            prs = PseudoEuclid(dividend.clone(), divider.clone(), prim);
+            prs = EuclidPseudoRemainders(dividend.clone(), divider.clone(), prim);
             assertEquals(2, prs.remainders.size());
             assertEquals(divider, prs.gcd());
 
-            prs = PseudoEuclid(divider.clone(), dividend.clone(), prim);
+            prs = EuclidPseudoRemainders(divider.clone(), dividend.clone(), prim);
             assertEquals(2, prs.remainders.size());
             assertEquals(divider, prs.gcd());
         }
 
-        prs = SubresultantEuclid(dividend.clone(), divider.clone());
+        prs = EuclidSubresultantRemainders(dividend.clone(), divider.clone());
         assertEquals(2, prs.remainders.size());
         assertEquals(divider, prs.gcd());
     }
@@ -227,14 +227,14 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     public void testRandom2a() throws Exception {
         lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(4, -1, -4, -3, 2, 4);
         lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(-4, 1, 4, 3, -2, -4);
-        assertPolynomialRemainders(dividend, divider, UnivariateGCD.PseudoEuclid(dividend, divider, true));
+        assertPolynomialRemainders(dividend, divider, UnivariateGCD.EuclidPseudoRemainders(dividend, divider, true));
     }
 
     @Test
     public void testRandom2b() throws Exception {
         lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(0, 0, 4, 0, 4, 4);
         lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(0, 0, 4, 0, 4, 4);
-        assertPolynomialRemainders(dividend, divider, UnivariateGCD.PseudoEuclid(dividend, divider, true));
+        assertPolynomialRemainders(dividend, divider, UnivariateGCD.EuclidPseudoRemainders(dividend, divider, true));
     }
 
     @Test
@@ -318,10 +318,10 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
 
                     assertFalse(mgcd.isConstant());
 
-                    lUnivariatePolynomialZ[] qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
+                    lUnivariatePolynomialZ[] qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
                     assertNotNull(qr);
                     assertTrue(qr[1].isZero());
-                    lUnivariatePolynomialZ[] qr1 = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
+                    lUnivariatePolynomialZ[] qr1 = UnivariateDivision.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
                     assertArrayEquals(qr, qr1);
                     if (!qr[0].isConstant()) ++larger;
 
@@ -368,10 +368,10 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     public void test18() throws Exception {
         lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
         lUnivariatePolynomialZ b = lUnivariatePolynomialZ.zero();
-        assertEquals(a, SubresultantEuclid(a, b).gcd());
-        assertEquals(a, SubresultantEuclid(b, a).gcd());
-        assertEquals(a, PseudoEuclid(a, b, true).gcd());
-        assertEquals(a, PseudoEuclid(b, a, true).gcd());
+        assertEquals(a, EuclidSubresultantRemainders(a, b).gcd());
+        assertEquals(a, EuclidSubresultantRemainders(b, a).gcd());
+        assertEquals(a, EuclidPseudoRemainders(a, b, true).gcd());
+        assertEquals(a, EuclidPseudoRemainders(b, a, true).gcd());
         assertEquals(a, EuclidGCD(a, b));
         assertEquals(a, EuclidGCD(b, a));
         assertEquals(a, PolynomialGCD(a, b));
@@ -382,12 +382,12 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     public void test19() throws Exception {
         lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
         lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(2);
-        assertEquals(b, SubresultantEuclid(a, b).gcd());
-        assertEquals(b, SubresultantEuclid(b, a).gcd());
-        assertEquals(b, PseudoEuclid(a, b, true).gcd());
-        assertEquals(b, PseudoEuclid(b, a, true).gcd());
-        assertEquals(b, PseudoEuclid(a, b, false).gcd());
-        assertEquals(b, PseudoEuclid(b, a, false).gcd());
+        assertEquals(b, EuclidSubresultantRemainders(a, b).gcd());
+        assertEquals(b, EuclidSubresultantRemainders(b, a).gcd());
+        assertEquals(b, EuclidPseudoRemainders(a, b, true).gcd());
+        assertEquals(b, EuclidPseudoRemainders(b, a, true).gcd());
+        assertEquals(b, EuclidPseudoRemainders(a, b, false).gcd());
+        assertEquals(b, EuclidPseudoRemainders(b, a, false).gcd());
         assertEquals(b, EuclidGCD(a, b));
         assertEquals(b, EuclidGCD(b, a));
         assertEquals(b, PolynomialGCD(a, b));
@@ -400,16 +400,16 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(24);
         lUnivariatePolynomialZ gcd = lUnivariatePolynomialZ.create(8);
         assertEquals(gcd, PolynomialGCD(a, b));
-        assertEquals(gcd, SubresultantEuclid(a, b).gcd());
-        assertEquals(gcd, PseudoEuclid(a, b, true).gcd());
-        assertEquals(gcd, PseudoEuclid(a, b, false).gcd());
+        assertEquals(gcd, EuclidSubresultantRemainders(a, b).gcd());
+        assertEquals(gcd, EuclidPseudoRemainders(a, b, true).gcd());
+        assertEquals(gcd, EuclidPseudoRemainders(a, b, false).gcd());
     }
 
     @SuppressWarnings("unchecked")
     private static void assertGCD(IUnivariatePolynomial a, IUnivariatePolynomial b, IUnivariatePolynomial gcd) {
         IUnivariatePolynomial[] qr;
         for (IUnivariatePolynomial dividend : Arrays.asList(a, b)) {
-            qr = DivisionWithRemainder.pseudoDivideAndRemainder(dividend, gcd, true);
+            qr = UnivariateDivision.pseudoDivideAndRemainder(dividend, gcd, true);
             assertNotNull(qr);
             assertTrue(qr[1].isZero());
         }
@@ -432,8 +432,8 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         T gcd = prs.gcd().clone();
         if (!a.isOverField())
             gcd = gcd.primitivePart();
-        assertTrue(DivisionWithRemainder.pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
-        assertTrue(DivisionWithRemainder.pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
+        assertTrue(UnivariateDivision.pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
+        assertTrue(UnivariateDivision.pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
     }
 //
 //    @SuppressWarnings("ConstantConditions")
@@ -447,8 +447,8 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
 //        assertEquals(b, prs.remainders.get(1));
 //
 //        T gcd = prs.gcd().clone();
-//        assertTrue(DivisionWithRemainder.divideAndRemainder(a, gcd, true)[1].isZero());
-//        assertTrue(DivisionWithRemainder.divideAndRemainder(b, gcd, true)[1].isZero());
+//        assertTrue(UnivariateDivision.divideAndRemainder(a, gcd, true)[1].isZero());
+//        assertTrue(UnivariateDivision.divideAndRemainder(b, gcd, true)[1].isZero());
 //    }
 
     private static <T extends IUnivariatePolynomial<T>> List<PolynomialRemainders<T>> runAlgorithms(T dividend, T divider, GCDAlgorithm... algorithms) {
@@ -466,11 +466,11 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> gcd(T dividend, T divider) {
             switch (this) {
                 case PolynomialEuclid:
-                    return PseudoEuclid(dividend, divider, false);
+                    return EuclidPseudoRemainders(dividend, divider, false);
                 case PolynomialPrimitiveEuclid:
-                    return PseudoEuclid(dividend, divider, true);
+                    return EuclidPseudoRemainders(dividend, divider, true);
                 case SubresultantEuclid:
-                    return SubresultantEuclid(dividend, divider);
+                    return EuclidSubresultantRemainders(dividend, divider);
             }
             throw new IllegalArgumentException();
         }
@@ -504,10 +504,10 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
         a = a.multiply(gcd);
         b = b.multiply(gcd);
 
-        UnivariatePolynomial<BigInteger> gcdActual = PseudoEuclid(a, b, false).gcd();
+        UnivariatePolynomial<BigInteger> gcdActual = EuclidPseudoRemainders(a, b, false).gcd();
         assertGCD(a, b, gcdActual);
 
-        PolynomialRemainders<UnivariatePolynomial<BigInteger>> prs = SubresultantEuclid(a, b);
+        PolynomialRemainders<UnivariatePolynomial<BigInteger>> prs = EuclidSubresultantRemainders(a, b);
         assertPolynomialRemainders(a, b, prs);
 
         UnivariatePolynomial<BigInteger> gcdSubresultant = prs.gcd();
@@ -584,10 +584,10 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
 
                     assertFalse(mgcd.isConstant());
 
-                    UnivariatePolynomial<BigInteger>[] qr = DivisionWithRemainder.pseudoDivideAndRemainder(mgcd, gcd, true);
+                    UnivariatePolynomial<BigInteger>[] qr = UnivariateDivision.pseudoDivideAndRemainder(mgcd, gcd, true);
                     assertNotNull(qr);
                     assertTrue(qr[1].isZero());
-                    UnivariatePolynomial<BigInteger>[] qr1 = DivisionWithRemainder.pseudoDivideAndRemainder(mgcd.clone(), gcd, false);
+                    UnivariatePolynomial<BigInteger>[] qr1 = UnivariateDivision.pseudoDivideAndRemainder(mgcd.clone(), gcd, false);
                     assertArrayEquals(qr, qr1);
                     if (!qr[0].isConstant()) ++larger;
 
@@ -651,8 +651,8 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
     @Test
     public void test27() throws Exception {
         // assert java heap
-        lUnivariatePolynomialZp a = RandomPolynomials.randomMonicPoly(15_000, 19, getRandom());
-        lUnivariatePolynomialZp b = RandomPolynomials.randomMonicPoly(15_000, 19, getRandom());
+        lUnivariatePolynomialZp a = RandomUnivariatePolynomials.randomMonicPoly(15_000, 19, getRandom());
+        lUnivariatePolynomialZp b = RandomUnivariatePolynomials.randomMonicPoly(15_000, 19, getRandom());
         assertExtendedGCD(ExtendedEuclidGCD(a, b), a, b);
     }
 
@@ -689,8 +689,8 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
             }
 
             long modulus = getModulusRandom(rndd.nextInt(2, 20));
-            lUnivariatePolynomialZp a = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
-            lUnivariatePolynomialZp b = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
+            lUnivariatePolynomialZp a = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
+            lUnivariatePolynomialZp b = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
             try {
                 long start;
 
@@ -750,9 +750,9 @@ public class UnivariateGCDTest extends AbstractPolynomialTest {
             }
 
             long modulus = getModulusRandom(rndd.nextInt(2, 20));
-            lUnivariatePolynomialZp a = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
+            lUnivariatePolynomialZp a = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
                     modulus, rnd).multiply(1 + rnd.nextLong());
-            lUnivariatePolynomialZp b = RandomPolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
+            lUnivariatePolynomialZp b = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
                     modulus, rnd).multiply(1 + rnd.nextLong());
             try {
                 long start;

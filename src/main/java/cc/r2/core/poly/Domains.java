@@ -2,7 +2,7 @@ package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
-import cc.r2.core.poly.multivar.DegreeVector;
+import cc.r2.core.poly.multivar.MonomialOrder;
 import cc.r2.core.poly.multivar.MultivariatePolynomial;
 import cc.r2.core.poly.multivar.lMultivariatePolynomialZp;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
@@ -123,7 +123,7 @@ public final class Domains {
      */
     public static <E> MultivariatePolynomials<MultivariatePolynomial<E>>
     MultivariatePolynomials(int nVariables, Domain<E> coefficientDomain) {
-        return new MultivariatePolynomials<>(MultivariatePolynomial.zero(nVariables, coefficientDomain, DegreeVector.LEX));
+        return new MultivariatePolynomials<>(MultivariatePolynomial.zero(nVariables, coefficientDomain, MonomialOrder.LEX));
     }
 
     /**
@@ -154,7 +154,7 @@ public final class Domains {
      */
     public static MultivariatePolynomials<lMultivariatePolynomialZp>
     MultivariatePolynomialsZp(int nVariables, long modulus) {
-        return new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(nVariables, Zp(modulus), DegreeVector.LEX));
+        return new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(nVariables, Zp(modulus), MonomialOrder.LEX));
     }
 
     /**

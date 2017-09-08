@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Multivariate interpolation
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */

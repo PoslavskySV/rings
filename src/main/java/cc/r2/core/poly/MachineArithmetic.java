@@ -12,9 +12,9 @@ import cc.redberry.libdivide4j.FastDivision;
 public final class MachineArithmetic {
     private MachineArithmetic() {}
 
-    /** Max supported modulus bits */
+    /** Max supported modulus bits which fits into machine word */
     public static final int MAX_SUPPORTED_MODULUS_BITS = 62;
-    /** Max supported modulus */
+    /** Max supported modulus which fits into machine word */
     public static final long MAX_SUPPORTED_MODULUS = (1L << MAX_SUPPORTED_MODULUS_BITS) - 1L;
     /** Max supported modulus */
     public static final BigInteger b_MAX_SUPPORTED_MODULUS = BigInteger.valueOf(MAX_SUPPORTED_MODULUS);

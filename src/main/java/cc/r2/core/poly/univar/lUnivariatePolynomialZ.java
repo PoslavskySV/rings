@@ -141,7 +141,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return modulus(domain, true);
     }
 
-    /** INTERNAL API */
+    /** internal API */
     lUnivariatePolynomialZp modulusUnsafe(long modulus) {
         return lUnivariatePolynomialZp.createUnsafe(modulus, data);
     }
@@ -318,7 +318,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return multiply(factor.longValueExact());
     }
 
-    /** INTERNAL API */
+    /** internal API */
     lUnivariatePolynomialZ multiplyUnsafe(long factor) {
         for (int i = degree; i >= 0; --i)
             data[i] *= factor;
@@ -355,7 +355,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
         return this;
     }
 
-    /** INTERNAL API */
+    /** internal API */
     lUnivariatePolynomialZ multiplyUnsafe(lUnivariatePolynomialZ oth) {
         if (isZero())
             return this;

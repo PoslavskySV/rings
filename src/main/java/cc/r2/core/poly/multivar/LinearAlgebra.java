@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.lIntegersModulo;
-import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.univar.UnivariateDivision;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
 import cc.r2.core.util.ArraysUtil;
@@ -270,7 +270,7 @@ final class LinearAlgebra {
             result[i] = domain.getZero();
 
         for (int i = 0; i < row.length; i++) {
-            UnivariatePolynomial<E> quot = DivisionWithRemainder.divideAndRemainder(master, lins[i], true)[0];
+            UnivariatePolynomial<E> quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
             E cf = quot.evaluate(row[i]);
             if (domain.isZero(cf))
                 return UnderDetermined;
@@ -311,7 +311,7 @@ final class LinearAlgebra {
         }
 
         for (int i = 0; i < row.length; i++) {
-            UnivariatePolynomial<E> quot = DivisionWithRemainder.divideAndRemainder(master, lins[i], true)[0];
+            UnivariatePolynomial<E> quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
             E cf = quot.evaluate(row[i]);
             if (domain.isZero(cf))
                 return UnderDetermined;
@@ -550,7 +550,7 @@ final class LinearAlgebra {
             result[i] = 0;
 
         for (int i = 0; i < row.length; i++) {
-            lUnivariatePolynomialZp quot = DivisionWithRemainder.divideAndRemainder(master, lins[i], true)[0];
+            lUnivariatePolynomialZp quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
             long cf = quot.evaluate(row[i]);
             if (cf == 0)
                 return UnderDetermined;
@@ -589,7 +589,7 @@ final class LinearAlgebra {
         }
 
         for (int i = 0; i < row.length; i++) {
-            lUnivariatePolynomialZp quot = DivisionWithRemainder.divideAndRemainder(master, lins[i], true)[0];
+            lUnivariatePolynomialZp quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
             long cf = quot.evaluate(row[i]);
             if (cf == 0)
                 return UnderDetermined;

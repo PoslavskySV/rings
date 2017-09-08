@@ -1,7 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.util.ArraysUtil;
@@ -12,7 +12,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static cc.r2.core.poly.multivar.DegreeVector.LEX;
+import static cc.r2.core.poly.multivar.MonomialOrder.LEX;
 import static cc.r2.core.poly.multivar.lMultivariatePolynomialZp.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
+public class lMultivariatePolynomialZpTest extends APolynomialTest {
 
     private lIntegersModulo Integers = new lIntegersModulo(Integer.MAX_VALUE);
 
@@ -79,10 +79,10 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
     public void testZero2() throws Exception {
         lMultivariatePolynomialZp poly = lMultivariatePolynomialZp.create(3,
                 Integers, LEX,
-                new lMonomialTerm(new int[]{1, 2, 3}, 0),
-                new lMonomialTerm(new int[]{0, 1, 2}, 5),
-                new lMonomialTerm(new int[]{0, 1, 2}, 5),
-                new lMonomialTerm(new int[]{3, 43, 1}, 10));
+                new lMonomialZp(new int[]{1, 2, 3}, 0),
+                new lMonomialZp(new int[]{0, 1, 2}, 5),
+                new lMonomialZp(new int[]{0, 1, 2}, 5),
+                new lMonomialZp(new int[]{3, 43, 1}, 10));
         assertEquals(2, poly.size());
         assertEquals(parse("10*b*c^2 + 10*a^3*b^43*c", Integers), poly);
     }
@@ -230,11 +230,11 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
         for (int i = 0; i < nIterations; i++) {
             domain = rnd.nextBoolean() ? Integers : new lIntegersModulo(getModulusRandom(8));
             lMultivariatePolynomialZp poly =
-                    MultivariatePolynomial.asLongPolyZp(RandomMultivariatePolynomial.randomPolynomial(
+                    MultivariatePolynomial.asLongPolyZp(RandomMultivariatePolynomials.randomPolynomial(
                             rndd.nextInt(1, 4),
                             rndd.nextInt(1, 5),
                             rndd.nextInt(1, 10),
-                            BigInteger.valueOf(1000), domain.asDomain(), LEX, rnd));
+                            domain.asDomain(), LEX, rnd));
             lMultivariatePolynomialZp parsed = parse(poly.toString(), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
             assertEquals(poly, parsed);
         }
@@ -250,7 +250,7 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
         for (int v = 0; v < poly.nVariables; v++) {
             final int var = v;
             lMultivariatePolynomialZp r = IntStream.rangeClosed(0, poly.degree(var))
-                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new lMonomialTerm(poly.nVariables, var, i, 1)))
+                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new lMonomialZp(poly.nVariables, var, i, 1)))
                     .reduce(poly.createZero(), AMultivariatePolynomial::add);
             assertEquals(poly, r);
         }
@@ -412,7 +412,7 @@ public class lMultivariatePolynomialZpTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(100, 100); i++) {
             lIntegersModulo domain = new lIntegersModulo(getModulusRandom(rndd.nextInt(2, 31)));
-            lMultivariatePolynomialZp poly = RandomMultivariatePolynomial.randomPolynomial(10, 10, 50, domain, DegreeVector.LEX, rnd);
+            lMultivariatePolynomialZp poly = RandomMultivariatePolynomials.randomPolynomial(10, 10, 50, domain, MonomialOrder.LEX, rnd);
             for (int j = 0; j < its(10, 10); j++) {
                 int[] select = rndd.nextPermutation(poly.nVariables, rndd.nextInt(1, poly.nVariables));
                 assertEquals(poly, lMultivariatePolynomialZp.asNormalMultivariate(poly.asOverMultivariate(select)));

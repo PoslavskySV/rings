@@ -4,7 +4,7 @@ import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.Util;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
+import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -29,9 +29,9 @@ public final class IrreduciblePolynomials {
             return true;
 
         poly = poly.clone().monic();
-        InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+        InverseModMonomial<Poly> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
         // x^q
-        Poly xq = PolynomialArithmetics.createMonomialMod(poly.coefficientDomainCardinality(), poly, invMod);
+        Poly xq = UnivariatePolynomialArithmetic.createMonomialMod(poly.coefficientDomainCardinality(), poly, invMod);
 
         // cached powers x^(q^i) for different i
         TIntObjectMap<Poly> cache = new TIntObjectHashMap<>();
@@ -41,8 +41,8 @@ public final class IrreduciblePolynomials {
         // x^(q^n)
         Poly xqn = composition(xq, degree, poly, invMod, cache);
         assert
-                xqn.equals(PolynomialArithmetics.createMonomialMod(BigIntegerArithmetics.safePow(poly.coefficientDomainCardinality(), degree), poly, invMod))
-                : "\n" + xqn + "\n" + PolynomialArithmetics.createMonomialMod(BigIntegerArithmetics.safePow(poly.coefficientDomainCardinality(), degree), poly, invMod);
+                xqn.equals(UnivariatePolynomialArithmetic.createMonomialMod(BigIntegerArithmetics.safePow(poly.coefficientDomainCardinality(), degree), poly, invMod))
+                : "\n" + xqn + "\n" + UnivariatePolynomialArithmetic.createMonomialMod(BigIntegerArithmetics.safePow(poly.coefficientDomainCardinality(), degree), poly, invMod);
 
         Poly xMonomial = poly.createMonomial(1);
         if (!xqn.equals(xMonomial))
@@ -71,7 +71,7 @@ public final class IrreduciblePolynomials {
     public static lUnivariatePolynomialZp randomIrreduciblePolynomial(long modulus, int degree, RandomGenerator rnd) {
         lUnivariatePolynomialZp poly;
         do {
-            poly = RandomPolynomials.randomMonicPoly(degree, modulus, rnd);
+            poly = RandomUnivariatePolynomials.randomMonicPoly(degree, modulus, rnd);
         } while (!irreducibleQ(poly));
         assert poly.degree == degree;
         return poly;
@@ -90,7 +90,7 @@ public final class IrreduciblePolynomials {
             throw new IllegalArgumentException("Not a finite domain.");
         UnivariatePolynomial<E> poly;
         do {
-            poly = RandomPolynomials.randomMonicPoly(degree, domain, rnd);
+            poly = RandomUnivariatePolynomials.randomMonicPoly(degree, domain, rnd);
         } while (!irreducibleQ(poly));
         assert poly.degree == degree;
         return poly;
@@ -109,7 +109,7 @@ public final class IrreduciblePolynomials {
             throw new IllegalArgumentException("Not a finite domain.");
         Poly poly;
         do {
-            poly = RandomPolynomials.randomPoly(factory, degree, rnd);
+            poly = RandomUnivariatePolynomials.randomPoly(factory, degree, rnd);
         } while (!irreducibleQ(poly));
         assert poly.degree() == degree;
         return poly;

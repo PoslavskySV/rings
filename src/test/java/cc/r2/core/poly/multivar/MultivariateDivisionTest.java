@@ -1,7 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.lIntegersModulo;
@@ -14,22 +14,21 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import static cc.r2.core.poly.Integers.Integers;
-import static cc.r2.core.poly.multivar.MonomialTerm.*;
+import static cc.r2.core.poly.multivar.MultivariateDivision.divideAndRemainder;
+import static cc.r2.core.poly.multivar.MultivariateDivision.dividesQ;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
-import static cc.r2.core.poly.multivar.MultivariateReduction.divideAndRemainder;
-import static cc.r2.core.poly.multivar.MultivariateReduction.dividesQ;
-import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
+import static cc.r2.core.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
 import static org.junit.Assert.*;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariateReductionTest extends AbstractPolynomialTest {
+public class MultivariateDivisionTest extends APolynomialTest {
     @Test
     public void test1() throws Exception {
         String[] vars = {"a", "b"};
-        Comparator<DegreeVector> ordering = LEX;
+        Comparator<DegreeVector> ordering = MonomialOrder.LEX;
         MultivariatePolynomial<BigInteger> dividend = parse("a*b^2 + 1", ordering, vars);
         MultivariatePolynomial<BigInteger> f1 = parse("a*b + 1", ordering, vars);
         MultivariatePolynomial<BigInteger> f2 = parse("b + 1", ordering, vars);
@@ -56,7 +55,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     @Test
     public void test2() throws Exception {
         String[] vars = {"a", "b"};
-        Comparator<DegreeVector> ordering = LEX;
+        Comparator<DegreeVector> ordering = MonomialOrder.LEX;
         MultivariatePolynomial<BigInteger> dividend = parse("a^2*b+a*b^2+b^2", ordering, vars);
         MultivariatePolynomial<BigInteger> f1 = parse("a*b - 1", ordering, vars);
         MultivariatePolynomial<BigInteger> f2 = parse("b^2 - 1", ordering, vars);
@@ -78,7 +77,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     public void test3() throws Exception {
         MultivariatePolynomial<BigInteger> a = randomPolynomial(5, 10, 10, getRandom());
         MultivariatePolynomial<BigInteger> b = randomPolynomial(5, 10, 10, getRandom());
-        for (Comparator<DegreeVector> order : Arrays.asList(LEX, GRLEX, GREVLEX)) {
+        for (Comparator<DegreeVector> order : Arrays.asList(MonomialOrder.LEX, MonomialOrder.GRLEX, MonomialOrder.GREVLEX)) {
             MultivariatePolynomial c = a.clone().multiply(b).setOrdering(order);
             assertTrue(divideAndRemainder(c, a.setOrdering(order))[1].isZero());
             assertTrue(divideAndRemainder(c, b.setOrdering(order))[1].isZero());
@@ -87,13 +86,13 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
 
     @Test
     public void test4_random() throws Exception {
-        testRandomReduce(its(1000, 10000), 5, 3, 1, 5, LEX);
-        testRandomReduce(its(1000, 10000), 5, 1, 1, 15, LEX);
+        testRandomReduce(its(1000, 10000), 5, 3, 1, 5, MonomialOrder.LEX);
+        testRandomReduce(its(1000, 10000), 5, 1, 1, 15, MonomialOrder.LEX);
     }
 
     @Test
     public void test5_random() throws Exception {
-        for (Comparator<DegreeVector> ord : Arrays.asList(LEX, GRLEX, GREVLEX)) {
+        for (Comparator<DegreeVector> ord : Arrays.asList(MonomialOrder.LEX, MonomialOrder.GRLEX, MonomialOrder.GREVLEX)) {
             testRandomReduce(its(300, 3000), 5, 3, 1, 5, ord);
             testRandomReduce(its(300, 3000), 5, 1, 1, 15, ord);
         }
@@ -103,7 +102,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     public void test6() throws Exception {
         String[] vars = {"a", "b"};
         Domain<BigInteger> domain = new IntegersModulo(2);
-        Comparator<DegreeVector> ordering = LEX;
+        Comparator<DegreeVector> ordering = MonomialOrder.LEX;
         MultivariatePolynomial<BigInteger> dividend = parse("a^2*b+a*b^2+b^2", domain, ordering, vars);
         MultivariatePolynomial<BigInteger> f1 = parse("a*b - 1", domain, ordering, vars);
         MultivariatePolynomial<BigInteger> f2 = parse("b^2 - 1", domain, ordering, vars);
@@ -124,7 +123,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
     public void test7() throws Exception {
         String[] vars = {"a", "b"};
         Domain<BigInteger> domain = new IntegersModulo(2);
-        Comparator<DegreeVector> ordering = LEX;
+        Comparator<DegreeVector> ordering = MonomialOrder.LEX;
         MultivariatePolynomial<BigInteger> dividend = parse("a^2*b+a*b^2+b^2", domain, ordering, vars);
         MultivariatePolynomial<BigInteger> divider = parse("1", domain, ordering, vars);
         Assert.assertArrayEquals(new MultivariatePolynomial[]{dividend, dividend.createZero()},
@@ -167,7 +166,7 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp
                 dividend = lMultivariatePolynomialZp.parse("a^2*b", domain, vars),
                 divider = lMultivariatePolynomialZp.parse("b", domain, vars);
-        System.out.println(MultivariateReduction.divideExact(dividend, divider));
+        System.out.println(MultivariateDivision.divideExact(dividend, divider));
     }
 
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,
@@ -192,12 +191,15 @@ public class MultivariateReductionTest extends AbstractPolynomialTest {
 
             MultivariatePolynomial<BigInteger> dividend = MultivariatePolynomial.zero(nVariables, domain, ordering);
             for (int j = 0; j < dividers.length; j++) {
-                dividers[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), domain, ordering, rnd);
+                dividers[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), domain, ordering, rnd)
+                        .mapCoefficients(domain, b -> b.remainder(BigInteger.valueOf(100)));
                 if (dividers[j].isZero()) {
                     --j;
                     continue;
                 }
-                quotients[j] = randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), BigInteger.valueOf(100), domain, ordering, rnd);
+                quotients[j] =
+                        randomPolynomial(nVariables, rndd.nextInt(1, maxDegree), rndd.nextInt(minSize, maxDegree), domain, ordering, rnd)
+                                .mapCoefficients(domain, b -> b.remainder(BigInteger.valueOf(100)));
                 dividend = dividend.add(dividers[j].clone().multiply(quotients[j]));
             }
             if (dividend.size() > maxGeneratedDividendSize)

@@ -18,21 +18,29 @@ import java.util.function.Function;
 import java.util.function.LongFunction;
 
 /**
+ * Multivariate polynomial over Zp domain with the modulus in the range (0, 2^62) (see {@link MachineArithmetic#MAX_SUPPORTED_MODULUS}).
+ * For details on polynomial data structure and properties see {@link AMultivariatePolynomial}.
+ *
  * @author Stanislav Poslavsky
+ * @see AMultivariatePolynomial
  * @since 1.0
  */
-public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMonomialTerm, lMultivariatePolynomialZp> {
-    final lIntegersModulo domain;
+public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMonomialZp, lMultivariatePolynomialZp> {
+    private static final long serialVersionUID = 1L;
+    /**
+     * The domain.
+     */
+    public final lIntegersModulo domain;
 
-    private lMultivariatePolynomialZp(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering, MonomialsSet<lMonomialTerm> lMonomialTerms) {
+    private lMultivariatePolynomialZp(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering, MonomialSet<lMonomialZp> lMonomialTerms) {
         super(nVariables, ordering, lMonomialTerms);
         this.domain = domain;
     }
 
-    private static void add(MonomialsSet<lMonomialTerm> polynomial, lMonomialTerm term, lIntegersModulo domain) {
+    private static void add(MonomialSet<lMonomialZp> polynomial, lMonomialZp term, lIntegersModulo domain) {
         if (term.coefficient == 0)
             return;
-        lMonomialTerm pTerm = polynomial.get(term);
+        lMonomialZp pTerm = polynomial.get(term);
         if (pTerm == null)
             polynomial.add(term);
         else {
@@ -44,10 +52,10 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         }
     }
 
-    private static void subtract(MonomialsSet<lMonomialTerm> polynomial, lMonomialTerm term, lIntegersModulo domain) {
+    private static void subtract(MonomialSet<lMonomialZp> polynomial, lMonomialZp term, lIntegersModulo domain) {
         if (term.coefficient == 0)
             return;
-        lMonomialTerm pTerm = polynomial.get(term);
+        lMonomialZp pTerm = polynomial.get(term);
         if (pTerm == null)
             polynomial.add(term.negate(domain));
         else {
@@ -60,15 +68,15 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Creates multivariate polynomial from a set of monomial terms
+     * Creates multivariate polynomial from a set of monomials
      *
      * @param nVariables number of variables
      * @param domain     the domain
      * @param ordering   term ordering
-     * @param terms      the monomial terms
+     * @param terms      the monomials
      * @return multivariate polynomial
      */
-    public static lMultivariatePolynomialZp create(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering, MonomialsSet<lMonomialTerm> terms) {
+    public static lMultivariatePolynomialZp create(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering, MonomialSet<lMonomialZp> terms) {
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, terms);
     }
 
@@ -80,18 +88,28 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @param terms    the monomial terms
      * @return multivariate polynomial
      */
-    public static lMultivariatePolynomialZp create(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering, lMonomialTerm... terms) {
-        if (terms.length == 0)
-            throw new IllegalArgumentException("empty");
-        MonomialsSet<lMonomialTerm> map = new MonomialsSet<>(ordering);
-        for (lMonomialTerm term : terms)
+    public static lMultivariatePolynomialZp create(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering, Iterable<lMonomialZp> terms) {
+        MonomialSet<lMonomialZp> map = new MonomialSet<>(ordering);
+        for (lMonomialZp term : terms)
             add(map, term.setDomain(domain), domain);
 
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, map);
     }
 
     /**
-     * Creates zero.
+     * Creates multivariate polynomial from a list of monomial terms
+     *
+     * @param domain   the domain
+     * @param ordering term ordering
+     * @param terms    the monomial terms
+     * @return multivariate polynomial
+     */
+    public static lMultivariatePolynomialZp create(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering, lMonomialZp... terms) {
+        return create(nVariables, domain, ordering, Arrays.asList(terms));
+    }
+
+    /**
+     * Creates zero polynomial.
      *
      * @param nVariables number of variables
      * @param domain     the domain
@@ -99,11 +117,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return zero
      */
     public static lMultivariatePolynomialZp zero(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering) {
-        return new lMultivariatePolynomialZp(nVariables, domain, ordering, new MonomialsSet<>(ordering));
+        return new lMultivariatePolynomialZp(nVariables, domain, ordering, new MonomialSet<>(ordering));
     }
 
     /**
-     * Creates unit.
+     * Creates unit polynomial.
      *
      * @param nVariables number of variables
      * @param domain     the domain
@@ -111,29 +129,29 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return unit
      */
     public static lMultivariatePolynomialZp one(int nVariables, lIntegersModulo domain, Comparator<DegreeVector> ordering) {
-        return create(nVariables, domain, ordering, lMonomialTerm.withZeroExponents(nVariables, 1L));
+        return create(nVariables, domain, ordering, lMonomialZp.withZeroExponents(nVariables, 1L));
     }
 
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string    string polynomials
-     * @param domain    domain
+     * @param string    the string
+     * @param domain    the domain
      * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
      *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
      *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
      * @return multivariate polynomial
      */
     public static lMultivariatePolynomialZp parse(String string, lIntegersModulo domain, String... variables) {
-        return MultivariatePolynomial.asLongPolyZp(Parser.parse(string, domain.asDomain(), DegreeVector.LEX, variables));
+        return MultivariatePolynomial.asLongPolyZp(Parser.parse(string, domain.asDomain(), MonomialOrder.LEX, variables));
     }
 
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string    string polynomials
-     * @param domain    domain
-     * @param ordering  term ordering
+     * @param string    the string
+     * @param domain    the domain
+     * @param ordering  monomial order
      * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
      *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
      *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
@@ -149,27 +167,21 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @param poly       univariate polynomial
      * @param nVariables number of variables in the result
      * @param variable   variable that will be used as a primary variable
-     * @param ordering   ordering
+     * @param ordering   the ordering
      * @return multivariate polynomial
      */
     public static lMultivariatePolynomialZp asMultivariate(lUnivariatePolynomialZp poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
-        MonomialsSet<lMonomialTerm> map = new MonomialsSet<>(ordering);
+        MonomialSet<lMonomialZp> map = new MonomialSet<>(ordering);
         for (int i = poly.degree(); i >= 0; --i) {
             if (poly.isZeroAt(i))
                 continue;
             int[] degreeVector = new int[nVariables];
             degreeVector[variable] = i;
-            map.add(new lMonomialTerm(degreeVector, i, poly.get(i)));
+            map.add(new lMonomialZp(degreeVector, i, poly.get(i)));
         }
         return new lMultivariatePolynomialZp(nVariables, poly.domain, ordering, map);
     }
 
-    /**
-     * Converts this polynomial to a univariate polynomial.
-     *
-     * @return univariate polynomial
-     * @throws IllegalArgumentException if this is not effectively a univariate polynomial
-     */
     @Override
     public lUnivariatePolynomialZp asUnivariate() {
         if (isConstant())
@@ -186,7 +198,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         if (theVar == -1)
             throw new IllegalStateException("Not a univariate polynomial: " + this);
         long[] univarData = new long[degrees[theVar] + 1];
-        for (lMonomialTerm e : terms)
+        for (lMonomialZp e : terms)
             univarData[e.exponents[theVar]] = e.coefficient;
         return lUnivariatePolynomialZp.createUnsafe(domain, univarData);
     }
@@ -195,12 +207,12 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     public MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariate(int variable) {
         lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(domain);
         UnivariatePolynomials<lUnivariatePolynomialZp> pDomain = new UnivariatePolynomials<>(factory);
-        MonomialsSet<MonomialTerm<lUnivariatePolynomialZp>> newData = new MonomialsSet<>(ordering);
-        for (lMonomialTerm e : terms) {
-            MonomialTerm<lUnivariatePolynomialZp> eMonomialTerm = new MonomialTerm<>(
+        MonomialSet<Monomial<lUnivariatePolynomialZp>> newData = new MonomialSet<>(ordering);
+        for (lMonomialZp e : terms) {
+            Monomial<lUnivariatePolynomialZp> eMonomial = new Monomial<>(
                     e.set(variable, 0).exponents,
                     factory.createMonomial(e.coefficient, e.exponents[variable]));
-            MultivariatePolynomial.add(newData, eMonomialTerm, pDomain);
+            MultivariatePolynomial.add(newData, eMonomial, pDomain);
         }
         return new MultivariatePolynomial<>(nVariables, pDomain, ordering, newData);
     }
@@ -209,12 +221,12 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     public MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariateEliminate(int variable) {
         lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(domain);
         UnivariatePolynomials<lUnivariatePolynomialZp> pDomain = new UnivariatePolynomials<>(factory);
-        MonomialsSet<MonomialTerm<lUnivariatePolynomialZp>> newData = new MonomialsSet<>(ordering);
-        for (lMonomialTerm e : terms) {
-            MonomialTerm<lUnivariatePolynomialZp> eMonomialTerm = new MonomialTerm<>(
+        MonomialSet<Monomial<lUnivariatePolynomialZp>> newData = new MonomialSet<>(ordering);
+        for (lMonomialZp e : terms) {
+            Monomial<lUnivariatePolynomialZp> eMonomial = new Monomial<>(
                     e.without(variable).exponents,
                     factory.createMonomial(e.coefficient, e.exponents[variable]));
-            MultivariatePolynomial.add(newData, eMonomialTerm, pDomain);
+            MultivariatePolynomial.add(newData, eMonomial, pDomain);
         }
         return new MultivariatePolynomial<>(nVariables - 1, pDomain, ordering, newData);
     }
@@ -222,17 +234,17 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     @Override
     public MultivariatePolynomial<lMultivariatePolynomialZp> asOverMultivariate(int... variables) {
         Domain<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(this);
-        MonomialsSet<MonomialTerm<lMultivariatePolynomialZp>> terms = new MonomialsSet<>(ordering);
-        for (lMonomialTerm term : this) {
+        MonomialSet<Monomial<lMultivariatePolynomialZp>> terms = new MonomialSet<>(ordering);
+        for (lMonomialZp term : this) {
             int[] coeffExponents = new int[nVariables];
             for (int var : variables)
                 coeffExponents[var] = term.exponents[var];
-            lMonomialTerm restTerm = term.setZero(variables, 1);
-            MonomialTerm<lMultivariatePolynomialZp> newTerm
-                    = new MonomialTerm<>(
+            lMonomialZp restTerm = term.setZero(variables, 1);
+            Monomial<lMultivariatePolynomialZp> newTerm
+                    = new Monomial<>(
                     restTerm.exponents,
                     restTerm.totalDegree,
-                    create(new lMonomialTerm(coeffExponents, term.coefficient)));
+                    create(new lMonomialZp(coeffExponents, term.coefficient)));
 
             MultivariatePolynomial.add(terms, newTerm, domain);
         }
@@ -244,9 +256,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         variables = variables.clone();
         Arrays.sort(variables);
         int[] restVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(nVariables), variables);
-        Domain<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(create(variables.length, new MonomialsSet<>(ordering)));
-        MonomialsSet<MonomialTerm<lMultivariatePolynomialZp>> terms = new MonomialsSet<>(ordering);
-        for (lMonomialTerm term : this) {
+        Domain<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(create(variables.length, new MonomialSet<>(ordering)));
+        MonomialSet<Monomial<lMultivariatePolynomialZp>> terms = new MonomialSet<>(ordering);
+        for (lMonomialZp term : this) {
             int i = 0;
             int[] coeffExponents = new int[variables.length];
             for (int var : variables)
@@ -257,10 +269,10 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             for (int var : restVariables)
                 termExponents[i++] = term.exponents[var];
 
-            MonomialTerm<lMultivariatePolynomialZp> newTerm
-                    = new MonomialTerm<>(
+            Monomial<lMultivariatePolynomialZp> newTerm
+                    = new Monomial<>(
                     termExponents,
-                    create(variables.length, this.domain, this.ordering, new lMonomialTerm(coeffExponents, term.coefficient)));
+                    create(variables.length, this.domain, this.ordering, new lMonomialZp(coeffExponents, term.coefficient)));
 
             MultivariatePolynomial.add(terms, newTerm, domain);
         }
@@ -268,8 +280,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Converts multivariate polynomial over univariate polynomial domain to a multivariate polynomial over
-     * coefficient domain
+     * Converts multivariate polynomial over univariate polynomial domain (Zp[variable][other_variables]) to a
+     * multivariate polynomial over coefficient domain (Zp[all_variables])
      *
      * @param poly     the polynomial
      * @param variable the variable to insert
@@ -279,7 +291,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         lIntegersModulo domain = poly.domain.getZero().domain;
         int nVariables = poly.nVariables + 1;
         lMultivariatePolynomialZp result = zero(nVariables, domain, poly.ordering);
-        for (MonomialTerm<lUnivariatePolynomialZp> entry : poly.terms) {
+        for (Monomial<lUnivariatePolynomialZp> entry : poly.terms) {
             lUnivariatePolynomialZp uPoly = entry.coefficient;
             int[] dv = ArraysUtil.insert(entry.exponents, variable, 0);
             for (int i = 0; i <= uPoly.degree(); ++i) {
@@ -287,7 +299,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
                     continue;
                 int[] cdv = dv.clone();
                 cdv[variable] = i;
-                result.add(new lMonomialTerm(cdv, uPoly.get(i)));
+                result.add(new lMonomialZp(cdv, uPoly.get(i)));
             }
         }
         return result;
@@ -304,9 +316,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         lIntegersModulo domain = poly.domain.getZero().domain;
         int nVariables = poly.nVariables;
         lMultivariatePolynomialZp result = zero(nVariables, domain, poly.ordering);
-        for (MonomialTerm<lMultivariatePolynomialZp> term : poly.terms) {
+        for (Monomial<lMultivariatePolynomialZp> term : poly.terms) {
             lMultivariatePolynomialZp uPoly = term.coefficient;
-            result.add(uPoly.clone().multiply(new lMonomialTerm(term.exponents, term.totalDegree, 1)));
+            result.add(uPoly.clone().multiply(new lMonomialZp(term.exponents, term.totalDegree, 1)));
         }
         return result;
     }
@@ -324,11 +336,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         lIntegersModulo domain = poly.domain.getZero().domain;
         int nVariables = coefficientVariables.length + mainVariables.length;
         lMultivariatePolynomialZp result = zero(nVariables, domain, poly.ordering);
-        for (MonomialTerm<lMultivariatePolynomialZp> term : poly.terms) {
+        for (Monomial<lMultivariatePolynomialZp> term : poly.terms) {
             lMultivariatePolynomialZp coefficient =
                     term.coefficient.joinNewVariables(nVariables, coefficientVariables);
-            MonomialTerm<lMultivariatePolynomialZp> t = term.joinNewVariables(nVariables, mainVariables);
-            result.add(coefficient.multiply(new lMonomialTerm(t.exponents, t.totalDegree, 1)));
+            Monomial<lMultivariatePolynomialZp> t = term.joinNewVariables(nVariables, mainVariables);
+            result.add(coefficient.multiply(new lMonomialZp(t.exponents, t.totalDegree, 1)));
         }
         return result;
     }
@@ -340,9 +352,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return Z[X] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
      */
     public MultivariatePolynomial<BigInteger> asPolyZSymmetric() {
-        MonomialsSet<MonomialTerm<BigInteger>> bTerms = new MonomialsSet<>(ordering);
-        for (lMonomialTerm t : this)
-            bTerms.add(new MonomialTerm<>(t.exponents, t.totalDegree, BigInteger.valueOf(domain.symmetricForm(t.coefficient))));
+        MonomialSet<Monomial<BigInteger>> bTerms = new MonomialSet<>(ordering);
+        for (lMonomialZp t : this)
+            bTerms.add(new Monomial<>(t.exponents, t.totalDegree, BigInteger.valueOf(domain.symmetricForm(t.coefficient))));
         return new MultivariatePolynomial<>(nVariables, Integers.Integers, ordering, bTerms);
     }
 
@@ -352,9 +364,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return Z[X] version of this
      */
     public MultivariatePolynomial<BigInteger> asPolyZ() {
-        MonomialsSet<MonomialTerm<BigInteger>> bTerms = new MonomialsSet<>(ordering);
-        for (lMonomialTerm t : this)
-            bTerms.add(t.asBigInteger());
+        MonomialSet<Monomial<BigInteger>> bTerms = new MonomialSet<>(ordering);
+        for (lMonomialZp t : this)
+            bTerms.add(t.toBigMonomial());
         return new MultivariatePolynomial<>(nVariables, Integers.Integers, ordering, bTerms);
     }
 
@@ -364,9 +376,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return Z[X] version of this
      */
     public MultivariatePolynomial<BigInteger> toBigPoly() {
-        MonomialsSet<MonomialTerm<BigInteger>> bTerms = new MonomialsSet<>(ordering);
-        for (lMonomialTerm t : this)
-            bTerms.add(t.asBigInteger());
+        MonomialSet<Monomial<BigInteger>> bTerms = new MonomialSet<>(ordering);
+        for (lMonomialZp t : this)
+            bTerms.add(t.toBigMonomial());
         return new MultivariatePolynomial<>(nVariables, domain.asDomain(), ordering, bTerms);
     }
 
@@ -388,23 +400,23 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
-    lMultivariatePolynomialZp create(int nVariables, MonomialsSet<lMonomialTerm> lMonomialTerms) {
+    lMultivariatePolynomialZp create(int nVariables, MonomialSet<lMonomialZp> lMonomialTerms) {
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, lMonomialTerms);
     }
 
     @Override
-    lMonomialTerm createTermWithUnitCoefficient(int[] exponents) {
-        return new lMonomialTerm(exponents, 1L);
+    public lMonomialZp createTermWithUnitCoefficient(int[] exponents) {
+        return new lMonomialZp(exponents, 1L);
     }
 
     @Override
-    lMonomialTerm getUnitTerm() {
-        return lMonomialTerm.withZeroExponents(nVariables, 1L);
+    public lMonomialZp createUnitTerm() {
+        return lMonomialZp.withZeroExponents(nVariables, 1L);
     }
 
     @Override
-    lMonomialTerm getZeroTerm() {
-        return lMonomialTerm.withZeroExponents(nVariables, 0L);
+    public lMonomialZp createZeroTerm() {
+        return lMonomialZp.withZeroExponents(nVariables, 0L);
     }
 
     @Override
@@ -462,17 +474,17 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
-    boolean isZeroMonomial(lMonomialTerm a) {
+    boolean isZeroMonomial(lMonomialZp a) {
         return a.coefficient == 0L;
     }
 
     @Override
-    lMonomialTerm multiply(lMonomialTerm a, lMonomialTerm b) {
+    lMonomialZp multiply(lMonomialZp a, lMonomialZp b) {
         return a.multiply(b, domain.multiply(a.coefficient, b.coefficient));
     }
 
     @Override
-    lMonomialTerm divideOrNull(lMonomialTerm a, lMonomialTerm b) {
+    lMonomialZp divideOrNull(lMonomialZp a, lMonomialZp b) {
         return a.divide(b, domain.divide(a.coefficient, b.coefficient));
     }
 
@@ -502,8 +514,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     @SuppressWarnings("unchecked")
     public lMultivariatePolynomialZp setDomain(lIntegersModulo newDomain) {
-        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
-        for (lMonomialTerm e : terms)
+        MonomialSet<lMonomialZp> newData = new MonomialSet<>(ordering);
+        for (lMonomialZp e : terms)
             add(newData, e.setDomain(newDomain));
         return new lMultivariatePolynomialZp(nVariables, newDomain, ordering, newData);
     }
@@ -516,12 +528,13 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     @SuppressWarnings("unchecked")
     public <E> MultivariatePolynomial<E> setDomain(Domain<E> newDomain) {
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        for (lMonomialTerm e : terms)
+        MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
+        for (lMonomialZp e : terms)
             MultivariatePolynomial.add(newData, e.setDomain(newDomain), newDomain);
         return new MultivariatePolynomial(nVariables, newDomain, ordering, newData);
     }
 
+    /** internal API */
     public lMultivariatePolynomialZp setDomainUnsafe(lIntegersModulo newDomain) {
         return new lMultivariatePolynomialZp(nVariables, newDomain, ordering, terms);
     }
@@ -533,9 +546,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return constant polynomial with specified value
      */
     public lMultivariatePolynomialZp createConstant(long val) {
-        MonomialsSet<lMonomialTerm> data = new MonomialsSet<>(ordering);
+        MonomialSet<lMonomialZp> data = new MonomialSet<>(ordering);
         if (val != 0)
-            data.add(lMonomialTerm.withZeroExponents(nVariables, val));
+            data.add(lMonomialZp.withZeroExponents(nVariables, val));
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, data);
     }
 
@@ -558,17 +571,17 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return linear polynomial {@code cc + lc * variable}
      */
     public lMultivariatePolynomialZp createLinear(int variable, long cc, long lc) {
-        MonomialsSet<lMonomialTerm> data = new MonomialsSet<>(ordering);
+        MonomialSet<lMonomialZp> data = new MonomialSet<>(ordering);
 
         lc = domain.modulus(lc);
         cc = domain.modulus(cc);
 
         if (cc != 0L)
-            data.add(lMonomialTerm.withZeroExponents(nVariables, cc));
+            data.add(lMonomialZp.withZeroExponents(nVariables, cc));
         if (lc != 0L) {
             int[] lcDegreeVector = new int[nVariables];
             lcDegreeVector[variable] = 1;
-            data.add(new lMonomialTerm(lcDegreeVector, 1, lc));
+            data.add(new lMonomialZp(lcDegreeVector, 1, lc));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, data);
     }
@@ -593,7 +606,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     public boolean isOne() {
         if (size() != 1)
             return false;
-        lMonomialTerm lt = terms.first();
+        lMonomialZp lt = terms.first();
         return lt.isZeroVector() && lt.coefficient == 1L;
     }
 
@@ -608,10 +621,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
 
-    /** {@inheritDoc} */
     @Override
-    public lMonomialTerm lt() {
-        return size() == 0 ? lMonomialTerm.withZeroExponents(nVariables, 0L) : terms.last();
+    public lMonomialZp lt() {
+        return size() == 0 ? lMonomialZp.withZeroExponents(nVariables, 0L) : terms.last();
     }
 
     /**
@@ -642,7 +654,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return constant coefficient of this polynomial
      */
     public long cc() {
-        lMonomialTerm zero = lMonomialTerm.withZeroExponents(nVariables, 0L);
+        lMonomialZp zero = lMonomialZp.withZeroExponents(nVariables, 0L);
         return terms.getOrDefault(zero, zero).coefficient;
     }
 
@@ -653,7 +665,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     public long content() {
         long gcd = -1;
-        for (lMonomialTerm term : terms) {
+        for (lMonomialZp term : terms) {
             if (gcd == -1)
                 gcd = term.coefficient;
             else
@@ -697,11 +709,10 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Divides this polynomial by a {@code factor} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
-     * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
+     * Divides this polynomial by a {@code factor}
      *
      * @param factor the factor
-     * @return {@code this} divided by the {@code factor} or {@code null}
+     * @return {@code this / factor}
      */
     public lMultivariatePolynomialZp divide(long factor) {
         if (factor == 1)
@@ -709,15 +720,14 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return multiply(domain.reciprocal(factor)); // <- this is typically faster than the division
     }
 
-    /** {@inheritDoc} */
     @Override
-    public lMultivariatePolynomialZp divideOrNull(lMonomialTerm monomial) {
+    public lMultivariatePolynomialZp divideOrNull(lMonomialZp monomial) {
         if (monomial.isZeroVector())
             return divide(monomial.coefficient);
         long reciprocal = domain.reciprocal(monomial.coefficient);
-        MonomialsSet<lMonomialTerm> map = new MonomialsSet<>(ordering);
-        for (lMonomialTerm term : terms) {
-            lMonomialTerm dv = term.divide(monomial, domain.multiply(term.coefficient, reciprocal));
+        MonomialSet<lMonomialZp> map = new MonomialSet<>(ordering);
+        for (lMonomialZp term : terms) {
+            lMonomialZp dv = term.divide(monomial, domain.multiply(term.coefficient, reciprocal));
             if (dv == null)
                 return null;
             map.add(dv);
@@ -758,21 +768,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Substitutes {@code 0} for {@code variable}.
-     *
-     * @param variable the variable
-     * @return a new multivariate polynomial with {@code 0} substituted for {@code variable}
-     */
-    public lMultivariatePolynomialZp evaluateAtZero(int variable) {
-        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
-        for (lMonomialTerm el : terms)
-            if (el.exponents[variable] == 0)
-                newData.add(el);
-        return new lMultivariatePolynomialZp(nVariables, domain, ordering, newData);
-    }
-
-    /**
-     * Substitutes {@code value} for {@code variable}.
+     * Returns a copy of this with {@code value} substituted for {@code variable}
      *
      * @param variable the variable
      * @param value    the value
@@ -788,7 +784,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Substitutes {@code value} for {@code variable}.
+     * Returns a copy of this with {@code value} substituted for {@code variable}
      *
      * @param variable the variable
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the
@@ -797,43 +793,19 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     lMultivariatePolynomialZp evaluate(int variable, lPrecomputedPowers powers) {
         if (powers.value == 0)
             return evaluateAtZero(variable);
-        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
-        for (lMonomialTerm el : terms) {
+        MonomialSet<lMonomialZp> newData = new MonomialSet<>(ordering);
+        for (lMonomialZp el : terms) {
             long val = domain.multiply(el.coefficient, powers.pow(el.exponents[variable]));
             add(newData, el.setZero(variable, val));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newData);
     }
 
-    /**
-     * Substitutes {@code 0} for all specified {@code variables}.
-     *
-     * @param variables the variables
-     * @return a new multivariate polynomial with {@code 0} substituted for all specified {@code variables}
-     */
-    public lMultivariatePolynomialZp evaluateAtZero(int[] variables) {
-        if (variables.length == 0)
-            return this.clone();
-        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
-        out:
-        for (lMonomialTerm el : terms) {
-            for (int variable : variables)
-                if (el.exponents[variable] != 0)
-                    continue out;
-            newData.add(el);
-        }
-        return new lMultivariatePolynomialZp(nVariables, domain, ordering, newData);
-    }
-
     lUnivariatePolynomialZp evaluateAtZeroAllExcept(int variable) {
         long[] uData = new long[degree(variable) + 1];
-        out:
-        for (lMonomialTerm el : terms) {
-            if (el.totalDegree != 0 && el.exponents[variable] == 0)
+        for (lMonomialZp el : terms) {
+            if (el.totalDegree != el.exponents[variable])
                 continue;
-            for (int i = 0; i < nVariables; ++i)
-                if (i != variable && el.exponents[i] != 0)
-                    continue out;
             int uExp = el.exponents[variable];
             uData[uExp] = domain.add(uData[uExp], el.coefficient);
         }
@@ -841,7 +813,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Substitutes {@code values} for {@code variables}.
+     * Returns a copy of this with {@code values} substituted for {@code variables}
      *
      * @param variables the variables
      * @param values    the values
@@ -857,7 +829,6 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         // <- all values are zero
         return evaluateAtZero(variables);
     }
-
 
     /* cached array of units */
     private static int[][] ones = new int[16][];
@@ -883,9 +854,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     /** substitutes {@code values} for {@code variables} */
     @SuppressWarnings("unchecked")
     lMultivariatePolynomialZp evaluate(lPrecomputedPowersHolder powers, int[] variables, int[] raiseFactors) {
-        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
-        for (lMonomialTerm el : terms) {
-            lMonomialTerm r = el;
+        MonomialSet<lMonomialZp> newData = new MonomialSet<>(ordering);
+        for (lMonomialZp el : terms) {
+            lMonomialZp r = el;
             long value = el.coefficient;
             for (int i = 0; i < variables.length; ++i) {
                 value = domain.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
@@ -915,9 +886,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      */
     public lMultivariatePolynomialZp eliminate(int variable, long value) {
         value = domain.modulus(value);
-        MonomialsSet<lMonomialTerm> newData = new MonomialsSet<>(ordering);
+        MonomialSet<lMonomialZp> newData = new MonomialSet<>(ordering);
         lPrecomputedPowers powers = new lPrecomputedPowers(value, domain);
-        for (lMonomialTerm el : terms) {
+        for (lMonomialZp el : terms) {
             long val = domain.multiply(el.coefficient, powers.pow(el.exponents[variable]));
             add(newData, el.without(variable, val));
         }
@@ -955,7 +926,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             long k2p = value;
             int rExp = 0, kExp = 1;
             for (; ; ) {
-                if ((exponent&1) != 0)
+                if ((exponent & 1) != 0)
                     precomputedPowers[rExp += kExp] = result = domain.multiply(result, k2p);
                 exponent = exponent >> 1;
                 if (exponent == 0)
@@ -995,7 +966,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Substitutes {@code variable -> poly} and returns the result (copied)
+     * Returns a copy of this with {@code poly} substituted for {@code variable}
      *
      * @param variable the variable
      * @param poly     the replacement for the variable
@@ -1011,7 +982,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             subsPowers = new lMSubstitution(poly);
 
         lMultivariatePolynomialZp result = createZero();
-        for (lMonomialTerm term : this) {
+        for (lMonomialZp term : this) {
             int exponent = term.exponents[variable];
             if (exponent == 0) {
                 result.add(term);
@@ -1024,7 +995,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     /**
-     * Substitutes {@code variable -> variable + shift} and returns the result (copied)
+     * Returns a copy of this with {@code variable -> variable + shift}
      *
      * @param variable the variable
      * @param shift    shift amount
@@ -1036,7 +1007,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
         lUSubstitution shifts = new lUSubstitution(lUnivariatePolynomialZ.create(shift, 1).modulus(domain), variable, nVariables, ordering);
         lMultivariatePolynomialZp result = createZero();
-        for (lMonomialTerm term : this) {
+        for (lMonomialZp term : this) {
             int exponent = term.exponents[variable];
             if (exponent == 0) {
                 result.add(term);
@@ -1070,7 +1041,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         lPrecomputedSubstitutions calculatedShifts = new lPrecomputedSubstitutions(powers);
 
         lMultivariatePolynomialZp result = createZero();
-        for (lMonomialTerm term : this) {
+        for (lMonomialZp term : this) {
             lMultivariatePolynomialZp temp = createOne();
             for (int variable : variables) {
                 if (term.exponents[variable] != 0) {
@@ -1148,8 +1119,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
 
     @Override
     public lMultivariatePolynomialZp negate() {
-        for (Entry<DegreeVector, lMonomialTerm> entry : terms.entrySet()) {
-            lMonomialTerm term = entry.getValue();
+        for (Entry<DegreeVector, lMonomialZp> entry : terms.entrySet()) {
+            lMonomialZp term = entry.getValue();
             entry.setValue(term.negate(domain));
         }
         release();
@@ -1157,12 +1128,12 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
-    void add(MonomialsSet<lMonomialTerm> terms, lMonomialTerm term) {
+    void add(MonomialSet<lMonomialZp> terms, lMonomialZp term) {
         add(terms, term, domain);
     }
 
     @Override
-    void subtract(MonomialsSet<lMonomialTerm> terms, lMonomialTerm term) {
+    void subtract(MonomialSet<lMonomialZp> terms, lMonomialZp term) {
         subtract(terms, term, domain);
     }
 
@@ -1176,7 +1147,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         oth = domain.modulus(oth);
         if (oth == 0)
             return this;
-        add(terms, lMonomialTerm.withZeroExponents(nVariables, oth));
+        add(terms, lMonomialZp.withZeroExponents(nVariables, oth));
         release();
         return this;
     }
@@ -1201,12 +1172,6 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return subtract(1L);
     }
 
-    /**
-     * Raises {@code this} by the {@code factor}
-     *
-     * @param factor the factor
-     * @return {@code} this multiplied by the {@code factor}
-     */
     @Override
     public lMultivariatePolynomialZp multiply(long factor) {
         factor = domain.modulus(factor);
@@ -1214,8 +1179,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             return this;
         if (factor == 0)
             return toZero();
-        for (Entry<DegreeVector, lMonomialTerm> entry : terms.entrySet()) {
-            lMonomialTerm term = entry.getValue();
+        for (Entry<DegreeVector, lMonomialZp> entry : terms.entrySet()) {
+            lMonomialZp term = entry.getValue();
             long val = domain.multiply(term.coefficient, factor);
             if (val != 0)
                 entry.setValue(term.setCoefficient(val));
@@ -1234,20 +1199,19 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return multiply(factor.mod(BigInteger.valueOf(domain.modulus)).longValueExact());
     }
 
-    /** {@inheritDoc} */
     @Override
-    public lMultivariatePolynomialZp multiply(lMonomialTerm term) {
-        checkSameDomainWith(term);
-        if (term.isZeroVector())
-            return multiply(term.coefficient);
-        if (term.coefficient == 0)
+    public lMultivariatePolynomialZp multiply(lMonomialZp monomial) {
+        checkSameDomainWith(monomial);
+        if (monomial.isZeroVector())
+            return multiply(monomial.coefficient);
+        if (monomial.coefficient == 0)
             return toZero();
 
-        MonomialsSet<lMonomialTerm> newMap = new MonomialsSet<>(ordering);
-        for (lMonomialTerm thisElement : terms) {
-            long val = domain.multiply(thisElement.coefficient, term.coefficient);
+        MonomialSet<lMonomialZp> newMap = new MonomialSet<>(ordering);
+        for (lMonomialZp thisElement : terms) {
+            long val = domain.multiply(thisElement.coefficient, monomial.coefficient);
             if (val != 0)
-                newMap.add(thisElement.multiply(term, val));
+                newMap.add(thisElement.multiply(monomial, val));
         }
 
         return loadFrom(newMap);
@@ -1262,9 +1226,9 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             return this;
         if (oth.isConstant())
             return multiply(oth.cc());
-        MonomialsSet<lMonomialTerm> newMap = new MonomialsSet<>(ordering);
-        for (lMonomialTerm othElement : oth.terms)
-            for (lMonomialTerm thisElement : terms)
+        MonomialSet<lMonomialZp> newMap = new MonomialSet<>(ordering);
+        for (lMonomialZp othElement : oth.terms)
+            for (lMonomialZp thisElement : terms)
                 add(newMap, thisElement.multiply(othElement, domain.multiply(thisElement.coefficient, othElement.coefficient)));
 
         return loadFrom(newMap);
@@ -1276,12 +1240,12 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
-    lMultivariatePolynomialZp evaluateAtRandom(int variable, RandomGenerator rnd) {
+    public lMultivariatePolynomialZp evaluateAtRandom(int variable, RandomGenerator rnd) {
         return evaluate(variable, domain.randomElement(rnd));
     }
 
     @Override
-    lMultivariatePolynomialZp evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd) {
+    public lMultivariatePolynomialZp evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd) {
         //desired skeleton
         Set<DegreeVector> skeleton = getSkeletonExcept(variable);
         lMultivariatePolynomialZp tmp;
@@ -1298,8 +1262,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             return this.clone();
         if (isConstant())
             return createZero();
-        MonomialsSet<lMonomialTerm> newTerms = new MonomialsSet<>(ordering);
-        for (lMonomialTerm term : this) {
+        MonomialSet<lMonomialZp> newTerms = new MonomialSet<>(ordering);
+        for (lMonomialZp term : this) {
             int exponent = term.exponents[variable];
             if (exponent < order)
                 continue;
@@ -1309,7 +1273,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             int[] newExponents = term.exponents.clone();
             newExponents[variable] -= order;
 
-            add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - order, newCoefficient));
+            add(newTerms, new lMonomialZp(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);
     }
@@ -1372,8 +1336,8 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         if (isConstant())
             return createZero();
 
-        MonomialsSet<lMonomialTerm> newTerms = new MonomialsSet<>(ordering);
-        for (lMonomialTerm term : this) {
+        MonomialSet<lMonomialZp> newTerms = new MonomialSet<>(ordering);
+        for (lMonomialZp term : this) {
             int exponent = term.exponents[variable];
             if (exponent < order)
                 continue;
@@ -1382,7 +1346,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
             newExponents[variable] -= order;
 
             long newCoefficient = domain.multiply(term.coefficient, seriesCoefficientFactor(exponent, order, domain));
-            add(newTerms, new lMonomialTerm(newExponents, term.totalDegree - order, newCoefficient));
+            add(newTerms, new lMonomialZp(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new lMultivariatePolynomialZp(nVariables, domain, ordering, newTerms);
     }
@@ -1395,7 +1359,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @param <T>       new element type
      * @return a new polynomial with terms obtained by applying mapper to this terms
      */
-    public <T> MultivariatePolynomial<T> mapTerms(Domain<T> newDomain, Function<lMonomialTerm, MonomialTerm<T>> mapper) {
+    public <T> MultivariatePolynomial<T> mapTerms(Domain<T> newDomain, Function<lMonomialZp, Monomial<T>> mapper) {
         return terms.values()
                 .stream()
                 .map(mapper)
@@ -1411,7 +1375,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
      * @return a new polynomial with terms obtained by applying mapper to this terms (only coefficients are changed)
      */
     public <T> MultivariatePolynomial<T> mapCoefficients(Domain<T> newDomain, LongFunction<T> mapper) {
-        return mapTerms(newDomain, t -> new MonomialTerm<>(t.exponents, t.totalDegree, mapper.apply(t.coefficient)));
+        return mapTerms(newDomain, t -> new Monomial<>(t.exponents, t.totalDegree, mapper.apply(t.coefficient)));
     }
 
     @Override
@@ -1419,12 +1383,12 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         int c = Integer.compare(size(), oth.size());
         if (c != 0)
             return c;
-        Iterator<lMonomialTerm>
+        Iterator<lMonomialZp>
                 thisIt = iterator(),
                 othIt = oth.iterator();
 
         while (thisIt.hasNext() && othIt.hasNext()) {
-            lMonomialTerm
+            lMonomialZp
                     a = thisIt.next(),
                     b = othIt.next();
 
@@ -1451,10 +1415,11 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         return r;
     }
 
+    @Override
     public String toString(String... vars) {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for (lMonomialTerm term : terms) {
+        for (lMonomialZp term : terms) {
             long coeff = term.coefficient;
             if (coeff == 0)
                 continue;
@@ -1487,20 +1452,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     }
 
     @Override
-    public String toString() {
-        return toString(defaultVars(nVariables));
-    }
-
-    @Override
     public String coefficientDomainToString() {
         return domain.toString();
-    }
-
-    static String[] defaultVars(int nVars) {
-        char v = 'a';
-        String[] vars = new String[nVars];
-        for (int i = 0; i < nVars; i++)
-            vars[i] = Character.toString(v++);
-        return vars;
     }
 }

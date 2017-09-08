@@ -8,6 +8,7 @@ import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.RandomUtil;
 import cc.r2.core.util.TimeUnits;
@@ -24,22 +25,20 @@ import java.util.function.BiFunction;
 
 import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.Rationals.Rationals;
-import static cc.r2.core.poly.multivar.DegreeVector.LEX;
+import static cc.r2.core.poly.multivar.MonomialOrder.LEX;
 import static cc.r2.core.poly.multivar.MultivariateGCD.*;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.asLongPolyZp;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
-import static cc.r2.core.poly.multivar.MultivariateReduction.divideExact;
-import static cc.r2.core.poly.multivar.MultivariateReduction.dividesQ;
-import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
+import static cc.r2.core.poly.multivar.MultivariateDivision.divideExact;
+import static cc.r2.core.poly.multivar.MultivariateDivision.dividesQ;
+import static cc.r2.core.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
 import static org.junit.Assert.*;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariateGCDTest extends AbstractPolynomialTest {
-
-
+public class MultivariateGCDTest extends APolynomialTest {
     private static void assertBrownGCD(MultivariatePolynomial<BigInteger> gcd,
                                        MultivariatePolynomial<BigInteger> a,
                                        MultivariatePolynomial<BigInteger> b) {
@@ -196,7 +195,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+        GCDSampleData<lMonomialZp, lMultivariatePolynomialZp>
                 sampleData = fixVariables(
                 new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars);
         testGCDAlgorithm(sampleData, nIterations,
@@ -359,11 +358,11 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int nVarsMin = 3, nVarsMax = 10, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
 
         int nIterations = its(100, 1500);
-        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp> sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        GCDSampleData<lMonomialZp, lMultivariatePolynomialZp> sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
         for (int n = 0; n < nIterations; n++) {
             if (n % 100 == 0) System.out.println(n);
 
-            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> data = sampleData.nextSample(true, true);
+            GCDSample<lMonomialZp, lMultivariatePolynomialZp> data = sampleData.nextSample(true, true);
 
             int variable = data.a.nVariables - 1;
             long seed;
@@ -622,7 +621,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+        GCDSampleData<lMonomialZp, lMultivariatePolynomialZp>
                 sampleData = fixVariables(
                 new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars);
         testGCDAlgorithm(sampleData, nIterations,
@@ -640,7 +639,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                     a = randomPolynomial(5, 50, 20, rnd),
                     b = randomPolynomial(5, 50, 20, rnd);
 
-            PairIterator<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>
+            PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
                     it = new PairIterator<>(a, b);
 
             MultivariatePolynomial<BigInteger> acc = a.createZero();
@@ -718,7 +717,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         lGCDSampleDataZp sampleData = new lGCDSampleDataZp(3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
-            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> gcdTriplet = sampleData.nextSample(false, false);
+            GCDSample<lMonomialZp, lMultivariatePolynomialZp> gcdTriplet = sampleData.nextSample(false, false);
             lMultivariatePolynomialZp contentGCD = MultivariateGCD.contentGCD(gcdTriplet.a, gcdTriplet.b, 0, MultivariateGCD::PolynomialGCD);
             lMultivariatePolynomialZp gcd = null, actual = null;
             try {
@@ -775,10 +774,10 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int nIterations = its(500, 1000);
         int badEvaluations = 0;
         RandomGenerator rnd = getRandom();
-        GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
+        GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
                 new GCDSampleDataGeneric<>(Integers, 3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
-            GCDSample<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> gcdTriplet = sampleData.nextSample(false, false);
+            GCDSample<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> gcdTriplet = sampleData.nextSample(false, false);
 //            MultivariatePolynomial<BigInteger> contentGCD = MultivariateGCD.contentGCD(gcdTriplet.aCoFactor, gcdTriplet.bCoFactor, 0, MultivariateGCD::PolynomialGCD);
 //            gcdTriplet = new GCDSample<>(divideExact(gcdTriplet.aCoFactor, contentGCD), divideExact(gcdTriplet.bCoFactor, contentGCD), divideExact(gcdTriplet.gcd, contentGCD));
 
@@ -808,7 +807,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                         lb1 = asLongPolyZp(b.setDomain(domain1));
 
                 gcd = ZippelGCD(la1, lb1);
-                if (!gcd.sameSkeleton(skeleton)) {
+                if (!gcd.sameSkeletonQ(skeleton)) {
                     --n; continue;
                 }
 
@@ -915,7 +914,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 lb1 = asLongPolyZp(b.setDomain(domain1));
 
         lMultivariatePolynomialZp gcd0 = ZippelGCD(la1, lb1);
-        System.out.println(gcd0.sameSkeleton(skeleton));
+        System.out.println(gcd0.sameSkeletonQ(skeleton));
 
         rnd.setSeed(-7756222446675659124L);
         lMultivariatePolynomialZp actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.domain), rnd);
@@ -1027,7 +1026,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 //                skeleton = lMultivariatePolynomialZp.parse("943*b^2+976*b^3+899*a*b+212*a*b^2+764*a*b^3+26*a^2*b+274*a^2*b^2+921*a^3*b+189*a^3*b^2+866*a^4+265*a^4*b+955*a^4*b^2+548*a^5+858*a^5*b", domain, vars),
 //                content = lMultivariatePolynomialZp.parse("673+b", domain, vars);
 //
-//        System.out.println(b.sameSkeleton(skeleton));
+//        System.out.println(b.sameSkeletonQ(skeleton));
 //        System.out.println(b.clone().setAllCoefficientsToUnit());
 //
 ////        a = divideExact(a, content);
@@ -1044,7 +1043,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     public void testModularGCD_random1() throws Exception {
         int nIterations = its(1000, 3000);
         RandomGenerator rnd = getRandom();
-        GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
+        GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
                 new GCDSampleDataGeneric<>(Integers, 3, 5, 5, 15, 5, 15, rnd);
 
         testGCDAlgorithms(sampleData, nIterations,
@@ -1060,7 +1059,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>
+        GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
                 sampleData =
                 boundCoefficients(
                         fixVariables(new GCDSampleDataGeneric<>(Integers, nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars),
@@ -1142,18 +1141,18 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             FiniteField<lUnivariatePolynomialZp> field = FiniteField.GF17p5;
             MultivariatePolynomial<lUnivariatePolynomialZp>
                     a = MultivariatePolynomial.zero(3, field, LEX)
-                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5).modulus(17)), 1, 1, 3))
-                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 3, 2, 13).modulus(17)), 3, 2, 1))
-                    .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 13, 12, 13).modulus(17)), 0, 2, 1)),
+                    .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(1, 2, 3, 4, 5).modulus(17)), 1, 1, 3))
+                    .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 3, 2, 13).modulus(17)), 3, 2, 1))
+                    .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 13, 12, 13).modulus(17)), 0, 2, 1)),
                     b = MultivariatePolynomial.zero(3, field, LEX)
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5).modulus(17)), 1, 1, 13))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 1, 2, 13).modulus(17)), 2, 2, 1))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 113, 112, 13).modulus(17)), 10, 2, 1)),
+                            .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5).modulus(17)), 1, 1, 13))
+                            .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(2, 1, 1, 2, 13).modulus(17)), 2, 2, 1))
+                            .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(2, 11, 113, 112, 13).modulus(17)), 10, 2, 1)),
                     gcd = MultivariatePolynomial.one(3, field, LEX)
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5, 12).modulus(17)), 11, 1, 13))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(11, 2, 1, 1, 2, 13).modulus(17)), 21, 2, 1))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(17)), 10, 12, 1))
-                            .add(MonomialTerm.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(17)), 0, 0, 1));
+                            .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(1, 1, 3, 4, 5, 12).modulus(17)), 11, 1, 13))
+                            .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(11, 2, 1, 1, 2, 13).modulus(17)), 21, 2, 1))
+                            .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(17)), 10, 12, 1))
+                            .add(Monomial.create(field.valueOf(lUnivariatePolynomialZ.create(2, 111, 113, 112, 13, 12).modulus(17)), 0, 0, 1));
 
             a = a.clone().add(b).multiply(gcd);
             b = b.clone().subtract(gcd).multiply(gcd);
@@ -1182,7 +1181,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 //
 //            MultivariatePolynomial<E> term = poly.get(i);
 //            zero.add(
-//                    term.multiply(new MonomialTerm<>(zero.nVariables, variable, i, zero.domain.getOne())));
+//                    term.multiply(new Monomial<>(zero.nVariables, variable, i, zero.domain.getOne())));
 //        }
 //        return zero;
 //    }
@@ -1208,7 +1207,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 ////        System.out.println(b);
 ////        System.out.println(asMUnivariate(b, variable));
 //
-//        UnivariatePolynomial<MultivariatePolynomial<BigInteger>> result = UnivariateGCD.SubresultantEuclid(asMUnivariate(a, variable), asMUnivariate(b, variable)).gcd();
+//        UnivariatePolynomial<MultivariatePolynomial<BigInteger>> result = UnivariateGCD.EuclidSubresultantRemainders(asMUnivariate(a, variable), asMUnivariate(b, variable)).gcd();
 //        System.out.println(result);
 //        System.out.println(fromMUnivariate(result, variable));
 //
@@ -1230,7 +1229,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             a1 = a1.multiply(gcd1);
             b1 = b1.multiply(gcd1);
 
-            assertEquals(gcd1.monic(), ModularGCDFiniteField(a1, b1).monic());
+            assertEquals(gcd1.monic(), ModularGCDInGF(a1, b1).monic());
         }
     }
 
@@ -1245,8 +1244,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         sampleData.minModulusBits = 2;
         sampleData.maxModulusBits = 5;
         testGCDAlgorithm(sampleData, nIterations,
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField),
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField));
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF),
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF));
     }
 
     @Test
@@ -1262,12 +1261,12 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         source.minModulusBits = 2;
         source.maxModulusBits = 5;
 
-        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+        GCDSampleData<lMonomialZp, lMultivariatePolynomialZp>
                 sampleData = filterZeros(fixVariables(source, nVars));
 
         testGCDAlgorithm(sampleData, nIterations,
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField),
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDFiniteField));
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF),
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF));
     }
 
 
@@ -1288,7 +1287,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(5, 5); i++) {
             timestamp();
-            lMultivariatePolynomialZp gcd = ModularGCDFiniteField(a, b);
+            lMultivariatePolynomialZp gcd = ModularGCDInGF(a, b);
             timeElapsed();
 
             assertTrue(dividesQ(a, gcd));
@@ -1441,7 +1440,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         lGCDSampleDataZp sampleData = new lGCDSampleDataZp(3, 4, 2, 3, 5, 7, rnd);
         rnd.setSeed(42);
-        GCDSample<lMonomialTerm, lMultivariatePolynomialZp> sample = sampleData.nextSample(false, true);
+        GCDSample<lMonomialZp, lMultivariatePolynomialZp> sample = sampleData.nextSample(false, true);
         for (lMultivariatePolynomialZp[] pp : new lMultivariatePolynomialZp[][]{{sample.a, sample.b}, {sample.aCoFactor, sample.bCoFactor}}) {
             lMultivariatePolynomialZp
                     a = pp[0],
@@ -1464,7 +1463,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         lGCDSampleDataZp sampleData = new lGCDSampleDataZp(3, 4, 2, 3, 5, 7, rnd);
         for (int i = 0; i < nIterations; i++) {
             System.out.println(i);
-            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> sample = sampleData.nextSample(false, true);
+            GCDSample<lMonomialZp, lMultivariatePolynomialZp> sample = sampleData.nextSample(false, true);
             for (lMultivariatePolynomialZp[] pp : new lMultivariatePolynomialZp[][]{{sample.a, sample.b}, {sample.aCoFactor, sample.bCoFactor}}) {
                 lMultivariatePolynomialZp
                         a = pp[0],
@@ -1779,7 +1778,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         int minSize = 5, maxSize = 10;
 
         int nIterations = its(1000, 10000);
-        GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp>
+        GCDSampleData<lMonomialZp, lMultivariatePolynomialZp>
                 sampleData = fixVariables(
                 new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars);
 
@@ -2002,13 +2001,13 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     /** substitute random values for some variables */
-    public static GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>
-    boundCoefficients(final GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> source, BigInteger bound) {
+    public static GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+    boundCoefficients(final GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> source, BigInteger bound) {
         final IntegersModulo domain = new IntegersModulo(bound);
-        return new GCDSampleData<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>>() {
+        return new GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>() {
             @Override
-            GCDSample<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> nextSample0(boolean primitive, boolean monic) {
-                GCDSample<MonomialTerm<BigInteger>, MultivariatePolynomial<BigInteger>> sample = source.nextSample(primitive, monic);
+            GCDSample<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> nextSample0(boolean primitive, boolean monic) {
+                GCDSample<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> sample = source.nextSample(primitive, monic);
                 return new GCDSample<>(
                         setRandomCoefficients(sample.aCoFactor, bound),
                         setRandomCoefficients(sample.bCoFactor, bound),
@@ -2018,7 +2017,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
             private MultivariatePolynomial<BigInteger> setRandomCoefficients(MultivariatePolynomial<BigInteger> poly, BigInteger bound) {
                 RandomGenerator rnd = PrivateRandom.getRandom();
                 MultivariatePolynomial<BigInteger> r = poly.createZero();
-                for (MonomialTerm<BigInteger> term : poly)
+                for (Monomial<BigInteger> term : poly)
                     r.add(term.setCoefficient(RandomUtil.randomInt(bound, rnd)));
                 return r;
             }
@@ -2209,7 +2208,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     /** sample data for machine-sized Zp polynomials */
-    public static final class lGCDSampleDataZp extends AGCDSampleData<lMonomialTerm, lMultivariatePolynomialZp> {
+    public static final class lGCDSampleDataZp extends AGCDSampleData<lMonomialZp, lMultivariatePolynomialZp> {
         public lGCDSampleDataZp(int nVarsMin, int nVarsMax, int minDegree, int maxDegree, int minSize, int maxSize, RandomGenerator rnd) {
             super(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
         }
@@ -2217,8 +2216,8 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         public int minModulusBits = 24, maxModulusBits = 32;
 
         @Override
-        public GCDSample<lMonomialTerm, lMultivariatePolynomialZp> nextSample1(boolean primitive, boolean monic) {
-            long modulus = AbstractPolynomialTest.getModulusRandom(rndd.nextInt(minModulusBits, maxModulusBits));
+        public GCDSample<lMonomialZp, lMultivariatePolynomialZp> nextSample1(boolean primitive, boolean monic) {
+            long modulus = APolynomialTest.getModulusRandom(rndd.nextInt(minModulusBits, maxModulusBits));
             lIntegersModulo domain = new lIntegersModulo(modulus);
 
             int nVariables = rndd.nextInt(nVarsMin, nVarsMax);
@@ -2249,7 +2248,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     /** generic sample data */
-    public static final class GCDSampleDataGeneric<E> extends AGCDSampleData<MonomialTerm<E>, MultivariatePolynomial<E>> {
+    public static final class GCDSampleDataGeneric<E> extends AGCDSampleData<Monomial<E>, MultivariatePolynomial<E>> {
         final Domain<E> domain;
 
         public GCDSampleDataGeneric(Domain<E> domain, int nVarsMin, int nVarsMax, int minDegree, int maxDegree, int minSize, int maxSize, RandomGenerator rnd) {
@@ -2258,7 +2257,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
         }
 
         @Override
-        public GCDSample<MonomialTerm<E>, MultivariatePolynomial<E>> nextSample1(boolean primitive, boolean monic) {
+        public GCDSample<Monomial<E>, MultivariatePolynomial<E>> nextSample1(boolean primitive, boolean monic) {
             int nVariables = rndd.nextInt(nVarsMin, nVarsMax);
             @SuppressWarnings("unchecked")
             MultivariatePolynomial<E>[] data = new MultivariatePolynomial[3];
@@ -2358,7 +2357,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
     }
 
     /** run specified gcd algorithms on sample input */
-    public static void testGCDAlgorithm(GCDSampleData<lMonomialTerm, lMultivariatePolynomialZp> sampleData, int nIterations,
+    public static void testGCDAlgorithm(GCDSampleData<lMonomialZp, lMultivariatePolynomialZp> sampleData, int nIterations,
                                         GCDAlgorithm<lMultivariatePolynomialZp> lAlgorithm,
                                         GCDAlgorithm<MultivariatePolynomial<BigInteger>> algorithm) {
         System.out.println("\nRunning gcd tests for " + algorithm);
@@ -2383,7 +2382,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
                 System.out.flush();
             }
 
-            GCDSample<lMonomialTerm, lMultivariatePolynomialZp> sample = sampleData.nextSample();
+            GCDSample<lMonomialZp, lMultivariatePolynomialZp> sample = sampleData.nextSample();
 
             MultivariatePolynomial<BigInteger> result = null;
             lMultivariatePolynomialZp lResult = null;
@@ -2449,7 +2448,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
     private static <E> void checkConsistency(MultivariatePolynomial<E> poly) {
         Domain<E> domain = poly.domain;
-        for (MonomialTerm<E> e : poly.terms) {
+        for (Monomial<E> e : poly.terms) {
             E value = e.coefficient;
             assertFalse(domain.isZero(value));
             assertTrue(value == domain.valueOf(value));
@@ -2462,7 +2461,7 @@ public class MultivariateGCDTest extends AbstractPolynomialTest {
 
     private static void checkConsistency(lMultivariatePolynomialZp poly) {
         lIntegersModulo domain = poly.domain;
-        for (lMonomialTerm e : poly.terms) {
+        for (lMonomialZp e : poly.terms) {
             long value = e.coefficient;
             assertFalse(value == 0);
             assertTrue(value == domain.modulus(value));

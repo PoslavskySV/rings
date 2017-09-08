@@ -1,4 +1,4 @@
-package cc.r2.core.poly.factorization;
+package cc.r2.core.poly.test;
 
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.IPolynomial;
@@ -13,7 +13,7 @@ import java.util.function.Function;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FactorizationTestData {
+public final class FactorizationInput {
 
     /** Sample factorization */
     public static class SampleDecomposition<Poly extends IPolynomial<Poly>> {

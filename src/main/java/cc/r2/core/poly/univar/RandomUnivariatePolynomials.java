@@ -9,20 +9,20 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
 /**
- * Util to generate random polynomials.
+ * Methods to generate random polynomials.
  *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class RandomPolynomials {
-    private RandomPolynomials() {}
+public final class RandomUnivariatePolynomials {
+    private RandomUnivariatePolynomials() {}
 
     private static final int DEFAULT_BOUND = 100;
 
     /**
      * Creates random polynomial of specified {@code degree}.
      *
-     * @param factory return type marker
+     * @param factory the factory (used to infer the type and the domain)
      * @param degree  polynomial degree
      * @param rnd     random source
      * @return random polynomial of specified {@code degree}
@@ -181,7 +181,6 @@ public class RandomPolynomials {
      * @return array of length {@code degree + 1} with elements from specified domain
      */
     public static <E> E[] randomArray(int degree, Domain<E> domain, RandomGenerator rnd) {
-        RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         E[] data = domain.createArray(degree + 1);
         for (int i = 0; i <= degree; ++i)
             data[i] = domain.randomElement(rnd);

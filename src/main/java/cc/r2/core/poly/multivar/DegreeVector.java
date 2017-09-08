@@ -2,14 +2,15 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.util.ArraysUtil;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * Parent class for monomials which holds the degree vector of monomial.
+ * Instances of this class are immutable (all structural operations return new instances).
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
@@ -17,23 +18,23 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
     private static final long serialVersionUID = 1L;
     /** exponents */
     final int[] exponents;
-    /** sum of all exponents */
-    final int totalDegree;
+    /** Sum of all exponents (total degree) */
+    public final int totalDegree;
 
-    DegreeVector(int[] exponents, int totalDegree) {
+    protected DegreeVector(int[] exponents, int totalDegree) {
         this.exponents = exponents;
         this.totalDegree = totalDegree;
         //assertions();
     }
 
-    DegreeVector(int nVariables, int position, int exponent) {
+    protected DegreeVector(int nVariables, int position, int exponent) {
         this.exponents = new int[nVariables];
         this.exponents[position] = exponent;
         this.totalDegree = exponent;
         //assertions();
     }
 
-    DegreeVector(int[] exponents) {
+    protected DegreeVector(int[] exponents) {
         this(exponents, ArraysUtil.sum(exponents));
     }
 
@@ -41,30 +42,55 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
         assert ArraysUtil.sum(exponents) == totalDegree;
     }
 
-    /** internal method */
-    abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
+    /**
+     * Set the degree vector to a new value
+     *
+     * @param newDegree      new degree vector
+     * @param newTotalDegree sum of newDegree
+     */
+    public abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
 
-    final MonomialTerm setDegreeVector(int[] newDegree) {
+    /**
+     * Set the degree vector to a new value
+     *
+     * @param newDegree new degree vector
+     * @return new monomial
+     */
+    public final MonomialTerm setDegreeVector(int[] newDegree) {
         return setDegreeVector(newDegree, ArraysUtil.sum(newDegree));
     }
 
-    /** internal method */
-    final MonomialTerm setDegreeVector(DegreeVector dv) {
+    /**
+     * Set the degree vector to a new value
+     *
+     * @param dv new degree vector
+     * @return new monomial
+     */
+    public final MonomialTerm setDegreeVector(DegreeVector dv) {
         return setDegreeVector(dv.exponents, dv.totalDegree);
     }
 
-    /** set i-th exponent to zero and return new Monomial */
-    abstract MonomialTerm setZero(int var);
+    /**
+     * Returns  exponents of all variables except the specified variable to zero and exponent of specified variable to
+     * one (so the result is just "var")
+     *
+     * @param var the variable
+     * @return the new monomial
+     */
+    public final MonomialTerm singleVar(int var) {
+        int[] newExponents = new int[exponents.length];
+        newExponents[var] = 1;
+        return setDegreeVector(newExponents, 1);
+    }
 
-    /** set i-th exponent to zero and return new Monomial */
-    abstract MonomialTerm setZero(int[] vars);
-
-    abstract MonomialTerm select(int i);
-
-    abstract MonomialTerm singleVar(int i);
-
-    /** Divide degree vector */
-    final MonomialTerm divide(DegreeVector oth) {
+    /**
+     * Divides this monomial by {@code oth} not taking into account the coefficient of {@code oth} (division of
+     * degree vectors), returns null if exact division is not possible (e.g. a^2*b^3 / a^3*b^5)
+     *
+     * @param oth the degree vector
+     * @return {@code this / oth} or null if exact division is not possible
+     */
+    public final MonomialTerm divideOrNull(DegreeVector oth) {
         int[] newExponents = new int[exponents.length];
         for (int i = 0; i < exponents.length; i++) {
             newExponents[i] = exponents[i] - oth.exponents[i];
@@ -74,8 +100,8 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
         return setDegreeVector(newExponents, totalDegree - oth.totalDegree);
     }
 
-    /** Whether divides degree vector */
-    final boolean dividesQ(DegreeVector oth) {
+    /** Tests whether this can be divided by {@code oth} degree vector */
+    public final boolean dividesQ(DegreeVector oth) {
         for (int i = 0; i < exponents.length; i++) {
             if (exponents[i] < oth.exponents[i])
                 return false;
@@ -88,12 +114,13 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
         return totalDegree == 0;
     }
 
-    /** Adjoins new variable (with zero exponent) to this monomial */
+    /** Joins new variable (with zero exponent) to this monomial */
     public final MonomialTerm joinNewVariable() {
         return setDegreeVector(Arrays.copyOf(exponents, exponents.length + 1), totalDegree);
     }
 
-    public final MonomialTerm joinNewVariables(int newNVariables, int[] mapping) {
+    /** internal API */
+    final MonomialTerm joinNewVariables(int newNVariables, int[] mapping) {
         int[] newExponents = new int[newNVariables];
         int c = 0;
         for (int i : mapping)
@@ -102,8 +129,25 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
         return setDegreeVector(newExponents, totalDegree);
     }
 
-    /** Set's exponents of all variables except specified ones to zero */
-    public final MonomialTerm of(int[] variables) {
+    /**
+     * Sets exponents of all variables except the specified variable to zero
+     *
+     * @param var the variable
+     * @return new monomial
+     */
+    public final MonomialTerm select(int var) {
+        int[] newExponents = new int[exponents.length];
+        newExponents[var] = exponents[var];
+        return setDegreeVector(newExponents, exponents[var]);
+    }
+
+    /**
+     * Set's exponents of all variables except specified variables to zero
+     *
+     * @param variables the variables
+     * @return new monomial
+     */
+    public final MonomialTerm select(int[] variables) {
         int[] exs = new int[exponents.length];
         int totalDegree = 0;
         for (int i : variables) {
@@ -113,8 +157,27 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
         return setDegreeVector(exs, totalDegree);
     }
 
-    /** Set's exponents of specified variables to zero */
-    public final MonomialTerm except(int[] variables) {
+    /**
+     * Set exponent of specified {@code var} to zero
+     *
+     * @param var the variable
+     * @return new monomial
+     */
+    public final MonomialTerm setZero(int var) {
+        int[] exs = exponents.clone();
+        int totalDegree = this.totalDegree;
+        exs[var] = 0;
+        totalDegree -= exponents[var];
+        return setDegreeVector(exs, totalDegree);
+    }
+
+    /**
+     * Set exponents of specified variables to zero and return new Monomial
+     *
+     * @param variables the array of variables
+     * @return new monomial
+     */
+    public final MonomialTerm setZero(int[] variables) {
         int[] exs = exponents.clone();
         int totalDegree = this.totalDegree;
         for (int i : variables) {
@@ -124,32 +187,48 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
         return setDegreeVector(exs, totalDegree);
     }
 
+    /**
+     * Drops specified variable (number of variables will be reduced)
+     *
+     * @param variable the variable
+     * @return new monomial
+     */
     public final MonomialTerm without(int variable) {
         return setDegreeVector(ArraysUtil.remove(exponents, variable), totalDegree - exponents[variable]);
     }
 
-    @SuppressWarnings("unchecked")
-    final MonomialTerm dropFrom(int variable) {
-        if (variable == exponents.length - 1)
-            return (MonomialTerm) this;
-        return setDegreeVector(Arrays.copyOf(exponents, variable));
-    }
-
+    /**
+     * Inserts new variable
+     *
+     * @param variable the variable
+     * @return new monomial
+     */
     public final MonomialTerm insert(int variable) {
         return setDegreeVector(ArraysUtil.insert(exponents, variable, 0), totalDegree);
     }
 
-    /** Set's exponent of i-th variable to specified value */
-    public final MonomialTerm set(int i, int exponent) {
+    /**
+     * Set's exponent of specified variable to specified value
+     *
+     * @param variable the variable
+     * @param exponent new exponent
+     * @return new monomial
+     */
+    public final MonomialTerm set(int variable, int exponent) {
         int[] newExponents = exponents.clone();
-        newExponents[i] = exponent;
-        return setDegreeVector(newExponents, totalDegree - exponents[i] + exponent);
+        newExponents[variable] = exponent;
+        return setDegreeVector(newExponents, totalDegree - exponents[variable] + exponent);
     }
 
     private static String toString0(String var, int exp) {
         return exp == 0 ? "" : var + (exp == 1 ? "" : "^" + exp);
     }
 
+    /**
+     * String representation of this monomial with specified string names for variables
+     *
+     * @param vars string names of variables
+     */
     public final String toString(String[] vars) {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < exponents.length; i++)
@@ -193,47 +272,4 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements
             zeroDegreeVectors[i] = new int[i];
     }
 
-    /**
-     * Lexicographic monomial order
-     */
-    public static final Comparator<DegreeVector> LEX = (Comparator<DegreeVector> & Serializable)
-            (DegreeVector a, DegreeVector b) -> {
-                for (int i = 0; i < a.exponents.length; ++i) {
-                    int c = Integer.compare(a.exponents[i], b.exponents[i]);
-                    if (c != 0)
-                        return c;
-                }
-                return 0;
-            };
-
-    /**
-     * Antilexicographic monomial order
-     */
-    public static final Comparator<DegreeVector> ALEX = (Comparator<DegreeVector> & Serializable)
-            (DegreeVector a, DegreeVector b) -> LEX.compare(b, a);
-
-    /**
-     * Graded lexicographic monomial order
-     */
-    public static final Comparator<DegreeVector> GRLEX = (Comparator<DegreeVector> & Serializable)
-            (DegreeVector a, DegreeVector b) -> {
-                int c = Integer.compare(a.totalDegree, b.totalDegree);
-                return c != 0 ? c : LEX.compare(a, b);
-            };
-
-    /**
-     * Graded reverse lexicographic monomial order
-     */
-    public static final Comparator<DegreeVector> GREVLEX = (Comparator<DegreeVector> & Serializable)
-            (Comparator<DegreeVector> & Serializable) (DegreeVector a, DegreeVector b) -> {
-        int c = Integer.compare(a.totalDegree, b.totalDegree);
-        if (c != 0)
-            return c;
-        for (int i = a.exponents.length - 1; i >= 0; --i) {
-            c = Integer.compare(b.exponents[i], a.exponents[i]);
-            if (c != 0)
-                return c;
-        }
-        return 0;
-    };
 }

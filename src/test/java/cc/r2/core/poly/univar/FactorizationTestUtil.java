@@ -12,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by poslavsky on 20/01/2017.
  */
-public final class FactorizationTestUtil {
+final class FactorizationTestUtil {
     public FactorizationTestUtil() {}
 
     public static <T extends IUnivariatePolynomial<T>> void assertDistinctDegreeFactorization(T poly, FactorDecomposition<T> factorization) {
@@ -112,11 +112,11 @@ public final class FactorizationTestUtil {
             poly = lUnivariatePolynomialZ.create(rndd.nextLong(1, modulus)).modulus(modulus, false);
             int nBases = rndd.nextInt(minNBase, maxNBase);
             for (int j = 1; j <= nBases; ++j)
-                poly = poly.multiply(RandomPolynomials.randomMonicPoly(j, modulus, rnd));
+                poly = poly.multiply(RandomUnivariatePolynomials.randomMonicPoly(j, modulus, rnd));
 
             if (ensureSquareFree) {
-                poly = SquareFreeFactorization.SquareFreePart(poly);
-                assert SquareFreeFactorization.isSquareFree(poly);
+                poly = UnivariateSquareFreeFactorization.SquareFreePart(poly);
+                assert UnivariateSquareFreeFactorization.isSquareFree(poly);
             }
 
             if (poly.isConstant())
@@ -148,11 +148,11 @@ public final class FactorizationTestUtil {
 
         @Override
         public lUnivariatePolynomialZp take(long modulus) {
-            lUnivariatePolynomialZp poly = RandomPolynomials.randomMonicPoly(minDegree + rnd.nextInt(maxDegree - minDegree + 1), modulus, rnd).multiply(rndd.nextLong(1, modulus - 1));
+            lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(minDegree + rnd.nextInt(maxDegree - minDegree + 1), modulus, rnd).multiply(rndd.nextLong(1, modulus - 1));
 
             if (ensureSquareFree) {
-                poly = SquareFreeFactorization.SquareFreePart(poly);
-                assert SquareFreeFactorization.isSquareFree(poly);
+                poly = UnivariateSquareFreeFactorization.SquareFreePart(poly);
+                assert UnivariateSquareFreeFactorization.isSquareFree(poly);
             }
 
             if (poly.isConstant())
@@ -180,8 +180,8 @@ public final class FactorizationTestUtil {
                 poly = poly.multiply(pSource.take(modulus));
 
             if (ensureSquareFree) {
-                poly = SquareFreeFactorization.SquareFreePart(poly);
-                assert SquareFreeFactorization.isSquareFree(poly);
+                poly = UnivariateSquareFreeFactorization.SquareFreePart(poly);
+                assert UnivariateSquareFreeFactorization.isSquareFree(poly);
             }
             return poly;
         }

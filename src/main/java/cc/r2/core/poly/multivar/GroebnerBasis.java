@@ -5,9 +5,11 @@ import cc.r2.core.util.ArraysUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-import static cc.r2.core.poly.multivar.MultivariateReduction.remainder;
+import static cc.r2.core.poly.multivar.MultivariateDivision.remainder;
 
 /**
+ * Basic Groebner basis.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */

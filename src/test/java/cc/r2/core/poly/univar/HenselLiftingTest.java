@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.FactorDecompositionTest;
 import cc.r2.core.poly.IntegersModulo;
@@ -26,7 +26,7 @@ import static cc.r2.core.poly.univar.UnivariatePolynomial.mignotteBound;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class HenselLiftingTest extends AbstractPolynomialTest {
+public class HenselLiftingTest extends APolynomialTest {
 
     @SuppressWarnings("unchecked")
     private static <PolyZ extends IUnivariatePolynomial<PolyZ>, PolyZp extends IUnivariatePolynomial<PolyZp>>
@@ -139,8 +139,8 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         RandomDataGenerator rndd = getRandomData();
         int nIterations = (int) its(100, 1000);
         for (int i = 0; i < nIterations; i++) {
-            UnivariatePolynomial<BigInteger> a = RandomPolynomials.randomPoly(rndd.nextInt(2, 5), BigInteger.INT_MAX_VALUE, rnd);
-            UnivariatePolynomial<BigInteger> b = RandomPolynomials.randomPoly(rndd.nextInt(2, 5), BigInteger.INT_MAX_VALUE, rnd);
+            UnivariatePolynomial<BigInteger> a = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(2, 5), BigInteger.INT_MAX_VALUE, rnd);
+            UnivariatePolynomial<BigInteger> b = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(2, 5), BigInteger.INT_MAX_VALUE, rnd);
             UnivariatePolynomial<BigInteger> poly = a.clone().multiply(b);
             testHenselStepRandomModulus(poly, a, b, true, 5, 5);
             testHenselStepRandomModulus(poly, a, b, false, 5, 5);
@@ -148,16 +148,16 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
     }
 
     static void testMultiFactorHenselLifting(UnivariatePolynomial<BigInteger> base, long modulus, int nIterations, boolean quadratic) {
-        base = SquareFreeFactorization.SquareFreePart(base);
+        base = UnivariateSquareFreeFactorization.SquareFreePart(base);
 
         lUnivariatePolynomialZp baseMod = asLongPolyZp(base.setDomain(new IntegersModulo(modulus)));
         if (baseMod.degree() != base.degree())
             return;
 
-        if (!SquareFreeFactorization.isSquareFree(baseMod))
+        if (!UnivariateSquareFreeFactorization.isSquareFree(baseMod))
             return;
 
-        FactorDecomposition<lUnivariatePolynomialZp> modularFactors = Factorization.factorInFiniteField(baseMod);
+        FactorDecomposition<lUnivariatePolynomialZp> modularFactors = UnivariateFactorization.factorInGF(baseMod);
         FactorDecompositionTest.assertFactorization(baseMod, modularFactors);
 
         HenselLifting.LiftFactory<lUnivariatePolynomialZp> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
@@ -202,7 +202,7 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
         for (int i = 0; i < its(100, 1000); ++i) {
-            UnivariatePolynomial<BigInteger> poly = RandomPolynomials.randomPoly(rndd.nextInt(5, 15), BigInteger.LONG_MAX_VALUE, rnd);
+            UnivariatePolynomial<BigInteger> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(5, 15), BigInteger.LONG_MAX_VALUE, rnd);
             for (long modulus : getModulusArray((int) its(5, 15), 0, 5, 0)) {
                 lUnivariatePolynomialZp polyMod = asLongPolyZp(poly.setDomain(new IntegersModulo(modulus)));
                 if (polyMod.isConstant() || polyMod.isMonomial())
@@ -230,8 +230,8 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
         UnivariatePolynomial<BigInteger> aFactor, bFactor;
         IntegersModulo domain = new IntegersModulo(modulus);
         do {
-            aFactor = RandomPolynomials.randomPoly(5, BigInteger.LONG_MAX_VALUE, rnd);
-            bFactor = RandomPolynomials.randomPoly(5, BigInteger.LONG_MAX_VALUE, rnd);
+            aFactor = RandomUnivariatePolynomials.randomPoly(5, BigInteger.LONG_MAX_VALUE, rnd);
+            bFactor = RandomUnivariatePolynomials.randomPoly(5, BigInteger.LONG_MAX_VALUE, rnd);
         } while (!UnivariateGCD.PolynomialGCD(aFactor.setDomain(domain), bFactor.setDomain(domain)).isConstant());
 
         UnivariatePolynomial<BigInteger> poly = aFactor.clone().multiply(bFactor);
@@ -325,8 +325,8 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
 
             UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.create(1);
             for (int i = 0; i < nFactors; i++)
-                poly = poly.multiply(RandomPolynomials.randomPoly(rndd.nextInt(5, 15), BigInteger.valueOf(1000), rnd));
-            poly = SquareFreeFactorization.SquareFreePart(poly);
+                poly = poly.multiply(RandomUnivariatePolynomials.randomPoly(rndd.nextInt(5, 15), BigInteger.valueOf(1000), rnd));
+            poly = UnivariateSquareFreeFactorization.SquareFreePart(poly);
 
             UnivariatePolynomial<BigInteger> polyMod;
             long modulus;
@@ -336,10 +336,10 @@ public class HenselLiftingTest extends AbstractPolynomialTest {
                 domain = new IntegersModulo(modulus);
                 polyMod = poly.setDomain(domain);
             }
-            while (!SquareFreeFactorization.isSquareFree(poly.setDomain(domain)) || polyMod.degree() != poly.degree());
+            while (!UnivariateSquareFreeFactorization.isSquareFree(poly.setDomain(domain)) || polyMod.degree() != poly.degree());
 
             BigInteger desiredBound = mignotteBound(poly).shiftLeft(1).multiply(poly.lc());
-            FactorDecomposition<lUnivariatePolynomialZp> modularFactors = Factorization.factorInFiniteField(asLongPolyZp(polyMod));
+            FactorDecomposition<lUnivariatePolynomialZp> modularFactors = UnivariateFactorization.factorInGF(asLongPolyZp(polyMod));
             BigInteger bModulus = BigInteger.valueOf(modulus);
 
             long start;

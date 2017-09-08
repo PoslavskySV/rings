@@ -1,6 +1,6 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.lIntegersModulo;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -14,7 +14,7 @@ import java.util.Arrays;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class lUnivariatePolynomialZpTest extends AbstractPolynomialTest {
+public class lUnivariatePolynomialZpTest extends APolynomialTest {
     @Test
     public void test1() throws Exception {
         lUnivariatePolynomialZp aL = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, 6).modulus(59);

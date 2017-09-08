@@ -1,8 +1,8 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.poly.multivar.AMultivariatePolynomial;
+import cc.r2.core.poly.multivar.MultivariateDivision;
 import cc.r2.core.poly.multivar.MultivariateGCD;
-import cc.r2.core.poly.multivar.MultivariateReduction;
 import org.apache.commons.math3.random.RandomGenerator;
 
 /**
@@ -29,7 +29,7 @@ public final class MultivariatePolynomials<Poly extends AMultivariatePolynomial<
     public Poly[] divideAndRemainder(Poly dividend, Poly divider) {
         Poly[] arr = divider.createArray(1);
         arr[0] = divider;
-        return (Poly[]) MultivariateReduction.divideAndRemainder((AMultivariatePolynomial) dividend, (AMultivariatePolynomial[]) arr);
+        return (Poly[]) MultivariateDivision.divideAndRemainder((AMultivariatePolynomial) dividend, (AMultivariatePolynomial[]) arr);
     }
 
     @Override

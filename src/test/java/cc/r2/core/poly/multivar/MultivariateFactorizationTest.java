@@ -2,11 +2,12 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.*;
-import cc.r2.core.poly.factorization.FactorizationTestData;
-import cc.r2.core.poly.factorization.FactorizationTestData.FactorizationAlgorithm;
-import cc.r2.core.poly.factorization.FactorizationTestData.SampleDecomposition;
-import cc.r2.core.poly.factorization.FactorizationTestData.SampleDecompositionSource;
-import cc.r2.core.poly.univar.DivisionWithRemainder;
+import cc.r2.core.poly.test.APolynomialTest;
+import cc.r2.core.poly.test.FactorizationInput;
+import cc.r2.core.poly.test.FactorizationInput.FactorizationAlgorithm;
+import cc.r2.core.poly.test.FactorizationInput.SampleDecomposition;
+import cc.r2.core.poly.test.FactorizationInput.SampleDecompositionSource;
+import cc.r2.core.poly.univar.UnivariateDivision;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
@@ -26,14 +27,14 @@ import java.util.Date;
 
 import static cc.r2.core.poly.multivar.AMultivariatePolynomial.renameVariables;
 import static cc.r2.core.poly.multivar.MultivariateFactorization.*;
-import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
+import static cc.r2.core.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
 import static cc.r2.core.util.ArraysUtil.negate;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariateFactorizationTest extends AbstractPolynomialTest {
+public class MultivariateFactorizationTest extends APolynomialTest {
     @Ignore
     @Test
     public void testBivariate1() throws Exception {
@@ -48,7 +49,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         System.out.println(base);
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
-            Assert.assertEquals(4, bivariateDenseFactorSquareFree(base).size());
+            Assert.assertEquals(4, bivariateDenseFactorSquareFreeInGF(base).size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }
@@ -62,7 +63,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 lMultivariatePolynomialZp.parse("43370+32368*a^2*b^2+45712*a^2*b^4+52302*a^4+23776*a^4*b^2", domain, vars)
         };
         lMultivariatePolynomialZp poly = factors[0].createOne().multiply(factors);
-        FactorDecomposition<lMultivariatePolynomialZp> factorization = bivariateDenseFactorSquareFree(poly);
+        FactorDecomposition<lMultivariatePolynomialZp> factorization = bivariateDenseFactorSquareFreeInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, factorization);
         Assert.assertTrue(factorization.size() >= factors.length);
     }
@@ -75,8 +76,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 2, 6,
                 1, 5);
         testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(100, 1000),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"));
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization"),
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization"));
     }
 
     @Test
@@ -87,8 +88,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 5, 10,
                 3, 6);
         testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(10, 100),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"));
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization"),
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization"));
     }
 
     @Test
@@ -101,7 +102,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 lMultivariatePolynomialZp.parse("616781+1057293*b^2+158725*a+730076*a*b^2", domain, vars)
         };
         lMultivariatePolynomialZp poly = factors[0].createOne().multiply(factors);
-        FactorDecomposition<lMultivariatePolynomialZp> factorization = bivariateDenseFactorSquareFree(poly);
+        FactorDecomposition<lMultivariatePolynomialZp> factorization = bivariateDenseFactorSquareFreeInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, factorization);
         Assert.assertTrue(factorization.size() >= factors.length);
     }
@@ -115,7 +116,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 lMultivariatePolynomialZp.parse("39330400+51579304*a^2", domain, vars)
         };
         lMultivariatePolynomialZp poly = factors[0].createOne().multiply(factors);
-        FactorDecomposition<lMultivariatePolynomialZp> factorization = bivariateDenseFactorSquareFree(poly);
+        FactorDecomposition<lMultivariatePolynomialZp> factorization = bivariateDenseFactorSquareFreeInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, factorization);
         Assert.assertTrue(factorization.size() >= factors.length);
     }
@@ -134,7 +135,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         //System.out.println(base);
         for (int i = 0; i < its(2, 2); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = bivariateDenseFactorSquareFree(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = bivariateDenseFactorSquareFreeInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(5, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -153,8 +154,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         source.minModulusBits = 2;
         source.maxModulusBits = 3;
         testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(50, 500),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization"));
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization"),
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization"));
     }
 
     @Test
@@ -167,8 +168,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         source.minModulusBits = 2;
         source.maxModulusBits = 3;
         testFactorizationAlgorithm(filterNonSquareFree(filterMonomialContent(source)), its(10, 100),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization (small domain)"),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFree, "Bivariate dense factorization (small domain)"));
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization (small domain)"),
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInGF, "Bivariate dense factorization (small domain)"));
     }
 
     @Test
@@ -183,7 +184,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         //System.out.println(base);
         for (int i = 0; i < its(10, 10); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeInZ(base);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(base, factors);
             Assert.assertEquals(4, factors.size());
@@ -202,7 +203,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         //System.out.println(base);
         for (int i = 0; i < its(10, 10); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeInZ(base);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(base, factors);
             Assert.assertEquals(4, factors.size());
@@ -218,7 +219,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 1, 5));
 
         testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 500),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeZ, "Bivariate dense factorization over Z"));
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInZ, "Bivariate dense factorization over Z"));
     }
 
     @Test
@@ -234,7 +235,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(2, 2); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeInZ(base);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(base, factors);
             Assert.assertEquals(5, factors.size());
@@ -252,7 +253,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(2, 12); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeInZ(base);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(base, factors);
             Assert.assertEquals(3, factors.size());
@@ -272,7 +273,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(2, 2); i++) {
             long start = System.nanoTime();
             PrivateRandom.getRandom().setSeed(i);
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeInZ(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(base, factors);
             Assert.assertEquals(3, factors.size());
@@ -292,7 +293,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(2, 2); i++) {
             long start = System.nanoTime();
             PrivateRandom.getRandom().setSeed(i);
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeInZ(base);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(base, factors);
             Assert.assertEquals(3, factors.size());
@@ -307,7 +308,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 3, 5,
                 1, 6));
         testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(50, 100),
-                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeZ, "Bivariate dense factorization over Z"));
+                FactorizationAlgorithm.named(MultivariateFactorization::bivariateDenseFactorSquareFreeInZ, "Bivariate dense factorization over Z"));
     }
 
     @Test
@@ -323,7 +324,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(2, 2); i++) {
             long start = System.nanoTime();
             PrivateRandom.getRandom().setSeed(i);
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = bivariateDenseFactorSquareFreeInZ(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(base, factors);
             Assert.assertEquals(3, factors.size());
@@ -337,7 +338,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(2, 2); i++) {
             long start = System.nanoTime();
-            Assert.assertEquals(2, bivariateDenseFactorSquareFree(poly).size());
+            Assert.assertEquals(2, bivariateDenseFactorSquareFreeInGF(poly).size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start)); ;
         }
     }
@@ -349,7 +350,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(2, 2); i++) {
             long start = System.nanoTime();
-            Assert.assertEquals(1, bivariateDenseFactorSquareFree(poly).size());
+            Assert.assertEquals(1, bivariateDenseFactorSquareFreeInGF(poly).size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start)); ;
         }
     }
@@ -369,9 +370,9 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 d = lUnivariatePolynomialZ.create(1, 11, 0, 12, 4).modulus(modulus);
 
         FactorDecomposition<lUnivariatePolynomialZp>
-                d1 = FactorDecomposition.create(Arrays.asList(multiply(a, b, b, b), multiply(a, c, c), multiply(a, a, d))),
-                d2 = FactorDecomposition.create(Arrays.asList(multiply(a, c, b), multiply(b, d, c), multiply(d, c, d))),
-                d3 = FactorDecomposition.create(Arrays.asList(multiply(c, c, d), multiply(b, b, c), multiply(a, b, c, d)));
+                d1 = FactorDecomposition.of(Arrays.asList(multiply(a, b, b, b), multiply(a, c, c), multiply(a, a, d))),
+                d2 = FactorDecomposition.of(Arrays.asList(multiply(a, c, b), multiply(b, d, c), multiply(d, c, d))),
+                d3 = FactorDecomposition.of(Arrays.asList(multiply(c, c, d), multiply(b, b, c), multiply(a, b, c, d)));
 
         @SuppressWarnings("unchecked")
         FactorDecomposition<lUnivariatePolynomialZp>[] decomps = new FactorDecomposition[]{
@@ -385,7 +386,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         Assert.assertEquals(d3.toPolynomial(), decomps[2].toPolynomial());
 
         System.out.println(d1.toPolynomial().equals(decomps[0].toPolynomial()));
-        System.out.println(Arrays.toString(DivisionWithRemainder.divideAndRemainder(d1.toPolynomial(), decomps[0].toPolynomial(), true)));
+        System.out.println(Arrays.toString(UnivariateDivision.divideAndRemainder(d1.toPolynomial(), decomps[0].toPolynomial(), true)));
         for (FactorDecomposition<lUnivariatePolynomialZp> decomp : decomps)
             System.out.println(decomp.size() + " => " + decomp);
     }
@@ -398,9 +399,9 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 c = UnivariatePolynomial.create(2);
 
         FactorDecomposition<UnivariatePolynomial<BigInteger>>
-                d1 = FactorDecomposition.create(Arrays.asList(a)),
-                d2 = FactorDecomposition.create(b.contentAsPoly(), Arrays.asList(b.primitivePart())),
-                d3 = FactorDecomposition.create(Arrays.asList(c));
+                d1 = FactorDecomposition.of(Arrays.asList(a)),
+                d2 = FactorDecomposition.of(b.contentAsPoly(), Arrays.asList(b.primitivePart())),
+                d3 = FactorDecomposition.of(Arrays.asList(c));
 
         @SuppressWarnings("unchecked")
         FactorDecomposition<lUnivariatePolynomialZp>[] decomps = new FactorDecomposition[]{
@@ -425,7 +426,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -441,7 +442,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(42);
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -455,7 +456,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(328);
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -471,7 +472,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(100, 100); i++) {
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -489,7 +490,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(100, 100); i++) {
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -508,7 +509,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -524,7 +525,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(31);
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -538,7 +539,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(88);
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -552,7 +553,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(531);
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -568,7 +569,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -586,7 +587,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -604,7 +605,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -623,7 +624,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -641,7 +642,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -669,7 +670,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base, false);
             Assert.assertEquals(5, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -697,7 +698,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(0);
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(5, decomposition.size());
         FactorDecompositionTest.assertFactorization(base, decomposition);
     }
@@ -730,7 +731,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
 
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -743,7 +744,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 b = lMultivariatePolynomialZp.parse("1+105163*a^2+81015*a^2*c+166076*a^3*c^3+106464*a^3*b^2*c^2+43621*a^3*b^3", domain);
         lMultivariatePolynomialZp base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -759,7 +760,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         b = AMultivariatePolynomial.renameVariables(b, new int[]{0, 2, 1});
         lMultivariatePolynomialZp base = a.clone().multiply(b);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
-        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -784,7 +785,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(0);
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(3, decomposition.size());
         FactorDecompositionTest.assertFactorization(base, decomposition);
     }
@@ -805,7 +806,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(0);
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base, false);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base, false);
         Assert.assertEquals(4, decomposition.size());
         FactorDecompositionTest.assertFactorization(base, decomposition);
     }
@@ -830,7 +831,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         PrivateRandom.getRandom().setSeed(0);
         for (int i = 0; i < its(10, 10); i++) {
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base, false);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base, false);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(3, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -847,8 +848,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         source.minModulusBits = 15;
         source.maxModulusBits = 30;
         testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 100),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"));
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields"),
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields"));
     }
 
     @Test
@@ -861,8 +862,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         source.minModulusBits = 15;
         source.maxModulusBits = 30;
         testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 100),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"));
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields"),
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields"));
     }
 
     @Test
@@ -875,8 +876,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         source.minModulusBits = 15;
         source.maxModulusBits = 30;
         testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 100),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields"));
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields"),
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields"));
     }
 
     @Test
@@ -895,7 +896,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         PrivateRandom.getRandom().setSeed(0);
         for (int i = 0; i < its(10, 10); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(2, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -928,7 +929,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         PrivateRandom.getRandom().setSeed(0);
         for (int i = 0; i < its(10, 30); i++) {
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(3, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -955,7 +956,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -976,7 +977,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorPrimitiveInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -998,7 +999,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorPrimitiveInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(3, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1021,7 +1022,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(3, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1044,7 +1045,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(3, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1068,7 +1069,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1090,7 +1091,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1113,7 +1114,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1132,7 +1133,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = factorInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(2, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1151,8 +1152,8 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         //DETALIZATION_PERCENT = 1000;
         //PRINT_FACTORS = true;
         testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(100, 100),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields (small domain)"),
-                FactorizationTestData.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitive, "Multivariate factorization in finite fields (small domain)"));
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields (small domain)"),
+                FactorizationInput.FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInGF, "Multivariate factorization in finite fields (small domain)"));
     }
 
     @Test
@@ -1167,7 +1168,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition decomposition = factorInField(base.toBigPoly());
+            FactorDecomposition decomposition = factorInGF(base.toBigPoly());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(2, decomposition.size());
             FactorDecompositionTest.assertFactorization(base.toBigPoly(), decomposition);
@@ -1189,7 +1190,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i + 1);
             timestamp();
-            FactorDecomposition decomposition = factorInField(base);
+            FactorDecomposition decomposition = factorInGF(base);
             timeElapsed();
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1209,7 +1210,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i + 1);
             timestamp();
-            FactorDecomposition decomposition = factorInField(base);
+            FactorDecomposition decomposition = factorInGF(base);
             timeElapsed();
             Assert.assertEquals(2, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1237,7 +1238,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             //PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1273,7 +1274,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(9);
 
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
         Assert.assertEquals(4, decomposition.size());
         FactorDecompositionTest.assertFactorization(base, decomposition);
     }
@@ -1301,7 +1302,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //cc.r2.core.poly.univar.PrivateRandom.getRandom().setSeed(i);
             //PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(3, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
@@ -1335,7 +1336,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(5);
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
         Assert.assertEquals(3, decomposition.size());
         FactorDecompositionTest.assertFactorization(base, decomposition);
     }
@@ -1355,7 +1356,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(2);
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
         Assert.assertEquals(3, decomposition.size());
         FactorDecompositionTest.assertFactorization(base, decomposition);
     }
@@ -1375,7 +1376,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(7);
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
         Assert.assertEquals(3, decomposition.size());
     }
 
@@ -1395,7 +1396,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         //cc.r2.core.poly.univar.PrivateRandom.getRandom().setSeed(10);
         PrivateRandom.getRandom().setSeed(10);
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
         Assert.assertEquals(3, decomposition.size());
     }
 
@@ -1415,7 +1416,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         for (int i = 0; i < its(2, 2); i++) {
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             Assert.assertEquals(4, decomposition.size());
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -1435,7 +1436,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         for (int i = 0; i < its(20, 20); i++) {
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             Assert.assertEquals(2, decomposition.size());
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -1456,7 +1457,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         for (int i = 0; i < its(20, 20); i++) {
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitive(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
             Assert.assertEquals(2, decomposition.size());
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -1478,7 +1479,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         for (int i = 0; i < its(20, 20); i++) {
             //long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInGF(base);
             Assert.assertEquals(4, decomposition.size());
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -1499,7 +1500,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         for (int i = 0; i < its(20, 20); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInGF(base);
             Assert.assertEquals(3, decomposition.size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -1534,7 +1535,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i + 20);
             PrivateRandom.getRandom().setSeed(i + 20);
             long start = System.nanoTime();
-            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInGF(base);
             Assert.assertEquals(4, decomposition.size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -1556,7 +1557,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(27);
         long start = System.nanoTime();
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInGF(base);
         Assert.assertEquals(4, decomposition.size());
         System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
     }
@@ -1576,7 +1577,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 };
         lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
 
-        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInField(base);
+        FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInGF(base);
         Assert.assertEquals(3, decomposition.size());
     }
 
@@ -1590,7 +1591,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1607,7 +1608,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1625,7 +1626,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(3, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1646,7 +1647,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(5, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1668,7 +1669,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(1);
-        FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+        FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
         Assert.assertEquals(5, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -1688,7 +1689,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(3);
-        FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+        FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
         Assert.assertEquals(5, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -1708,7 +1709,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
 
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         PrivateRandom.getRandom().setSeed(9);
-        FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+        FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
         Assert.assertEquals(5, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -1734,7 +1735,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(5, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1757,7 +1758,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(4, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1783,7 +1784,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(5, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1808,7 +1809,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(3, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1834,7 +1835,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(4, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1859,7 +1860,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveZ(base);
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorPrimitiveInZ(base);
             Assert.assertEquals(3, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -1904,7 +1905,31 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                 2, 6,
                 1, 5));
         testFactorizationAlgorithm(filterNonPrimitive(filterNonSquareFree(filterMonomialContent(source))), its(25, 75),
-                FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveZ, "Multivariate factorization over Z"));
+                FactorizationAlgorithm.named(MultivariateFactorization::factorPrimitiveInZ, "Multivariate factorization over Z"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMultivariateFactorization39() throws Exception {
+        String[] vars = {"a", "b", "c"};
+        MultivariatePolynomial<BigInteger> pp[] = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("a^2 + b^2 + c^2", vars),
+                MultivariatePolynomial.parse("a*b - b*c - c*a", vars).square(),
+                MultivariatePolynomial.parse("3", vars),
+                MultivariatePolynomial.parse("a - b - c", vars).square(),
+                MultivariatePolynomial.parse("a - b ", vars).square(),
+                MultivariatePolynomial.parse("b + c", vars).square(),
+                MultivariatePolynomial.parse("a^6 + c^2 + a*c^2 + 1", vars).square()
+        }, poly = multiply(pp);
+
+        FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = factor(poly);
+        Assert.assertEquals(6, factors.size());
+        Assert.assertEquals(poly, factors.toPolynomial());
+
+        poly = poly.setDomain(new IntegersModulo(Integer.MAX_VALUE));
+        factors = factor(poly);
+        Assert.assertEquals(6, factors.size());
+        Assert.assertEquals(poly, factors.toPolynomial());
     }
 
     /* ==================================== Test data =============================================== */
@@ -2169,7 +2194,7 @@ public class MultivariateFactorizationTest extends AbstractPolynomialTest {
                         randomPolynomial(nVariables,
                                 rndd.nextInt(minDegree, maxDegree),
                                 rndd.nextInt(minSize, maxSize),
-                                domain, DegreeVector.LEX, rnd);
+                                domain, MonomialOrder.LEX, rnd);
 
                 if (sample.isConstant() || sample.isMonomial())
                     continue;

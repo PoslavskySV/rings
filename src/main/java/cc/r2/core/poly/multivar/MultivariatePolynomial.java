@@ -22,21 +22,22 @@ import static cc.r2.core.poly.Integers.Integers;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<MonomialTerm<E>, MultivariatePolynomial<E>> {
+public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Monomial<E>, MultivariatePolynomial<E>> {
+    private static final long serialVersionUID = 1L;
     /** the domain */
-    final Domain<E> domain;
+    public final Domain<E> domain;
 
-    MultivariatePolynomial(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering, MonomialsSet<MonomialTerm<E>> terms) {
+    MultivariatePolynomial(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering, MonomialSet<Monomial<E>> terms) {
         super(nVariables, ordering, terms);
         this.domain = domain;
     }
 
     /* ============================================ Factory methods ============================================ */
 
-    static <E> void add(MonomialsSet<MonomialTerm<E>> polynomial, MonomialTerm<E> term, Domain<E> domain) {
+    static <E> void add(MonomialSet<Monomial<E>> polynomial, Monomial<E> term, Domain<E> domain) {
         if (domain.isZero(term.coefficient))
             return;
-        MonomialTerm<E> pTerm = polynomial.get(term);
+        Monomial<E> pTerm = polynomial.get(term);
         if (pTerm == null)
             polynomial.add(term);
         else {
@@ -48,10 +49,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         }
     }
 
-    static <E> void subtract(MonomialsSet<MonomialTerm<E>> polynomial, MonomialTerm<E> term, Domain<E> domain) {
+    static <E> void subtract(MonomialSet<Monomial<E>> polynomial, Monomial<E> term, Domain<E> domain) {
         if (domain.isZero(term.coefficient))
             return;
-        MonomialTerm<E> pTerm = polynomial.get(term);
+        Monomial<E> pTerm = polynomial.get(term);
         if (pTerm == null)
             polynomial.add(term.negate(domain));
         else {
@@ -71,57 +72,67 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param terms    the monomial terms
      * @return multivariate polynomial
      */
-    public static <E> MultivariatePolynomial<E> create(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering, MonomialTerm<E>... terms) {
-        if (terms.length == 0)
-            throw new IllegalArgumentException("empty");
-        MonomialsSet<MonomialTerm<E>> map = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> term : terms)
+    public static <E> MultivariatePolynomial<E> create(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering, Iterable<Monomial<E>> terms) {
+        MonomialSet<Monomial<E>> map = new MonomialSet<>(ordering);
+        for (Monomial<E> term : terms)
             add(map, term.setDomain(domain), domain);
 
         return new MultivariatePolynomial<>(nVariables, domain, ordering, map);
     }
 
     /**
-     * Creates zero.
+     * Creates multivariate polynomial from a list of monomial terms
+     *
+     * @param domain   the domain
+     * @param ordering term ordering
+     * @param terms    the monomial terms
+     * @return multivariate polynomial
+     */
+    public static <E> MultivariatePolynomial<E> create(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering, Monomial<E>... terms) {
+        return create(nVariables, domain, ordering, Arrays.asList(terms));
+    }
+
+    /**
+     * Creates zero polynomial.
      *
      * @param nVariables number of variables
      * @param domain     the domain
      * @param ordering   the ordering
-     * @return zero
+     * @return zero polynomial
      */
     public static <E> MultivariatePolynomial<E> zero(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering) {
-        return new MultivariatePolynomial<>(nVariables, domain, ordering, new MonomialsSet<>(ordering));
+        return new MultivariatePolynomial<>(nVariables, domain, ordering, new MonomialSet<>(ordering));
     }
 
     /**
-     * Creates unit.
+     * Creates unit polynomial.
      *
      * @param nVariables number of variables
      * @param domain     the domain
      * @param ordering   the ordering
-     * @return unit
+     * @return unit polynomial
      */
     public static <E> MultivariatePolynomial<E> one(int nVariables, Domain<E> domain, Comparator<DegreeVector> ordering) {
-        return create(nVariables, domain, ordering, MonomialTerm.withZeroExponents(nVariables, domain.getOne()));
+        return create(nVariables, domain, ordering, Monomial.withZeroExponents(nVariables, domain.getOne()));
     }
 
     /**
-     * Parse multivariate polynomial from string.
+     * Parse multivariate Z[X] polynomial from string.
      *
-     * @param string    string polynomials
+     * @param string    the string
      * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
      *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
      *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
-     * @return multivariate polynomial
+     * @return multivariate Z[X] polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, String... variables) {
-        return Parser.parse(string, DegreeVector.LEX, variables);
+        return Parser.parse(string, MonomialOrder.LEX, variables);
     }
 
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string    string polynomials
+     * @param string    the string
      * @param domain    the domain
      * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
      *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
@@ -129,18 +140,18 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, String... variables) {
-        return Parser.parse(string, domain, DegreeVector.LEX, variables);
+        return Parser.parse(string, domain, MonomialOrder.LEX, variables);
     }
 
     /**
-     * Parse multivariate polynomial from string.
+     * Parse multivariate Z[X] polynomial from string.
      *
-     * @param string    string polynomials
-     * @param ordering  term ordering
+     * @param string    the string
+     * @param ordering  monomial order
      * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
      *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
      *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
-     * @return multivariate polynomial
+     * @return Z[X] multivariate polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, Comparator<DegreeVector> ordering, String... variables) {
         return Parser.parse(string, ordering, variables);
@@ -149,12 +160,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string    string polynomials
-     * @param domain    domain
-     * @param ordering  term ordering
+     * @param string    the string
+     * @param domain    the domain
+     * @param ordering  monomial order
      * @param variables string variables that should be taken into account. For examples: {@code parse("a", LEX)} and
-     *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are differ,
-     *                  since the first one is considered as Z[x], while the second as Z[x1,x2]
+     *                  {@code parse("a", LEX, "a", "b")} although give the same mathematical expressions are different,
+     *                  since the first one is considered as Z[a], while the second as Z[a,b]
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
@@ -164,8 +175,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string string polynomials
-     * @param domain domain
+     * @param string the string
+     * @param domain the domain
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain) {
@@ -173,19 +184,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Converts multivariate polynomial over BigIntegers to multivariate polynomial over machine sized modular integers
+     * Converts multivariate polynomial over BigIntegers to multivariate polynomial over machine modular integers
      *
      * @param poly the polynomial
      * @return multivariate polynomial over machine sized modular integers
-     * @throws ArithmeticException if some of coefficients will not exactly fit in a {@code long}.
+     * @throws IllegalArgumentException if poly.domain is not Zp
+     * @throws ArithmeticException      if some of coefficients will not exactly fit in a {@code long}.
      */
     public static lMultivariatePolynomialZp asLongPolyZp(MultivariatePolynomial<BigInteger> poly) {
         if (!(poly.domain instanceof IntegersModulo))
             throw new IllegalArgumentException("Poly is not over modular domain: " + poly.domain);
         IntegersModulo domain = (IntegersModulo) poly.domain;
-        MonomialsSet<lMonomialTerm> terms = new MonomialsSet<>(poly.ordering);
-        for (MonomialTerm<BigInteger> term : poly.terms)
-            terms.add(new lMonomialTerm(term.exponents, term.totalDegree, term.coefficient.longValueExact()));
+        MonomialSet<lMonomialZp> terms = new MonomialSet<>(poly.ordering);
+        for (Monomial<BigInteger> term : poly.terms)
+            terms.add(new lMonomialZp(term.exponents, term.totalDegree, term.coefficient.longValueExact()));
         return lMultivariatePolynomialZp.create(poly.nVariables, domain.asLong(), poly.ordering, terms);
     }
 
@@ -195,27 +207,21 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param poly       univariate polynomial
      * @param nVariables number of variables in the result
      * @param variable   variable that will be used as a primary variable
-     * @param ordering   ordering
+     * @param ordering   monomial order
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> asMultivariate(UnivariatePolynomial<E> poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
-        MonomialsSet<MonomialTerm<E>> map = new MonomialsSet<>(ordering);
+        MonomialSet<Monomial<E>> map = new MonomialSet<>(ordering);
         for (int i = poly.degree(); i >= 0; --i) {
             if (poly.isZeroAt(i))
                 continue;
             int[] degreeVector = new int[nVariables];
             degreeVector[variable] = i;
-            map.add(new MonomialTerm<>(degreeVector, i, poly.get(i)));
+            map.add(new Monomial<>(degreeVector, i, poly.get(i)));
         }
         return new MultivariatePolynomial<>(nVariables, poly.domain, ordering, map);
     }
 
-    /**
-     * Converts this polynomial to a univariate polynomial.
-     *
-     * @return univariate polynomial
-     * @throws IllegalArgumentException if this is not effectively a univariate polynomial
-     */
     @Override
     @SuppressWarnings("unchecked")
     public UnivariatePolynomial<E> asUnivariate() {
@@ -233,7 +239,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         if (theVar == -1)
             throw new IllegalStateException("Not a univariate polynomial: " + this);
         E[] univarData = domain.createZeroesArray(degrees[theVar] + 1);
-        for (MonomialTerm<E> e : terms)
+        for (Monomial<E> e : terms)
             univarData[e.exponents[theVar]] = e.coefficient;
         return UnivariatePolynomial.createUnsafe(domain, univarData);
     }
@@ -242,9 +248,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<UnivariatePolynomial<E>> asOverUnivariate(int variable) {
         UnivariatePolynomial<E> factory = UnivariatePolynomial.zero(domain);
         UnivariatePolynomials<UnivariatePolynomial<E>> pDomain = new UnivariatePolynomials<>(factory);
-        MonomialsSet<MonomialTerm<UnivariatePolynomial<E>>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> e : terms) {
-            add(newData, new MonomialTerm<>(
+        MonomialSet<Monomial<UnivariatePolynomial<E>>> newData = new MonomialSet<>(ordering);
+        for (Monomial<E> e : terms) {
+            add(newData, new Monomial<>(
                             e.set(variable, 0).exponents,
                             factory.createMonomial(e.coefficient, e.exponents[variable])),
                     pDomain);
@@ -256,9 +262,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<UnivariatePolynomial<E>> asOverUnivariateEliminate(int variable) {
         UnivariatePolynomial<E> factory = UnivariatePolynomial.zero(domain);
         UnivariatePolynomials<UnivariatePolynomial<E>> pDomain = new UnivariatePolynomials<>(factory);
-        MonomialsSet<MonomialTerm<UnivariatePolynomial<E>>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> e : terms) {
-            add(newData, new MonomialTerm<>(
+        MonomialSet<Monomial<UnivariatePolynomial<E>>> newData = new MonomialSet<>(ordering);
+        for (Monomial<E> e : terms) {
+            add(newData, new Monomial<>(
                             e.without(variable).exponents,
                             factory.createMonomial(e.coefficient, e.exponents[variable])),
                     pDomain);
@@ -269,17 +275,17 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<MultivariatePolynomial<E>> asOverMultivariate(int... variables) {
         Domain<MultivariatePolynomial<E>> domain = new MultivariatePolynomials<>(this);
-        MonomialsSet<MonomialTerm<MultivariatePolynomial<E>>> terms = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> term : this) {
+        MonomialSet<Monomial<MultivariatePolynomial<E>>> terms = new MonomialSet<>(ordering);
+        for (Monomial<E> term : this) {
             int[] coeffExponents = new int[nVariables];
             for (int var : variables)
                 coeffExponents[var] = term.exponents[var];
-            MonomialTerm<E> restTerm = term.setZero(variables, this.domain.getOne());
-            MonomialTerm<MultivariatePolynomial<E>> newTerm
-                    = new MonomialTerm<>(
+            Monomial<E> restTerm = term.setZero(variables, this.domain.getOne());
+            Monomial<MultivariatePolynomial<E>> newTerm
+                    = new Monomial<>(
                     restTerm.exponents,
                     restTerm.totalDegree,
-                    create(new MonomialTerm<>(coeffExponents, term.coefficient)));
+                    create(new Monomial<>(coeffExponents, term.coefficient)));
 
             add(terms, newTerm, domain);
         }
@@ -291,9 +297,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         variables = variables.clone();
         Arrays.sort(variables);
         int[] restVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(nVariables), variables);
-        Domain<MultivariatePolynomial<E>> domain = new MultivariatePolynomials<>(create(variables.length, new MonomialsSet<>(ordering)));
-        MonomialsSet<MonomialTerm<MultivariatePolynomial<E>>> terms = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> term : this) {
+        Domain<MultivariatePolynomial<E>> domain = new MultivariatePolynomials<>(create(variables.length, new MonomialSet<>(ordering)));
+        MonomialSet<Monomial<MultivariatePolynomial<E>>> terms = new MonomialSet<>(ordering);
+        for (Monomial<E> term : this) {
             int i = 0;
             int[] coeffExponents = new int[variables.length];
             for (int var : variables)
@@ -304,10 +310,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             for (int var : restVariables)
                 termExponents[i++] = term.exponents[var];
 
-            MonomialTerm<MultivariatePolynomial<E>> newTerm
-                    = new MonomialTerm<>(
+            Monomial<MultivariatePolynomial<E>> newTerm
+                    = new Monomial<>(
                     termExponents,
-                    create(variables.length, this.domain, this.ordering, new MonomialTerm<>(coeffExponents, term.coefficient)));
+                    create(variables.length, this.domain, this.ordering, new Monomial<>(coeffExponents, term.coefficient)));
 
             add(terms, newTerm, domain);
         }
@@ -315,8 +321,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Converts multivariate polynomial over univariate polynomial domain to a multivariate polynomial over
-     * coefficient domain
+     * Converts multivariate polynomial over univariate polynomial domain (R[variable][other_variables]) to a
+     * multivariate polynomial over coefficient domain (R[variables])
      *
      * @param poly     the polynomial
      * @param variable the variable to insert
@@ -326,7 +332,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         Domain<E> domain = poly.domain.getZero().domain;
         int nVariables = poly.nVariables + 1;
         MultivariatePolynomial<E> result = zero(nVariables, domain, poly.ordering);
-        for (MonomialTerm<UnivariatePolynomial<E>> entry : poly.terms) {
+        for (Monomial<UnivariatePolynomial<E>> entry : poly.terms) {
             UnivariatePolynomial<E> uPoly = entry.coefficient;
             int[] dv = ArraysUtil.insert(entry.exponents, variable, 0);
             for (int i = 0; i <= uPoly.degree(); ++i) {
@@ -334,7 +340,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
                     continue;
                 int[] cdv = dv.clone();
                 cdv[variable] = i;
-                result.add(new MonomialTerm<>(cdv, uPoly.get(i)));
+                result.add(new Monomial<>(cdv, uPoly.get(i)));
             }
         }
         return result;
@@ -351,9 +357,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         Domain<E> domain = poly.domain.getZero().domain;
         int nVariables = poly.nVariables;
         MultivariatePolynomial<E> result = zero(nVariables, domain, poly.ordering);
-        for (MonomialTerm<MultivariatePolynomial<E>> term : poly.terms) {
+        for (Monomial<MultivariatePolynomial<E>> term : poly.terms) {
             MultivariatePolynomial<E> uPoly = term.coefficient;
-            result.add(uPoly.clone().multiply(new MonomialTerm<>(term.exponents, term.totalDegree, domain.getOne())));
+            result.add(uPoly.clone().multiply(new Monomial<>(term.exponents, term.totalDegree, domain.getOne())));
         }
         return result;
     }
@@ -371,11 +377,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         Domain<E> domain = poly.domain.getZero().domain;
         int nVariables = coefficientVariables.length + mainVariables.length;
         MultivariatePolynomial<E> result = zero(nVariables, domain, poly.ordering);
-        for (MonomialTerm<MultivariatePolynomial<E>> term : poly.terms) {
+        for (Monomial<MultivariatePolynomial<E>> term : poly.terms) {
             MultivariatePolynomial<E> coefficient =
                     term.coefficient.joinNewVariables(nVariables, coefficientVariables);
-            MonomialTerm<MultivariatePolynomial<E>> t = term.joinNewVariables(nVariables, mainVariables);
-            result.add(coefficient.multiply(new MonomialTerm<>(t.exponents, t.totalDegree, domain.getOne())));
+            Monomial<MultivariatePolynomial<E>> t = term.joinNewVariables(nVariables, mainVariables);
+            result.add(coefficient.multiply(new Monomial<>(t.exponents, t.totalDegree, domain.getOne())));
         }
         return result;
     }
@@ -403,8 +409,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         if (!(poly.domain instanceof IntegersModulo))
             throw new IllegalArgumentException("Not a modular domain: " + poly.domain);
         IntegersModulo domain = (IntegersModulo) poly.domain;
-        MonomialsSet<MonomialTerm<BigInteger>> newTerms = new MonomialsSet<>(poly.ordering);
-        for (MonomialTerm<BigInteger> term : poly)
+        MonomialSet<Monomial<BigInteger>> newTerms = new MonomialSet<>(poly.ordering);
+        for (Monomial<BigInteger> term : poly)
             newTerms.add(term.setCoefficient(domain.symmetricForm(term.coefficient)));
 
         return new MultivariatePolynomial<>(poly.nVariables, Integers, poly.ordering, newTerms);
@@ -429,23 +435,23 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    MultivariatePolynomial<E> create(int nVariables, MonomialsSet<MonomialTerm<E>> monomialTerms) {
+    MultivariatePolynomial<E> create(int nVariables, MonomialSet<Monomial<E>> monomialTerms) {
         return new MultivariatePolynomial<>(nVariables, domain, ordering, monomialTerms);
     }
 
     @Override
-    MonomialTerm<E> createTermWithUnitCoefficient(int[] exponents) {
-        return new MonomialTerm<E>(exponents, domain.getOne());
+    public Monomial<E> createTermWithUnitCoefficient(int[] exponents) {
+        return new Monomial<E>(exponents, domain.getOne());
     }
 
     @Override
-    MonomialTerm<E> getUnitTerm() {
-        return MonomialTerm.withZeroExponents(nVariables, domain.getOne());
+    public Monomial<E> createUnitTerm() {
+        return Monomial.withZeroExponents(nVariables, domain.getOne());
     }
 
     @Override
-    MonomialTerm<E> getZeroTerm() {
-        return MonomialTerm.withZeroExponents(nVariables, domain.getZero());
+    public Monomial<E> createZeroTerm() {
+        return Monomial.withZeroExponents(nVariables, domain.getZero());
     }
 
     @Override
@@ -506,17 +512,17 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    boolean isZeroMonomial(MonomialTerm<E> a) {
+    boolean isZeroMonomial(Monomial<E> a) {
         return domain.isZero(a.coefficient);
     }
 
     @Override
-    MonomialTerm<E> multiply(MonomialTerm<E> a, MonomialTerm<E> b) {
+    Monomial<E> multiply(Monomial<E> a, Monomial<E> b) {
         return a.multiply(b, domain.multiply(a.coefficient, b.coefficient));
     }
 
     @Override
-    MonomialTerm<E> divideOrNull(MonomialTerm<E> a, MonomialTerm<E> b) {
+    Monomial<E> divideOrNull(Monomial<E> a, Monomial<E> b) {
         E e = domain.divideOrNull(a.coefficient, b.coefficient);
         if (e == null)
             return null;
@@ -532,7 +538,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
 
     /**
-     * Switches to another domain specified by {@code newDomain}
+     * Returns a copy of this with coefficient reduced to a {@code newDomain}
      *
      * @param newDomain the new domain
      * @return a copy of this reduced to the domain specified by {@code newDomain}
@@ -540,12 +546,13 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> setDomain(Domain<E> newDomain) {
         if (domain == newDomain)
             return clone();
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> e : terms)
+        MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
+        for (Monomial<E> e : terms)
             add(newData, e.setDomain(newDomain));
         return new MultivariatePolynomial<>(nVariables, newDomain, ordering, newData);
     }
 
+    /** internal API */
     public MultivariatePolynomial<E> setDomainUnsafe(Domain<E> newDomain) {
         return new MultivariatePolynomial<>(nVariables, newDomain, ordering, terms);
     }
@@ -557,9 +564,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return constant polynomial with specified value
      */
     public MultivariatePolynomial<E> createConstant(E val) {
-        MonomialsSet<MonomialTerm<E>> data = new MonomialsSet<>(ordering);
+        MonomialSet<Monomial<E>> data = new MonomialSet<>(ordering);
         if (!domain.isZero(val))
-            data.add(MonomialTerm.withZeroExponents(nVariables, val));
+            data.add(Monomial.withZeroExponents(nVariables, val));
         return new MultivariatePolynomial<>(nVariables, domain, ordering, data);
     }
 
@@ -582,17 +589,16 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return linear polynomial {@code cc + lc * variable}
      */
     public MultivariatePolynomial<E> createLinear(int variable, E cc, E lc) {
-        MonomialsSet<MonomialTerm<E>> data = new MonomialsSet<>(ordering);
+        MonomialSet<Monomial<E>> data = new MonomialSet<>(ordering);
         if (!domain.isZero(cc))
-            data.add(MonomialTerm.withZeroExponents(nVariables, cc));
+            data.add(Monomial.withZeroExponents(nVariables, cc));
         if (!domain.isZero(lc)) {
             int[] lcDegreeVector = new int[nVariables];
             lcDegreeVector[variable] = 1;
-            data.add(new MonomialTerm<>(lcDegreeVector, 1, lc));
+            data.add(new Monomial<>(lcDegreeVector, 1, lc));
         }
         return new MultivariatePolynomial<>(nVariables, domain, ordering, data);
     }
-
 
     @Override
     public boolean isMonic() {
@@ -613,7 +619,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public boolean isOne() {
         if (size() != 1)
             return false;
-        MonomialTerm<E> lt = terms.first();
+        Monomial<E> lt = terms.first();
         return lt.isZeroVector() && domain.isOne(lt.coefficient);
     }
 
@@ -627,11 +633,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return size() == 0 || (size() == 1 && terms.first().isZeroVector());
     }
 
-
-    /** {@inheritDoc} */
     @Override
-    public MonomialTerm<E> lt() {
-        return size() == 0 ? MonomialTerm.withZeroExponents(nVariables, domain.getZero()) : terms.last();
+    public Monomial<E> lt() {
+        return size() == 0 ? Monomial.withZeroExponents(nVariables, domain.getZero()) : terms.last();
     }
 
     /**
@@ -662,7 +666,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return constant coefficient of this polynomial
      */
     public E cc() {
-        MonomialTerm<E> zero = MonomialTerm.withZeroExponents(nVariables, domain.getZero());
+        Monomial<E> zero = Monomial.withZeroExponents(nVariables, domain.getZero());
         return terms.getOrDefault(zero, zero).coefficient;
     }
 
@@ -685,9 +689,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Returns polynomial coefficients
+     * Returns array of polynomial coefficients
      *
-     * @return polynomial coefficients
+     * @return array of polynomial coefficients
      */
     public E[] coefficientsArray() {
         if (isZero())
@@ -695,15 +699,15 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
         E[] array = domain.createArray(size());
         int i = 0;
-        for (MonomialTerm<E> term : this)
+        for (Monomial<E> term : this)
             array[i++] = term.coefficient;
         return array;
     }
 
     private static class It<V> implements Iterator<V> {
-        final Iterator<MonomialTerm<V>> inner;
+        final Iterator<Monomial<V>> inner;
 
-        public It(Iterator<MonomialTerm<V>> inner) {
+        public It(Iterator<Monomial<V>> inner) {
             this.inner = inner;
         }
 
@@ -752,7 +756,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     /**
      * Divides this polynomial by a {@code factor} or returns {@code null} (causing loss of internal data) if some of the elements can't be exactly
-     * divided by the {@code factor}. NOTE: is {@code null} is returned, the content of {@code this} is destroyed.
+     * divided by the {@code factor}. NOTE: if {@code null} is returned, the content of {@code this} is destroyed.
      *
      * @param factor the factor
      * @return {@code this} divided by the {@code factor} or {@code null}
@@ -762,8 +766,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return this;
         if (domain.isField())
             return multiply(domain.reciprocal(factor)); // <- this is typically faster than the division
-        for (Entry<DegreeVector, MonomialTerm<E>> entry : terms.entrySet()) {
-            MonomialTerm<E> term = entry.getValue();
+        for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
+            Monomial<E> term = entry.getValue();
             E quot = domain.divideOrNull(term.coefficient, factor);
             if (quot == null)
                 return null;
@@ -773,14 +777,13 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return this;
     }
 
-    /** {@inheritDoc} */
     @Override
-    public MultivariatePolynomial<E> divideOrNull(MonomialTerm<E> monomial) {
+    public MultivariatePolynomial<E> divideOrNull(Monomial<E> monomial) {
         if (monomial.isZeroVector())
             return divideOrNull(monomial.coefficient);
-        MonomialsSet<MonomialTerm<E>> map = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> term : terms) {
-            MonomialTerm<E> dv = divideOrNull(term, monomial);
+        MonomialSet<Monomial<E>> map = new MonomialSet<>(ordering);
+        for (Monomial<E> term : terms) {
+            Monomial<E> dv = divideOrNull(term, monomial);
             if (dv == null)
                 return null;
             map.add(dv);
@@ -820,21 +823,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Substitutes {@code 0} for {@code variable}.
-     *
-     * @param variable the variable
-     * @return a new multivariate polynomial with {@code 0} substituted for {@code variable}
-     */
-    public MultivariatePolynomial<E> evaluateAtZero(int variable) {
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> el : terms)
-            if (el.exponents[variable] == 0)
-                newData.add(el);
-        return new MultivariatePolynomial<>(nVariables, domain, ordering, newData);
-    }
-
-    /**
-     * Substitutes {@code value} for {@code variable}.
+     * Returns a copy of this with {@code value} substituted for {@code variable}.
      *
      * @param variable the variable
      * @param value    the value
@@ -851,7 +840,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Substitutes {@code value} for {@code variable}.
+     * Returns a copy of this with {@code value} substituted for {@code variable}.
      *
      * @param variable the variable
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the
@@ -860,38 +849,18 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     MultivariatePolynomial<E> evaluate(int variable, PrecomputedPowers<E> powers) {
         if (domain.isZero(powers.value))
             return evaluateAtZero(variable);
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> el : terms) {
+        MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
+        for (Monomial<E> el : terms) {
             E val = domain.multiply(el.coefficient, powers.pow(el.exponents[variable]));
             add(newData, el.setZero(variable, val));
         }
         return new MultivariatePolynomial<E>(nVariables, domain, ordering, newData);
     }
 
-    /**
-     * Substitutes {@code 0} for all specified {@code variables}.
-     *
-     * @param variables the variables
-     * @return a new multivariate polynomial with {@code 0} substituted for all specified {@code variables}
-     */
-    public MultivariatePolynomial<E> evaluateAtZero(int[] variables) {
-        if (variables.length == 0)
-            return this.clone();
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        out:
-        for (MonomialTerm<E> el : terms) {
-            for (int variable : variables)
-                if (el.exponents[variable] != 0)
-                    continue out;
-            newData.add(el);
-        }
-        return new MultivariatePolynomial<>(nVariables, domain, ordering, newData);
-    }
-
     UnivariatePolynomial<E> evaluateAtZeroAllExcept(int variable) {
         E[] uData = domain.createArray(degree(variable) + 1);
         out:
-        for (MonomialTerm<E> el : terms) {
+        for (Monomial<E> el : terms) {
             if (el.totalDegree != 0 && el.exponents[variable] == 0)
                 continue;
             for (int i = 0; i < nVariables; ++i)
@@ -904,7 +873,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Substitutes {@code values} for {@code variables}.
+     * Returns a copy of this with {@code values} substituted for {@code variables}.
      *
      * @param variables the variables
      * @param values    the values
@@ -946,9 +915,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     /** substitutes {@code values} for {@code variables} */
     @SuppressWarnings("unchecked")
     MultivariatePolynomial<E> evaluate(PrecomputedPowersHolder<E> powers, int[] variables, int[] raiseFactors) {
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> el : terms) {
-            MonomialTerm<E> r = el;
+        MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
+        for (Monomial<E> el : terms) {
+            Monomial<E> r = el;
             E value = el.coefficient;
             for (int i = 0; i < variables.length; ++i) {
                 value = domain.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
@@ -969,7 +938,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Substitutes {@code value} for {@code variable}. NOTE: the resulting polynomial will
+     * Returns a copy of this with {@code value} substituted for {@code variable}.
      *
      * @param variable the variable
      * @param value    the value
@@ -992,9 +961,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     public MultivariatePolynomial<E> eliminate(int variable, E value) {
         value = domain.valueOf(value);
-        MonomialsSet<MonomialTerm<E>> newData = new MonomialsSet<>(ordering);
+        MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
         PrecomputedPowers<E> powers = new PrecomputedPowers<>(value, domain);
-        for (MonomialTerm<E> el : terms) {
+        for (Monomial<E> el : terms) {
             E val = domain.multiply(el.coefficient, powers.pow(el.exponents[variable]));
             add(newData, el.without(variable, val));
         }
@@ -1085,7 +1054,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
 
     /**
-     * Substitutes {@code variable -> poly} and returns the result (copied)
+     * Returns a copy of this with {@code poly} substituted for {@code variable}.
      *
      * @param variable the variable
      * @param poly     the replacement for the variable
@@ -1101,7 +1070,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             subsPowers = new MSubstitution<>(poly);
 
         MultivariatePolynomial<E> result = createZero();
-        for (MonomialTerm<E> term : this) {
+        for (Monomial<E> term : this) {
             int exponent = term.exponents[variable];
             if (exponent == 0) {
                 result.add(term);
@@ -1114,7 +1083,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Substitutes {@code variable -> variable + shift} and returns the result (copied)
+     * Returns a copy of this with {@code variable -> variable + shift}
      *
      * @param variable the variable
      * @param shift    shift amount
@@ -1125,7 +1094,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Substitutes {@code variable -> variable + shift} and returns the result (copied)
+     * Returns a copy of this with {@code variable -> variable + shift}
      *
      * @param variable the variable
      * @param shift    shift amount
@@ -1138,7 +1107,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
         USubstitution<E> shifts = new USubstitution<>(UnivariatePolynomial.create(domain, shift, domain.getOne()), variable, nVariables, ordering);
         MultivariatePolynomial<E> result = createZero();
-        for (MonomialTerm<E> term : this) {
+        for (Monomial<E> term : this) {
             int exponent = term.exponents[variable];
             if (exponent == 0) {
                 result.add(term);
@@ -1151,11 +1120,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Substitutes {@code variable -> variable + shift} for each variable from {@code variables} array
+     * Returns a copy of this with {@code variables -> variables + shifts}
      *
      * @param variables the variables
      * @param shifts    the corresponding shifts
-     * @return a copy of this with  {@code variable -> variable + shift}
+     * @return a copy of this with {@code variables -> variables + shifts}
      */
     @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E> shift(int[] variables, E[] shifts) {
@@ -1173,7 +1142,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         PrecomputedSubstitutions<E> calculatedShifts = new PrecomputedSubstitutions<>(powers);
 
         MultivariatePolynomial<E> result = createZero();
-        for (MonomialTerm<E> term : this) {
+        for (Monomial<E> term : this) {
             MultivariatePolynomial<E> temp = createOne();
             for (int variable : variables) {
                 if (term.exponents[variable] != 0) {
@@ -1251,8 +1220,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> negate() {
-        for (Entry<DegreeVector, MonomialTerm<E>> entry : terms.entrySet()) {
-            MonomialTerm<E> term = entry.getValue();
+        for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
+            Monomial<E> term = entry.getValue();
             entry.setValue(term.negate(domain));
         }
         release();
@@ -1260,18 +1229,17 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    void add(MonomialsSet<MonomialTerm<E>> terms, MonomialTerm<E> term) {
+    void add(MonomialSet<Monomial<E>> terms, Monomial<E> term) {
         add(terms, term, domain);
     }
 
     @Override
-    void subtract(MonomialsSet<MonomialTerm<E>> terms, MonomialTerm<E> term) {
+    void subtract(MonomialSet<Monomial<E>> terms, Monomial<E> term) {
         subtract(terms, term, domain);
     }
 
-
     /**
-     * Adds {@code oth} to this polynomial and returns it
+     * Adds {@code oth} to this polynomial
      *
      * @param oth other polynomial
      * @return {@code this + oth}
@@ -1280,13 +1248,13 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         oth = domain.valueOf(oth);
         if (domain.isZero(oth))
             return this;
-        add(terms, MonomialTerm.withZeroExponents(nVariables, oth));
+        add(terms, Monomial.withZeroExponents(nVariables, oth));
         release();
         return this;
     }
 
     /**
-     * Subtracts {@code oth} from this polynomial and returns it
+     * Subtracts {@code oth} from this polynomial
      *
      * @param oth other polynomial
      * @return {@code this - oth}
@@ -1306,7 +1274,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
-     * Raises {@code this} by the {@code factor}
+     * Multiplies {@code this} by the {@code factor}
      *
      * @param factor the factor
      * @return {@code} this multiplied by the {@code factor}
@@ -1317,8 +1285,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return this;
         if (domain.isZero(factor))
             return toZero();
-        for (Entry<DegreeVector, MonomialTerm<E>> entry : terms.entrySet()) {
-            MonomialTerm<E> term = entry.getValue();
+        for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
+            Monomial<E> term = entry.getValue();
             E val = domain.multiply(term.coefficient, factor);
             if (!domain.isZero(val))
                 entry.setValue(term.setCoefficient(val));
@@ -1332,20 +1300,19 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return multiply(other.lc());
     }
 
-    /** {@inheritDoc} */
     @Override
-    public MultivariatePolynomial<E> multiply(MonomialTerm<E> term) {
-        checkSameDomainWith(term);
-        if (term.isZeroVector())
-            return multiply(term.coefficient);
-        if (domain.isZero(term.coefficient))
+    public MultivariatePolynomial<E> multiply(Monomial<E> monomial) {
+        checkSameDomainWith(monomial);
+        if (monomial.isZeroVector())
+            return multiply(monomial.coefficient);
+        if (domain.isZero(monomial.coefficient))
             return toZero();
 
-        MonomialsSet<MonomialTerm<E>> newMap = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> thisElement : terms) {
-            E val = domain.multiply(thisElement.coefficient, term.coefficient);
+        MonomialSet<Monomial<E>> newMap = new MonomialSet<>(ordering);
+        for (Monomial<E> thisElement : terms) {
+            E val = domain.multiply(thisElement.coefficient, monomial.coefficient);
             if (!domain.isZero(val))
-                newMap.add(thisElement.multiply(term, val));
+                newMap.add(thisElement.multiply(monomial, val));
         }
 
         return loadFrom(newMap);
@@ -1364,9 +1331,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<E> multiply(MultivariatePolynomial<E> oth) {
         assertSameDomainWith(oth);
-        MonomialsSet<MonomialTerm<E>> newMap = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> othElement : oth.terms)
-            for (MonomialTerm<E> thisElement : terms)
+        MonomialSet<Monomial<E>> newMap = new MonomialSet<>(ordering);
+        for (Monomial<E> othElement : oth.terms)
+            for (Monomial<E> thisElement : terms)
                 add(newMap, thisElement.multiply(othElement, domain.multiply(thisElement.coefficient, othElement.coefficient)));
 
         return loadFrom(newMap);
@@ -1378,12 +1345,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    MultivariatePolynomial<E> evaluateAtRandom(int variable, RandomGenerator rnd) {
+    public MultivariatePolynomial<E> evaluateAtRandom(int variable, RandomGenerator rnd) {
         return evaluate(variable, domain.randomElement(rnd));
     }
 
     @Override
-    MultivariatePolynomial<E> evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd) {
+    public MultivariatePolynomial<E> evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd) {
         //desired skeleton
         Set<DegreeVector> skeleton = getSkeletonExcept(variable);
         MultivariatePolynomial<E> tmp;
@@ -1396,8 +1363,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> derivative(int variable, int order) {
-        MonomialsSet<MonomialTerm<E>> newTerms = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> term : this) {
+        MonomialSet<Monomial<E>> newTerms = new MonomialSet<>(ordering);
+        for (Monomial<E> term : this) {
             int exponent = term.exponents[variable];
             if (exponent < order)
                 continue;
@@ -1407,7 +1374,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             int[] newExponents = term.exponents.clone();
             newExponents[variable] -= order;
 
-            add(newTerms, new MonomialTerm<>(newExponents, term.totalDegree - order, newCoefficient));
+            add(newTerms, new Monomial<>(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
     }
@@ -1456,8 +1423,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         if (isConstant())
             return createZero();
 
-        MonomialsSet<MonomialTerm<E>> newTerms = new MonomialsSet<>(ordering);
-        for (MonomialTerm<E> term : this) {
+        MonomialSet<Monomial<E>> newTerms = new MonomialSet<>(ordering);
+        for (Monomial<E> term : this) {
             int exponent = term.exponents[variable];
             if (exponent < order)
                 continue;
@@ -1466,7 +1433,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             newExponents[variable] -= order;
 
             E newCoefficient = domain.multiply(term.coefficient, seriesCoefficientFactor(exponent, order, domain));
-            add(newTerms, new MonomialTerm<>(newExponents, term.totalDegree - order, newCoefficient));
+            add(newTerms, new Monomial<>(newExponents, term.totalDegree - order, newCoefficient));
         }
         return new MultivariatePolynomial<>(nVariables, domain, ordering, newTerms);
     }
@@ -1488,7 +1455,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param <T>       new element type
      * @return a new polynomial with terms obtained by applying mapper to this terms
      */
-    public <T> MultivariatePolynomial<T> mapTerms(Domain<T> newDomain, Function<MonomialTerm<E>, MonomialTerm<T>> mapper) {
+    public <T> MultivariatePolynomial<T> mapTerms(Domain<T> newDomain, Function<Monomial<E>, Monomial<T>> mapper) {
         return terms.values()
                 .stream()
                 .map(mapper)
@@ -1504,7 +1471,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return a new polynomial with terms obtained by applying mapper to this terms (only coefficients are changed)
      */
     public <T> MultivariatePolynomial<T> mapCoefficients(Domain<T> newDomain, Function<E, T> mapper) {
-        return mapTerms(newDomain, t -> new MonomialTerm<>(t.exponents, t.totalDegree, mapper.apply(t.coefficient)));
+        return mapTerms(newDomain, t -> new Monomial<>(t.exponents, t.totalDegree, mapper.apply(t.coefficient)));
     }
 
     /**
@@ -1517,7 +1484,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public lMultivariatePolynomialZp mapCoefficients(lIntegersModulo newDomain, ToLongFunction<E> mapper) {
         return terms.values()
                 .stream()
-                .map(t -> new lMonomialTerm(t.exponents, t.totalDegree, mapper.applyAsLong(t.coefficient)))
+                .map(t -> new lMonomialZp(t.exponents, t.totalDegree, mapper.applyAsLong(t.coefficient)))
                 .collect(new PolynomialCollector<>(() -> lMultivariatePolynomialZp.zero(nVariables, newDomain, ordering)));
     }
 
@@ -1526,12 +1493,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         int c = Integer.compare(size(), oth.size());
         if (c != 0)
             return c;
-        Iterator<MonomialTerm<E>>
+        Iterator<Monomial<E>>
                 thisIt = iterator(),
                 othIt = oth.iterator();
 
         while (thisIt.hasNext() && othIt.hasNext()) {
-            MonomialTerm<E>
+            Monomial<E>
                     a = thisIt.next(),
                     b = othIt.next();
 
@@ -1568,10 +1535,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return "(" + cfs + ")";
     }
 
+    @Override
     public String toString(String... vars) {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for (MonomialTerm<E> term : terms) {
+        for (Monomial<E> term : terms) {
             E coeff = term.coefficient;
             if (domain.isZero(coeff))
                 continue;
@@ -1604,21 +1572,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public String toString() {
-        return toString(defaultVars(nVariables));
-    }
-
-    @Override
     public String coefficientDomainToString() {
         return domain.toString();
     }
-
-    static String[] defaultVars(int nVars) {
-        char v = 'a';
-        String[] vars = new String[nVars];
-        for (int i = 0; i < nVars; i++)
-            vars[i] = Character.toString(v++);
-        return vars;
-    }
-
 }

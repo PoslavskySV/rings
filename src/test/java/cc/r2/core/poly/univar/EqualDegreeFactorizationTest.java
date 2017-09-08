@@ -33,7 +33,7 @@ public class EqualDegreeFactorizationTest {
         FiniteField<lUnivariatePolynomialZp> domain = new FiniteField<>(irreducible);
         UnivariatePolynomial<lUnivariatePolynomialZp> poly = UnivariatePolynomial.parse(domain, "(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6");
 
-        DivisionWithRemainder.InverseModMonomial<UnivariatePolynomial<lUnivariatePolynomialZp>> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+        UnivariateDivision.InverseModMonomial<UnivariatePolynomial<lUnivariatePolynomialZp>> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
 
 
         int d = 3, pPower = 4;

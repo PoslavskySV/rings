@@ -20,7 +20,7 @@ final class Parser {
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain) {
-        return parse(input, domain, DegreeVector.LEX);
+        return parse(input, domain, MonomialOrder.LEX);
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
@@ -55,7 +55,7 @@ final class Parser {
         String[] vars = varsList.toArray(new String[allVars.size()]);
 
         @SuppressWarnings("unchecked")
-        MonomialTerm<E>[] mTerms = new MonomialTerm[terms.size()];
+        Monomial<E>[] mTerms = new Monomial[terms.size()];
         for (int i = 0; i < terms.size(); i++)
             mTerms[i] = terms.get(i).toMonomialTerm(vars);
 
@@ -73,11 +73,11 @@ final class Parser {
             this.exponents = exponents;
         }
 
-        MonomialTerm<E> toMonomialTerm(String[] map) {
+        Monomial<E> toMonomialTerm(String[] map) {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
                 degrees[ArraysUtil.firstIndexOf(variables[i], map)] = exponents[i];
-            return new MonomialTerm<>(degrees, coefficient);
+            return new Monomial<>(degrees, coefficient);
         }
 
         @Override

@@ -1,19 +1,20 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.poly.FactorDecomposition;
-import cc.r2.core.poly.univar.DivisionWithRemainder.InverseModMonomial;
+import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
 
 import java.util.ArrayList;
 
-import static cc.r2.core.poly.univar.DivisionWithRemainder.quotient;
 import static cc.r2.core.poly.Util.ensureFiniteFieldDomain;
 import static cc.r2.core.poly.univar.ModularComposition.*;
-import static cc.r2.core.poly.univar.PolynomialArithmetics.polyMultiplyMod;
+import static cc.r2.core.poly.univar.UnivariatePolynomialArithmetic.polyMultiplyMod;
+import static cc.r2.core.poly.univar.UnivariateDivision.quotient;
 import static cc.r2.core.poly.univar.UnivariateGCD.PolynomialGCD;
 
 
 /**
- * Distinct-free factorization of univariate polynomials over finite fields with single-precision coefficients.
+ * Distinct-degree factorization of univariate polynomials over finite fields.
+ *
  *
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -44,13 +45,13 @@ final class DistinctDegreeFactorization {
         if (base.isMonomial())
             return FactorDecomposition.singleFactor(base.createConstant(factor), base);
 
-        InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
+        InverseModMonomial<lUnivariatePolynomialZp> invMod = UnivariateDivision.fastDivisionPreConditioning(polyModulus);
         lUnivariatePolynomialZp exponent = poly.createMonomial(1);
         FactorDecomposition<lUnivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.createOne());
         int i = 0;
         while (!base.isConstant()) {
             ++i;
-            exponent = PolynomialArithmetics.polyPowMod(exponent, poly.domain.modulus, polyModulus, invMod, false);
+            exponent = UnivariatePolynomialArithmetic.polyPowMod(exponent, poly.domain.modulus, polyModulus, invMod, false);
             lUnivariatePolynomialZp tmpExponent = exponent.clone();
             tmpExponent.ensureCapacity(1);
             tmpExponent.data[1] = base.subtract(tmpExponent.data[1], 1);
@@ -72,7 +73,7 @@ final class DistinctDegreeFactorization {
 
     /**
      * Performs distinct-degree factorization for square-free polynomial {@code poly} using
-     * plain incremental exponents algorithm.
+     * plain incremental exponents algorithm with precomputed exponents.
      * <p>
      * In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
      *
@@ -93,7 +94,7 @@ final class DistinctDegreeFactorization {
         if (base.isMonomial())
             return FactorDecomposition.singleFactor(base.createConstant(factor), base);
 
-        InverseModMonomial<lUnivariatePolynomialZp> invMod = DivisionWithRemainder.fastDivisionPreConditioning(polyModulus);
+        InverseModMonomial<lUnivariatePolynomialZp> invMod = UnivariateDivision.fastDivisionPreConditioning(polyModulus);
         lUnivariatePolynomialZp exponent = poly.createMonomial(1);
         FactorDecomposition<lUnivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.createOne());
 
@@ -129,7 +130,7 @@ final class DistinctDegreeFactorization {
         int l = (int) Math.ceil(Math.pow(1.0 * n, SHOUP_BETA));
         int m = (int) Math.ceil(1.0 * n / 2 / l);
 
-        InverseModMonomial<Poly> invMod = DivisionWithRemainder.fastDivisionPreConditioning(poly);
+        InverseModMonomial<Poly> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
         ArrayList<Poly> xPowers = xPowers(poly, invMod);
 
         //baby steps
@@ -265,7 +266,7 @@ final class DistinctDegreeFactorization {
      * @return square-free and distinct-degree decomposition of {@code poly} modulo {@code modulus}
      */
     static FactorDecomposition<lUnivariatePolynomialZp> DistinctDegreeFactorizationComplete(lUnivariatePolynomialZp poly) {
-        FactorDecomposition<lUnivariatePolynomialZp> squareFree = SquareFreeFactorization.SquareFreeFactorization(poly);
+        FactorDecomposition<lUnivariatePolynomialZp> squareFree = UnivariateSquareFreeFactorization.SquareFreeFactorization(poly);
         long overallFactor = squareFree.constantFactor.lc();
 
         FactorDecomposition<lUnivariatePolynomialZp> result = FactorDecomposition.constantFactor(poly.createOne());

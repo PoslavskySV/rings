@@ -1,7 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
 
 import static cc.r2.core.number.BigInteger.*;
 import static cc.r2.core.poly.Integers.Integers;
-import static cc.r2.core.poly.multivar.DegreeVector.LEX;
+import static cc.r2.core.poly.multivar.MonomialOrder.LEX;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariatePolynomialTest extends AbstractPolynomialTest {
+public class MultivariatePolynomialTest extends APolynomialTest {
     @Test
     public void testArithmetics1() throws Exception {
         MultivariatePolynomial<BigInteger> a = parse("a*b + a^2 + c^3*b^2", LEX);
@@ -71,10 +71,10 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
     public void testZero2() throws Exception {
         MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.create(3,
                 Integers, LEX,
-                new MonomialTerm<>(new int[]{1, 2, 3}, ZERO),
-                new MonomialTerm<>(new int[]{0, 1, 2}, FIVE),
-                new MonomialTerm<>(new int[]{0, 1, 2}, FIVE),
-                new MonomialTerm<>(new int[]{3, 43, 1}, TEN));
+                new Monomial<>(new int[]{1, 2, 3}, ZERO),
+                new Monomial<>(new int[]{0, 1, 2}, FIVE),
+                new Monomial<>(new int[]{0, 1, 2}, FIVE),
+                new Monomial<>(new int[]{3, 43, 1}, TEN));
         assertEquals(2, poly.size());
         assertEquals(parse("10*b*c^2 + 10*a^3*b^43*c", LEX), poly);
     }
@@ -223,11 +223,11 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
         for (int i = 0; i < nIterations; i++) {
             domain = rnd.nextBoolean() ? Integers : new IntegersModulo(getModulusRandom(8));
             MultivariatePolynomial<BigInteger> poly =
-                    RandomMultivariatePolynomial.randomPolynomial(
+                    RandomMultivariatePolynomials.randomPolynomial(
                             rndd.nextInt(1, 4),
                             rndd.nextInt(1, 5),
                             rndd.nextInt(1, 10),
-                            BigInteger.valueOf(1000), domain, LEX, rnd);
+                            domain, LEX, rnd);
             MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
             assertEquals(poly, parsed);
         }
@@ -243,7 +243,7 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
         for (int v = 0; v < poly.nVariables; v++) {
             final int var = v;
             MultivariatePolynomial<BigInteger> r = IntStream.rangeClosed(0, poly.degree(var))
-                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new MonomialTerm<BigInteger>(poly.nVariables, var, i, BigInteger.ONE)))
+                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new Monomial<BigInteger>(poly.nVariables, var, i, BigInteger.ONE)))
                     .reduce(poly.createZero(), (a, b) -> a.add(b));
             assertEquals(poly, r);
         }
@@ -388,7 +388,7 @@ public class MultivariatePolynomialTest extends AbstractPolynomialTest {
 
         for (int i = 0; i < its(100, 100); i++) {
             IntegersModulo domain = new IntegersModulo(getModulusRandom(rndd.nextInt(2, 31)));
-            MultivariatePolynomial<BigInteger> poly = RandomMultivariatePolynomial.randomPolynomial(10, 10, 50, domain, DegreeVector.LEX, rnd);
+            MultivariatePolynomial<BigInteger> poly = RandomMultivariatePolynomials.randomPolynomial(10, 10, 50, domain, MonomialOrder.LEX, rnd);
             for (int j = 0; j < its(3, 10); j++) {
                 int[] select = rndd.nextPermutation(poly.nVariables, rndd.nextInt(1, poly.nVariables));
                 assertEquals(poly, MultivariatePolynomial.asNormalMultivariate(poly.asOverMultivariate(select)));

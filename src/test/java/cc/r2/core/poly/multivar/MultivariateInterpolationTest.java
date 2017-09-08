@@ -1,7 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
@@ -12,26 +12,24 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static cc.r2.core.number.BigInteger.INT_MAX_VALUE;
-import static cc.r2.core.poly.multivar.MonomialTerm.LEX;
 import static cc.r2.core.poly.multivar.MultivariateInterpolation.interpolateNewton;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
-import static cc.r2.core.poly.multivar.RandomMultivariatePolynomial.randomPolynomial;
+import static cc.r2.core.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariateInterpolationTest extends AbstractPolynomialTest {
+public class MultivariateInterpolationTest extends APolynomialTest {
     @Test
     @SuppressWarnings("unchecked")
     public void test1() throws Exception {
         String[] variables = {"a", "b"};
         Domain<BigInteger> domain = new IntegersModulo(17);
-        MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, LEX, variables);
-        MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, LEX, variables);
-        MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, LEX, variables);
+        MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, MonomialOrder.LEX, variables);
+        MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, MonomialOrder.LEX, variables);
+        MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, MonomialOrder.LEX, variables);
 
         BigInteger[] points = {BigInteger.valueOf(1), BigInteger.valueOf(2), BigInteger.valueOf(3)};
         MultivariatePolynomial<BigInteger>[] values = new MultivariatePolynomial[]{val1, val2, val3};
@@ -44,9 +42,9 @@ public class MultivariateInterpolationTest extends AbstractPolynomialTest {
     public void test2() throws Exception {
         String[] variables = {"a", "b"};
         Domain<BigInteger> domain = new IntegersModulo(17);
-        MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, LEX, variables);
-        MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, LEX, variables);
-        MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, LEX, variables);
+        MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, MonomialOrder.LEX, variables);
+        MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, MonomialOrder.LEX, variables);
+        MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, MonomialOrder.LEX, variables);
 
         BigInteger[] points = {BigInteger.valueOf(1), BigInteger.valueOf(2), BigInteger.valueOf(3)};
         MultivariatePolynomial<BigInteger>[] values = new MultivariatePolynomial[]{val1, val2, val3};
@@ -67,7 +65,7 @@ public class MultivariateInterpolationTest extends AbstractPolynomialTest {
     public void test3() throws Exception {
         IntegersModulo domain = new IntegersModulo(197);
         String[] vars = {"a", "b", "c"};
-        MultivariatePolynomial<BigInteger> base = parse("15*b*c^2+47*b^4*c^4+144*a*b^5*c^5+150*a^5*b^4+62*a^5*b^4*c", domain, LEX);
+        MultivariatePolynomial<BigInteger> base = parse("15*b*c^2+47*b^4*c^4+144*a*b^5*c^5+150*a^5*b^4+62*a^5*b^4*c", domain, MonomialOrder.LEX);
         int var = 2;
         BigInteger[] points = {
                 BigInteger.valueOf(1),
@@ -100,7 +98,7 @@ public class MultivariateInterpolationTest extends AbstractPolynomialTest {
 
             int nVars = rndd.nextInt(2, 4);
             IntegersModulo domain = new IntegersModulo(getModulusRandom(16));
-            MultivariatePolynomial<BigInteger> base = randomPolynomial(nVars, rndd.nextInt(3, 10), rndd.nextInt(5, 10), INT_MAX_VALUE, domain, LEX, rnd);
+            MultivariatePolynomial<BigInteger> base = randomPolynomial(nVars, rndd.nextInt(3, 10), rndd.nextInt(5, 10), domain, MonomialOrder.LEX, rnd);
             int var = rndd.nextInt(0, nVars - 1);
             int degree = base.degrees()[var];
 

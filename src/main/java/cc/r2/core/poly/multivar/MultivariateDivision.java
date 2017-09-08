@@ -3,11 +3,13 @@ package cc.r2.core.poly.multivar;
 import java.util.Collection;
 
 /**
+ * Division with remainder of multivariate polynomials (multivariate reduction).
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class MultivariateReduction {
-    private MultivariateReduction() {}
+public final class MultivariateDivision {
+    private MultivariateDivision() {}
 
     /**
      * Performs multivariate division with remainder. The resulting array of quotients and remainder (last element of
@@ -15,7 +17,7 @@ public final class MultivariateReduction {
      *
      * @param dividend the dividend
      * @param dividers the dividers
-     * @return array of quotients and remainder at the last position
+     * @return array of quotients and remainder in the last position
      */
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
@@ -65,7 +67,7 @@ public final class MultivariateReduction {
     }
 
     /**
-     * Performs multivariate division with remainder and rerurns the remainder.
+     * Performs multivariate division with remainder and returns the remainder.
      *
      * @param dividend the dividend
      * @param dividers the dividers

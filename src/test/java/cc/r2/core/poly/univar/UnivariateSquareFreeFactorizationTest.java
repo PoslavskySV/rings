@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.AbstractPolynomialTest;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.IntegersModulo;
@@ -15,26 +15,26 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static cc.r2.core.poly.FactorDecompositionTest.assertFactorization;
-import static cc.r2.core.poly.univar.SquareFreeFactorization.SquareFreeFactorization;
+import static cc.r2.core.poly.univar.UnivariateSquareFreeFactorization.SquareFreeFactorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Created by poslavsky on 20/01/2017.
  */
-public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
+public class UnivariateSquareFreeFactorizationTest extends APolynomialTest {
     @Test
     public void test1() throws Exception {
-        lUnivariatePolynomialZ poly = PolynomialArithmetics.polyPow(lUnivariatePolynomialZ.create(1, 3).multiply(2), 3, false).multiply(PolynomialArithmetics.polyPow(lUnivariatePolynomialZ.create(-3, -5, 7), 2, false));
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
+        lUnivariatePolynomialZ poly = UnivariatePolynomialArithmetic.polyPow(lUnivariatePolynomialZ.create(1, 3).multiply(2), 3, false).multiply(UnivariatePolynomialArithmetic.polyPow(lUnivariatePolynomialZ.create(-3, -5, 7), 2, false));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(1, 3);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(3);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(33);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorizationYun0(poly));
         poly = lUnivariatePolynomialZ.create(22, 22).multiply(lUnivariatePolynomialZ.create(12, 12, 12)).multiply(12);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorizationYun0(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorizationYun0(poly));
     }
 
     @Test
@@ -55,9 +55,9 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             try {
                 poly = lUnivariatePolynomialZ.create(rndd.nextLong(1, 10));
                 for (int j = 0; j < nbase; j++) {
-                    lUnivariatePolynomialZ factor = RandomPolynomials.randomPoly(rndd.nextInt(1, 3), 10, rnd);
+                    lUnivariatePolynomialZ factor = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 3), 10, rnd);
                     int exponent = rndd.nextInt(1, 5);
-                    poly = poly.multiply(PolynomialArithmetics.polyPow(factor, exponent, true));
+                    poly = poly.multiply(UnivariatePolynomialArithmetic.polyPow(factor, exponent, true));
                 }
             } catch (ArithmeticException e) {
                 --i;
@@ -65,11 +65,11 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
             }
             try {
                 long start = System.nanoTime();
-                FactorDecomposition<lUnivariatePolynomialZ> yunFactorization = SquareFreeFactorization.SquareFreeFactorizationYun0(poly);
+                FactorDecomposition<lUnivariatePolynomialZ> yunFactorization = UnivariateSquareFreeFactorization.SquareFreeFactorizationYun0(poly);
                 yun.addValue(System.nanoTime() - start);
 
                 start = System.nanoTime();
-                FactorDecomposition<lUnivariatePolynomialZ> musserFactorization = SquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
+                FactorDecomposition<lUnivariatePolynomialZ> musserFactorization = UnivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
                 musser.addValue(System.nanoTime() - start);
 
                 assertEquals(yunFactorization.factors.size(), musserFactorization.factors.size());
@@ -90,7 +90,7 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test3() throws Exception {
         lUnivariatePolynomialZ poly = lUnivariatePolynomialZ.create(0, 0, -1458, 6561, -6561);
-        FactorDecomposition<lUnivariatePolynomialZ> factorization = SquareFreeFactorization.SquareFreeFactorizationYun0(poly);
+        FactorDecomposition<lUnivariatePolynomialZ> factorization = UnivariateSquareFreeFactorization.SquareFreeFactorizationYun0(poly);
         assertFactorization(poly, factorization);
     }
 
@@ -99,13 +99,13 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     public void test4() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(1, 0, 1, 0, 2).modulus(2);
         poly = poly.multiply(lUnivariatePolynomialZ.create(1, 0, 1, 0, 2).modulus(2));
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
     public void test5() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(1, 0, 0, 0, 1).modulus(2);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
@@ -129,13 +129,13 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
                         start = System.nanoTime();
                         poly = lUnivariatePolynomialZ.create(rndd.nextLong(1, 1000)).modulus(modulus, false);
                         for (int j = 0; j < nbase; j++) {
-                            lUnivariatePolynomialZp f = RandomPolynomials.randomPoly(rndd.nextInt(1, maxDegree), bound, rnd).modulus(modulus);
-                            poly = poly.multiply(PolynomialArithmetics.polyPow(f, rndd.nextInt(1, maxExponent), true));
+                            lUnivariatePolynomialZp f = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, maxDegree), bound, rnd).modulus(modulus);
+                            poly = poly.multiply(UnivariatePolynomialArithmetic.polyPow(f, rndd.nextInt(1, maxExponent), true));
                         }
                         arithmetics.addValue(System.nanoTime() - start);
                         try {
                             start = System.nanoTime();
-                            FactorDecomposition<lUnivariatePolynomialZp> factorization = SquareFreeFactorization.SquareFreeFactorization(poly);
+                            FactorDecomposition<lUnivariatePolynomialZp> factorization = UnivariateSquareFreeFactorization.SquareFreeFactorization(poly);
                             timings.addValue(System.nanoTime() - start);
                             assertFactorization(poly, factorization);
                         } catch (ArithmeticException exc) {
@@ -165,51 +165,51 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
     @Test
     public void test6a() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(0, 0, 1, 3, 4, 3, 3, 2, 3).modulus(5);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6b() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(0, 0, 0, 2).modulus(3);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6c() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(0, 0, 0, 1, 1).modulus(2);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6d() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2).modulus(3);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6e() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(2, 3, 2, 1, 3, 3, 3).modulus(5);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6f() throws Exception {
         lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(1, 0, 2, 2, 0, 1, 1, 0, 2, 2, 0, 1).modulus(3);
-        assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+        assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
     }
 
     @Test
     public void test6g() throws Exception {
         for (long modulus : getModulusArray(1, 1, 50)) {
             lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(0, 0, 0, 8, 20, 67, 55).modulus(modulus);
-            assertFactorization(poly, SquareFreeFactorization.SquareFreeFactorization(poly));
+            assertFactorization(poly, UnivariateSquareFreeFactorization.SquareFreeFactorization(poly));
         }
     }
 
     @Test
     public void test7() throws Exception {
-        Assert.assertEquals(1, SquareFreeFactorization.SquareFreeFactorization(lUnivariatePolynomialZ.create(0, 0, 0, 0, 1)).factors.size());
-        Assert.assertEquals(1, SquareFreeFactorization.SquareFreeFactorization(lUnivariatePolynomialZ.create(0, 0, 0, 0, 1).modulus(31)).factors.size());
+        Assert.assertEquals(1, UnivariateSquareFreeFactorization.SquareFreeFactorization(lUnivariatePolynomialZ.create(0, 0, 0, 0, 1)).factors.size());
+        Assert.assertEquals(1, UnivariateSquareFreeFactorization.SquareFreeFactorization(lUnivariatePolynomialZ.create(0, 0, 0, 0, 1).modulus(31)).factors.size());
     }
 
     @Test
@@ -218,13 +218,13 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
         long modulus = 3;
         for (int i = 0; i < 1000; i++) {
             lUnivariatePolynomialZp poly = rnd.take(modulus);
-            assertTrue(SquareFreeFactorization.isSquareFree(SquareFreeFactorization.SquareFreePart(poly)));
+            assertTrue(UnivariateSquareFreeFactorization.isSquareFree(UnivariateSquareFreeFactorization.SquareFreePart(poly)));
         }
     }
 
     @Test
     public void test9() throws Exception {
-        assertTrue(SquareFreeFactorization.SquareFreeFactorization(lUnivariatePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
+        assertTrue(UnivariateSquareFreeFactorization.SquareFreeFactorization(lUnivariatePolynomialZ.create(3, 7).modulus(17)).get(0).isMonic());
     }
 
     @Test
@@ -256,9 +256,9 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
         int nIterations = (int) its(20, 50);
         for (int i = 0; i < nIterations; i++) {
             UnivariatePolynomial<BigInteger> poly;
-            poly = RandomPolynomials.randomPoly(rndd.nextInt(2, 30), bound, rnd);
+            poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(2, 30), bound, rnd);
             int exponent = rndd.nextInt(2, 4);
-            poly = PolynomialArithmetics.polyPow(poly, exponent, false);
+            poly = UnivariatePolynomialArithmetic.polyPow(poly, exponent, false);
 
             FactorDecomposition<UnivariatePolynomial<BigInteger>> zf = SquareFreeFactorization(poly);
             assertTrue(zf.sumExponents() >= exponent);
@@ -295,7 +295,7 @@ public class SquareFreeFactorizationTest extends AbstractPolynomialTest {
                         lUnivariatePolynomialZ.create(1, 0, 1).modulus(2),
                         lUnivariatePolynomialZ.create(0, 0, 1).modulus(2));
 
-        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = SquareFreeFactorization.SquareFreeFactorization(poly);
+        FactorDecomposition<UnivariatePolynomial<lUnivariatePolynomialZp>> factors = UnivariateSquareFreeFactorization.SquareFreeFactorization(poly);
         assertFactorization(poly, factors);
     }
 

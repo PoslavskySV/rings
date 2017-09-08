@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.poly.*;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -12,8 +13,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static cc.r2.core.poly.univar.DivisionWithRemainder.*;
-import static cc.r2.core.poly.univar.RandomPolynomials.randomPoly;
+import static cc.r2.core.poly.univar.UnivariateDivision.*;
+import static cc.r2.core.poly.univar.RandomUnivariatePolynomials.randomPoly;
 import static cc.r2.core.poly.univar.UnivariatePolynomial.asLongPolyZp;
 import static org.junit.Assert.*;
 
@@ -21,7 +22,7 @@ import static org.junit.Assert.*;
 /**
  * Created by poslavsky on 15/02/2017.
  */
-public class DivisionWithRemainderTest extends AbstractPolynomialTest {
+public class UnivariateDivisionTest extends APolynomialTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void test1() throws Exception {
@@ -32,8 +33,8 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         UnivariateGCD.PolynomialRemainders<lUnivariatePolynomialZp> prs = UnivariateGCD.EuclidRemainders(a, b);
         lUnivariatePolynomialZp gcd = prs.gcd();
         assertEquals(3, gcd.degree);
-        assertTrue(DivisionWithRemainder.divideAndRemainder(a, gcd, true)[1].isZero());
-        assertTrue(DivisionWithRemainder.divideAndRemainder(b, gcd, true)[1].isZero());
+        assertTrue(UnivariateDivision.divideAndRemainder(a, gcd, true)[1].isZero());
+        assertTrue(UnivariateDivision.divideAndRemainder(b, gcd, true)[1].isZero());
     }
 
     @Test(expected = ArithmeticException.class)
@@ -70,9 +71,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 lUnivariatePolynomialZp a = dividend.modulus(prime, true);
                 lUnivariatePolynomialZp b = divider.modulus(prime, true);
                 try {
-                    qd = DivisionWithRemainder.divideAndRemainder(a, b, true);
+                    qd = UnivariateDivision.divideAndRemainder(a, b, true);
                     assertQuotientRemainder(a, b, qd);
-                    qd = DivisionWithRemainder.divideAndRemainder(a.clone(), b, false);
+                    qd = UnivariateDivision.divideAndRemainder(a.clone(), b, false);
 
                     assertQuotientRemainder(a, b, qd);
                 } catch (Exception err) {
@@ -91,7 +92,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZp dividend = lUnivariatePolynomialZ.create(95, 45, 67, 5, -2, 65, 24, 24, 60).modulus(prime);
         lUnivariatePolynomialZp divider = lUnivariatePolynomialZ.create(94, 86).modulus(prime);
 
-        lUnivariatePolynomialZp[] qd = DivisionWithRemainder.divideAndRemainder(dividend.clone(), divider, false);
+        lUnivariatePolynomialZp[] qd = UnivariateDivision.divideAndRemainder(dividend.clone(), divider, false);
         assertQuotientRemainder(dividend, divider, qd);
     }
 
@@ -108,7 +109,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 try {
                     lUnivariatePolynomialZ[] qr = pseudoDivideAndRemainder(dividend, divider, true);
                     assertPseudoQuotientRemainder(dividend, divider, qr);
-                    qr = DivisionWithRemainder.pseudoDivideAndRemainder(dividend.clone(), divider, false);
+                    qr = UnivariateDivision.pseudoDivideAndRemainder(dividend.clone(), divider, false);
                     assertPseudoQuotientRemainder(dividend, divider, qr);
                     norm = qr[0].norm2();
                     ++passed;
@@ -116,9 +117,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
 
                 double normAdaptive = -1;
                 try {
-                    lUnivariatePolynomialZ[] qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(dividend, divider, true);
+                    lUnivariatePolynomialZ[] qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(dividend, divider, true);
                     assertPseudoQuotientRemainder(dividend, divider, qr);
-                    qr = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(dividend.clone(), divider, false);
+                    qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(dividend.clone(), divider, false);
                     assertPseudoQuotientRemainder(dividend, divider, qr);
                     normAdaptive = qr[0].norm2();
                     ++passed;
@@ -182,9 +183,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                     continue;
                 lUnivariatePolynomialZp a = dividend.clone().modulus(prime);
                 lUnivariatePolynomialZp b = divider.clone().modulus(prime);
-                lUnivariatePolynomialZp expected = DivisionWithRemainder.divideAndRemainder(a, b, true)[1];
-                Assert.assertEquals(expected, DivisionWithRemainder.remainder(a, b, true));
-                Assert.assertEquals(expected, DivisionWithRemainder.remainder(a.clone(), b, false));
+                lUnivariatePolynomialZp expected = UnivariateDivision.divideAndRemainder(a, b, true)[1];
+                Assert.assertEquals(expected, UnivariateDivision.remainder(a, b, true));
+                Assert.assertEquals(expected, UnivariateDivision.remainder(a.clone(), b, false));
             }
         }
     }
@@ -210,10 +211,10 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 Arrays.asList(fast, fastPseudo, gen, genPseudo).forEach(DescriptiveStatistics::clear);
 
             long start = System.nanoTime();
-            lUnivariatePolynomialZ[] actual = DivisionWithRemainder.divideAndRemainderLinearDivider(dividend, divider, true);
+            lUnivariatePolynomialZ[] actual = UnivariateDivision.divideAndRemainderLinearDivider(dividend, divider, true);
             fast.addValue(System.nanoTime() - start);
             start = System.nanoTime();
-            lUnivariatePolynomialZ[] expected = DivisionWithRemainder.divideAndRemainderClassic0(dividend, divider, 1, true);
+            lUnivariatePolynomialZ[] expected = UnivariateDivision.divideAndRemainderClassic0(dividend, divider, 1, true);
             gen.addValue(System.nanoTime() - start);
             assertArrayEquals(expected, actual);
             lUnivariatePolynomialZ[] expectedNoCopy = divideAndRemainderClassic0(dividend.clone(), divider, 1, false);
@@ -233,15 +234,15 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                     continue out;
                 }
                 start = System.nanoTime();
-                lUnivariatePolynomialZp[] actualMod = DivisionWithRemainder.divideAndRemainderLinearDividerModulus(dividendMod, dividerMod, true);
+                lUnivariatePolynomialZp[] actualMod = UnivariateDivision.divideAndRemainderLinearDividerModulus(dividendMod, dividerMod, true);
                 fast.addValue(System.nanoTime() - start);
                 start = System.nanoTime();
-                lUnivariatePolynomialZp[] expectedMod = DivisionWithRemainder.divideAndRemainderClassic0(dividendMod, dividerMod, true);
+                lUnivariatePolynomialZp[] expectedMod = UnivariateDivision.divideAndRemainderClassic0(dividendMod, dividerMod, true);
                 gen.addValue(System.nanoTime() - start);
                 assertArrayEquals(expectedMod, actualMod);
 
-                lUnivariatePolynomialZp[] actualNoCopyMod = DivisionWithRemainder.divideAndRemainderLinearDividerModulus(dividendMod.clone(), dividerMod, false);
-                lUnivariatePolynomialZp[] expectedNoCopyMod = DivisionWithRemainder.divideAndRemainderClassic0(dividendMod.clone(), dividerMod, false);
+                lUnivariatePolynomialZp[] actualNoCopyMod = UnivariateDivision.divideAndRemainderLinearDividerModulus(dividendMod.clone(), dividerMod, false);
+                lUnivariatePolynomialZp[] expectedNoCopyMod = UnivariateDivision.divideAndRemainderClassic0(dividendMod.clone(), dividerMod, false);
                 assertArrayEquals(expectedMod, actualNoCopyMod);
                 assertArrayEquals(expectedMod, expectedNoCopyMod);
             }
@@ -250,11 +251,11 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 divider = lUnivariatePolynomialZ.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
             } while (divider.degree == 0);
             start = System.nanoTime();
-            actual = DivisionWithRemainder.pseudoDivideAndRemainderLinearDivider(dividend, divider, true);
+            actual = UnivariateDivision.pseudoDivideAndRemainderLinearDivider(dividend, divider, true);
             fastPseudo.addValue(System.nanoTime() - start);
             start = System.nanoTime();
             long factor = MachineArithmetic.safePow(divider.lc(), dividend.degree - divider.degree + 1);
-            expected = DivisionWithRemainder.divideAndRemainderClassic0(dividend, divider, factor, true);
+            expected = UnivariateDivision.divideAndRemainderClassic0(dividend, divider, factor, true);
             genPseudo.addValue(System.nanoTime() - start);
             assertArrayEquals(expected, actual);
 
@@ -267,15 +268,15 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 divider = lUnivariatePolynomialZ.create(rndd.nextLong(-10, 10), rndd.nextLong(-10, 10));
             } while (divider.degree == 0);
             start = System.nanoTime();
-            actual = DivisionWithRemainder.pseudoDivideAndRemainderLinearDividerAdaptive(dividend, divider, true);
+            actual = UnivariateDivision.pseudoDivideAndRemainderLinearDividerAdaptive(dividend, divider, true);
             fastPseudo.addValue(System.nanoTime() - start);
             start = System.nanoTime();
-            expected = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive0(dividend, divider, true);
+            expected = UnivariateDivision.pseudoDivideAndRemainderAdaptive0(dividend, divider, true);
             genPseudo.addValue(System.nanoTime() - start);
             assertArrayEquals(expected, actual);
 
-            actualNoCopy = DivisionWithRemainder.pseudoDivideAndRemainderLinearDividerAdaptive(dividend.clone(), divider, false);
-            expectedNoCopy = DivisionWithRemainder.pseudoDivideAndRemainderAdaptive0(dividend.clone(), divider, false);
+            actualNoCopy = UnivariateDivision.pseudoDivideAndRemainderLinearDividerAdaptive(dividend.clone(), divider, false);
+            expectedNoCopy = UnivariateDivision.pseudoDivideAndRemainderAdaptive0(dividend.clone(), divider, false);
             assertArrayEquals(expected, actualNoCopy);
             assertArrayEquals(expected, expectedNoCopy);
         }
@@ -303,9 +304,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         lUnivariatePolynomialZ[] zeros = {lUnivariatePolynomialZ.zero(), lUnivariatePolynomialZ.zero()};
         assertArrayEquals(zeros, divideAndRemainder(b, a, true));
         assertArrayEquals(zeros, pseudoDivideAndRemainder(b, a, true));
-        assertArrayEquals(zeros, DivisionWithRemainder.pseudoDivideAndRemainderAdaptive(b, a, true));
+        assertArrayEquals(zeros, UnivariateDivision.pseudoDivideAndRemainderAdaptive(b, a, true));
         assertArrayEquals(Arrays.stream(zeros).map(x -> x.modulus(13)).toArray(size -> new lUnivariatePolynomialZp[size]),
-                DivisionWithRemainder.divideAndRemainder(b.modulus(13), a.modulus(13), true));
+                UnivariateDivision.divideAndRemainder(b.modulus(13), a.modulus(13), true));
     }
 
     private static <T extends IUnivariatePolynomial<T>> void assertQuotientRemainder(T dividend, T divider, T[] qr) {
@@ -327,11 +328,11 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
             return null;
         if (poly.cc() != 1)
             throw new IllegalArgumentException();
-        int r = DivisionWithRemainder.log2(xDegree);
+        int r = UnivariateDivision.log2(xDegree);
         lUnivariatePolynomialZp gPrev = poly.createOne();
         for (int i = 0; i < r; ++i) {
             lUnivariatePolynomialZp tmp = gPrev.clone().multiply(2).subtract(gPrev.square().multiply(poly));
-            gPrev = DivisionWithRemainder.remainderMonomial(tmp, 1 << i, false);
+            gPrev = UnivariateDivision.remainderMonomial(tmp, 1 << i, false);
         }
         return gPrev;
     }
@@ -341,7 +342,7 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         long modulus = getModulusRandom(10);
         for (int i = 0; i < its(100, 1000); i++) {
-            lUnivariatePolynomialZp f = RandomPolynomials.randomMonicPoly(1 + rnd.nextInt(100), modulus, rnd);
+            lUnivariatePolynomialZp f = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(100), modulus, rnd);
             f.data[0] = 1;
             int modDegree = 1 + rnd.nextInt(2 * f.degree);
             lUnivariatePolynomialZp invMod = inverseModMonomial0(f, modDegree);
@@ -372,10 +373,10 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(100, 1000); i++) {
             long modulus = getModulusRandom(20);
-            lUnivariatePolynomialZp p = RandomPolynomials.randomMonicPoly(2 + rnd.nextInt(100), modulus, rnd);
+            lUnivariatePolynomialZp p = RandomUnivariatePolynomials.randomMonicPoly(2 + rnd.nextInt(100), modulus, rnd);
             p.data[0] = 1;
 
-            DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(p);
+            UnivariateDivision.InverseModMonomial invMod = UnivariateDivision.fastDivisionPreConditioning(p);
             for (int j = 0; j < 30; j++) {
                 int xDegree = 1 + rnd.nextInt(1025);
                 assertEquals(invMod.getInverse(xDegree), inverseModMonomial0(p.clone().reverse(), xDegree));
@@ -389,12 +390,12 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(100, 500); i++) {
             long modulus = getModulusRandom(getRandomData().nextInt(29, 33));
-            lUnivariatePolynomialZp b = RandomPolynomials.randomMonicPoly(30, modulus, rnd);
-            lUnivariatePolynomialZp a = RandomPolynomials.randomMonicPoly(rnd.nextInt(30), modulus, rnd);
+            lUnivariatePolynomialZp b = RandomUnivariatePolynomials.randomMonicPoly(30, modulus, rnd);
+            lUnivariatePolynomialZp a = RandomUnivariatePolynomials.randomMonicPoly(rnd.nextInt(30), modulus, rnd);
 
-            DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(b);
-            lUnivariatePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(a, b, invMod, true);
-            lUnivariatePolynomialZp[] plain = DivisionWithRemainder.divideAndRemainderClassic(a, b, true);
+            UnivariateDivision.InverseModMonomial invMod = UnivariateDivision.fastDivisionPreConditioning(b);
+            lUnivariatePolynomialZp[] fast = UnivariateDivision.divideAndRemainderFast(a, b, invMod, true);
+            lUnivariatePolynomialZp[] plain = UnivariateDivision.divideAndRemainderClassic(a, b, true);
             assertArrayEquals(fast, plain);
         }
     }
@@ -404,9 +405,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         long modulus = 7;
         lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(5, 1, 4, 6, 4, 3, 5, 5, 3, 4, 2, 2, 5, 2, 5, 6, 1, 1, 2, 5, 1, 0, 0, 6, 6, 5, 5, 1, 0, 1, 4, 1, 1).modulus(modulus);
         lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(2, 5, 3, 1, 1, 5, 6, 3, 4, 0, 0, 5, 4, 0, 2, 1).modulus(modulus);
-        DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(b);
-        lUnivariatePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(a, b, invMod, true);
-        lUnivariatePolynomialZp[] plain = DivisionWithRemainder.divideAndRemainderClassic(a, b, true);
+        UnivariateDivision.InverseModMonomial invMod = UnivariateDivision.fastDivisionPreConditioning(b);
+        lUnivariatePolynomialZp[] fast = UnivariateDivision.divideAndRemainderFast(a, b, invMod, true);
+        lUnivariatePolynomialZp[] plain = UnivariateDivision.divideAndRemainderClassic(a, b, true);
         assertArrayEquals(fast, plain);
     }
 
@@ -415,9 +416,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         long modulus = 7;
         lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(5, 3, 3, 3, 5, 3, 1, 4, -3, 1, 4, 5, 0, 2, 2, -5, 1).modulus(modulus);
         lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(0, 4, 6, 1, 2, 4, 0, 0, 6, 5, 2, 3, 1, 4, 0, 1).modulus(modulus);
-        DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(b);
-        lUnivariatePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(a, b, invMod, true);
-        lUnivariatePolynomialZp[] plain = DivisionWithRemainder.divideAndRemainderClassic(a, b, true);
+        UnivariateDivision.InverseModMonomial invMod = UnivariateDivision.fastDivisionPreConditioning(b);
+        lUnivariatePolynomialZp[] fast = UnivariateDivision.divideAndRemainderFast(a, b, invMod, true);
+        lUnivariatePolynomialZp[] plain = UnivariateDivision.divideAndRemainderClassic(a, b, true);
         assertArrayEquals(fast, plain);
     }
 
@@ -426,9 +427,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         long modulus = 17;
         lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(0, 6, 2, 1, 10, 15, 16, 15, 2, 11, 13, 0, 1, 15, 5, 13, 8, 14, 13, 14, 15, 1, 1).modulus(modulus);
         lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(7, 12, 12, 12, 13, 2, 7, 10, 7, 15, 13, 1, 10, 16, 6, 1).modulus(modulus);
-        DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(b);
-        lUnivariatePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(a, b, invMod, true);
-        lUnivariatePolynomialZp[] plain = DivisionWithRemainder.divideAndRemainderClassic(a, b, true);
+        UnivariateDivision.InverseModMonomial invMod = UnivariateDivision.fastDivisionPreConditioning(b);
+        lUnivariatePolynomialZp[] fast = UnivariateDivision.divideAndRemainderFast(a, b, invMod, true);
+        lUnivariatePolynomialZp[] plain = UnivariateDivision.divideAndRemainderClassic(a, b, true);
         assertArrayEquals(fast, plain);
     }
 
@@ -437,9 +438,9 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         long modulus = 17;
         lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(5, 9, 4, 9, 8, 12, 11, 9, 1, 6, 15, 7, 11, 2, 11, 13, 11, 10, 5, 1).modulus(modulus);
         lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(11, 15, 9, 5, 11, 5, 14, 9, 1, 0, 16, 12, 11, 5, 15, 10, 15, 2, 14, 3, 1, 16, 16, 12, 13, 1, 12, 11, 1, 15, 1).modulus(modulus);
-        DivisionWithRemainder.InverseModMonomial invMod = DivisionWithRemainder.fastDivisionPreConditioning(b);
-        lUnivariatePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(a, b, invMod, true);
-        lUnivariatePolynomialZp[] plain = DivisionWithRemainder.divideAndRemainderClassic(a, b, true);
+        UnivariateDivision.InverseModMonomial invMod = UnivariateDivision.fastDivisionPreConditioning(b);
+        lUnivariatePolynomialZp[] fast = UnivariateDivision.divideAndRemainderFast(a, b, invMod, true);
+        lUnivariatePolynomialZp[] plain = UnivariateDivision.divideAndRemainderClassic(a, b, true);
         assertArrayEquals(fast, plain);
     }
 
@@ -468,26 +469,26 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
     public void test19_FastDivisionPerformance() throws Exception {
         long modulus = 5659;
         RandomGenerator rnd = getRandom();
-        lUnivariatePolynomialZp divider = RandomPolynomials.randomMonicPoly(118, modulus, rnd);
+        lUnivariatePolynomialZp divider = RandomUnivariatePolynomials.randomMonicPoly(118, modulus, rnd);
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
-        DivisionWithRemainder.InverseModMonomial invRev = DivisionWithRemainder.fastDivisionPreConditioning(divider);
+        UnivariateDivision.InverseModMonomial invRev = UnivariateDivision.fastDivisionPreConditioning(divider);
         long nIterations = its(1000, 15000);
         for (int i = 0; i < nIterations; i++) {
             if (i * 10 == nIterations) {
                 classic.clear();
                 fast.clear();
             }
-            lUnivariatePolynomialZ dividendZ = RandomPolynomials.randomPoly(3 * divider.degree / 2, (int) modulus, rnd);
+            lUnivariatePolynomialZ dividendZ = RandomUnivariatePolynomials.randomPoly(3 * divider.degree / 2, (int) modulus, rnd);
             lUnivariatePolynomialZp dividend = dividendZ.modulus(modulus);
 
             long start = System.nanoTime();
-            lUnivariatePolynomialZp[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
+            lUnivariatePolynomialZp[] qdPlain = UnivariateDivision.divideAndRemainderClassic(dividend, divider, true);
             long plain = System.nanoTime() - start;
             classic.addValue(plain);
 
             start = System.nanoTime();
-            lUnivariatePolynomialZp[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, invRev, true);
+            lUnivariatePolynomialZp[] qdNewton = UnivariateDivision.divideAndRemainderFast(dividend, divider, invRev, true);
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
@@ -517,18 +518,18 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 fast.clear();
             }
 
-            lUnivariatePolynomialZp divider = RandomPolynomials.randomMonicPoly(dividerDegree, modulus, rnd);
-            lUnivariatePolynomialZ dividendZ = RandomPolynomials.randomPoly(dividendDegree, (int) modulus, rnd);
+            lUnivariatePolynomialZp divider = RandomUnivariatePolynomials.randomMonicPoly(dividerDegree, modulus, rnd);
+            lUnivariatePolynomialZ dividendZ = RandomUnivariatePolynomials.randomPoly(dividendDegree, (int) modulus, rnd);
             lUnivariatePolynomialZp dividend = dividendZ.modulus(modulus);
             divider.multiply(3);
 
             long start = System.nanoTime();
-            lUnivariatePolynomialZp[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
+            lUnivariatePolynomialZp[] qdPlain = UnivariateDivision.divideAndRemainderClassic(dividend, divider, true);
             long plain = System.nanoTime() - start;
             classic.addValue(plain);
 
             start = System.nanoTime();
-            lUnivariatePolynomialZp[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, true);
+            lUnivariatePolynomialZp[] qdNewton = UnivariateDivision.divideAndRemainderFast(dividend, divider, true);
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
@@ -548,8 +549,8 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         long modulus = 17;
         lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(5, 9, 4, 9, 8, 12, 11, 9, 1, 6, 15, 7, 11, 2, 11, 13, 11, 10, 5, 1).modulus(modulus);
         lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(11, 15, 9, 5, 11, 5, 14, 9, 1, 0, 16, 12, 11, 5, 15, 10, 15, 2, 14, 3, 1, 16, 16, 12, 13, 1, 12, 11, 1, 15, 13).modulus(modulus);
-        lUnivariatePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(a, b, true);
-        lUnivariatePolynomialZp[] plain = DivisionWithRemainder.divideAndRemainderClassic(a, b, true);
+        lUnivariatePolynomialZp[] fast = UnivariateDivision.divideAndRemainderFast(a, b, true);
+        lUnivariatePolynomialZp[] plain = UnivariateDivision.divideAndRemainderClassic(a, b, true);
         assertArrayEquals(fast, plain);
     }
 
@@ -563,8 +564,8 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
         UnivariatePolynomial<BigInteger> bDivider = UnivariatePolynomial.create(domain, 1, 2, 3, 3, 2, 1);
         lUnivariatePolynomialZp lDivider = asLongPolyZp(bDivider);
 
-        UnivariatePolynomial<BigInteger>[] bqd = DivisionWithRemainder.divideAndRemainderFast(bDividend, bDivider, true);
-        lUnivariatePolynomialZp[] lqd = DivisionWithRemainder.divideAndRemainderFast(lDividend, lDivider, true);
+        UnivariatePolynomial<BigInteger>[] bqd = UnivariateDivision.divideAndRemainderFast(bDividend, bDivider, true);
+        lUnivariatePolynomialZp[] lqd = UnivariateDivision.divideAndRemainderFast(lDividend, lDivider, true);
         Assert.assertArrayEquals(new lUnivariatePolynomialZp[]{asLongPolyZp(bqd[0]), asLongPolyZp(bqd[1])}, lqd);
     }
 
@@ -573,26 +574,26 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
     public void test19_BigInteger_FastDivisionPerformance() throws Exception {
         BigInteger modulus = new BigInteger("1247842098624308285367648396697");//BigPrimes.nextPrime(new BigInteger(100, rnd));
         RandomGenerator rnd = getRandom();
-        UnivariatePolynomial<BigInteger> divider = RandomPolynomials.randomMonicPoly(128, modulus, rnd);
+        UnivariatePolynomial<BigInteger> divider = RandomUnivariatePolynomials.randomMonicPoly(128, modulus, rnd);
 
         DescriptiveStatistics classic = new DescriptiveStatistics(), fast = new DescriptiveStatistics();
-        DivisionWithRemainder.InverseModMonomial<UnivariatePolynomial<BigInteger>> invRev = DivisionWithRemainder.fastDivisionPreConditioning(divider);
+        UnivariateDivision.InverseModMonomial<UnivariatePolynomial<BigInteger>> invRev = UnivariateDivision.fastDivisionPreConditioning(divider);
         long nIterations = its(1000, 5000);
         for (int i = 0; i < nIterations; i++) {
             if (i == nIterations / 10) {
                 classic.clear();
                 fast.clear();
             }
-            UnivariatePolynomial<BigInteger> dividendZ = RandomPolynomials.randomPoly(3 * divider.degree / 2, modulus, rnd);
+            UnivariatePolynomial<BigInteger> dividendZ = RandomUnivariatePolynomials.randomPoly(3 * divider.degree / 2, modulus, rnd);
             UnivariatePolynomial<BigInteger> dividend = dividendZ.setDomain(new IntegersModulo(modulus));
 
             long start = System.nanoTime();
-            UnivariatePolynomial<BigInteger>[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
+            UnivariatePolynomial<BigInteger>[] qdPlain = UnivariateDivision.divideAndRemainderClassic(dividend, divider, true);
             long plain = System.nanoTime() - start;
             classic.addValue(plain);
 
             start = System.nanoTime();
-            UnivariatePolynomial<BigInteger>[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, invRev, true);
+            UnivariatePolynomial<BigInteger>[] qdNewton = UnivariateDivision.divideAndRemainderFast(dividend, divider, invRev, true);
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
@@ -622,18 +623,18 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 fast.clear();
             }
 
-            UnivariatePolynomial<BigInteger> divider = RandomPolynomials.randomMonicPoly(dividerDegree, modulus, rnd);
-            UnivariatePolynomial<BigInteger> dividendZ = RandomPolynomials.randomPoly(dividendDegree, modulus, rnd);
+            UnivariatePolynomial<BigInteger> divider = RandomUnivariatePolynomials.randomMonicPoly(dividerDegree, modulus, rnd);
+            UnivariatePolynomial<BigInteger> dividendZ = RandomUnivariatePolynomials.randomPoly(dividendDegree, modulus, rnd);
             UnivariatePolynomial<BigInteger> dividend = dividendZ.setDomain(new IntegersModulo(modulus));
             divider.multiply(BigInteger.THREE);
 
             long start = System.nanoTime();
-            UnivariatePolynomial<BigInteger>[] qdPlain = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
+            UnivariatePolynomial<BigInteger>[] qdPlain = UnivariateDivision.divideAndRemainderClassic(dividend, divider, true);
             long plain = System.nanoTime() - start;
             classic.addValue(plain);
 
             start = System.nanoTime();
-            UnivariatePolynomial<BigInteger>[] qdNewton = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, true);
+            UnivariatePolynomial<BigInteger>[] qdNewton = UnivariateDivision.divideAndRemainderFast(dividend, divider, true);
             long newton = System.nanoTime() - start;
             fast.addValue(newton);
 
@@ -654,8 +655,8 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
 //        bMutablePolynomialZp dividend = bMutablePolynomialZ.parse("989441076315244786644+174683251098354358x^1+2939699558711223765x^2+993164729241539182424x^3+8652504087827847685x^4+2978039521215483585x^5+5687372540827878771x^6+3684693598277313443x^7+3034113231916032517x^8+1842720927561159970x^9+1401489172494884190x^10").modulus(modulus);
 //        bMutablePolynomialZp divider = bMutablePolynomialZ.parse("718119058879299323824+59748620370951943044x^1+27715597040703811206x^2+3x^3").modulus(modulus);
 //
-//        bMutablePolynomialZp[] classic = DivisionWithRemainder.divideAndRemainderClassic(dividend, divider, true);
-//        bMutablePolynomialZp[] fast = DivisionWithRemainder.divideAndRemainderFast(dividend, divider, true);
+//        bMutablePolynomialZp[] classic = UnivariateDivision.divideAndRemainderClassic(dividend, divider, true);
+//        bMutablePolynomialZp[] fast = UnivariateDivision.divideAndRemainderFast(dividend, divider, true);
 //
 //        System.out.println(Arrays.toString(classic));
 //        System.out.println(Arrays.toString(fast));
@@ -731,8 +732,8 @@ public class DivisionWithRemainderTest extends AbstractPolynomialTest {
                 maxDegree = 15;
         for (int i = 0; i < its(100, 1000); i++) {
             UnivariatePolynomial<lUnivariatePolynomialZp>
-                    dividend = RandomPolynomials.randomMonicPoly(rndd.nextInt(minDegree, maxDegree), FiniteField.GF17p5, rnd),
-                    divider = RandomPolynomials.randomMonicPoly(rndd.nextInt(1, dividend.degree + 1), FiniteField.GF17p5, rnd);
+                    dividend = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minDegree, maxDegree), FiniteField.GF17p5, rnd),
+                    divider = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(1, dividend.degree + 1), FiniteField.GF17p5, rnd);
 
             assertQuotientRemainder(dividend, divider, divideAndRemainder(dividend, divider, true));
         }
