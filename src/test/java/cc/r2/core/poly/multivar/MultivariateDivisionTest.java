@@ -1,6 +1,7 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.IntegersModulo;
@@ -13,7 +14,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.multivar.MultivariateDivision.divideAndRemainder;
 import static cc.r2.core.poly.multivar.MultivariateDivision.dividesQ;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
@@ -172,7 +172,7 @@ public class MultivariateDivisionTest extends APolynomialTest {
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,
                                  int minSize, int maxDegree,
                                  Comparator<DegreeVector> ordering) {
-        testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, Integers, getRandom());
+        testRandomReduce(nIterations, nVariables, nDividers, minSize, maxDegree, ordering, Domains.Z, getRandom());
     }
 
     @SuppressWarnings("unchecked")

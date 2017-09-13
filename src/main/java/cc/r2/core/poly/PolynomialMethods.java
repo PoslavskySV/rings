@@ -39,6 +39,17 @@ public final class PolynomialMethods {
             throw new RuntimeException();
     }
 
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>>
+    Poly divideExact(Poly a, Poly b) {
+        if (a instanceof IUnivariatePolynomial)
+            return (Poly) UnivariateDivision.divideExact((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
+        else if (a instanceof AMultivariatePolynomial)
+            return (Poly) MultivariateDivision.divideExact((AMultivariatePolynomial) a, (AMultivariatePolynomial) b);
+        else
+            throw new RuntimeException();
+    }
+
     public static <Poly extends IPolynomial<Poly>>
     boolean coprimeQ(Poly... polynomials) {
         for (int i = 0; i < polynomials.length - 1; i++)

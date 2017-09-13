@@ -206,7 +206,7 @@ public final class MultivariateGCD {
             return (Poly) ZippelGCD((lMultivariatePolynomialZp) a, (lMultivariatePolynomialZp) b);
         else if (a instanceof MultivariatePolynomial) {
             Domain domain = ((MultivariatePolynomial) a).domain;
-            if (Integers.Integers.equals(domain))
+            if (Domains.Z.equals(domain))
                 return (Poly) ModularGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
             else if (domain.isField())
                 return (Poly) ZippelGCD((MultivariatePolynomial) a, (MultivariatePolynomial) b);

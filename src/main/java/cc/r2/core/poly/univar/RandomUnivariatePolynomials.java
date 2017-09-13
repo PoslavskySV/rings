@@ -2,7 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.Integers;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -114,7 +114,7 @@ public final class RandomUnivariatePolynomials {
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
     public static UnivariatePolynomial<BigInteger> randomPoly(int degree, BigInteger bound, RandomGenerator rnd) {
-        return UnivariatePolynomial.create(Integers.Integers, randomBigArray(degree, bound, rnd));
+        return UnivariatePolynomial.create(Domains.Z, randomBigArray(degree, bound, rnd));
     }
 
     /**

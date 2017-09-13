@@ -1,5 +1,6 @@
 package cc.r2.core.poly.multivar;
 
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.Rationals;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
@@ -65,5 +66,10 @@ public class ParserTest {
             Assert.assertEquals(strs[i], arr[i].toString());
             Assert.assertEquals(arr[i], arr[i].parsePoly(arr[i].toString()));
         }
+    }
+
+    @Test
+    public void test4() throws Exception {
+        System.out.println(Parser.parse("2", Domains.GF(2, 3), MonomialOrder.LEX, "x", "y", "z"));
     }
 }

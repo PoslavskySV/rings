@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.lIntegersModulo;
@@ -43,7 +44,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
      * Parse string into polynomial
      */
     public static lUnivariatePolynomialZ parse(String string) {
-        return UnivariatePolynomial.asLongPolyZ(Parser.parse(Integers.Integers, string));
+        return UnivariatePolynomial.asLongPolyZ(Parser.parse(Domains.Z, string));
     }
 
     /**
@@ -152,7 +153,7 @@ public final class lUnivariatePolynomialZ extends lUnivariatePolynomialAbstract<
      */
     @Override
     public UnivariatePolynomial<BigInteger> toBigPoly() {
-        return UnivariatePolynomial.createUnsafe(Integers.Integers, dataToBigIntegers());
+        return UnivariatePolynomial.createUnsafe(Domains.Z, dataToBigIntegers());
     }
 
     /**

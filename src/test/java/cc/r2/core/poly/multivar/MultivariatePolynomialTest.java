@@ -1,9 +1,10 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -14,7 +15,6 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static cc.r2.core.number.BigInteger.*;
-import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.multivar.MonomialOrder.LEX;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static org.junit.Assert.assertEquals;
@@ -70,7 +70,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
     @SuppressWarnings("unchecked")
     public void testZero2() throws Exception {
         MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.create(3,
-                Integers, LEX,
+                Domains.Z, LEX,
                 new Monomial<>(new int[]{1, 2, 3}, ZERO),
                 new Monomial<>(new int[]{0, 1, 2}, FIVE),
                 new Monomial<>(new int[]{0, 1, 2}, FIVE),
@@ -113,7 +113,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void testCreateLinear() throws Exception {
-        MultivariatePolynomial<BigInteger> p0 = MultivariatePolynomial.zero(3, Integers, LEX);
+        MultivariatePolynomial<BigInteger> p0 = MultivariatePolynomial.zero(3, Domains.Z, LEX);
         String[] vars = {"a", "b", "c"};
         assertEquals(parse("-1+2*a", vars), p0.createLinear(0, NEGATIVE_ONE, TWO));
         assertEquals(parse("-1+2*b", vars), p0.createLinear(1, NEGATIVE_ONE, TWO));
@@ -155,7 +155,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
     @Test
     public void testEvaluate2() throws Exception {
         String[] vars = {"a", "b"};
-        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", Integers, LEX, vars);
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", Domains.Z, LEX, vars);
         assertEquals(parse("18 + 18*a^2 + 18*a^3", vars), poly.evaluate(1, 1));
 
         IntegersModulo pDomain = new IntegersModulo(17);
@@ -183,7 +183,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
         assertEquals(UnivariatePolynomial.create(9, 0, 11), poly.asUnivariate());
         assertEquals(UnivariatePolynomial.create(9, 0, 11).setDomain(domain), poly.asUnivariate());
 
-        assertEquals(poly.setDomain(Integers), asMultivariate(UnivariatePolynomial.create(9, 0, 11), 2, 1, poly.ordering));
+        assertEquals(poly.setDomain(Domains.Z), asMultivariate(UnivariatePolynomial.create(9, 0, 11), 2, 1, poly.ordering));
         assertEquals(poly, asMultivariate(UnivariatePolynomial.create(9, 0, 11).setDomain(domain), 2, 1, poly.ordering));
     }
 
@@ -221,7 +221,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
         String[] vars = {"a", "b", "c", "d", "e", "f"};
         Domain<BigInteger> domain;
         for (int i = 0; i < nIterations; i++) {
-            domain = rnd.nextBoolean() ? Integers : new IntegersModulo(getModulusRandom(8));
+            domain = rnd.nextBoolean() ? Domains.Z : new IntegersModulo(getModulusRandom(8));
             MultivariatePolynomial<BigInteger> poly =
                     RandomMultivariatePolynomials.randomPolynomial(
                             rndd.nextInt(1, 4),

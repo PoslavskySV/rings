@@ -1,14 +1,14 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.test.APolynomialTest;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.FiniteField;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.r2.core.poly.Integers.Integers;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -20,43 +20,43 @@ public class ParserTest extends APolynomialTest {
     public void test1() throws Exception {
         Assert.assertEquals(
                 UnivariatePolynomial.create(3),
-                Parser.parse(Integers, "3"));
+                Parser.parse(Domains.Z, "3"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(3, 0, 0, 1, 0, 4),
-                Parser.parse(Integers, "3 + x^3 + 4*x^5"));
+                Parser.parse(Domains.Z, "3 + x^3 + 4*x^5"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, 1, 0, 4),
-                Parser.parse(Integers, "x^3 + 4*x^5"));
+                Parser.parse(Domains.Z, "x^3 + 4*x^5"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, 1, 0, 4),
-                Parser.parse(Integers, "0*x + x^3 + 4*x^5"));
+                Parser.parse(Domains.Z, "0*x + x^3 + 4*x^5"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Integers, "0*x - x^3 + 4*x^5"));
+                Parser.parse(Domains.Z, "0*x - x^3 + 4*x^5"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Integers, "0*x + - x^3 + 4*x^5"));
+                Parser.parse(Domains.Z, "0*x + - x^3 + 4*x^5"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Integers, "0*x - + x^3 + 4*x^5"));
+                Parser.parse(Domains.Z, "0*x - + x^3 + 4*x^5"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Integers, "-x^3 + 4*x^5"));
+                Parser.parse(Domains.Z, "-x^3 + 4*x^5"));
         Assert.assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, -4),
-                Parser.parse(Integers, "-x^3 - 4*x^5"));
+                Parser.parse(Domains.Z, "-x^3 - 4*x^5"));
     }
 
     @Test
     public void test2() throws Exception {
         UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.create(20, 4, 48, 86, -25, 93, 91, 93, -3, 3, 38, 20, 38, 40, 7);
-        assertEquals(poly, Parser.parse(Integers, poly.toString()));
+        assertEquals(poly, Parser.parse(Domains.Z, poly.toString()));
     }
 
     @Test
     public void test3() throws Exception {
         UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.create(1, 97, -92, 43);
-        UnivariatePolynomial<BigInteger> r = Parser.parse(Integers, poly.toString());
+        UnivariatePolynomial<BigInteger> r = Parser.parse(Domains.Z, poly.toString());
         assertEquals(poly, r);
     }
 
@@ -69,7 +69,7 @@ public class ParserTest extends APolynomialTest {
             UnivariatePolynomial<BigInteger> bPoly = lPoly.toBigPoly();
 
             for (String str : new String[]{lPoly.toString(), bPoly.toString()})
-                Assert.assertEquals(bPoly, Parser.parse(Integers, str));
+                Assert.assertEquals(bPoly, Parser.parse(Domains.Z, str));
         }
     }
 

@@ -1,16 +1,14 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
-import org.apache.commons.math3.random.RandomGenerator;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
 
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomain<Poly> {
+abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomain<Poly> implements PolynomialDomain<Poly> {
     private static final long serialVersionUID = 1L;
 
     public final Poly factory;
@@ -126,6 +124,11 @@ abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomai
     @Override
     public Poly parse(String string) {
         return factory.parsePoly(string);
+    }
+
+    @Override
+    public Poly parse(String string, String[] variables) {
+        return factory.parsePoly(string, variables);
     }
 
     @Override

@@ -126,8 +126,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param newOrdering  the new ordering
      * @return renamed polynomial
      */
-    public static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>> P
-    renameVariables(P poly, int[] newVariables, Comparator<DegreeVector> newOrdering) {
+    public static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>>
+    P renameVariables(P poly, int[] newVariables, Comparator<DegreeVector> newOrdering) {
         // NOTE: always return a copy of poly, even if order of variables is unchanged
         MonomialSet<T> data = new MonomialSet<>(newOrdering);
         for (T e : poly.terms)
@@ -1069,14 +1069,6 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
             return EnumSet.of(Characteristics.IDENTITY_FINISH);
         }
     }
-
-    /**
-     * Returns string representation of this using specified string representation for variables.
-     *
-     * @param vars string values of variables
-     * @return string representation of this
-     */
-    public abstract String toString(String... vars);
 
     @Override
     public final String toString() {

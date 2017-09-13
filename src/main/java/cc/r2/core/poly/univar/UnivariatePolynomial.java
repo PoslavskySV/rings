@@ -3,6 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.util.ArraysUtil;
 
@@ -19,7 +20,6 @@ import static cc.r2.core.number.BigInteger.ONE;
 import static cc.r2.core.number.BigInteger.ZERO;
 import static cc.r2.core.number.BigIntegerArithmetics.abs;
 import static cc.r2.core.number.BigIntegerArithmetics.max;
-import static cc.r2.core.poly.Integers.Integers;
 
 /**
  * Univariate polynomial over generic domain.
@@ -91,7 +91,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return new univariate Z[x] polynomial with specified coefficients
      */
     public static UnivariatePolynomial<BigInteger> create(long... data) {
-        return create(Integers, data);
+        return create(Domains.Z, data);
     }
 
     /**
@@ -172,7 +172,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         BigInteger[] newData = new BigInteger[poly.degree + 1];
         for (int i = poly.degree; i >= 0; --i)
             newData[i] = domain.symmetricForm(poly.data[i]);
-        return UnivariatePolynomial.create(Integers, newData);
+        return UnivariatePolynomial.create(Domains.Z, newData);
     }
 
     @Override
@@ -452,7 +452,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     @Override
-    public boolean isOverZ() {return domain.equals(Integers);}
+    public boolean isOverZ() {return domain.equals(Domains.Z);}
 
     @Override
     public BigInteger coefficientDomainCardinality() {
@@ -936,8 +936,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (domain instanceof IntegersModulo) {
             // faster method with exact operations
             UnivariatePolynomial<E>
-                    iThis = setDomainUnsafe((Domain<E>) Integers),
-                    iOth = oth.setDomainUnsafe((Domain<E>) Integers);
+                    iThis = setDomainUnsafe((Domain<E>) Domains.Z),
+                    iOth = oth.setDomainUnsafe((Domain<E>) Domains.Z);
             data = iThis.multiply(iOth).data;
             domain.setToValueOf(data);
         } else
@@ -957,7 +957,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
         if (domain instanceof IntegersModulo) {
             // faster method with exact operations
-            UnivariatePolynomial<E> iThis = setDomainUnsafe((Domain<E>) Integers);
+            UnivariatePolynomial<E> iThis = setDomainUnsafe((Domain<E>) Domains.Z);
             data = iThis.square().data;
             domain.setToValueOf(data);
         } else
@@ -1117,11 +1117,16 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public String toString() {
+        return toString("x");
+    }
+
+    @Override
+    public String toString(String... variables) {
         if (isZero())
             return "0";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
-            String str = termToString(i);
+            String str = termToString(i, variables[0]);
             if (sb.length() == 0 && str.startsWith("+"))
                 str = str.substring(1);
             sb.append(str);
@@ -1129,7 +1134,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return sb.toString();
     }
 
-    private String termToString(int i) {
+    private String termToString(int i, String var) {
         E el = data[i];
         if (domain.isZero(el))
             return "";
@@ -1155,7 +1160,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (i == 0)
             m = "";
         else
-            m = ((needSeparator ? "*" : "") + "x" + (i == 1 ? "" : "^" + i));
+            m = ((needSeparator ? "*" : "") + var + (i == 1 ? "" : "^" + i));
         if (m.isEmpty())
             if (domain.isOne(el) || (!(domain instanceof IntegersModulo) && domain.isMinusOne(el)))
                 coefficient = coefficient + "1";

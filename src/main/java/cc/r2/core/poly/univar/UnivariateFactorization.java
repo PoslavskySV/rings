@@ -465,7 +465,7 @@ public final class UnivariateFactorization {
 
     private static void ensureIntegersDomain(IUnivariatePolynomial poly) {
         if (poly instanceof lUnivariatePolynomialZ ||
-                (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).domain == Integers.Integers))
+                (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).domain.equals(Domains.Z)))
             return;
         throw new IllegalArgumentException("Not an integers domain for factorization in Z[x]");
     }

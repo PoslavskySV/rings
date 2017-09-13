@@ -245,6 +245,16 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     Poly createOne();
 
     /**
+     * Creates constant polynomial with specified value
+     *
+     * @param value the value
+     * @return constant polynomial
+     */
+    default Poly createConstant(long value) {
+        return createOne().multiply(value);
+    }
+
+    /**
      * Adds {@code oth} to {@code this}.
      *
      * @param oth the polynomial
@@ -373,6 +383,8 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      */
     Poly clone();
 
+    default Poly copy() { return clone(); }
+
     /** overcome Java generics... */
     Poly[] createArray(int length);
 
@@ -398,7 +410,24 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     Poly parsePoly(String string);
 
     /**
+     * Parse string representation of polynomial
+     *
+     * @param string    string
+     * @param variables names of variables
+     * @return the polynomial corresponding to specified string
+     */
+    Poly parsePoly(String string, String[] variables);
+
+    /**
      * String representation of the coefficient domain of this
      */
     String coefficientDomainToString();
+
+    /**
+     * Returns string representation of this using specified string representation for variables.
+     *
+     * @param variables string values of variables
+     * @return string representation of this
+     */
+    String toString(String... variables);
 }

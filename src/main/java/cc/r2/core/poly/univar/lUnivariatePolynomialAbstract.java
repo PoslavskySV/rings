@@ -624,11 +624,16 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
 
     @Override
     public String toString() {
+        return toString("x");
+    }
+
+    @Override
+    public String toString(String... variables) {
         if (isZero())
             return "0";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
-            String str = termToString(i);
+            String str = termToString(i, variables[0]);
             if (sb.length() == 0 && str.startsWith("+"))
                 str = str.substring(1);
             sb.append(str);
@@ -636,7 +641,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         return sb.toString();
     }
 
-    private String termToString(int i) {
+    private String termToString(int i, String var) {
         long el = data[i];
         if (el == 0)
             return "";
@@ -660,7 +665,7 @@ abstract class lUnivariatePolynomialAbstract<lPoly extends lUnivariatePolynomial
         if (i == 0)
             m = "";
         else
-            m = ((needSeparator ? "*" : "") + "x" + (i == 1 ? "" : "^" + i));
+            m = ((needSeparator ? "*" : "") + var + (i == 1 ? "" : "^" + i));
         if (m.isEmpty())
             if (el == 1 || el == -1)
                 coefficient = coefficient + "1";

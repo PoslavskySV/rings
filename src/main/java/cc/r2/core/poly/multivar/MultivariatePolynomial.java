@@ -16,8 +16,6 @@ import java.util.function.Function;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
-import static cc.r2.core.poly.Integers.Integers;
-
 /**
  * @author Stanislav Poslavsky
  * @since 1.0
@@ -394,7 +392,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return Z[X] version of the poly
      */
     public static MultivariatePolynomial<BigInteger> asPolyZ(MultivariatePolynomial<BigInteger> poly, boolean copy) {
-        return new MultivariatePolynomial<>(poly.nVariables, Integers, poly.ordering, copy ? poly.terms.clone() : poly.terms);
+        return new MultivariatePolynomial<>(poly.nVariables, Domains.Z, poly.ordering, copy ? poly.terms.clone() : poly.terms);
     }
 
     /**
@@ -413,7 +411,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         for (Monomial<BigInteger> term : poly)
             newTerms.add(term.setCoefficient(domain.symmetricForm(term.coefficient)));
 
-        return new MultivariatePolynomial<>(poly.nVariables, Integers, poly.ordering, newTerms);
+        return new MultivariatePolynomial<>(poly.nVariables, Domains.Z, poly.ordering, newTerms);
     }
 
 
@@ -460,9 +458,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public boolean isOverFiniteField() {return domain.isFiniteField();}
 
-    /** {@inheritDoc} */
     @Override
-    public boolean isOverZ() {return domain.equals(Integers);}
+    public boolean isOverZ() {return domain.equals(Domains.Z);}
 
     @Override
     public BigInteger coefficientDomainCardinality() {return domain.cardinality();}
@@ -872,6 +869,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return UnivariatePolynomial.createUnsafe(domain, uData);
     }
 
+    public MultivariatePolynomial<E> evaluate1(int[] variables, E[] values) {
+        return evaluate(variables, values);
+    }
     /**
      * Returns a copy of this with {@code values} substituted for {@code variables}.
      *
@@ -1400,7 +1400,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         BigInteger factor = BigInteger.ONE;
         for (int i = 0; i < order; ++i)
             factor = factor.multiply(BigInteger.valueOf(exponent - i));
-        factor = factor.divideExact(Integers.factorial(order));
+        factor = factor.divideExact(Domains.Z.factorial(order));
         return domain.valueOfBigInteger(factor);
     }
 
@@ -1520,6 +1520,14 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<E> parsePoly(String string) {
         MultivariatePolynomial<E> r = parse(string, domain, ordering, defaultVars(nVariables));
+        if (r.nVariables != nVariables)
+            throw new IllegalArgumentException("not from this field");
+        return r;
+    }
+
+    @Override
+    public MultivariatePolynomial<E> parsePoly(String string, String[] variables) {
+        MultivariatePolynomial<E> r = parse(string, domain, ordering, variables);
         if (r.nVariables != nVariables)
             throw new IllegalArgumentException("not from this field");
         return r;

@@ -17,7 +17,8 @@ import java.util.Iterator;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends ADomain<Poly> {
+public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
+        extends ADomain<Poly> implements PolynomialDomain<Poly> {
     private static final long serialVersionUID = 1L;
 
     /** GF(3^3) */
@@ -221,6 +222,11 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>> extends
     @Override
     public Poly parse(String string) {
         return valueOf(irreducible.parsePoly(string));
+    }
+
+    @Override
+    public Poly parse(String string, String[] variables) {
+        return valueOf(irreducible.parsePoly(string, variables));
     }
 
     /**

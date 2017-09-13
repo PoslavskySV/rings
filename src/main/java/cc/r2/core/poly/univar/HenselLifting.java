@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.Integers;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.MachineArithmetic;
@@ -131,7 +132,7 @@ public final class HenselLifting {
     }
 
     private static void ensureIntegersDomain(UnivariatePolynomial<BigInteger> poly) {
-        if (poly.domain != Integers.Integers)
+        if (poly.domain.equals(Domains.Z))
             throw new IllegalArgumentException("Not an integers domain domain");
     }
 

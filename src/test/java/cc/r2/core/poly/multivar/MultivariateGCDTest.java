@@ -5,10 +5,10 @@ import cc.r2.core.number.Rational;
 import cc.r2.core.number.primes.BigPrimes;
 import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.*;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
-import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.util.RandomDataGenerator;
 import cc.r2.core.util.RandomUtil;
 import cc.r2.core.util.TimeUnits;
@@ -23,14 +23,13 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
 
-import static cc.r2.core.poly.Integers.Integers;
 import static cc.r2.core.poly.Rationals.Rationals;
 import static cc.r2.core.poly.multivar.MonomialOrder.LEX;
+import static cc.r2.core.poly.multivar.MultivariateDivision.divideExact;
+import static cc.r2.core.poly.multivar.MultivariateDivision.dividesQ;
 import static cc.r2.core.poly.multivar.MultivariateGCD.*;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.asLongPolyZp;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.parse;
-import static cc.r2.core.poly.multivar.MultivariateDivision.divideExact;
-import static cc.r2.core.poly.multivar.MultivariateDivision.dividesQ;
 import static cc.r2.core.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
 import static org.junit.Assert.*;
 
@@ -743,9 +742,9 @@ public class MultivariateGCDTest extends APolynomialTest {
     @Test
     public void testSparseInterpolation5() throws Exception {
         MultivariatePolynomial<BigInteger>
-                a = parse("7*a*b*c^3+8*a^3*c+8*a^4*b^2*c^4+8*a^4*b^6*c^6", Integers, LEX, "a", "b", "c"),
-                b = parse("1 + a*b^6*c^2+6*a^2*b^3*c^3+27445990*a^3*b^6*c^2", Integers, LEX, "a", "b", "c"),
-                gcd = parse("1 + 5*b*c^3+8*b^5*c+4*b^6+5*a*b^3+4*a^6*b^3*c^3", Integers, LEX, "a", "b", "c");
+                a = parse("7*a*b*c^3+8*a^3*c+8*a^4*b^2*c^4+8*a^4*b^6*c^6", Domains.Z, LEX, "a", "b", "c"),
+                b = parse("1 + a*b^6*c^2+6*a^2*b^3*c^3+27445990*a^3*b^6*c^2", Domains.Z, LEX, "a", "b", "c"),
+                gcd = parse("1 + 5*b*c^3+8*b^5*c+4*b^6+5*a*b^3+4*a^6*b^3*c^3", Domains.Z, LEX, "a", "b", "c");
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -775,7 +774,7 @@ public class MultivariateGCDTest extends APolynomialTest {
         int badEvaluations = 0;
         RandomGenerator rnd = getRandom();
         GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
-                new GCDSampleDataGeneric<>(Integers, 3, 5, 5, 15, 5, 15, rnd);
+                new GCDSampleDataGeneric<>(Domains.Z, 3, 5, 5, 15, 5, 15, rnd);
         for (int n = 0; n < nIterations; n++) {
             GCDSample<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> gcdTriplet = sampleData.nextSample(false, false);
 //            MultivariatePolynomial<BigInteger> contentGCD = MultivariateGCD.contentGCD(gcdTriplet.aCoFactor, gcdTriplet.bCoFactor, 0, MultivariateGCD::PolynomialGCD);
@@ -1044,7 +1043,7 @@ public class MultivariateGCDTest extends APolynomialTest {
         int nIterations = its(1000, 3000);
         RandomGenerator rnd = getRandom();
         GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
-                new GCDSampleDataGeneric<>(Integers, 3, 5, 5, 15, 5, 15, rnd);
+                new GCDSampleDataGeneric<>(Domains.Z, 3, 5, 5, 15, 5, 15, rnd);
 
         testGCDAlgorithms(sampleData, nIterations,
                 GCDAlgorithm.named("Modular gcd", MultivariateGCD::ModularGCD));
@@ -1062,7 +1061,7 @@ public class MultivariateGCDTest extends APolynomialTest {
         GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
                 sampleData =
                 boundCoefficients(
-                        fixVariables(new GCDSampleDataGeneric<>(Integers, nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars),
+                        fixVariables(new GCDSampleDataGeneric<>(Domains.Z, nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd), nVars),
                         BigInteger.valueOf(100));
 
         testGCDAlgorithms(sampleData, nIterations,
@@ -1074,7 +1073,7 @@ public class MultivariateGCDTest extends APolynomialTest {
     public void testModularGCD_performance() throws Exception {
         PrivateRandom.getRandom().setSeed(1232);
         String[] vars = {"a", "b", "c", "d", "e"};
-        Domain<BigInteger> domain = Integers;
+        Domain<BigInteger> domain = Domains.Z;
         MultivariatePolynomial<BigInteger>
                 a = parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", domain, LEX, vars),
                 b = parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", domain, LEX, vars),

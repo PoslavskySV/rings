@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.Integers;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -16,7 +16,7 @@ final class Parser {
     private Parser() {}
 
     static MultivariatePolynomial<BigInteger> parse(String input, Comparator<DegreeVector> ordering, String... variables) {
-        return parse(input, Integers.Integers, ordering, variables);
+        return parse(input, Domains.Z, ordering, variables);
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain) {

@@ -40,11 +40,10 @@ public final class MultivariateFactorization {
      * @return factor decomposition
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>,
-            Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Poly extends AMultivariatePolynomial<?, Poly>>
     FactorDecomposition<Poly> factor(final Poly poly) {
         if (poly.isOverFiniteField())
-            return factorInGF(poly);
+            return (FactorDecomposition<Poly>) factorInGF((AMultivariatePolynomial) poly);
         else if (poly.isOverZ())
             return factorInZ((MultivariatePolynomial) poly);
         else
@@ -1017,7 +1016,7 @@ public final class MultivariateFactorization {
         // in order to obtain correct factorization with monic factors mod (y - y0)^l
         // and then perform l.c. correction at the recombination stage
 
-        BigInteger[] evals = Integers.Integers.createZeroesArray(poly.nVariables - 1);
+        BigInteger[] evals = Domains.Z.createZeroesArray(poly.nVariables - 1);
         evals[0] = ySubstitution;
         Evaluation<BigInteger> evaluation = new Evaluation<>(poly.nVariables, evals, zpDomain, baseZp.ordering);
         if (!lcZp.isConstant()) {
@@ -1112,7 +1111,7 @@ public final class MultivariateFactorization {
         int s = 1;
 
         MultivariatePolynomial.USubstitution<BigInteger> lPowersZ = new MultivariatePolynomial.USubstitution<>(
-                UnivariatePolynomial.create(Integers.Integers, ySubstitution.negate(), BigInteger.ONE),
+                UnivariatePolynomial.create(Domains.Z, ySubstitution.negate(), BigInteger.ONE),
                 1, baseZ.nVariables, baseZ.ordering);
 
         UnivariatePolynomials<UnivariatePolynomial<BigInteger>> moduloDomain = Domains.Polynomials(modulus);
@@ -2460,7 +2459,7 @@ public final class MultivariateFactorization {
                     BigInteger baseDivide = BigInteger.ONE;
                     if (!realLC.cc().equals(ppPartLC.cc())) {
                         BigInteger
-                                lcm = Integers.Integers.lcm(realLC.cc(), ppPartLC.cc()),
+                                lcm = Domains.Z.lcm(realLC.cc(), ppPartLC.cc()),
                                 factorCorrection = lcm.divideExact(realLC.cc()),
                                 baseCorrection = lcm.divideExact(ppPartLC.cc());
                         base = base.multiply(baseCorrection);
@@ -2513,7 +2512,7 @@ public final class MultivariateFactorization {
 
                     if (!lcInMain.equals(lcTrue)) {
                         BigInteger
-                                lcm = Integers.Integers.lcm(lcInMain, lcTrue),
+                                lcm = Domains.Z.lcm(lcInMain, lcTrue),
                                 factorCorrection = lcm.divideExact(lcInMain),
                                 lcCorrection = lcm.divideExact(lcTrue);
 

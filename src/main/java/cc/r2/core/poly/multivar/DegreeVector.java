@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public abstract class DegreeVector<MonomialTerm extends DegreeVector> implements java.io.Serializable {
+public abstract class DegreeVector<MonomialTerm extends DegreeVector<MonomialTerm>> implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
     /** exponents */
     final int[] exponents;

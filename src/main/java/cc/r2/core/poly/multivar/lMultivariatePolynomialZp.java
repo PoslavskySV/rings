@@ -355,7 +355,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         MonomialSet<Monomial<BigInteger>> bTerms = new MonomialSet<>(ordering);
         for (lMonomialZp t : this)
             bTerms.add(new Monomial<>(t.exponents, t.totalDegree, BigInteger.valueOf(domain.symmetricForm(t.coefficient))));
-        return new MultivariatePolynomial<>(nVariables, Integers.Integers, ordering, bTerms);
+        return new MultivariatePolynomial<>(nVariables, Domains.Z, ordering, bTerms);
     }
 
     /**
@@ -367,7 +367,7 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
         MonomialSet<Monomial<BigInteger>> bTerms = new MonomialSet<>(ordering);
         for (lMonomialZp t : this)
             bTerms.add(t.toBigMonomial());
-        return new MultivariatePolynomial<>(nVariables, Integers.Integers, ordering, bTerms);
+        return new MultivariatePolynomial<>(nVariables, Domains.Z, ordering, bTerms);
     }
 
     /**
@@ -1410,6 +1410,14 @@ public final class lMultivariatePolynomialZp extends AMultivariatePolynomial<lMo
     @Override
     public lMultivariatePolynomialZp parsePoly(String string) {
         lMultivariatePolynomialZp r = parse(string, domain, ordering, defaultVars(nVariables));
+        if (r.nVariables != nVariables)
+            throw new IllegalArgumentException("not from this field");
+        return r;
+    }
+
+    @Override
+    public lMultivariatePolynomialZp parsePoly(String string, String[] variables) {
+        lMultivariatePolynomialZp r = parse(string, domain, ordering, variables);
         if (r.nVariables != nVariables)
             throw new IllegalArgumentException("not from this field");
         return r;

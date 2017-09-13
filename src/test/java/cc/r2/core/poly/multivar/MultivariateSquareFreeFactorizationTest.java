@@ -2,10 +2,10 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.*;
+import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.univar.IrreduciblePolynomials;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
 import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
-import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.util.TimeUnits;
 import org.junit.Assert;
 import org.junit.Test;
@@ -142,7 +142,7 @@ public class MultivariateSquareFreeFactorizationTest extends APolynomialTest {
     @Test
     public void test6() throws Exception {
         String[] vars = {"a", "b", "c", "d", "e", "f", "g", "h"};
-        for (Domain<BigInteger> domain : Arrays.<Domain<BigInteger>>asList(new IntegersModulo(2), Integers.Integers)) {
+        for (Domain<BigInteger> domain : Arrays.<Domain<BigInteger>>asList(new IntegersModulo(2), Domains.Z)) {
             MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.parse("a^2*b^4*c*e^5", domain, vars);
             FactorDecomposition<MultivariatePolynomial<BigInteger>> expected = FactorDecomposition.empty(poly);
             expected.addFactor(MultivariatePolynomial.parse("a", domain, vars), 2);

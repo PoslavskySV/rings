@@ -6,7 +6,7 @@ import cc.r2.core.number.BigIntegerArithmetics;
 import cc.r2.core.number.ChineseRemainders;
 import cc.r2.core.number.primes.PrimesIterator;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.Integers;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.util.ArraysUtil;
@@ -30,7 +30,7 @@ import static cc.r2.core.poly.univar.UnivariatePolynomial.*;
  */
 public final class UnivariateGCD {
     private UnivariateGCD() {}
-    
+
     /**
      * Calculates the GCD of two polynomials. Depending on the coefficient domain, the algorithm switches
      * between Half-GCD (polys over finite fields), modular GCD (polys over Z and Q) and subresultant Euclid (other domains).
@@ -48,7 +48,7 @@ public final class UnivariateGCD {
             return (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
         else if (a instanceof UnivariatePolynomial) {
             Domain domain = ((UnivariatePolynomial) a).domain;
-            if (domain == Integers.Integers)
+            if (domain.equals(Domains.Z))
                 return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
             else
                 return (T) EuclidSubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
@@ -895,7 +895,7 @@ public final class UnivariateGCD {
     @SuppressWarnings("ConstantConditions")
     public static UnivariatePolynomial<BigInteger> ModularGCD(UnivariatePolynomial<BigInteger> a,
                                                               UnivariatePolynomial<BigInteger> b) {
-        if (a.domain != Integers.Integers)
+        if (!a.domain.equals(Domains.Z))
             throw new IllegalArgumentException("Only polynomials over integers domain are allowed; " + a.domain);
         if (a == b)
             return a.clone();

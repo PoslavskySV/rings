@@ -46,6 +46,13 @@ public final class lUnivariatePolynomialZp extends lUnivariatePolynomialAbstract
     }
 
     /**
+     * Parse string into polynomial
+     */
+    public static lUnivariatePolynomialZp parse(lIntegersModulo modulus, String string) {
+        return lUnivariatePolynomialZ.parse(string).modulus(modulus);
+    }
+
+    /**
      * Creates poly with specified coefficients represented as signed integers reducing them modulo {@code modulus}
      *
      * @param modulus the modulus

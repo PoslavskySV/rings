@@ -71,6 +71,15 @@ public final class Domains {
     }
 
     /**
+     * Galois field with the specified irreducible generator. Note: there is no explicit check that input is irreducible
+     *
+     * @param irreducible irreducible univariate polynomial
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> FiniteField<Poly> GF(Poly irreducible) {
+        return new FiniteField<>(irreducible);
+    }
+
+    /**
      * Domain of univariate polynomials over specified coefficient domain
      *
      * @param coefficientDomain the coefficient domain
@@ -95,6 +104,15 @@ public final class Domains {
      * @param modulus the modulus
      */
     public static UnivariatePolynomials<lUnivariatePolynomialZp> PolynomialsZp(long modulus) {
+        return new UnivariatePolynomials<>(lUnivariatePolynomialZp.zero(modulus));
+    }
+
+    /**
+     * Domain of univariate polynomials over Zp integers (Zp[x])
+     *
+     * @param modulus the modulus
+     */
+    public static UnivariatePolynomials<lUnivariatePolynomialZp> PolynomialsZp(lIntegersModulo modulus) {
         return new UnivariatePolynomials<>(lUnivariatePolynomialZp.zero(modulus));
     }
 
@@ -155,6 +173,17 @@ public final class Domains {
     public static MultivariatePolynomials<lMultivariatePolynomialZp>
     MultivariatePolynomialsZp(int nVariables, long modulus) {
         return new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(nVariables, Zp(modulus), MonomialOrder.LEX));
+    }
+
+    /**
+     * Domain of multivariate polynomials over Zp integers (Zp[x1, x2, ...])
+     *
+     * @param nVariables the number of variables
+     * @param modulus    the modulus
+     */
+    public static MultivariatePolynomials<lMultivariatePolynomialZp>
+    MultivariatePolynomialsZp(int nVariables, lIntegersModulo modulus) {
+        return new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(nVariables, modulus, MonomialOrder.LEX));
     }
 
     /**

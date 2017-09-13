@@ -19,7 +19,7 @@ public class UnivariatePolynomialTest extends APolynomialTest {
     @Test
     public void test1() throws Exception {
         BigInteger modulus = BigInteger.valueOf(59);
-        UnivariatePolynomial<BigInteger> aZ = UnivariatePolynomial.create(Integers.Integers, 1, 2, 3, 4, 5, 6);
+        UnivariatePolynomial<BigInteger> aZ = UnivariatePolynomial.create(Domains.Z, 1, 2, 3, 4, 5, 6);
         IntegersModulo domain = new IntegersModulo(modulus);
         UnivariatePolynomial<BigInteger> aZp = aZ.setDomain(domain);
         lUnivariatePolynomialZp aL = asLongPolyZp(aZp);
