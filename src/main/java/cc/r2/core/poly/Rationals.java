@@ -31,7 +31,7 @@ public final class Rationals implements Domain<Rational> {
     }
 
     @Override
-    public BigInteger characteristics() {
+    public BigInteger characteristic() {
         return BigInteger.ZERO;
     }
 

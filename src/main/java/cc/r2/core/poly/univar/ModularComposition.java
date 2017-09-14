@@ -63,20 +63,20 @@ public final class ModularComposition {
      * @see #xPowers(IUnivariatePolynomial, UnivariateDivision.InverseModMonomial)
      * @see UnivariateDivision#fastDivisionPreConditioning(IUnivariatePolynomial)
      **/
-    public static lUnivariatePolynomialZp powModulusMod(lUnivariatePolynomialZp poly,
-                                                        lUnivariatePolynomialZp polyModulus,
-                                                        UnivariateDivision.InverseModMonomial<lUnivariatePolynomialZp> invMod,
-                                                        ArrayList<lUnivariatePolynomialZp> xPowers) {
+    public static UnivariatePolynomialZp64 powModulusMod(UnivariatePolynomialZp64 poly,
+                                                         UnivariatePolynomialZp64 polyModulus,
+                                                         UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod,
+                                                         ArrayList<UnivariatePolynomialZp64> xPowers) {
         poly = polyMod(poly, polyModulus, invMod, true);
         return powModulusMod0(poly, polyModulus, invMod, xPowers);
     }
 
     /** doesn't do poly mod polyModulus first */
-    private static lUnivariatePolynomialZp powModulusMod0(lUnivariatePolynomialZp poly,
-                                                          lUnivariatePolynomialZp polyModulus,
-                                                          UnivariateDivision.InverseModMonomial<lUnivariatePolynomialZp> invMod,
-                                                          ArrayList<lUnivariatePolynomialZp> xPowers) {
-        lUnivariatePolynomialZp res = poly.createZero();
+    private static UnivariatePolynomialZp64 powModulusMod0(UnivariatePolynomialZp64 poly,
+                                                           UnivariatePolynomialZp64 polyModulus,
+                                                           UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod,
+                                                           ArrayList<UnivariatePolynomialZp64> xPowers) {
+        UnivariatePolynomialZp64 res = poly.createZero();
         for (int i = poly.degree; i >= 0; --i) {
             if (poly.data[i] == 0)
                 continue;
@@ -134,9 +134,9 @@ public final class ModularComposition {
                                                                        T polyModulus,
                                                                        UnivariateDivision.InverseModMonomial<T> invMod,
                                                                        ArrayList<T> xPowers) {
-        if (poly instanceof lUnivariatePolynomialZp)
-            return (T) powModulusMod((lUnivariatePolynomialZp) poly, (lUnivariatePolynomialZp) polyModulus,
-                    (UnivariateDivision.InverseModMonomial<lUnivariatePolynomialZp>) invMod, (ArrayList<lUnivariatePolynomialZp>) xPowers);
+        if (poly instanceof UnivariatePolynomialZp64)
+            return (T) powModulusMod((UnivariatePolynomialZp64) poly, (UnivariatePolynomialZp64) polyModulus,
+                    (UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64>) invMod, (ArrayList<UnivariatePolynomialZp64>) xPowers);
         else if (poly instanceof UnivariatePolynomial)
             return (T) powModulusMod((UnivariatePolynomial) poly, (UnivariatePolynomial) polyModulus,
                     (UnivariateDivision.InverseModMonomial) invMod, (ArrayList) xPowers);
@@ -150,8 +150,8 @@ public final class ModularComposition {
                                                                          T polyModulus,
                                                                          UnivariateDivision.InverseModMonomial<T> invMod,
                                                                          ArrayList<T> xPowers) {
-        if (poly instanceof lUnivariatePolynomialZp)
-            return (T) powModulusMod0((lUnivariatePolynomialZp) poly, (lUnivariatePolynomialZp) polyModulus, (UnivariateDivision.InverseModMonomial) invMod, (ArrayList) xPowers);
+        if (poly instanceof UnivariatePolynomialZp64)
+            return (T) powModulusMod0((UnivariatePolynomialZp64) poly, (UnivariatePolynomialZp64) polyModulus, (UnivariateDivision.InverseModMonomial) invMod, (ArrayList) xPowers);
         else if (poly instanceof UnivariatePolynomial)
             return (T) powModulusMod0((UnivariatePolynomial) poly, (UnivariatePolynomial) polyModulus, (UnivariateDivision.InverseModMonomial) invMod, (ArrayList) xPowers);
         else
@@ -229,10 +229,10 @@ public final class ModularComposition {
      * @return modular composition {@code poly(point) mod polyModulus }
      * @see UnivariateDivision#fastDivisionPreConditioning(IUnivariatePolynomial)
      */
-    public static lUnivariatePolynomialZp compositionHorner(lUnivariatePolynomialZp poly, lUnivariatePolynomialZp point, lUnivariatePolynomialZp polyModulus, UnivariateDivision.InverseModMonomial<lUnivariatePolynomialZp> invMod) {
+    public static UnivariatePolynomialZp64 compositionHorner(UnivariatePolynomialZp64 poly, UnivariatePolynomialZp64 point, UnivariatePolynomialZp64 polyModulus, UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod) {
         if (poly.isConstant())
             return poly;
-        lUnivariatePolynomialZp res = poly.createZero();
+        UnivariatePolynomialZp64 res = poly.createZero();
         for (int i = poly.degree; i >= 0; --i)
             res = polyMod(res.multiply(point).addMonomial(poly.data[i], 0), polyModulus, invMod, false);
         return res;

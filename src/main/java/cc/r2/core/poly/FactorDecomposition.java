@@ -23,7 +23,7 @@ import static cc.r2.core.poly.PolynomialMethods.polyPow;
  * @since 1.0
  */
 public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
-        implements Iterable<Poly>, java.io.Serializable {
+        implements Iterable<Poly>, WithVariables, java.io.Serializable {
     private static final long serialVersionUID = 1L;
     /** Holds a numerical factor */
     public final Poly constantFactor;
@@ -300,29 +300,49 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
         return toString(true);
     }
 
-    protected String toString(boolean infoAsExponents) {
-        return toStringFactorization(factors, exponents, constantFactor, infoAsExponents);
+    @Override
+    public String toString(String[] vars) {
+        return toString(true, vars);
     }
 
-    /** pretty print for factorization */
-    private static String toStringFactorization(List factors, TIntArrayList exponents, IPolynomial factor, boolean infoAsExponents) {
+    protected String toString(boolean infoAsExponents) {
+        return toString(infoAsExponents, null);
+    }
+
+    public String toString(ToStringSupport<Poly> polyToString) {
+        return toStringFactorization(factors, exponents, constantFactor, true, polyToString);
+    }
+
+    protected String toString(boolean infoAsExponents, String[] vars) {
+        return toStringFactorization(factors, exponents, constantFactor, infoAsExponents, vars);
+    }
+
+    private static <P extends IPolynomial<P>> String toStringFactorization(List<P> factors, TIntArrayList exponents,
+                                                                           P factor, boolean infoAsExponents,
+                                                                           ToStringSupport<P> polyToString) {
         if (factors.isEmpty())
-            return factor.toString();
+            return polyToString.toString(factor);
 
         StringBuilder sb = new StringBuilder();
         if (!factor.isOne()) {
-            sb.append(factor);
+            sb.append(polyToString.toString(factor));
             if (factors.size() > 0)
                 sb.append("*");
         }
         for (int i = 0; ; i++) {
-            sb.append("(").append(factors.get(i)).append(")");
+            sb.append("(").append(polyToString.toString(factors.get(i))).append(")");
             if (infoAsExponents && exponents.get(i) != 1)
                 sb.append("^").append(exponents.get(i));
             if (i == factors.size() - 1)
                 return sb.toString();
             sb.append("*");
         }
+    }
+
+    /** pretty print for factorization */
+    private static <P extends IPolynomial<P>> String toStringFactorization(List<P> factors, TIntArrayList exponents,
+                                                                           P factor, boolean infoAsExponents, String[] vars) {
+        return toStringFactorization(factors, exponents, factor, infoAsExponents, ToStringSupport.poly(vars));
     }
 
     /** Multiply factors */

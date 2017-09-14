@@ -3,6 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Domains;
+import cc.r2.core.poly.ElementParser;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 
@@ -16,14 +17,14 @@ final class Parser {
     private Parser() {}
 
     static MultivariatePolynomial<BigInteger> parse(String input, Comparator<DegreeVector> ordering, String... variables) {
-        return parse(input, Domains.Z, ordering, variables);
+        return parse(input, Domains.Z, Domains.Z, ordering, variables);
     }
 
-    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain) {
-        return parse(input, domain, MonomialOrder.LEX);
+    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, ElementParser<E> eParser) {
+        return parse(input, domain, eParser, MonomialOrder.LEX);
     }
 
-    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
+    static <E> MultivariatePolynomial<E> parse(String input, Domain<E> domain, ElementParser<E> eParser, Comparator<DegreeVector> ordering, String... variables) {
         List<TMonomialTerm<E>> terms = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         int bracketLevel = 0;
@@ -34,13 +35,13 @@ final class Parser {
             if (c == ')')
                 --bracketLevel;
             if ((c == '+' || c == '-') && bracketLevel == 0 && sb.length() != 0) {
-                terms.add(parseMonomial(sb.toString(), domain));
+                terms.add(parseMonomial(sb.toString(), domain, eParser));
                 sb = new StringBuilder();
             }
             sb.append(c);
         }
         if (sb.length() != 0)
-            terms.add(parseMonomial(sb.toString(), domain));
+            terms.add(parseMonomial(sb.toString(), domain, eParser));
 
         Set<String> allVars = new HashSet<>();
         allVars.addAll(Arrays.asList(variables));
@@ -95,7 +96,7 @@ final class Parser {
         }
     }
 
-    public static <E> TMonomialTerm<E> parseMonomial(String expression, Domain<E> domain) {
+    public static <E> TMonomialTerm<E> parseMonomial(String expression, Domain<E> domain, ElementParser<E> eParser) {
         expression = expression.replace(" ", "");
         E coefficient = domain.getOne();
         if (expression.startsWith("+"))
@@ -114,7 +115,7 @@ final class Parser {
                 if (el.startsWith("(") && el.endsWith(")"))
                     el = el.substring(1, el.length() - 1);
                 try {
-                    coefficient = domain.multiply(coefficient, domain.parse(el));
+                    coefficient = domain.multiply(coefficient, eParser.parse(el));
                     continue;
                 } catch (Exception e) {}  // not a coefficient
             }
@@ -125,7 +126,7 @@ final class Parser {
             if (varExp.length == 2) {
                 if (var.startsWith("(") || var.matches("\\d+"))
                     try {
-                        coefficient = domain.multiply(coefficient, domain.pow(domain.parse(var), Integer.parseInt(varExp[1].trim())));
+                        coefficient = domain.multiply(coefficient, domain.pow(eParser.parse(var), Integer.parseInt(varExp[1].trim())));
                         continue;
                     } catch (Exception e) {}
             }

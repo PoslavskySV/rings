@@ -4,8 +4,8 @@ import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.Rationals;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.univar.UnivariatePolynomialZ64;
+import cc.r2.core.poly.univar.UnivariatePolynomialZp64;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,7 +23,7 @@ public class ParserTest {
 
     @Test
     public void test2() throws Exception {
-        System.out.println(Parser.parse("2/3*a*b^2 - 1/3*a^3*b^2", Rationals.Rationals, MonomialOrder.LEX));
+        System.out.println(Parser.parse("2/3*a*b^2 - 1/3*a^3*b^2", Rationals.Rationals, Rationals.Rationals, MonomialOrder.LEX));
     }
 
     @Test
@@ -56,10 +56,10 @@ public class ParserTest {
                 "(1+x+x^2)*b^7",
                 "(1+x)*b^4+(1+x)*b^8",
         };
-        FiniteField<lUnivariatePolynomialZp> minorDomain = new FiniteField<>(lUnivariatePolynomialZ.create(1, 0, 1, 1).modulus(2));
-        FiniteField<UnivariatePolynomial<lUnivariatePolynomialZp>> domain = new FiniteField<>(UnivariatePolynomial.parse(minorDomain, "(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3"));
+        FiniteField<UnivariatePolynomialZp64> minorDomain = new FiniteField<>(UnivariatePolynomialZ64.create(1, 0, 1, 1).modulus(2));
+        FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(UnivariatePolynomial.parse(minorDomain, "(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3"));
         String[] vars = {"a", "b", "c"};
-        MultivariatePolynomial<lUnivariatePolynomialZp> arr[] = Arrays.stream(strs)
+        MultivariatePolynomial<UnivariatePolynomialZp64> arr[] = Arrays.stream(strs)
                 .map(s -> MultivariatePolynomial.parse(s, domain, vars))
                 .toArray(MultivariatePolynomial[]::new);
         for (int i = 0; i < arr.length; i++) {
@@ -70,6 +70,7 @@ public class ParserTest {
 
     @Test
     public void test4() throws Exception {
-        System.out.println(Parser.parse("2", Domains.GF(2, 3), MonomialOrder.LEX, "x", "y", "z"));
+        FiniteField<UnivariatePolynomialZp64> domain = Domains.GF(2, 3);
+        System.out.println(Parser.parse("2", domain, domain, MonomialOrder.LEX, "x", "y", "z"));
     }
 }

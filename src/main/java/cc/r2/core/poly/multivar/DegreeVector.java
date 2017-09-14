@@ -1,5 +1,6 @@
 package cc.r2.core.poly.multivar;
 
+import cc.r2.core.poly.WithVariables;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.ArrayList;
@@ -238,7 +239,7 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector<MonomialTer
 
     @Override
     public final String toString() {
-        return toString(MultivariatePolynomial.defaultVars(exponents.length));
+        return toString(WithVariables.defaultVars(exponents.length));
     }
 
     public final String toStringArray() {

@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.poly.Rationals;
 import org.junit.Test;
 
@@ -56,15 +56,15 @@ System.out.println(poly.toString());
     @Test
     public void test3() throws Exception {
         String[] vars = {"x", "y", "z"};
-        IntegersModulo domain = new IntegersModulo(17);
-        lMultivariatePolynomialZp
+        IntegersZp domain = new IntegersZp(17);
+        MultivariatePolynomialZp64
                 f1 = asLongPolyZp(parse("x^2*y^2 + x*y + 5*z^3*y^2", domain, MonomialOrder.LEX, vars)),
                 f2 = asLongPolyZp(parse("x*y^4 - y^2 - 5*z^3*x^2", domain, MonomialOrder.LEX, vars)),
                 f3 = asLongPolyZp(parse("x - 1", domain, MonomialOrder.LEX, vars));
 
 
-        List<lMultivariatePolynomialZp> r = GroebnerBasis.BuchbergerGB(Arrays.asList(f1, f2, f3));
-        for (lMultivariatePolynomialZp t : r)
+        List<MultivariatePolynomialZp64> r = GroebnerBasis.BuchbergerGB(Arrays.asList(f1, f2, f3));
+        for (MultivariatePolynomialZp64 t : r)
             System.out.println(t.toString(vars));
     }
 }

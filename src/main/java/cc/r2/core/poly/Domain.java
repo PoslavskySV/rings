@@ -17,7 +17,12 @@ import java.util.Iterator;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializable {
+public interface Domain<E> extends
+                           Comparator<E>,
+                           Iterable<E>,
+                           ToStringSupport<E>,
+                           ElementParser<E>,
+                           java.io.Serializable {
     /**
      * Returns whether this domain is a field
      *
@@ -33,11 +38,11 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
     BigInteger cardinality();
 
     /**
-     * Returns characteristics of this domain
+     * Returns characteristic of this domain
      *
-     * @return characteristics of this domain
+     * @return characteristic of this domain
      */
-    BigInteger characteristics();
+    BigInteger characteristic();
 
     /**
      * Returns whether the cardinality is a perfect power
@@ -447,6 +452,7 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
      * @param string string
      * @return domain element
      */
+    @Override
     default E parse(String string) {
         throw new UnsupportedOperationException();
     }
@@ -655,7 +661,13 @@ public interface Domain<E> extends Comparator<E>, Iterable<E>, java.io.Serializa
         } while (isZero(el));
         return el;
     }
-//    /**
+
+    @Override
+    default String toString(E element) {
+        return element.toString();
+    }
+
+    //    /**
 //     * Returns domain with larger cardinality that contains all elements of this or null if there is no such domain.
 //     *
 //     * @return domain with larger cardinality that contains all elements of this or null if there is no such domain

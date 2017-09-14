@@ -65,7 +65,7 @@ public class ParserTest extends APolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
         for (int i = 0; i < its(1000, 1000); i++) {
-            lUnivariatePolynomialZ lPoly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), rnd);
+            UnivariatePolynomialZ64 lPoly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), rnd);
             UnivariatePolynomial<BigInteger> bPoly = lPoly.toBigPoly();
 
             for (String str : new String[]{lPoly.toString(), bPoly.toString()})
@@ -78,20 +78,20 @@ public class ParserTest extends APolynomialTest {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
         for (int i = 0; i < its(100, 1000); i++) {
-            UnivariatePolynomial<lUnivariatePolynomialZp> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), FiniteField.GF17p5, rnd);
+            UnivariatePolynomial<UnivariatePolynomialZp64> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), FiniteField.GF17p5, rnd);
             Assert.assertEquals(poly, Parser.parse(poly.domain, poly.toString()));
         }
     }
 
     @Test
     public void testFiniteField1() throws Exception {
-        lUnivariatePolynomialZp
-                c0 = lUnivariatePolynomialZ.create(1, 2, 3).modulus(17),
-                c1 = lUnivariatePolynomialZ.create(1).modulus(17),
-                c2 = lUnivariatePolynomialZ.create(0, 2, 3).modulus(17),
-                c3 = lUnivariatePolynomialZ.create(-1, -2, -3).modulus(17);
+        UnivariatePolynomialZp64
+                c0 = UnivariatePolynomialZ64.create(1, 2, 3).modulus(17),
+                c1 = UnivariatePolynomialZ64.create(1).modulus(17),
+                c2 = UnivariatePolynomialZ64.create(0, 2, 3).modulus(17),
+                c3 = UnivariatePolynomialZ64.create(-1, -2, -3).modulus(17);
 
-        UnivariatePolynomial<lUnivariatePolynomialZp> poly =
+        UnivariatePolynomial<UnivariatePolynomialZp64> poly =
                 UnivariatePolynomial.create(FiniteField.GF17p5, c0, c1, c2, c3);
         Assert.assertEquals(poly, Parser.parse(poly.domain, poly.toString()));
     }

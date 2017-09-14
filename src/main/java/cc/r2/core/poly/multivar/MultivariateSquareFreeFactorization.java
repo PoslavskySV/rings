@@ -214,7 +214,7 @@ public final class MultivariateSquareFreeFactorization {
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         if (poly.coefficientDomainCharacteristics().isZero())
-            throw new IllegalArgumentException("Positive characteristics expected");
+            throw new IllegalArgumentException("Positive characteristic expected");
 
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
@@ -284,8 +284,8 @@ public final class MultivariateSquareFreeFactorization {
     Poly pRoot(Poly poly) {
         if (poly instanceof MultivariatePolynomial)
             return (Poly) pRoot((MultivariatePolynomial) poly);
-        else if (poly instanceof lMultivariatePolynomialZp)
-            return (Poly) pRoot((lMultivariatePolynomialZp) poly);
+        else if (poly instanceof MultivariatePolynomialZp64)
+            return (Poly) pRoot((MultivariatePolynomialZp64) poly);
         else
             throw new RuntimeException();
 //        int modulus = poly.coefficientDomainCharacteristics().intValueExact();
@@ -304,7 +304,7 @@ public final class MultivariateSquareFreeFactorization {
     private static <E> MultivariatePolynomial<E> pRoot(MultivariatePolynomial<E> poly) {
         Domain<E> domain = poly.domain;
         // p^(m -1) used for computing p-th root of elements
-        BigInteger inverseFactor = domain.cardinality().divide(domain.characteristics());
+        BigInteger inverseFactor = domain.cardinality().divide(domain.characteristic());
         int modulus = poly.coefficientDomainCharacteristics().intValueExact();
         MonomialSet<Monomial<E>> pRoot = new MonomialSet<>(poly.ordering);
 
@@ -319,12 +319,12 @@ public final class MultivariateSquareFreeFactorization {
         return poly.create(pRoot);
     }
 
-    private static lMultivariatePolynomialZp pRoot(lMultivariatePolynomialZp poly) {
+    private static MultivariatePolynomialZp64 pRoot(MultivariatePolynomialZp64 poly) {
         assert !poly.domain.isPerfectPower();
         int modulus = MachineArithmetic.safeToInt(poly.domain.modulus);
-        MonomialSet<lMonomialZp> pRoot = new MonomialSet<>(poly.ordering);
+        MonomialSet<MonomialZp64> pRoot = new MonomialSet<>(poly.ordering);
 
-        for (lMonomialZp term : poly) {
+        for (MonomialZp64 term : poly) {
             int[] exponents = term.exponents.clone();
             for (int i = 0; i < exponents.length; i++) {
                 assert exponents[i] % modulus == 0;

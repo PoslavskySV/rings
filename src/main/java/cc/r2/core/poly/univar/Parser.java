@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
 import cc.r2.core.poly.Domain;
+import cc.r2.core.poly.ElementParser;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.util.ArrayList;
@@ -20,6 +21,10 @@ final class Parser {
     public static final Pattern termPattern = Pattern.compile("((?<var>[a-zA-Zz]+)(\\^(?<exponent>[0-9]+))?)?$");
 
     public static <E> UnivariatePolynomial<E> parse(Domain<E> domain, String string) {
+        return parse(domain, domain, string);
+    }
+
+    public static <E> UnivariatePolynomial<E> parse(Domain<E> domain, ElementParser<E> eParser, String string) {
         string = string.replace(" ", "");
         string = string.replace("--", "+");
         string = string.replace("-+", "-");
@@ -39,14 +44,14 @@ final class Parser {
                 --bracketLevel;
 
             if ((c == '+' || c == '-') && bracketLevel == 0) {
-                parseTerm(domain, buffer.toString(), coefficients, exponents, varRef);
+                parseTerm(domain, eParser, buffer.toString(), coefficients, exponents, varRef);
                 buffer = new StringBuilder();
             }
 
             buffer.append(c);
         }
 
-        parseTerm(domain, buffer.toString(), coefficients, exponents, varRef);
+        parseTerm(domain, eParser, buffer.toString(), coefficients, exponents, varRef);
         int degree = exponents.size() == 0 ? 0 : exponents.max();
         E[] data = domain.createZeroesArray(degree + 1);
         for (int i = 0; i < coefficients.size(); i++)
@@ -69,7 +74,7 @@ final class Parser {
         return -1;
     }
 
-    private static <E> void parseTerm(Domain<E> domain, String string, List<E> coefficients, TIntArrayList exponents, String[] varRef) {
+    private static <E> void parseTerm(Domain<E> domain, ElementParser<E> eParser, String string, List<E> coefficients, TIntArrayList exponents, String[] varRef) {
         if (string.isEmpty())
             return;
 
@@ -100,11 +105,11 @@ final class Parser {
                 exponent = exponent.substring(1);
         }
 
-        coefficients.add(parseCoeff(domain, coefficient));
+        coefficients.add(parseCoeff(domain, eParser, coefficient));
         exponents.add(parseExponent(exponent, varRef));
     }
 
-    private static <E> E parseCoeff(Domain<E> domain, String string) {
+    private static <E> E parseCoeff(Domain<E> domain, ElementParser<E> eParser, String string) {
         boolean negate = false;
         if (string.startsWith("+"))
             string = string.substring(1);
@@ -116,9 +121,9 @@ final class Parser {
         if (string.isEmpty())
             result = domain.getOne();
         else if (string.startsWith("(") && string.endsWith(")"))
-            result = domain.parse(string.substring(1, string.length() - 1));
+            result = eParser.parse(string.substring(1, string.length() - 1));
         else
-            result = domain.parse(string);
+            result = eParser.parse(string);
         return negate ? domain.negateMutable(result) : result;
     }
 

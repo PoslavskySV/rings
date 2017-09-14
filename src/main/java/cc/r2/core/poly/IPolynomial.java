@@ -17,7 +17,7 @@ import java.util.Collection;
  * @since 1.0
  */
 public interface IPolynomial<Poly extends IPolynomial<Poly>>
-        extends Comparable<Poly>, java.io.Serializable {
+        extends Comparable<Poly>, WithVariables, java.io.Serializable {
     /**
      * Returns whether {@code oth} and {@code this} have the same coefficient domain
      *
@@ -130,9 +130,9 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     BigInteger coefficientDomainCardinality();
 
     /**
-     * Returns characteristics of the coefficient domain of this poly
+     * Returns characteristic of the coefficient domain of this poly
      *
-     * @return characteristics of the coefficient domain
+     * @return characteristic of the coefficient domain
      */
     BigInteger coefficientDomainCharacteristics();
 
@@ -423,11 +423,6 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      */
     String coefficientDomainToString();
 
-    /**
-     * Returns string representation of this using specified string representation for variables.
-     *
-     * @param variables string values of variables
-     * @return string representation of this
-     */
-    String toString(String... variables);
+    @Override
+    String toString(String[] variables);
 }

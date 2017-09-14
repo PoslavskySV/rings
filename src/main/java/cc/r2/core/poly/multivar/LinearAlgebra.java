@@ -1,10 +1,10 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.IntegersZp64;
 import cc.r2.core.poly.univar.UnivariateDivision;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.univar.UnivariatePolynomialZp64;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -335,7 +335,7 @@ final class LinearAlgebra {
      * @param matrix the matrix
      * @return the number of free variables
      */
-    public static int rowEchelonForm(lIntegersModulo domain, long[][] matrix) {
+    public static int rowEchelonForm(IntegersZp64 domain, long[][] matrix) {
         return rowEchelonForm(domain, matrix, null);
     }
 
@@ -347,7 +347,7 @@ final class LinearAlgebra {
      * @param rhs    the rhs of the system
      * @return the number of free variables
      */
-    public static int rowEchelonForm(lIntegersModulo domain, long[][] lhs, long[] rhs) {
+    public static int rowEchelonForm(IntegersZp64 domain, long[][] lhs, long[] rhs) {
         if (rhs != null && lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
 
@@ -401,7 +401,7 @@ final class LinearAlgebra {
      * @return the solution
      * @throws ArithmeticException if the system is inconsistent or under-determined
      */
-    public static long[] solve(lIntegersModulo domain, long[][] lhs, long[] rhs) {
+    public static long[] solve(IntegersZp64 domain, long[][] lhs, long[] rhs) {
         int nUnknowns = lhs[0].length;
         if (nUnknowns == 0)
             return new long[0];
@@ -422,7 +422,7 @@ final class LinearAlgebra {
      * @param result where to place the result
      * @return system information (inconsistent, under-determined or consistent)
      */
-    public static SystemInfo solve(lIntegersModulo domain, long[][] lhs, long[] rhs, long[] result) {
+    public static SystemInfo solve(IntegersZp64 domain, long[][] lhs, long[] rhs, long[] result) {
         if (lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
         if (rhs.length == 0)
@@ -480,7 +480,7 @@ final class LinearAlgebra {
      * @param result where to place the result
      * @return system information (inconsistent, under-determined or consistent)
      */
-    public static SystemInfo solve(lIntegersModulo domain, ArrayList<long[]> lhs, TLongArrayList rhs, long[] result) {
+    public static SystemInfo solve(IntegersZp64 domain, ArrayList<long[]> lhs, TLongArrayList rhs, long[] result) {
         return solve(domain, lhs.toArray(new long[lhs.size()][]), rhs.toArray(), result);
     }
 
@@ -493,7 +493,7 @@ final class LinearAlgebra {
      * @return the solution
      * @throws ArithmeticException if the system is inconsistent or under-determined
      */
-    public static long[] solveVandermonde(lIntegersModulo domain, long[] row, long[] rhs) {
+    public static long[] solveVandermonde(IntegersZp64 domain, long[] row, long[] rhs) {
         long[] result = new long[rhs.length];
         SystemInfo info = solveVandermonde(domain, row, rhs, result);
         if (info != Consistent)
@@ -510,7 +510,7 @@ final class LinearAlgebra {
      * @return the solution
      * @throws ArithmeticException if the system is inconsistent or under-determined
      */
-    public static long[] solveVandermondeT(lIntegersModulo domain, long[] row, long[] rhs) {
+    public static long[] solveVandermondeT(IntegersZp64 domain, long[] row, long[] rhs) {
         long[] result = new long[rhs.length];
         SystemInfo info = solveVandermondeT(domain, row, rhs, result);
         if (info != Consistent)
@@ -528,7 +528,7 @@ final class LinearAlgebra {
      * @param result where to place the result
      * @return system information (inconsistent, under-determined or consistent)
      */
-    public static SystemInfo solveVandermonde(lIntegersModulo domain, long[] row, long[] rhs, long[] result) {
+    public static SystemInfo solveVandermonde(IntegersZp64 domain, long[] row, long[] rhs, long[] result) {
         if (row.length != rhs.length)
             throw new IllegalArgumentException("not a square Vandermonde matrix");
         if (rhs.length == 0)
@@ -538,8 +538,8 @@ final class LinearAlgebra {
             return Consistent;
         }
         @SuppressWarnings("unchecked")
-        lUnivariatePolynomialZp[] lins = new lUnivariatePolynomialZp[row.length];
-        lUnivariatePolynomialZp master = lUnivariatePolynomialZp.one(domain);
+        UnivariatePolynomialZp64[] lins = new UnivariatePolynomialZp64[row.length];
+        UnivariatePolynomialZp64 master = UnivariatePolynomialZp64.one(domain);
         for (int i = 0; i < row.length; ++i) {
             lins[i] = master.createLinear(domain.negate(row[i]), 1L);
             master = master.multiply(lins[i]);
@@ -550,7 +550,7 @@ final class LinearAlgebra {
             result[i] = 0;
 
         for (int i = 0; i < row.length; i++) {
-            lUnivariatePolynomialZp quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
+            UnivariatePolynomialZp64 quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
             long cf = quot.evaluate(row[i]);
             if (cf == 0)
                 return UnderDetermined;
@@ -571,7 +571,7 @@ final class LinearAlgebra {
      * @param result where to place the result
      * @return system information (inconsistent, under-determined or consistent)
      */
-    public static SystemInfo solveVandermondeT(lIntegersModulo domain, long[] row, long[] rhs, long[] result) {
+    public static SystemInfo solveVandermondeT(IntegersZp64 domain, long[] row, long[] rhs, long[] result) {
         if (row.length != rhs.length)
             throw new IllegalArgumentException("not a square Vandermonde matrix");
         if (rhs.length == 0)
@@ -581,15 +581,15 @@ final class LinearAlgebra {
             return Consistent;
         }
         @SuppressWarnings("unchecked")
-        lUnivariatePolynomialZp[] lins = new lUnivariatePolynomialZp[row.length];
-        lUnivariatePolynomialZp master = lUnivariatePolynomialZp.one(domain);
+        UnivariatePolynomialZp64[] lins = new UnivariatePolynomialZp64[row.length];
+        UnivariatePolynomialZp64 master = UnivariatePolynomialZp64.one(domain);
         for (int i = 0; i < row.length; ++i) {
             lins[i] = master.createLinear(domain.negate(row[i]), 1L);
             master = master.multiply(lins[i]);
         }
 
         for (int i = 0; i < row.length; i++) {
-            lUnivariatePolynomialZp quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
+            UnivariatePolynomialZp64 quot = UnivariateDivision.divideAndRemainder(master, lins[i], true)[0];
             long cf = quot.evaluate(row[i]);
             if (cf == 0)
                 return UnderDetermined;

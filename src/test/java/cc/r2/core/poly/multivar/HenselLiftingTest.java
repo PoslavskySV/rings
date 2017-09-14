@@ -3,11 +3,11 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.combinatorics.IntCombinationsGenerator;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.poly.IntegersZp64;
 import cc.r2.core.poly.PolynomialMethods;
 import cc.r2.core.poly.IPolynomial;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.poly.test.FactorizationInput;
-import cc.r2.core.poly.lIntegersModulo;
 import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
@@ -29,7 +29,7 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import static cc.r2.core.poly.multivar.MultivariateFactorizationTest.*;
-import static cc.r2.core.poly.multivar.lMultivariatePolynomialZp.parse;
+import static cc.r2.core.poly.multivar.MultivariatePolynomialZp64.parse;
 import static cc.r2.core.test.AbstractTest.its;
 
 /**
@@ -40,9 +40,9 @@ public class HenselLiftingTest {
 
     @Test
     public void test1() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        IntegersZp64 domain = new IntegersZp64(SmallPrimes.nextPrime(66));
         String[] vars = {"a", "b"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 factors[] =
                 {
                         parse("a^15*b + a^15 - 2*a*b^4 - 3*b + 2 + b^2*a - b^4", domain, vars),
@@ -54,8 +54,8 @@ public class HenselLiftingTest {
 
         lEvaluation evaluation = new lEvaluation(base.nVariables, new long[]{1}, domain, base.ordering);
 
-        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
-        lMultivariatePolynomialZp[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(lMultivariatePolynomialZp[]::new);
+        MultivariatePolynomialZp64[] uFactors = evaluation.evaluateFrom(factors, 1);
+        MultivariatePolynomialZp64[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(MultivariatePolynomialZp64[]::new);
         HenselLifting.multivariateLift0(base,
                 uFactors,
                 factorsLC,
@@ -66,9 +66,9 @@ public class HenselLiftingTest {
 
     @Test
     public void test2() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(43313);
+        IntegersZp64 domain = new IntegersZp64(43313);
         String[] vars = {"a", "b"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 factors[] =
                 {
                         parse("36045*b^2+23621*a*b+21517*a^2", domain, vars),
@@ -83,11 +83,11 @@ public class HenselLiftingTest {
 
         lEvaluation evaluation = new lEvaluation(base.nVariables, new long[]{1146}, domain, base.ordering);
 
-        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        MultivariatePolynomialZp64[] uFactors = evaluation.evaluateFrom(factors, 1);
         System.out.println(allCoprime(uFactors));
         System.out.println(IntStream.range(0, uFactors.length).allMatch(i -> factors[i].degree(0) == uFactors[i].degree(0)));
 
-        lMultivariatePolynomialZp[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(lMultivariatePolynomialZp[]::new);
+        MultivariatePolynomialZp64[] factorsLC = Arrays.stream(factors).map(f -> f.lc(0)).toArray(MultivariatePolynomialZp64[]::new);
         HenselLifting.multivariateLift0(base,
                 uFactors,
                 factorsLC,
@@ -99,9 +99,9 @@ public class HenselLiftingTest {
 
     @Test
     public void testEvaluation1() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(97);
+        IntegersZp64 domain = new IntegersZp64(97);
         String[] vars = {"a", "b", "c"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 poly = parse("b*a^2 + b + a^2 + 2 + a^3*b^4 - a^62*b + 3*b^55*a^55 + b^66 + 3*c^55 + c*a*b + 3", domain, vars);
         lEvaluation evaluation = new lEvaluation(poly.nVariables, new long[]{2, 3}, domain, poly.ordering);
 
@@ -125,10 +125,10 @@ public class HenselLiftingTest {
 
     @Test
     public void testEvaluation2() throws Exception {
-        // small characteristics
-        lIntegersModulo domain = new lIntegersModulo(2);
+        // small characteristic
+        IntegersZp64 domain = new IntegersZp64(2);
         String[] vars = {"a", "b", "c"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 poly = parse("b*a^2 + b + a^2 + 2 + a^3*b^4 - a^62*b + 3*b^55*a^55 + b^66 + 3*c^55 + c*a*b + 3", domain, vars);
         lEvaluation evaluation = new lEvaluation(poly.nVariables, new long[]{1, 3}, domain, poly.ordering);
 
@@ -152,8 +152,8 @@ public class HenselLiftingTest {
 
     @Test
     public void testEvaluation3() throws Exception {
-        // small characteristics
-        IntegersModulo domain = new IntegersModulo(2);
+        // small characteristic
+        IntegersZp domain = new IntegersZp(2);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger>
                 poly = MultivariatePolynomial.parse("b*a^2 + b + a^2 + 2 + a^3*b^4 - a^62*b + 3*b^55*a^55 + b^66 + 3*c^55 + c*a*b + 3", domain, vars);
@@ -186,7 +186,7 @@ public class HenselLiftingTest {
                 1, 4);
         baseSource.minModulusBits = 15;
         baseSource.maxModulusBits = 30;
-        FactorizationInput.SampleDecompositionSource<lMultivariatePolynomialZp> source
+        FactorizationInput.SampleDecompositionSource<MultivariatePolynomialZp64> source
                 = orderVarsByDegree(
                 filterMonomialContent(
                         filterNonSquareFree(baseSource)));
@@ -197,12 +197,12 @@ public class HenselLiftingTest {
     @Benchmark(runAnyway = true)
     @Test
     public void testBivariateLifting1() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(67);
+        IntegersZp64 domain = new IntegersZp64(67);
         String[] vars = {"a", "b"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 base = parse("33*b+34*b^2+36*b^3+59*b^4+50*b^5+52*b^6+66*b^7+17*b^8+33*a^4+34*a^4*b+36*a^4*b^2+28*a^4*b^3+14*a^4*b^4+6*a^4*b^5+57*a^4*b^6+17*a^4*b^7+52*a^4*b^8+66*a^4*b^9+17*a^4*b^10+11*a^5*b+59*a^5*b^2+50*a^5*b^3+53*a^5*b^4+65*a^5*b^5+45*a^5*b^6+56*a^5*b^7+53*a^5*b^8+a^5*b^9+66*a^5*b^10+17*a^5*b^11+33*a^6*b^2+11*a^6*b^4+3*a^6*b^5+a^6*b^7+3*a^8*b^2+64*a^8*b^3+52*a^8*b^4+2*a^8*b^5+14*a^8*b^6+52*a^8*b^7+66*a^8*b^8+17*a^8*b^9+11*a^9+59*a^9*b+50*a^9*b^2+65*a^9*b^3+56*a^9*b^4+45*a^9*b^5+42*a^9*b^6+51*a^9*b^7+47*a^9*b^8+54*a^9*b^9+20*a^9*b^10+a^9*b^11+66*a^9*b^12+17*a^9*b^13+33*a^10*b+a^10*b^2+10*a^10*b^3+56*a^10*b^4+13*a^10*b^6+4*a^10*b^7+66*a^10*b^8+18*a^10*b^9+11*a^11*b^2+3*a^11*b^3+2*a^11*b^5+11*a^11*b^7+a^11*b^10+a^13*b^2+66*a^13*b^3+17*a^13*b^4+a^13*b^5+66*a^13*b^6+18*a^13*b^7+66*a^13*b^8+17*a^13*b^9+a^13*b^10+66*a^13*b^11+17*a^13*b^12+a^14*b+66*a^14*b^2+20*a^14*b^3+a^14*b^4+21*a^14*b^6+66*a^14*b^7+18*a^14*b^8+a^14*b^9+66*a^14*b^10+17*a^14*b^11+11*a^15*b+3*a^15*b^2+14*a^15*b^4+3*a^15*b^5+11*a^15*b^6+2*a^15*b^7+13*a^15*b^9+a^15*b^12+a^16*b^3+a^16*b^8+a^19*b^3+a^19*b^6+a^19*b^8+a^19*b^11+a^20*b^2+a^20*b^5+a^20*b^7+a^20*b^10", domain);
 
-        lMultivariatePolynomialZp[] uFactors = {
+        MultivariatePolynomialZp64[] uFactors = {
                 parse("b^2+b^5+b^7+b^10", domain, vars),
                 parse("33+a", domain, vars),
                 parse("22+a", domain, vars),
@@ -217,7 +217,7 @@ public class HenselLiftingTest {
         int degree = base.degree(1) + 1;
         for (int i = 0; i < its(10, 100); i++) {
             long start = System.nanoTime();
-            lMultivariatePolynomialZp[] lifted = uFactors.clone();
+            MultivariatePolynomialZp64[] lifted = uFactors.clone();
             HenselLifting.bivariateLiftNoLCCorrection0(base, lifted, evaluation, degree);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(base, evaluation.modImage(base.createOne().multiply(lifted), 1, degree));
@@ -226,18 +226,18 @@ public class HenselLiftingTest {
 
     @Test
     public void testBivariateLifting2() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(62653);
+        IntegersZp64 domain = new IntegersZp64(62653);
         String[] vars = {"a", "b"};
 
-        lMultivariatePolynomialZp[] factors = {
-                lMultivariatePolynomialZp.parse("17096+6578*a*b^2+54905*a^3", domain, vars),
-                lMultivariatePolynomialZp.parse("43370+32368*a^2*b^2+45712*a^2*b^4+52302*a^4+23776*a^4*b^2", domain, vars)
+        MultivariatePolynomialZp64[] factors = {
+                MultivariatePolynomialZp64.parse("17096+6578*a*b^2+54905*a^3", domain, vars),
+                MultivariatePolynomialZp64.parse("43370+32368*a^2*b^2+45712*a^2*b^4+52302*a^4+23776*a^4*b^2", domain, vars)
         };
 
-        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
         lEvaluation evaluation = new lEvaluation(2, new long[]{0}, domain, base.ordering);
 
-        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        MultivariatePolynomialZp64[] uFactors = evaluation.evaluateFrom(factors, 1);
 
         int degree = base.degree(1) + 1;
         HenselLifting.bivariateLift0(base, uFactors, null, evaluation, degree);
@@ -253,7 +253,7 @@ public class HenselLiftingTest {
                 1, 4);
         baseSource.minModulusBits = 15;
         baseSource.maxModulusBits = 30;
-        FactorizationInput.SampleDecompositionSource<lMultivariatePolynomialZp> source
+        FactorizationInput.SampleDecompositionSource<MultivariatePolynomialZp64> source
                 = orderVarsByDegree(
                 filterMonomialContent(
                         filterNonSquareFree(baseSource)));
@@ -271,7 +271,7 @@ public class HenselLiftingTest {
                 1, 4);
         baseSource.minModulusBits = 15;
         baseSource.maxModulusBits = 30;
-        FactorizationInput.SampleDecompositionSource<lMultivariatePolynomialZp> source
+        FactorizationInput.SampleDecompositionSource<MultivariatePolynomialZp64> source
                 = orderVarsByDegree(
                 filterMonomialContent(
                         filterNonSquareFree(baseSource)));
@@ -284,16 +284,16 @@ public class HenselLiftingTest {
     @Test
     public void test4() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
-        lIntegersModulo domain = new lIntegersModulo(592346501);
+        IntegersZp64 domain = new IntegersZp64(592346501);
         String[] vars = {"a", "b"};
-        lMultivariatePolynomialZp
-                a = lMultivariatePolynomialZp.parse("8864159 + 332216825*a + 307171438*a^2 + 574396609*a^3 + b", domain, vars),
-                b = lMultivariatePolynomialZp.parse("364341910 + 56968290*a + 134477777*a^2 + 264733241*b + 223672725*a*b + 365910146*a^2*b + 448183856*b^2 + 56041492*a*b^2 + 1386*a^2*b^2", domain, vars),
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("8864159 + 332216825*a + 307171438*a^2 + 574396609*a^3 + b", domain, vars),
+                b = MultivariatePolynomialZp64.parse("364341910 + 56968290*a + 134477777*a^2 + 264733241*b + 223672725*a*b + 365910146*a^2*b + 448183856*b^2 + 56041492*a*b^2 + 1386*a^2*b^2", domain, vars),
                 base = a.clone().multiply(b);
 
         lEvaluation evaluation = new lEvaluation(base.nVariables, new long[]{0}, domain, base.ordering);
 
-        lMultivariatePolynomialZp[] uFactors = {
+        MultivariatePolynomialZp64[] uFactors = {
                 evaluation.evaluateFrom(a, 1),
                 evaluation.evaluateFrom(b, 1),
         };
@@ -304,7 +304,7 @@ public class HenselLiftingTest {
         System.out.println(uFactors[0]);
         System.out.println(uFactors[1]);
 
-        lMultivariatePolynomialZp[] factorsLC = {
+        MultivariatePolynomialZp64[] factorsLC = {
                 null,
                 base.lc(0)
         };
@@ -319,9 +319,9 @@ public class HenselLiftingTest {
 
     @Test
     public void test5() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        IntegersZp64 domain = new IntegersZp64(SmallPrimes.nextPrime(66));
         String[] vars = {"a", "b", "c"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 factors[] =
                 {
                         parse("a^15*b*c^2 + 2*a*b^4 - 3*b + 2 + b^2*a - b^4", domain, vars),
@@ -334,20 +334,20 @@ public class HenselLiftingTest {
 
         lEvaluation evaluation = new lEvaluation(base.nVariables, new long[]{1, 2}, domain, base.ordering);
 
-        lMultivariatePolynomialZp[] uFactors = evaluation.evaluateFrom(factors, 1);
+        MultivariatePolynomialZp64[] uFactors = evaluation.evaluateFrom(factors, 1);
         HenselLifting.multivariateLiftAutomaticLC(base, uFactors, evaluation);
         Assert.assertEquals(base, multiply(uFactors));
 
-        lMultivariatePolynomialZp[] biFactors = evaluation.evaluateFrom(factors, 2);
+        MultivariatePolynomialZp64[] biFactors = evaluation.evaluateFrom(factors, 2);
         HenselLifting.multivariateLiftAutomaticLC(base, biFactors, evaluation, 2);
         Assert.assertEquals(base, multiply(biFactors));
     }
 
     @Test
     public void test5a() throws Exception {
-        lIntegersModulo domain = new lIntegersModulo(SmallPrimes.nextPrime(66));
+        IntegersZp64 domain = new IntegersZp64(SmallPrimes.nextPrime(66));
         String[] vars = {"a", "b", "c"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 factors[] =
                 {
                         parse("a^15*b*c^2 + 2*a*b^4 - 3*b + 2 + b^2*a - b^4", domain, vars),
@@ -361,29 +361,29 @@ public class HenselLiftingTest {
         lEvaluation evaluation = new lEvaluation(base.nVariables, new long[]{1, 2}, domain, base.ordering);
 
 
-        lMultivariatePolynomialZp[] biFactors = evaluation.evaluateFrom(factors, 2);
-        lMultivariatePolynomialZp lc = base.lc(0);
+        MultivariatePolynomialZp64[] biFactors = evaluation.evaluateFrom(factors, 2);
+        MultivariatePolynomialZp64 lc = base.lc(0);
 
 //         imposing leading coefficients
-        lMultivariatePolynomialZp lcCorrection = evaluation.evaluateFrom(lc, 2);
+        MultivariatePolynomialZp64 lcCorrection = evaluation.evaluateFrom(lc, 2);
 //        assert lcCorrection.isConstant();
 
         System.out.println(Arrays.stream(biFactors).map(p -> p.lc(0)).reduce(base.createOne(), (a, b) -> a.clone().multiply(b)));
         System.out.println(evaluation.evaluateFrom(base.lc(0), 2));
 
-        for (lMultivariatePolynomialZp factor : biFactors) {
-            lMultivariatePolynomialZp r = MultivariateDivision.divideExact(lcCorrection, factor.lc(0));
+        for (MultivariatePolynomialZp64 factor : biFactors) {
+            MultivariatePolynomialZp64 r = MultivariateDivision.divideExact(lcCorrection, factor.lc(0));
             factor.multiply(r);
 //            assert factor.lt().exponents[0] == factor.degree(0);
 //            factor.setLC(0, evaluation.evaluateFrom(factor.lc(0), 1));
 //            factor.monicWithLC(lcCorrection.lcAsPoly());
         }
 
-        lMultivariatePolynomialZp tmp = base.clone().multiply(PolynomialMethods.polyPow(lc, biFactors.length - 1, true));
+        MultivariatePolynomialZp64 tmp = base.clone().multiply(PolynomialMethods.polyPow(lc, biFactors.length - 1, true));
 
         HenselLifting.multivariateLift0(tmp, biFactors, ArraysUtil.arrayOf(lc, biFactors.length), evaluation, base.degrees(), 2);
 
-        for (lMultivariatePolynomialZp factor : biFactors)
+        for (MultivariatePolynomialZp64 factor : biFactors)
             factor.set(HenselLifting.primitivePart(factor));
 
         System.out.println(Arrays.toString(factors));
@@ -395,43 +395,43 @@ public class HenselLiftingTest {
     @Test
     public void test6() throws Exception {
         // todo: discover
-        lIntegersModulo domain = new lIntegersModulo(33554467);
+        IntegersZp64 domain = new IntegersZp64(33554467);
         String[] vars = {"a", "b", "c", "d", "e", "f", "g"};
-        lMultivariatePolynomialZp
+        MultivariatePolynomialZp64
                 factors[] =
                 {
-                        lMultivariatePolynomialZp.parse("25078271*b^5*c*d^2*e^2*f^6*g^3+22985334*a*b*c^2*d*e^7*f^3*g^7+19249719*a*b^7*d^5*e^6*g^2+6865506*a^2*b^5*c^3*d^6*e^6*f^3*g^5+20943085*a^2*b^5*c^8*d^3*e^3*f^7+733087*a^3*c^3*d^4*f^4*g^2+24327652*a^3*b^2*c^2*d^2*e^2*f^3*g^5+2508535*a^3*b^3*c*d^3*e^5*f^2*g^2+9991244*a^3*b^4*c^5*e^5*f^5*g^3+22044750*a^3*b^7*c*d^8*e*f^6+8526153*a^4*c^8*d*e^8*f^4*g^6+15162335*a^4*b^8*c^3*d^4*f^4*g^6+21943911*a^5*b*c^3*d^2*e^5*g^2+7268253*a^5*b^8*c^4*d^4*e*f*g^5+11265450*a^6*b^3*c^5*d^5*e+1307471*a^6*b^5*c^4*d^3*e*f^7+27352310*a^7*b^2*c^2*d^6*e^3*f^3*g+18596343*a^8*b^3*e^4*f^2*g+477464*a^8*b^4*c^3*d*e^3*f^5*g^3+20723946*a^8*b^4*c^8*d^3*e^2*g^3", domain, vars),
-                        lMultivariatePolynomialZp.parse("24999489*c^6*d^5*g^7+31605719*b^5*c^5*d^4*e^3*g^6+33475465*b^8*c^5*d^6*f^7+21150942*a*c^4*d^4*e^3*f^3*g+30544835*a*b^3*d^7*e*f^8*g^5+8725705*a*b^8*c^6*d^5*e^4*f*g+3830207*a^2*d^2*e*f^7*g^8+31725230*a^2*b^8*c*e*f^8*g^2+5924640*a^3*c*d^4*e^8+14191319*a^3*b*c^3*e^7*f^3*g^8+5482302*a^3*b^2*c^2*d^5*f^8*g^2+350050*a^4*b^3*c^6*d^6*e^7*f^6+246147*a^4*b^4*c^3*d^7*e^5*g^8+27052604*a^5*c^4*d^4*f+2073523*a^5*b^4*c^4*d^7*e^4*f^2*g^5+21322895*a^5*b^5*c*d^3*e^5*f^5*g^4+19375356*a^5*b^6*c^7*e^3*f^2*g^6+15676776*a^6*b^7*c^3*d^8*e^3*f^6*g^6+9971731*a^7*b^4*c^3*d*e^5*f*g^5+16734963*a^8*b^8*c^7*d^4*e*g^7", domain, vars),
-                        lMultivariatePolynomialZp.parse("21113415*b^5*c^6*d^4*e^4*f^2*g^3+20864231*b^8*c*d^6*e^5*f^8*g^5+33448448*a*b^3*c^6*d*e^4*f^7*g^2+31133965*a*b^4*c^2*d^2*e^7*f^6*g^2+27612593*a*b^5*d^5*e^2*f^7*g^4+17128197*a*b^7*c^3*d^6*e^2+4469686*a^2*b^5*c^4*d^8*e^4*f^4*g^7+1374035*a^3*c^8*e^7*f*g^5+10414621*a^3*b^6*c^5*d^7*e^7*f^6*g^6+10872067*a^3*b^8*c^3*d*e^4*f^8*g^4+6381772*a^4*b^2*c^6*d^6*e^6*f^3*g^3+26978581*a^4*b^5*d^6*e^5*f^7+30602413*a^4*b^8*c^8*d^4*e^5*f^3*g^3+13372094*a^5*b^3*c^3*d^7*e^5*f^8*g^3+25263857*a^5*b^5*c*d^7*e^6*g^5+4204332*a^6*c^2*d^2*e*f^6*g^2+13228578*a^6*b^2*c^5*d^7*e^6*f^8*g^6+17934510*a^6*b^8*c^4*d^5*e^3*f^4+17371834*a^7*b^4*c^2*d^8*e^4*f^2*g+8745908*a^8*b*c^4*d^7*e^5*f*g^6", domain, vars)
+                        MultivariatePolynomialZp64.parse("25078271*b^5*c*d^2*e^2*f^6*g^3+22985334*a*b*c^2*d*e^7*f^3*g^7+19249719*a*b^7*d^5*e^6*g^2+6865506*a^2*b^5*c^3*d^6*e^6*f^3*g^5+20943085*a^2*b^5*c^8*d^3*e^3*f^7+733087*a^3*c^3*d^4*f^4*g^2+24327652*a^3*b^2*c^2*d^2*e^2*f^3*g^5+2508535*a^3*b^3*c*d^3*e^5*f^2*g^2+9991244*a^3*b^4*c^5*e^5*f^5*g^3+22044750*a^3*b^7*c*d^8*e*f^6+8526153*a^4*c^8*d*e^8*f^4*g^6+15162335*a^4*b^8*c^3*d^4*f^4*g^6+21943911*a^5*b*c^3*d^2*e^5*g^2+7268253*a^5*b^8*c^4*d^4*e*f*g^5+11265450*a^6*b^3*c^5*d^5*e+1307471*a^6*b^5*c^4*d^3*e*f^7+27352310*a^7*b^2*c^2*d^6*e^3*f^3*g+18596343*a^8*b^3*e^4*f^2*g+477464*a^8*b^4*c^3*d*e^3*f^5*g^3+20723946*a^8*b^4*c^8*d^3*e^2*g^3", domain, vars),
+                        MultivariatePolynomialZp64.parse("24999489*c^6*d^5*g^7+31605719*b^5*c^5*d^4*e^3*g^6+33475465*b^8*c^5*d^6*f^7+21150942*a*c^4*d^4*e^3*f^3*g+30544835*a*b^3*d^7*e*f^8*g^5+8725705*a*b^8*c^6*d^5*e^4*f*g+3830207*a^2*d^2*e*f^7*g^8+31725230*a^2*b^8*c*e*f^8*g^2+5924640*a^3*c*d^4*e^8+14191319*a^3*b*c^3*e^7*f^3*g^8+5482302*a^3*b^2*c^2*d^5*f^8*g^2+350050*a^4*b^3*c^6*d^6*e^7*f^6+246147*a^4*b^4*c^3*d^7*e^5*g^8+27052604*a^5*c^4*d^4*f+2073523*a^5*b^4*c^4*d^7*e^4*f^2*g^5+21322895*a^5*b^5*c*d^3*e^5*f^5*g^4+19375356*a^5*b^6*c^7*e^3*f^2*g^6+15676776*a^6*b^7*c^3*d^8*e^3*f^6*g^6+9971731*a^7*b^4*c^3*d*e^5*f*g^5+16734963*a^8*b^8*c^7*d^4*e*g^7", domain, vars),
+                        MultivariatePolynomialZp64.parse("21113415*b^5*c^6*d^4*e^4*f^2*g^3+20864231*b^8*c*d^6*e^5*f^8*g^5+33448448*a*b^3*c^6*d*e^4*f^7*g^2+31133965*a*b^4*c^2*d^2*e^7*f^6*g^2+27612593*a*b^5*d^5*e^2*f^7*g^4+17128197*a*b^7*c^3*d^6*e^2+4469686*a^2*b^5*c^4*d^8*e^4*f^4*g^7+1374035*a^3*c^8*e^7*f*g^5+10414621*a^3*b^6*c^5*d^7*e^7*f^6*g^6+10872067*a^3*b^8*c^3*d*e^4*f^8*g^4+6381772*a^4*b^2*c^6*d^6*e^6*f^3*g^3+26978581*a^4*b^5*d^6*e^5*f^7+30602413*a^4*b^8*c^8*d^4*e^5*f^3*g^3+13372094*a^5*b^3*c^3*d^7*e^5*f^8*g^3+25263857*a^5*b^5*c*d^7*e^6*g^5+4204332*a^6*c^2*d^2*e*f^6*g^2+13228578*a^6*b^2*c^5*d^7*e^6*f^8*g^6+17934510*a^6*b^8*c^4*d^5*e^3*f^4+17371834*a^7*b^4*c^2*d^8*e^4*f^2*g+8745908*a^8*b*c^4*d^7*e^5*f*g^6", domain, vars)
                 };
         for (int i = 0; i < factors.length; i++)
             factors[i] = AMultivariatePolynomial.swapVariables(factors[i], 2, 3);
 
-        lMultivariatePolynomialZp base = factors[0].createOne().multiply(factors);
+        MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
         System.out.println(base.size());
         System.out.println();
 //        if(true) return;
         long[] values = {32161817, 2822446, 31477240, 17500389, 4067697, 32147770};
         lEvaluation evaluation = new lEvaluation(base.nVariables, values, domain, base.ordering);
 
-        lMultivariatePolynomialZp[] lcFactors = Arrays.stream(factors).map(f -> f.lc(0)).toArray(lMultivariatePolynomialZp[]::new);
+        MultivariatePolynomialZp64[] lcFactors = Arrays.stream(factors).map(f -> f.lc(0)).toArray(MultivariatePolynomialZp64[]::new);
 
         for (int i = 4; i <= base.nVariables; i++) {
 
-            lMultivariatePolynomialZp iBase = evaluation.evaluateFrom(base, i);
-            lMultivariatePolynomialZp[] iLcFactors = lcFactors.clone();
+            MultivariatePolynomialZp64 iBase = evaluation.evaluateFrom(base, i);
+            MultivariatePolynomialZp64[] iLcFactors = lcFactors.clone();
             for (int j = 0; j < iLcFactors.length; j++)
                 iLcFactors[j] = evaluation.evaluateFrom(iLcFactors[j], i);
 
             for (int j = 0; j < 1111; j++) {
 
-                lMultivariatePolynomialZp[] biImages = Arrays.stream(factors).map(f -> evaluation.evaluateFrom(f, 2)).toArray(lMultivariatePolynomialZp[]::new);
+                MultivariatePolynomialZp64[] biImages = Arrays.stream(factors).map(f -> evaluation.evaluateFrom(f, 2)).toArray(MultivariatePolynomialZp64[]::new);
                 long start = System.nanoTime();
 //                HenselLifting.multivariateLift0_old(iBase, biImages, iLcFactors, evaluation, base.degrees(), 2);
 //                System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
 //                assert multiply(biImages).equals(iBase);
 
-                biImages = Arrays.stream(factors).map(f -> evaluation.evaluateFrom(f, 2)).toArray(lMultivariatePolynomialZp[]::new);
+                biImages = Arrays.stream(factors).map(f -> evaluation.evaluateFrom(f, 2)).toArray(MultivariatePolynomialZp64[]::new);
                 start = System.nanoTime();
                 HenselLifting.multivariateLift0(iBase, biImages, iLcFactors, evaluation, base.degrees(), 2);
                 System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -444,7 +444,7 @@ public class HenselLiftingTest {
 //        assert MultivariateSquareFreeFactorization.isSquareFree(base);
 //        for (int i = 0; i < its(20, 20); i++) {
 //            long start = System.nanoTime();
-//            FactorDecomposition<lMultivariatePolynomialZp> decomposition = MultivariateFactorization.factorInGF(base);
+//            FactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateFactorization.factorInGF(base);
 //            Assert.assertEquals(3, decomposition.size());
 //            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
 //        }

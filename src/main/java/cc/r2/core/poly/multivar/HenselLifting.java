@@ -3,8 +3,8 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.PrecomputedPowersHolder;
 import cc.r2.core.poly.multivar.MultivariatePolynomial.USubstitution;
-import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lPrecomputedPowersHolder;
-import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lUSubstitution;
+import cc.r2.core.poly.multivar.MultivariatePolynomialZp64.lPrecomputedPowersHolder;
+import cc.r2.core.poly.multivar.MultivariatePolynomialZp64.lUSubstitution;
 import cc.r2.core.poly.univar.*;
 import cc.r2.core.util.ArraysUtil;
 
@@ -49,12 +49,12 @@ public final class HenselLifting {
      * Drops all terms of poly ∈ R[x1,x2,..,xN] which total degree with respect to [x2,.., xN] is equal or higher
      * than degree. NOTE: poly is not copied (returns the same reference)
      */
-    static lMultivariatePolynomialZp modImage(lMultivariatePolynomialZp poly, int degree) {
+    static MultivariatePolynomialZp64 modImage(MultivariatePolynomialZp64 poly, int degree) {
         if (degree == 0)
             return poly.ccAsPoly();
-        Iterator<Map.Entry<DegreeVector, lMonomialZp>> it = poly.terms.entrySet().iterator();
+        Iterator<Map.Entry<DegreeVector, MonomialZp64>> it = poly.terms.entrySet().iterator();
         while (it.hasNext()) {
-            lMonomialZp term = it.next().getValue();
+            MonomialZp64 term = it.next().getValue();
             if (ArraysUtil.sum(term.exponents, 1) >= degree) {
                 it.remove();
                 poly.release();
@@ -150,16 +150,16 @@ public final class HenselLifting {
         IEvaluation<Term, Poly> renameVariables(int[] newVariablesExceptFirst);
     }
 
-    /** Evaluations for {@link lMultivariatePolynomialZp} */
-    static final class lEvaluation implements IEvaluation<lMonomialZp, lMultivariatePolynomialZp> {
+    /** Evaluations for {@link MultivariatePolynomialZp64} */
+    static final class lEvaluation implements IEvaluation<MonomialZp64, MultivariatePolynomialZp64> {
         final long[] values;
         final int nVariables;
         final lPrecomputedPowersHolder precomputedPowers;
         final lUSubstitution[] linearPowers;
-        final lIntegersModulo domain;
+        final IntegersZp64 domain;
         final Comparator<DegreeVector> ordering;
 
-        lEvaluation(int nVariables, long[] values, lIntegersModulo domain, Comparator<DegreeVector> ordering) {
+        lEvaluation(int nVariables, long[] values, IntegersZp64 domain, Comparator<DegreeVector> ordering) {
             this.nVariables = nVariables;
             this.values = values;
             this.domain = domain;
@@ -167,16 +167,16 @@ public final class HenselLifting {
             this.precomputedPowers = new lPrecomputedPowersHolder(nVariables, ArraysUtil.sequence(1, nVariables), values, domain);
             this.linearPowers = new lUSubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
-                linearPowers[i] = new lUSubstitution(lUnivariatePolynomialZ.create(-values[i], 1).modulus(domain), i + 1, nVariables, ordering);
+                linearPowers[i] = new lUSubstitution(UnivariatePolynomialZ64.create(-values[i], 1).modulus(domain), i + 1, nVariables, ordering);
         }
 
         @Override
-        public lMultivariatePolynomialZp evaluate(lMultivariatePolynomialZp poly, int variable) {
+        public MultivariatePolynomialZp64 evaluate(MultivariatePolynomialZp64 poly, int variable) {
             return poly.evaluate(variable, precomputedPowers.powers[variable]);
         }
 
         @Override
-        public lMultivariatePolynomialZp evaluateFrom(lMultivariatePolynomialZp poly, int variable) {
+        public MultivariatePolynomialZp64 evaluateFrom(MultivariatePolynomialZp64 poly, int variable) {
             if (variable >= poly.nVariables)
                 return poly.clone();
             if (variable == 1 && poly.univariateVariable() == 0)
@@ -185,7 +185,7 @@ public final class HenselLifting {
         }
 
         @Override
-        public lMultivariatePolynomialZp evaluateFromExcept(lMultivariatePolynomialZp poly, int from, int except) {
+        public MultivariatePolynomialZp64 evaluateFromExcept(MultivariatePolynomialZp64 poly, int from, int except) {
             if (from >= poly.nVariables)
                 return poly.clone();
             if (from == 1 && poly.univariateVariable() == 0)
@@ -202,7 +202,7 @@ public final class HenselLifting {
         }
 
         @Override
-        public lMultivariatePolynomialZp linearPower(int variable, int exponent) {
+        public MultivariatePolynomialZp64 linearPower(int variable, int exponent) {
             return linearPowers[variable - 1].pow(exponent);
         }
 

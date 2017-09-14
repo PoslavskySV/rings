@@ -68,8 +68,8 @@ public final class IrreduciblePolynomials {
      * @param rnd     random source
      * @return irreducible polynomial
      */
-    public static lUnivariatePolynomialZp randomIrreduciblePolynomial(long modulus, int degree, RandomGenerator rnd) {
-        lUnivariatePolynomialZp poly;
+    public static UnivariatePolynomialZp64 randomIrreduciblePolynomial(long modulus, int degree, RandomGenerator rnd) {
+        UnivariatePolynomialZp64 poly;
         do {
             poly = RandomUnivariatePolynomials.randomMonicPoly(degree, modulus, rnd);
         } while (!irreducibleQ(poly));

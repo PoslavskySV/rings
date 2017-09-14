@@ -21,8 +21,8 @@ final class EqualDegreeFactorization {
     static <T extends IUnivariatePolynomial<T>> T randomMonicPoly(T factory) {
         RandomGenerator rnd = PrivateRandom.getRandom();
         int degree = Math.max(1, rnd.nextInt(2 * factory.degree() + 1));
-        if (factory instanceof lUnivariatePolynomialZp) {
-            lUnivariatePolynomialZp fm = (lUnivariatePolynomialZp) factory;
+        if (factory instanceof UnivariatePolynomialZp64) {
+            UnivariatePolynomialZp64 fm = (UnivariatePolynomialZp64) factory;
             return (T) RandomUnivariatePolynomials.randomMonicPoly(degree, fm.domain.modulus, rnd);
         } else {
             UnivariatePolynomial fm = (UnivariatePolynomial) factory;
@@ -41,7 +41,7 @@ final class EqualDegreeFactorization {
         ensureFiniteFieldDomain(input);
         FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(input.lcAsPoly());
         if (!input.coefficientDomainCardinality().testBit(0))
-            //even characteristics => GF2p
+            //even characteristic => GF2p
             CantorZassenhaus(input, d, result, input.coefficientDomainPerfectPowerExponent().intValueExact());
         else
             CantorZassenhaus(input, d, result, -1);
@@ -91,7 +91,7 @@ final class EqualDegreeFactorization {
     }
 
     /**
-     * Plain Cantor-Zassenhaus algorithm for odd characteristics
+     * Plain Cantor-Zassenhaus algorithm for odd characteristic
      *
      * @param poly the monic polynomial
      * @param d    distinct degree

@@ -22,9 +22,9 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
     private static final long serialVersionUID = 1L;
 
     /** GF(3^3) */
-    public static final FiniteField<lUnivariatePolynomialZp> GF27 = new FiniteField<>(lUnivariatePolynomialZ.create(-1, -1, 0, 1).modulus(3));
+    public static final FiniteField<UnivariatePolynomialZp64> GF27 = new FiniteField<>(UnivariatePolynomialZ64.create(-1, -1, 0, 1).modulus(3));
     /** GF(17^5) */
-    public static final FiniteField<lUnivariatePolynomialZp> GF17p5 = new FiniteField<>(lUnivariatePolynomialZ.create(11, 11, 0, 3, 9, 9).modulus(17).monic());
+    public static final FiniteField<UnivariatePolynomialZp64> GF17p5 = new FiniteField<>(UnivariatePolynomialZ64.create(11, 11, 0, 3, 9, 9).modulus(17).monic());
 
     /** Irreducible polynomial that generates this finite field */
     private final Poly irreducible;
@@ -48,6 +48,10 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
         this.cardinality = BigIntegerArithmetics.pow(irreducible.coefficientDomainCardinality(), irreducible.degree());
     }
 
+    public Poly getIrreducible() {
+        return irreducible.clone();
+    }
+
     @Override
     public boolean isField() {
         return true;
@@ -59,7 +63,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
     }
 
     @Override
-    public BigInteger characteristics() {
+    public BigInteger characteristic() {
         return irreducible.coefficientDomainCharacteristics();
     }
 
@@ -239,8 +243,8 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
     public Iterator<Poly> iterator() {
         if (irreducible instanceof UnivariatePolynomial)
             return (Iterator<Poly>) new It(((UnivariatePolynomial) irreducible).domain, irreducible.degree());
-        else if (irreducible instanceof lUnivariatePolynomialZp)
-            return (Iterator<Poly>) new lIt(((lUnivariatePolynomialZp) irreducible).domain, irreducible.degree());
+        else if (irreducible instanceof UnivariatePolynomialZp64)
+            return (Iterator<Poly>) new lIt(((UnivariatePolynomialZp64) irreducible).domain, irreducible.degree());
         throw new RuntimeException();
     }
 
@@ -289,12 +293,12 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
         }
     }
 
-    private static final class lIt implements Iterator<lUnivariatePolynomialZp> {
-        final lIntegersModulo domain;
+    private static final class lIt implements Iterator<UnivariatePolynomialZp64> {
+        final IntegersZp64 domain;
         final long[] data;
 
         @SuppressWarnings("unchecked")
-        lIt(lIntegersModulo domain, int degree) {
+        lIt(IntegersZp64 domain, int degree) {
             this.domain = domain;
             this.data = new long[degree];
         }
@@ -307,10 +311,10 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
         private boolean first = true;
 
         @Override
-        public lUnivariatePolynomialZp next() {
+        public UnivariatePolynomialZp64 next() {
             if (first) {
                 first = false;
-                return lUnivariatePolynomialZp.createUnsafe(domain, data.clone());
+                return UnivariatePolynomialZp64.createUnsafe(domain, data.clone());
             }
             int i = 0;
             if (data[i] >= domain.modulus - 1)
@@ -323,7 +327,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
                 return null;
 
             ++data[i];
-            return lUnivariatePolynomialZp.createUnsafe(domain, data.clone());
+            return UnivariatePolynomialZp64.createUnsafe(domain, data.clone());
         }
     }
 
@@ -346,7 +350,21 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
     }
 
     @Override
+    public String toString(String[] variables) {
+        return toString(irreducible.coefficientDomainToString(), variables);
+    }
+
+    @Override
+    public String toString(String coefficientDomain, String[] variables) {
+        return "(" + coefficientDomain + ")[" + variables[0] + "]/<" + irreducible.toString(variables) + ">";
+    }
+
+    public String toString(String coefficientDomain, ToStringSupport<Poly> irreducibleToString, String[] variables) {
+        return "(" + coefficientDomain + ")[" + variables[0] + "]/<" + irreducibleToString.toString(irreducible) + ">";
+    }
+
+    @Override
     public String toString() {
-        return "(" + irreducible.coefficientDomainToString() + ")[x]/<" + irreducible + "> (GF" + cardinality + ")";
+        return toString(WithVariables.defaultVars(1));
     }
 }

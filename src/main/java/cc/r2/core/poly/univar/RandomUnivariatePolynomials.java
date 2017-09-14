@@ -3,7 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Domains;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -29,10 +29,10 @@ public final class RandomUnivariatePolynomials {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends IUnivariatePolynomial<Poly>> Poly randomPoly(Poly factory, int degree, RandomGenerator rnd) {
-        if (factory instanceof lUnivariatePolynomialZ)
+        if (factory instanceof UnivariatePolynomialZ64)
             return (Poly) randomPoly(degree, rnd);
-        else if (factory instanceof lUnivariatePolynomialZp)
-            return (Poly) randomMonicPoly(degree, ((lUnivariatePolynomialZp) factory).modulus(), rnd);
+        else if (factory instanceof UnivariatePolynomialZp64)
+            return (Poly) randomMonicPoly(degree, ((UnivariatePolynomialZp64) factory).modulus(), rnd);
         else if (factory instanceof UnivariatePolynomial) {
             UnivariatePolynomial p = randomPoly(degree, ((UnivariatePolynomial) factory).domain, rnd);
             if (factory.isOverField())
@@ -49,7 +49,7 @@ public final class RandomUnivariatePolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static lUnivariatePolynomialZ randomPoly(int degree, RandomGenerator rnd) {
+    public static UnivariatePolynomialZ64 randomPoly(int degree, RandomGenerator rnd) {
         return randomPoly(degree, DEFAULT_BOUND, rnd);
     }
 
@@ -60,8 +60,8 @@ public final class RandomUnivariatePolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree}
      */
-    public static lUnivariatePolynomialZp randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
-        lUnivariatePolynomialZ r = randomPoly(degree, modulus, rnd);
+    public static UnivariatePolynomialZp64 randomMonicPoly(int degree, long modulus, RandomGenerator rnd) {
+        UnivariatePolynomialZ64 r = randomPoly(degree, modulus, rnd);
         while (r.data[degree] % modulus == 0) {
             r.data[r.degree] = rnd.nextLong();
         }
@@ -78,7 +78,7 @@ public final class RandomUnivariatePolynomials {
     public static UnivariatePolynomial<BigInteger> randomMonicPoly(int degree, BigInteger modulus, RandomGenerator rnd) {
         UnivariatePolynomial<BigInteger> r = randomPoly(degree, modulus, rnd);
         while ((r.data[degree].mod(modulus)).isZero()) {r.data[r.degree] = RandomUtil.randomInt(modulus, rnd);}
-        return r.setDomain(new IntegersModulo(modulus)).monic();
+        return r.setDomain(new IntegersZp(modulus)).monic();
     }
 
     /**
@@ -101,8 +101,8 @@ public final class RandomUnivariatePolynomials {
      * @param rnd    random source
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
-    public static lUnivariatePolynomialZ randomPoly(int degree, long bound, RandomGenerator rnd) {
-        return lUnivariatePolynomialZ.create(randomLongArray(degree, bound, rnd));
+    public static UnivariatePolynomialZ64 randomPoly(int degree, long bound, RandomGenerator rnd) {
+        return UnivariatePolynomialZ64.create(randomLongArray(degree, bound, rnd));
     }
 
     /**

@@ -3,7 +3,7 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.MonomialOrder;
-import cc.r2.core.poly.multivar.lMultivariatePolynomialZp;
+import cc.r2.core.poly.multivar.MultivariatePolynomialZp64;
 import cc.r2.core.poly.test.APolynomialTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,9 +20,9 @@ public class UnivariatePolynomialTest extends APolynomialTest {
     public void test1() throws Exception {
         BigInteger modulus = BigInteger.valueOf(59);
         UnivariatePolynomial<BigInteger> aZ = UnivariatePolynomial.create(Domains.Z, 1, 2, 3, 4, 5, 6);
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         UnivariatePolynomial<BigInteger> aZp = aZ.setDomain(domain);
-        lUnivariatePolynomialZp aL = asLongPolyZp(aZp);
+        UnivariatePolynomialZp64 aL = asLongPolyZp(aZp);
 
         for (int i = 0; i < 5; i++) {
 //            a = (a.clone() * a.clone().decrement() - a.clone().derivative() + (a.clone().square())) * a.clone();
@@ -57,15 +57,15 @@ public class UnivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void test4() throws Exception {
-        UnivariatePolynomial<lUnivariatePolynomialZp> poly = UnivariatePolynomial.create(FiniteField.GF17p5, lUnivariatePolynomialZ.zero().modulus(17));
+        UnivariatePolynomial<UnivariatePolynomialZp64> poly = UnivariatePolynomial.create(FiniteField.GF17p5, UnivariatePolynomialZ64.zero().modulus(17));
         Assert.assertEquals("0", poly.toString());
     }
 
     @Test
     public void test5() throws Exception {
-        lIntegersModulo lDomain = new lIntegersModulo(11);
-        MultivariatePolynomials<lMultivariatePolynomialZp> domain = new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(4, lDomain, MonomialOrder.LEX));
-        UnivariatePolynomial<lMultivariatePolynomialZp> poly = UnivariatePolynomial.parse(domain, "(6*c)+(10*b*c^2*d^2)*x^3");
+        IntegersZp64 lDomain = new IntegersZp64(11);
+        MultivariatePolynomials<MultivariatePolynomialZp64> domain = new MultivariatePolynomials<>(MultivariatePolynomialZp64.zero(4, lDomain, MonomialOrder.LEX));
+        UnivariatePolynomial<MultivariatePolynomialZp64> poly = UnivariatePolynomial.parse(domain, "(6*c)+(10*b*c^2*d^2)*x^3");
         for (int i = 0; i < 1000; i++)
             Assert.assertFalse(poly.content().isZero());
     }

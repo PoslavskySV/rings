@@ -3,6 +3,7 @@ package cc.r2.core.poly;
 import cc.r2.core.poly.multivar.AMultivariatePolynomial;
 import cc.r2.core.poly.multivar.MultivariateDivision;
 import cc.r2.core.poly.multivar.MultivariateGCD;
+import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import org.apache.commons.math3.random.RandomGenerator;
 
 /**
@@ -57,5 +58,4 @@ public final class MultivariatePolynomials<Poly extends AMultivariatePolynomial<
     public Poly randomElement(RandomGenerator rnd) {
         return super.randomElement(rnd);
     }
-
 }

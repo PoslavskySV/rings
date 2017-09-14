@@ -181,7 +181,7 @@ public final class UnivariateSquareFreeFactorization {
 
     /**
      * Performs square-free factorization of a {@code poly} using Musser's algorithm (both zero and non-zero
-     * characteristics of coefficient domain allowed).
+     * characteristic of coefficient domain allowed).
      *
      * @param poly the polynomial
      * @return square-free decomposition
@@ -264,8 +264,8 @@ public final class UnivariateSquareFreeFactorization {
     /** p-th root of poly */
     @SuppressWarnings("unchecked")
     private static <Poly extends IUnivariatePolynomial<Poly>> Poly pRoot(Poly poly) {
-        if (poly instanceof lUnivariatePolynomialZp)
-            return (Poly) pRoot((lUnivariatePolynomialZp) poly);
+        if (poly instanceof UnivariatePolynomialZp64)
+            return (Poly) pRoot((UnivariatePolynomialZp64) poly);
         else if (poly instanceof UnivariatePolynomial)
             return (Poly) pRoot((UnivariatePolynomial) poly);
         else
@@ -273,7 +273,7 @@ public final class UnivariateSquareFreeFactorization {
     }
 
     /** p-th root of poly */
-    private static lUnivariatePolynomialZp pRoot(lUnivariatePolynomialZp poly) {
+    private static UnivariatePolynomialZp64 pRoot(UnivariatePolynomialZp64 poly) {
         if (poly.domain.modulus > Integer.MAX_VALUE)
             throw new IllegalArgumentException("Too big modulus: " + poly.domain.modulus);
         int modulus = MachineArithmetic.safeToInt(poly.domain.modulus);
@@ -295,7 +295,7 @@ public final class UnivariateSquareFreeFactorization {
             throw new IllegalArgumentException("Infinite or too large domain: " + poly.domain);
         Domain<E> domain = poly.domain;
         // p^(m -1) used for computing p-th root of elements
-        BigInteger inverseFactor = domain.cardinality().divide(domain.characteristics());
+        BigInteger inverseFactor = domain.cardinality().divide(domain.characteristic());
         int modulus = poly.coefficientDomainCharacteristics().intValueExact();
         assert poly.degree % modulus == 0;
         E[] rootData = poly.domain.createZeroesArray(poly.degree / modulus + 1);

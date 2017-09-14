@@ -1,10 +1,12 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.poly.multivar.AMultivariatePolynomial;
-import cc.r2.core.poly.multivar.MultivariateGCD;
 import cc.r2.core.poly.multivar.MultivariateDivision;
-import cc.r2.core.poly.univar.UnivariateDivision;
+import cc.r2.core.poly.multivar.MultivariateFactorization;
+import cc.r2.core.poly.multivar.MultivariateGCD;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
+import cc.r2.core.poly.univar.UnivariateDivision;
+import cc.r2.core.poly.univar.UnivariateFactorization;
 import cc.r2.core.poly.univar.UnivariateGCD;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
@@ -19,6 +21,17 @@ public final class PolynomialMethods {
 
     @SuppressWarnings("unchecked")
     public static <Poly extends IPolynomial<Poly>>
+    FactorDecomposition<Poly> factor(Poly poly) {
+        if (poly instanceof IUnivariatePolynomial)
+            return (FactorDecomposition<Poly>) UnivariateFactorization.factor((IUnivariatePolynomial) poly);
+        else if (poly instanceof AMultivariatePolynomial)
+            return (FactorDecomposition<Poly>) MultivariateFactorization.factor((AMultivariatePolynomial) poly);
+        else
+            throw new RuntimeException();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>>
     Poly PolynomialGCD(Poly a, Poly b) {
         if (a instanceof IUnivariatePolynomial)
             return (Poly) UnivariateGCD.PolynomialGCD((IUnivariatePolynomial) a, (IUnivariatePolynomial) b);
@@ -30,7 +43,19 @@ public final class PolynomialMethods {
 
     @SuppressWarnings("unchecked")
     public static <Poly extends IPolynomial<Poly>>
-    Poly[] PolynomialDivideAndRemainder(Poly a, Poly b) {
+    Poly PolynomialGCD(Poly... array) {
+        Poly a = array[0];
+        if (a instanceof IUnivariatePolynomial)
+            return (Poly) UnivariateGCD.PolynomialGCD((IUnivariatePolynomial[]) array);
+        else if (a instanceof AMultivariatePolynomial)
+            return (Poly) MultivariateGCD.PolynomialGCD((AMultivariatePolynomial[]) array);
+        else
+            throw new RuntimeException();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>>
+    Poly[] divideAndRemainder(Poly a, Poly b) {
         if (a instanceof IUnivariatePolynomial)
             return (Poly[]) UnivariateDivision.divideAndRemainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
         else if (a instanceof AMultivariatePolynomial)

@@ -3,8 +3,8 @@ package cc.r2.core.poly.univar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
 import cc.r2.core.poly.Domains;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.poly.test.APolynomialTest;
-import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.univar.UnivariateGCD.*;
 import cc.r2.core.test.Benchmark;
@@ -33,11 +33,11 @@ public class UnivariateGCDTest extends APolynomialTest {
     @Test
     public void test1() throws Exception {
         long modulus = 11;
-        lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
-        lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
+        UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
+        UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
 
-        PolynomialRemainders<lUnivariatePolynomialZp> prs = UnivariateGCD.EuclidRemainders(a, b);
-        lUnivariatePolynomialZp gcd = prs.gcd();
+        PolynomialRemainders<UnivariatePolynomialZp64> prs = UnivariateGCD.EuclidRemainders(a, b);
+        UnivariatePolynomialZp64 gcd = prs.gcd();
         assertEquals(3, gcd.degree);
         assertTrue(divideAndRemainder(a, gcd, true)[1].isZero());
         assertTrue(divideAndRemainder(b, gcd, true)[1].isZero());
@@ -46,56 +46,56 @@ public class UnivariateGCDTest extends APolynomialTest {
     @Test
     public void test2() throws Exception {
         //test long overflow
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(0, 14, 50, 93, 108, 130, 70);
-        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(63, 92, 143, 245, 146, 120, 90);
-        lUnivariatePolynomialZ gcd = EuclidPseudoRemainders(dividend, divider, true).gcd();
-        lUnivariatePolynomialZ expected = lUnivariatePolynomialZ.create(7, 4, 10, 10);
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(0, 14, 50, 93, 108, 130, 70);
+        UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(63, 92, 143, 245, 146, 120, 90);
+        UnivariatePolynomialZ64 gcd = EuclidPseudoRemainders(dividend, divider, true).gcd();
+        UnivariatePolynomialZ64 expected = UnivariatePolynomialZ64.create(7, 4, 10, 10);
         assertEquals(expected, gcd);
     }
 
     @Test
     public void test3() throws Exception {
         //test long overflow
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, -7, 0, 1);
-        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(-7, 0, 3);
-        PolynomialRemainders<lUnivariatePolynomialZ> naive = EuclidPseudoRemainders(dividend.clone(), divider.clone(), false);
-        List<lUnivariatePolynomialZ> expectedNaive = new ArrayList<>();
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(7, -7, 0, 1);
+        UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(-7, 0, 3);
+        PolynomialRemainders<UnivariatePolynomialZ64> naive = EuclidPseudoRemainders(dividend.clone(), divider.clone(), false);
+        List<UnivariatePolynomialZ64> expectedNaive = new ArrayList<>();
         expectedNaive.add(dividend);
         expectedNaive.add(divider);
-        expectedNaive.add(lUnivariatePolynomialZ.create(63, -42));
-        expectedNaive.add(lUnivariatePolynomialZ.create(1L));
+        expectedNaive.add(UnivariatePolynomialZ64.create(63, -42));
+        expectedNaive.add(UnivariatePolynomialZ64.create(1L));
         assertEquals(expectedNaive, naive.remainders);
 
-        PolynomialRemainders<lUnivariatePolynomialZ> primitive = EuclidPseudoRemainders(dividend.clone(), divider.clone(), true);
-        List<lUnivariatePolynomialZ> expectedPrimitive = new ArrayList<>();
+        PolynomialRemainders<UnivariatePolynomialZ64> primitive = EuclidPseudoRemainders(dividend.clone(), divider.clone(), true);
+        List<UnivariatePolynomialZ64> expectedPrimitive = new ArrayList<>();
         expectedPrimitive.add(dividend);
         expectedPrimitive.add(divider);
-        expectedPrimitive.add(lUnivariatePolynomialZ.create(-3, 2));
-        expectedPrimitive.add(lUnivariatePolynomialZ.create(1L));
+        expectedPrimitive.add(UnivariatePolynomialZ64.create(-3, 2));
+        expectedPrimitive.add(UnivariatePolynomialZ64.create(1L));
         assertEquals(expectedPrimitive, primitive.remainders);
 
-        PolynomialRemainders<lUnivariatePolynomialZ> subresultant = EuclidSubresultantRemainders(dividend.clone(), divider.clone());
-        List<lUnivariatePolynomialZ> expectedSubresultant = new ArrayList<>();
+        PolynomialRemainders<UnivariatePolynomialZ64> subresultant = EuclidSubresultantRemainders(dividend.clone(), divider.clone());
+        List<UnivariatePolynomialZ64> expectedSubresultant = new ArrayList<>();
         expectedSubresultant.add(dividend);
         expectedSubresultant.add(divider);
-        expectedSubresultant.add(lUnivariatePolynomialZ.create(63, -42));
-        expectedSubresultant.add(lUnivariatePolynomialZ.create(-49L));
+        expectedSubresultant.add(UnivariatePolynomialZ64.create(63, -42));
+        expectedSubresultant.add(UnivariatePolynomialZ64.create(-49L));
         assertEquals(expectedSubresultant, subresultant.remainders);
     }
 
     @Test
     public void test4() throws Exception {
         for (long sign = -1; sign <= 2; sign += 2) {
-            lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(sign);
-            lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(6, 7, 9, 8, 3).multiply(sign);
-            PolynomialRemainders<lUnivariatePolynomialZ> subresultant = EuclidSubresultantRemainders(dividend, divider);
-            List<lUnivariatePolynomialZ> expectedSubresultant = new ArrayList<>();
+            UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(7, 4, 10, 10, 0, 2).multiply(sign);
+            UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(6, 7, 9, 8, 3).multiply(sign);
+            PolynomialRemainders<UnivariatePolynomialZ64> subresultant = EuclidSubresultantRemainders(dividend, divider);
+            List<UnivariatePolynomialZ64> expectedSubresultant = new ArrayList<>();
             expectedSubresultant.add(dividend);
             expectedSubresultant.add(divider);
-            expectedSubresultant.add(lUnivariatePolynomialZ.create(159, 112, 192, 164).multiply(sign));
-            expectedSubresultant.add(lUnivariatePolynomialZ.create(4928, 3068, 5072).multiply(sign));
-            expectedSubresultant.add(lUnivariatePolynomialZ.create(65840, -98972).multiply(sign));
-            expectedSubresultant.add(lUnivariatePolynomialZ.create(3508263).multiply(sign));
+            expectedSubresultant.add(UnivariatePolynomialZ64.create(159, 112, 192, 164).multiply(sign));
+            expectedSubresultant.add(UnivariatePolynomialZ64.create(4928, 3068, 5072).multiply(sign));
+            expectedSubresultant.add(UnivariatePolynomialZ64.create(65840, -98972).multiply(sign));
+            expectedSubresultant.add(UnivariatePolynomialZ64.create(3508263).multiply(sign));
             assertEquals(expectedSubresultant, subresultant.remainders);
         }
     }
@@ -104,16 +104,16 @@ public class UnivariateGCDTest extends APolynomialTest {
     public void test4a() throws Exception {
         for (long sign1 = -1; sign1 <= 2; sign1 += 2)
             for (long sign2 = -1; sign2 <= 2; sign2 += 2) {
-                lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(1, 1, 6, -3, 5).multiply(sign1);
-                lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(-9, -3, -10, 2, 8).multiply(sign2);
-                PolynomialRemainders<lUnivariatePolynomialZ> subresultant = EuclidSubresultantRemainders(dividend, divider);
-                List<lUnivariatePolynomialZ> expectedSubresultant = new ArrayList<>();
+                UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(1, 1, 6, -3, 5).multiply(sign1);
+                UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(-9, -3, -10, 2, 8).multiply(sign2);
+                PolynomialRemainders<UnivariatePolynomialZ64> subresultant = EuclidSubresultantRemainders(dividend, divider);
+                List<UnivariatePolynomialZ64> expectedSubresultant = new ArrayList<>();
                 expectedSubresultant.add(dividend);
                 expectedSubresultant.add(divider);
-                expectedSubresultant.add(lUnivariatePolynomialZ.create(-53, -23, -98, 34).multiply(sign1 * sign2));
-                expectedSubresultant.add(lUnivariatePolynomialZ.create(4344, 3818, 9774));
-                expectedSubresultant.add(lUnivariatePolynomialZ.create(-292677, 442825).multiply(sign1 * sign2));
-                expectedSubresultant.add(lUnivariatePolynomialZ.create(22860646));
+                expectedSubresultant.add(UnivariatePolynomialZ64.create(-53, -23, -98, 34).multiply(sign1 * sign2));
+                expectedSubresultant.add(UnivariatePolynomialZ64.create(4344, 3818, 9774));
+                expectedSubresultant.add(UnivariatePolynomialZ64.create(-292677, 442825).multiply(sign1 * sign2));
+                expectedSubresultant.add(UnivariatePolynomialZ64.create(22860646));
                 assertEquals(expectedSubresultant, subresultant.remainders);
             }
     }
@@ -121,7 +121,7 @@ public class UnivariateGCDTest extends APolynomialTest {
     @Test
     public void test5() throws Exception {
         //test long overflow
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2);
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(7, 4, 10, 10, 0, 2);
         UnivariateGCD.PolynomialRemainders prs = EuclidPseudoRemainders(dividend.clone(), dividend.clone(), false);
 
         assertEquals(2, prs.remainders.size());
@@ -131,9 +131,9 @@ public class UnivariateGCDTest extends APolynomialTest {
     @Test
     public void test6() throws Exception {
         //test long overflow
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(2);
-        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2);
-        PolynomialRemainders<lUnivariatePolynomialZ> prs;
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(7, 4, 10, 10, 0, 2).multiply(2);
+        UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(7, 4, 10, 10, 0, 2);
+        PolynomialRemainders<UnivariatePolynomialZ64> prs;
 
         for (boolean prim : new boolean[]{true, false}) {
             prs = EuclidPseudoRemainders(dividend.clone(), divider.clone(), prim);
@@ -153,8 +153,8 @@ public class UnivariateGCDTest extends APolynomialTest {
     @Test
     public void test7() throws Exception {
         //test long overflow
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2).multiply(2);
-        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(7, 4, 10, 10, 0, 2);
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(7, 4, 10, 10, 0, 2).multiply(2);
+        UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(7, 4, 10, 10, 0, 2);
 
         for (UnivariateGCD.PolynomialRemainders prs : runAlgorithms(dividend, divider)) {
             assertEquals(2, prs.remainders.size());
@@ -170,18 +170,18 @@ public class UnivariateGCDTest extends APolynomialTest {
     @Test
     public void test8() throws Exception {
         //test long overflow
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(1, 1, 1, 1).multiply(2);
-        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(1, 0, 2);
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(1, 1, 1, 1).multiply(2);
+        UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(1, 0, 2);
 
-        for (UnivariateGCD.PolynomialRemainders<lUnivariatePolynomialZ> prs : runAlgorithms(dividend, divider))
+        for (UnivariateGCD.PolynomialRemainders<UnivariatePolynomialZ64> prs : runAlgorithms(dividend, divider))
             assertEquals(0, prs.gcd().degree);
     }
 
     @Test
     public void test9() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(-58, 81, -29, -77, 81, 42, -38, 48, 94, 6, 55);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(1, 2, 1);
-        lUnivariatePolynomialZ expected = lUnivariatePolynomialZ.create(-58, -35, 75, -54, -102, 127, 127, 14, 152, 242, 161, 116, 55);
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(-58, 81, -29, -77, 81, 42, -38, 48, 94, 6, 55);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(1, 2, 1);
+        UnivariatePolynomialZ64 expected = UnivariatePolynomialZ64.create(-58, -35, 75, -54, -102, 127, 127, 14, 152, 242, 161, 116, 55);
         assertEquals(expected, a.multiply(b));
     }
 
@@ -189,9 +189,9 @@ public class UnivariateGCDTest extends APolynomialTest {
     public void testRandom1() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(100, 1000); i++) {
-            lUnivariatePolynomialZ dividend = randomPoly(5, rnd);
-            lUnivariatePolynomialZ divider = randomPoly(0, rnd);
-            for (UnivariateGCD.PolynomialRemainders<lUnivariatePolynomialZ> prs : runAlgorithms(dividend, divider)) {
+            UnivariatePolynomialZ64 dividend = randomPoly(5, rnd);
+            UnivariatePolynomialZ64 divider = randomPoly(0, rnd);
+            for (UnivariateGCD.PolynomialRemainders<UnivariatePolynomialZ64> prs : runAlgorithms(dividend, divider)) {
                 assertEquals(0, prs.gcd().degree);
             }
         }
@@ -203,8 +203,8 @@ public class UnivariateGCDTest extends APolynomialTest {
         int overflows = 0;
         int nIterations = its(10000, 10000);
         for (int i = 0; i < nIterations; i++) {
-            lUnivariatePolynomialZ dividend = randomPoly(5, 5, rnd);
-            lUnivariatePolynomialZ divider = randomPoly(5, 5, rnd);
+            UnivariatePolynomialZ64 dividend = randomPoly(5, 5, rnd);
+            UnivariatePolynomialZ64 divider = randomPoly(5, 5, rnd);
             try {
                 for (UnivariateGCD.PolynomialRemainders prs :
                         runAlgorithms(dividend, divider,
@@ -225,15 +225,15 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void testRandom2a() throws Exception {
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(4, -1, -4, -3, 2, 4);
-        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(-4, 1, 4, 3, -2, -4);
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(4, -1, -4, -3, 2, 4);
+        UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(-4, 1, 4, 3, -2, -4);
         assertPolynomialRemainders(dividend, divider, UnivariateGCD.EuclidPseudoRemainders(dividend, divider, true));
     }
 
     @Test
     public void testRandom2b() throws Exception {
-        lUnivariatePolynomialZ dividend = lUnivariatePolynomialZ.create(0, 0, 4, 0, 4, 4);
-        lUnivariatePolynomialZ divider = lUnivariatePolynomialZ.create(0, 0, 4, 0, 4, 4);
+        UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(0, 0, 4, 0, 4, 4);
+        UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(0, 0, 4, 0, 4, 4);
         assertPolynomialRemainders(dividend, divider, UnivariateGCD.EuclidPseudoRemainders(dividend, divider, true));
     }
 
@@ -241,14 +241,14 @@ public class UnivariateGCDTest extends APolynomialTest {
     public void testRandom3() throws Exception {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(500, 3000); i++) {
-            lUnivariatePolynomialZ dividend = randomPoly(10, 500, rnd);
-            lUnivariatePolynomialZ divider = randomPoly(10, 500, rnd);
+            UnivariatePolynomialZ64 dividend = randomPoly(10, 500, rnd);
+            UnivariatePolynomialZ64 divider = randomPoly(10, 500, rnd);
             for (long prime : getModulusArray(9, 1, 40)) {
                 if (dividend.lc() % prime == 0 || divider.lc() % prime == 0)
                     continue;
-                lUnivariatePolynomialZp a = dividend.modulus(prime);
-                lUnivariatePolynomialZp b = divider.modulus(prime);
-                PolynomialRemainders<lUnivariatePolynomialZp> euclid = EuclidRemainders(a, b);
+                UnivariatePolynomialZp64 a = dividend.modulus(prime);
+                UnivariatePolynomialZp64 b = divider.modulus(prime);
+                PolynomialRemainders<UnivariatePolynomialZp64> euclid = EuclidRemainders(a, b);
                 assertPolynomialRemainders(a, b, euclid);
             }
         }
@@ -256,43 +256,43 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void test10() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(1740, 4044, 4371, 6905, 6201, 5209, 4483, 2225, 475);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(1102, 1349, 1847, 1759, 2517, 2607, 2731, 2145, 608);
-        assertEquals(lUnivariatePolynomialZ.create(29, 21, 32, 19), ModularGCD(a, b));
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(1740, 4044, 4371, 6905, 6201, 5209, 4483, 2225, 475);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(1102, 1349, 1847, 1759, 2517, 2607, 2731, 2145, 608);
+        assertEquals(UnivariatePolynomialZ64.create(29, 21, 32, 19), ModularGCD(a, b));
     }
 
     @Test
     public void test11() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(0, 1, 1, -6, 17, -18, 14);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(0, 4, -3, 0, 8, 0, 4);
-        assertEquals(lUnivariatePolynomialZ.create(0, 1, -2, 2), ModularGCD(a, b));
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(0, 1, 1, -6, 17, -18, 14);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(0, 4, -3, 0, 8, 0, 4);
+        assertEquals(UnivariatePolynomialZ64.create(0, 1, -2, 2), ModularGCD(a, b));
     }
 
     @Test
     public void test12() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(1, 2, 3, 3, 6, 9);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(1, 3, 6, 5, 3);
-        assertEquals(lUnivariatePolynomialZ.create(1, 2, 3), ModularGCD(a, b));
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(1, 2, 3, 3, 6, 9);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(1, 3, 6, 5, 3);
+        assertEquals(UnivariatePolynomialZ64.create(1, 2, 3), ModularGCD(a, b));
 
-        a = lUnivariatePolynomialZ.create(0, 0, 1, 2);
-        b = lUnivariatePolynomialZ.create(-1, 0, 4);
-        assertEquals(lUnivariatePolynomialZ.create(1, 2), ModularGCD(a, b));
+        a = UnivariatePolynomialZ64.create(0, 0, 1, 2);
+        b = UnivariatePolynomialZ64.create(-1, 0, 4);
+        assertEquals(UnivariatePolynomialZ64.create(1, 2), ModularGCD(a, b));
     }
 
     @Test
     public void test13() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(-1, 0, 4);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(-1, 0, 0, 0, 16);
-        lUnivariatePolynomialZ gcd = ModularGCD(a, b);
-        assertEquals(lUnivariatePolynomialZ.create(-1, 0, 4), gcd);
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(-1, 0, 4);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(-1, 0, 0, 0, 16);
+        UnivariatePolynomialZ64 gcd = ModularGCD(a, b);
+        assertEquals(UnivariatePolynomialZ64.create(-1, 0, 4), gcd);
     }
 
     @Test
     public void test14() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(-1, 0, 4);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(1, -5, 6);
-        lUnivariatePolynomialZ gcd = ModularGCD(a, b);
-        assertEquals(lUnivariatePolynomialZ.create(-1, 2), gcd);
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(-1, 0, 4);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(1, -5, 6);
+        UnivariatePolynomialZ64 gcd = ModularGCD(a, b);
+        assertEquals(UnivariatePolynomialZ64.create(-1, 2), gcd);
     }
 
     @Test
@@ -306,22 +306,22 @@ public class UnivariateGCDTest extends APolynomialTest {
             timings = new DescriptiveStatistics();
             for (int i = 0; i < its(5000, 10000); i++) {
                 try {
-                    lUnivariatePolynomialZ a = randomPoly(1 + rnd.nextInt(7), 100, rnd);
-                    lUnivariatePolynomialZ b = randomPoly(1 + rnd.nextInt(6), 100, rnd);
-                    lUnivariatePolynomialZ gcd = randomPoly(2 + rnd.nextInt(5), 30, rnd);
+                    UnivariatePolynomialZ64 a = randomPoly(1 + rnd.nextInt(7), 100, rnd);
+                    UnivariatePolynomialZ64 b = randomPoly(1 + rnd.nextInt(6), 100, rnd);
+                    UnivariatePolynomialZ64 gcd = randomPoly(2 + rnd.nextInt(5), 30, rnd);
                     a = a.multiply(gcd);
                     b = b.multiply(gcd);
 
                     long start = System.nanoTime();
-                    lUnivariatePolynomialZ mgcd = ModularGCD(a, b);
+                    UnivariatePolynomialZ64 mgcd = ModularGCD(a, b);
                     timings.addValue(System.nanoTime() - start);
 
                     assertFalse(mgcd.isConstant());
 
-                    lUnivariatePolynomialZ[] qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
+                    UnivariatePolynomialZ64[] qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(mgcd, gcd, true);
                     assertNotNull(qr);
                     assertTrue(qr[1].isZero());
-                    lUnivariatePolynomialZ[] qr1 = UnivariateDivision.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
+                    UnivariatePolynomialZ64[] qr1 = UnivariateDivision.pseudoDivideAndRemainderAdaptive(mgcd.clone(), gcd, false);
                     assertArrayEquals(qr, qr1);
                     if (!qr[0].isConstant()) ++larger;
 
@@ -337,7 +337,7 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void test15() throws Exception {
-        lUnivariatePolynomialZ poly = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        UnivariatePolynomialZ64 poly = UnivariatePolynomialZ64.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
         assertEquals(0, poly.evaluate(1));
         assertEquals(-3999, poly.evaluate(2));
         assertEquals(1881, poly.evaluate(-2));
@@ -346,7 +346,7 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void test16() throws Exception {
-        lUnivariatePolynomialZ poly = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        UnivariatePolynomialZ64 poly = UnivariatePolynomialZ64.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
         poly.multiply(MachineArithmetic.safePow(5, poly.degree));
 
         assertEquals(3045900, poly.evaluateAtRational(1, 5));
@@ -360,14 +360,14 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void test17() throws Exception {
-        lUnivariatePolynomialZ poly = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
+        UnivariatePolynomialZ64 poly = UnivariatePolynomialZ64.create(1, 2, 3, 4, 5, -1, -2, -3, -4, -5);
         poly.evaluateAtRational(1, 5);
     }
 
     @Test
     public void test18() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.zero();
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(8, -2 * 8, 8, 8 * 2);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.zero();
         assertEquals(a, EuclidSubresultantRemainders(a, b).gcd());
         assertEquals(a, EuclidSubresultantRemainders(b, a).gcd());
         assertEquals(a, EuclidPseudoRemainders(a, b, true).gcd());
@@ -380,8 +380,8 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void test19() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(8, -2 * 8, 8, 8 * 2);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(2);
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(8, -2 * 8, 8, 8 * 2);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(2);
         assertEquals(b, EuclidSubresultantRemainders(a, b).gcd());
         assertEquals(b, EuclidSubresultantRemainders(b, a).gcd());
         assertEquals(b, EuclidPseudoRemainders(a, b, true).gcd());
@@ -396,9 +396,9 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void test20() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(32);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(24);
-        lUnivariatePolynomialZ gcd = lUnivariatePolynomialZ.create(8);
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(32);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(24);
+        UnivariatePolynomialZ64 gcd = UnivariatePolynomialZ64.create(8);
         assertEquals(gcd, PolynomialGCD(a, b));
         assertEquals(gcd, EuclidSubresultantRemainders(a, b).gcd());
         assertEquals(gcd, EuclidPseudoRemainders(a, b, true).gcd());
@@ -478,15 +478,15 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void test21() throws Exception {
-        lUnivariatePolynomialZ a = lUnivariatePolynomialZ.create(8, 2, -1, -2, -7);
-        lUnivariatePolynomialZ b = lUnivariatePolynomialZ.create(1, -9, -5, -21);
+        UnivariatePolynomialZ64 a = UnivariatePolynomialZ64.create(8, 2, -1, -2, -7);
+        UnivariatePolynomialZ64 b = UnivariatePolynomialZ64.create(1, -9, -5, -21);
         assertTrue(ModularGCD(a, b).isOne());
     }
 
     @Test
     public void test22() throws Exception {
-        lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(1, 2, 3, 4, 3, 2, 1).modulus(25);
-        lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(1, 2, 3, 1, 3, 2, 1).modulus(25);
+        UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(1, 2, 3, 4, 3, 2, 1).modulus(25);
+        UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(1, 2, 3, 1, 3, 2, 1).modulus(25);
         assertExtendedGCD(a, b);
     }
 
@@ -552,7 +552,7 @@ public class UnivariateGCDTest extends APolynomialTest {
             for (BigInteger prime : getProbablePrimesArray(BigInteger.LONG_MAX_VALUE.shiftLeft(10), 10)) {
                 if (dividend.lc().mod(prime).isZero() || divider.lc().mod(prime).isZero())
                     continue;
-                IntegersModulo domain = new IntegersModulo(prime);
+                IntegersZp domain = new IntegersZp(prime);
                 UnivariatePolynomial<BigInteger> a = dividend.setDomain(domain);
                 UnivariatePolynomial<BigInteger> b = divider.setDomain(domain);
                 PolynomialRemainders<UnivariatePolynomial<BigInteger>> euclid = EuclidRemainders(a, b);
@@ -608,11 +608,11 @@ public class UnivariateGCDTest extends APolynomialTest {
         UnivariatePolynomial<BigInteger> a = UnivariatePolynomial.create(Domains.Z, new BigInteger("419563715"), new BigInteger("419566193"), new BigInteger("3612"), new BigInteger("3444"), new BigInteger("419563127"), new BigInteger("419564681"), new BigInteger("419565017"), new BigInteger("419564387"), new BigInteger("419563463"), new BigInteger("3192"), new BigInteger("419563841"), new BigInteger("419563001"));
         UnivariatePolynomial<BigInteger> b = UnivariatePolynomial.create(Domains.Z, new BigInteger("209783497"), new BigInteger("9989688"), new BigInteger("379608231"), new BigInteger("399587609"), new BigInteger("59938143"), new BigInteger("29969072"), new BigInteger("99896901"), new BigInteger("359628849"), new BigInteger("329659781"), new BigInteger("239752567"), new BigInteger("19979379"), new BigInteger("179814423"), new BigInteger("1"));
 
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         UnivariatePolynomial<BigInteger> aMod = a.setDomain(domain).monic(poly.lc());
         UnivariatePolynomial<BigInteger> bMod = b.setDomain(domain).monic();
         UnivariatePolynomial<BigInteger>[] xgcd = UnivariateGCD.ExtendedEuclidGCD(aMod, bMod);
-        lUnivariatePolynomialZp[] lxgcd = UnivariateGCD.ExtendedEuclidGCD(asLongPolyZp(aMod), asLongPolyZp(bMod));
+        UnivariatePolynomialZp64[] lxgcd = UnivariateGCD.ExtendedEuclidGCD(asLongPolyZp(aMod), asLongPolyZp(bMod));
         assertEquals(asLongPolyZp(xgcd[0]), lxgcd[0]);
         assertEquals(asLongPolyZp(xgcd[1]), lxgcd[1]);
         assertEquals(asLongPolyZp(xgcd[2]), lxgcd[2]);
@@ -642,17 +642,17 @@ public class UnivariateGCDTest extends APolynomialTest {
 
     @Test
     public void test26() throws Exception {
-        lUnivariatePolynomialZp a = lUnivariatePolynomialZ.create(1, 2, 3, 1, 2, 3, 4, 3, 2, 1).modulus(29);//.square
+        UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(1, 2, 3, 1, 2, 3, 4, 3, 2, 1).modulus(29);//.square
         // ().square().square().square().square().square().square().square().square().square();
-        lUnivariatePolynomialZp b = lUnivariatePolynomialZ.create(1, 2, 3, 1, 1, 2, 3, 3).modulus(29);
+        UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(1, 2, 3, 1, 1, 2, 3, 3).modulus(29);
         assertArrayEquals(ExtendedEuclidGCD(a, b), ExtendedHalfGCD(a, b));
     }
 
     @Test
     public void test27() throws Exception {
         // assert java heap
-        lUnivariatePolynomialZp a = RandomUnivariatePolynomials.randomMonicPoly(15_000, 19, getRandom());
-        lUnivariatePolynomialZp b = RandomUnivariatePolynomials.randomMonicPoly(15_000, 19, getRandom());
+        UnivariatePolynomialZp64 a = RandomUnivariatePolynomials.randomMonicPoly(15_000, 19, getRandom());
+        UnivariatePolynomialZp64 b = RandomUnivariatePolynomials.randomMonicPoly(15_000, 19, getRandom());
         assertExtendedGCD(ExtendedEuclidGCD(a, b), a, b);
     }
 
@@ -689,17 +689,17 @@ public class UnivariateGCDTest extends APolynomialTest {
             }
 
             long modulus = getModulusRandom(rndd.nextInt(2, 20));
-            lUnivariatePolynomialZp a = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
-            lUnivariatePolynomialZp b = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
+            UnivariatePolynomialZp64 a = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
+            UnivariatePolynomialZp64 b = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree), modulus, rnd).multiply(1 + rnd.nextLong());
             try {
                 long start;
 
                 start = System.nanoTime();
-                lUnivariatePolynomialZp expected = EuclidGCD(a, b).monic();
+                UnivariatePolynomialZp64 expected = EuclidGCD(a, b).monic();
                 euclid.addValue(System.nanoTime() - start);
 
                 start = System.nanoTime();
-                lUnivariatePolynomialZp actual = HalfGCD(a, b).monic();
+                UnivariatePolynomialZp64 actual = HalfGCD(a, b).monic();
                 half.addValue(System.nanoTime() - start);
 
                 assertEquals(expected, actual);
@@ -707,8 +707,8 @@ public class UnivariateGCDTest extends APolynomialTest {
                 if (!expected.isConstant())
                     ++nonTrivGCD;
             } catch (Throwable tr) {
-                System.out.println("lUnivariatePolynomialZ." + a.toStringForCopy() + ".modulus(" + modulus + ");");
-                System.out.println("lUnivariatePolynomialZ." + b.toStringForCopy() + ".modulus(" + modulus + ");");
+                System.out.println("UnivariatePolynomialZ64." + a.toStringForCopy() + ".modulus(" + modulus + ");");
+                System.out.println("UnivariatePolynomialZ64." + b.toStringForCopy() + ".modulus(" + modulus + ");");
                 throw tr;
             }
         }
@@ -750,19 +750,19 @@ public class UnivariateGCDTest extends APolynomialTest {
             }
 
             long modulus = getModulusRandom(rndd.nextInt(2, 20));
-            lUnivariatePolynomialZp a = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
+            UnivariatePolynomialZp64 a = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
                     modulus, rnd).multiply(1 + rnd.nextLong());
-            lUnivariatePolynomialZp b = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
+            UnivariatePolynomialZp64 b = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(minimalDegree, maximalDegree),
                     modulus, rnd).multiply(1 + rnd.nextLong());
             try {
                 long start;
 
                 start = System.nanoTime();
-                lUnivariatePolynomialZp[] expected = ExtendedEuclidGCD(a, b);
+                UnivariatePolynomialZp64[] expected = ExtendedEuclidGCD(a, b);
                 euclid.addValue(System.nanoTime() - start);
 
                 start = System.nanoTime();
-                lUnivariatePolynomialZp[] actual = ExtendedHalfGCD(a, b);
+                UnivariatePolynomialZp64[] actual = ExtendedHalfGCD(a, b);
                 half.addValue(System.nanoTime() - start);
 
                 assertArrayEquals(expected, actual);
@@ -770,8 +770,8 @@ public class UnivariateGCDTest extends APolynomialTest {
                 if (!expected[0].isConstant())
                     ++nonTrivGCD;
             } catch (Throwable tr) {
-                System.out.println("lUnivariatePolynomialZ." + a.toStringForCopy() + ".modulus(" + modulus + ");");
-                System.out.println("lUnivariatePolynomialZ." + b.toStringForCopy() + ".modulus(" + modulus + ");");
+                System.out.println("UnivariatePolynomialZ64." + a.toStringForCopy() + ".modulus(" + modulus + ");");
+                System.out.println("UnivariatePolynomialZ64." + b.toStringForCopy() + ".modulus(" + modulus + ");");
                 throw tr;
             }
         }

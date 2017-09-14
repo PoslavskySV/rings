@@ -11,7 +11,7 @@ import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.lInterpolation;
-import cc.r2.core.poly.multivar.lMultivariatePolynomialZp.lPrecomputedPowersHolder;
+import cc.r2.core.poly.multivar.MultivariatePolynomialZp64.lPrecomputedPowersHolder;
 import cc.r2.core.poly.univar.*;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.iterator.TIntObjectIterator;
@@ -202,8 +202,8 @@ public final class MultivariateGCD {
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly a, Poly b) {
         a.assertSameDomainWith(b);
-        if (a instanceof lMultivariatePolynomialZp)
-            return (Poly) ZippelGCD((lMultivariatePolynomialZp) a, (lMultivariatePolynomialZp) b);
+        if (a instanceof MultivariatePolynomialZp64)
+            return (Poly) ZippelGCD((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b);
         else if (a instanceof MultivariatePolynomial) {
             Domain domain = ((MultivariatePolynomial) a).domain;
             if (Domains.Z.equals(domain))
@@ -456,8 +456,8 @@ public final class MultivariateGCD {
     MultivariatePolynomial<uPoly> asOverUnivariate(Poly poly, int variable) {
         if (poly instanceof MultivariatePolynomial)
             return (MultivariatePolynomial<uPoly>) ((MultivariatePolynomial) poly).asOverUnivariateEliminate(variable);
-        else if (poly instanceof lMultivariatePolynomialZp)
-            return (MultivariatePolynomial<uPoly>) ((lMultivariatePolynomialZp) poly).asOverUnivariateEliminate(variable);
+        else if (poly instanceof MultivariatePolynomialZp64)
+            return (MultivariatePolynomial<uPoly>) ((MultivariatePolynomialZp64) poly).asOverUnivariateEliminate(variable);
         else
             throw new RuntimeException();
     }
@@ -611,7 +611,7 @@ public final class MultivariateGCD {
             BigInteger bPrime = BigInteger.valueOf(basePrime);
             assert basePrime != -1 : "long overflow";
 
-            IntegersModulo domain = new IntegersModulo(basePrime);
+            IntegersZp domain = new IntegersZp(basePrime);
             // reduce Z -> Zp
             MultivariatePolynomial<BigInteger>
                     abMod = a.setDomain(domain),
@@ -619,13 +619,13 @@ public final class MultivariateGCD {
             if (!abMod.sameSkeletonQ(a) || !bbMod.sameSkeletonQ(b))
                 continue;
 
-            lMultivariatePolynomialZp
+            MultivariatePolynomialZp64
                     aMod = asLongPolyZp(abMod),
                     bMod = asLongPolyZp(bbMod);
 
             // the base image
             // accumulator to update coefficients via Chineese remainding
-            lMultivariatePolynomialZp base = PolynomialGCD(aMod, bMod);
+            MultivariatePolynomialZp64 base = PolynomialGCD(aMod, bMod);
             long lLcGCD = lcGCD.mod(bPrime).longValueExact();
             // scale to correct l.c.
             base = base.monic(lLcGCD);
@@ -640,7 +640,7 @@ public final class MultivariateGCD {
             while (true) {
                 long prime = primesLoop.take();
                 bPrime = BigInteger.valueOf(prime);
-                domain = new IntegersModulo(bPrime);
+                domain = new IntegersZp(bPrime);
 
                 // reduce Z -> Zp
                 abMod = a.setDomain(domain);
@@ -651,10 +651,10 @@ public final class MultivariateGCD {
                 aMod = asLongPolyZp(abMod);
                 bMod = asLongPolyZp(bbMod);
 
-                lIntegersModulo lDomain = new lIntegersModulo(prime);
+                IntegersZp64 lDomain = new IntegersZp64(prime);
 
                 // calculate new GCD using previously calculated skeleton via sparse interpolation
-                lMultivariatePolynomialZp modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(lDomain), random);
+                MultivariatePolynomialZp64 modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(lDomain), random);
                 if (modularGCD == null) {
                     // interpolation failed => assumed form is wrong => start over
                     continue main_loop;
@@ -689,11 +689,11 @@ public final class MultivariateGCD {
                         lcGCD.mod(bPrime).longValueExact());
 
                 ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
-                PairIterator<lMonomialZp, lMultivariatePolynomialZp> iterator = new PairIterator<>(base, modularGCD);
+                PairIterator<MonomialZp64, MultivariatePolynomialZp64> iterator = new PairIterator<>(base, modularGCD);
                 while (iterator.hasNext()) {
                     iterator.advance();
 
-                    lMonomialZp
+                    MonomialZp64
                             baseTerm = iterator.aTerm,
                             imageTerm = iterator.bTerm;
 
@@ -714,7 +714,7 @@ public final class MultivariateGCD {
                     base.terms.add(baseTerm.setCoefficient(newCoeff));
                 }
 
-                base = base.setDomainUnsafe(new lIntegersModulo(newBasePrime));
+                base = base.setDomainUnsafe(new IntegersZp64(newBasePrime));
                 basePrime = newBasePrime;
 
                 // two trials didn't change the result, probably we are done
@@ -740,7 +740,7 @@ public final class MultivariateGCD {
             while (true) {
                 long prime = primesLoop.take();
                 bPrime = BigInteger.valueOf(prime);
-                domain = new IntegersModulo(bPrime);
+                domain = new IntegersZp(bPrime);
 
                 // reduce Z -> Zp
                 abMod = a.setDomain(domain);
@@ -751,10 +751,10 @@ public final class MultivariateGCD {
                 aMod = asLongPolyZp(abMod);
                 bMod = asLongPolyZp(bbMod);
 
-                lIntegersModulo lDomain = new lIntegersModulo(prime);
+                IntegersZp64 lDomain = new IntegersZp64(prime);
 
                 // calculate new GCD using previously calculated skeleton via sparse interpolation
-                lMultivariatePolynomialZp modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(lDomain), random);
+                MultivariatePolynomialZp64 modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(lDomain), random);
                 if (modularGCD == null) {
                     // interpolation failed => assumed form is wrong => start over
                     continue main_loop;
@@ -810,7 +810,7 @@ public final class MultivariateGCD {
                     bBase.terms.add(baseTerm.setCoefficient(newCoeff));
                 }
 
-                bBase = bBase.setDomainUnsafe(new IntegersModulo(newBasePrime));
+                bBase = bBase.setDomainUnsafe(new IntegersZp(newBasePrime));
                 bBasePrime = newBasePrime;
 
                 // two trials didn't change the result, probably we are done
@@ -831,13 +831,13 @@ public final class MultivariateGCD {
         }
     }
 
-    static lMultivariatePolynomialZp interpolateGCD(lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, lMultivariatePolynomialZp skeleton, RandomGenerator rnd) {
+    static MultivariatePolynomialZp64 interpolateGCD(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b, MultivariatePolynomialZp64 skeleton, RandomGenerator rnd) {
         a.assertSameDomainWith(b);
         a.assertSameDomainWith(skeleton);
 
         // a and b must be content-free
         assert contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant();
-//        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
+//        MultivariatePolynomialZp64 content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
 //        a = divideExact(a, content);
 //        b = divideExact(b, content);
 //        skeleton = divideSkeletonExact(skeleton, content);
@@ -845,7 +845,7 @@ public final class MultivariateGCD {
         lSparseInterpolation interpolation = createInterpolation(-1, a, b, skeleton, rnd);
         if (interpolation == null)
             return null;
-        lMultivariatePolynomialZp gcd = interpolation.evaluate();
+        MultivariatePolynomialZp64 gcd = interpolation.evaluate();
         if (gcd == null)
             return null;
 
@@ -963,20 +963,20 @@ public final class MultivariateGCD {
         }
 
         for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable)
-            if (a.domain instanceof IntegersModulo && a.coefficientDomainCardinality().isLong()) {
+            if (a.domain instanceof IntegersZp && a.coefficientDomainCardinality().isLong()) {
                 // use machine integers
                 @SuppressWarnings("unchecked")
-                MultivariatePolynomial<lUnivariatePolynomialZp>
+                MultivariatePolynomial<UnivariatePolynomialZp64>
                         ua = asOverUnivariate0((MultivariatePolynomial<BigInteger>) a, uVariable),
                         ub = asOverUnivariate0((MultivariatePolynomial<BigInteger>) b, uVariable);
 
-                lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
-                lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
+                UnivariatePolynomialZp64 aContent = ua.content(), bContent = ub.content();
+                UnivariatePolynomialZp64 contentGCD = ua.domain.gcd(aContent, bContent);
 
                 ua = ua.divideOrNull(aContent);
                 ub = ub.divideOrNull(bContent);
 
-                MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
+                MultivariatePolynomial<UnivariatePolynomialZp64> ugcd =
                         ModularGCDInGF0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
                 if (ugcd == null)
                     continue;
@@ -1007,11 +1007,11 @@ public final class MultivariateGCD {
         throw new RuntimeException();
     }
 
-    private static MultivariatePolynomial<lUnivariatePolynomialZp> asOverUnivariate0(MultivariatePolynomial<BigInteger> poly, int variable) {
-        lIntegersModulo domain = new lIntegersModulo(((IntegersModulo) poly.domain).modulus.longValueExact());
-        lUnivariatePolynomialZp factory = lUnivariatePolynomialZp.zero(domain);
-        UnivariatePolynomials<lUnivariatePolynomialZp> pDomain = new UnivariatePolynomials<>(factory);
-        MonomialSet<Monomial<lUnivariatePolynomialZp>> newData = new MonomialSet<>(poly.ordering);
+    private static MultivariatePolynomial<UnivariatePolynomialZp64> asOverUnivariate0(MultivariatePolynomial<BigInteger> poly, int variable) {
+        IntegersZp64 domain = new IntegersZp64(((IntegersZp) poly.domain).modulus.longValueExact());
+        UnivariatePolynomialZp64 factory = UnivariatePolynomialZp64.zero(domain);
+        UnivariatePolynomials<UnivariatePolynomialZp64> pDomain = new UnivariatePolynomials<>(factory);
+        MonomialSet<Monomial<UnivariatePolynomialZp64>> newData = new MonomialSet<>(poly.ordering);
         for (Monomial<BigInteger> e : poly) {
             add(newData, new Monomial<>(
                             e.without(variable).exponents,
@@ -1021,12 +1021,12 @@ public final class MultivariateGCD {
         return new MultivariatePolynomial<>(poly.nVariables - 1, pDomain, poly.ordering, newData);
     }
 
-    private static MultivariatePolynomial<BigInteger> asNormalMultivariate0(MultivariatePolynomial<lUnivariatePolynomialZp> poly, int variable) {
+    private static MultivariatePolynomial<BigInteger> asNormalMultivariate0(MultivariatePolynomial<UnivariatePolynomialZp64> poly, int variable) {
         Domain<BigInteger> domain = poly.domain.getZero().domain.asDomain();
         int nVariables = poly.nVariables + 1;
         MultivariatePolynomial<BigInteger> result = zero(nVariables, domain, poly.ordering);
-        for (Monomial<lUnivariatePolynomialZp> entry : poly.terms) {
-            lUnivariatePolynomialZp uPoly = entry.coefficient;
+        for (Monomial<UnivariatePolynomialZp64> entry : poly.terms) {
+            UnivariatePolynomialZp64 uPoly = entry.coefficient;
             int[] dv = ArraysUtil.insert(entry.exponents, variable, 0);
             for (int i = 0; i <= uPoly.degree(); ++i) {
                 if (uPoly.isZeroAt(i))
@@ -1047,9 +1047,9 @@ public final class MultivariateGCD {
      * @return GCD of two polynomials
      */
     @SuppressWarnings("ConstantConditions")
-    public static lMultivariatePolynomialZp ModularGCDInGF(
-            lMultivariatePolynomialZp a,
-            lMultivariatePolynomialZp b) {
+    public static MultivariatePolynomialZp64 ModularGCDInGF(
+            MultivariatePolynomialZp64 a,
+            MultivariatePolynomialZp64 b) {
         Util.ensureFiniteFieldDomain(a, b);
         if (a == b)
             return a.clone();
@@ -1059,18 +1059,18 @@ public final class MultivariateGCD {
         if (a.degree() < b.degree())
             return ModularGCDInGF(b, a);
 
-        GCDInput<lMonomialZp, lMultivariatePolynomialZp>
+        GCDInput<MonomialZp64, MultivariatePolynomialZp64>
                 gcdInput = preparedGCDInput(a, b, MultivariateGCD::ModularGCDInGF);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
         return lModularGCDInGF(gcdInput);
     }
 
-    private static lMultivariatePolynomialZp lModularGCDInGF(GCDInput<lMonomialZp, lMultivariatePolynomialZp> gcdInput) {
-        lMultivariatePolynomialZp a = gcdInput.aReduced;
-        lMultivariatePolynomialZp b = gcdInput.bReduced;
+    private static MultivariatePolynomialZp64 lModularGCDInGF(GCDInput<MonomialZp64, MultivariatePolynomialZp64> gcdInput) {
+        MultivariatePolynomialZp64 a = gcdInput.aReduced;
+        MultivariatePolynomialZp64 b = gcdInput.bReduced;
 
-        lMultivariatePolynomialZp pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDInGF);
+        MultivariatePolynomialZp64 pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCDInGF);
         if (!pContentGCD.isConstant()) {
             a = divideExact(a, pContentGCD);
             b = divideExact(b, pContentGCD);
@@ -1078,24 +1078,24 @@ public final class MultivariateGCD {
         }
 
         for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable) {
-            MultivariatePolynomial<lUnivariatePolynomialZp>
+            MultivariatePolynomial<UnivariatePolynomialZp64>
                     ua = a.asOverUnivariateEliminate(uVariable),
                     ub = b.asOverUnivariateEliminate(uVariable);
 
-            lUnivariatePolynomialZp aContent = ua.content(), bContent = ub.content();
-            lUnivariatePolynomialZp contentGCD = ua.domain.gcd(aContent, bContent);
+            UnivariatePolynomialZp64 aContent = ua.content(), bContent = ub.content();
+            UnivariatePolynomialZp64 contentGCD = ua.domain.gcd(aContent, bContent);
 
             ua = ua.divideOrNull(aContent);
             ub = ub.divideOrNull(bContent);
 
-            MultivariatePolynomial<lUnivariatePolynomialZp> ugcd =
+            MultivariatePolynomial<UnivariatePolynomialZp64> ugcd =
                     ModularGCDInGF0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
             if (ugcd == null)
                 // bad variable choosen
                 continue;
 
             ugcd = ugcd.multiply(contentGCD);
-            return gcdInput.restoreGCD(lMultivariatePolynomialZp.asNormalMultivariate(ugcd, uVariable));
+            return gcdInput.restoreGCD(MultivariatePolynomialZp64.asNormalMultivariate(ugcd, uVariable));
         }
         throw new RuntimeException();
     }
@@ -1146,7 +1146,7 @@ public final class MultivariateGCD {
                 if (basePrime.degree() >= uDegreeBound + MAX_OVER_ITERATIONS)
                     // fixme:
                     // probably this should not ever happen, but it happens (extremely rare, only for small
-                    // characteristics and independently on the particular value of MAX_OVER_ITERATIONS)
+                    // characteristic and independently on the particular value of MAX_OVER_ITERATIONS)
                     // the current workaround is to switch to another variable in R[x_N][x1....x_(N-1)]
                     // representation and try again
                     //
@@ -1264,7 +1264,7 @@ public final class MultivariateGCD {
 
         // a and b must be content-free
         assert contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant();
-//        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
+//        MultivariatePolynomialZp64 content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
 //        a = divideExact(a, content);
 //        b = divideExact(b, content);
 //        skeleton = divideSkeletonExact(skeleton, content);
@@ -1868,8 +1868,8 @@ public final class MultivariateGCD {
             int nUnknowns = globalSkeleton.size(), nUnknownScalings = -1;
             int raiseFactor = 0;
 
-            // choose dynamically, depending on the cardinality of cyclic group (equal to domain.characteristics)
-            int nTries = domain.characteristics().bitLength() < 10
+            // choose dynamically, depending on the cardinality of cyclic group (equal to domain.characteristic)
+            int nTries = domain.characteristic().bitLength() < 10
                     ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
                     : NUMBER_OF_UNDER_DETERMINED_RETRIES;
             for (int iTry = 0; iTry < nTries; ++iTry) {
@@ -2219,19 +2219,19 @@ public final class MultivariateGCD {
      * @return greatest common divisor of {@code a} and {@code b}
      */
     @SuppressWarnings("unchecked")
-    public static lMultivariatePolynomialZp BrownGCD(
-            lMultivariatePolynomialZp a,
-            lMultivariatePolynomialZp b) {
+    public static MultivariatePolynomialZp64 BrownGCD(
+            MultivariatePolynomialZp64 a,
+            MultivariatePolynomialZp64 b) {
 
         // prepare input and test for early termination
-        GCDInput<lMonomialZp, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b, MultivariateGCD::BrownGCD);
+        GCDInput<MonomialZp64, MultivariatePolynomialZp64> gcdInput = preparedGCDInput(a, b, MultivariateGCD::BrownGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
         if (gcdInput.finiteExtensionDegree > 1)
             return lModularGCDInGF(gcdInput);
 
-        lMultivariatePolynomialZp result = BrownGCD(
+        MultivariatePolynomialZp64 result = BrownGCD(
                 gcdInput.aReduced, gcdInput.bReduced, PrivateRandom.getRandom(),
                 gcdInput.lastPresentVariable, gcdInput.degreeBounds, gcdInput.evaluationStackLimit);
         if (result == null)
@@ -2249,53 +2249,53 @@ public final class MultivariateGCD {
      * @param evaluationStackLimit domain cardinality
      */
     @SuppressWarnings("unchecked")
-    private static lMultivariatePolynomialZp BrownGCD(
-            lMultivariatePolynomialZp a,
-            lMultivariatePolynomialZp b,
+    private static MultivariatePolynomialZp64 BrownGCD(
+            MultivariatePolynomialZp64 a,
+            MultivariatePolynomialZp64 b,
             RandomGenerator rnd,
             int variable,
             int[] degreeBounds,
             int evaluationStackLimit) {
 
         //check for trivial gcd
-        lMultivariatePolynomialZp trivialGCD = trivialGCD(a, b);
+        MultivariatePolynomialZp64 trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null)
             return trivialGCD;
 
-        lMultivariatePolynomialZp factory = a;
+        MultivariatePolynomialZp64 factory = a;
         int nVariables = factory.nVariables;
         if (variable == 0)
         // switch to univariate gcd
         {
-            lUnivariatePolynomialZp gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
+            UnivariatePolynomialZp64 gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return AMultivariatePolynomial.asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
 
-        PrimitiveInput<lMonomialZp, lMultivariatePolynomialZp, lUnivariatePolynomialZp> primitiveInput = makePrimitive(a, b, variable);
+        PrimitiveInput<MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64> primitiveInput = makePrimitive(a, b, variable);
         // primitive parts of a and b as Zp[x_k][x_1 ... x_{k-1}]
         a = primitiveInput.aPrimitive;
         b = primitiveInput.bPrimitive;
         // gcd of Zp[x_k] content and lc
-        lUnivariatePolynomialZp
+        UnivariatePolynomialZp64
                 contentGCD = primitiveInput.contentGCD,
                 lcGCD = primitiveInput.lcGCD;
 
         //check again for trivial gcd
         trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null) {
-            lMultivariatePolynomialZp poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+            MultivariatePolynomialZp64 poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
             return trivialGCD.multiply(poly);
         }
 
-        lIntegersModulo domain = factory.domain;
+        IntegersZp64 domain = factory.domain;
         //degree bound for the previous variable
         int prevVarExponent = degreeBounds[variable - 1];
         //dense interpolation
         lInterpolation interpolation = null;
         //previous interpolation (used to detect whether update doesn't change the result)
-        lMultivariatePolynomialZp previousInterpolation;
+        MultivariatePolynomialZp64 previousInterpolation;
         //store points that were already used in interpolation
         TLongHashSet evaluationStack = new TLongHashSet();
 
@@ -2318,7 +2318,7 @@ public final class MultivariateGCD {
                 continue;
 
             // evaluate a and b at variable = randomPoint
-            lMultivariatePolynomialZp
+            MultivariatePolynomialZp64
                     aVal = a.evaluate(variable, randomPoint),
                     bVal = b.evaluate(variable, randomPoint);
 
@@ -2329,7 +2329,7 @@ public final class MultivariateGCD {
                     continue main;
 
             // calculate gcd of the result by the recursive call
-            lMultivariatePolynomialZp cVal = BrownGCD(aVal, bVal, rnd, variable - 1, degreeBounds, evaluationStackLimit);
+            MultivariatePolynomialZp64 cVal = BrownGCD(aVal, bVal, rnd, variable - 1, degreeBounds, evaluationStackLimit);
             if (cVal == null)
                 //unlucky homomorphism
                 continue;
@@ -2365,7 +2365,7 @@ public final class MultivariateGCD {
             // do division test
             if (degreeBounds[variable] <= interpolation.numberOfPoints()
                     || previousInterpolation.equals(interpolation.getInterpolatingPolynomial())) {
-                lMultivariatePolynomialZp result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
+                MultivariatePolynomialZp64 result = doDivisionCheck(a, b, contentGCD, interpolation, variable);
                 if (result != null)
                     return result;
             }
@@ -2373,19 +2373,19 @@ public final class MultivariateGCD {
     }
 
     /** division test **/
-    private static lMultivariatePolynomialZp doDivisionCheck(
-            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b,
-            lUnivariatePolynomialZp contentGCD, lInterpolation interpolation, int variable) {
+    private static MultivariatePolynomialZp64 doDivisionCheck(
+            MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b,
+            UnivariatePolynomialZp64 contentGCD, lInterpolation interpolation, int variable) {
         if (interpolation == null)
             return null;
-        lMultivariatePolynomialZp interpolated =
-                lMultivariatePolynomialZp.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariateEliminate(variable).primitivePart(), variable);
+        MultivariatePolynomialZp64 interpolated =
+                MultivariatePolynomialZp64.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariateEliminate(variable).primitivePart(), variable);
         if (!dividesQ(a, interpolated) || !dividesQ(b, interpolated))
             return null;
 
         if (contentGCD == null)
             return interpolated;
-        lMultivariatePolynomialZp poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+        MultivariatePolynomialZp64 poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
         return interpolated.multiply(poly);
     }
 
@@ -2397,12 +2397,12 @@ public final class MultivariateGCD {
      * @return greatest common divisor of {@code a} and {@code b}
      */
     @SuppressWarnings("unchecked")
-    public static lMultivariatePolynomialZp ZippelGCD(
-            lMultivariatePolynomialZp a,
-            lMultivariatePolynomialZp b) {
+    public static MultivariatePolynomialZp64 ZippelGCD(
+            MultivariatePolynomialZp64 a,
+            MultivariatePolynomialZp64 b) {
 
         // prepare input and test for early termination
-        GCDInput<lMonomialZp, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
+        GCDInput<MonomialZp64, MultivariatePolynomialZp64> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -2414,11 +2414,11 @@ public final class MultivariateGCD {
 
         // content in the main variable => avoid raise condition in LINZIP!
         // see Example 4 in "Algorithms for the non-monic case of the sparse modular GCD algorithm"
-        lMultivariatePolynomialZp content = contentGCD(a, b, 0, MultivariateGCD::ZippelGCD);
+        MultivariatePolynomialZp64 content = contentGCD(a, b, 0, MultivariateGCD::ZippelGCD);
         a = divideExact(a, content);
         b = divideExact(b, content);
 
-        lMultivariatePolynomialZp result = ZippelGCD(a, b, PrivateRandom.getRandom(),
+        MultivariatePolynomialZp64 result = ZippelGCD(a, b, PrivateRandom.getRandom(),
                 gcdInput.lastPresentVariable, gcdInput.degreeBounds, gcdInput.evaluationStackLimit);
         if (result == null)
             // ground fill is too small for modular algorithm
@@ -2429,55 +2429,55 @@ public final class MultivariateGCD {
     }
 
     @SuppressWarnings("unchecked")
-    private static lMultivariatePolynomialZp ZippelGCD(
-            lMultivariatePolynomialZp a,
-            lMultivariatePolynomialZp b,
+    private static MultivariatePolynomialZp64 ZippelGCD(
+            MultivariatePolynomialZp64 a,
+            MultivariatePolynomialZp64 b,
             RandomGenerator rnd,
             int variable,
             int[] degreeBounds,
             int evaluationStackLimit) {
 
         //check for trivial gcd
-        lMultivariatePolynomialZp trivialGCD = trivialGCD(a, b);
+        MultivariatePolynomialZp64 trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null)
             return trivialGCD;
 
-        lMultivariatePolynomialZp factory = a;
+        MultivariatePolynomialZp64 factory = a;
         int nVariables = factory.nVariables;
         if (variable == 0)
         // switch to univariate gcd
         {
-            lUnivariatePolynomialZp gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
+            UnivariatePolynomialZp64 gcd = UnivariateGCD.PolynomialGCD(a.asUnivariate(), b.asUnivariate());
             if (gcd.degree() == 0)
                 return factory.createOne();
             return AMultivariatePolynomial.asMultivariate(gcd, nVariables, variable, factory.ordering);
         }
 
-//        lMultivariatePolynomialZp content = ZippelContentGCD(a, b, variable);
+//        MultivariatePolynomialZp64 content = ZippelContentGCD(a, b, variable);
 //        a = divideExact(a, content);
 //        b = divideExact(b, content);
 
         PrimitiveInput<
-                lMonomialZp,
-                lMultivariatePolynomialZp,
-                lUnivariatePolynomialZp>
+                MonomialZp64,
+                MultivariatePolynomialZp64,
+                UnivariatePolynomialZp64>
                 primitiveInput = makePrimitive(a, b, variable);
         // primitive parts of a and b as Zp[x_k][x_1 ... x_{k-1}]
         a = primitiveInput.aPrimitive;
         b = primitiveInput.bPrimitive;
         // gcd of Zp[x_k] content and lc
-        lUnivariatePolynomialZp
+        UnivariatePolynomialZp64
                 contentGCD = primitiveInput.contentGCD,
                 lcGCD = primitiveInput.lcGCD;
 
         //check again for trivial gcd
         trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null) {
-            lMultivariatePolynomialZp poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
+            MultivariatePolynomialZp64 poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
             return trivialGCD.multiply(poly);
         }
 
-        lIntegersModulo domain = factory.domain;
+        IntegersZp64 domain = factory.domain;
         //store points that were already used in interpolation
         TLongHashSet globalEvaluationStack = new TLongHashSet();
 
@@ -2502,7 +2502,7 @@ public final class MultivariateGCD {
 
             // evaluate a and b at variable = randomPoint
             // calculate gcd of the result by the recursive call
-            lMultivariatePolynomialZp
+            MultivariatePolynomialZp64
                     aVal = a.evaluate(variable, seedPoint),
                     bVal = b.evaluate(variable, seedPoint);
 
@@ -2512,7 +2512,7 @@ public final class MultivariateGCD {
                 if (aDegrees[i] != aValDegrees[i] || bDegrees[i] != bValDegrees[i])
                     continue main;
 
-            lMultivariatePolynomialZp cVal = ZippelGCD(aVal, bVal, rnd, variable - 1, tmpDegreeBounds, evaluationStackLimit);
+            MultivariatePolynomialZp64 cVal = ZippelGCD(aVal, bVal, rnd, variable - 1, tmpDegreeBounds, evaluationStackLimit);
             if (cVal == null)
                 //unlucky homomorphism
                 continue;
@@ -2538,7 +2538,7 @@ public final class MultivariateGCD {
             // we are applying dense interpolation for univariate skeleton coefficients
             lInterpolation denseInterpolation = new lInterpolation(variable, seedPoint, cVal);
             //previous interpolation (used to detect whether update doesn't change the result)
-            lMultivariatePolynomialZp previousInterpolation;
+            MultivariatePolynomialZp64 previousInterpolation;
             //local evaluation stack for points that are calculated via sparse interpolation (but not gcd evaluation) -> always same skeleton
             TLongHashSet localEvaluationStack = new TLongHashSet(globalEvaluationStack);
             while (true) {
@@ -2579,7 +2579,7 @@ public final class MultivariateGCD {
                 // do division test
                 if (tmpDegreeBounds[variable] <= denseInterpolation.numberOfPoints()
                         || previousInterpolation.equals(denseInterpolation.getInterpolatingPolynomial())) {
-                    lMultivariatePolynomialZp result = doDivisionCheck(a, b, contentGCD, denseInterpolation, variable);
+                    MultivariatePolynomialZp64 result = doDivisionCheck(a, b, contentGCD, denseInterpolation, variable);
                     if (result != null)
                         return result;
                 }
@@ -2588,9 +2588,9 @@ public final class MultivariateGCD {
     }
 
     static lSparseInterpolation createInterpolation(int variable,
-                                                    lMultivariatePolynomialZp a,
-                                                    lMultivariatePolynomialZp b,
-                                                    lMultivariatePolynomialZp skeleton,
+                                                    MultivariatePolynomialZp64 a,
+                                                    MultivariatePolynomialZp64 b,
+                                                    MultivariatePolynomialZp64 skeleton,
                                                     RandomGenerator rnd) {
         skeleton = skeleton.clone().setAllCoefficientsToUnit();
         if (skeleton.size() == 1)
@@ -2599,10 +2599,10 @@ public final class MultivariateGCD {
         boolean monic = a.coefficientOf(0, a.degree(0)).isConstant() && b.coefficientOf(0, a.degree(0)).isConstant();
 
         Set<DegreeVector> globalSkeleton = skeleton.getSkeleton();
-        TIntObjectHashMap<lMultivariatePolynomialZp> univarSkeleton = getSkeleton(skeleton);
+        TIntObjectHashMap<MultivariatePolynomialZp64> univarSkeleton = getSkeleton(skeleton);
         int[] sparseUnivarDegrees = univarSkeleton.keys();
 
-        lIntegersModulo domain = a.domain;
+        IntegersZp64 domain = a.domain;
 
         int lastVariable = variable == -1 ? a.nVariables - 1 : variable;
         int[] evaluationVariables = ArraysUtil.sequence(1, lastVariable + 1);//variable inclusive
@@ -2623,7 +2623,7 @@ public final class MultivariateGCD {
             powers = new lPrecomputedPowersHolder(a.nVariables, evaluationVariables, evaluationPoint, domain);
             int[] raiseFactors = ArraysUtil.arrayOf(1, evaluationVariables.length);
 
-            for (lMultivariatePolynomialZp p : Arrays.asList(a, b, skeleton))
+            for (MultivariatePolynomialZp64 p : Arrays.asList(a, b, skeleton))
                 if (!p.getSkeleton(0).equals(p.evaluate(powers, evaluationVariables, raiseFactors).getSkeleton())) {
                     ++fails;
                     continue search_for_good_evaluation_point;
@@ -2632,9 +2632,9 @@ public final class MultivariateGCD {
         }
 
         int requiredNumberOfEvaluations = -1, monicScalingExponent = -1;
-        for (TIntObjectIterator<lMultivariatePolynomialZp> it = univarSkeleton.iterator(); it.hasNext(); ) {
+        for (TIntObjectIterator<MultivariatePolynomialZp64> it = univarSkeleton.iterator(); it.hasNext(); ) {
             it.advance();
-            lMultivariatePolynomialZp v = it.value();
+            MultivariatePolynomialZp64 v = it.value();
             if (v.size() > requiredNumberOfEvaluations)
                 requiredNumberOfEvaluations = v.size();
             if (v.size() == 1)
@@ -2658,15 +2658,15 @@ public final class MultivariateGCD {
      * view multivariate polynomial as a univariate in Zp[x_1, ... x_N][x_0] and
      * return the map (x_0)^exponent -> coefficient in Zp[x_1, ... x_N]
      */
-    private static TIntObjectHashMap<lMultivariatePolynomialZp> getSkeleton(lMultivariatePolynomialZp poly) {
-        TIntObjectHashMap<lMultivariatePolynomialZp> skeleton = new TIntObjectHashMap<>();
-        for (lMonomialZp term : poly.terms) {
-            lMonomialZp newDV = term.setZero(0);
-            lMultivariatePolynomialZp coeff = skeleton.get(term.exponents[0]);
+    private static TIntObjectHashMap<MultivariatePolynomialZp64> getSkeleton(MultivariatePolynomialZp64 poly) {
+        TIntObjectHashMap<MultivariatePolynomialZp64> skeleton = new TIntObjectHashMap<>();
+        for (MonomialZp64 term : poly.terms) {
+            MonomialZp64 newDV = term.setZero(0);
+            MultivariatePolynomialZp64 coeff = skeleton.get(term.exponents[0]);
             if (coeff != null)
                 coeff.add(newDV);
             else
-                skeleton.put(term.exponents[0], lMultivariatePolynomialZp.create(poly.nVariables, poly.domain, poly.ordering, newDV));
+                skeleton.put(term.exponents[0], MultivariatePolynomialZp64.create(poly.nVariables, poly.domain, poly.ordering, newDV));
         }
         return skeleton;
     }
@@ -2677,7 +2677,7 @@ public final class MultivariateGCD {
          *
          * @return gcd
          */
-        lMultivariatePolynomialZp evaluate();
+        MultivariatePolynomialZp64 evaluate();
 
         /**
          * Returns interpolating gcd at specified point
@@ -2685,38 +2685,38 @@ public final class MultivariateGCD {
          * @param newPoint evaluation point
          * @return gcd at {@code variable = newPoint}
          */
-        lMultivariatePolynomialZp evaluate(long newPoint);
+        MultivariatePolynomialZp64 evaluate(long newPoint);
     }
 
     static final class lTrivialSparseInterpolation implements lSparseInterpolation {
-        final lMultivariatePolynomialZp val;
+        final MultivariatePolynomialZp64 val;
 
-        lTrivialSparseInterpolation(lMultivariatePolynomialZp val) {
+        lTrivialSparseInterpolation(MultivariatePolynomialZp64 val) {
             this.val = val;
         }
 
         @Override
-        public lMultivariatePolynomialZp evaluate() {
+        public MultivariatePolynomialZp64 evaluate() {
             return val;
         }
 
         @Override
-        public lMultivariatePolynomialZp evaluate(long newPoint) {
+        public MultivariatePolynomialZp64 evaluate(long newPoint) {
             return val;
         }
     }
 
     static abstract class lASparseInterpolation implements lSparseInterpolation {
         /** the domain */
-        final lIntegersModulo domain;
+        final IntegersZp64 domain;
         /** variable which we are evaluating */
         final int variable;
         /** initial polynomials */
-        final lMultivariatePolynomialZp a, b;
+        final MultivariatePolynomialZp64 a, b;
         /** global skeleton of the result */
         final Set<DegreeVector> globalSkeleton;
         /** skeleton of each of the coefficients of polynomial viewed as Zp[x_1,...,x_N][x_0] */
-        final TIntObjectHashMap<lMultivariatePolynomialZp> univarSkeleton;
+        final TIntObjectHashMap<MultivariatePolynomialZp64> univarSkeleton;
         /** univariate degrees of {@code univarSkeleton} with respect to x_0 */
         final int[] sparseUnivarDegrees;
         /** variables that will be substituted with random values for sparse interpolation, i.e. {@code [1, 2 ... variable] } */
@@ -2732,10 +2732,10 @@ public final class MultivariateGCD {
         /** random */
         final RandomGenerator rnd;
 
-        lASparseInterpolation(lIntegersModulo domain, int variable,
-                              lMultivariatePolynomialZp a, lMultivariatePolynomialZp b,
+        lASparseInterpolation(IntegersZp64 domain, int variable,
+                              MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b,
                               Set<DegreeVector> globalSkeleton,
-                              TIntObjectHashMap<lMultivariatePolynomialZp> univarSkeleton,
+                              TIntObjectHashMap<MultivariatePolynomialZp64> univarSkeleton,
                               int[] sparseUnivarDegrees, int[] evaluationVariables,
                               long[] evaluationPoint,
                               lPrecomputedPowersHolder powers, RandomGenerator rnd) {
@@ -2753,10 +2753,10 @@ public final class MultivariateGCD {
         }
 
         @Override
-        public final lMultivariatePolynomialZp evaluate(long newPoint) {
+        public final MultivariatePolynomialZp64 evaluate(long newPoint) {
             // constant is constant
             if (globalSkeleton.size() == 1)
-                return a.create(((lMonomialZp) globalSkeleton.iterator().next()).setCoefficient(1));
+                return a.create(((MonomialZp64) globalSkeleton.iterator().next()).setCoefficient(1));
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
             powers.set(evaluationVariables[evaluationVariables.length - 1], newPoint);
@@ -2765,16 +2765,16 @@ public final class MultivariateGCD {
     }
 
     static final class lLinZipInterpolation extends lASparseInterpolation {
-        lLinZipInterpolation(lIntegersModulo domain, int variable, lMultivariatePolynomialZp a,
-                             lMultivariatePolynomialZp b, Set<DegreeVector> globalSkeleton,
-                             TIntObjectHashMap<lMultivariatePolynomialZp> univarSkeleton, int[] sparseUnivarDegrees,
+        lLinZipInterpolation(IntegersZp64 domain, int variable, MultivariatePolynomialZp64 a,
+                             MultivariatePolynomialZp64 b, Set<DegreeVector> globalSkeleton,
+                             TIntObjectHashMap<MultivariatePolynomialZp64> univarSkeleton, int[] sparseUnivarDegrees,
                              int[] evaluationVariables, long[] evaluationPoint, lPrecomputedPowersHolder powers,
                              RandomGenerator rnd) {
             super(domain, variable, a, b, globalSkeleton, univarSkeleton, sparseUnivarDegrees, evaluationVariables, evaluationPoint, powers, rnd);
         }
 
         @Override
-        public lMultivariatePolynomialZp evaluate() {
+        public MultivariatePolynomialZp64 evaluate() {
             @SuppressWarnings("unchecked")
             lLinZipSystem[] systems = new lLinZipSystem[sparseUnivarDegrees.length];
             for (int i = 0; i < sparseUnivarDegrees.length; i++)
@@ -2801,7 +2801,7 @@ public final class MultivariateGCD {
                     // sequential powers of evaluation point
                     Arrays.fill(raiseFactors, 0, variable == -1 ? raiseFactors.length : raiseFactors.length - 1, raiseFactor);
                     // evaluate a and b to univariate and calculate gcd
-                    lUnivariatePolynomialZp
+                    UnivariatePolynomialZp64
                             aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                             bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                             gcdUnivar = UnivariateGCD.PolynomialGCD(aUnivar, bUnivar);
@@ -2840,7 +2840,7 @@ public final class MultivariateGCD {
                     previousFreeVars = freeVars;
                 }
 
-                lMultivariatePolynomialZp result = a.createZero();
+                MultivariatePolynomialZp64 result = a.createZero();
                 SystemInfo info = solveLinZip(a, systems, nUnknownScalings, result);
                 if (info == SystemInfo.UnderDetermined)
                     //try to generate more equations
@@ -2858,10 +2858,10 @@ public final class MultivariateGCD {
         }
     }
 
-    private static SystemInfo solveLinZip(lMultivariatePolynomialZp factory, lLinZipSystem[] subSystems, int nUnknownScalings, lMultivariatePolynomialZp destination) {
-        ArrayList<lMonomialZp> unknowns = new ArrayList<>();
+    private static SystemInfo solveLinZip(MultivariatePolynomialZp64 factory, lLinZipSystem[] subSystems, int nUnknownScalings, MultivariatePolynomialZp64 destination) {
+        ArrayList<MonomialZp64> unknowns = new ArrayList<>();
         for (lLinZipSystem system : subSystems)
-            for (lMonomialZp degreeVector : system.skeleton)
+            for (MonomialZp64 degreeVector : system.skeleton)
                 unknowns.add(degreeVector.set(0, system.univarDegree));
 
         int nUnknownsMonomials = unknowns.size();
@@ -2869,7 +2869,7 @@ public final class MultivariateGCD {
         ArrayList<long[]> lhsGlobal = new ArrayList<>();
         TLongArrayList rhsGlobal = new TLongArrayList();
         int offset = 0;
-        lIntegersModulo domain = factory.domain;
+        IntegersZp64 domain = factory.domain;
         for (lLinZipSystem system : subSystems) {
             for (int j = 0; j < system.matrix.size(); j++) {
                 long[] row = new long[nUnknownsTotal];
@@ -2889,7 +2889,7 @@ public final class MultivariateGCD {
         SystemInfo info = LinearAlgebra.solve(domain, lhsGlobal, rhsGlobal, solution);
         if (info == SystemInfo.Consistent) {
             @SuppressWarnings("unchecked")
-            lMonomialZp[] terms = new lMonomialZp[unknowns.size()];
+            MonomialZp64[] terms = new MonomialZp64[unknowns.size()];
             for (int i = 0; i < terms.length; i++)
                 terms[i] = unknowns.get(i).setCoefficient(solution[i]);
             destination.add(terms);
@@ -2904,8 +2904,8 @@ public final class MultivariateGCD {
         /** univar exponent with monomial factor that can be used for scaling */
         final int monicScalingExponent;
 
-        lMonicInterpolation(lIntegersModulo domain, int variable, lMultivariatePolynomialZp a, lMultivariatePolynomialZp b,
-                            Set<DegreeVector> globalSkeleton, TIntObjectHashMap<lMultivariatePolynomialZp> univarSkeleton,
+        lMonicInterpolation(IntegersZp64 domain, int variable, MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b,
+                            Set<DegreeVector> globalSkeleton, TIntObjectHashMap<MultivariatePolynomialZp64> univarSkeleton,
                             int[] sparseUnivarDegrees, int[] evaluationVariables, long[] evaluationPoint,
                             lPrecomputedPowersHolder powers, RandomGenerator rnd, int requiredNumberOfEvaluations,
                             int monicScalingExponent) {
@@ -2915,7 +2915,7 @@ public final class MultivariateGCD {
         }
 
         @Override
-        public lMultivariatePolynomialZp evaluate() {
+        public MultivariatePolynomialZp64 evaluate() {
             @SuppressWarnings("unchecked")
             lVandermondeSystem[] systems = new lVandermondeSystem[sparseUnivarDegrees.length];
             for (int i = 0; i < sparseUnivarDegrees.length; i++)
@@ -2929,7 +2929,7 @@ public final class MultivariateGCD {
                 // sequential powers of evaluation point
                 Arrays.fill(raiseFactors, 0, variable == -1 ? raiseFactors.length : raiseFactors.length - 1, i + 1);
                 // evaluate a and b to univariate and calculate gcd
-                lUnivariatePolynomialZp
+                UnivariatePolynomialZp64
                         aUnivar = a.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         bUnivar = b.evaluate(powers, evaluationVariables, raiseFactors).asUnivariate(),
                         gcdUnivar = UnivariateGCD.PolynomialGCD(aUnivar, bUnivar);
@@ -2979,11 +2979,11 @@ public final class MultivariateGCD {
                     return null;
             }
 
-            lMultivariatePolynomialZp gcdVal = a.createZero();
+            MultivariatePolynomialZp64 gcdVal = a.createZero();
             for (lVandermondeSystem system : systems) {
                 assert monicScalingExponent == -1 || system.univarDegree != monicScalingExponent || system.solution[0] == 1;
                 for (int i = 0; i < system.skeleton.length; i++) {
-                    lMonomialZp degreeVector = system.skeleton[i].set(0, system.univarDegree);
+                    MonomialZp64 degreeVector = system.skeleton[i].set(0, system.univarDegree);
                     long value = system.solution[i];
                     gcdVal.add(degreeVector.setCoefficient(value));
                 }
@@ -2996,9 +2996,9 @@ public final class MultivariateGCD {
     private static abstract class lLinearSystem {
         final int univarDegree;
         /** the domain */
-        final lIntegersModulo domain;
+        final IntegersZp64 domain;
         /** the skeleton */
-        final lMonomialZp[] skeleton;
+        final MonomialZp64[] skeleton;
         /** the lhs matrix */
         final ArrayList<long[]> matrix;
         /** the rhs values */
@@ -3009,11 +3009,11 @@ public final class MultivariateGCD {
         final int nVars;
 
         @SuppressWarnings("unchecked")
-        lLinearSystem(int univarDegree, lMultivariatePolynomialZp skeleton, lPrecomputedPowersHolder powers, int nVars) {
+        lLinearSystem(int univarDegree, MultivariatePolynomialZp64 skeleton, lPrecomputedPowersHolder powers, int nVars) {
             this.univarDegree = univarDegree;
             this.domain = skeleton.domain;
             //todo refactor generics
-            this.skeleton = skeleton.getSkeleton().toArray(new lMonomialZp[skeleton.size()]);
+            this.skeleton = skeleton.getSkeleton().toArray(new MonomialZp64[skeleton.size()]);
             this.powers = powers;
             this.nVars = nVars;
             this.matrix = new ArrayList<>();
@@ -3035,7 +3035,7 @@ public final class MultivariateGCD {
 
     /** Vandermonde system builder */
     private static final class lLinZipSystem extends lLinearSystem {
-        public lLinZipSystem(int univarDegree, lMultivariatePolynomialZp skeleton, lPrecomputedPowersHolder powers, int nVars) {
+        public lLinZipSystem(int univarDegree, MultivariatePolynomialZp64 skeleton, lPrecomputedPowersHolder powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }
 
@@ -3058,7 +3058,7 @@ public final class MultivariateGCD {
 
     /** Vandermonde system builder */
     private static final class lVandermondeSystem extends lLinearSystem {
-        public lVandermondeSystem(int univarDegree, lMultivariatePolynomialZp skeleton, lPrecomputedPowersHolder powers, int nVars) {
+        public lVandermondeSystem(int univarDegree, MultivariatePolynomialZp64 skeleton, lPrecomputedPowersHolder powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }
 
@@ -3092,10 +3092,10 @@ public final class MultivariateGCD {
         }
     }
 
-    private static long evaluateExceptFirst(lIntegersModulo domain,
+    private static long evaluateExceptFirst(IntegersZp64 domain,
                                             lPrecomputedPowersHolder powers,
                                             long coefficient,
-                                            lMonomialZp skeleton,
+                                            MonomialZp64 skeleton,
                                             int raiseFactor,
                                             int nVars) {
         long tmp = coefficient;
@@ -3115,12 +3115,12 @@ public final class MultivariateGCD {
      * @return greatest common divisor of {@code a} and {@code b}
      */
     @SuppressWarnings("unchecked")
-    public static lMultivariatePolynomialZp EZGCD(
-            lMultivariatePolynomialZp a,
-            lMultivariatePolynomialZp b) {
+    public static MultivariatePolynomialZp64 EZGCD(
+            MultivariatePolynomialZp64 a,
+            MultivariatePolynomialZp64 b) {
 
         // prepare input and test for early termination
-        GCDInput<lMonomialZp, lMultivariatePolynomialZp> gcdInput = preparedGCDInput(a, b, MultivariateGCD::EZGCD);
+        GCDInput<MonomialZp64, MultivariatePolynomialZp64> gcdInput = preparedGCDInput(a, b, MultivariateGCD::EZGCD);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
@@ -3128,21 +3128,21 @@ public final class MultivariateGCD {
         b = gcdInput.bReduced;
 
         // remove content in each variable
-        lMultivariatePolynomialZp content = a.createOne();
+        MultivariatePolynomialZp64 content = a.createOne();
         for (int i = 0; i < a.nVariables; ++i) {
             if (a.degree(i) == 0 || b.degree(i) == 0)
                 continue;
-            lMultivariatePolynomialZp tmpContent = contentGCD(a, b, i, MultivariateGCD::EZGCD);
+            MultivariatePolynomialZp64 tmpContent = contentGCD(a, b, i, MultivariateGCD::EZGCD);
             a = divideExact(a, tmpContent);
             b = divideExact(b, tmpContent);
             content = content.multiply(tmpContent);
         }
 
         // one more reduction; removing of content may shuffle required variables order
-        GCDInput<lMonomialZp, lMultivariatePolynomialZp> gcdInput2 = preparedGCDInput(a, b, MultivariateGCD::EZGCD);
+        GCDInput<MonomialZp64, MultivariatePolynomialZp64> gcdInput2 = preparedGCDInput(a, b, MultivariateGCD::EZGCD);
         a = gcdInput2.aReduced; b = gcdInput2.bReduced;
 
-        lMultivariatePolynomialZp result = gcdInput2.earlyGCD != null
+        MultivariatePolynomialZp64 result = gcdInput2.earlyGCD != null
                 ? gcdInput2.earlyGCD
                 : gcdInput2.restoreGCD(EZGCD0(a, b, gcdInput2.lastPresentVariable + 1, PrivateRandom.getRandom()));
 
@@ -3151,8 +3151,8 @@ public final class MultivariateGCD {
     }
 
     /** actual EZ-GCD implementation */
-    private static lMultivariatePolynomialZp EZGCD0(
-            lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, int nUsedVariables, RandomGenerator rnd) {
+    private static MultivariatePolynomialZp64 EZGCD0(
+            MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b, int nUsedVariables, RandomGenerator rnd) {
 
         // degree of univariate gcd
         int ugcdDegree = Integer.MAX_VALUE;
@@ -3173,7 +3173,7 @@ public final class MultivariateGCD {
                     uaDegree = a.degree(0),
                     ubDegree = b.degree(0);
 
-            lUnivariatePolynomialZp
+            UnivariatePolynomialZp64
                     ua = a.evaluateAtZeroAllExcept(0),
                     ub = b.evaluateAtZeroAllExcept(0);
 
@@ -3181,7 +3181,7 @@ public final class MultivariateGCD {
             assert ub.degree() == ubDegree;
 
             // gcd of a mod I and b mod I (univariate)
-            lUnivariatePolynomialZp ugcd = UnivariateGCD.PolynomialGCD(ua, ub);
+            UnivariatePolynomialZp64 ugcd = UnivariateGCD.PolynomialGCD(ua, ub);
 
             if (ugcd.degree() == 0) {
                 // coprime polynomials
@@ -3209,13 +3209,13 @@ public final class MultivariateGCD {
             }
 
             // base polynomial to lift (either a or b)
-            lMultivariatePolynomialZp base = null;
+            MultivariatePolynomialZp64 base = null;
             // a cofactor with gcd to lift, i.e. base = ugcd * uCoFactor mod I
-            lUnivariatePolynomialZp uCoFactor = null;
-            lMultivariatePolynomialZp coFactorLC = null;
+            UnivariatePolynomialZp64 uCoFactor = null;
+            MultivariatePolynomialZp64 coFactorLC = null;
 
             // deg(b) < deg(a), so it is better to try to lift b
-            lUnivariatePolynomialZp ubCoFactor = UnivariateDivision.quotient(ub, ugcd, true);
+            UnivariatePolynomialZp64 ubCoFactor = UnivariateDivision.quotient(ub, ugcd, true);
             if (UnivariateGCD.PolynomialGCD(ugcd, ubCoFactor).isConstant()) {
                 // b splits into coprime factors
                 base = b;
@@ -3225,7 +3225,7 @@ public final class MultivariateGCD {
 
             if (base == null) {
                 // b does not split into coprime factors => try a
-                lUnivariatePolynomialZp uaCoFactor = UnivariateDivision.quotient(ua, ugcd, true);
+                UnivariatePolynomialZp64 uaCoFactor = UnivariateDivision.quotient(ua, ugcd, true);
                 if (UnivariateGCD.PolynomialGCD(ugcd, uaCoFactor).isConstant()) {
                     base = a;
                     uCoFactor = uaCoFactor;
@@ -3236,13 +3236,13 @@ public final class MultivariateGCD {
             if (base == null) {
                 // neither a nor b does not split into coprime factors => square free decomposition required
 
-                lMultivariatePolynomialZp
+                MultivariatePolynomialZp64
                         bRepeatedFactor = EZGCD(b, b.derivative(0, 1)),
                         squareFreeGCD = EZGCD(divideExact(b, bRepeatedFactor), a),
                         aRepeatedFactor = divideExact(a, squareFreeGCD),
                         gcd = squareFreeGCD.clone();
 
-                lUnivariatePolynomialZp
+                UnivariatePolynomialZp64
                         uSquareFreeGCD = squareFreeGCD.evaluateAtZeroAllExcept(0),
                         uaRepeatedFactor = aRepeatedFactor.evaluateAtZeroAllExcept(0),
                         ubRepeatedFactor = bRepeatedFactor.evaluateAtZeroAllExcept(0);
@@ -3254,9 +3254,9 @@ public final class MultivariateGCD {
                         return evaluations.reconstruct(gcd);
 
                     if (!uSquareFreeGCD.clone().monic().equals(ugcd.clone().monic())) {
-                        lMultivariatePolynomialZp
-                                mgcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering),
-                                gcdCoFactor = lMultivariatePolynomialZp.asMultivariate(
+                        MultivariatePolynomialZp64
+                                mgcd = MultivariatePolynomialZp64.asMultivariate(ugcd, a.nVariables, 0, a.ordering),
+                                gcdCoFactor = MultivariatePolynomialZp64.asMultivariate(
                                         UnivariateDivision.divideExact(uSquareFreeGCD, ugcd, false), a.nVariables, 0, a.ordering);
 
                         liftPairAutomaticLC(squareFreeGCD, mgcd, gcdCoFactor, evaluation);
@@ -3271,11 +3271,11 @@ public final class MultivariateGCD {
                 }
             }
 
-            lMultivariatePolynomialZp gcd = lMultivariatePolynomialZp.asMultivariate(ugcd, a.nVariables, 0, a.ordering);
-            lMultivariatePolynomialZp coFactor = lMultivariatePolynomialZp.asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
+            MultivariatePolynomialZp64 gcd = MultivariatePolynomialZp64.asMultivariate(ugcd, a.nVariables, 0, a.ordering);
+            MultivariatePolynomialZp64 coFactor = MultivariatePolynomialZp64.asMultivariate(uCoFactor, a.nVariables, 0, a.ordering);
 
             // impose the leading coefficient
-            lMultivariatePolynomialZp lcCorrection = EZGCD(a.lc(0), b.lc(0));
+            MultivariatePolynomialZp64 lcCorrection = EZGCD(a.lc(0), b.lc(0));
             assert ZippelGCD(a.lc(0), b.lc(0)).monic(lcCorrection.lc()).equals(lcCorrection) : "\n" + a.lc(0) + "  \n " + b.lc(0);
 
             if (lcCorrection.isOne()) {
@@ -3319,7 +3319,7 @@ public final class MultivariateGCD {
                 evaluation);
     }
 
-    static ZeroVariables commonPossibleZeroes(lMultivariatePolynomialZp a, lMultivariatePolynomialZp b, int nVariables) {
+    static ZeroVariables commonPossibleZeroes(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b, int nVariables) {
         return commonPossibleZeroes(possibleZeros(a, nVariables), possibleZeros(b, nVariables));
     }
 
@@ -3341,7 +3341,7 @@ public final class MultivariateGCD {
     }
 
     /** list of available zero substitutions for poly */
-    static ZeroVariables possibleZeros(lMultivariatePolynomialZp poly, int nVariables) {
+    static ZeroVariables possibleZeros(MultivariatePolynomialZp64 poly, int nVariables) {
         ZeroVariables result = new ZeroVariables(nVariables);
         if (poly.cc() != 0) {
             BitSet s = new BitSet(nVariables);
@@ -3349,7 +3349,7 @@ public final class MultivariateGCD {
             result.add(s);
             return result;
         }
-        for (lMonomialZp term : poly.terms) {
+        for (MonomialZp64 term : poly.terms) {
             BitSet zeroes = new BitSet(nVariables);
             for (int i = 0; i < nVariables; i++)
                 if (term.exponents[i] == 0)
@@ -3422,15 +3422,15 @@ public final class MultivariateGCD {
             ATTEMPTS_WITH_MAX_ZEROS = 2;
 
     static final class EZGCDEvaluations {
-        final lMultivariatePolynomialZp a, b;
+        final MultivariatePolynomialZp64 a, b;
         final RandomGenerator rnd;
         // actual number of variables in use [0, ... nVariables] (may be less than a.nVariables)
         final int nVariables;
         // variables in which both cc and lc in a and b are non zeroes
         final TIntArrayList perfectVariables = new TIntArrayList();
 
-        EZGCDEvaluations(lMultivariatePolynomialZp a,
-                         lMultivariatePolynomialZp b,
+        EZGCDEvaluations(MultivariatePolynomialZp64 a,
+                         MultivariatePolynomialZp64 b,
                          int nVariables,
                          RandomGenerator rnd) {
             this.a = a;
@@ -3440,11 +3440,11 @@ public final class MultivariateGCD {
 
             // search for main variables
             for (int var = 0; var < nVariables; ++var) {
-                lUnivariatePolynomialZp ub = b.evaluateAtZeroAllExcept(var);
+                UnivariatePolynomialZp64 ub = b.evaluateAtZeroAllExcept(var);
                 if (ub.degree() == 0 || ub.cc() == 0 || ub.degree() != b.degree(var))
                     continue;
 
-                lUnivariatePolynomialZp ua = a.evaluateAtZeroAllExcept(var);
+                UnivariatePolynomialZp64 ua = a.evaluateAtZeroAllExcept(var);
                 if (ua.degree() == 0 || ua.cc() == 0 || ua.degree() != a.degree(var))
                     continue;
 
@@ -3454,7 +3454,7 @@ public final class MultivariateGCD {
 
         // modified a and b so that all except first variables
         // may be evaluated to zero
-        lMultivariatePolynomialZp aReduced, bReduced;
+        MultivariatePolynomialZp64 aReduced, bReduced;
 
         // pointers in perfectVariables list
         int
@@ -3588,7 +3588,7 @@ public final class MultivariateGCD {
                 for (int i = 0; i < shiftingVariables.length; ++i)
                     shifts[i] = a.domain.randomElement(rnd);
 
-                lUnivariatePolynomialZp ub = bReduced
+                UnivariatePolynomialZp64 ub = bReduced
                         .evaluateAtZero(zeroVariables)
                         .evaluate(shiftingVariables, shifts)
                         .asUnivariate();
@@ -3596,7 +3596,7 @@ public final class MultivariateGCD {
                 if (ub.isZeroAt(0) || ub.isZeroAt(ubDegree))
                     continue;
 
-                lUnivariatePolynomialZp ua = aReduced
+                UnivariatePolynomialZp64 ua = aReduced
                         .evaluateAtZero(zeroVariables)
                         .evaluate(shiftingVariables, shifts)
                         .asUnivariate();
@@ -3612,22 +3612,22 @@ public final class MultivariateGCD {
             return changedMainVariable;
         }
 
-        lMultivariatePolynomialZp convert(lMultivariatePolynomialZp poly) {
+        MultivariatePolynomialZp64 convert(MultivariatePolynomialZp64 poly) {
             if (currentPerfectVariable != -1)
                 // just swap the vars
                 return currentPerfectVariable == 0 ?
-                        poly.clone() : lMultivariatePolynomialZp.swapVariables(poly, 0, currentPerfectVariable);
+                        poly.clone() : MultivariatePolynomialZp64.swapVariables(poly, 0, currentPerfectVariable);
             return AMultivariatePolynomial.swapVariables(poly, 0, baseVariable).shift(shiftingVariables, shifts);
         }
 
-        lMultivariatePolynomialZp reconstruct(lMultivariatePolynomialZp poly) {
+        MultivariatePolynomialZp64 reconstruct(MultivariatePolynomialZp64 poly) {
             if (currentPerfectVariable != -1)
                 // just swap the vars
                 return currentPerfectVariable == 0 ?
-                        poly : lMultivariatePolynomialZp.swapVariables(poly, 0, currentPerfectVariable);
+                        poly : MultivariatePolynomialZp64.swapVariables(poly, 0, currentPerfectVariable);
 
             poly = poly.shift(shiftingVariables, ArraysUtil.negate(shifts.clone()));
-            poly = lMultivariatePolynomialZp.swapVariables(poly, 0, baseVariable);
+            poly = MultivariatePolynomialZp64.swapVariables(poly, 0, baseVariable);
             return poly;
         }
     }
@@ -3680,8 +3680,8 @@ public final class MultivariateGCD {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     IEvaluation<Term, Poly> createEvaluation(Poly factory, RandomGenerator rnd) {
-        if (factory instanceof lMultivariatePolynomialZp) {
-            lMultivariatePolynomialZp lFactory = (lMultivariatePolynomialZp) factory;
+        if (factory instanceof MultivariatePolynomialZp64) {
+            MultivariatePolynomialZp64 lFactory = (MultivariatePolynomialZp64) factory;
             // set new evaluation point
             long[] substitutions = new long[factory.nVariables - 1];
             for (int j = 0; j < substitutions.length; j++)

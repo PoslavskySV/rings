@@ -27,8 +27,8 @@ public class IrreduciblePolynomialsTest extends APolynomialTest {
         int nIterations = its(5000, 1000);
         for (int i = 0; i < nIterations; i++) {
             long modulus = getModulusRandom(rndd.nextInt(5, 15));
-            lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 15), modulus, rnd);
-            FactorDecomposition<lUnivariatePolynomialZp> factors = UnivariateFactorization.factor(poly);
+            UnivariatePolynomialZp64 poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 15), modulus, rnd);
+            FactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.factor(poly);
             try {
                 Assert.assertEquals(factors.size() == 1, irreducibleQ(poly));
             } catch (Throwable e) {
@@ -43,34 +43,34 @@ public class IrreduciblePolynomialsTest extends APolynomialTest {
 
     @Test
     public void test1() throws Exception {
-        lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(18, 92, 51, 36, 61, 93, 14, 13, 45, 11, 21, 79, 61, 1).modulus(97);
+        UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(18, 92, 51, 36, 61, 93, 14, 13, 45, 11, 21, 79, 61, 1).modulus(97);
         Assert.assertFalse(irreducibleQ(poly));
     }
 
     @Test
     public void test2() throws Exception {
-        lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(42, 73, 0, 79, 47, 1).modulus(89);
+        UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(42, 73, 0, 79, 47, 1).modulus(89);
         Assert.assertTrue(UnivariateFactorization.factor(poly).toString(), irreducibleQ(poly));
     }
 
     @Test
     public void test3() throws Exception {
-        lUnivariatePolynomialZp poly = lUnivariatePolynomialZ.create(952, 1768, 349, 1839, 1538, 1851, 941, 167, 1).modulus(1861);
+        UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(952, 1768, 349, 1839, 1538, 1851, 941, 167, 1).modulus(1861);
         int exponent = 7;
 
-        InverseModMonomial<lUnivariatePolynomialZp> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
-        lUnivariatePolynomialZp xq = createMonomialMod(poly.modulus(), poly, invMod);
-        TIntObjectMap<lUnivariatePolynomialZp> cache = new TIntObjectHashMap<>();
+        InverseModMonomial<UnivariatePolynomialZp64> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
+        UnivariatePolynomialZp64 xq = createMonomialMod(poly.modulus(), poly, invMod);
+        TIntObjectMap<UnivariatePolynomialZp64> cache = new TIntObjectHashMap<>();
 
-        lUnivariatePolynomialZp actual = IrreduciblePolynomials.composition(xq.clone(), exponent, poly, invMod, cache);
-        lUnivariatePolynomialZp expected = composition(xq.clone(), exponent, poly, invMod);
-        lUnivariatePolynomialZp expected0 = createMonomialMod(safePow(BigInteger.valueOf(poly.modulus()), exponent), poly, invMod);
+        UnivariatePolynomialZp64 actual = IrreduciblePolynomials.composition(xq.clone(), exponent, poly, invMod, cache);
+        UnivariatePolynomialZp64 expected = composition(xq.clone(), exponent, poly, invMod);
+        UnivariatePolynomialZp64 expected0 = createMonomialMod(safePow(BigInteger.valueOf(poly.modulus()), exponent), poly, invMod);
         Assert.assertEquals(expected, actual);
         Assert.assertEquals(expected0, actual);
     }
 
-    private static lUnivariatePolynomialZp composition(lUnivariatePolynomialZp xq, int n, lUnivariatePolynomialZp poly, InverseModMonomial<lUnivariatePolynomialZp> invMod) {
-        lUnivariatePolynomialZp composition = xq.clone();
+    private static UnivariatePolynomialZp64 composition(UnivariatePolynomialZp64 xq, int n, UnivariatePolynomialZp64 poly, InverseModMonomial<UnivariatePolynomialZp64> invMod) {
+        UnivariatePolynomialZp64 composition = xq.clone();
         for (int i = 1; i < n; i++)
             composition = ModularComposition.composition(composition, xq, poly, invMod);
         return composition;
@@ -85,15 +85,15 @@ public class IrreduciblePolynomialsTest extends APolynomialTest {
             if (i % 10 == 0)
                 System.out.println(i);
             long modulus = getModulusRandom(rndd.nextInt(5, 15));
-            lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 10), modulus, rnd);
+            UnivariatePolynomialZp64 poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 10), modulus, rnd);
 
-            InverseModMonomial<lUnivariatePolynomialZp> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
-            lUnivariatePolynomialZp xq = createMonomialMod(poly.modulus(), poly, invMod);
-            TIntObjectMap<lUnivariatePolynomialZp> cache = new TIntObjectHashMap<>();
+            InverseModMonomial<UnivariatePolynomialZp64> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
+            UnivariatePolynomialZp64 xq = createMonomialMod(poly.modulus(), poly, invMod);
+            TIntObjectMap<UnivariatePolynomialZp64> cache = new TIntObjectHashMap<>();
 
             int exponent = rndd.nextInt(1, 1024);
-            lUnivariatePolynomialZp actual = IrreduciblePolynomials.composition(xq.clone(), exponent, poly, invMod, cache);
-            lUnivariatePolynomialZp expected = composition(xq.clone(), exponent, poly, invMod);
+            UnivariatePolynomialZp64 actual = IrreduciblePolynomials.composition(xq.clone(), exponent, poly, invMod, cache);
+            UnivariatePolynomialZp64 expected = composition(xq.clone(), exponent, poly, invMod);
             String msg = new StringBuilder()
                     .append("\npoly: " + poly.toStringForCopy())
                     .append("\nmodulus: " + modulus)

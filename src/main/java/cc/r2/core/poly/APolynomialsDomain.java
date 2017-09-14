@@ -1,7 +1,10 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.multivar.AMultivariatePolynomial;
+import cc.r2.core.poly.univar.IUnivariatePolynomial;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
 /**
@@ -24,7 +27,7 @@ abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomai
     public final BigInteger cardinality() {return null;}
 
     @Override
-    public final BigInteger characteristics() {return factory.coefficientDomainCharacteristics();}
+    public final BigInteger characteristic() {return factory.coefficientDomainCharacteristics();}
 
     @Override
     public final Poly add(Poly a, Poly b) {return a.clone().add(b);}
@@ -134,5 +137,26 @@ abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomai
     @Override
     public Iterator<Poly> iterator() {
         throw new UnsupportedOperationException("Domain of infinite cardinality.");
+    }
+
+    private int nVariables() {
+        return factory instanceof IUnivariatePolynomial ? 1 : ((AMultivariatePolynomial) factory).nVariables;
+    }
+
+    @Override
+    public String toString(String[] variables) {
+        return toString(factory.coefficientDomainToString(), variables);
+    }
+
+    @Override
+    public String toString(String coefficientDomain, String[] variables) {
+        if (factory.isOverFiniteField())
+            coefficientDomain = "(" + coefficientDomain + ")";
+        return coefficientDomain + Arrays.toString(Arrays.copyOf(variables, nVariables()));
+    }
+
+    @Override
+    public String toString() {
+        return toString(WithVariables.defaultVars(nVariables()));
     }
 }

@@ -3,7 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Domains;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.IntegersZp64;
 import cc.r2.core.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -87,7 +87,7 @@ public final class RandomMultivariatePolynomials {
      * @param rnd    random source
      * @return random polynomial
      */
-    public static lMultivariatePolynomialZp randomPolynomial(int nVars, int degree, int size, lIntegersModulo domain, RandomGenerator rnd) {
+    public static MultivariatePolynomialZp64 randomPolynomial(int nVars, int degree, int size, IntegersZp64 domain, RandomGenerator rnd) {
         return randomPolynomial(nVars, degree, size, domain, MonomialOrder.LEX, rnd);
     }
 
@@ -102,14 +102,14 @@ public final class RandomMultivariatePolynomials {
      * @param rnd      random source
      * @return random polynomial
      */
-    public static lMultivariatePolynomialZp randomPolynomial(int nVars, int degree, int size, lIntegersModulo domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+    public static MultivariatePolynomialZp64 randomPolynomial(int nVars, int degree, int size, IntegersZp64 domain, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
         int nd = 3 * degree / 2;
         @SuppressWarnings("unchecked")
-        lMonomialZp[] terms = new lMonomialZp[size];
+        MonomialZp64[] terms = new MonomialZp64[size];
         for (int i = 0; i < size; i++) {
             long cfx = domain.randomElement(rnd);
-            terms[i] = new lMonomialZp(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
+            terms[i] = new MonomialZp64(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
         }
-        return lMultivariatePolynomialZp.create(nVars, domain, ordering, terms);
+        return MultivariatePolynomialZp64.create(nVars, domain, ordering, terms);
     }
 }

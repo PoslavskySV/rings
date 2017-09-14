@@ -1,9 +1,9 @@
 package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.IntegersModulo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -26,7 +26,7 @@ public class MultivariateInterpolationTest extends APolynomialTest {
     @SuppressWarnings("unchecked")
     public void test1() throws Exception {
         String[] variables = {"a", "b"};
-        Domain<BigInteger> domain = new IntegersModulo(17);
+        Domain<BigInteger> domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, MonomialOrder.LEX, variables);
         MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, MonomialOrder.LEX, variables);
         MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, MonomialOrder.LEX, variables);
@@ -41,7 +41,7 @@ public class MultivariateInterpolationTest extends APolynomialTest {
     @SuppressWarnings("unchecked")
     public void test2() throws Exception {
         String[] variables = {"a", "b"};
-        Domain<BigInteger> domain = new IntegersModulo(17);
+        Domain<BigInteger> domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger> val1 = MultivariatePolynomial.parse("a^2 + a^3 + 1", domain, MonomialOrder.LEX, variables);
         MultivariatePolynomial<BigInteger> val2 = MultivariatePolynomial.parse("12*a^2 + 13*a^3 + 11", domain, MonomialOrder.LEX, variables);
         MultivariatePolynomial<BigInteger> val3 = MultivariatePolynomial.parse("2*a^2 + 3*a^3 + 1", domain, MonomialOrder.LEX, variables);
@@ -63,7 +63,7 @@ public class MultivariateInterpolationTest extends APolynomialTest {
     @Test
     @SuppressWarnings("unchecked")
     public void test3() throws Exception {
-        IntegersModulo domain = new IntegersModulo(197);
+        IntegersZp domain = new IntegersZp(197);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger> base = parse("15*b*c^2+47*b^4*c^4+144*a*b^5*c^5+150*a^5*b^4+62*a^5*b^4*c", domain, MonomialOrder.LEX);
         int var = 2;
@@ -97,7 +97,7 @@ public class MultivariateInterpolationTest extends APolynomialTest {
         for (int n = 0; n < nIterations; n++) {
 
             int nVars = rndd.nextInt(2, 4);
-            IntegersModulo domain = new IntegersModulo(getModulusRandom(16));
+            IntegersZp domain = new IntegersZp(getModulusRandom(16));
             MultivariatePolynomial<BigInteger> base = randomPolynomial(nVars, rndd.nextInt(3, 10), rndd.nextInt(5, 10), domain, MonomialOrder.LEX, rnd);
             int var = rndd.nextInt(0, nVars - 1);
             int degree = base.degrees()[var];

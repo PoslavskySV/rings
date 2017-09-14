@@ -3,7 +3,7 @@ package cc.r2.core.poly.multivar;
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Domains;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;
@@ -91,7 +91,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void testArithmetics2() throws Exception {
-        IntegersModulo algebra = new IntegersModulo(17);
+        IntegersZp algebra = new IntegersZp(17);
         MultivariatePolynomial<BigInteger> a = parse("a*b + a^2 + c^3*b^2", algebra, LEX);
         assertEquals(ZERO, a.cc());
         assertEquals(ONE, a.lc());
@@ -158,14 +158,14 @@ public class MultivariatePolynomialTest extends APolynomialTest {
         MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", Domains.Z, LEX, vars);
         assertEquals(parse("18 + 18*a^2 + 18*a^3", vars), poly.evaluate(1, 1));
 
-        IntegersModulo pDomain = new IntegersModulo(17);
+        IntegersZp pDomain = new IntegersZp(17);
         assertEquals(parse("1 + a^2 + a^3", pDomain, LEX, vars), poly.setDomain(pDomain).evaluate(1, 1));
     }
 
     @Test
     public void testEvaluate3() throws Exception {
         String[] vars = {"a", "b", "c"};
-        IntegersModulo domain = new IntegersModulo(5642359);
+        IntegersZp domain = new IntegersZp(5642359);
         MultivariatePolynomial<BigInteger> poly = parse(" b^2*c^2+b^3+a*c^4+a*b*c^2+a*b^2+a*b^2*c+2*a^2*c^2+a^2*c^3+a^2*b+a^2*b^2+a^3+a^3*c+a^3*c^2+a^4", domain, LEX, vars);
 
         int[] evalVars = {1, 2};
@@ -177,7 +177,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
     @Test
     public void testUnivar1() throws Exception {
         String[] vars = {"a", "b"};
-        IntegersModulo domain = new IntegersModulo(17);
+        IntegersZp domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
         poly = poly.evaluate(0, 1);
         assertEquals(UnivariatePolynomial.create(9, 0, 11), poly.asUnivariate());
@@ -190,7 +190,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
     @Test
     public void testConversion() throws Exception {
         String[] vars = {"a", "b"};
-        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new IntegersModulo(17), LEX, vars);
+        MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", new IntegersZp(17), LEX, vars);
         assertEquals(poly, asNormalMultivariate(poly.asOverUnivariateEliminate(1), 1));
         assertEquals(poly, asNormalMultivariate(poly.asOverUnivariateEliminate(1), 1));
     }
@@ -198,7 +198,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
     @Test
     public void testParse1() throws Exception {
         String[] vars = {"a", "b"};
-        IntegersModulo domain = new IntegersModulo(17);
+        IntegersZp domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger> poly = parse("5+6*b+7*b^2+3*a^2+15*a^2*b^2+a^3+11*a^3*b+6*a^3*b^2", domain, LEX, vars);
         MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(vars), domain, LEX, vars);
         assertEquals(poly, parsed);
@@ -207,7 +207,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
     @Test
     public void testParse2() throws Exception {
         String[] vars = {"a"};
-        IntegersModulo domain = new IntegersModulo(17);
+        IntegersZp domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger> poly = parse("8+14*a+16*a^2+11*a^3+12*a^4+a^5", domain, LEX, vars);
         MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(vars), domain, LEX, vars);
         assertEquals(poly, parsed);
@@ -221,7 +221,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
         String[] vars = {"a", "b", "c", "d", "e", "f"};
         Domain<BigInteger> domain;
         for (int i = 0; i < nIterations; i++) {
-            domain = rnd.nextBoolean() ? Domains.Z : new IntegersModulo(getModulusRandom(8));
+            domain = rnd.nextBoolean() ? Domains.Z : new IntegersZp(getModulusRandom(8));
             MultivariatePolynomial<BigInteger> poly =
                     RandomMultivariatePolynomials.randomPolynomial(
                             rndd.nextInt(1, 4),
@@ -315,7 +315,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
     @Test
     public void testSubstitute1() throws Exception {
         String[] vars = {"a", "b"};
-        IntegersModulo domain = new IntegersModulo(17);
+        IntegersZp domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger> poly = parse("1 + a^2*b^2 + a^3*b^3 + a*b^3 + b^3 + a^2 + 2", domain, vars);
         assertEquals(
                 parse("7 + 4*a + a^2 + 4*b^2 + 4*a*b^2 + a^2*b^2 + 11*b^3 + 13*a*b^3 + 6*a^2*b^3 + a^3*b^3", domain, vars),
@@ -337,7 +337,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void testSubstitute2() throws Exception {
-        IntegersModulo domain = new IntegersModulo(1321349);
+        IntegersZp domain = new IntegersZp(1321349);
         MultivariatePolynomial<BigInteger>
                 a = parse("7*a*b^3*c^5*d^5*e^4 + 2*a^2*c^2*d^3*e^4", domain);
 
@@ -350,7 +350,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void testSubstitute3() throws Exception {
-        IntegersModulo domain = new IntegersModulo(1321349);
+        IntegersZp domain = new IntegersZp(1321349);
         MultivariatePolynomial<BigInteger>
                 poly = parse("7*a*b^3*c^5*d^5*e^4 + 2*a^2*c^2*d^3*e^4", domain),
                 expected = parse("8*a^2*d^3*e^4 + 8*a^2*c*d^3*e^4 + 2*a^2*c^2*d^3*e^4 + 224*a*b^3*d^5*e^4 + 560*a*b^3*c*d^5*e^4 + 560*a*b^3*c^2*d^5*e^4 + 280*a*b^3*c^3*d^5*e^4 + 70*a*b^3*c^4*d^5*e^4 + 7*a*b^3*c^5*d^5*e^4", domain);
@@ -360,7 +360,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void testSubstitute4() throws Exception {
-        IntegersModulo domain = new IntegersModulo(67);
+        IntegersZp domain = new IntegersZp(67);
         MultivariatePolynomial<BigInteger>
                 a = parse("b*a + b^2 + 1", domain),
                 b = parse("a*b + 66*b + 1", domain),
@@ -374,7 +374,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
 
     @Test
     public void testOverMultivariate1() throws Exception {
-        IntegersModulo domain = new IntegersModulo(Integer.MAX_VALUE);
+        IntegersZp domain = new IntegersZp(Integer.MAX_VALUE);
         MultivariatePolynomial<BigInteger> poly = parse("2*a*b*c*d*e + 3*b*c + a^2*b*c", domain);
         assertEquals(poly, MultivariatePolynomial.asNormalMultivariate(poly.asOverMultivariate(0, 3, 4)));
         assertEquals(poly, MultivariatePolynomial.asNormalMultivariate(poly.asOverMultivariateEliminate(0, 3, 4),
@@ -387,7 +387,7 @@ public class MultivariatePolynomialTest extends APolynomialTest {
         RandomDataGenerator rndd = getRandomData();
 
         for (int i = 0; i < its(100, 100); i++) {
-            IntegersModulo domain = new IntegersModulo(getModulusRandom(rndd.nextInt(2, 31)));
+            IntegersZp domain = new IntegersZp(getModulusRandom(rndd.nextInt(2, 31)));
             MultivariatePolynomial<BigInteger> poly = RandomMultivariatePolynomials.randomPolynomial(10, 10, 50, domain, MonomialOrder.LEX, rnd);
             for (int j = 0; j < its(3, 10); j++) {
                 int[] select = rndd.nextPermutation(poly.nVariables, rndd.nextInt(1, poly.nVariables));

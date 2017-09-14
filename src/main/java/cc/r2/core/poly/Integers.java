@@ -25,7 +25,7 @@ public final class Integers extends AIntegers {
     public BigInteger cardinality() {return null;}
 
     @Override
-    public BigInteger characteristics() {return BigInteger.ZERO;}
+    public BigInteger characteristic() {return BigInteger.ZERO;}
 
     @Override
     public boolean isUnit(BigInteger element) {

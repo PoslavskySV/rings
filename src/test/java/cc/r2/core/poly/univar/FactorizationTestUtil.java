@@ -23,7 +23,7 @@ final class FactorizationTestUtil {
     }
 
 
-    public static <T extends lUnivariatePolynomialAbstract<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
+    public static <T extends AUnivariatePolynomial64<T>> void assertFactorization(T poly, long factor, List<T> factorization) {
         assertEquals(poly, factorization.stream().reduce(poly.createConstant(factor), (a, b) -> a.clone().multiply(b)));
     }
 
@@ -32,7 +32,7 @@ final class FactorizationTestUtil {
     }
 
     public interface PolynomialSource {
-        lUnivariatePolynomialZp take(long modulus);
+        UnivariatePolynomialZp64 take(long modulus);
     }
 
     public static final class WithTiming<T> {
@@ -61,17 +61,17 @@ final class FactorizationTestUtil {
         }
 
         @Override
-        public lUnivariatePolynomialZp take(long modulus) {
+        public UnivariatePolynomialZp64 take(long modulus) {
             int degree = minDegree + rnd.nextInt(maxDegree - minDegree + 1);
 
-            lUnivariatePolynomialZp algebra = lUnivariatePolynomialZp.zero(modulus);
+            UnivariatePolynomialZp64 algebra = UnivariatePolynomialZp64.zero(modulus);
             long[] data = new long[degree + 1];
             data[0] = 1;
             for (int i = 1; i <= degree; i++)
                 data[i] = algebra.add(algebra.multiply(data[i - 1], data[i - 1]), 1);
             ArraysUtil.reverse(data, 0, data.length);
 
-            return lUnivariatePolynomialZ.create(data).modulus(modulus, false);
+            return UnivariatePolynomialZ64.create(data).modulus(modulus, false);
         }
     }
 
@@ -86,9 +86,9 @@ final class FactorizationTestUtil {
         }
 
         @Override
-        public lUnivariatePolynomialZp take(long modulus) {
+        public UnivariatePolynomialZp64 take(long modulus) {
             int degree = minDegree + rnd.nextInt(maxDegree - minDegree + 1);
-            return lUnivariatePolynomialZp.monomial(modulus, 1, degree).addMonomial(1, 1).addMonomial(1, 0);
+            return UnivariatePolynomialZp64.monomial(modulus, 1, degree).addMonomial(1, 1).addMonomial(1, 0);
         }
     }
 
@@ -107,9 +107,9 @@ final class FactorizationTestUtil {
         }
 
         @Override
-        public lUnivariatePolynomialZp take(long modulus) {
-            lUnivariatePolynomialZp poly;
-            poly = lUnivariatePolynomialZ.create(rndd.nextLong(1, modulus)).modulus(modulus, false);
+        public UnivariatePolynomialZp64 take(long modulus) {
+            UnivariatePolynomialZp64 poly;
+            poly = UnivariatePolynomialZ64.create(rndd.nextLong(1, modulus)).modulus(modulus, false);
             int nBases = rndd.nextInt(minNBase, maxNBase);
             for (int j = 1; j <= nBases; ++j)
                 poly = poly.multiply(RandomUnivariatePolynomials.randomMonicPoly(j, modulus, rnd));
@@ -147,8 +147,8 @@ final class FactorizationTestUtil {
         }
 
         @Override
-        public lUnivariatePolynomialZp take(long modulus) {
-            lUnivariatePolynomialZp poly = RandomUnivariatePolynomials.randomMonicPoly(minDegree + rnd.nextInt(maxDegree - minDegree + 1), modulus, rnd).multiply(rndd.nextLong(1, modulus - 1));
+        public UnivariatePolynomialZp64 take(long modulus) {
+            UnivariatePolynomialZp64 poly = RandomUnivariatePolynomials.randomMonicPoly(minDegree + rnd.nextInt(maxDegree - minDegree + 1), modulus, rnd).multiply(rndd.nextLong(1, modulus - 1));
 
             if (ensureSquareFree) {
                 poly = UnivariateSquareFreeFactorization.SquareFreePart(poly);
@@ -174,8 +174,8 @@ final class FactorizationTestUtil {
         }
 
         @Override
-        public lUnivariatePolynomialZp take(long modulus) {
-            lUnivariatePolynomialZp poly = lUnivariatePolynomialZp.one(modulus);
+        public UnivariatePolynomialZp64 take(long modulus) {
+            UnivariatePolynomialZp64 poly = UnivariatePolynomialZp64.one(modulus);
             for (int i = 0; i < nFactors; i++)
                 poly = poly.multiply(pSource.take(modulus));
 

@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.test.AbstractTest;
 import cc.r2.core.test.Benchmark;
@@ -27,7 +27,7 @@ public class LinearAlgebraTest extends AbstractTest {
     public void test1() throws Exception {
         long[][] system = {{1, 2, 13}, {2, 14, 3}, {11, 2, 13}};
         long[] rhs = {1, 2, 13};
-        BigInteger[] r = solve(new IntegersModulo(SmallPrimes.nextPrime(12324)), convert(system), convert(rhs));
+        BigInteger[] r = solve(new IntegersZp(SmallPrimes.nextPrime(12324)), convert(system), convert(rhs));
         Assert.assertArrayEquals(convert(new long[]{2467, 9625, 6865}), r);
     }
 
@@ -52,7 +52,7 @@ public class LinearAlgebraTest extends AbstractTest {
         BigInteger[][] lhs = convert(lhs0);
         BigInteger[] rhs = convert(rhs0);
 
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         BigInteger[] solution = solve(domain, lhs, rhs);
         long[] expected = {16402965, 22655879, 11505290, 2916536, 13894224, 7600529, 2132874, 14945154};
         Assert.assertArrayEquals(convert(expected), solution);
@@ -71,7 +71,7 @@ public class LinearAlgebraTest extends AbstractTest {
         long[] rhs0 = {1, 0, 740880, 0, 1693671, 0, 810986, 0};
         long modulus = 5642359;
         BigInteger[] solution = new BigInteger[rhs0.length];
-        SystemInfo r = solve(new IntegersModulo(modulus), convert(lhs0), convert(rhs0), solution);
+        SystemInfo r = solve(new IntegersZp(modulus), convert(lhs0), convert(rhs0), solution);
         Assert.assertEquals(SystemInfo.UnderDetermined, r);
     }
 
@@ -94,7 +94,7 @@ public class LinearAlgebraTest extends AbstractTest {
         BigInteger[][] lhs = convert(lhs0);
         BigInteger[] rhs = convert(rhs0);
 
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         rowEchelonForm(domain, lhs, rhs);
 
 //        System.out.println(prettyMatrix(lhs0));
@@ -109,7 +109,7 @@ public class LinearAlgebraTest extends AbstractTest {
     @Test
     public void testVandermonde1() throws Exception {
         int modulus = 23;
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         long[] vnd = {1, 2, 3, 4};
         long[][] lhs = {
                 {1, 1, 1, 1},
@@ -132,7 +132,7 @@ public class LinearAlgebraTest extends AbstractTest {
     @Test
     public void testVandermonde2() throws Exception {
         int modulus = 23;
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         long[] vnd = {2, 3, 4, 5};
         long[][] lhs = {
                 {1, 2, 2 * 2, 2 * 2 * 2},
@@ -155,7 +155,7 @@ public class LinearAlgebraTest extends AbstractTest {
     @Test
     public void testVandermonde3() throws Exception {
         int modulus = 13;
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         long[] vnd = {2, 3, 4, 5};
         long[][] lhs = {
                 {1, 2, 2 * 2, 2 * 2 * 2},
@@ -183,7 +183,7 @@ public class LinearAlgebraTest extends AbstractTest {
                 vandT = new DescriptiveStatistics();
         int size = 8;
         long modulus = SmallPrimes.nextPrime(123456789);
-        IntegersModulo domain = new IntegersModulo(modulus);
+        IntegersZp domain = new IntegersZp(modulus);
         int nIterations = 1000;
         for (int n = 0; n < nIterations; n++) {
             if (n == nIterations / 10)

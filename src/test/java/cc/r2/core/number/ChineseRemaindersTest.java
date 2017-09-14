@@ -5,8 +5,8 @@ import cc.r2.core.number.primes.SmallPrimes;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.UnivariatePolynomials;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.univar.UnivariatePolynomialZ64;
+import cc.r2.core.poly.univar.UnivariatePolynomialZp64;
 import cc.r2.core.test.AbstractTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -196,24 +196,24 @@ public class ChineseRemaindersTest extends AbstractTest {
 
     @Test
     public void test6() throws Exception {
-        lUnivariatePolynomialZp
-                prime1 = lUnivariatePolynomialZ.create(1, 2, 3, 4).modulus(19),
-                prime2 = lUnivariatePolynomialZ.create(1, 2, 1, 1, 1, 1).modulus(19);
+        UnivariatePolynomialZp64
+                prime1 = UnivariatePolynomialZ64.create(1, 2, 3, 4).modulus(19),
+                prime2 = UnivariatePolynomialZ64.create(1, 2, 1, 1, 1, 1).modulus(19);
 
 //        System.out.println(Factorization.factor(prime1));
 //        System.out.println(Factorization.factor(prime2));
 //        if (true) return;
 
-        lUnivariatePolynomialZp
-                remainder1 = lUnivariatePolynomialZ.create(1, 2, 3).modulus(19),
-                remainder2 = lUnivariatePolynomialZ.create(1, 2, 3, 4, 5).modulus(19);
+        UnivariatePolynomialZp64
+                remainder1 = UnivariatePolynomialZ64.create(1, 2, 3).modulus(19),
+                remainder2 = UnivariatePolynomialZ64.create(1, 2, 3, 4, 5).modulus(19);
 
 
-        UnivariatePolynomials<lUnivariatePolynomialZp> domain = new UnivariatePolynomials<>(prime1.createOne());
-        lUnivariatePolynomialZp crt = ChineseRemainders.ChineseRemainders(domain, prime1, prime2, remainder1, remainder2);
+        UnivariatePolynomials<UnivariatePolynomialZp64> domain = new UnivariatePolynomials<>(prime1.createOne());
+        UnivariatePolynomialZp64 crt = ChineseRemainders.ChineseRemainders(domain, prime1, prime2, remainder1, remainder2);
         assertCRT(domain,
-                new lUnivariatePolynomialZp[]{prime1, prime2},
-                new lUnivariatePolynomialZp[]{remainder1, remainder2},
+                new UnivariatePolynomialZp64[]{prime1, prime2},
+                new UnivariatePolynomialZp64[]{remainder1, remainder2},
                 crt);
     }
 

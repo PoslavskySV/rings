@@ -2,9 +2,10 @@ package cc.r2.core.poly.multivar;
 
 import cc.r2.core.poly.IPolynomial;
 import cc.r2.core.poly.MultivariatePolynomials;
+import cc.r2.core.poly.WithVariables;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.univar.UnivariatePolynomialZp64;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -66,7 +67,7 @@ import java.util.stream.Collectors;
  * @param <Poly> type of this (self-type)
  * @author Stanislav Poslavsky
  * @see IPolynomial
- * @see lMultivariatePolynomialZp
+ * @see MultivariatePolynomialZp64
  * @see MultivariatePolynomial
  * @since 1.0
  */
@@ -165,8 +166,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     Poly asMultivariate(IUnivariatePolynomial poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
         if (poly instanceof UnivariatePolynomial)
             return (Poly) MultivariatePolynomial.asMultivariate((UnivariatePolynomial) poly, nVariables, variable, ordering);
-        else if (poly instanceof lUnivariatePolynomialZp)
-            return (Poly) lMultivariatePolynomialZp.asMultivariate((lUnivariatePolynomialZp) poly, nVariables, variable, ordering);
+        else if (poly instanceof UnivariatePolynomialZp64)
+            return (Poly) MultivariatePolynomialZp64.asMultivariate((UnivariatePolynomialZp64) poly, nVariables, variable, ordering);
         else
             throw new RuntimeException();
     }
@@ -1072,14 +1073,6 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
 
     @Override
     public final String toString() {
-        return toString(defaultVars(nVariables));
-    }
-
-    static String[] defaultVars(int nVars) {
-        char v = 'a';
-        String[] vars = new String[nVars];
-        for (int i = 0; i < nVars; i++)
-            vars[i] = Character.toString(v++);
-        return vars;
+        return toString(WithVariables.defaultVars(nVariables));
     }
 }

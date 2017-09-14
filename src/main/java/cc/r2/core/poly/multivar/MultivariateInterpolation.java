@@ -2,7 +2,7 @@ package cc.r2.core.poly.multivar;
 
 
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.lIntegersModulo;
+import cc.r2.core.poly.IntegersZp64;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
@@ -167,15 +167,15 @@ public final class MultivariateInterpolation {
         /** list of evaluation points */
         private final TLongArrayList points = new TLongArrayList();
         /** list of values at points */
-        private final List<lMultivariatePolynomialZp> values = new ArrayList<>();
+        private final List<MultivariatePolynomialZp64> values = new ArrayList<>();
         /** mixed radix form of interpolating polynomial */
-        private final List<lMultivariatePolynomialZp> mixedRadix = new ArrayList<>();
+        private final List<MultivariatePolynomialZp64> mixedRadix = new ArrayList<>();
         /** total modulus (x_i - points[0])*(x_i - points[1])*... */
-        private final lMultivariatePolynomialZp lins;
+        private final MultivariatePolynomialZp64 lins;
         /** resulting interpolating polynomial */
-        private final lMultivariatePolynomialZp poly;
+        private final MultivariatePolynomialZp64 poly;
         /** domain */
-        private final lIntegersModulo domain;
+        private final IntegersZp64 domain;
 
         /**
          * Start new interpolation with {@code interpolation[variable = point] = value}
@@ -184,7 +184,7 @@ public final class MultivariateInterpolation {
          * @param point    evaluation point
          * @param value    polynomial value at {@code point}
          */
-        public lInterpolation(int variable, long point, lMultivariatePolynomialZp value) {
+        public lInterpolation(int variable, long point, MultivariatePolynomialZp64 value) {
             this.variable = variable;
             this.lins = value.createOne();
             this.poly = value.clone();
@@ -201,9 +201,9 @@ public final class MultivariateInterpolation {
          * @param point evaluation point
          * @param value polynomial value at {@code point}
          */
-        public void update(long point, lMultivariatePolynomialZp value) {
+        public void update(long point, MultivariatePolynomialZp64 value) {
             long reciprocal = domain.subtract(point, points.get(0));
-            lMultivariatePolynomialZp accumulator = mixedRadix.get(0).clone();
+            MultivariatePolynomialZp64 accumulator = mixedRadix.get(0).clone();
             for (int i = 1; i < points.size(); ++i) {
                 accumulator = accumulator.add(mixedRadix.get(i).clone().multiply(reciprocal));
                 reciprocal = domain.multiply(reciprocal, domain.subtract(point, points.get(i)));
@@ -231,7 +231,7 @@ public final class MultivariateInterpolation {
          *
          * @return interpolating polynomial
          */
-        public lMultivariatePolynomialZp getInterpolatingPolynomial() {return poly;}
+        public MultivariatePolynomialZp64 getInterpolatingPolynomial() {return poly;}
 
         /**
          * Returns the list of evaluation points used in interpolation
@@ -245,7 +245,7 @@ public final class MultivariateInterpolation {
          *
          * @return the list of polynomial values at interpolation points
          */
-        public List<lMultivariatePolynomialZp> getValues() {return values;}
+        public List<MultivariatePolynomialZp64> getValues() {return values;}
 
         /**
          * Returns the number of interpolation points used

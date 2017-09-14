@@ -4,11 +4,11 @@ import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.Rational;
 import cc.r2.core.poly.multivar.MonomialOrder;
 import cc.r2.core.poly.multivar.MultivariatePolynomial;
-import cc.r2.core.poly.multivar.lMultivariatePolynomialZp;
+import cc.r2.core.poly.multivar.MultivariatePolynomialZp64;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.IrreduciblePolynomials;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZp;
+import cc.r2.core.poly.univar.UnivariatePolynomialZp64;
 import org.apache.commons.math3.random.Well19937c;
 
 /**
@@ -35,14 +35,14 @@ public final class Domains {
      *
      * @param modulus the modulus
      */
-    public static lIntegersModulo Zp(long modulus) {return new lIntegersModulo(modulus);}
+    public static IntegersZp64 Zp(long modulus) {return new IntegersZp64(modulus);}
 
     /**
      * Domain of integers modulo {@code modulus} (arbitrary large modulus)
      *
      * @param modulus the modulus (arbitrary large)
      */
-    public static IntegersModulo Zp(BigInteger modulus) {return new IntegersModulo(modulus);}
+    public static IntegersZp Zp(BigInteger modulus) {return new IntegersZp(modulus);}
 
     /**
      * Galois field with the cardinality {@code prime ^ exponent} (with prime < 2^63)
@@ -50,7 +50,7 @@ public final class Domains {
      * @param prime    the integer prime modulus
      * @param exponent the exponent (degree of modulo polynomial)
      */
-    public static FiniteField<lUnivariatePolynomialZp> GF(long prime, int exponent) {
+    public static FiniteField<UnivariatePolynomialZp64> GF(long prime, int exponent) {
         if (exponent <= 0)
             throw new IllegalArgumentException("Exponent must be positive");
         // provide random generator with fixed seed to make the behavior predictable
@@ -103,8 +103,8 @@ public final class Domains {
      *
      * @param modulus the modulus
      */
-    public static UnivariatePolynomials<lUnivariatePolynomialZp> PolynomialsZp(long modulus) {
-        return new UnivariatePolynomials<>(lUnivariatePolynomialZp.zero(modulus));
+    public static UnivariatePolynomials<UnivariatePolynomialZp64> PolynomialsZp(long modulus) {
+        return new UnivariatePolynomials<>(UnivariatePolynomialZp64.zero(modulus));
     }
 
     /**
@@ -112,8 +112,8 @@ public final class Domains {
      *
      * @param modulus the modulus
      */
-    public static UnivariatePolynomials<lUnivariatePolynomialZp> PolynomialsZp(lIntegersModulo modulus) {
-        return new UnivariatePolynomials<>(lUnivariatePolynomialZp.zero(modulus));
+    public static UnivariatePolynomials<UnivariatePolynomialZp64> PolynomialsZp(IntegersZp64 modulus) {
+        return new UnivariatePolynomials<>(UnivariatePolynomialZp64.zero(modulus));
     }
 
     /**
@@ -170,9 +170,9 @@ public final class Domains {
      * @param nVariables the number of variables
      * @param modulus    the modulus
      */
-    public static MultivariatePolynomials<lMultivariatePolynomialZp>
+    public static MultivariatePolynomials<MultivariatePolynomialZp64>
     MultivariatePolynomialsZp(int nVariables, long modulus) {
-        return new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(nVariables, Zp(modulus), MonomialOrder.LEX));
+        return new MultivariatePolynomials<>(MultivariatePolynomialZp64.zero(nVariables, Zp(modulus), MonomialOrder.LEX));
     }
 
     /**
@@ -181,9 +181,9 @@ public final class Domains {
      * @param nVariables the number of variables
      * @param modulus    the modulus
      */
-    public static MultivariatePolynomials<lMultivariatePolynomialZp>
-    MultivariatePolynomialsZp(int nVariables, lIntegersModulo modulus) {
-        return new MultivariatePolynomials<>(lMultivariatePolynomialZp.zero(nVariables, modulus, MonomialOrder.LEX));
+    public static MultivariatePolynomials<MultivariatePolynomialZp64>
+    MultivariatePolynomialsZp(int nVariables, IntegersZp64 modulus) {
+        return new MultivariatePolynomials<>(MultivariatePolynomialZp64.zero(nVariables, modulus, MonomialOrder.LEX));
     }
 
     /**

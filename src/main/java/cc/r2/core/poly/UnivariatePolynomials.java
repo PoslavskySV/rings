@@ -1,8 +1,8 @@
 package cc.r2.core.poly;
 
-import cc.r2.core.poly.univar.UnivariateDivision;
 import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import cc.r2.core.poly.univar.RandomUnivariatePolynomials;
+import cc.r2.core.poly.univar.UnivariateDivision;
 import cc.r2.core.poly.univar.UnivariateGCD;
 import org.apache.commons.math3.random.RandomGenerator;
 

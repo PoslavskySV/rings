@@ -1,8 +1,8 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.poly.multivar.MultivariatePolynomial;
-import cc.r2.core.poly.multivar.lMultivariatePolynomialZp;
-import cc.r2.core.poly.univar.lUnivariatePolynomialZ;
+import cc.r2.core.poly.multivar.MultivariatePolynomialZp64;
+import cc.r2.core.poly.univar.UnivariatePolynomialZ64;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -15,13 +15,13 @@ public class IPolynomialTest {
 
     @Test
     public void testComparable() throws Exception {
-        assertSignum(lUnivariatePolynomialZ.create(1, 2, 3));
-        lUnivariatePolynomialZ negate = lUnivariatePolynomialZ.create(1, 2, 3).negate();
+        assertSignum(UnivariatePolynomialZ64.create(1, 2, 3));
+        UnivariatePolynomialZ64 negate = UnivariatePolynomialZ64.create(1, 2, 3).negate();
         assertSignum(negate);
-        assertSignum(lUnivariatePolynomialZ.create(1, 2, 3).modulus(2));
-        assertSignum(lUnivariatePolynomialZ.create(1, 2, 3).modulus(2).toBigPoly());
+        assertSignum(UnivariatePolynomialZ64.create(1, 2, 3).modulus(2));
+        assertSignum(UnivariatePolynomialZ64.create(1, 2, 3).modulus(2).toBigPoly());
         assertSignum(MultivariatePolynomial.parse("a^2 - 2*b"));
-        assertSignum(lMultivariatePolynomialZp.parse("a^2 - 2*b", new lIntegersModulo(2)));
+        assertSignum(MultivariatePolynomialZp64.parse("a^2 - 2*b", new IntegersZp64(2)));
     }
 
     private static <T extends IPolynomial<T>> void assertSignum(T p) {

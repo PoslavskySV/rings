@@ -138,7 +138,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, String... variables) {
-        return Parser.parse(string, domain, MonomialOrder.LEX, variables);
+        return Parser.parse(string, domain, domain, MonomialOrder.LEX, variables);
     }
 
     /**
@@ -167,7 +167,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain, Comparator<DegreeVector> ordering, String... variables) {
-        return Parser.parse(string, domain, ordering, variables);
+        return Parser.parse(string, domain, domain, ordering, variables);
     }
 
     /**
@@ -178,7 +178,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Domain<E> domain) {
-        return Parser.parse(string, domain);
+        return Parser.parse(string, domain, domain);
     }
 
     /**
@@ -189,14 +189,14 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @throws IllegalArgumentException if poly.domain is not Zp
      * @throws ArithmeticException      if some of coefficients will not exactly fit in a {@code long}.
      */
-    public static lMultivariatePolynomialZp asLongPolyZp(MultivariatePolynomial<BigInteger> poly) {
-        if (!(poly.domain instanceof IntegersModulo))
+    public static MultivariatePolynomialZp64 asLongPolyZp(MultivariatePolynomial<BigInteger> poly) {
+        if (!(poly.domain instanceof IntegersZp))
             throw new IllegalArgumentException("Poly is not over modular domain: " + poly.domain);
-        IntegersModulo domain = (IntegersModulo) poly.domain;
-        MonomialSet<lMonomialZp> terms = new MonomialSet<>(poly.ordering);
+        IntegersZp domain = (IntegersZp) poly.domain;
+        MonomialSet<MonomialZp64> terms = new MonomialSet<>(poly.ordering);
         for (Monomial<BigInteger> term : poly.terms)
-            terms.add(new lMonomialZp(term.exponents, term.totalDegree, term.coefficient.longValueExact()));
-        return lMultivariatePolynomialZp.create(poly.nVariables, domain.asLong(), poly.ordering, terms);
+            terms.add(new MonomialZp64(term.exponents, term.totalDegree, term.coefficient.longValueExact()));
+        return MultivariatePolynomialZp64.create(poly.nVariables, domain.asLong(), poly.ordering, terms);
     }
 
     /**
@@ -401,12 +401,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      *
      * @param poly Zp polynomial
      * @return Z[x] version of the poly with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
-     * @throws IllegalArgumentException is {@code poly.domain} is not a {@link IntegersModulo}
+     * @throws IllegalArgumentException is {@code poly.domain} is not a {@link IntegersZp}
      */
     public static MultivariatePolynomial<BigInteger> asPolyZSymmetric(MultivariatePolynomial<BigInteger> poly) {
-        if (!(poly.domain instanceof IntegersModulo))
+        if (!(poly.domain instanceof IntegersZp))
             throw new IllegalArgumentException("Not a modular domain: " + poly.domain);
-        IntegersModulo domain = (IntegersModulo) poly.domain;
+        IntegersZp domain = (IntegersZp) poly.domain;
         MonomialSet<Monomial<BigInteger>> newTerms = new MonomialSet<>(poly.ordering);
         for (Monomial<BigInteger> term : poly)
             newTerms.add(term.setCoefficient(domain.symmetricForm(term.coefficient)));
@@ -465,7 +465,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public BigInteger coefficientDomainCardinality() {return domain.cardinality();}
 
     @Override
-    public BigInteger coefficientDomainCharacteristics() {return domain.characteristics();}
+    public BigInteger coefficientDomainCharacteristics() {return domain.characteristic();}
 
     @Override
     public boolean isOverPerfectPower() {
@@ -872,6 +872,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> evaluate1(int[] variables, E[] values) {
         return evaluate(variables, values);
     }
+
     /**
      * Returns a copy of this with {@code values} substituted for {@code variables}.
      *
@@ -1380,10 +1381,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
-    static BigInteger seriesCoefficientFactor0(int exponent, int order, IntegersModulo domain) {
+    static BigInteger seriesCoefficientFactor0(int exponent, int order, IntegersZp domain) {
         if (!domain.modulus.isInt() || order < domain.modulus.intValueExact())
             return seriesCoefficientFactor1(exponent, order, domain);
-        return BigInteger.valueOf(lMultivariatePolynomialZp.seriesCoefficientFactor(exponent, order, domain.asMachineSizedDomain()));
+        return BigInteger.valueOf(MultivariatePolynomialZp64.seriesCoefficientFactor(exponent, order, domain.asMachineSizedDomain()));
     }
 
     /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
@@ -1407,9 +1408,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     /** exp * (exp - 1) * ... * (exp - order + 1) / (1 * 2 * ... * order) mod modulus */
     @SuppressWarnings("unchecked")
     static <E> E seriesCoefficientFactor(int exponent, int order, Domain<E> domain) {
-        if (domain instanceof IntegersModulo)
-            return (E) seriesCoefficientFactor0(exponent, order, (IntegersModulo) domain);
-        BigInteger characteristics = domain.characteristics();
+        if (domain instanceof IntegersZp)
+            return (E) seriesCoefficientFactor0(exponent, order, (IntegersZp) domain);
+        BigInteger characteristics = domain.characteristic();
         if (characteristics == null || !characteristics.isInt() || characteristics.intValueExact() > order)
             return seriesCoefficientFactor1(exponent, order, domain);
 
@@ -1481,11 +1482,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param mapper    mapping
      * @return a new polynomial with terms obtained by applying mapper to this terms (only coefficients are changed)
      */
-    public lMultivariatePolynomialZp mapCoefficients(lIntegersModulo newDomain, ToLongFunction<E> mapper) {
+    public MultivariatePolynomialZp64 mapCoefficients(IntegersZp64 newDomain, ToLongFunction<E> mapper) {
         return terms.values()
                 .stream()
-                .map(t -> new lMonomialZp(t.exponents, t.totalDegree, mapper.applyAsLong(t.coefficient)))
-                .collect(new PolynomialCollector<>(() -> lMultivariatePolynomialZp.zero(nVariables, newDomain, ordering)));
+                .map(t -> new MonomialZp64(t.exponents, t.totalDegree, mapper.applyAsLong(t.coefficient)))
+                .collect(new PolynomialCollector<>(() -> MultivariatePolynomialZp64.zero(nVariables, newDomain, ordering)));
     }
 
     @Override
@@ -1519,7 +1520,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> parsePoly(String string) {
-        MultivariatePolynomial<E> r = parse(string, domain, ordering, defaultVars(nVariables));
+        MultivariatePolynomial<E> r = parse(string, domain, ordering, WithVariables.defaultVars(nVariables));
         if (r.nVariables != nVariables)
             throw new IllegalArgumentException("not from this field");
         return r;
@@ -1533,8 +1534,15 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return r;
     }
 
-    private static <E> String coeffToString(E coeff) {
-        String cfs = coeff.toString();
+    public MultivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String[] variables) {
+        MultivariatePolynomial<E> r = Parser.parse(string, domain, eParser, ordering, variables);
+        if (r.nVariables != nVariables)
+            throw new IllegalArgumentException("not from this field");
+        return r;
+    }
+
+    private static <E> String coeffToString(ToStringSupport<E> cfxToString, E coeff) {
+        String cfs = cfxToString.toString(coeff);
         if (cfs.matches("\\d+"))
             return cfs;
         if (cfs.startsWith("(") && cfs.endsWith(")"))
@@ -1544,7 +1552,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public String toString(String... vars) {
+    public String toString(String[] vars) {
+        return toString(domain, vars);
+    }
+
+    public String toString(ToStringSupport<E> cfxToString, String[] vars) {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
         for (Monomial<E> term : terms) {
@@ -1554,7 +1566,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             String monomialString = term.toString(vars);
             if (first) {
                 if (!domain.isOne(coeff) || monomialString.isEmpty()) {
-                    sb.append(coeffToString(coeff));
+                    sb.append(coeffToString(cfxToString, coeff));
                     if (!monomialString.isEmpty())
                         sb.append("*");
                 }
@@ -1569,7 +1581,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
                 }
 
                 if (!domain.isOne(coeff) || monomialString.isEmpty()) {
-                    sb.append(coeffToString(coeff));
+                    sb.append(coeffToString(cfxToString, coeff));
                     if (!monomialString.isEmpty())
                         sb.append("*");
                 }

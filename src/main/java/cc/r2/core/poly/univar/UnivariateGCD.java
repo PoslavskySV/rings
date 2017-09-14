@@ -7,7 +7,7 @@ import cc.r2.core.number.ChineseRemainders;
 import cc.r2.core.number.primes.PrimesIterator;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Domains;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.IntegersZp;
 import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
@@ -44,8 +44,8 @@ public final class UnivariateGCD {
         a.assertSameDomainWith(b);
         if (a.isOverField())
             return HalfGCD(a, b);
-        else if (a instanceof lUnivariatePolynomialZ)
-            return (T) ModularGCD((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
+        else if (a instanceof UnivariatePolynomialZ64)
+            return (T) ModularGCD((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b);
         else if (a instanceof UnivariatePolynomial) {
             Domain domain = ((UnivariatePolynomial) a).domain;
             if (domain.equals(Domains.Z))
@@ -532,8 +532,8 @@ public final class UnivariateGCD {
     public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> EuclidPseudoRemainders(final T a,
                                                                                                       final T b,
                                                                                                       boolean primitivePRS) {
-        if (a instanceof lUnivariatePolynomialZ)
-            return (PolynomialRemainders<T>) EuclidPseudoRemainders((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b, primitivePRS);
+        if (a instanceof UnivariatePolynomialZ64)
+            return (PolynomialRemainders<T>) EuclidPseudoRemainders((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b, primitivePRS);
         else if (a instanceof UnivariatePolynomial)
             return (PolynomialRemainders<T>) EuclidPseudoRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b, primitivePRS);
         else
@@ -548,9 +548,9 @@ public final class UnivariateGCD {
      * @param primitivePRS whether to build primitive polynomial remainders or not
      * @return polynomial remainder sequence (the last element is GCD)
      */
-    public static PolynomialRemainders<lUnivariatePolynomialZ> EuclidPseudoRemainders(final lUnivariatePolynomialZ a,
-                                                                                      final lUnivariatePolynomialZ b,
-                                                                                      boolean primitivePRS) {
+    public static PolynomialRemainders<UnivariatePolynomialZ64> EuclidPseudoRemainders(final UnivariatePolynomialZ64 a,
+                                                                                       final UnivariatePolynomialZ64 b,
+                                                                                       boolean primitivePRS) {
         if (a.degree < b.degree)
             return EuclidPseudoRemainders(b, a, primitivePRS);
 
@@ -559,8 +559,8 @@ public final class UnivariateGCD {
 
         long aContent = a.content(), bContent = b.content();
         long contentGCD = MachineArithmetic.gcd(aContent, bContent);
-        lUnivariatePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
-        PolynomialRemainders<lUnivariatePolynomialZ> res = EuclidPseudoRemainders0(aPP, bPP, primitivePRS);
+        UnivariatePolynomialZ64 aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
+        PolynomialRemainders<UnivariatePolynomialZ64> res = EuclidPseudoRemainders0(aPP, bPP, primitivePRS);
         res.gcd().primitivePartSameSign().multiply(contentGCD);
         return res;
     }
@@ -624,8 +624,8 @@ public final class UnivariateGCD {
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T>
     EuclidSubresultantRemainders(final T a, final T b) {
-        if (a instanceof lUnivariatePolynomialZ)
-            return (PolynomialRemainders<T>) EuclidSubresultantRemainders((lUnivariatePolynomialZ) a, (lUnivariatePolynomialZ) b);
+        if (a instanceof UnivariatePolynomialZ64)
+            return (PolynomialRemainders<T>) EuclidSubresultantRemainders((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b);
         else if (a instanceof UnivariatePolynomial)
             return (PolynomialRemainders<T>) EuclidSubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b);
         else
@@ -639,8 +639,8 @@ public final class UnivariateGCD {
      * @param b poly
      * @return subresultant sequence (the last element is GCD)
      */
-    public static PolynomialRemainders<lUnivariatePolynomialZ>
-    EuclidSubresultantRemainders(final lUnivariatePolynomialZ a, final lUnivariatePolynomialZ b) {
+    public static PolynomialRemainders<UnivariatePolynomialZ64>
+    EuclidSubresultantRemainders(final UnivariatePolynomialZ64 a, final UnivariatePolynomialZ64 b) {
         if (b.degree > a.degree)
             return EuclidSubresultantRemainders(b, a);
 
@@ -649,9 +649,9 @@ public final class UnivariateGCD {
 
         long aContent = a.content(), bContent = b.content();
         long contentGCD = MachineArithmetic.gcd(aContent, bContent);
-        lUnivariatePolynomialZ aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
+        UnivariatePolynomialZ64 aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
 
-        ArrayList<lUnivariatePolynomialZ> prs = new ArrayList<>();
+        ArrayList<UnivariatePolynomialZ64> prs = new ArrayList<>();
         prs.add(aPP); prs.add(bPP);
 
         TLongArrayList beta = new TLongArrayList(), psi = new TLongArrayList();
@@ -659,8 +659,8 @@ public final class UnivariateGCD {
 
         long cBeta, cPsi;
         for (int i = 0; ; i++) {
-            lUnivariatePolynomialZ curr = prs.get(i);
-            lUnivariatePolynomialZ next = prs.get(i + 1);
+            UnivariatePolynomialZ64 curr = prs.get(i);
+            UnivariatePolynomialZ64 next = prs.get(i + 1);
             int delta = curr.degree - next.degree;
             if (i == 0) {
                 cBeta = (delta + 1) % 2 == 0 ? 1 : -1;
@@ -677,7 +677,7 @@ public final class UnivariateGCD {
                 cBeta = safeMultiply(-curr.lc(), safePow(cPsi, delta));
             }
 
-            lUnivariatePolynomialZ q = UnivariateDivision.pseudoDivideAndRemainder(curr, next, true)[1];
+            UnivariatePolynomialZ64 q = UnivariateDivision.pseudoDivideAndRemainder(curr, next, true)[1];
             if (q.isZero())
                 break;
 
@@ -688,7 +688,7 @@ public final class UnivariateGCD {
             beta.add(cBeta);
             psi.add(cPsi);
         }
-        PolynomialRemainders<lUnivariatePolynomialZ> res = new PolynomialRemainders<>(prs);
+        PolynomialRemainders<UnivariatePolynomialZ64> res = new PolynomialRemainders<>(prs);
         res.gcd().multiply(contentGCD);
         return res;
     }
@@ -789,7 +789,7 @@ public final class UnivariateGCD {
      * @param b the second polynomial
      * @return GCD of two polynomials
      */
-    public static lUnivariatePolynomialZ ModularGCD(lUnivariatePolynomialZ a, lUnivariatePolynomialZ b) {
+    public static UnivariatePolynomialZ64 ModularGCD(UnivariatePolynomialZ64 a, UnivariatePolynomialZ64 b) {
         if (a == b)
             return a.clone();
         if (a.isZero()) return b.clone();
@@ -800,21 +800,21 @@ public final class UnivariateGCD {
         long aContent = a.content(), bContent = b.content();
         long contentGCD = MachineArithmetic.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
-            return lUnivariatePolynomialZ.create(contentGCD);
+            return UnivariatePolynomialZ64.create(contentGCD);
 
         return ModularGCD0(a.clone().divideOrNull(aContent), b.clone().divideOrNull(bContent)).multiply(contentGCD);
     }
 
     /** modular GCD for primitive polynomials */
     @SuppressWarnings("ConstantConditions")
-    private static lUnivariatePolynomialZ ModularGCD0(lUnivariatePolynomialZ a, lUnivariatePolynomialZ b) {
+    private static UnivariatePolynomialZ64 ModularGCD0(UnivariatePolynomialZ64 a, UnivariatePolynomialZ64 b) {
         assert a.degree >= b.degree;
 
         long lcGCD = MachineArithmetic.gcd(a.lc(), b.lc());
         double bound = Math.max(a.mignotteBound(), b.mignotteBound()) * lcGCD;
 
-        lUnivariatePolynomialZ previousBase = null;
-        lUnivariatePolynomialZp base = null;
+        UnivariatePolynomialZ64 previousBase = null;
+        UnivariatePolynomialZp64 base = null;
         long basePrime = -1;
 
         PrimesIterator primesLoop = new PrimesIterator(3);
@@ -825,15 +825,15 @@ public final class UnivariateGCD {
             if (a.lc() % prime == 0 || b.lc() % prime == 0)
                 continue;
 
-            lUnivariatePolynomialZp aMod = a.modulus(prime), bMod = b.modulus(prime);
-            lUnivariatePolynomialZp modularGCD = EuclidGCD(aMod, bMod);
+            UnivariatePolynomialZp64 aMod = a.modulus(prime), bMod = b.modulus(prime);
+            UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
 
             //coprime polynomials
             if (modularGCD.degree == 0)
-                return lUnivariatePolynomialZ.one();
+                return UnivariatePolynomialZ64.one();
 
             // save the base for the first time or when a new modular image is better
             if (base == null || base.degree > modularGCD.degree) {
@@ -866,11 +866,11 @@ public final class UnivariateGCD {
             basePrime = newBasePrime;
 
             //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
-            lUnivariatePolynomialZ candidate = base.asPolyZSymmetric().primitivePart();
+            UnivariatePolynomialZ64 candidate = base.asPolyZSymmetric().primitivePart();
             if ((double) basePrime >= 2 * bound || (previousBase != null && candidate.equals(previousBase))) {
                 previousBase = candidate;
                 //first check b since b is less degree
-                lUnivariatePolynomialZ[] div;
+                UnivariatePolynomialZ64[] div;
                 div = UnivariateDivision.divideAndRemainder(b, candidate, true);
                 if (div == null || !div[1].isZero())
                     continue;
@@ -925,8 +925,8 @@ public final class UnivariateGCD {
                 && maxAbsCoefficient(b).isLong())
             return ModularGCD(asLongPolyZ(a), asLongPolyZ(b)).toBigPoly();
 
-        lUnivariatePolynomialZ previousBase = null;
-        lUnivariatePolynomialZp base = null;
+        UnivariatePolynomialZ64 previousBase = null;
+        UnivariatePolynomialZp64 base = null;
         long basePrime = -1;
 
         PrimesIterator primesLoop = new PrimesIterator(1031);
@@ -938,9 +938,9 @@ public final class UnivariateGCD {
             if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
                 continue;
 
-            IntegersModulo bPrimeDomain = new IntegersModulo(bPrime);
-            lUnivariatePolynomialZp aMod = asLongPolyZp(a.setDomain(bPrimeDomain)), bMod = asLongPolyZp(b.setDomain(bPrimeDomain));
-            lUnivariatePolynomialZp modularGCD = EuclidGCD(aMod, bMod);
+            IntegersZp bPrimeDomain = new IntegersZp(bPrime);
+            UnivariatePolynomialZp64 aMod = asLongPolyZp(a.setDomain(bPrimeDomain)), bMod = asLongPolyZp(b.setDomain(bPrimeDomain));
+            UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -983,7 +983,7 @@ public final class UnivariateGCD {
             basePrime = newBasePrime;
 
             //either trigger Mignotte's bound or two trials didn't change the result, probably we are done
-            lUnivariatePolynomialZ lCandidate = base.asPolyZSymmetric().primitivePart();
+            UnivariatePolynomialZ64 lCandidate = base.asPolyZSymmetric().primitivePart();
             if (BigInteger.valueOf(basePrime).compareTo(bound2) >= 0 || (previousBase != null && lCandidate.equals(previousBase))) {
                 previousBase = lCandidate;
                 UnivariatePolynomial<BigInteger> candidate = lCandidate.toBigPoly();
@@ -1014,9 +1014,9 @@ public final class UnivariateGCD {
             if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
                 continue;
 
-            IntegersModulo bPrimeDomain = new IntegersModulo(bPrime);
-            lUnivariatePolynomialZp aMod = asLongPolyZp(a.setDomain(bPrimeDomain)), bMod = asLongPolyZp(b.setDomain(bPrimeDomain));
-            lUnivariatePolynomialZp modularGCD = EuclidGCD(aMod, bMod);
+            IntegersZp bPrimeDomain = new IntegersZp(bPrime);
+            UnivariatePolynomialZp64 aMod = asLongPolyZp(a.setDomain(bPrimeDomain)), bMod = asLongPolyZp(b.setDomain(bPrimeDomain));
+            UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -1051,7 +1051,7 @@ public final class UnivariateGCD {
                 long oth = modularGCD.multiply(modularGCD.data[i], monicFactor);
                 bBase.data[i] = ChineseRemainders(bBasePrime, bPrime, bBase.data[i], BigInteger.valueOf(oth));
             }
-            bBase = bBase.setDomainUnsafe(new IntegersModulo(newBasePrime));
+            bBase = bBase.setDomainUnsafe(new IntegersZp(newBasePrime));
             bBasePrime = newBasePrime;
 
             UnivariatePolynomial<BigInteger> candidate = asPolyZSymmetric(bBase).primitivePart();

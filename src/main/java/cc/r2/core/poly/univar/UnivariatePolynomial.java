@@ -2,9 +2,7 @@ package cc.r2.core.poly.univar;
 
 import cc.r2.core.number.BigInteger;
 import cc.r2.core.number.BigIntegerArithmetics;
-import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.Domains;
-import cc.r2.core.poly.IntegersModulo;
+import cc.r2.core.poly.*;
 import cc.r2.core.util.ArraysUtil;
 
 import java.util.*;
@@ -52,7 +50,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * Parse string into polynomial
      */
     public static <E> UnivariatePolynomial<E> parse(Domain<E> domain, String string) {
-        return Parser.parse(domain, string);
+        return Parser.parse(domain, domain, string);
     }
 
     /**
@@ -133,11 +131,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return machine-sized polynomial in Z
      * @throws ArithmeticException if some of coefficients is out of long range
      */
-    public static lUnivariatePolynomialZ asLongPolyZ(UnivariatePolynomial<BigInteger> poly) {
+    public static UnivariatePolynomialZ64 asLongPolyZ(UnivariatePolynomial<BigInteger> poly) {
         long[] data = new long[poly.degree + 1];
         for (int i = 0; i < data.length; i++)
             data[i] = poly.data[i].longValueExact();
-        return lUnivariatePolynomialZ.create(data);
+        return UnivariatePolynomialZ64.create(data);
     }
 
     /**
@@ -145,16 +143,16 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      *
      * @param poly the Z/p polynomial over BigIntegers
      * @return machine-sized polynomial in Z/p
-     * @throws IllegalArgumentException if {@code poly.domain} is not {@link IntegersModulo}
+     * @throws IllegalArgumentException if {@code poly.domain} is not {@link IntegersZp}
      * @throws ArithmeticException      if some of {@code poly} elements is out of long range
      */
-    public static lUnivariatePolynomialZp asLongPolyZp(UnivariatePolynomial<BigInteger> poly) {
-        if (!(poly.domain instanceof IntegersModulo))
+    public static UnivariatePolynomialZp64 asLongPolyZp(UnivariatePolynomial<BigInteger> poly) {
+        if (!(poly.domain instanceof IntegersZp))
             throw new IllegalArgumentException("Not a modular domain: " + poly.domain);
         long[] data = new long[poly.degree + 1];
         for (int i = 0; i < data.length; i++)
             data[i] = poly.data[i].longValueExact();
-        return lUnivariatePolynomialZp.create(((IntegersModulo) poly.domain).modulus.longValueExact(), data);
+        return UnivariatePolynomialZp64.create(((IntegersZp) poly.domain).modulus.longValueExact(), data);
     }
 
     /**
@@ -163,12 +161,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      *
      * @param poly Zp polynomial
      * @return Z[x] version of the poly with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <= modulus/2}).
-     * @throws IllegalArgumentException is {@code poly.domain} is not a {@link IntegersModulo}
+     * @throws IllegalArgumentException is {@code poly.domain} is not a {@link IntegersZp}
      */
     public static UnivariatePolynomial<BigInteger> asPolyZSymmetric(UnivariatePolynomial<BigInteger> poly) {
-        if (!(poly.domain instanceof IntegersModulo))
+        if (!(poly.domain instanceof IntegersZp))
             throw new IllegalArgumentException("Not a modular domain: " + poly.domain);
-        IntegersModulo domain = (IntegersModulo) poly.domain;
+        IntegersZp domain = (IntegersZp) poly.domain;
         BigInteger[] newData = new BigInteger[poly.degree + 1];
         for (int i = poly.degree; i >= 0; --i)
             newData[i] = domain.symmetricForm(poly.data[i]);
@@ -461,7 +459,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public BigInteger coefficientDomainCharacteristics() {
-        return domain.characteristics();
+        return domain.characteristic();
     }
 
     @Override
@@ -933,7 +931,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             return multiply(factor);
         }
 
-        if (domain instanceof IntegersModulo) {
+        if (domain instanceof IntegersZp) {
             // faster method with exact operations
             UnivariatePolynomial<E>
                     iThis = setDomainUnsafe((Domain<E>) Domains.Z),
@@ -955,7 +953,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (degree == 0)
             return multiply(data[0]);
 
-        if (domain instanceof IntegersModulo) {
+        if (domain instanceof IntegersZp) {
             // faster method with exact operations
             UnivariatePolynomial<E> iThis = setDomainUnsafe((Domain<E>) Domains.Z);
             data = iThis.square().data;
@@ -984,7 +982,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public UnivariatePolynomial<E> parsePoly(String string) {
-        return Parser.parse(domain, string);
+        return parse(domain, string);
+    }
+
+    public UnivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String variable) {
+        return Parser.parse(domain, eParser, string);
     }
 
     @Override
@@ -1117,16 +1119,20 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public String toString() {
-        return toString("x");
+        return toString(WithVariables.defaultVars(1));
     }
 
     @Override
-    public String toString(String... variables) {
+    public String toString(String[] variables) {
+        return toString(domain, variables[0]);
+    }
+
+    public String toString(ToStringSupport<E> cfxToString, String variable) {
         if (isZero())
             return "0";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
-            String str = termToString(i, variables[0]);
+            String str = termToString(cfxToString, i, variable);
             if (sb.length() == 0 && str.startsWith("+"))
                 str = str.substring(1);
             sb.append(str);
@@ -1134,7 +1140,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return sb.toString();
     }
 
-    private String termToString(int i, String var) {
+    private String termToString(ToStringSupport<E> cfxToString, int i, String var) {
         E el = data[i];
         if (domain.isZero(el))
             return "";
@@ -1143,11 +1149,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         if (domain.isOne(el)) {
             coefficient = "";
             needSeparator = false;
-        } else if (!(domain instanceof IntegersModulo) && domain.isMinusOne(el)) {
+        } else if (!(domain instanceof IntegersZp) && domain.isMinusOne(el)) {
             coefficient = "-";
             needSeparator = false;
         } else {
-            coefficient = el.toString();
+            coefficient = cfxToString.toString(el);
             if (!coefficient.matches("[+\\-]?\\d+"))
                 coefficient = "(" + coefficient + ")";
             needSeparator = true;
@@ -1162,7 +1168,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         else
             m = ((needSeparator ? "*" : "") + var + (i == 1 ? "" : "^" + i));
         if (m.isEmpty())
-            if (domain.isOne(el) || (!(domain instanceof IntegersModulo) && domain.isMinusOne(el)))
+            if (domain.isOne(el) || (!(domain instanceof IntegersZp) && domain.isMinusOne(el)))
                 coefficient = coefficient + "1";
 
         return coefficient + m;
