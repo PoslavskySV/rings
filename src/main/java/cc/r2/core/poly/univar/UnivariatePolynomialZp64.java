@@ -111,7 +111,17 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
      * @return constant polynomial
      */
     public static UnivariatePolynomialZp64 constant(long modulus, long value) {
-        IntegersZp64 domain = new IntegersZp64(modulus);
+        return constant(new IntegersZp64(modulus), value);
+    }
+
+    /**
+     * Creates constant polynomial with specified value
+     *
+     * @param domain the domain
+     * @param value  the value
+     * @return constant polynomial
+     */
+    public static UnivariatePolynomialZp64 constant(IntegersZp64 domain, long value) {
         return new UnivariatePolynomialZp64(domain, new long[]{domain.modulus(value)}, 0);
     }
 

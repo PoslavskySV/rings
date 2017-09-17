@@ -2,8 +2,8 @@ package cc.r2.core.poly.univar;
 
 
 import cc.r2.core.poly.Domain;
-import cc.r2.core.poly.MachineArithmetic;
 import cc.r2.core.poly.IntegersZp64;
+import cc.r2.core.poly.MachineArithmetic;
 import cc.redberry.libdivide4j.FastDivision.Magic;
 
 import java.util.ArrayList;
@@ -1164,8 +1164,22 @@ public final class UnivariateDivision {
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> Poly divideExact(Poly dividend, Poly divider, boolean copy) {
         Poly[] qr = divideAndRemainder(dividend, divider, copy);
-        if (!qr[1].isZero())
+        if (qr == null || !qr[1].isZero())
             throw new ArithmeticException("Not divisible: (" + dividend + ") / (" + divider + ")");
+        return qr[0];
+    }
+
+    /**
+     * Divides {@code dividend} by {@code divider} or returns {@code null} if exact division is not possible
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return {@code dividend / divider} or {@code null} if exact division is not possible
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> Poly divideOrNull(Poly dividend, Poly divider, boolean copy) {
+        Poly[] qr = divideAndRemainder(dividend, divider, copy);
+        if (qr == null || !qr[1].isZero())
+            return null;
         return qr[0];
     }
 

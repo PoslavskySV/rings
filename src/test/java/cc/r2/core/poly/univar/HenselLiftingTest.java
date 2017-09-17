@@ -157,7 +157,7 @@ public class HenselLiftingTest extends APolynomialTest {
         if (!UnivariateSquareFreeFactorization.isSquareFree(baseMod))
             return;
 
-        FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.factorInGF(baseMod);
+        FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(baseMod);
         FactorDecompositionTest.assertFactorization(baseMod, modularFactors);
 
         HenselLifting.LiftFactory<UnivariatePolynomialZp64> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
@@ -339,7 +339,7 @@ public class HenselLiftingTest extends APolynomialTest {
             while (!UnivariateSquareFreeFactorization.isSquareFree(poly.setDomain(domain)) || polyMod.degree() != poly.degree());
 
             BigInteger desiredBound = mignotteBound(poly).shiftLeft(1).multiply(poly.lc());
-            FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.factorInGF(asLongPolyZp(polyMod));
+            FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(asLongPolyZp(polyMod));
             BigInteger bModulus = BigInteger.valueOf(modulus);
 
             long start;

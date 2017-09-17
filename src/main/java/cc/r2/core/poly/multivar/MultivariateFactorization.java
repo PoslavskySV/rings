@@ -41,11 +41,11 @@ public final class MultivariateFactorization {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    FactorDecomposition<Poly> factor(final Poly poly) {
+    FactorDecomposition<Poly> Factor(final Poly poly) {
         if (poly.isOverFiniteField())
-            return (FactorDecomposition<Poly>) factorInGF((AMultivariatePolynomial) poly);
+            return (FactorDecomposition<Poly>) FactorInGF((AMultivariatePolynomial) poly);
         else if (poly.isOverZ())
-            return factorInZ((MultivariatePolynomial) poly);
+            return FactorInZ((MultivariatePolynomial) poly);
         else
             throw new RuntimeException("Unsupported domain: " + poly.coefficientDomainToString());
     }
@@ -57,8 +57,8 @@ public final class MultivariateFactorization {
      * @return factor decomposition
      */
     @SuppressWarnings("unchecked")
-    public static FactorDecomposition<MultivariatePolynomial<BigInteger>> factorInZ(final MultivariatePolynomial<BigInteger> polynomial) {
-        return factor(polynomial, MultivariateFactorization::factorPrimitiveInZ);
+    public static FactorDecomposition<MultivariatePolynomial<BigInteger>> FactorInZ(final MultivariatePolynomial<BigInteger> polynomial) {
+        return Factor(polynomial, MultivariateFactorization::factorPrimitiveInZ);
     }
 
     /**
@@ -70,8 +70,8 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorInGF(final Poly polynomial) {
-        return factor(polynomial, MultivariateFactorization::factorPrimitiveInGF);
+    FactorDecomposition<Poly> FactorInGF(final Poly polynomial) {
+        return Factor(polynomial, MultivariateFactorization::factorPrimitiveInGF);
     }
 
     /**
@@ -83,7 +83,7 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     private static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factor(final Poly polynomial, Function<Poly, FactorDecomposition<Poly>> algorithm) {
+    FactorDecomposition<Poly> Factor(final Poly polynomial, Function<Poly, FactorDecomposition<Poly>> algorithm) {
         if (polynomial.isEffectiveUnivariate())
             return factorUnivariate(polynomial);
 
@@ -115,7 +115,7 @@ public final class MultivariateFactorization {
     FactorDecomposition<Poly> factorUnivariate(Poly poly) {
         int uVar = poly.univariateVariable();
         FactorDecomposition<? extends IUnivariatePolynomial>
-                uFactors = UnivariateFactorization.factor(poly.asUnivariate());
+                uFactors = UnivariateFactorization.Factor(poly.asUnivariate());
         return uFactors.map(u -> (Poly) asMultivariate(u, poly.nVariables, uVar, poly.ordering));
     }
 
@@ -514,7 +514,7 @@ public final class MultivariateFactorization {
                 // ensure that univariate image is also square free
                 continue;
 
-            FactorDecomposition<UnivariatePolynomialZp64> factorization = UnivariateFactorization.factorSquareFreeInGF(uImage);
+            FactorDecomposition<UnivariatePolynomialZp64> factorization = UnivariateFactorization.FactorSquareFreeInGF(uImage);
             if (factorization.size() == 1)
                 // irreducible polynomial
                 return FactorDecomposition.singleFactor(poly);
@@ -712,7 +712,7 @@ public final class MultivariateFactorization {
                 // ensure that univariate image is also square free
                 continue;
 
-            FactorDecomposition<UnivariatePolynomial<E>> factorization = UnivariateFactorization.factorSquareFreeInGF(uImage);
+            FactorDecomposition<UnivariatePolynomial<E>> factorization = UnivariateFactorization.FactorSquareFreeInGF(uImage);
             if (factorization.size() == 1)
                 // irreducible polynomial
                 return FactorDecomposition.singleFactor(poly);
@@ -959,7 +959,7 @@ public final class MultivariateFactorization {
                 // ensure that univariate image is also square free
                 continue;
 
-            FactorDecomposition<UnivariatePolynomial<BigInteger>> factorization = UnivariateFactorization.factorSquareFreeInZ(uImage);
+            FactorDecomposition<UnivariatePolynomial<BigInteger>> factorization = UnivariateFactorization.FactorSquareFreeInZ(uImage);
             if (factorization.size() == 1)
                 // irreducible polynomial
                 return FactorDecomposition.singleFactor(poly);

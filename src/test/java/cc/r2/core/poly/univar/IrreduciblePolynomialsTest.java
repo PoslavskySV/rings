@@ -28,7 +28,7 @@ public class IrreduciblePolynomialsTest extends APolynomialTest {
         for (int i = 0; i < nIterations; i++) {
             long modulus = getModulusRandom(rndd.nextInt(5, 15));
             UnivariatePolynomialZp64 poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 15), modulus, rnd);
-            FactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.factor(poly);
+            FactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.Factor(poly);
             try {
                 Assert.assertEquals(factors.size() == 1, irreducibleQ(poly));
             } catch (Throwable e) {
@@ -50,7 +50,7 @@ public class IrreduciblePolynomialsTest extends APolynomialTest {
     @Test
     public void test2() throws Exception {
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(42, 73, 0, 79, 47, 1).modulus(89);
-        Assert.assertTrue(UnivariateFactorization.factor(poly).toString(), irreducibleQ(poly));
+        Assert.assertTrue(UnivariateFactorization.Factor(poly).toString(), irreducibleQ(poly));
     }
 
     @Test

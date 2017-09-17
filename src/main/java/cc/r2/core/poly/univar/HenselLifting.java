@@ -131,8 +131,8 @@ public final class HenselLifting {
     }
 
     private static void ensureIntegersDomain(UnivariatePolynomial<BigInteger> poly) {
-        if (poly.domain.equals(Domains.Z))
-            throw new IllegalArgumentException("Not an integers domain domain");
+        if (!poly.domain.equals(Domains.Z))
+            throw new IllegalArgumentException("Not an integers domain domain: " + poly.domain);
     }
 
     private static void ensureModularDomain(UnivariatePolynomial<BigInteger> poly) {

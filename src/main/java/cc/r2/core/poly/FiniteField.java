@@ -28,6 +28,8 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
 
     /** Irreducible polynomial that generates this finite field */
     private final Poly irreducible;
+    /** Factory polynomial */
+    private final Poly factory;
     /** Precomputed inverses */
     private final InverseModMonomial<Poly> inverseMod;
     /** Domain cardinality */
@@ -44,13 +46,25 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
         if (!irreducible.isOverField())
             throw new IllegalArgumentException();
         this.irreducible = irreducible;
+        this.factory = irreducible.clone();
         this.inverseMod = UnivariateDivision.fastDivisionPreConditioning(irreducible);
         this.cardinality = BigIntegerArithmetics.pow(irreducible.coefficientDomainCardinality(), irreducible.degree());
     }
 
+    /**
+     * Returns the irreducible polynomial that generates this finite field
+     *
+     * @return the irreducible polynomial that generates this finite field
+     */
     public Poly getIrreducible() {
         return irreducible.clone();
     }
+
+    @Override
+    public int nVariables() { return 1; }
+
+    @Override
+    public Poly factory() { return factory; }
 
     @Override
     public boolean isField() {
@@ -221,6 +235,13 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
     @Override
     public Poly randomElement(RandomGenerator rnd) {
         return valueOf(RandomUnivariatePolynomials.randomPoly(irreducible, rnd.nextInt(2 * irreducible.degree()), rnd));
+    }
+
+    @Override
+    public Poly variable(int variable) {
+        if (variable != 0)
+            throw new IllegalArgumentException();
+        return valueOf(irreducible.createMonomial(1));
     }
 
     @Override

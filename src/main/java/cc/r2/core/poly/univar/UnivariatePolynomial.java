@@ -712,6 +712,18 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return this;
     }
 
+    /**
+     * Add constant to this.
+     *
+     * @param val some number
+     * @return this + val
+     */
+    public UnivariatePolynomial<E> subtract(E val) {
+        data[0] = domain.subtract(data[0], domain.valueOf(val));
+        fixDegree();
+        return this;
+    }
+
     @Override
     public UnivariatePolynomial<E> decrement() {
         return subtract(createOne());
@@ -881,6 +893,20 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             data[i] = l;
         }
         return this;
+    }
+
+    /**
+     * Divides this polynomial by a {@code factor} or throws exception if exact division is not possible
+     *
+     * @param factor the factor
+     * @return {@code this} divided by the {@code factor}
+     * @throws ArithmeticException if exact division is not possible
+     */
+    public UnivariatePolynomial<E> divideExact(E factor) {
+        UnivariatePolynomial<E> r = divideOrNull(factor);
+        if (r == null)
+            throw new ArithmeticException("not divisible " + this + " / " + factor);
+        return r;
     }
 
     @Override

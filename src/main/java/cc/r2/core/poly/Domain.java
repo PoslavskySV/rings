@@ -9,9 +9,9 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 /**
- * Domain of elements. Mathematical operations defined in {@code Domain} cover all <i>field</i> operations, though the
- * particular implementations may describe actually a more restricted sets (rings both Euclidean or not etc.), in
- * which case some unsupported field operations (e.g. reciprocal) will throw exception.
+ * Domain of elements. Mathematical operations defined in {@code Domain} include all <i>field</i> operations, though the
+ * particular implementations may represent a more restricted sets (general rings, Euclidean rings etc.), in
+ * which case some field operations (e.g. reciprocal) are not applicable (will throw exception).
  *
  * @param <E> the type of objects that may be operated by this domain
  * @author Stanislav Poslavsky
@@ -542,22 +542,7 @@ public interface Domain<E> extends
      * @return {@code base} in a power of {@code exponent}
      */
     default E pow(E base, int exponent) {
-        if (exponent < 0)
-            throw new IllegalArgumentException();
-
-        if (exponent == 1)
-            return base;
-
-        E result = getOne();
-        E k2p = copy(base); // <= copy the base (mutable operations are used below)
-        for (; ; ) {
-            if ((exponent & 1) != 0)
-                result = multiplyMutable(result, k2p);
-            exponent = exponent >> 1;
-            if (exponent == 0)
-                return result;
-            k2p = multiplyMutable(k2p, k2p);
-        }
+        return pow(base, BigInteger.valueOf(exponent));
     }
 
     /**
@@ -568,22 +553,7 @@ public interface Domain<E> extends
      * @return {@code base} in a power of {@code exponent}
      */
     default E pow(E base, long exponent) {
-        if (exponent < 0)
-            throw new IllegalArgumentException();
-
-        if (exponent == 1)
-            return base;
-
-        E result = getOne();
-        E k2p = copy(base); // <= copy the base (mutable operations are used below)
-        for (; ; ) {
-            if ((exponent & 1) != 0)
-                result = multiplyMutable(result, k2p);
-            exponent = exponent >> 1;
-            if (exponent == 0)
-                return result;
-            k2p = multiplyMutable(k2p, k2p);
-        }
+        return pow(base, BigInteger.valueOf(exponent));
     }
 
     /**
@@ -667,7 +637,7 @@ public interface Domain<E> extends
         return element.toString();
     }
 
-    //    /**
+//    /**
 //     * Returns domain with larger cardinality that contains all elements of this or null if there is no such domain.
 //     *
 //     * @return domain with larger cardinality that contains all elements of this or null if there is no such domain

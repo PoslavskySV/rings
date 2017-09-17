@@ -67,6 +67,21 @@ public final class MultivariateDivision {
     }
 
     /**
+     * Performs multivariate division with remainder.
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return array of quotient and remainder
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly[] divideAndRemainder(Poly dividend, Poly divider) {
+        Poly[] array = divider.createArray(1);
+        array[0] = divider;
+        return divideAndRemainder(dividend, array);
+    }
+
+    /**
      * Performs multivariate division with remainder and returns the remainder.
      *
      * @param dividend the dividend

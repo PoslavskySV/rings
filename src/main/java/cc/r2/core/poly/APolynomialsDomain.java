@@ -1,8 +1,6 @@
 package cc.r2.core.poly;
 
 import cc.r2.core.number.BigInteger;
-import cc.r2.core.poly.multivar.AMultivariatePolynomial;
-import cc.r2.core.poly.univar.IUnivariatePolynomial;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -14,11 +12,15 @@ import java.util.Iterator;
 abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomain<Poly> implements PolynomialDomain<Poly> {
     private static final long serialVersionUID = 1L;
 
-    public final Poly factory;
+    /** the factory polynomial */
+    final Poly factory;
 
     APolynomialsDomain(Poly factory) {
         this.factory = factory.createZero();
     }
+
+    @Override
+    public Poly factory() { return factory; }
 
     @Override
     public final boolean isField() {return false;}
@@ -40,6 +42,11 @@ abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomai
 
     @Override
     public final Poly negate(Poly element) {return element.clone().negate();}
+
+    @Override
+    public Poly pow(Poly base, BigInteger exponent) {
+        return PolynomialMethods.polyPow(base, exponent, true);
+    }
 
     @Override
     public Poly addMutable(Poly a, Poly b) {
@@ -137,10 +144,6 @@ abstract class APolynomialsDomain<Poly extends IPolynomial<Poly>> extends ADomai
     @Override
     public Iterator<Poly> iterator() {
         throw new UnsupportedOperationException("Domain of infinite cardinality.");
-    }
-
-    private int nVariables() {
-        return factory instanceof IUnivariatePolynomial ? 1 : ((AMultivariatePolynomial) factory).nVariables;
     }
 
     @Override

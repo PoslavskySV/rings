@@ -25,6 +25,9 @@ public final class UnivariatePolynomials<Poly extends IUnivariatePolynomial<Poly
     public UnivariatePolynomials(Poly factory) { super(factory); }
 
     @Override
+    public int nVariables() { return 1; }
+
+    @Override
     public Poly remainder(Poly a, Poly b) {return UnivariateDivision.remainder(a, b, true);}
 
     @Override
@@ -32,6 +35,13 @@ public final class UnivariatePolynomials<Poly extends IUnivariatePolynomial<Poly
 
     @Override
     public Poly gcd(Poly a, Poly b) {return UnivariateGCD.PolynomialGCD(a, b);}
+
+    @Override
+    public Poly variable(int variable) {
+        if (variable != 0)
+            throw new IllegalArgumentException();
+        return factory.createMonomial(1);
+    }
 
     /**
      * Gives a random univariate polynomial with the degree randomly picked from {@code minDegree} (inclusive)

@@ -774,6 +774,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return this;
     }
 
+    /**
+     * Divides this polynomial by a {@code factor} or throws exception if exact division is not possible
+     *
+     * @param factor the factor
+     * @return {@code this} divided by the {@code factor}
+     * @throws ArithmeticException if exact division is not possible
+     */
+    public MultivariatePolynomial<E> divideExact(E factor) {
+        MultivariatePolynomial<E> r = divideOrNull(factor);
+        if (r == null)
+            throw new ArithmeticException("not divisible " + this + " / " + factor);
+        return r;
+    }
+
     @Override
     public MultivariatePolynomial<E> divideOrNull(Monomial<E> monomial) {
         if (monomial.isZeroVector())
@@ -867,10 +881,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             uData[uExp] = domain.add(uData[uExp], el.coefficient);
         }
         return UnivariatePolynomial.createUnsafe(domain, uData);
-    }
-
-    public MultivariatePolynomial<E> evaluate1(int[] variables, E[] values) {
-        return evaluate(variables, values);
     }
 
     /**

@@ -3,7 +3,6 @@ package cc.r2.core.poly;
 import cc.r2.core.poly.multivar.AMultivariatePolynomial;
 import cc.r2.core.poly.multivar.MultivariateDivision;
 import cc.r2.core.poly.multivar.MultivariateGCD;
-import cc.r2.core.poly.univar.IUnivariatePolynomial;
 import org.apache.commons.math3.random.RandomGenerator;
 
 /**
@@ -26,6 +25,9 @@ public final class MultivariatePolynomials<Poly extends AMultivariatePolynomial<
     public MultivariatePolynomials(Poly factory) { super(factory); }
 
     @Override
+    public int nVariables() { return factory.nVariables; }
+
+    @Override
     @SuppressWarnings("unchecked")
     public Poly[] divideAndRemainder(Poly dividend, Poly divider) {
         Poly[] arr = divider.createArray(1);
@@ -46,6 +48,12 @@ public final class MultivariatePolynomials<Poly extends AMultivariatePolynomial<
     @Override
     public Poly gcd(Iterable<Poly> elements) {
         return MultivariateGCD.PolynomialGCD(elements);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Poly variable(int variable) {
+        return factory.createUnivariateMonomial(variable, 1);
     }
 
     /**

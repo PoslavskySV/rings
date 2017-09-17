@@ -444,7 +444,7 @@ public class HenselLiftingTest {
 //        assert MultivariateSquareFreeFactorization.isSquareFree(base);
 //        for (int i = 0; i < its(20, 20); i++) {
 //            long start = System.nanoTime();
-//            FactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateFactorization.factorInGF(base);
+//            FactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateFactorization.FactorInGF(base);
 //            Assert.assertEquals(3, decomposition.size());
 //            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
 //        }

@@ -464,6 +464,18 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
         return self;
     }
 
+    /**
+     * Subtract constant from this.
+     *
+     * @param val some number
+     * @return this + val
+     */
+    public final lPoly subtract(long val) {
+        data[0] = subtract(data[0], valueOf(val));
+        fixDegree();
+        return self;
+    }
+
     @Override
     public final lPoly decrement() {
         return subtract(createOne());
