@@ -2,7 +2,7 @@ package cc.r2.core.poly.scaladsl
 
 import java.util.Comparator
 
-import cc.r2.core.number.{BigInteger, Rational}
+import cc.r2.core.bigint.{BigInteger, Rational}
 import cc.r2.core.poly._
 import cc.r2.core.poly.multivar._
 import cc.r2.core.poly.univar.{IUnivariatePolynomial, UnivariatePolynomial, UnivariatePolynomialZp64}

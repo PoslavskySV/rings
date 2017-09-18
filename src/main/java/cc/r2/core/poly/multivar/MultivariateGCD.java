@@ -1,14 +1,14 @@
 package cc.r2.core.poly.multivar;
 
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
-import cc.r2.core.number.ChineseRemainders;
-import cc.r2.core.number.primes.PrimesIterator;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.BigIntegerUtil;
+import cc.r2.core.bigint.ChineseRemainders;
+import cc.r2.core.primes.PrimesIterator;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
-import cc.r2.core.poly.multivar.LinearAlgebra.SystemInfo;
+import cc.r2.core.poly.LinearAlgebra.SystemInfo;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.Interpolation;
 import cc.r2.core.poly.multivar.MultivariateInterpolation.lInterpolation;
 import cc.r2.core.poly.multivar.MultivariatePolynomialZp64.lPrecomputedPowersHolder;
@@ -572,7 +572,7 @@ public final class MultivariateGCD {
         if (a.degree() < b.degree())
             return ModularGCD(b, a);
         BigInteger aContent = a.content(), bContent = b.content();
-        BigInteger contentGCD = BigIntegerArithmetics.gcd(aContent, bContent);
+        BigInteger contentGCD = BigIntegerUtil.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
             return a.createConstant(contentGCD);
 
@@ -600,7 +600,7 @@ public final class MultivariateGCD {
             return gcdInput.restoreGCD(ModularGCD(a, b).multiply(pContentGCD));
         }
 
-        BigInteger lcGCD = BigIntegerArithmetics.gcd(a.lc(), b.lc());
+        BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
 
         RandomGenerator random = PrivateRandom.getRandom();
         PrimesIterator primesLoop = new PrimesIterator(1031);

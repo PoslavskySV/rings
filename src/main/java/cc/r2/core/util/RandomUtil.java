@@ -1,6 +1,6 @@
 package cc.r2.core.util;
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.bigint.BigInteger;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 

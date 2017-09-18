@@ -1,7 +1,7 @@
 package cc.r2.core.poly;
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.BigIntegerUtil;
 
 /**
  * Abstract domain which holds perfect power decomposition of its cardinality.
@@ -32,7 +32,7 @@ public abstract class ADomain<E> implements Domain<E> {
                     return;
                 }
 
-                BigInteger[] ipp = BigIntegerArithmetics.perfectPowerDecomposition(cardinality());
+                BigInteger[] ipp = BigIntegerUtil.perfectPowerDecomposition(cardinality());
                 if (ipp == null) {
                     // not a perfect power
                     perfectPowerDecomposition[0] = cardinality();

@@ -1,7 +1,7 @@
 package cc.r2.core.poly.scaladsl
 
-import cc.r2.core.number.BigInteger
-import cc.r2.core.number.primes.SmallPrimes
+import cc.r2.core.bigint.BigInteger
+import cc.r2.core.primes.SmallPrimes
 import cc.r2.core.poly.multivar._
 import cc.r2.core.poly.scaladsl.Rings._
 import cc.r2.core.poly.univar.{IrreduciblePolynomials, UnivariateInterpolation, UnivariatePolynomialZ64}

@@ -1,12 +1,12 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.combinatorics.IntCombinationsGenerator;
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.primes.BigPrimes;
-import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.primes.BigPrimes;
+import cc.r2.core.primes.SmallPrimes;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.HenselLifting.QuadraticLiftAbstract;
 import cc.r2.core.util.ArraysUtil;
+import cc.redberry.combinatorics.Combinatorics;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -200,8 +200,7 @@ public final class UnivariateFactorization {
 
         factor_combinations:
         while (2 * s <= modIndexes.length) {
-            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
-            for (int[] combination : combinations) {
+            for (int[] combination : Combinatorics.combinations(modIndexes.length, s)) {
                 int[] indexes = select(modIndexes, combination);
 
                 UnivariatePolynomialZp64 mFactor = factory.createConstant(fRest.lc());
@@ -255,8 +254,7 @@ public final class UnivariateFactorization {
 
         factor_combinations:
         while (2 * s <= modIndexes.length) {
-            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
-            for (int[] combination : combinations) {
+            for (int[] combination : Combinatorics.combinations(modIndexes.length, s)) {
                 int[] indexes = select(modIndexes, combination);
 
                 UnivariatePolynomial<BigInteger> mFactor = factory.createConstant(fRest.lc());

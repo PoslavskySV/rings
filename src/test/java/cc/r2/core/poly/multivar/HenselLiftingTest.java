@@ -1,21 +1,21 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.combinatorics.IntCombinationsGenerator;
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.primes.SmallPrimes;
-import cc.r2.core.poly.IntegersZp64;
-import cc.r2.core.poly.PolynomialMethods;
+import cc.r2.core.bigint.BigInteger;
 import cc.r2.core.poly.IPolynomial;
 import cc.r2.core.poly.IntegersZp;
-import cc.r2.core.poly.test.FactorizationInput;
+import cc.r2.core.poly.IntegersZp64;
+import cc.r2.core.poly.PolynomialMethods;
 import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.multivar.MultivariateFactorization.IEvaluationLoop;
 import cc.r2.core.poly.multivar.MultivariateFactorization.lEvaluationLoop;
+import cc.r2.core.poly.test.FactorizationInput;
+import cc.r2.core.primes.SmallPrimes;
 import cc.r2.core.test.Benchmark;
 import cc.r2.core.util.ArraysUtil;
 import cc.r2.core.util.TimeUnits;
+import cc.redberry.combinatorics.Combinatorics;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -547,7 +547,7 @@ public class HenselLiftingTest {
 
     private static <Poly extends AMultivariatePolynomial> boolean allCoprime(Poly... factors) {
         return StreamSupport
-                .stream(Spliterators.spliteratorUnknownSize(new IntCombinationsGenerator(factors.length, 2), Spliterator.ORDERED), false)
+                .stream(Spliterators.spliteratorUnknownSize(Combinatorics.combinations(factors.length, 2), Spliterator.ORDERED), false)
                 .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
     }
 }

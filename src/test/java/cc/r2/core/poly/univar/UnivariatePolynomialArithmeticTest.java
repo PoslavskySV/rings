@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.number.primes.BigPrimes;
-import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.primes.BigPrimes;
+import cc.r2.core.primes.SmallPrimes;
 import cc.r2.core.poly.test.APolynomialTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;

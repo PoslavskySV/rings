@@ -1,6 +1,6 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.bigint.BigInteger;
 import cc.r2.core.test.AbstractTest;
 import org.junit.Test;
 

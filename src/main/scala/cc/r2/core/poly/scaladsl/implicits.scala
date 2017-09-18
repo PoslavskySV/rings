@@ -1,6 +1,6 @@
 package cc.r2.core.poly.scaladsl
 
-import cc.r2.core.number.BigInteger
+import cc.r2.core.bigint.BigInteger
 import cc.r2.core.poly._
 import cc.r2.core.poly.multivar._
 import cc.r2.core.poly.univar.{IUnivariatePolynomial, UnivariatePolynomial, UnivariatePolynomialZp64}

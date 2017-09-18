@@ -1,10 +1,10 @@
 package cc.r2.core.poly.univar;
 
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
-import cc.r2.core.number.ChineseRemainders;
-import cc.r2.core.number.primes.PrimesIterator;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.BigIntegerUtil;
+import cc.r2.core.bigint.ChineseRemainders;
+import cc.r2.core.primes.PrimesIterator;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.IntegersZp;
@@ -16,7 +16,7 @@ import gnu.trove.list.array.TLongArrayList;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static cc.r2.core.number.ChineseRemainders.ChineseRemainders;
+import static cc.r2.core.bigint.ChineseRemainders.ChineseRemainders;
 import static cc.r2.core.poly.MachineArithmetic.safeMultiply;
 import static cc.r2.core.poly.MachineArithmetic.safePow;
 import static cc.r2.core.poly.univar.UnivariateDivision.*;
@@ -905,7 +905,7 @@ public final class UnivariateGCD {
         if (a.degree < b.degree)
             return ModularGCD(b, a);
         BigInteger aContent = a.content(), bContent = b.content();
-        BigInteger contentGCD = BigIntegerArithmetics.gcd(aContent, bContent);
+        BigInteger contentGCD = BigIntegerUtil.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
             return a.createConstant(contentGCD);
 
@@ -918,8 +918,8 @@ public final class UnivariateGCD {
                                                                 UnivariatePolynomial<BigInteger> b) {
         assert a.degree >= b.degree;
 
-        BigInteger lcGCD = BigIntegerArithmetics.gcd(a.lc(), b.lc());
-        BigInteger bound2 = BigIntegerArithmetics.max(mignotteBound(a), mignotteBound(b)).multiply(lcGCD).shiftLeft(1);
+        BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
+        BigInteger bound2 = BigIntegerUtil.max(mignotteBound(a), mignotteBound(b)).multiply(lcGCD).shiftLeft(1);
         if (bound2.isLong()
                 && maxAbsCoefficient(a).isLong()
                 && maxAbsCoefficient(b).isLong())

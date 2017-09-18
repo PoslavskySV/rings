@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.BigIntegerUtil;
 import cc.r2.core.poly.*;
 import cc.r2.core.util.ArraysUtil;
 
@@ -14,10 +14,10 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static cc.r2.core.number.BigInteger.ONE;
-import static cc.r2.core.number.BigInteger.ZERO;
-import static cc.r2.core.number.BigIntegerArithmetics.abs;
-import static cc.r2.core.number.BigIntegerArithmetics.max;
+import static cc.r2.core.bigint.BigInteger.ONE;
+import static cc.r2.core.bigint.BigInteger.ZERO;
+import static cc.r2.core.bigint.BigIntegerUtil.abs;
+import static cc.r2.core.bigint.BigIntegerUtil.max;
 
 /**
  * Univariate polynomial over generic domain.
@@ -501,7 +501,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         BigInteger norm = ZERO;
         for (int i = poly.degree; i >= 0; --i)
             norm = norm.add(poly.data[i].multiply(poly.data[i]));
-        return BigIntegerArithmetics.sqrtCeil(norm);
+        return BigIntegerUtil.sqrtCeil(norm);
     }
 
     /**

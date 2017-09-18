@@ -7,6 +7,8 @@ import gnu.trove.list.array.TLongArrayList;
 import java.util.ArrayList;
 
 /**
+ * Univariate polynomial interpolation.
+ *
  * @author Stanislav Poslavsky
  * @since 1.0
  */

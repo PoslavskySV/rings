@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.number.BigIntegerArithmetics;
-import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.bigint.BigIntegerUtil;
+import cc.r2.core.primes.SmallPrimes;
 import cc.r2.core.poly.Util;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
@@ -41,8 +41,8 @@ public final class IrreduciblePolynomials {
         // x^(q^n)
         Poly xqn = composition(xq, degree, poly, invMod, cache);
         assert
-                xqn.equals(UnivariatePolynomialArithmetic.createMonomialMod(BigIntegerArithmetics.safePow(poly.coefficientDomainCardinality(), degree), poly, invMod))
-                : "\n" + xqn + "\n" + UnivariatePolynomialArithmetic.createMonomialMod(BigIntegerArithmetics.safePow(poly.coefficientDomainCardinality(), degree), poly, invMod);
+                xqn.equals(UnivariatePolynomialArithmetic.createMonomialMod(BigIntegerUtil.pow(poly.coefficientDomainCardinality(), degree), poly, invMod))
+                : "\n" + xqn + "\n" + UnivariatePolynomialArithmetic.createMonomialMod(BigIntegerUtil.pow(poly.coefficientDomainCardinality(), degree), poly, invMod);
 
         Poly xMonomial = poly.createMonomial(1);
         if (!xqn.equals(xMonomial))

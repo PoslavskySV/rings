@@ -1,7 +1,7 @@
 package cc.r2.core.poly;
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.Rational;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.Rational;
 import cc.r2.core.poly.multivar.MonomialOrder;
 import cc.r2.core.poly.multivar.MultivariatePolynomial;
 import cc.r2.core.poly.multivar.MultivariatePolynomialZp64;

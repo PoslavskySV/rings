@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar;
 
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.bigint.BigInteger;
 import cc.r2.core.poly.MachineArithmetic;
 
 import static cc.r2.core.poly.univar.UnivariateDivision.remainder;

@@ -9,6 +9,8 @@ import org.apache.commons.math3.random.RandomGenerator;
  * @since 1.0
  */
 public class RandomDataGenerator extends org.apache.commons.math3.random.RandomDataGenerator {
+    private static final long serialVersionUID = 1L;
+
     public RandomDataGenerator(RandomGenerator rand) {
         super(rand);
     }

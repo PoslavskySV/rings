@@ -1,6 +1,6 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.bigint.BigInteger;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
 import cc.r2.core.util.ArraysUtil;

@@ -1,15 +1,15 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.combinatorics.IntCombinationsGenerator;
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
-import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.BigIntegerUtil;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.multivar.HenselLifting.Evaluation;
 import cc.r2.core.poly.multivar.HenselLifting.IEvaluation;
 import cc.r2.core.poly.multivar.HenselLifting.lEvaluation;
 import cc.r2.core.poly.univar.*;
+import cc.r2.core.primes.SmallPrimes;
 import cc.r2.core.util.ArraysUtil;
+import cc.redberry.combinatorics.Combinatorics;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.set.hash.TLongHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -148,7 +148,10 @@ public final class MultivariateFactorization {
     }
 
 
-    /** Number of univariate factorizations performed with different evaluation homomorphisms before doing Hensel lifting **/
+    /**
+     * Number of univariate factorizations performed with different evaluation homomorphisms before doing Hensel
+     * lifting
+     **/
     private static final long UNIVARIATE_FACTORIZATION_ATTEMPTS = 3;
 
     /** starting extension field exponent */
@@ -356,8 +359,8 @@ public final class MultivariateFactorization {
     }
 
     /**
-     * Simple checks whether Newton polygon is indecomposable: see Example 1
-     * in [S. Gao. Absolute irreducibility of polynomials via Newton polytopes]
+     * Simple checks whether Newton polygon is indecomposable: see Example 1 in [S. Gao. Absolute irreducibility of
+     * polynomials via Newton polytopes]
      */
     static boolean isCertainlyIndecomposable(int[][] np) {
         if (np.length == 2) {
@@ -839,8 +842,7 @@ public final class MultivariateFactorization {
 
         factor_combinations:
         while (2 * s <= modIndexes.length) {
-            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
-            for (int[] combination : combinations) {
+            for (int[] combination : Combinatorics.combinations(modIndexes.length, s)) {
                 int[] indexes = select(modIndexes, combination);
 
                 UnivariatePolynomial<uPoly> mFactor = lcInSeries(fRest);
@@ -1086,7 +1088,7 @@ public final class MultivariateFactorization {
             bound = bound.multiply(BigInteger.valueOf(d).increment());
         }
         bound = bound.divide(BigInteger.ONE.shiftLeft(degrees.length)).increment();
-        bound = BigIntegerArithmetics.sqrtCeil(bound);
+        bound = BigIntegerUtil.sqrtCeil(bound);
         bound = bound.multiply(BigInteger.ONE.shiftLeft(degreeSum));
         bound = bound.multiply(maxNorm);
 
@@ -1121,8 +1123,7 @@ public final class MultivariateFactorization {
 
         factor_combinations:
         while (2 * s <= modIndexes.length) {
-            IntCombinationsGenerator combinations = new IntCombinationsGenerator(modIndexes.length, s);
-            for (int[] combination : combinations) {
+            for (int[] combination : Combinatorics.combinations(modIndexes.length, s)) {
                 int[] indexes = select(modIndexes, combination);
 
                 UnivariatePolynomial<UnivariatePolynomial<BigInteger>> factor = lcInSeries(fRest).setDomain(moduloDomain);
@@ -1200,8 +1201,8 @@ public final class MultivariateFactorization {
     }
 
     /**
-     * Given poly as R[x][y] returns leading coefficient of x which is R[y] viewed as R[x][y]
-     * (with all coefficients constant)
+     * Given poly as R[x][y] returns leading coefficient of x which is R[y] viewed as R[x][y] (with all coefficients
+     * constant)
      */
     private static <uPoly extends IUnivariatePolynomial<uPoly>>
     UnivariatePolynomial<uPoly> lcInSeries(UnivariatePolynomial<uPoly> poly) {
@@ -1384,8 +1385,8 @@ public final class MultivariateFactorization {
         /** square-free part of l.c. */
         final Poly lcSqFreePart;
         /**
-         * square-free part of l.c. divided into content in x_i and prim. part in x_i for different i
-         * (sorted in order of decreasing content degrees, to provide optimal l.c. lifts)
+         * square-free part of l.c. divided into content in x_i and prim. part in x_i for different i (sorted in order
+         * of decreasing content degrees, to provide optimal l.c. lifts)
          */
         final SplitContent<Term, Poly>[] lcSplits;
         /**
@@ -1497,9 +1498,9 @@ public final class MultivariateFactorization {
     private static final int N_FAILS_BEFORE_SWITCH_TO_EXTENSION = 32;
 
     /**
-     * number of attempts to factor which lead to inconsistent bivariate factorizations over different
-     * variables (e.g. incompatible factorization patterns) before switch to extension field (take place only
-     * for domains of very small characteristic)
+     * number of attempts to factor which lead to inconsistent bivariate factorizations over different variables (e.g.
+     * incompatible factorization patterns) before switch to extension field (take place only for domains of very small
+     * characteristic)
      */
     private static final int N_INCONSISTENT_BIFACTORS_BEFORE_SWITCH_TO_EXTENSION = 32;
 
@@ -2581,7 +2582,7 @@ public final class MultivariateFactorization {
     private static void adjustConstants(BigInteger constant, MultivariatePolynomial<BigInteger> base,
                                         MultivariatePolynomial<BigInteger>[] factors,
                                         MultivariatePolynomial<BigInteger>[] lcs) {
-        base.multiply(BigIntegerArithmetics.pow(constant, factors.length - 1));
+        base.multiply(Domains.Z.pow(constant, factors.length - 1));
         for (MultivariatePolynomial<BigInteger> factor : factors)
             factor.multiply(constant);
         if (lcs != null)

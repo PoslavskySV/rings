@@ -1,6 +1,6 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.bigint.BigInteger;
 import cc.r2.core.poly.Domain;
 import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.IntegersZp;
@@ -14,7 +14,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static cc.r2.core.number.BigInteger.*;
+import static cc.r2.core.bigint.BigInteger.*;
 import static cc.r2.core.poly.multivar.MonomialOrder.LEX;
 import static cc.r2.core.poly.multivar.MultivariatePolynomial.*;
 import static org.junit.Assert.assertEquals;

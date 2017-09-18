@@ -1,7 +1,7 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.primes.SmallPrimes;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.FiniteField;
 import cc.r2.core.poly.IntegersZp;

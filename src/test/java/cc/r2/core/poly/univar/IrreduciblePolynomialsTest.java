@@ -1,6 +1,7 @@
 package cc.r2.core.poly.univar;
 
-import cc.r2.core.number.BigInteger;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.poly.Domains;
 import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.FactorDecomposition;
 import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
@@ -11,7 +12,6 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.r2.core.number.BigIntegerArithmetics.safePow;
 import static cc.r2.core.poly.univar.IrreduciblePolynomials.irreducibleQ;
 import static cc.r2.core.poly.univar.UnivariatePolynomialArithmetic.createMonomialMod;
 
@@ -64,7 +64,7 @@ public class IrreduciblePolynomialsTest extends APolynomialTest {
 
         UnivariatePolynomialZp64 actual = IrreduciblePolynomials.composition(xq.clone(), exponent, poly, invMod, cache);
         UnivariatePolynomialZp64 expected = composition(xq.clone(), exponent, poly, invMod);
-        UnivariatePolynomialZp64 expected0 = createMonomialMod(safePow(BigInteger.valueOf(poly.modulus()), exponent), poly, invMod);
+        UnivariatePolynomialZp64 expected0 = createMonomialMod(Domains.Z.pow(BigInteger.valueOf(poly.modulus()), exponent), poly, invMod);
         Assert.assertEquals(expected, actual);
         Assert.assertEquals(expected0, actual);
     }
@@ -101,13 +101,13 @@ public class IrreduciblePolynomialsTest extends APolynomialTest {
                     .toString();
             Assert.assertEquals(msg, expected, actual);
             if (exponent <= 64)
-                Assert.assertEquals(msg, createMonomialMod(safePow(BigInteger.valueOf(poly.modulus()), exponent), poly, invMod), actual);
+                Assert.assertEquals(msg, createMonomialMod(Domains.Z.pow(BigInteger.valueOf(poly.modulus()), exponent), poly, invMod), actual);
 
             for (int ci : cache.keys()) {
                 msg = msg + "\nexponent: " + ci;
                 Assert.assertEquals(msg, composition(xq.clone(), ci, poly, invMod), cache.get(ci));
                 if (ci <= 64)
-                    Assert.assertEquals(msg, createMonomialMod(safePow(poly.coefficientDomainCardinality(), ci), poly, invMod), cache.get(ci));
+                    Assert.assertEquals(msg, createMonomialMod(Domains.Z.pow(poly.coefficientDomainCardinality(), ci), poly, invMod), cache.get(ci));
             }
         }
     }

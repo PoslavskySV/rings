@@ -1,7 +1,7 @@
 package cc.r2.core.poly;
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.BigIntegerArithmetics;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.BigIntegerUtil;
 import cc.r2.core.poly.univar.*;
 import cc.r2.core.poly.univar.UnivariateDivision.InverseModMonomial;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -48,7 +48,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
         this.irreducible = irreducible;
         this.factory = irreducible.clone();
         this.inverseMod = UnivariateDivision.fastDivisionPreConditioning(irreducible);
-        this.cardinality = BigIntegerArithmetics.pow(irreducible.coefficientDomainCardinality(), irreducible.degree());
+        this.cardinality = BigIntegerUtil.pow(irreducible.coefficientDomainCardinality(), irreducible.degree());
     }
 
     /**

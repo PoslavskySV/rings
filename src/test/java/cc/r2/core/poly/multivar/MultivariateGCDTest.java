@@ -1,9 +1,9 @@
 package cc.r2.core.poly.multivar;
 
-import cc.r2.core.number.BigInteger;
-import cc.r2.core.number.Rational;
-import cc.r2.core.number.primes.BigPrimes;
-import cc.r2.core.number.primes.SmallPrimes;
+import cc.r2.core.bigint.BigInteger;
+import cc.r2.core.bigint.Rational;
+import cc.r2.core.primes.BigPrimes;
+import cc.r2.core.primes.SmallPrimes;
 import cc.r2.core.poly.*;
 import cc.r2.core.poly.test.APolynomialTest;
 import cc.r2.core.poly.univar.UnivariatePolynomial;
