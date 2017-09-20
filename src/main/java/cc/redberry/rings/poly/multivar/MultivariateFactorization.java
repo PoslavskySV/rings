@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
+import static cc.redberry.rings.poly.multivar.Conversions64bit.asOverZp64;
+import static cc.redberry.rings.poly.multivar.Conversions64bit.canConvertToZp64;
 
 /**
  * Factorization of multivariate polynomials.
@@ -68,6 +70,9 @@ public final class MultivariateFactorization {
     public static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorDecomposition<Poly> FactorInGF(final Poly polynomial) {
+        if (canConvertToZp64(polynomial))
+            return FactorInGF(asOverZp64(polynomial)).map(Conversions64bit::convert);
+
         return Factor(polynomial, MultivariateFactorization::factorPrimitiveInGF);
     }
 
@@ -1110,7 +1115,7 @@ public final class MultivariateFactorization {
         int s = 1;
 
         MultivariatePolynomial.USubstitution<BigInteger> lPowersZ = new MultivariatePolynomial.USubstitution<>(
-                UnivariatePolynomial.create(Rings.Z, ySubstitution.negate(), BigInteger.ONE),
+                UnivariatePolynomial.createUnsafe(Rings.Z, new BigInteger[]{ySubstitution.negate(), BigInteger.ONE}),
                 1, baseZ.nVariables, baseZ.ordering);
 
         UnivariateRing<UnivariatePolynomial<BigInteger>> moduloDomain = Rings.UnivariateRing(modulus);
@@ -1159,7 +1164,7 @@ public final class MultivariateFactorization {
         UnivariatePolynomial<BigInteger>[] coefficients = Rings.UnivariateRingZ.createArray(degree + 1);
         for (int i = 0; i <= degree; i++)
             coefficients[i] = poly.seriesCoefficient(1, i).evaluate(1, ySubstitution).asUnivariate();
-        return UnivariatePolynomial.create(Rings.UnivariateRingZ, coefficients);
+        return UnivariatePolynomial.createUnsafe(Rings.UnivariateRingZ, coefficients);
     }
 
     private static MultivariatePolynomial<BigInteger> denseSeriesToPolyZ(

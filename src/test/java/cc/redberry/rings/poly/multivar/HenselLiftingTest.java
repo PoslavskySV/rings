@@ -35,7 +35,7 @@ import static cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.parse;
 /**
  * @since 1.0
  */
-public class HenselLiftingTest {
+public class HenselLiftingTest extends AMultivariateTest {
 
     @Test
     public void test1() throws Exception {

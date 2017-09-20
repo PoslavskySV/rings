@@ -3,7 +3,6 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.libdivide4j.FastDivision;
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.RandomUtil;
 import cc.redberry.rings.util.TimeUnits;
@@ -22,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @since 1.0
  */
-public class UnivariateInterpolationTest extends APolynomialTest {
+public class UnivariateInterpolationTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         long

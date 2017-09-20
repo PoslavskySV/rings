@@ -15,8 +15,11 @@ import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static cc.redberry.rings.bigint.ChineseRemainders.ChineseRemainders;
+import static cc.redberry.rings.poly.univar.Conversions64bit.asOverZp64;
+import static cc.redberry.rings.poly.univar.Conversions64bit.canConvertToZp64;
 
 /**
  * Univariate polynomial GCD and sub-resultant sequences.
@@ -95,6 +98,11 @@ public final class UnivariateGCD {
 
     /* ========================================== implementation ==================================================== */
 
+    @SuppressWarnings("unchecked")
+    static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> convert(PolynomialRemainders<UnivariatePolynomialZp64> r64) {
+        return new PolynomialRemainders<>(new ArrayList<>(r64.remainders.stream().map(p -> (T) p.toBigPoly()).collect(Collectors.toList())));
+    }
+
     /**
      * Returns the remainder sequence produced by Euclidean algorithm. If coefficient ring of the input is not a field
      * (and thus polynomials does not form an integral ring), {@code ArithmeticException} may be thrown in case when
@@ -105,6 +113,11 @@ public final class UnivariateGCD {
      * @return polynomial remainder sequence (the last element is GCD)
      */
     public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> EuclidRemainders(final T a, final T b) {
+        a.assertSameCoefficientRingWith(b);
+        if (canConvertToZp64(a))
+            // switch to faster machine arithmetic
+            return convert(EuclidRemainders(asOverZp64(a), asOverZp64(b)));
+
         if (a.degree() < b.degree())
             return EuclidRemainders(b, a);
 
@@ -139,6 +152,10 @@ public final class UnivariateGCD {
      * @return the GCD (monic if a and b are over field)
      */
     public static <T extends IUnivariatePolynomial<T>> T EuclidGCD(final T a, final T b) {
+        a.assertSameCoefficientRingWith(b);
+        if (canConvertToZp64(a))
+            return Conversions64bit.convert(EuclidGCD(asOverZp64(a), asOverZp64(b)));
+
         if (a.degree() < b.degree())
             return EuclidGCD(b, a);
 
@@ -177,6 +194,10 @@ public final class UnivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> T[] ExtendedEuclidGCD(final T a, final T b) {
+        a.assertSameCoefficientRingWith(b);
+        if (canConvertToZp64(a))
+            return Conversions64bit.convert(a, ExtendedEuclidGCD(asOverZp64(a), asOverZp64(b)));
+
         T s = a.createZero(), old_s = a.createOne();
         T t = a.createOne(), old_t = a.createZero();
         T r = b.clone(), old_r = a.clone();
@@ -237,6 +258,10 @@ public final class UnivariateGCD {
      * @return the GCD (monic)
      */
     public static <T extends IUnivariatePolynomial<T>> T HalfGCD(T a, T b) {
+        a.assertSameCoefficientRingWith(b);
+        if (canConvertToZp64(a))
+            return Conversions64bit.convert(HalfGCD(asOverZp64(a), asOverZp64(b)));
+
         if (a.degree() < b.degree())
             return HalfGCD(b, a);
 
@@ -269,6 +294,10 @@ public final class UnivariateGCD {
      * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
      */
     public static <T extends IUnivariatePolynomial<T>> T[] ExtendedHalfGCD(T a, T b) {
+        a.assertSameCoefficientRingWith(b);
+        if (canConvertToZp64(a))
+            return Conversions64bit.convert(a, ExtendedHalfGCD(asOverZp64(a), asOverZp64(b)));
+
         if (a.degree() < b.degree()) {
             T[] r = ExtendedHalfGCD(b, a);
             ArraysUtil.swap(r, 1, 2);
@@ -549,7 +578,6 @@ public final class UnivariateGCD {
                                                                                        boolean primitivePRS) {
         if (a.degree < b.degree)
             return EuclidPseudoRemainders(b, a, primitivePRS);
-
 
         if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
 
@@ -924,7 +952,7 @@ public final class UnivariateGCD {
         if (bound2.isLong()
                 && UnivariatePolynomial.maxAbsCoefficient(a).isLong()
                 && UnivariatePolynomial.maxAbsCoefficient(b).isLong())
-            return ModularGCD(UnivariatePolynomial.asLongPolyZ(a), UnivariatePolynomial.asLongPolyZ(b)).toBigPoly();
+            return ModularGCD(UnivariatePolynomial.asOverZ64(a), UnivariatePolynomial.asOverZ64(b)).toBigPoly();
 
         UnivariatePolynomialZ64 previousBase = null;
         UnivariatePolynomialZp64 base = null;
@@ -940,7 +968,7 @@ public final class UnivariateGCD {
                 continue;
 
             IntegersZp bPrimeDomain = new IntegersZp(bPrime);
-            UnivariatePolynomialZp64 aMod = UnivariatePolynomial.asLongPolyZp(a.setRing(bPrimeDomain)), bMod = UnivariatePolynomial.asLongPolyZp(b.setRing(bPrimeDomain));
+            UnivariatePolynomialZp64 aMod = UnivariatePolynomial.asOverZp64(a.setRing(bPrimeDomain)), bMod = UnivariatePolynomial.asOverZp64(b.setRing(bPrimeDomain));
             UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
@@ -1016,7 +1044,7 @@ public final class UnivariateGCD {
                 continue;
 
             IntegersZp bPrimeDomain = new IntegersZp(bPrime);
-            UnivariatePolynomialZp64 aMod = UnivariatePolynomial.asLongPolyZp(a.setRing(bPrimeDomain)), bMod = UnivariatePolynomial.asLongPolyZp(b.setRing(bPrimeDomain));
+            UnivariatePolynomialZp64 aMod = UnivariatePolynomial.asOverZp64(a.setRing(bPrimeDomain)), bMod = UnivariatePolynomial.asOverZp64(b.setRing(bPrimeDomain));
             UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)

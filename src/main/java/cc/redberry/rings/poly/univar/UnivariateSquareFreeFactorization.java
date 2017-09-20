@@ -7,6 +7,9 @@ import cc.redberry.rings.poly.MachineArithmetic;
 
 import java.util.Arrays;
 
+import static cc.redberry.rings.poly.univar.Conversions64bit.asOverZp64;
+import static cc.redberry.rings.poly.univar.Conversions64bit.canConvertToZp64;
+
 
 /**
  * Square-free factorization of univariate polynomials over Z and Zp.
@@ -183,6 +186,9 @@ public final class UnivariateSquareFreeFactorization {
      * @return square-free decomposition
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
+        if (canConvertToZp64(poly))
+            return SquareFreeFactorizationMusser(asOverZp64(poly)).map(Conversions64bit::convert);
+
         poly = poly.clone();
         Poly lc = poly.lcAsPoly();
         //make poly monic

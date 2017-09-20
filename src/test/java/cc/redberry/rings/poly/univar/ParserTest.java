@@ -3,7 +3,6 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
@@ -13,7 +12,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @since 1.0
  */
-public class ParserTest extends APolynomialTest {
+public class ParserTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         assertEquals(

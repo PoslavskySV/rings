@@ -4,7 +4,6 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.test.Benchmark;
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * @since 1.0
  */
-public class HenselLiftingTest extends APolynomialTest {
+public class HenselLiftingTest extends AUnivariateTest {
 
     @SuppressWarnings("unchecked")
     private static <PolyZ extends IUnivariatePolynomial<PolyZ>, PolyZp extends IUnivariatePolynomial<PolyZp>>
@@ -59,7 +58,7 @@ public class HenselLiftingTest extends APolynomialTest {
     HenselLifting.LiftableQuintet<PolyZp> createLinearLift(long modulus, PolyZ poly, PolyZp aFactor, PolyZp bFactor) {
         if (poly instanceof UnivariatePolynomial)
             return (HenselLifting.LiftableQuintet<PolyZp>) HenselLifting.createLinearLift(modulus,
-                    (UnivariatePolynomial) poly, UnivariatePolynomial.asLongPolyZp((UnivariatePolynomial) aFactor), UnivariatePolynomial.asLongPolyZp((UnivariatePolynomial) bFactor));
+                    (UnivariatePolynomial) poly, UnivariatePolynomial.asOverZp64((UnivariatePolynomial) aFactor), UnivariatePolynomial.asOverZp64((UnivariatePolynomial) bFactor));
         else
             return (HenselLifting.LiftableQuintet<PolyZp>) HenselLifting.createLinearLift(modulus,
                     (UnivariatePolynomialZ64) poly, (UnivariatePolynomialZp64) aFactor, (UnivariatePolynomialZp64) bFactor);
@@ -147,7 +146,7 @@ public class HenselLiftingTest extends APolynomialTest {
     static void testMultiFactorHenselLifting(UnivariatePolynomial<BigInteger> base, long modulus, int nIterations, boolean quadratic) {
         base = UnivariateSquareFreeFactorization.SquareFreePart(base);
 
-        UnivariatePolynomialZp64 baseMod = UnivariatePolynomial.asLongPolyZp(base.setRing(new IntegersZp(modulus)));
+        UnivariatePolynomialZp64 baseMod = UnivariatePolynomial.asOverZp64(base.setRing(new IntegersZp(modulus)));
         if (baseMod.degree() != base.degree())
             return;
 
@@ -201,7 +200,7 @@ public class HenselLiftingTest extends APolynomialTest {
         for (int i = 0; i < AbstractTest.its(100, 1000); ++i) {
             UnivariatePolynomial<BigInteger> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(5, 15), BigInteger.LONG_MAX_VALUE, rnd);
             for (long modulus : getModulusArray((int) AbstractTest.its(5, 15), 0, 5, 0)) {
-                UnivariatePolynomialZp64 polyMod = UnivariatePolynomial.asLongPolyZp(poly.setRing(new IntegersZp(modulus)));
+                UnivariatePolynomialZp64 polyMod = UnivariatePolynomial.asOverZp64(poly.setRing(new IntegersZp(modulus)));
                 if (polyMod.isConstant() || polyMod.isMonomial())
                     continue;
 
@@ -338,7 +337,7 @@ public class HenselLiftingTest extends APolynomialTest {
             while (!UnivariateSquareFreeFactorization.isSquareFree(poly.setRing(domain)) || polyMod.degree() != poly.degree());
 
             BigInteger desiredBound = UnivariatePolynomial.mignotteBound(poly).shiftLeft(1).multiply(poly.lc());
-            FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(UnivariatePolynomial.asLongPolyZp(polyMod));
+            FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(UnivariatePolynomial.asOverZp64(polyMod));
             BigInteger bModulus = BigInteger.valueOf(modulus);
 
             long start;

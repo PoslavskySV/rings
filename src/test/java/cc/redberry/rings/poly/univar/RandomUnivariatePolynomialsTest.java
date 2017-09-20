@@ -1,7 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
 
@@ -10,7 +9,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @since 1.0
  */
-public class RandomUnivariatePolynomialsTest extends APolynomialTest {
+public class RandomUnivariatePolynomialsTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         RandomGenerator rnd = getRandom();

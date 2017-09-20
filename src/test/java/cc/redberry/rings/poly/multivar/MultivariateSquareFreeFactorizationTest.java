@@ -7,7 +7,6 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
 import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.IrreduciblePolynomials;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
@@ -21,7 +20,7 @@ import java.util.Arrays;
 /**
  * @since 1.0
  */
-public class MultivariateSquareFreeFactorizationTest extends APolynomialTest {
+public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
 
     @Test
     public void test1() throws Exception {
@@ -55,7 +54,7 @@ public class MultivariateSquareFreeFactorizationTest extends APolynomialTest {
                 c = MultivariatePolynomial.parse("z*y^2*x^2 - 2*y^3*x - 1234*z^7*x^12*y^13", domain),
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
-        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asLongPolyZp(poly);
+        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
         for (int i = 0; i < AbstractTest.its(1, 5); i++) {
             long start = System.nanoTime();
             FactorDecompositionTest.assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
@@ -83,7 +82,7 @@ public class MultivariateSquareFreeFactorizationTest extends APolynomialTest {
                 c = MultivariatePolynomial.parse("z*y^2*x^2 - 2*y^3*x - 1234*z^7*x^12*y^13", domain),
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
-        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asLongPolyZp(poly);
+        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
         FactorDecompositionTest.assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
     }
 
@@ -96,7 +95,7 @@ public class MultivariateSquareFreeFactorizationTest extends APolynomialTest {
                 c = MultivariatePolynomial.parse("z*y^2*x^2 - 2*y^3*x - 1234*z^7*x^12*y^13", domain),
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
-        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asLongPolyZp(poly);
+        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
         FactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
         FactorDecompositionTest.assertFactorization(lPoly, decomposition);
     }
@@ -109,7 +108,7 @@ public class MultivariateSquareFreeFactorizationTest extends APolynomialTest {
                 b = MultivariatePolynomial.parse("1 + a^3*b^4 + a + b", domain),
                 poly = a.square().multiply(b.square());
 
-        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asLongPolyZp(poly);
+        MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
         FactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
         FactorDecompositionTest.assertFactorization(lPoly, decomposition);
     }

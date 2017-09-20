@@ -10,6 +10,8 @@ import cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization;
 
 import java.util.Arrays;
 
+import static cc.redberry.rings.poly.multivar.Conversions64bit.asOverZp64;
+import static cc.redberry.rings.poly.multivar.Conversions64bit.canConvertToZp64;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.divideExact;
 
 /**
@@ -214,6 +216,9 @@ public final class MultivariateSquareFreeFactorization {
     FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         if (poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Positive characteristic expected");
+
+        if (canConvertToZp64(poly))
+            return SquareFreeFactorizationMusser(asOverZp64(poly)).map(Conversions64bit::convert);
 
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);

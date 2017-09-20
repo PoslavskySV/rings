@@ -4,7 +4,6 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -23,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @since 1.0
  */
-public class MultivariatePolynomialTest extends APolynomialTest {
+public class MultivariatePolynomialTest extends AMultivariateTest {
     @Test
     public void testArithmetic1() throws Exception {
         MultivariatePolynomial<BigInteger> a = parse("a*b + a^2 + c^3*b^2", LEX);

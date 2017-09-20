@@ -15,6 +15,8 @@ import cc.redberry.rings.util.ArraysUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static cc.redberry.rings.poly.univar.Conversions64bit.asOverZp64;
+import static cc.redberry.rings.poly.univar.Conversions64bit.canConvertToZp64;
 import static cc.redberry.rings.poly.univar.DistinctDegreeFactorization.DistinctDegreeFactorization;
 import static cc.redberry.rings.poly.univar.EqualDegreeFactorization.CantorZassenhaus;
 import static cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization.SquareFreeFactorization;
@@ -82,6 +84,9 @@ public final class UnivariateFactorization {
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> FactorInGF(Poly poly) {
         Util.ensureOverFiniteField(poly);
+        if (canConvertToZp64(poly))
+            return FactorInGF(asOverZp64(poly)).map(Conversions64bit::convert);
+
         FactorDecomposition<Poly> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
@@ -99,6 +104,10 @@ public final class UnivariateFactorization {
      * @see EqualDegreeFactorization
      */
     public static <T extends IUnivariatePolynomial<T>> FactorDecomposition<T> FactorSquareFreeInGF(T poly) {
+        Util.ensureOverFiniteField(poly);
+        if (canConvertToZp64(poly))
+            return FactorInGF(asOverZp64(poly)).map(Conversions64bit::convert);
+
         FactorDecomposition<T> result = FactorDecomposition.empty(poly);
         FactorSquareFreeInGF(poly, 1, result);
         return result;
@@ -325,7 +334,7 @@ public final class UnivariateFactorization {
 
         BigInteger bound2 = BigInteger.TWO.multiply(UnivariatePolynomial.mignotteBound(poly)).multiply(poly.lc().abs());
         if (bound2.compareTo(MachineArithmetic.b_MAX_SUPPORTED_MODULUS) < 0) {
-            FactorDecomposition<UnivariatePolynomialZ64> tryLong = FactorSquareFreeInZ0(UnivariatePolynomial.asLongPolyZ(poly));
+            FactorDecomposition<UnivariatePolynomialZ64> tryLong = FactorSquareFreeInZ0(UnivariatePolynomial.asOverZ64(poly));
             if (tryLong != null)
                 return convertFactorizationToBigIntegers(tryLong);
         }
@@ -339,7 +348,7 @@ public final class UnivariateFactorization {
             long tmpModulus;
             do {
                 tmpModulus = SmallPrimes.nextPrime(randomModulusInf());
-                moduloImage = UnivariatePolynomial.asLongPolyZp(poly.setRing(new IntegersZp(tmpModulus)));
+                moduloImage = UnivariatePolynomial.asOverZp64(poly.setRing(new IntegersZp(tmpModulus)));
             }
             while (moduloImage.cc() == 0 || moduloImage.degree() != poly.degree() || !UnivariateSquareFreeFactorization.isSquareFree(moduloImage));
 

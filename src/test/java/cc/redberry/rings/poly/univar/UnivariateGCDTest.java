@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
 /**
  * Created by poslavsky on 15/02/2017.
  */
-public class UnivariateGCDTest extends APolynomialTest {
+public class UnivariateGCDTest extends AUnivariateTest {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void test1() throws Exception {
@@ -611,10 +611,10 @@ public class UnivariateGCDTest extends APolynomialTest {
         UnivariatePolynomial<BigInteger> aMod = a.setRing(domain).monic(poly.lc());
         UnivariatePolynomial<BigInteger> bMod = b.setRing(domain).monic();
         UnivariatePolynomial<BigInteger>[] xgcd = UnivariateGCD.ExtendedEuclidGCD(aMod, bMod);
-        UnivariatePolynomialZp64[] lxgcd = UnivariateGCD.ExtendedEuclidGCD(UnivariatePolynomial.asLongPolyZp(aMod), UnivariatePolynomial.asLongPolyZp(bMod));
-        assertEquals(UnivariatePolynomial.asLongPolyZp(xgcd[0]), lxgcd[0]);
-        assertEquals(UnivariatePolynomial.asLongPolyZp(xgcd[1]), lxgcd[1]);
-        assertEquals(UnivariatePolynomial.asLongPolyZp(xgcd[2]), lxgcd[2]);
+        UnivariatePolynomialZp64[] lxgcd = UnivariateGCD.ExtendedEuclidGCD(UnivariatePolynomial.asOverZp64(aMod), UnivariatePolynomial.asOverZp64(bMod));
+        assertEquals(UnivariatePolynomial.asOverZp64(xgcd[0]), lxgcd[0]);
+        assertEquals(UnivariatePolynomial.asOverZp64(xgcd[1]), lxgcd[1]);
+        assertEquals(UnivariatePolynomial.asOverZp64(xgcd[2]), lxgcd[2]);
     }
 
     @Test

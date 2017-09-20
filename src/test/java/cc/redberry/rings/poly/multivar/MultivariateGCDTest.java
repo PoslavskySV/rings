@@ -32,7 +32,7 @@ import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.divideExact;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.dividesQ;
 import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
-import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asLongPolyZp;
+import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.parse;
 import static cc.redberry.rings.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
 import static org.junit.Assert.*;
@@ -40,14 +40,14 @@ import static org.junit.Assert.*;
 /**
  * @since 1.0
  */
-public class MultivariateGCDTest extends APolynomialTest {
+public class MultivariateGCDTest extends AMultivariateTest {
     private static void assertBrownGCD(MultivariatePolynomial<BigInteger> gcd,
                                        MultivariatePolynomial<BigInteger> a,
                                        MultivariatePolynomial<BigInteger> b) {
         MultivariatePolynomial<BigInteger> actualGCD = BrownGCD(a, b);
-        MultivariatePolynomialZp64 lActualGCD = BrownGCD(asLongPolyZp(a), asLongPolyZp(b));
+        MultivariatePolynomialZp64 lActualGCD = BrownGCD(asOverZp64(a), asOverZp64(b));
         Assert.assertTrue(dividesQ(actualGCD, gcd));
-        Assert.assertEquals(asLongPolyZp(actualGCD).monic(), lActualGCD.monic());
+        Assert.assertEquals(asOverZp64(actualGCD).monic(), lActualGCD.monic());
     }
 
     @Test
@@ -252,9 +252,9 @@ public class MultivariateGCDTest extends APolynomialTest {
                                         MultivariatePolynomial<BigInteger> a,
                                         MultivariatePolynomial<BigInteger> b) {
         MultivariatePolynomial<BigInteger> actualGCD = ZippelGCD(a, b);
-        MultivariatePolynomialZp64 lActualGCD = ZippelGCD(asLongPolyZp(a), asLongPolyZp(b));
+        MultivariatePolynomialZp64 lActualGCD = ZippelGCD(asOverZp64(a), asOverZp64(b));
         Assert.assertTrue(dividesQ(actualGCD, gcd));
-        Assert.assertEquals(asLongPolyZp(actualGCD).monic(), lActualGCD.monic());
+        Assert.assertEquals(asOverZp64(actualGCD).monic(), lActualGCD.monic());
     }
 
     @Test
@@ -281,8 +281,8 @@ public class MultivariateGCDTest extends APolynomialTest {
             assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
 
-        MultivariatePolynomialZp64 la = asLongPolyZp(a), lb = asLongPolyZp(b),
-                lskeleton = asLongPolyZp(skeleton), lgcd = asLongPolyZp(gcd);
+        MultivariatePolynomialZp64 la = asOverZp64(a), lb = asOverZp64(b),
+                lskeleton = asOverZp64(skeleton), lgcd = asOverZp64(gcd);
         for (int i = 0; i < 100; i++) {
             lSparseInterpolation sparseInterpolation
                     = createInterpolation(variable, la, lb, lskeleton, rnd);
@@ -456,7 +456,7 @@ public class MultivariateGCDTest extends APolynomialTest {
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertNotNull(ZippelGCD(a, b));
-        assertNotNull(ZippelGCD(asLongPolyZp(a), asLongPolyZp(b)));
+        assertNotNull(ZippelGCD(asOverZp64(a), asOverZp64(b)));
     }
 
     @Test
@@ -567,8 +567,8 @@ public class MultivariateGCDTest extends APolynomialTest {
         System.out.println(b);
 
         MultivariatePolynomialZp64
-                aL = asLongPolyZp(a),
-                bL = asLongPolyZp(b);
+                aL = asOverZp64(a),
+                bL = asOverZp64(b);
 
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
@@ -600,8 +600,8 @@ public class MultivariateGCDTest extends APolynomialTest {
         System.out.println(b);
 
         MultivariatePolynomialZp64
-                aL = asLongPolyZp(a),
-                bL = asLongPolyZp(b);
+                aL = asOverZp64(a),
+                bL = asOverZp64(b);
 
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
@@ -665,7 +665,7 @@ public class MultivariateGCDTest extends APolynomialTest {
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
-        assertEquals(ZippelGCD(a, b).monic(), interpolateGCD(asLongPolyZp(a), asLongPolyZp(b), asLongPolyZp(ZippelGCD(a, b)), getRandom()).monic().toBigPoly());
+        assertEquals(ZippelGCD(a, b).monic(), interpolateGCD(asOverZp64(a), asOverZp64(b), asOverZp64(ZippelGCD(a, b)), getRandom()).monic().toBigPoly());
     }
 
     @Test
@@ -678,7 +678,7 @@ public class MultivariateGCDTest extends APolynomialTest {
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
-        assertEquals(asLongPolyZp(gcd).monic(), interpolateGCD(asLongPolyZp(a), asLongPolyZp(b), asLongPolyZp(gcd), getRandom()).monic());
+        assertEquals(asOverZp64(gcd).monic(), interpolateGCD(asOverZp64(a), asOverZp64(b), asOverZp64(gcd), getRandom()).monic());
     }
 
     @Test
@@ -691,8 +691,8 @@ public class MultivariateGCDTest extends APolynomialTest {
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
-        MultivariatePolynomialZp64 intrp = interpolateGCD(asLongPolyZp(a), asLongPolyZp(b), asLongPolyZp(gcd), getRandom());
-        assertEquals(asLongPolyZp(gcd).monic(), intrp.monic());
+        MultivariatePolynomialZp64 intrp = interpolateGCD(asOverZp64(a), asOverZp64(b), asOverZp64(gcd), getRandom());
+        assertEquals(asOverZp64(gcd).monic(), intrp.monic());
     }
 
     @Test
@@ -706,7 +706,7 @@ public class MultivariateGCDTest extends APolynomialTest {
         a = a.multiply(gcd);
         b = b.multiply(gcd);
 
-        MultivariatePolynomialZp64 la = asLongPolyZp(a), lb = asLongPolyZp(b);
+        MultivariatePolynomialZp64 la = asOverZp64(a), lb = asOverZp64(b);
         MultivariatePolynomialZp64 lgcd = ZippelGCD(la, lb);
         MultivariatePolynomialZp64 intrp = interpolateGCD(la, lb, lgcd, getRandom());
         assertEquals(lgcd.monic(), intrp.monic());
@@ -756,14 +756,14 @@ public class MultivariateGCDTest extends APolynomialTest {
         IntegersZp domain = new IntegersZp(27445993);
 
         MultivariatePolynomialZp64
-                la = asLongPolyZp(a.setRing(domain)),
-                lb = asLongPolyZp(b.setRing(domain));
+                la = asOverZp64(a.setRing(domain)),
+                lb = asOverZp64(b.setRing(domain));
         MultivariatePolynomialZp64 skeleton = ZippelGCD(la, lb);
 
         IntegersZp domain1 = new IntegersZp(BigPrimes.nextPrime(37445993132451L));
         MultivariatePolynomialZp64
-                la1 = asLongPolyZp(a.setRing(domain1)),
-                lb1 = asLongPolyZp(b.setRing(domain1));
+                la1 = asOverZp64(a.setRing(domain1)),
+                lb1 = asOverZp64(b.setRing(domain1));
 
         MultivariatePolynomialZp64 gcd1 = ZippelGCD(la1, lb1);
 
@@ -795,8 +795,8 @@ public class MultivariateGCDTest extends APolynomialTest {
 
                 domain = new IntegersZp(getModulusRandom(20));
                 MultivariatePolynomialZp64
-                        la = asLongPolyZp(a.setRing(domain)),
-                        lb = asLongPolyZp(b.setRing(domain));
+                        la = asOverZp64(a.setRing(domain)),
+                        lb = asOverZp64(b.setRing(domain));
 
 
                 skeleton = ZippelGCD(la, lb);
@@ -807,8 +807,8 @@ public class MultivariateGCDTest extends APolynomialTest {
 
                 domain1 = new IntegersZp(getModulusRandom(20));
                 MultivariatePolynomialZp64
-                        la1 = asLongPolyZp(a.setRing(domain1)),
-                        lb1 = asLongPolyZp(b.setRing(domain1));
+                        la1 = asOverZp64(a.setRing(domain1)),
+                        lb1 = asOverZp64(b.setRing(domain1));
 
                 gcd = ZippelGCD(la1, lb1);
                 if (!gcd.sameSkeletonQ(skeleton)) {
@@ -853,9 +853,9 @@ public class MultivariateGCDTest extends APolynomialTest {
                     base = parse("3*c+7*a^2*b^2*c*d+4*a^2*b^2*c*d^2+8*a^3*b^6*c^7*d^7+9*a^6*b^4*c^7*d^4+a^6*b^9*c^3*d+7*a^7*b^9*d^5+17492158*a^8*b*d^8+17492153*a^8*b^3*c^4*d^2+4*a^9*b^7*d^2+17492156*a^9*b^9*c*d^2", domain, LEX);
 
             MultivariatePolynomialZp64
-                    la = asLongPolyZp(a),
-                    lb = asLongPolyZp(b),
-                    skeleton = asLongPolyZp(base);
+                    la = asOverZp64(a),
+                    lb = asOverZp64(b),
+                    skeleton = asOverZp64(base);
             MultivariatePolynomialZp64 lgcd = ZippelGCD(la, lb);
             MultivariatePolynomialZp64 intrp = null;
             try {
@@ -881,8 +881,8 @@ public class MultivariateGCDTest extends APolynomialTest {
                 b = parse("12*c^6*d^2+234*b^8*c^8*d^6+28*a^2*b^2*c^6*d^3+16*a^2*b^2*c^6*d^4+3*a^2*b^7*c^5*d+546*a^2*b^10*c^8*d^7+312*a^2*b^10*c^8*d^8+32*a^3*b^6*c^12*d^9+624*a^3*b^14*c^14*d^13+7*a^4*b^9*c^5*d^2+4*a^4*b^9*c^5*d^3+8*a^5*b^13*c^11*d^8+12*a^6*b*c^6+36*a^6*b^4*c^12*d^6+4*a^6*b^9*c^8*d^3+702*a^6*b^12*c^14*d^10+78*a^6*b^17*c^10*d^7+28*a^7*b^9*c^5*d^7+546*a^7*b^17*c^7*d^11+3*a^8*c*d^3+332*a^8*b*c^5*d^10+28*a^8*b^3*c^6*d+16*a^8*b^3*c^6*d^2+312*a^8*b^3*c^9*d^4+180*a^8*b^9*c^7*d^14+9*a^8*b^11*c^11*d^5+839*a^8*b^11*c^11*d^8+a^8*b^16*c^7*d^2+16*a^9*b^7*c^5*d^4+32*a^9*b^7*c^12*d^7+324*a^9*b^9*c^6*d^4+312*a^9*b^15*c^7*d^8+7*a^9*b^16*c^4*d^6+24*a^9*b^17*c^8*d^8+7*a^10*b^2*c*d^4+4*a^10*b^2*c*d^5+83*a^10*b^8*c^4*d^9+78*a^10*b^10*c^8*d^3+8*a^11*b^6*c^7*d^10+4*a^11*b^14*c^4*d^3+81*a^11*b^16*c^5*d^3+36*a^12*b^5*c^12*d^4+4*a^12*b^10*c^8*d+28*a^13*b^10*c^5*d^5+332*a^14*b^2*c^5*d^8+9*a^14*b^4*c^7*d^7+312*a^14*b^4*c^9*d^2+a^14*b^9*c^3*d^4+16*a^15*b^8*c^5*d^2+7*a^15*b^9*d^8+324*a^15*b^10*c^6*d^2+83*a^16*b*d^11+78*a^16*b^3*c^4*d^5+4*a^17*b^7*d^5+81*a^17*b^9*c*d^5", domain, LEX);
 
         MultivariatePolynomialZp64
-                la = asLongPolyZp(a),
-                lb = asLongPolyZp(b);
+                la = asOverZp64(a),
+                lb = asOverZp64(b);
 
         MultivariatePolynomialZp64 lgcd = ZippelGCD(la, lb);
         assertTrue(dividesQ(la, lgcd));
@@ -908,15 +908,15 @@ public class MultivariateGCDTest extends APolynomialTest {
 
         IntegersZp domain = new IntegersZp(806213L);
         MultivariatePolynomialZp64
-                la = asLongPolyZp(a.setRing(domain)),
-                lb = asLongPolyZp(b.setRing(domain));
+                la = asOverZp64(a.setRing(domain)),
+                lb = asOverZp64(b.setRing(domain));
 
         MultivariatePolynomialZp64 skeleton = ZippelGCD(la, lb);
 
         IntegersZp domain1 = new IntegersZp(755899L);
         MultivariatePolynomialZp64
-                la1 = asLongPolyZp(a.setRing(domain1)),
-                lb1 = asLongPolyZp(b.setRing(domain1));
+                la1 = asOverZp64(a.setRing(domain1)),
+                lb1 = asOverZp64(b.setRing(domain1));
 
         MultivariatePolynomialZp64 gcd0 = ZippelGCD(la1, lb1);
         System.out.println(gcd0.sameSkeletonQ(skeleton));

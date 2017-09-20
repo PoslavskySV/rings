@@ -931,7 +931,7 @@ public final class HenselLifting {
         public UnivariatePolynomial<BigInteger> bCoFactorMod() {return bCoFactor == null ? null : bCoFactor.setRing(ring);}
 
         private void liftFactors() {
-            UnivariatePolynomialZp64 factorsDiff = UnivariatePolynomial.asLongPolyZp(
+            UnivariatePolynomialZp64 factorsDiff = UnivariatePolynomial.asOverZp64(
                     poly.clone().subtract(aFactor.clone().multiply(bFactor))
                             .divideOrNull(ring.modulus)
                             .setRing(initialDomain));
@@ -942,7 +942,7 @@ public final class HenselLifting {
         }
 
         private void liftCoFactors() {
-            UnivariatePolynomialZp64 coFactorsDiff = UnivariatePolynomial.asLongPolyZp(
+            UnivariatePolynomialZp64 coFactorsDiff = UnivariatePolynomial.asOverZp64(
                     aCoFactor.clone().multiply(aFactor).add(bCoFactor.clone().multiply(bFactor)).decrement().negate()
                             .divideOrNull(ring.modulus)
                             .setRing(initialDomain));

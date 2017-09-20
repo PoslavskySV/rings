@@ -66,7 +66,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /** skips {@code ring.setToValueOf(data)} */
-    public static <E> UnivariatePolynomial<E> createUnsafe(Ring<E> ring, E... data) {
+    public static <E> UnivariatePolynomial<E> createUnsafe(Ring<E> ring, E[] data) {
         return new UnivariatePolynomial<>(ring, data);
     }
 
@@ -100,7 +100,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      */
     @SuppressWarnings("unchecked")
     public static <E> UnivariatePolynomial<E> constant(Ring<E> ring, E constant) {
-        return create(ring, constant);
+        return create(ring, ring.createArray(constant));
     }
 
     /**
@@ -130,7 +130,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return machine-sized polynomial in Z
      * @throws ArithmeticException if some of coefficients is out of long range
      */
-    public static UnivariatePolynomialZ64 asLongPolyZ(UnivariatePolynomial<BigInteger> poly) {
+    public static UnivariatePolynomialZ64 asOverZ64(UnivariatePolynomial<BigInteger> poly) {
         long[] data = new long[poly.degree + 1];
         for (int i = 0; i < data.length; i++)
             data[i] = poly.data[i].longValueExact();
@@ -145,12 +145,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @throws IllegalArgumentException if {@code poly.ring} is not {@link IntegersZp}
      * @throws ArithmeticException      if some of {@code poly} elements is out of long range
      */
-    public static UnivariatePolynomialZp64 asLongPolyZp(UnivariatePolynomial<BigInteger> poly) {
+    public static UnivariatePolynomialZp64 asOverZp64(UnivariatePolynomial<BigInteger> poly) {
         if (!(poly.ring instanceof IntegersZp))
             throw new IllegalArgumentException("Not a modular ring: " + poly.ring);
         long[] data = new long[poly.degree + 1];
         for (int i = 0; i < data.length; i++)
-            data[i] = poly.data[i].longValueExact();
+            data[i] = ((BigInteger) poly.data[i]).longValueExact();
         return UnivariatePolynomialZp64.create(((IntegersZp) poly.ring).modulus.longValueExact(), data);
     }
 
@@ -170,7 +170,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         BigInteger[] newData = new BigInteger[poly.degree + 1];
         for (int i = poly.degree; i >= 0; --i)
             newData[i] = ring.symmetricForm(poly.data[i]);
-        return UnivariatePolynomial.create(Rings.Z, newData);
+        return UnivariatePolynomial.createUnsafe(Rings.Z, newData);
     }
 
     @Override

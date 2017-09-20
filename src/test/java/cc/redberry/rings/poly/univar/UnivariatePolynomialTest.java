@@ -8,14 +8,13 @@ import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * @since 1.0
  */
-public class UnivariatePolynomialTest extends APolynomialTest {
+public class UnivariatePolynomialTest extends AUnivariateTest {
 
     @Test
     public void test1() throws Exception {
@@ -23,7 +22,7 @@ public class UnivariatePolynomialTest extends APolynomialTest {
         UnivariatePolynomial<BigInteger> aZ = UnivariatePolynomial.create(Rings.Z, 1, 2, 3, 4, 5, 6);
         IntegersZp domain = new IntegersZp(modulus);
         UnivariatePolynomial<BigInteger> aZp = aZ.setRing(domain);
-        UnivariatePolynomialZp64 aL = UnivariatePolynomial.asLongPolyZp(aZp);
+        UnivariatePolynomialZp64 aL = UnivariatePolynomial.asOverZp64(aZp);
 
         for (int i = 0; i < 5; i++) {
 //            a = (a.clone() * a.clone().decrement() - a.clone().derivative() + (a.clone().square())) * a.clone();
@@ -44,7 +43,7 @@ public class UnivariatePolynomialTest extends APolynomialTest {
         }
 
         System.out.println(aZp.degree);
-        Assert.assertEquals(aL, UnivariatePolynomial.asLongPolyZp(aZp));
+        Assert.assertEquals(aL, UnivariatePolynomial.asOverZp64(aZp));
         Assert.assertEquals(aZp, aZ.setRing(domain));
     }
 

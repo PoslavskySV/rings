@@ -6,10 +6,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
-
  * @since 1.0
  */
-public class EqualDegreeFactorizationTest {
+public class EqualDegreeFactorizationTest extends AUnivariateTest {
 
     @Test
     public void test1() throws Exception {

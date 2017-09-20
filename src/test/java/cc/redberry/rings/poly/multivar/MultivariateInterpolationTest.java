@@ -3,7 +3,6 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -18,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @since 1.0
  */
-public class MultivariateInterpolationTest extends APolynomialTest {
+public class MultivariateInterpolationTest extends AMultivariateTest {
     @Test
     @SuppressWarnings("unchecked")
     public void test1() throws Exception {

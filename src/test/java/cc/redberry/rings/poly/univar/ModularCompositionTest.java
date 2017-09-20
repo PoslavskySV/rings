@@ -1,7 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.test.Benchmark;
@@ -18,7 +17,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by poslavsky on 26/02/2017.
  */
-public class ModularCompositionTest extends APolynomialTest {
+public class ModularCompositionTest extends AUnivariateTest {
     @Test
     public void testXPowers1() throws Exception {
         long modulus = 43;
@@ -208,9 +207,9 @@ public class ModularCompositionTest extends APolynomialTest {
                 UnivariatePolynomial<BigInteger> point = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
                 UnivariatePolynomial<BigInteger> polyModulus = RandomUnivariatePolynomials.randomMonicPoly(1 + rnd.nextInt(10), bModulus, rnd);
                 UnivariatePolynomial<BigInteger> bComp = compositionBrentKung(poly, point, polyModulus, UnivariateDivision.fastDivisionPreConditioning(polyModulus));
-                UnivariatePolynomialZp64 lPolyModulus = UnivariatePolynomial.asLongPolyZp(polyModulus);
-                UnivariatePolynomialZp64 lComp = compositionBrentKung(UnivariatePolynomial.asLongPolyZp(poly), UnivariatePolynomial.asLongPolyZp(point), lPolyModulus, UnivariateDivision.fastDivisionPreConditioning(lPolyModulus));
-                Assert.assertEquals(lComp, UnivariatePolynomial.asLongPolyZp(bComp));
+                UnivariatePolynomialZp64 lPolyModulus = UnivariatePolynomial.asOverZp64(polyModulus);
+                UnivariatePolynomialZp64 lComp = compositionBrentKung(UnivariatePolynomial.asOverZp64(poly), UnivariatePolynomial.asOverZp64(point), lPolyModulus, UnivariateDivision.fastDivisionPreConditioning(lPolyModulus));
+                Assert.assertEquals(lComp, UnivariatePolynomial.asOverZp64(bComp));
             }
         }
     }

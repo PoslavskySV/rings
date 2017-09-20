@@ -14,7 +14,7 @@ import java.util.Arrays;
 /**
  * @since 1.0
  */
-public class ParserTest {
+public class ParserTest extends AMultivariateTest {
     @Test
     public void test1() throws Exception {
         Rationals.Rationals.parse("+12");

@@ -1,20 +1,14 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
-import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.util.ArraysUtil;
-import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.IntStream;
 
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
@@ -25,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @since 1.0
  */
-public class MultivariatePolynomialZp64Test extends APolynomialTest {
+public class MultivariatePolynomialZp64Test extends AMultivariateTest {
 
     private IntegersZp64 Integers = new IntegersZp64(Integer.MAX_VALUE);
 
@@ -234,7 +228,7 @@ public class MultivariatePolynomialZp64Test extends APolynomialTest {
         for (int i = 0; i < nIterations; i++) {
             domain = rnd.nextBoolean() ? Integers : new IntegersZp64(getModulusRandom(8));
             MultivariatePolynomialZp64 poly =
-                    MultivariatePolynomial.asLongPolyZp(RandomMultivariatePolynomials.randomPolynomial(
+                    MultivariatePolynomial.asOverZp64(RandomMultivariatePolynomials.randomPolynomial(
                             rndd.nextInt(1, 4),
                             rndd.nextInt(1, 5),
                             rndd.nextInt(1, 10),

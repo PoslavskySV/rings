@@ -3,7 +3,6 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.util.RandomDataGenerator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -16,7 +15,7 @@ import static cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic.creat
 /**
  * @since 1.0
  */
-public class IrreduciblePolynomialsTest extends APolynomialTest {
+public class IrreduciblePolynomialsTest extends AUnivariateTest {
     @Test
     public void testIrreducibleRandom1() throws Exception {
         RandomGenerator rnd = getRandom();

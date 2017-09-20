@@ -5,7 +5,6 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.MachineArithmetic;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.test.Benchmark;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -17,14 +16,14 @@ import java.util.Arrays;
 
 import static cc.redberry.rings.poly.univar.RandomUnivariatePolynomials.randomPoly;
 import static cc.redberry.rings.poly.univar.UnivariateDivision.*;
-import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asLongPolyZp;
+import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asOverZp64;
 import static org.junit.Assert.*;
 
 
 /**
  * Created by poslavsky on 15/02/2017.
  */
-public class UnivariateDivisionTest extends APolynomialTest {
+public class UnivariateDivisionTest extends AUnivariateTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void test1() throws Exception {
@@ -560,15 +559,15 @@ public class UnivariateDivisionTest extends APolynomialTest {
     public void test22() throws Exception {
         IntegersZp domain = new IntegersZp(7);
         UnivariatePolynomial<BigInteger> bDividend = UnivariatePolynomial.create(domain, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1);
-        UnivariatePolynomialZp64 lDividend = asLongPolyZp(bDividend);
+        UnivariatePolynomialZp64 lDividend = asOverZp64(bDividend);
 
 
         UnivariatePolynomial<BigInteger> bDivider = UnivariatePolynomial.create(domain, 1, 2, 3, 3, 2, 1);
-        UnivariatePolynomialZp64 lDivider = asLongPolyZp(bDivider);
+        UnivariatePolynomialZp64 lDivider = asOverZp64(bDivider);
 
         UnivariatePolynomial<BigInteger>[] bqd = UnivariateDivision.divideAndRemainderFast(bDividend, bDivider, true);
         UnivariatePolynomialZp64[] lqd = UnivariateDivision.divideAndRemainderFast(lDividend, lDivider, true);
-        assertArrayEquals(new UnivariatePolynomialZp64[]{asLongPolyZp(bqd[0]), asLongPolyZp(bqd[1])}, lqd);
+        assertArrayEquals(new UnivariatePolynomialZp64[]{asOverZp64(bqd[0]), asOverZp64(bqd[1])}, lqd);
     }
 
     @Test

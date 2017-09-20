@@ -1,6 +1,5 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
 import org.apache.commons.math3.random.RandomDataGenerator;
@@ -11,7 +10,7 @@ import org.junit.Test;
 /**
  * Created by poslavsky on 27/02/2017.
  */
-public class UnivariatePolynomialArithmeticTest extends APolynomialTest {
+public class UnivariatePolynomialArithmeticTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         long modulus = 5;

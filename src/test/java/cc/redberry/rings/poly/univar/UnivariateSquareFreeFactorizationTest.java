@@ -4,7 +4,6 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.FactorizationTestUtil.RandomSource;
 import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.RandomUtil;
@@ -21,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by poslavsky on 20/01/2017.
  */
-public class UnivariateSquareFreeFactorizationTest extends APolynomialTest {
+public class UnivariateSquareFreeFactorizationTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         UnivariatePolynomialZ64 poly = UnivariatePolynomialArithmetic.polyPow(UnivariatePolynomialZ64.create(1, 3).multiply(2), 3, false).multiply(UnivariatePolynomialArithmetic.polyPow(UnivariatePolynomialZ64.create(-3, -5, 7), 2, false));

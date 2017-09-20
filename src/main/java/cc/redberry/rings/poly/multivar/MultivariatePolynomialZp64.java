@@ -161,7 +161,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      */
     public static MultivariatePolynomialZp64 parse(String string, IntegersZp64 ring, Comparator<DegreeVector> ordering, String... variables) {
         IntegersZp lDomain = ring.asGenericRing();
-        return MultivariatePolynomial.asLongPolyZp(Parser.parse(string, lDomain, lDomain, ordering, variables));
+        return MultivariatePolynomial.asOverZp64(Parser.parse(string, lDomain, lDomain, ordering, variables));
     }
 
     /**

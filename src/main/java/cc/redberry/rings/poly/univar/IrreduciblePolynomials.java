@@ -11,6 +11,9 @@ import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import static cc.redberry.rings.poly.univar.Conversions64bit.asOverZp64;
+import static cc.redberry.rings.poly.univar.Conversions64bit.canConvertToZp64;
+
 /**
  * Irreducibility tests and generators for random irreducible polynomials.
  *
@@ -18,7 +21,6 @@ import org.apache.commons.math3.random.RandomGenerator;
  */
 public final class IrreduciblePolynomials {
     private IrreduciblePolynomials() {}
-
 
     /**
      * Tests whether {@code poly} is irreducible
@@ -41,6 +43,10 @@ public final class IrreduciblePolynomials {
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> boolean finiteFieldIrreducibleQ(Poly poly) {
         Util.ensureOverFiniteField(poly);
+
+        if (canConvertToZp64(poly))
+            return finiteFieldIrreducibleQ(asOverZp64(poly));
+
         if (poly.degree() <= 1)
             return true;
 

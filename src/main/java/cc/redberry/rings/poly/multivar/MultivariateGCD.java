@@ -28,6 +28,8 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
+
 
 /**
  * Multivariate polynomial GCD
@@ -617,8 +619,8 @@ public final class MultivariateGCD {
                 continue;
 
             MultivariatePolynomialZp64
-                    aMod = MultivariatePolynomial.asLongPolyZp(abMod),
-                    bMod = MultivariatePolynomial.asLongPolyZp(bbMod);
+                    aMod = MultivariatePolynomial.asOverZp64(abMod),
+                    bMod = MultivariatePolynomial.asOverZp64(bbMod);
 
             // the base image
             // accumulator to update coefficients via Chineese remainding
@@ -645,8 +647,8 @@ public final class MultivariateGCD {
                 if (!abMod.sameSkeletonQ(a) || !bbMod.sameSkeletonQ(b))
                     continue;
 
-                aMod = MultivariatePolynomial.asLongPolyZp(abMod);
-                bMod = MultivariatePolynomial.asLongPolyZp(bbMod);
+                aMod = MultivariatePolynomial.asOverZp64(abMod);
+                bMod = MultivariatePolynomial.asOverZp64(bbMod);
 
                 IntegersZp64 lDomain = new IntegersZp64(prime);
 
@@ -745,8 +747,8 @@ public final class MultivariateGCD {
                 if (!abMod.sameSkeletonQ(a) || !bbMod.sameSkeletonQ(b))
                     continue;
 
-                aMod = MultivariatePolynomial.asLongPolyZp(abMod);
-                bMod = MultivariatePolynomial.asLongPolyZp(bbMod);
+                aMod = MultivariatePolynomial.asOverZp64(abMod);
+                bMod = MultivariatePolynomial.asOverZp64(bbMod);
 
                 IntegersZp64 lDomain = new IntegersZp64(prime);
 
@@ -933,6 +935,11 @@ public final class MultivariateGCD {
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
         Util.ensureOverFiniteField(a, b);
+        a.assertSameCoefficientRingWith(b);
+
+        if (canConvertToZp64(a))
+            return convert(ModularGCDInGF(asOverZp64(a), asOverZp64(b)));
+
         if (a == b)
             return a.clone();
         if (a.isZero()) return b.clone();
@@ -1037,7 +1044,7 @@ public final class MultivariateGCD {
     }
 
     /**
-     * Modular GCD algorithm for polynomials over Z.
+     * Modular GCD algorithm for polynomials over finite fields of small cardinality.
      *
      * @param a the first polynomial
      * @param b the second polynomial
@@ -1290,6 +1297,10 @@ public final class MultivariateGCD {
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
         Util.ensureOverField(a, b);
+        a.assertSameCoefficientRingWith(b);
+
+        if (canConvertToZp64(a))
+            return convert(BrownGCD(asOverZp64(a), asOverZp64(b)));
 
         // prepare input and test for early termination
         GCDInput<Monomial<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::BrownGCD);
@@ -1468,6 +1479,10 @@ public final class MultivariateGCD {
             MultivariatePolynomial<E> a,
             MultivariatePolynomial<E> b) {
         Util.ensureOverField(a, b);
+        a.assertSameCoefficientRingWith(b);
+
+        if (canConvertToZp64(a))
+            return convert(ZippelGCD(asOverZp64(a), asOverZp64(b)));
 
         // prepare input and test for early termination
         GCDInput<Monomial<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
@@ -3649,6 +3664,9 @@ public final class MultivariateGCD {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly EEZGCD(Poly a, Poly b) {
+        a.assertSameCoefficientRingWith(b);
+        if (canConvertToZp64(a))
+            return convert(EEZGCD(asOverZp64(a), asOverZp64(b)));
 
         // prepare input and test for early termination
         GCDInput<Term, Poly> gcdInput = preparedGCDInput(a, b, MultivariateGCD::EEZGCD);

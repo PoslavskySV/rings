@@ -116,7 +116,7 @@ public final class RandomUnivariatePolynomials {
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
     public static UnivariatePolynomial<BigInteger> randomPoly(int degree, BigInteger bound, RandomGenerator rnd) {
-        return UnivariatePolynomial.create(Rings.Z, randomBigArray(degree, bound, rnd));
+        return UnivariatePolynomial.createUnsafe(Rings.Z, randomBigArray(degree, bound, rnd));
     }
 
     /**
@@ -128,7 +128,7 @@ public final class RandomUnivariatePolynomials {
      * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
      */
     public static <E> UnivariatePolynomial<E> randomPoly(int degree, Ring<E> ring, RandomGenerator rnd) {
-        return UnivariatePolynomial.create(ring, randomArray(degree, ring, rnd));
+        return UnivariatePolynomial.createUnsafe(ring, randomArray(degree, ring, rnd));
     }
 
     /**

@@ -5,7 +5,6 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
@@ -19,7 +18,7 @@ import static org.junit.Assert.*;
 /**
  * @since 1.0
  */
-public class MultivariateDivisionTest extends APolynomialTest {
+public class MultivariateDivisionTest extends AMultivariateTest  {
     @Test
     public void test1() throws Exception {
         String[] vars = {"a", "b"};

@@ -1,7 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Assert;
@@ -13,7 +12,7 @@ import java.util.Arrays;
 /**
  * @since 1.0
  */
-public class UnivariatePolynomialZp64Test extends APolynomialTest {
+public class UnivariatePolynomialZp64Test extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         UnivariatePolynomialZp64 aL = UnivariatePolynomialZ64.create(1, 2, 3, 4, 5, 6).modulus(59);

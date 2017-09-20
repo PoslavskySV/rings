@@ -311,7 +311,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
                 return null;
 
             data[i] = iterators[i].next();
-            return UnivariatePolynomial.create(ring, data.clone());
+            return UnivariatePolynomial.createUnsafe(ring, data.clone());
         }
     }
 

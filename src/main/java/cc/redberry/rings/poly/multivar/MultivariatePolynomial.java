@@ -189,7 +189,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @throws IllegalArgumentException if poly.ring is not Zp
      * @throws ArithmeticException      if some of coefficients will not exactly fit in a {@code long}.
      */
-    public static MultivariatePolynomialZp64 asLongPolyZp(MultivariatePolynomial<BigInteger> poly) {
+    public static MultivariatePolynomialZp64 asOverZp64(MultivariatePolynomial<BigInteger> poly) {
         if (!(poly.ring instanceof IntegersZp))
             throw new IllegalArgumentException("Poly is not over modular ring: " + poly.ring);
         IntegersZp ring = (IntegersZp) poly.ring;
@@ -224,7 +224,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @SuppressWarnings("unchecked")
     public UnivariatePolynomial<E> asUnivariate() {
         if (isConstant())
-            return UnivariatePolynomial.create(ring, lc());
+            return UnivariatePolynomial.constant(ring, lc());
         int[] degrees = degrees();
         int theVar = -1;
         for (int i = 0; i < degrees.length; i++) {
@@ -1124,8 +1124,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> shift(int variable, E shift) {
         if (ring.isZero(shift))
             return clone();
+        shift = ring.valueOf(shift);
 
-        USubstitution<E> shifts = new USubstitution<>(UnivariatePolynomial.create(ring, shift, ring.getOne()), variable, nVariables, ordering);
+        USubstitution<E> shifts = new USubstitution<>(UnivariatePolynomial.createUnsafe(ring, ring.createArray(shift, ring.getOne())), variable, nVariables, ordering);
         MultivariatePolynomial<E> result = createZero();
         for (Monomial<E> term : this) {
             int exponent = term.exponents[variable];
@@ -1153,7 +1154,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         for (int i = 0; i < variables.length; ++i) {
             if (!ring.isZero(shifts[i]))
                 allShiftsAreZero = false;
-            powers[variables[i]] = new USubstitution<>(UnivariatePolynomial.create(ring, shifts[i], ring.getOne()), variables[i], nVariables, ordering);
+            powers[variables[i]] = new USubstitution<>(UnivariatePolynomial.create(ring, ring.createArray(shifts[i], ring.getOne())), variables[i], nVariables, ordering);
         }
 
         if (allShiftsAreZero)

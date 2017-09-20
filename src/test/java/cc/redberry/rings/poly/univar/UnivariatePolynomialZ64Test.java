@@ -1,13 +1,12 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.poly.test.APolynomialTest;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * @since 1.0
  */
-public class UnivariatePolynomialZ64Test extends APolynomialTest {
+public class UnivariatePolynomialZ64Test extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         Assert.assertEquals(-1, UnivariatePolynomialZ64.create(0).firstNonZeroCoefficientPosition());

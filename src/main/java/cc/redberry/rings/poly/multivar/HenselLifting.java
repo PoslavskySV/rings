@@ -254,7 +254,9 @@ public final class HenselLifting {
             this.precomputedPowers = new MultivariatePolynomial.PrecomputedPowersHolder<>(nVariables, ArraysUtil.sequence(1, nVariables), values, ring);
             this.linearPowers = new MultivariatePolynomial.USubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
-                linearPowers[i] = new MultivariatePolynomial.USubstitution<>(UnivariatePolynomial.create(ring, ring.negate(values[i]), ring.getOne()), i + 1, nVariables, ordering);
+                linearPowers[i] = new MultivariatePolynomial.USubstitution<>(
+                        UnivariatePolynomial.createUnsafe(ring, ring.createArray(ring.negate(values[i]), ring.getOne())),
+                        i + 1, nVariables, ordering);
         }
 
         Evaluation<E> setRing(Ring<E> ring) {
@@ -725,7 +727,7 @@ public final class HenselLifting {
         uPoly[] coefficients = ring.createArray(degree + 1);
         for (int i = 0; i <= degree; i++)
             coefficients[i] = (uPoly) evaluate.taylorCoefficient(poly, variable, i).asUnivariate();
-        return UnivariatePolynomial.create(ring, coefficients);
+        return UnivariatePolynomial.createUnsafe(ring, coefficients);
     }
 
     /**
@@ -912,7 +914,7 @@ public final class HenselLifting {
         Poly[] coefficients = ring.createArray(degree + 1);
         for (int i = 0; i <= degree; i++)
             coefficients[i] = evaluate.taylorCoefficient(poly, variable, i);
-        return UnivariatePolynomial.create(ring, coefficients);
+        return UnivariatePolynomial.createUnsafe(ring, coefficients);
     }
 
     /**

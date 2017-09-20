@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by poslavsky on 27/02/2017.
  */
-public class UnivariateFactorizationTest extends APolynomialTest {
+public class UnivariateFactorizationTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         assertTrue(UnivariateFactorization.FactorInGF(UnivariatePolynomialZ64.create(3, 7).modulus(19)).get(0).isMonic());
