@@ -659,8 +659,11 @@ public final class MultivariateGCD {
                     continue main_loop;
                 }
 
-                assert MultivariateDivision.dividesQ(aMod, modularGCD);
-                assert MultivariateDivision.dividesQ(bMod, modularGCD);
+                if (!MultivariateDivision.dividesQ(aMod, modularGCD) || !MultivariateDivision.dividesQ(bMod, modularGCD)) {
+                    // extremely rare event
+                    // bad base prime choosen
+                    continue main_loop;
+                }
 
                 if (modularGCD.isConstant())
                     return gcdInput.restoreGCD(a.createOne());
