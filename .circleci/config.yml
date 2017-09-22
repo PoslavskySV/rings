@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
       - image: circleci/openjdk:8-jdk
 
@@ -18,19 +18,13 @@ jobs:
               git submodule update --init --recursive
               cd libdivide4j
               mvn clean install -DskipTests
-      - restore_cache:
-          keys:
-          - dependencies-{{ checksum "pom.xml" }}
-          - dependencies-
 
-      - run: mvn dependency:go-offline
-
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: dependencies-{{ checksum "pom.xml" }}
-
-      - run: mvn clean test -DrunLongTests=true -e -ff
-
-      - store_test_results:
-          path: target/surefire-reports
+    - run: 
+          command: |
+              cd rings
+              mvn clean test -DrunLongTests=true -e -ff
+      
+      - run:
+          command: |
+              cd rings.scaladsl
+              sbt test
