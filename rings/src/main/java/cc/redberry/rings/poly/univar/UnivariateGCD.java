@@ -66,7 +66,7 @@ public final class UnivariateGCD {
         Tuple2<UnivariatePolynomial<E>, E> aRat = Util.toCommonDenominator(a);
         Tuple2<UnivariatePolynomial<E>, E> bRat = Util.toCommonDenominator(b);
 
-        return Util.asOverRationals(a.ring, PolynomialGCD(aRat._1, bRat._1));
+        return Util.asOverRationals(a.ring, PolynomialGCD(aRat._1, bRat._1)).monic();
     }
 
     /**
