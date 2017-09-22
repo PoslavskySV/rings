@@ -341,7 +341,7 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
     /** pretty print for factorization */
     private static <P extends IPolynomial<P>> String toStringFactorization(List<P> factors, TIntArrayList exponents,
                                                                            P factor, boolean infoAsExponents, String[] vars) {
-        return toStringFactorization(factors, exponents, factor, infoAsExponents, vars == null ? ToStringSupport.plain() : ToStringSupport.poly(vars));
+        return toStringFactorization(factors, exponents, factor, infoAsExponents, vars == null ? ToStringSupport.plain() : ToStringSupport.withVariables(vars));
     }
 
     /** Multiply factors */

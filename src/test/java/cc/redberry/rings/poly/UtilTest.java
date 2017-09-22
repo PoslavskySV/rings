@@ -1,31 +1,23 @@
 package cc.redberry.rings.poly;
 
-import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Rings;
+import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
-import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
-import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
-import cc.redberry.rings.util.ZipUtil;
-import org.junit.Assert;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import org.junit.Test;
 
-import java.io.Serializable;
-
 /**
+ * @author Stanislav Poslavsky
  * @since 1.0
  */
 public class UtilTest {
     @Test
-    public void testsSerialization1() throws Exception {
-        assertSerialization(UnivariatePolynomialZ64.create(1, 2, 3));
-        assertSerialization(UnivariatePolynomialZ64.create(1, 2, 3).modulus(2));
-        assertSerialization(UnivariatePolynomialZ64.create(1, 2, 3).modulus(2).toBigPoly());
-        assertSerialization(MultivariatePolynomial.parse("a^2 - 2*b"));
-        assertSerialization(MultivariatePolynomialZp64.parse("a^2 - 2*b", new IntegersZp64(2)));
-    }
+    public void test1() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>> poly = UnivariatePolynomial.parse(Rings.Q, "(1/2) + (1/3)*x + (1/4)*x^2 + (1/5)*x^3 + (1/6)*x^7");
+        System.out.println(Util.toCommonDenominator(poly));
 
-    private static <T extends Serializable> void assertSerialization(T object) {
-        String compressed = ZipUtil.compress(object);
-        T uncomressed = ZipUtil.uncompress(compressed);
-        Assert.assertEquals(object, uncomressed);
+        MultivariatePolynomial<Rational<BigInteger>> mpoly = MultivariatePolynomial.parse("(1/2) + (1/3)*x + (1/4)*x^2 + (1/5)*x^3111  + 1/5*x^66", Rings.Q);
+        System.out.println(Util.toCommonDenominator(mpoly));
     }
 }

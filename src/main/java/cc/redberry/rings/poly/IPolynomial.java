@@ -32,7 +32,7 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      */
     default void assertSameCoefficientRingWith(Poly oth) {
         if (!sameCoefficientRingWith(oth))
-            throw new IllegalArgumentException("Mixing polynomials over different coefficient rings.");
+            throw new IllegalArgumentException("Mixing polynomials over different coefficient rings: " + this.coefficientRingToString() + " and " + oth.coefficientRingToString());
     }
 
     /**

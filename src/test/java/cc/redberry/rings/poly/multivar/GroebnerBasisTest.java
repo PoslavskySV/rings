@@ -1,9 +1,9 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.Rationals;
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.bigint.Rational;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -32,9 +32,9 @@ public class GroebnerBasisTest extends AMultivariateTest {
     @Test
     public void test1() throws Exception {
         String[] vars = {"x", "y"};
-        MultivariatePolynomial<Rational>
-                f1 = parse("x^2*y^2+x*y", Rationals.Rationals, MonomialOrder.LEX, vars),
-                f2 = parse("x*y^4-y^2", Rationals.Rationals, MonomialOrder.LEX, vars);
+        MultivariatePolynomial<Rational<BigInteger>>
+                f1 = parse("x^2*y^2+x*y", Rings.Q, MonomialOrder.LEX, vars),
+                f2 = parse("x*y^4-y^2", Rings.Q, MonomialOrder.LEX, vars);
 
         System.out.println(GroebnerBasis.BuchbergerGB(Arrays.asList(f1, f2)));
     }
@@ -42,13 +42,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
     @Test
     public void test2() throws Exception {
         String[] vars = {"x", "y", "z"};
-        MultivariatePolynomial<Rational>
-                f1 = parse("x^2*y^2 + x*y + 5*z^3*y^2", Rationals.Rationals, MonomialOrder.LEX, vars),
-                f2 = parse("x*y^4 - y^2 - 5*z^3*x^2", Rationals.Rationals, MonomialOrder.LEX, vars);
+        MultivariatePolynomial<Rational<BigInteger>>
+                f1 = parse("x^2*y^2 + x*y + 5*z^3*y^2", Rings.Q, MonomialOrder.LEX, vars),
+                f2 = parse("x*y^4 - y^2 - 5*z^3*x^2", Rings.Q, MonomialOrder.LEX, vars);
 
 
-        List<MultivariatePolynomial<Rational>> r = GroebnerBasis.BuchbergerGB(Arrays.asList(f1, f2));
-        for (MultivariatePolynomial<Rational> t : r)
+        List<MultivariatePolynomial<Rational<BigInteger>>> r = GroebnerBasis.BuchbergerGB(Arrays.asList(f1, f2));
+        for (MultivariatePolynomial<Rational<BigInteger>> t : r)
             System.out.println(t.toString(vars));
     }
 

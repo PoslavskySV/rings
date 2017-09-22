@@ -3,11 +3,13 @@ package cc.redberry.rings.scaladsl
 import java.util.Comparator
 
 import cc.redberry.rings
-import cc.redberry.rings.bigint.{BigInteger, Rational}
+import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly._
 import cc.redberry.rings.poly.multivar._
 import cc.redberry.rings.poly.univar.{IUnivariatePolynomial, UnivariatePolynomial, UnivariatePolynomialZp64}
 import cc.redberry.rings.{poly, _}
+
+import scala.language.{existentials, implicitConversions}
 
 /**
   *
@@ -30,7 +32,7 @@ object Rings {
     /**
       * @inheritdoc
       **/
-    override def toString(element: E): String = element toString
+    override final def toString(element: E): String = _show(element)
 
     /**
       * @inheritdoc
@@ -38,9 +40,15 @@ object Rings {
     override def parse(string: String): E = domain parse string
 
     /**
+      * Parse polynomial
+      */
+    final def apply(string: String) = parse(string)
+
+    /**
       * @inheritdoc
       **/
     override def toString: String = domain toString
+
 
     /** element class  */
     private val eClass: Class[_ <: E] = domain.getZero.getClass
@@ -55,10 +63,19 @@ object Rings {
       */
     final def element(e: Any): E = e.asInstanceOf[E]
 
+    protected[Rings]
+    def _show(obj: Any): String = obj toString
+
     /**
       * Pretty toString
       */
-    def show(obj: Any): String = obj toString
+    final def show(arg: Any): String = arg match {
+      case obj: Traversable[_] =>
+        obj.map(_show).toString
+      case obj: FactorDecomposition[_] =>
+        obj.toString((element: T forSome {type T <: IPolynomial[T]}) => show(element))
+      case any@_ => _show(any)
+    }
   }
 
   /**
@@ -79,7 +96,7 @@ object Rings {
   /**
     * Field of rationals (Q)
     */
-  val Q: Ring[Rational] = rings.Rings.Q
+  val Q: Ring[Rational[BigInteger]] = rings.Rings.Q
 
   /**
     * Field of integers modulo `modulus`
@@ -94,6 +111,27 @@ object Rings {
     * @param modulus the modulus
     */
   def Zp(modulus: BigInteger): Ring[BigInteger] = rings.Rings.Zp(modulus)
+
+  /**
+    * Ring of rationals
+    */
+  final case class Rationals[E](ring: Ring[E]) extends Ring[Rational[E]](rings.Rings.Rationals(ring)) {
+    private val rationalsDomain: rings.Rationals[E] = domain.asInstanceOf[rings.Rationals[E]]
+
+    /**
+      * @inheritdoc
+      **/
+    override def parse(string: String): Rational[E] = rationalsDomain.parse(ring, string)
+
+    /**
+      * Pretty toString
+      */
+    override def _show(obj: Any): String = obj match {
+      case rat: Rational[E] =>
+        rat.toString(ring)
+      case element => ring.show(element)
+    }
+  }
 
   /**
     * Base class for polynomial rings
@@ -117,16 +155,11 @@ object Rings {
     override def parse(string: String): Poly = domain.parse(string, variables)
 
     /**
-      * Parse polynomial
-      */
-    final def apply(string: String) = parse(string)
-
-    /**
       * To string
       */
-    override def show(obj: Any): String = obj match {
+    override def _show(obj: Any): String = obj match {
       case wv: WithVariables => show(wv)
-      case _ => obj.toString
+      case _ => super.show(obj)
     }
 
     /**
@@ -151,11 +184,6 @@ object Rings {
       * Index of variable with specified string representation
       */
     final def index(variable: String): Int = variables.indexOf(variable)
-
-    /**
-      * @inheritdoc
-      **/
-    override final def toString(element: Poly): String = show(element)
 
     /**
       * String representation of this ring
@@ -497,7 +525,7 @@ object Rings {
       */
     override def show(obj: WithVariables): String = obj match {
       case poly: UnivariatePolynomial[E] => poly.toString(coefficientDomain, variable)
-      case cfx if coefficientDomain.isElement(cfx) => coefficientDomain.show(cfx)
+      case cfx if coefficientDomain.isElement(cfx) => coefficientDomain._show(cfx)
       case _ => super.show(obj)
     }
 
@@ -645,7 +673,7 @@ object Rings {
       */
     override def show(obj: WithVariables): String = obj match {
       case poly: MultivariatePolynomial[E] => poly.toString(coefficientDomain, variables)
-      case el if coefficientDomain.isElement(el) => coefficientDomain.show(el)
+      case el if coefficientDomain.isElement(el) => coefficientDomain._show(el)
       case _ => super.show(obj)
     }
 

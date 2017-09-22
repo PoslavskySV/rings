@@ -1,10 +1,7 @@
 package cc.redberry.rings.poly.multivar;
 
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.bigint.ChineseRemainders;
@@ -13,6 +10,7 @@ import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
@@ -206,12 +204,24 @@ public final class MultivariateGCD {
             Ring ring = ((MultivariatePolynomial) a).ring;
             if (Rings.Z.equals(ring))
                 return (Poly) ModularGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
-            else if (ring.isField())
-                return (Poly) ZippelGCD((MultivariatePolynomial) a, (MultivariatePolynomial) b);
-            else
+            else if (ring.isField()) {
+                if (Util.isOverRationals(a))
+                    return (Poly) PolynomialGCDOverRationals((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+                else
+                    return (Poly) ZippelGCD((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+            } else
                 throw new RuntimeException("GCD over " + ring + " ring not supported.");
         } else
             throw new RuntimeException();
+    }
+
+    private static <E> MultivariatePolynomial<Rational<E>> PolynomialGCDOverRationals(
+            MultivariatePolynomial<Rational<E>> a,
+            MultivariatePolynomial<Rational<E>> b) {
+        Tuple2<MultivariatePolynomial<E>, E> aRat = Util.toCommonDenominator(a);
+        Tuple2<MultivariatePolynomial<E>, E> bRat = Util.toCommonDenominator(b);
+
+        return Util.asOverRationals(a.ring, PolynomialGCD(aRat._1, bRat._1));
     }
 
     /* ============================================== Auxiliary methods ============================================= */
@@ -661,7 +671,7 @@ public final class MultivariateGCD {
 
                 if (!MultivariateDivision.dividesQ(aMod, modularGCD) || !MultivariateDivision.dividesQ(bMod, modularGCD)) {
                     // extremely rare event
-                    // bad base prime choosen
+                    // bad base prime chosen
                     continue main_loop;
                 }
 
@@ -1098,7 +1108,7 @@ public final class MultivariateGCD {
             MultivariatePolynomial<UnivariatePolynomialZp64> ugcd =
                     ModularGCDInGF0(ua, ub, gcdInput.degreeBounds[uVariable], gcdInput.finiteExtensionDegree);
             if (ugcd == null)
-                // bad variable choosen
+                // bad variable chosen
                 continue;
 
             ugcd = ugcd.multiply(contentGCD);
@@ -1179,7 +1189,7 @@ public final class MultivariateGCD {
 
                 if (!MultivariateDivision.dividesQ(aMod, modularGCD) || !MultivariateDivision.dividesQ(bMod, modularGCD)) {
                     // extremely rare event
-                    // bad base prime choosen
+                    // bad base prime chosen
                     continue main_loop;
                 }
 

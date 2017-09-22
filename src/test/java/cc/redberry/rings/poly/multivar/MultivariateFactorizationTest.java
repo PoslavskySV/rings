@@ -2,6 +2,8 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
@@ -1929,6 +1931,50 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         Assert.assertEquals(6, factors.size());
         Assert.assertEquals(poly, factors.toPolynomial());
     }
+
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMultivariateFactorization40() throws Exception {
+        String[] vars = {"a", "b", "c", "d"};
+        MultivariatePolynomial<BigInteger> pp[] = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("31694*c^2*d^2-9343*b^2-12027*b^2*d^2+40289*a^2*b*c*d", vars),
+                MultivariatePolynomial.parse("(-114834)*b^2*d+119706*a*c^2-105913*a*b^2+129857*a*b^2*d", vars),
+                MultivariatePolynomial.parse("(-27997)*b^4*d^5-120509*b^5*c^3*d^5-103731*a*c^3*d^2-71946*a*b^4*c^5*d^5+113296*a^3*b^4*c", vars),
+                MultivariatePolynomial.parse("1-16532*b*c*d^2-101779*a*b^2*c^4*d^4-74636*a^2*b^2*c^4-110612*a^3*c^4*d^4-97709*a^3*b^2*c+120010*a^5*b^3*c*d^2", vars),
+        }, poly = multiply(pp);
+
+        for (int i = 21; i < 22; i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.Factor(poly);
+            Assert.assertEquals(4, factors.size());
+            Assert.assertEquals(poly, factors.toPolynomial());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMultivariateFactorization41() throws Exception {
+        String[] vars = {"a", "b", "c", "d"};
+        MultivariatePolynomial<Rational<BigInteger>> pp[] = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("(31694/3)*c^2*d^2-(9343/1111)*b^2-12027*b^2*d^2+40289*a^2*b*c*d", Rings.Q, vars),
+                MultivariatePolynomial.parse("(-114834)*b^2*d+119706*a*c^2-105913*a*b^2+129857*a*b^2*d", Rings.Q, vars),
+                MultivariatePolynomial.parse("(-27997)*b^4*d^5-(120509/123)*b^5*c^3*d^5-103731*a*c^3*d^2-71946*a*b^4*c^5*d^5+113296*a^3*b^4*c", Rings.Q, vars),
+                MultivariatePolynomial.parse("1-16532*b*c*d^2-101779*a*b^2*c^4*d^4-(74636/1234342)*a^2*b^2*c^4-110612*a^3*c^4*d^4-97709*a^3*b^2*c+120010*a^5*b^3*c*d^2", Rings.Q, vars),
+        }, poly = multiply(pp);
+
+        for (int i = 21; i < 22; i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            FactorDecomposition<MultivariatePolynomial<Rational<BigInteger>>> factors = MultivariateFactorization.Factor(poly);
+            Assert.assertEquals(4, factors.size());
+            Assert.assertEquals(poly, factors.toPolynomial());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
 
     /* ==================================== Test data =============================================== */
 

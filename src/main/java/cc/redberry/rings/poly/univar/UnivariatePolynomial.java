@@ -1045,7 +1045,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @param <T>    result elements type
      * @return a new polynomial with the coefficients obtained from this by applying {@code mapper}
      */
-    public <T> UnivariatePolynomial<T> mapElements(Ring<T> ring, Function<E, T> mapper) {
+    public <T> UnivariatePolynomial<T> mapCoefficients(Ring<T> ring, Function<E, T> mapper) {
         return stream().map(mapper).collect(new PolynomialCollector<>(ring));
     }
 

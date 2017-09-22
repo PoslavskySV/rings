@@ -1,11 +1,11 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.bigint.Rational;
 import cc.redberry.rings.poly.MachineArithmetic;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.UnivariateGCD.*;
 import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.RandomDataGenerator;
@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static cc.redberry.rings.Rationals.Rationals;
 import static cc.redberry.rings.poly.univar.RandomUnivariatePolynomials.randomPoly;
 import static cc.redberry.rings.poly.univar.UnivariateDivision.divideAndRemainder;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.*;
@@ -619,21 +618,21 @@ public class UnivariateGCDTest extends AUnivariateTest {
 
     @Test
     public void test25() throws Exception {
-        UnivariatePolynomial<Rational> a = UnivariatePolynomial.create(Rationals.Rationals,
-                Rationals.Rationals.parse("2/3"),
-                Rationals.Rationals.parse("4/5"),
-                Rationals.Rationals.parse("1/2"),
-                Rationals.Rationals.parse("-31/2"));
-        UnivariatePolynomial<Rational> b = UnivariatePolynomial.create(Rationals.Rationals,
-                Rationals.Rationals.parse("7/3"),
-                Rationals.Rationals.parse("4/7"),
-                Rationals.Rationals.parse("3/2"),
-                Rationals.Rationals.parse("-31/12"));
-        UnivariatePolynomial<Rational> gcd = UnivariatePolynomial.create(Rationals.Rationals,
-                Rationals.Rationals.parse("4/3"),
-                Rationals.Rationals.parse("-4/7"),
-                Rationals.Rationals.parse("-1/2"),
-                Rationals.Rationals.parse("-1/12"));
+        UnivariatePolynomial<Rational<BigInteger>> a = UnivariatePolynomial.create(Rings.Q,
+                Rings.Q.parse("2/3"),
+                Rings.Q.parse("4/5"),
+                Rings.Q.parse("1/2"),
+                Rings.Q.parse("-31/2"));
+        UnivariatePolynomial<Rational<BigInteger>> b = UnivariatePolynomial.create(Rings.Q,
+                Rings.Q.parse("7/3"),
+                Rings.Q.parse("4/7"),
+                Rings.Q.parse("3/2"),
+                Rings.Q.parse("-31/12"));
+        UnivariatePolynomial<Rational<BigInteger>> gcd = UnivariatePolynomial.create(Rings.Q,
+                Rings.Q.parse("4/3"),
+                Rings.Q.parse("-4/7"),
+                Rings.Q.parse("-1/2"),
+                Rings.Q.parse("-1/12"));
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertGCD(a, b, PolynomialGCD(a, b));

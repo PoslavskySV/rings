@@ -1,11 +1,7 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.bigint.Rational;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -27,7 +23,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
 
-import static cc.redberry.rings.Rationals.Rationals;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.divideExact;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.dividesQ;
@@ -1115,29 +1110,15 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     @Test
     public void testRationals1() throws Exception {
-        MultivariatePolynomial<Rational>
-                a = parse("-(2/3)*a*b*c - (7/6)*a^3*c^4 + (2/3)*b^3", Rationals),
-                b = parse("(2/3)*a^2*b*c + (1/6)*a^3*c^4 + (2/13)*c^3", Rationals),
-                gcd = parse("(12/3)*a^2*b*c^2 - (11/6)*a^3*b*c^4 + (2/11)*c", Rationals);
+        MultivariatePolynomial<Rational<BigInteger>>
+                a = parse("-(2/3)*a*b*c - (7/6)*a^3*c^4 + (2/3)*b^3", Rings.Q),
+                b = parse("(2/3)*a^2*b*c + (1/6)*a^3*c^4 + (2/13)*c^3", Rings.Q),
+                gcd = parse("(12/3)*a^2*b*c^2 - (11/6)*a^3*b*c^4 + (2/11)*c", Rings.Q);
 
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertTrue(dividesQ(BrownGCD(a, b), gcd));
         assertTrue(dividesQ(ZippelGCD(a, b), gcd));
-    }
-
-    @Ignore//too long for rationals
-    @Test
-    public void testRationals2() throws Exception {
-        String[] vars = {"a", "b", "c", "d", "e"};
-        MultivariatePolynomial<Rational>
-                a = parse("(-2/9)*b*c*d^5*e^5-1/10*b*c^5*d^3*e", Rationals, LEX, vars),
-                b = parse("b*c^2*e^3-b*c^3*d*e^3+11/7*b^3*d^2*e-2/11*a^3*b^2*c*d^2+4/11*a^3*b^3*e", Rationals, LEX, vars),
-                gcd = parse("11/10*b^4*c^4*e+3/2*a*b^3*c*d^4*e^5-1/3*a^4*b^4*c^2*d^6*e^5+14/5*a^6*b^5*c^3*d^6*e+13*a^6*b^6*c^3*e", Rationals, LEX, vars);
-
-        a = a.clone().multiply(gcd);
-        b = b.clone().multiply(gcd);
-        assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
     }
 
     @Test

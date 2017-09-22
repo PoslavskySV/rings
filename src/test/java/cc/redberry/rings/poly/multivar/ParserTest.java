@@ -17,12 +17,12 @@ import java.util.Arrays;
 public class ParserTest extends AMultivariateTest {
     @Test
     public void test1() throws Exception {
-        Rationals.Rationals.parse("+12");
+        Rings.Q.parse("+12");
     }
 
     @Test
     public void test2() throws Exception {
-        System.out.println(Parser.parse("2/3*a*b^2 - 1/3*a^3*b^2", Rationals.Rationals, Rationals.Rationals, MonomialOrder.LEX));
+        System.out.println(Parser.parse("(2/3)*a*b^2 - (1/3)*a^3*b^2", Rings.Q, Rings.Q, MonomialOrder.LEX));
     }
 
     @Test

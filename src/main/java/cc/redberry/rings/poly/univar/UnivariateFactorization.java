@@ -2,11 +2,13 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.combinatorics.Combinatorics;
 import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.poly.univar.HenselLifting.QuadraticLiftAbstract;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
@@ -35,13 +37,31 @@ public final class UnivariateFactorization {
      * @param poly the polynomial
      * @return factor decomposition
      */
+    @SuppressWarnings("unchecked")
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> Factor(Poly poly) {
         if (poly.isOverFiniteField())
             return FactorInGF(poly);
         else if (poly.isOverZ())
             return FactorInZ(poly);
+        else if (Util.isOverRationals(poly))
+            return FactorInQ((UnivariatePolynomial) poly);
         else
             throw new RuntimeException("ring is not supported: " + poly.coefficientRingToString());
+    }
+
+    /**
+     * Factors polynomial over Q
+     *
+     * @param poly the polynomial over finite field
+     * @return irreducible factor decomposition
+     */
+    public static <E> FactorDecomposition<UnivariatePolynomial<Rational<E>>> FactorInQ(UnivariatePolynomial<Rational<E>> poly) {
+        Tuple2<UnivariatePolynomial<E>, E> cmd = Util.toCommonDenominator(poly);
+        UnivariatePolynomial<E> integral = cmd._1;
+        E denominator = cmd._2;
+        return Factor(integral)
+                .map(p -> Util.asOverRationals(poly.ring, p))
+                .addConstantFactor(poly.createConstant(new Rational<>(integral.ring, integral.ring.getOne(), denominator)));
     }
 
     /** x^n * poly */

@@ -2,12 +2,15 @@ package cc.redberry.rings.poly.univar;
 
 
 import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.Rational;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.bigint.ChineseRemainders;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
@@ -40,9 +43,11 @@ public final class UnivariateGCD {
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T a, T b) {
         a.assertSameCoefficientRingWith(b);
-        if (a.isOverField())
+        if (a.isOverField()) {
+            if (Util.isOverRationals(a))
+                return (T) PolynomialGCDInQ((UnivariatePolynomial) a, (UnivariatePolynomial) b);
             return HalfGCD(a, b);
-        else if (a instanceof UnivariatePolynomialZ64)
+        } else if (a instanceof UnivariatePolynomialZ64)
             return (T) ModularGCD((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b);
         else if (a instanceof UnivariatePolynomial) {
             Ring ring = ((UnivariatePolynomial) a).ring;
@@ -52,6 +57,16 @@ public final class UnivariateGCD {
                 return (T) EuclidSubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
         } else
             throw new RuntimeException(a.getClass().toString());
+    }
+
+    private static <E> UnivariatePolynomial<Rational<E>> PolynomialGCDInQ(
+            UnivariatePolynomial<Rational<E>> a,
+            UnivariatePolynomial<Rational<E>> b) {
+
+        Tuple2<UnivariatePolynomial<E>, E> aRat = Util.toCommonDenominator(a);
+        Tuple2<UnivariatePolynomial<E>, E> bRat = Util.toCommonDenominator(b);
+
+        return Util.asOverRationals(a.ring, PolynomialGCD(aRat._1, bRat._1));
     }
 
     /**

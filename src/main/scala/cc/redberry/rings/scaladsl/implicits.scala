@@ -4,7 +4,9 @@ import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly.IPolynomial
 import cc.redberry.rings.poly.multivar._
 import cc.redberry.rings.poly.univar.{IUnivariatePolynomial, UnivariatePolynomial, UnivariatePolynomialZp64}
-import cc.redberry.rings.{IntegersZp64, WithVariables}
+import cc.redberry.rings.{IntegersZp64, Rational}
+
+import scala.language.{existentials, implicitConversions}
 
 /**
   *
@@ -25,9 +27,15 @@ object implicits {
 
     def +(other: E): E = ring.add(self, other)
 
+    def +=(other: E): E = ring.addMutable(self, other)
+
     def -(other: E): E = ring.subtract(self, other)
 
+    def -=(other: E): E = ring.subtractMutable(self, other)
+
     def *(other: E): E = ring.multiply(self, other)
+
+    def *=(other: E): E = ring.multiplyMutable(self, other)
 
     def **(exponent: Int): E = ring.pow(self, exponent)
 
@@ -35,11 +43,15 @@ object implicits {
 
     def unary_- : E = ring.negate(self)
 
+    def unary_-= : E = ring.negateMutable(self)
+
     def unary_+ : E = ring.copy(self)
 
     def ++ : E = ring.increment(self)
 
     def -- : E = ring.decrement(self)
+
+    def gcd(other: E): E = ring.gcd(self, other)
 
     def <(other: E): Boolean = ring.compare(self, other) < 0
 
@@ -54,12 +66,19 @@ object implicits {
       (qd(0), qd(1))
     }
 
+    def %(other: E): E = ring.remainder(self, other)
+
     def /(other: E): E = ring.divideExact(self, other)
 
     def ===(other: Int): Boolean = self == constant(other)
 
+    def ===(other: Long): Boolean = self == constant(other)
+
     def ===(other: E): Boolean = self == other
   }
+
+  implicit def withRationalOperators[E]
+  (self: Rational[E])(implicit ring: Rationals[E]): RingOperators[Rational[E]] = new RingOperators(self)(ring)
 
   @specialized(Long)
   private final case class
@@ -116,6 +135,8 @@ object implicits {
 
     def /(element: E): Poly = ring.divide(self, element)
 
+    def :=(other: Poly): Unit = self.set(other)
+
     def /%(element: E)(implicit dummy: DummyImplicit): (Poly, Poly) = ring.divideAndRemainder(self, element)
 
     def lc(): E
@@ -129,6 +150,8 @@ object implicits {
     def <<(offset: Int): Poly = ring.valueOf(self.copy().shiftLeft(offset))
 
     def >>(offset: Int): Poly = ring.valueOf(self.copy().shiftRight(offset))
+
+    def @@(index: Int): E = apply(index)
 
     def apply(from: Int, to: Int): Poly = ring.valueOf(self.copy().getRange(from, to))
 
@@ -223,23 +246,23 @@ object implicits {
 
     override def cc(): E = self.cc()
 
-    override def swapVariables(i: Int, j: Int) = AMultivariatePolynomial.swapVariables[Monomial[E], MultivariatePolynomial[E]](self, i, j)
+    override def swapVariables(i: Int, j: Int): MultivariatePolynomial[E] = AMultivariatePolynomial.swapVariables[Monomial[E], MultivariatePolynomial[E]](self, i, j)
 
     override def eval(variable: String, value: E): MultivariatePolynomial[E] = self.evaluate(ring.index(variable), value)
 
   }
 
   final case class StringSwap(self: String) {
-    def <>(oth: String) = (self, oth)
+    def <>(oth: String): (String, String) = (self, oth)
 
-    def ->(oth: Long) = (self, oth)
+    def ->(oth: Long): (String, Long) = (self, oth)
 
-    def ->(oth: Int) = (self, oth)
+    def ->(oth: Int): (String, Int) = (self, oth)
 
-    def ->[E](oth: E) = (self, oth)
+    def ->[E](oth: E): (String, E) = (self, oth)
   }
 
-  implicit def withStringSwap(self: String) = StringSwap(self)
+  implicit def withStringSwap(self: String): StringSwap = StringSwap(self)
 
   object univariate {
     implicit def withUnivariateOperators[Poly <: IUnivariatePolynomial[Poly], E]
@@ -262,14 +285,20 @@ object implicits {
   }
 
   object generic {
-    implicit def withPolynomialOperators[Poly <: IPolynomial[Poly], E]
-    (self: Poly)(implicit ring: PolynomialRing[Poly, E]): IPolynomialOperators[Poly, E]
-    = self match {
-      case u64: UnivariatePolynomialZp64 => UnivariateZp64Operators(u64)(ring.asInstanceOf[IUnivariateRing[UnivariatePolynomialZp64, Long]]).asInstanceOf[IPolynomialOperators[Poly, E]]
-      case ue: UnivariatePolynomial[E] => UnivariateOperators[E](ue)(ring.asInstanceOf[IUnivariateRing[UnivariatePolynomial[E], E]]).asInstanceOf[IPolynomialOperators[Poly, E]]
-      case m64: MultivariatePolynomialZp64 => MultivariateZp64Operators(m64)(ring.asInstanceOf[PolynomialRing[MultivariatePolynomialZp64, Long]]).asInstanceOf[IPolynomialOperators[Poly, E]]
-      case me: MultivariatePolynomial[E] => MultivariateOperators[E](me)(ring.asInstanceOf[PolynomialRing[MultivariatePolynomial[E], E]]).asInstanceOf[IPolynomialOperators[Poly, E]]
-      case _ => throw new RuntimeException("unknown type: " + self.getClass + "  " + self.coefficientRingToString())
+    object rings {
+      implicit def withRingOperators[E]
+      (self: E)(implicit ring: Ring[E]): RingOperators[E] = new RingOperators(self)(ring)
+    }
+    object polynomials {
+      implicit def withPolynomialOperators[Poly <: IPolynomial[Poly], E]
+      (self: Poly)(implicit ring: PolynomialRing[Poly, E]): IPolynomialOperators[Poly, E]
+      = self match {
+        case u64: UnivariatePolynomialZp64 => UnivariateZp64Operators(u64)(ring.asInstanceOf[IUnivariateRing[UnivariatePolynomialZp64, Long]]).asInstanceOf[IPolynomialOperators[Poly, E]]
+        case ue: UnivariatePolynomial[E] => UnivariateOperators[E](ue)(ring.asInstanceOf[IUnivariateRing[UnivariatePolynomial[E], E]]).asInstanceOf[IPolynomialOperators[Poly, E]]
+        case m64: MultivariatePolynomialZp64 => MultivariateZp64Operators(m64)(ring.asInstanceOf[PolynomialRing[MultivariatePolynomialZp64, Long]]).asInstanceOf[IPolynomialOperators[Poly, E]]
+        case me: MultivariatePolynomial[E] => MultivariateOperators[E](me)(ring.asInstanceOf[PolynomialRing[MultivariatePolynomial[E], E]]).asInstanceOf[IPolynomialOperators[Poly, E]]
+        case _ => throw new RuntimeException("unknown type: " + self.getClass + "  " + self.coefficientRingToString())
+      }
     }
   }
 
@@ -347,15 +376,15 @@ object implicits {
   def show[Poly <: IPolynomial[Poly], E](poly: Poly)(implicit ring: PolynomialRing[Poly, E])
   = scala.Predef.println(poly.toString(ring.variables))
 
-  def println(arg: Any)(implicit ring: PolynomialRing[_, _] = null): Unit = {
-    scala.Predef.println(
-      arg match {
-        case obj: WithVariables if ring != null =>
-          ring.show(obj)
-        case obj: Traversable[_] if ring != null =>
-          ring.show(obj)
-        case any@_ => any.toString
-      }
+  def println(arg: Any)(implicit ring: Ring[T] forSome {type T} = null): Unit = {
+    scala.Predef.println(ring.show(arg)
+      //      arg match {
+      //        case obj: WithVariables if ring != null =>
+      //          ring.show(obj)
+      //        case obj: Traversable[_] if ring != null =>
+      //          ring.show(obj)
+      //        case any@_ => any.toString
+      //      }
     )
   }
 }

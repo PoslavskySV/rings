@@ -1,13 +1,11 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.combinatorics.Combinatorics;
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.util.ArraysUtil;
@@ -45,8 +43,25 @@ public final class MultivariateFactorization {
             return (FactorDecomposition<Poly>) FactorInGF((AMultivariatePolynomial) poly);
         else if (poly.isOverZ())
             return FactorInZ((MultivariatePolynomial) poly);
+        else if (Util.isOverRationals(poly))
+            return (FactorDecomposition<Poly>) FactorInQ((MultivariatePolynomial) poly);
         else
             throw new RuntimeException("Unsupported ring: " + poly.coefficientRingToString());
+    }
+
+    /**
+     * Factors multivariate polynomial over Q
+     *
+     * @param polynomial the polynomial
+     * @return factor decomposition
+     */
+    public static <E> FactorDecomposition<MultivariatePolynomial<Rational<E>>> FactorInQ(MultivariatePolynomial<Rational<E>> polynomial) {
+        Tuple2<MultivariatePolynomial<E>, E> cmd = Util.toCommonDenominator(polynomial);
+        MultivariatePolynomial<E> integral = cmd._1;
+        E denominator = cmd._2;
+        return Factor(integral)
+                .map(p -> Util.asOverRationals(polynomial.ring, p))
+                .addConstantFactor(polynomial.createConstant(new Rational<>(integral.ring, integral.ring.getOne(), denominator)));
     }
 
     /**

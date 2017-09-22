@@ -1,11 +1,12 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
 import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.TimeUnits;
@@ -421,5 +422,18 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
             assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(input, factors);
         }
+    }
+
+    @Test
+    public void testRationals() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>>
+                f1 = UnivariatePolynomial.parse(Rings.Q, "(1/2) + x^6 + (1/33)*x^5"),
+                f2 = UnivariatePolynomial.parse(Rings.Q, "(1/2) - (3/4)*x^6 + (2/5)*x^11"),
+                f3 = UnivariatePolynomial.parse(Rings.Q, "1 - x^2 + x^3"),
+                poly = f1.createOne().multiply(f1, f2, f3);
+
+        FactorDecomposition<UnivariatePolynomial<Rational<BigInteger>>> fct = UnivariateFactorization.Factor(poly);
+        Assert.assertEquals(3, fct.size());
+        Assert.assertEquals(poly, fct.toPolynomial());
     }
 }

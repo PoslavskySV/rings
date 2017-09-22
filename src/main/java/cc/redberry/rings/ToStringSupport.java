@@ -28,5 +28,5 @@ public interface ToStringSupport<E> {
     /**
      * {@code p -> p.toString(vars)}
      */
-    static <P extends IPolynomial<P>> ToStringSupport<P> poly(String[] vars) { return p -> p.toString(vars);}
+    static <P extends WithVariables> ToStringSupport<P> withVariables(String[] vars) { return p -> p.toString(vars);}
 }

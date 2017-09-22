@@ -1,9 +1,10 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings.bigint.BigInteger
+import cc.redberry.rings.poly.IPolynomial
+import cc.redberry.rings.poly.PolynomialMethods.Factor
 import cc.redberry.rings.poly.multivar._
 import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariateInterpolation, UnivariatePolynomialZ64}
-import cc.redberry.rings.poly.{IPolynomial, PolynomialMethods}
 import cc.redberry.rings.primes.SmallPrimes
 import cc.redberry.rings.scaladsl.Rings._
 import org.apache.commons.math3.random.Well1024a
@@ -13,7 +14,7 @@ import scala.reflect.ClassTag
 
 /**
   *
-
+  *
   * @since 1.0
   */
 class RingsTest {
@@ -96,7 +97,7 @@ class RingsTest {
 
     val rndPoly = ring.randomElement(new Well1024a())
     println(rndPoly)
-    println(PolynomialMethods.Factor(rndPoly))
+    println(Factor(rndPoly))
   }
 
   @Test
@@ -117,7 +118,7 @@ class RingsTest {
     val f = coefficientRing("x") + coefficientRing("2*x")
     println(f)
 
-    println(PolynomialMethods.Factor(poly))
+    println(Factor(poly))
   }
 
 
@@ -150,7 +151,7 @@ class RingsTest {
   }
 
   def interpolate[Poly <: IPolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: PolynomialRing[Poly, E]) = {
-    import implicits.generic._
+    import implicits.generic.polynomials._
     points.indices
       .foldLeft(ring getZero) { case (sum, i) =>
         sum + points.indices
@@ -196,7 +197,7 @@ class RingsTest {
   Poly <: AMultivariatePolynomial[Term, Poly],
   E] private(generators: Set[Poly])(implicit val ring: IMultivariateRing[Term, Poly, E]) {
 
-    import implicits.generic._
+    import implicits.generic.polynomials._
 
     private implicit val eClassTag: ClassTag[Poly] = if (generators.isEmpty) null else ClassTag(generators.head.getClass)
 
@@ -256,5 +257,25 @@ class RingsTest {
     def apply(generators: Seq[MultivariatePolynomialZp64])(implicit ring: MultivariateRingZp64) = Ideal[MonomialZp64, MultivariatePolynomialZp64, Long](generators.toSet)(ring)
 
     def apply[E](generators: Seq[MultivariatePolynomial[E]])(implicit ring: MultivariateRing[E]) = Ideal[Monomial[E], MultivariatePolynomial[E], E](generators.toSet)(ring)
+  }
+
+  @Test
+  def xxxx: Unit = {
+    import implicits._
+
+    val polyRing = MultivariateRingZp64(2, Array("x", "y", "z"))
+
+    implicit val ring = Rationals(polyRing)
+
+    val a = ring("(x + y + z)/(x - y)")
+    val b = ring("(x^2 - y + z)/(x + y)")
+    val c = ring("(x^2 + y - z^2)/(x - y)")
+    val sum = a * b ** 2 / c - a * c / b ** 3 + b ** 4 * c / a
+
+//        println(sum)
+
+    assert(sum % a === 0)
+    println(Factor(sum.denominator))
+    //    println(Factor(sum.numerator))
   }
 }

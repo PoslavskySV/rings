@@ -1,7 +1,6 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.bigint.Rational;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
@@ -33,7 +32,16 @@ public final class Rings {
     /**
      * Ring of rationals (Q)
      */
-    public static final Rationals Q = Rationals.Rationals;
+    public static final Rationals<BigInteger> Q = new Rationals<>(Z);
+
+    /**
+     * Ring of rational functions over specified ring
+     *
+     * @param ring the ring that numerators and denominators belong to
+     */
+    public static <E> Rationals<E> Rationals(Ring<E> ring) {
+        return new Rationals<>(ring);
+    }
 
     /**
      * Ring of integers modulo {@code modulus} (with modulus < 2^63)
@@ -102,7 +110,7 @@ public final class Rings {
     /**
      * Ring of univariate polynomials over rationals (Q[x])
      */
-    public static final UnivariateRing<UnivariatePolynomial<Rational>> UnivariateRingQ = UnivariateRing(Q);
+    public static final UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> UnivariateRingQ = UnivariateRing(Q);
 
     /**
      * Ring of univariate polynomials over Zp integers (Zp[x])
@@ -177,7 +185,7 @@ public final class Rings {
      *
      * @param nVariables the number of variables
      */
-    public static MultivariateRing<MultivariatePolynomial<Rational>>
+    public static MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>>
     MultivariateRingQ(int nVariables) {
         return MultivariateRing(nVariables, Q);
     }
