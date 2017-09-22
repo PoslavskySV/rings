@@ -75,7 +75,12 @@ val coefficientRing = Zp(new BigInteger("1267650600228229401496703205653"))
 // Z/1237940039285380274899124357[x]
 implicit val ring = UnivariateRing(coefficientRing, "x")
 ```
-will factor `poly` in Z/1267650600228229401496703205653[x] (the next prime to 2^100).
+will factor `poly` in Z/1267650600228229401496703205653[x] (the next prime to 2^100). Large primes can be generated with `BigPrimes` methods:
+
+```scala
+// next prime number after 2^100 = 1237940039285380274899124357
+val prime = BigPrimes.nextPrime(BigInteger.valueOf(1).shiftLeft(100))
+```
 
 
 ---
