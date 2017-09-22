@@ -19,7 +19,7 @@ jobs:
               cd libdivide4j
               mvn clean install -DskipTests
 
-     - run: 
+      - run: 
           command: |
               cd rings
               mvn clean test -DrunLongTests=true -e -ff
