@@ -159,7 +159,7 @@ object Rings {
       */
     override def _show(obj: Any): String = obj match {
       case wv: WithVariables => show(wv)
-      case _ => super.show(obj)
+      case _ => super._show(obj)
     }
 
     /**
