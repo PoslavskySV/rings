@@ -76,3 +76,26 @@ val coefficientRing = Zp(new BigInteger("1267650600228229401496703205653"))
 implicit val ring = UnivariateRing(coefficientRing, "x")
 ```
 will factor `poly` in Z/1267650600228229401496703205653[x] (the next prime to 2^100).
+
+
+---
+
+Polynomial factorization in Z/2[x, y, z]:
+
+```scala
+implicit val ring = MultivariateRingZp64(2, Array("x", "y", "z"), MonomialOrder.LEX)
+import ring.{`x`, `y`, `z`}
+
+val poly1 = 1 + ring("1 + x + y + z") ** 3
+val poly2 = `x` + ring("1 + x + y") ** 3
+val poly3 = `y` + ring("1 + x + z") ** 3
+val poly4 = `z` + ring("1 + y + z") ** 3
+val poly = poly1 * poly2 * poly3 * poly4
+
+// factorize polynomial
+val factors = Factor(poly)
+// there will be exactly 5 factors
+assert(5 == factors.size())
+
+println(s"factorization : ${ring show factors}")
+```
