@@ -508,6 +508,9 @@ public class HenselLiftingTest extends AMultivariateTest {
                     if (!allCoprime(uFactors))
                         continue;
 
+                    if (from != 1 && !allCoprime(Arrays.stream(sample.factors).map(p -> evaluation.evaluateFrom(p, 1)).toArray(factory::createArray)))
+                        continue;
+
                     if (!IntStream.range(0, uFactors.length).allMatch(i -> sample.factors[i].degree(0) == uFactors[i].degree(0)))
                         continue;
 
