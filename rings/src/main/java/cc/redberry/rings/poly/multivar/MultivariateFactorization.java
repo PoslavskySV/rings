@@ -1082,7 +1082,7 @@ public final class MultivariateFactorization {
         ulc = ulc.abs();
         if (!ulc.isOne() && (prime.compareTo(ulc) > 0 ? prime.remainder(ulc) : ulc.remainder(prime)).isZero())
             return false;
-        if (!ucc.isOne() && (prime.compareTo(ucc) > 0 ? prime.remainder(ucc) : ucc.remainder(prime)).isZero())
+        if (!ucc.isOne() && !ucc.isZero() && (prime.compareTo(ucc) > 0 ? prime.remainder(ucc) : ucc.remainder(prime)).isZero())
             return false;
         return true;
     }
