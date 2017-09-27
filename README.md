@@ -1,8 +1,9 @@
 [![Build Status](https://circleci.com/gh/PoslavskySV/r2.0x.svg?style=shield&circle-token=2db6894ad742a4f5147d1a3089ec91d4c637a7c3)](https://circleci.com/gh/PoslavskySV/r2.0x)
 
+
 # Rings: efficient Java/Scala library for polynomial rings
 
-`Rings` provides very efficient implementation of polynomial algebra for both univariate and multivariate cases over arbitrary coefficient rings. It uses asymptotically fast algorithms for basic algebraic operations as well as for advanced methods like GCDs and polynomial factorization and gives performance comparable or sometimes even better than well known solutions like `Singular`/`Maple`/`Mathematica`.
+`Rings` provide very efficient implementation of both univariate and multivariate polynomial algebra over arbitrary coefficient rings. It use asymptotically fast algorithms for basic algebraic operations as well as for advanced methods like GCDs and polynomial factorization and give performance comparable (or even better in some cases) to well known solutions like `Singular`/`NTL`/ `FLINT`/`Maple`/`Mathematica`.
 
 Highlighted features of `Rings` are:
 
@@ -12,9 +13,11 @@ Highlighted features of `Rings` are:
  * really high performance
 
 
-### Installation
+Full documentation is available at [http://rings.readthedocs.io](http://rings.readthedocs.io).
 
-`Rings` is available from Maven Central:
+## Installation
+
+`Rings` are available from Maven Central:
 
 ```xml
 <dependency>
@@ -40,67 +43,352 @@ or via SBT:
 libraryDependencies += "cc.redberry" % "rings.scaladsl" % "1.0"
 ```
 
-### Examples
+The following header will import DSL and most useful methods:
 
-
-Polynomial factorization in Z/17[x]:
-
-```scala
+```
 import cc.redberry.rings.poly.PolynomialMethods._
 import cc.redberry.rings.scaladsl.Rings._
 import cc.redberry.rings.scaladsl.implicits._
+```
 
+## Examples
+
+Below examples are given in Scala DSL, examples in Java are available at [http://rings.readthedocs.io](http://rings.readthedocs.io).
+
+----
+### Polynomial factorization
+
+
+Factor polynomial in Z/17[x]:
+
+```scala
 // Ring Z/17[x]
 implicit val ring = UnivariateRingZp64(17, "x")
 
-// parse univariate polynomials from string
-val poly1 = ring("1 + 2*x + 3*x^2")
-val poly2 = ring("4 + 5*x^5 + 6*x^6")
-val poly3 = ring("7 + 8*x^9 + 9*x^10 + 10*x^11 + x^99")
-val poly = poly1 * poly2 * poly3
-
-// factorize polynomial
+// parse univariate poly from string
+val poly = ring("4 + 8*x + 12*x^2 + 5*x^5 - x^6 + 10*x^7 + x^8")
+// factorize poly (in this example there will be 5 factors)
 val factors = Factor(poly)
-// there will be exactly 9 factors
-assert(9 == factors.size())
-
 println(s"factorization : ${ring show factors}")
 ```
 
-One can use coefficient ring with arbitrary large characteristic. For example replacing `val ring = ...` in the above example with
+Coefficient rings with arbitrary large characteristic are available:
 
 ```scala
-// Z/1237940039285380274899124357
-val coefficientRing = Zp(new BigInteger("1267650600228229401496703205653"))
+// coefficient ring Z/1237940039285380274899124357 (the next prime to 2^100)
+val cfRing = Zp(new BigInteger("1267650600228229401496703205653"))
 // Z/1237940039285380274899124357[x]
-implicit val ring = UnivariateRing(coefficientRing, "x")
-```
-will factor `poly` in Z/1267650600228229401496703205653[x] (the next prime to 2^100). Large primes can be generated with `BigPrimes` methods:
+implicit val ring = UnivariateRing(cfRing, "x")
 
-```scala
-// next prime number after 2^100 = 1237940039285380274899124357
-val prime = BigPrimes.nextPrime(BigInteger.valueOf(1).shiftLeft(100))
-```
+val poly = ring("4 + 8*x + 12*x^2 + 5*x^5 + 16*x^6 + 27*x^7 + 18*x^8")
+println(s"factorization : ${ring show Factor(poly)}")
 
+```
+(large primes can be generated with `BigPrimes.nextPrime(BigInteger)` method).
 
 ---
 
-Polynomial factorization in Z/2[x, y, z]:
+Factor polynomial in Z/2[x, y, z]:
 
 ```scala
 implicit val ring = MultivariateRingZp64(2, Array("x", "y", "z"), MonomialOrder.LEX)
-import ring.{`x`, `y`, `z`}
 
-val poly1 = 1 + ring("1 + x + y + z") ** 3
-val poly2 = `x` + ring("1 + x + y") ** 3
-val poly3 = `y` + ring("1 + x + z") ** 3
-val poly4 = `z` + ring("1 + y + z") ** 3
+val (x, y, z) = ring("x", "y", "z")
+val poly1 = 1 + (1 + x + y + z) ** 3
+val poly2 = x + (1 + x + y) ** 3
+val poly3 = y + (1 + x + z) ** 3
+val poly4 = z + (1 + y + z) ** 3
 val poly = poly1 * poly2 * poly3 * poly4
 
 // factorize polynomial
 val factors = Factor(poly)
-// there will be exactly 5 factors
-assert(5 == factors.size())
-
 println(s"factorization : ${ring show factors}")
 ```
+
+---
+
+Factor polynomial in Q[x, y, z]:
+
+```scala
+implicit val ring = MultivariateRing(Q, Array("x", "y", "z"))
+
+val poly = ring(
+  """
+    |(1/6)*y*z + (1/6)*y^3*z^2 - (1/2)*y^6*z^5 - (1/2)*y^8*z^6
+    |-(1/3)*x*z - (1/3)*x*y^2*z^2 + x*y^5*z^5 + x*y^7*z^6
+    |+(1/9)*x^2*y^2*z - (1/3)*x^2*y^7*z^5 - (2/9)*x^3*y*z
+    |+(2/3)*x^3*y^6*z^5 - (1/2)*x^6*y - (1/2)*x^6*y^3*z
+    |+x^7 + x^7*y^2*z - (1/3)*x^8*y^2 + (2/3)*x^9*y
+  """.stripMargin)
+
+// factorize polynomial (in this example there will be 3 factors)
+val factors = Factor(poly)
+println(s"factorization : ${ring show factors}")
+```
+
+----
+### Polynomial GCD
+
+Find GCD of two multivariate polynomials in Q[x1, x2, x3, x4, x5]:
+
+```scala
+implicit val ring = MultivariateRing(Q, Array("x1", "x2", "x3", "x4", "x5"))
+
+// some polynomials
+val a = ring("(2/3)*x1^6*x2 + (1/7)*x1*x2*x4 + 2")
+val b = ring("1 + (2/7)*x2^16 + x3^34 + x5^16 + (2/3)*x1*x2*x3*x4*x5")
+val gcd = a + b
+
+val actualGCD = PolynomialGCD(
+  ((a - b) ** 2 + b ** 4 + a ** 2) * gcd,
+  (b - a + a ** 2) * gcd)
+
+assert(gcd.monic() == actualGCD.monic())
+
+println(s"GCD : ${ring show actualGCD}")
+```
+
+----
+### Constructing arbitrary rings
+
+Polynomial rings over Z and Q:
+```scala
+// Ring Z[x]
+UnivariateRing(Z, "x")
+// Ring Z[x, y, z]
+MultivariateRing(Z, Array("x", "y", "z"))
+// Ring Q[a, b, c]
+MultivariateRing(Q, Array("a", "b", "c"))
+```
+
+Polynomial rings over Z/p:
+```scala
+// Ring Z/3[x] (64 indicates that machine numbers are used in the basis)
+UnivariateRingZp64(3, "x")
+// Ring Z/3[x, y, z]
+MultivariateRingZp64(3, Array("x", "y", "z"))
+// Ring Z/p[x, y, z] with p = 2^107 - 1 (Mersenne prime)
+MultivariateRing(Zp((BigInt(2) ^ 107) - 1), Array("x", "y", "z"))
+```
+Galois fields:
+```scala
+// Galois field with cardinality 7^10
+GF(7, 10, "x")
+// GF_343 generated by irreducible polynomial "1 + 3*z + z^2 + z^3"
+GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
+```
+Fractional fields:
+```scala
+// Field of fractions of univariate polynomials Z[x]
+Rationals(UnivariateRing(Z, "x"))
+// Field of fractions of multivariate polynomials Z/19[x, y, z]
+Rationals(MultivariateRingZp64(19, Array("x", "y", "z")))
+
+```
+
+Ring of univariate polynomials over elements of Galois field GF_343:
+
+```scala
+// Elements of GF_343 are represented as polynomials
+// over "z" modulo irreducible polynomial "1 + 3*z + z^2 + z^3"
+val cfRing = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
+
+assert(cfRing.characteristic().intValue() == 7)
+assert(cfRing.cardinality().intValue() == 343)
+
+// Ring GF343[x]
+implicit val ring = UnivariateRing(cfRing, "x")
+
+// Coefficients of polynomials in GF_343[x] are elements of GF343
+val poly = ring("1 - (1 - z^3) * x^6 + (1 - 2*z) * x^33 + x^66")
+
+// factorize poly (in this examples there will be 9 factors)
+val factors = Factor(poly)
+println(s"${ring show factors}")
+```
+
+Ring of multivariate polynomials over elements of Galois field GF_343:
+
+```scala
+// Elements of GF_343 are represented as polynomials
+// over "z" modulo irreducible polynomial "1 + 3*z + z^2 + z^3"
+val cfRing = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
+// Ring GF343[x]
+implicit val ring = MultivariateRing(cfRing, Array("a", "b", "c"))
+
+// Coefficients of polynomials in GF_343[x] are elements of GF343
+val poly = ring("1 - (1 - z^3) * a^6*b + (1 - 2*z) * c^33 + a^66")
+```
+
+## Index of algorithms implemented in `Rings`
+
+### Univariate polynomials:
+
+ 1. **_Karatsuba multiplication_** [[vzGG03 (Sec. 8.1)]](#vzGG03)
+<br>used (in some adapted form) for multiplication of univariate polynomials: 
+	 - `UnivariatePolynomial#multiply`
+	 - `UnivariatePolynomialZp64#multiply`
+
+ 2. **_Half-GCD and Extended Half-GCD_** [[vzGG03 (Sec. 11)]](#vzGG03)
+<br>used (in some adapted form inspired by [NTL]) for univariate GCD:
+    - `UnivariateGCD#HalfGCD`
+    - `UnivariateGCD#ExtendedHalfGCD`
+ 
+ 3. **_Subresultant sequences_** [[GCL92 (Sec. 7.3)]](#GCL92)
+<br>subresultant polynomial remainder sequence
+    - `UnivariateGCD#SubresultantRemainders`
+
+ 4. **_Modular GCD in Z[x] and Q[x]_** [[vzGG03 (Sec. 6.7)]](#vzGG03)
+<br>small primes version is used:
+     - `UnivariateGCD#ModularGCD`
+
+ 5. **_Fast univariate division with Newton iteration_** [[vzGG03 (Sec. 9.1)]](#vzGG03)
+<br>precomputed inverses are used everywhere where multiple divisions (remainders) by the same divider are performed:
+     - `UnivariateDivision#fastDivisionPreConditioning`
+     - `UnivariateDivision#divideAndRemainderFast`
+ 
+ 6. **_Univariate square-free factorization in zero characteristic (Yun's algorithm)_** [[vzGG03 (Sec. 14.6)]](#vzGG03)
+     - `UnivariateSquareFreeFactorization#SquareFreeFactorizationYunZeroCharacteristics`
+     
+ 7. **_Univariate square-free factorization in non-zero characteristic (Musser's algorithm)_** [[Mus71]](#Mus71), [[GCL92 (Sec. 8.3)]](#GCL92)
+     - `UnivariateSquareFreeFactorization#SquareFreeFactorizationMusser`
+     - `UnivariateSquareFreeFactorization#SquareFreeFactorizationMusserZeroCharacteristics`
+ 
+ 8. **_Distinct-degree factorization_** [[vzGG03 (Sec. 14.2)]](#vzGG03)
+ <br> plain version and adapted version (which is actually used) with precomputed _x_-powers:
+     - `DistinctDegreeFactorization#DistinctDegreeFactorizationPlain`
+     - `DistinctDegreeFactorization#DistinctDegreeFactorizationPrecomputedExponents`
+
+ 9. **_Shoup's baby-step giant-step algorithm for distinct-degree factorization_** [[Sho95]](#Sho95)
+ <br> used for factorization over fields with large cardinality:
+	 - `DistinctDegreeFactorization#DistinctDegreeFactorizationShoup`
+
+ 10. **_Univariate modular composition_**
+ <br> plain algorithm with Horner schema:
+	 - `ModularComposition#compositionHorner`
+
+ 11. **_Brent-Kung algorithm for univariate modular composition_** [[BK98]](#BK98), [[Sho95]](#Sho95)
+ <br> asymptotically fast algorithm:
+     - `ModularComposition#compositionBrentKung`
+
+ 12. **_Cantor-Zassenhaus algorithm (equal-degree splitting)_** [[vzGG03 (Sec. 14.3)]](#vzGG03)
+ <br> both for odd and even characteristic:
+     - `EqualDegreeFactorization#CantorZassenhaus`
+    
+ 13. **_Univaraite linear p-adic Hensel lifting_** [[GCL92 (Sec. 6.5)]](#GCL92)
+     - `univar.HenselLifting#createLinearLift`
+     - `univar.HenselLifting#liftFactorization`
+
+ 14. **_Univaraite quadratic p-adic Hensel lifting_** [[vzGG03 (Sec. 15.4-15.5)]](#vzGG03)
+     - `univar.HenselLifting#createQuadraticLift`
+     - `univar.HenselLifting#liftFactorization`
+
+ 15. **_Univariate polynomial factorization over finite fields_**
+<br> Musser's square free factorization -> distinct-degree factorization (either x-powers or Shoup's algorithm) -> Cantor-Zassenhaus equal-degree factorization:
+ 	 - `UnivariateFactorization#FactorInGF`
+
+ 16. **_Univariate polynomial factorization over Z and Q_**
+<br> factorization modulo small prime -> Hensel lifting (adaptive linear/quadratic):
+	 - `UnivariateFactorization#FactorInZ`
+	 - `UnivariateFactorization#FactorInQ`
+
+ 17. **_Univariate irreducibility test_** [[vzGG03 (Sec. 14.9)]](#vzGG03)
+     - `IrreduciblePolynomials.irreducibleQ`
+
+ 18. **_Ben-Or’s generation of irreducible polynomials_** [[vzGG03 (Sec. 14.9)]](#vzGG03)
+      - `IrreduciblePolynomials.randomIrreduciblePolynomial`
+
+ 19. **_Univariate polynomial interpolation_**
+<br> Lagrange and Newton methods:
+     - `UnivariateInterpolation`
+
+### Multivariate polynomials:
+
+
+ 20. **_Brown GCD over finite fields_** [[Bro71]](#Bro71), [[GCL92 (Sec. 7.4)]](#GCL92), [[Yan09]](#Yan09)
+     - `MultivariateGCD#BrownGCD`
+
+ 21. **_Zippel's sparse GCD over finite fields_** [[Zip79]](#Zip79), [[Zip93]](#Zip93), [[dKMW05]](#dKMW05), [[Yan09]](#Yan09)
+<br> both for monic (with fast Vandermonde systems) and non-monic (LINZIP) cases:
+     - `MultivariateGCD#ZippelGCD`     
+
+ 22. **_Extended Zassenhaus GCD (EZ-GCD) over finite fields_** [[GCL92 (Sec. 7.6)]](#GCL92), [[MY73]](#MY73)
+     - `MultivariateGCD#EZGCD`     
+
+ 23. **_Enhanced Extended Zassenhaus GCD (EEZ-GCD)  over finite fields_** [[Wan80]](#Wan80)
+     - `MultivariateGCD#EEZGCD`     
+
+ 24. **_Modular GCD over Z with sparse interpolation_** [[Zip79]](#Zip79), [[Zip93]](#Zip93), [[dKMW05]](#dKMW05)
+<br> the same interpolation techniques as in `ZippelGCD` is used:
+     - `MultivariateGCD#ModularGCD`     
+
+ 25. **_Kaltofen's & Monagan's generic modular GCD_** [[KM99]](#KM99)
+<br> used for computing multivariate GCD over finite fields of very small cardinality
+     - `MultivariateGCD#ModularGCDInGF`
+
+ 26. **_Multivariate square-free factorization in zero characteristic (Yun's algorithm)_** [[Lee13]](#Lee13)
+     - `MultivariateSquareFreeFactorization#SquareFreeFactorizationYunZeroCharacteristics`
+
+ 27. **_Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)_** [[Mus71]](#Mus71), [[GCL92 (Sec. 8.3)]](#GCL92)
+     - `MultivariateSquareFreeFactorization#SquareFreeFactorizationMusser`
+     - `MultivariateSquareFreeFactorization#SquareFreeFactorizationMusserZeroCharacteristics`
+ 
+ 28. **_Bernardin's fast dense multivariate Hensel lifting_** [[Ber99]](#Ber99), [[Lee13]](#Lee13)
+<br> Both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
+     - `multivar.HenselLifting`
+
+ 29. **_Fast dense bivariate factorization with recombination_** [[Ber99]](#Ber99), [[Lee13]](#Lee13)
+     - `MultivariateFactorization#bivariateDenseFactorSquareFreeInGF`
+     - `MultivariateFactorization#bivariateDenseFactorSquareFreeInZ`
+
+ 30. **_Kaltofen's multivariate factorization in finite fields_** [[Kal85]](#Kal85), [[Lee13]](#Lee13)
+<br> modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to [Lee13], but at the same time has many differences in details:
+     - `MultivariateFactorization#factorInGF`
+
+ 31. **_Kaltofen's multivariate factorization Z_** [[Kal85]](#Kal85), [[Lee13]](#Lee13)
+<br> the same modifications as for finite field algorithm are made:
+     - `MultivariateFactorization#factorInZ`
+
+ 32. **_Multivariate polynomial interpolation with Newton method_**
+     - `MultivariateInterpolation`
+ 
+### References:
+
+<a name="vzGG03">[vzGG03]</a>  J. von zur Gathen and J. Gerhard. Modern computer algebra (2. ed.). Cambridge University Press, 2003.
+
+<a name="NTL">[NTL]</a> V. Shoup. NTL: A library for doing number theory. www.shoup.net/ntl
+
+<a name="GCL92">[GCL92]</a> K. O. Geddes, S. R. Czapor, G. Labahn. Algorithms for Computer Algebra. 1992.
+
+<a name="Mus71">[Mus71]</a> D.R. Musser,  Algorithms for polynomial factorization, Ph.D. Thesis, University of Wisconsin, 1971.
+
+<a name="Sho95">[Sho95]</a> V. Shoup. A new polynomial factorization algorithm and its implementation. J. Symb. Comput., 20(4):363–397, 1995.
+
+<a name="BK98">[BK98]</a>  R.P. Brent and H.T. Kung. Fast algorithms for manipulating formal power series. J. Assoc. Comput. Math. 25:581-595, 1978
+
+<a name="Bro71">[Bro71]</a> W. S. Brown. On Euclid’s algorithm and the computation of polynomial greatest common divisors. J. ACM, 18(4):478–504, 1971.
+
+<a name="Zip79">[Zip79]</a> R. E. Zippel. Probabilistic algorithms for sparse polynomials. In Proceedings of the International Symposiumon on Symbolic and Algebraic Computation, EUROSAM ’79, pages 216–226, London, UK, UK, 1979. Springer-Verlag.
+
+<a name="Zip93">[Zip93]</a> R. E. Zippel. Effective Polynomial Computation. Kluwer International Series in Engineering and Computer Science. Kluwer Academic Publishers, 1993.
+
+<a name="dKMW05">[dKMW05]</a> J. de Kleine, M. B. Monagan, A. D. Wittkopf. Algorithms for the Non-monic Case of the Sparse Modular GCD Algorithm. Proceeding of ISSAC ’05, ACM Press, pp. 124-131 , 2005.
+
+<a name="Yan09">[Yan09]</a> S. Yang. Computing the greatest common divisor of multivariate polynomials over finite fields. Master’s thesis, Simon Fraser University, 2009.
+
+<a name="MY73">[MY73]</a>  J. Moses and D.Y.Y.Yun, "The EZGCD Algorithm," pp. 159-166 in Proc. ACM Annual Conference, (1973).
+
+<a name="Wan80">[Wan80]</a> P.S. Wang, "The EEZ-GCD Algorithm," ACM SIGSAMBull., 14 pp. 50-60 (1980).
+
+<a name="KM99">[KM99]</a> E. Kaltofen, M. B. Monagan. On the Genericity of the Modular Polynomial GCD Algorithm. Proceeding of ISSAC ’99, ACM Press, 59-66, 1999.
+
+<a name="Ber99">[Ber99]</a> L. Bernardin. Factorization of Multivariate Polynomials over Finite Fields. PhD thesis, ETH Zu ̈rich, 1999.
+
+<a name="Lee13">[Lee13]</a> M. M.-D. Lee, Factorization of multivariate polynomials,  Ph.D. thesis, University of Kaiserslautern, 2013
+
+<a name="Kal85">[Kal85]</a> E. Kaltofen. Sparse Hensel lifting. In EUROCAL 85 European Conf. Comput. Algebra Proc. Vol. 2, pages 4–17, 1985.
+
+
+## License
+
+Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0.txt
