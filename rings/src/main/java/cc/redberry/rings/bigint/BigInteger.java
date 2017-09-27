@@ -293,6 +293,10 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
 
     // Constructors
 
+    public BigInteger(java.math.BigInteger javaBigInt) {
+        this(javaBigInt.toByteArray());
+    }
+
     /**
      * Translates a byte array containing the two's-complement binary
      * representation of a BigInteger into a BigInteger.  The input array is

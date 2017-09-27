@@ -1,6 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.Rationals;
+import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -56,7 +56,7 @@ public class ParserTest extends AMultivariateTest {
                 "(1+x)*b^4+(1+x)*b^8",
         };
         FiniteField<UnivariatePolynomialZp64> minorDomain = new FiniteField<>(UnivariatePolynomialZ64.create(1, 0, 1, 1).modulus(2));
-        FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(UnivariatePolynomial.parse(minorDomain, "(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3"));
+        FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(UnivariatePolynomial.parse("(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3", minorDomain));
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<UnivariatePolynomialZp64> arr[] = Arrays.stream(strs)
                 .map(s -> MultivariatePolynomial.parse(s, domain, vars))
@@ -71,5 +71,10 @@ public class ParserTest extends AMultivariateTest {
     public void test4() throws Exception {
         FiniteField<UnivariatePolynomialZp64> domain = Rings.GF(2, 3);
         System.out.println(Parser.parse("2", domain, domain, MonomialOrder.LEX, "x", "y", "z"));
+    }
+
+    @Test
+    public void test5() throws Exception {
+        System.out.println(MultivariatePolynomialZp64.parse("12312341231412423142342343125234234321423 + x", new IntegersZp64(3), MonomialOrder.LEX));
     }
 }

@@ -52,6 +52,7 @@
                 <version>2.12</version>
                 <configuration>
                     <argLine>-Xmx1024m</argLine>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
             <plugin>

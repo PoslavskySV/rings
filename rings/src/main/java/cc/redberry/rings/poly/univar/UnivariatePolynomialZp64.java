@@ -39,15 +39,15 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     /**
      * Parse string into polynomial
      */
-    public static UnivariatePolynomialZp64 parse(long modulus, String string) {
-        return UnivariatePolynomialZ64.parse(string).modulus(modulus);
+    public static UnivariatePolynomialZp64 parse(String string, long modulus) {
+        return parse(string, new IntegersZp64(modulus));
     }
 
     /**
      * Parse string into polynomial
      */
-    public static UnivariatePolynomialZp64 parse(IntegersZp64 modulus, String string) {
-        return UnivariatePolynomialZ64.parse(string).modulus(modulus);
+    public static UnivariatePolynomialZp64 parse(String string, IntegersZp64 modulus) {
+        return UnivariatePolynomial.asOverZp64(UnivariatePolynomial.parse(string, modulus.asGenericRing()));
     }
 
     /**

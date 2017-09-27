@@ -14,7 +14,7 @@ import org.junit.Test;
 public class UtilTest {
     @Test
     public void test1() throws Exception {
-        UnivariatePolynomial<Rational<BigInteger>> poly = UnivariatePolynomial.parse(Rings.Q, "(1/2) + (1/3)*x + (1/4)*x^2 + (1/5)*x^3 + (1/6)*x^7");
+        UnivariatePolynomial<Rational<BigInteger>> poly = UnivariatePolynomial.parse("(1/2) + (1/3)*x + (1/4)*x^2 + (1/5)*x^3 + (1/6)*x^7", Rings.Q);
         System.out.println(Util.toCommonDenominator(poly));
 
         MultivariatePolynomial<Rational<BigInteger>> mpoly = MultivariatePolynomial.parse("(1/2) + (1/3)*x + (1/4)*x^2 + (1/5)*x^3111  + 1/5*x^66", Rings.Q);

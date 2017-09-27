@@ -191,18 +191,18 @@ object implicits {
   private[implicits] sealed abstract class IMultivariateOperators[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
   (self: Poly)(implicit ring: PolynomialRing[Poly, E])
     extends IPolynomialOperators[Poly, E](self)(ring) {
-    def +(other: Term): Poly = ring.domain.valueOf(self.copy().add(other))
+    def +(other: Term): Poly = ring.theRing.valueOf(self.copy().add(other))
 
-    def -(other: Term): Poly = ring.domain.valueOf(self.copy().subtract(other))
+    def -(other: Term): Poly = ring.theRing.valueOf(self.copy().subtract(other))
 
-    def *(other: Term): Poly = ring.domain.valueOf(self.copy().multiply(other))
+    def *(other: Term): Poly = ring.theRing.valueOf(self.copy().multiply(other))
 
     def /(other: Term): Poly = {
       val r = self.copy().divideOrNull(other)
       if (r == null)
         throw new ArithmeticException(s"not divisible: $self / $other")
       else
-        ring.domain.valueOf(r)
+        ring.theRing.valueOf(r)
     }
 
     def swapVariables(i: Int, j: Int): Poly
@@ -325,8 +325,8 @@ object implicits {
   implicit def withRingOperators[Poly <: IPolynomial[Poly], E]
   (self: E)(implicit ring: PolynomialRing[Poly, E]): RingOperators[E] =
     ring match {
-      case r: GaloisField64 => RingOperatorsZp64(self.asInstanceOf[Long], r.domain.factory.ring).asInstanceOf[RingOperators[E]]
-      case r: GaloisField[E] => new RingOperators[E](self)(domainAsRing(r.factory.ring))
+      case r: GaloisField64 => RingOperatorsZp64(self.asInstanceOf[Long], r.theRing.factory.ring).asInstanceOf[RingOperators[E]]
+      case r: GaloisField[E] => new RingOperators[E](self)(ringAsScalaRing(r.factory.ring))
       case r: UnivariateRingZp64 => RingOperatorsZp64(self.asInstanceOf[Long], r.coefficientDomain).asInstanceOf[RingOperators[E]]
       case r: UnivariateRing[E] => new RingOperators(self)(r.coefficientDomain)
       case r: MultivariateRingZp64 => RingOperatorsZp64(self.asInstanceOf[Long], r.coefficientDomain).asInstanceOf[RingOperators[E]]
@@ -377,14 +377,6 @@ object implicits {
   = scala.Predef.println(poly.toString(ring.variables))
 
   def println(arg: Any)(implicit ring: Ring[T] forSome {type T} = null): Unit = {
-    scala.Predef.println(ring.show(arg)
-      //      arg match {
-      //        case obj: WithVariables if ring != null =>
-      //          ring.show(obj)
-      //        case obj: Traversable[_] if ring != null =>
-      //          ring.show(obj)
-      //        case any@_ => any.toString
-      //      }
-    )
+    scala.Predef.println(if (ring == null) arg.toString else ring.show(arg))
   }
 }

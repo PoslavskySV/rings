@@ -48,7 +48,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     /**
      * Parse string into polynomial
      */
-    public static <E> UnivariatePolynomial<E> parse(Ring<E> ring, String string) {
+    public static <E> UnivariatePolynomial<E> parse(String string, Ring<E> ring) {
         return Parser.parse(ring, ring, string);
     }
 
@@ -1010,7 +1010,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public UnivariatePolynomial<E> parsePoly(String string) {
-        return parse(ring, string);
+        return parse(string, ring);
     }
 
     public UnivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String variable) {

@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
+import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FiniteField;
@@ -91,5 +92,10 @@ public class ParserTest extends AUnivariateTest {
         UnivariatePolynomial<UnivariatePolynomialZp64> poly =
                 UnivariatePolynomial.create(FiniteField.GF17p5, c0, c1, c2, c3);
         assertEquals(poly, Parser.parse(poly.ring, poly.toString()));
+    }
+
+    @Test
+    public void test4() throws Exception {
+        System.out.println(UnivariatePolynomialZp64.parse("12312341231412423142342343125234234321423 + x", new IntegersZp64(3)));
     }
 }

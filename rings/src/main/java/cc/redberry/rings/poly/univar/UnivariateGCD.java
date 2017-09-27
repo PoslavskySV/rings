@@ -54,7 +54,7 @@ public final class UnivariateGCD {
             if (ring.equals(Rings.Z))
                 return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
             else
-                return (T) EuclidSubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+                return (T) SubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
         } else
             throw new RuntimeException(a.getClass().toString());
     }
@@ -569,13 +569,13 @@ public final class UnivariateGCD {
      * @return polynomial remainder sequence (the last element is GCD)
      */
     @SuppressWarnings("unchecked")
-    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> EuclidPseudoRemainders(final T a,
-                                                                                                      final T b,
-                                                                                                      boolean primitivePRS) {
+    public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> PseudoRemainders(final T a,
+                                                                                                final T b,
+                                                                                                boolean primitivePRS) {
         if (a instanceof UnivariatePolynomialZ64)
-            return (PolynomialRemainders<T>) EuclidPseudoRemainders((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b, primitivePRS);
+            return (PolynomialRemainders<T>) PseudoRemainders((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b, primitivePRS);
         else if (a instanceof UnivariatePolynomial)
-            return (PolynomialRemainders<T>) EuclidPseudoRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b, primitivePRS);
+            return (PolynomialRemainders<T>) PseudoRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b, primitivePRS);
         else
             throw new RuntimeException("Not a Z[x] polynomials: " + a.getClass());
     }
@@ -588,18 +588,18 @@ public final class UnivariateGCD {
      * @param primitivePRS whether to build primitive polynomial remainders or not
      * @return polynomial remainder sequence (the last element is GCD)
      */
-    public static PolynomialRemainders<UnivariatePolynomialZ64> EuclidPseudoRemainders(final UnivariatePolynomialZ64 a,
-                                                                                       final UnivariatePolynomialZ64 b,
-                                                                                       boolean primitivePRS) {
+    public static PolynomialRemainders<UnivariatePolynomialZ64> PseudoRemainders(final UnivariatePolynomialZ64 a,
+                                                                                 final UnivariatePolynomialZ64 b,
+                                                                                 boolean primitivePRS) {
         if (a.degree < b.degree)
-            return EuclidPseudoRemainders(b, a, primitivePRS);
+            return PseudoRemainders(b, a, primitivePRS);
 
         if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
 
         long aContent = a.content(), bContent = b.content();
         long contentGCD = MachineArithmetic.gcd(aContent, bContent);
         UnivariatePolynomialZ64 aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
-        PolynomialRemainders<UnivariatePolynomialZ64> res = EuclidPseudoRemainders0(aPP, bPP, primitivePRS);
+        PolynomialRemainders<UnivariatePolynomialZ64> res = PseudoRemainders0(aPP, bPP, primitivePRS);
         res.gcd().primitivePartSameSign().multiply(contentGCD);
         return res;
     }
@@ -613,11 +613,11 @@ public final class UnivariateGCD {
      * @return polynomial remainder sequence (the last element is GCD)
      */
     @SuppressWarnings("unchecked")
-    public static <E> PolynomialRemainders<UnivariatePolynomial<E>> EuclidPseudoRemainders(final UnivariatePolynomial<E> a,
-                                                                                           final UnivariatePolynomial<E> b,
-                                                                                           boolean primitivePRS) {
+    public static <E> PolynomialRemainders<UnivariatePolynomial<E>> PseudoRemainders(final UnivariatePolynomial<E> a,
+                                                                                     final UnivariatePolynomial<E> b,
+                                                                                     boolean primitivePRS) {
         if (a.degree < b.degree)
-            return EuclidPseudoRemainders(b, a, primitivePRS);
+            return PseudoRemainders(b, a, primitivePRS);
 
         if (a.isZero() || b.isZero())
             return new PolynomialRemainders<>(a.clone(), b.clone());
@@ -625,15 +625,15 @@ public final class UnivariateGCD {
         E aContent = a.content(), bContent = b.content();
         E contentGCD = a.ring.gcd(aContent, bContent);
         UnivariatePolynomial<E> aPP = a.clone().divideOrNull(aContent), bPP = b.clone().divideOrNull(bContent);
-        PolynomialRemainders<UnivariatePolynomial<E>> res = EuclidPseudoRemainders0(aPP, bPP, primitivePRS);
+        PolynomialRemainders<UnivariatePolynomial<E>> res = PseudoRemainders0(aPP, bPP, primitivePRS);
         res.gcd().primitivePartSameSign().multiply(contentGCD);
         return res;
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> EuclidPseudoRemainders0(final T aPP,
-                                                                                                        final T bPP,
-                                                                                                        boolean primitivePRS) {
+    private static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T> PseudoRemainders0(final T aPP,
+                                                                                                  final T bPP,
+                                                                                                  boolean primitivePRS) {
         ArrayList<T> prs = new ArrayList<>();
         prs.add(aPP);
         prs.add(bPP);
@@ -663,11 +663,11 @@ public final class UnivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> PolynomialRemainders<T>
-    EuclidSubresultantRemainders(final T a, final T b) {
+    SubresultantRemainders(final T a, final T b) {
         if (a instanceof UnivariatePolynomialZ64)
-            return (PolynomialRemainders<T>) EuclidSubresultantRemainders((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b);
+            return (PolynomialRemainders<T>) SubresultantRemainders((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b);
         else if (a instanceof UnivariatePolynomial)
-            return (PolynomialRemainders<T>) EuclidSubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+            return (PolynomialRemainders<T>) SubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b);
         else
             throw new RuntimeException("Not a Z[x] polynomials: " + a.getClass());
     }
@@ -680,9 +680,9 @@ public final class UnivariateGCD {
      * @return subresultant sequence (the last element is GCD)
      */
     public static PolynomialRemainders<UnivariatePolynomialZ64>
-    EuclidSubresultantRemainders(final UnivariatePolynomialZ64 a, final UnivariatePolynomialZ64 b) {
+    SubresultantRemainders(final UnivariatePolynomialZ64 a, final UnivariatePolynomialZ64 b) {
         if (b.degree > a.degree)
-            return EuclidSubresultantRemainders(b, a);
+            return SubresultantRemainders(b, a);
 
         if (a.isZero() || b.isZero()) return new PolynomialRemainders<>(a.clone(), b.clone());
 
@@ -743,9 +743,9 @@ public final class UnivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static <E> PolynomialRemainders<UnivariatePolynomial<E>>
-    EuclidSubresultantRemainders(final UnivariatePolynomial<E> a, final UnivariatePolynomial<E> b) {
+    SubresultantRemainders(final UnivariatePolynomial<E> a, final UnivariatePolynomial<E> b) {
         if (b.degree > a.degree)
-            return EuclidSubresultantRemainders(b, a);
+            return SubresultantRemainders(b, a);
 
         if (a.isZero() || b.isZero())
             return new PolynomialRemainders<>(a.clone(), b.clone());

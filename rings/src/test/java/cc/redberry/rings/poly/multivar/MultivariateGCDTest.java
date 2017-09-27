@@ -1193,7 +1193,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 ////        System.out.println(b);
 ////        System.out.println(asMUnivariate(b, variable));
 //
-//        UnivariatePolynomial<MultivariatePolynomial<BigInteger>> result = UnivariateGCD.EuclidSubresultantRemainders(asMUnivariate(a, variable), asMUnivariate(b, variable)).gcd();
+//        UnivariatePolynomial<MultivariatePolynomial<BigInteger>> result = UnivariateGCD.SubresultantRemainders(asMUnivariate(a, variable), asMUnivariate(b, variable)).gcd();
 //        System.out.println(result);
 //        System.out.println(fromMUnivariate(result, variable));
 //
@@ -1318,7 +1318,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testArrayGCD2() throws Exception {
         // very tricky example with recursive finite fields modulo 2
         FiniteField<UnivariatePolynomialZp64> minorDomain = new FiniteField<>(UnivariatePolynomialZ64.create(1, 0, 1, 1).modulus(2));
-        FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(UnivariatePolynomial.parse(minorDomain, "(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3"));
+        FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(UnivariatePolynomial.parse("(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3", minorDomain));
         MultivariatePolynomial<UnivariatePolynomialZp64>
                 arr[] = new MultivariatePolynomial[]{
                 MultivariatePolynomial.parse("((y)*x^0)*b+((y+y^2)*x^0)*b^2+b^3+((1+y)*x^0)*b^4", domain),
@@ -1346,7 +1346,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testArrayGCD3() throws Exception {
         // very tricky example with recursive finite fields modulo 2
         FiniteField<UnivariatePolynomialZp64> minorDomain = new FiniteField<>(UnivariatePolynomialZ64.create(1, 0, 1, 1).modulus(2));
-        FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(UnivariatePolynomial.parse(minorDomain, "(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3"));
+        FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(UnivariatePolynomial.parse("(1+x^2)+(x^2)*x+(x+x^2)*x^2+x^3", minorDomain));
         MultivariatePolynomial<UnivariatePolynomialZp64>
                 arr[] = new MultivariatePolynomial[]{
                 MultivariatePolynomial.parse("(x)*b+(x+x^2)*b^2+b^3+(1+x)*b^4", domain),

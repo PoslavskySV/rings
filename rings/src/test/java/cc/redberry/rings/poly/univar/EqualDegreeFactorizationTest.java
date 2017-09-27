@@ -30,7 +30,7 @@ public class EqualDegreeFactorizationTest extends AUnivariateTest {
     public void test3a() throws Exception {
         UnivariatePolynomialZp64 irreducible = UnivariatePolynomialZ64.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
-        UnivariatePolynomial<UnivariatePolynomialZp64> poly = UnivariatePolynomial.parse(domain, "(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6");
+        UnivariatePolynomial<UnivariatePolynomialZp64> poly = UnivariatePolynomial.parse("(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6", domain);
 
         UnivariateDivision.InverseModMonomial<UnivariatePolynomial<UnivariatePolynomialZp64>> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
 

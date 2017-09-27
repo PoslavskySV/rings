@@ -24,6 +24,8 @@ final class Parser {
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Ring<E> ring, ElementParser<E> eParser, Comparator<DegreeVector> ordering, String... variables) {
+        input = input.trim().replace("\n", "").replace(" ", "");
+
         List<TMonomialTerm<E>> terms = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         int bracketLevel = 0;

@@ -1,6 +1,6 @@
 package cc.redberry.rings.scaladsl
 
-import java.util.Comparator
+import java.util.{Comparator, Objects}
 
 import cc.redberry.rings
 import cc.redberry.rings.bigint.BigInteger
@@ -9,7 +9,7 @@ import cc.redberry.rings.poly.multivar._
 import cc.redberry.rings.poly.univar.{IUnivariatePolynomial, UnivariatePolynomial, UnivariatePolynomialZp64}
 import cc.redberry.rings.{poly, _}
 
-import scala.language.{existentials, implicitConversions}
+import scala.language.{existentials, implicitConversions, postfixOps}
 
 /**
   *
@@ -21,13 +21,13 @@ object Rings {
   /**
     * Simple wrapper around [[Ring]] used to unify PolynomialRing and Ring
     *
-    * @param domain the [[Ring]]
+    * @param theRing the [[Ring]]
     **/
-  sealed class Ring[E](val domain: rings.Ring[E]) extends ToStringSupport[E] with ElementParser[E] {
+  sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with ElementParser[E] {
     /**
       * Element type
       */
-    final type Type = E
+    final type ElementType = E
 
     /**
       * @inheritdoc
@@ -37,21 +37,32 @@ object Rings {
     /**
       * @inheritdoc
       **/
-    override def parse(string: String): E = domain parse string
+    override def parse(string: String): E = theRing parse string
 
     /**
       * Parse polynomial
       */
-    final def apply(string: String) = parse(string)
+    final def apply(string: String): E = parse(string)
+
+    final def apply(a: String, b: String): (E, E) = (parse(a), parse(b))
+
+    final def apply(a: String, b: String, c: String): (E, E, E)
+    = (parse(a), parse(b), parse(c))
+
+    final def apply(a: String, b: String, c: String, d: String): (E, E, E, E)
+    = (parse(a), parse(b), parse(c), parse(d))
+
+    final def apply(a: String, b: String, c: String, d: String, e: String): (E, E, E, E, E)
+    = (parse(a), parse(b), parse(c), parse(d), parse(e))
 
     /**
       * @inheritdoc
       **/
-    override def toString: String = domain toString
+    override def toString: String = theRing toString
 
 
     /** element class  */
-    private val eClass: Class[_ <: E] = domain.getZero.getClass
+    private val eClass: Class[_ <: E] = theRing.getZero.getClass
 
     /**
       * Reflection: determines whether is element of this
@@ -64,7 +75,7 @@ object Rings {
     final def element(e: Any): E = e.asInstanceOf[E]
 
     protected[Rings]
-    def _show(obj: Any): String = obj toString
+    def _show(obj: Any): String = Objects.toString(obj)
 
     /**
       * Pretty toString
@@ -81,12 +92,12 @@ object Rings {
   /**
     * Delegate [[Ring]] methods for [[Ring]]
     */
-  implicit def domainMethods[E](ring: Ring[E]): rings.Ring[E] = ring.domain
+  implicit def ringMethods[E](ring: Ring[E]): rings.Ring[E] = ring.theRing
 
   /**
     * Implicitly convert [[Ring]] to [[Ring]]
     */
-  implicit def domainAsRing[E](domain: rings.Ring[E]) = new Ring[E](domain)
+  implicit def ringAsScalaRing[E](domain: rings.Ring[E]) = new Ring[E](domain)
 
   /**
     * Ring of integers (Z)
@@ -113,10 +124,17 @@ object Rings {
   def Zp(modulus: BigInteger): Ring[BigInteger] = rings.Rings.Zp(modulus)
 
   /**
+    * Field of integers modulo `modulus`
+    *
+    * @param modulus the modulus
+    */
+  def Zp(modulus: BigInt): Ring[BigInteger] = Zp(new BigInteger(modulus.bigInteger))
+
+  /**
     * Ring of rationals
     */
   final case class Rationals[E](ring: Ring[E]) extends Ring[Rational[E]](rings.Rings.Rationals(ring)) {
-    private val rationalsDomain: rings.Rationals[E] = domain.asInstanceOf[rings.Rationals[E]]
+    private val rationalsDomain: rings.Rationals[E] = theRing.asInstanceOf[rings.Rationals[E]]
 
     /**
       * @inheritdoc
@@ -136,13 +154,13 @@ object Rings {
   /**
     * Base class for polynomial rings
     *
-    * @param domain    the [[PolynomialRing]]
+    * @param theRing   the [[PolynomialRing]]
     * @param variables polynomial variables
     * @tparam E coefficient type
     */
   sealed abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
-  (override val domain: poly.PolynomialRing[Poly],
-   val variables: Array[String]) extends Ring[Poly](domain) {
+  (override val theRing: poly.PolynomialRing[Poly],
+   val variables: Array[String]) extends Ring[Poly](theRing) {
 
     /**
       * Type of coefficients
@@ -152,7 +170,7 @@ object Rings {
     /**
       * Parse polynomial
       */
-    override def parse(string: String): Poly = domain.parse(string, variables)
+    override def parse(string: String): Poly = theRing.parse(string, variables)
 
     /**
       * To string
@@ -165,7 +183,7 @@ object Rings {
     /**
       * String representation of polynomial from this ring
       */
-    def show(obj: WithVariables): String = obj match {
+    protected[Rings] def show(obj: WithVariables): String = obj match {
       case fct: FactorDecomposition[Poly] => fct.toString(this)
       case el if isElement(el) => el.toString(variables)
       case _ => obj.toString()
@@ -188,28 +206,28 @@ object Rings {
     /**
       * String representation of this ring
       */
-    override def toString: String = domain.toString(variables)
+    override def toString: String = theRing.toString(variables)
 
     /**
       * The first variable
       */
-    final def `x`: Poly = domain.variable(0)
+    final def `x`: Poly = theRing.variable(0)
 
     /**
       * The second variable
       */
-    final def `y`: Poly = domain.variable(1)
+    final def `y`: Poly = theRing.variable(1)
 
     /**
       * The third variable
       */
-    final def `z`: Poly = domain.variable(2)
+    final def `z`: Poly = theRing.variable(2)
 
     /**
       * Shortcut for /% operation
       */
     protected[Rings] final def divRem(a: Poly, b: Poly): (Poly, Poly) = {
-      val qd = domain.divideAndRemainder(a, b)
+      val qd = theRing.divideAndRemainder(a, b)
       if (qd == null)
         throw new ArithmeticException(s"not divisible with remainder: ${this show a} / ${this show b}")
       (qd(0), qd(1))
@@ -254,32 +272,32 @@ object Rings {
   /**
     * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
     */
-  implicit def domainMethods[Poly <: IPolynomial[Poly], E](ring: PolynomialRing[Poly, E]): poly.PolynomialRing[Poly] = ring.domain
+  implicit def domainMethods[Poly <: IPolynomial[Poly], E](ring: PolynomialRing[Poly, E]): poly.PolynomialRing[Poly] = ring.theRing
 
   /**
     * Ring of univariate polynomials
     *
-    * @param domain   the [[PolynomialRing]]
+    * @param theRing  the [[PolynomialRing]]
     * @param variable the variable
     */
   sealed abstract class IUnivariateRing[Poly <: IUnivariatePolynomial[Poly], E]
-  (override val domain: poly.PolynomialRing[Poly],
-   val variable: String) extends PolynomialRing[Poly, E](domain, Array(variable))
+  (override val theRing: poly.PolynomialRing[Poly],
+   val variable: String) extends PolynomialRing[Poly, E](theRing, Array(variable))
 
   /**
     * Galois field with prime base in a range of `(0, 2^63)`
     *
-    * @param domain   the [[FiniteField]]
+    * @param theRing  the [[FiniteField]]
     * @param variable the variable of univariate polynomials representing this Galois field
     */
   final case class GaloisField64
-  (override val domain: FiniteField[UnivariatePolynomialZp64], override val variable: String)
-    extends IUnivariateRing[UnivariatePolynomialZp64, Long](domain, variable) {
+  (override val theRing: FiniteField[UnivariatePolynomialZp64], override val variable: String)
+    extends IUnivariateRing[UnivariatePolynomialZp64, Long](theRing, variable) {
 
     /**
       * Constant polynomial with specified value
       */
-    override def getConstant(value: Long): UnivariatePolynomialZp64 = domain.valueOf(value)
+    override def getConstant(value: Long): UnivariatePolynomialZp64 = theRing.valueOf(value)
 
     /**
       * Add coefficient ring element
@@ -309,7 +327,7 @@ object Rings {
       * Divide by coefficient ring element
       */
     override def divideAndRemainder(poly: UnivariatePolynomialZp64, el: Long): (UnivariatePolynomialZp64, UnivariatePolynomialZp64)
-    = divRem(poly, domain.valueOf(el))
+    = divRem(poly, theRing.valueOf(el))
 
     /**
       * Value of integer in coefficient ring
@@ -320,26 +338,26 @@ object Rings {
   /**
     * Delegate [[FiniteField]] methods fo [[GaloisField64]]
     */
-  implicit def domainMethods(ring: GaloisField64): FiniteField[UnivariatePolynomialZp64] = ring.domain
+  implicit def domainMethods(ring: GaloisField64): FiniteField[UnivariatePolynomialZp64] = ring.theRing
 
   /**
     * Galois field with arbitrary prime base
     *
-    * @param domain   the [[FiniteField]]
+    * @param theRing  the [[FiniteField]]
     * @param variable the variable of univariate polynomials representing this Galois field
     */
   final case class GaloisField[E]
-  (override val domain: FiniteField[UnivariatePolynomial[E]], override val variable: String,
+  (override val theRing: FiniteField[UnivariatePolynomial[E]], override val variable: String,
    private val ringOption: Option[UnivariateRing[E]] = None)
-    extends IUnivariateRing[UnivariatePolynomial[E], E](domain, variable) {
+    extends IUnivariateRing[UnivariatePolynomial[E], E](theRing, variable) {
 
-    val polyCoefficientDomain = domain.factory().ring
+    val polyCoefficientDomain = theRing.factory().ring
 
     /**
       * @inheritdoc
       */
     override def parse(string: String): UnivariatePolynomial[E] = ringOption match {
-      case Some(ring) => domain.valueOf(domain.factory().parsePoly(string, ring.coefficientDomain, variable))
+      case Some(ring) => theRing.valueOf(theRing.factory().parsePoly(string, ring.coefficientDomain, variable))
       case None => super.parse(string)
     }
 
@@ -360,14 +378,14 @@ object Rings {
       * @inheritdoc
       */
     override val toString: String = ringOption match {
-      case Some(ring) => domain.toString(ring.coefficientDomain.toString, this, variables)
+      case Some(ring) => theRing.toString(ring.coefficientDomain.toString, this, variables)
       case None => super.toString
     }
 
     /**
       * Constant polynomial with specified value
       */
-    override def getConstant(value: E): UnivariatePolynomial[E] = domain.factory().createConstant(value)
+    override def getConstant(value: E): UnivariatePolynomial[E] = theRing.factory().createConstant(value)
 
     /**
       * Add coefficient ring element
@@ -409,7 +427,7 @@ object Rings {
   /**
     * Delegate [[FiniteField]] methods fo [[GaloisField64]]
     */
-  implicit def domainMethods[E](ring: GaloisField[E]): FiniteField[UnivariatePolynomial[E]] = ring.domain
+  implicit def domainMethods[E](ring: GaloisField[E]): FiniteField[UnivariatePolynomial[E]] = ring.theRing
 
   object GF {
     /**
@@ -461,7 +479,7 @@ object Rings {
     /**
       * Constant polynomial with specified value
       */
-    override def getConstant(value: Long): UnivariatePolynomialZp64 = domain.valueOf(value)
+    override def getConstant(value: Long): UnivariatePolynomialZp64 = theRing.valueOf(value)
 
     /**
       * Add coefficient ring element
@@ -518,7 +536,7 @@ object Rings {
     * @param variable          variable
     */
   final case class UnivariateRing[E](coefficientDomain: Ring[E], override val variable: String)
-    extends IUnivariateRing[UnivariatePolynomial[E], E](rings.Rings.UnivariateRing(coefficientDomain.domain), variable) {
+    extends IUnivariateRing[UnivariatePolynomial[E], E](rings.Rings.UnivariateRing(coefficientDomain.theRing), variable) {
 
     /**
       * @inheritdoc
@@ -532,17 +550,17 @@ object Rings {
     /**
       * @inheritdoc
       */
-    override def parse(string: String): UnivariatePolynomial[E] = domain.factory().parsePoly(string, coefficientDomain, variable)
+    override def parse(string: String): UnivariatePolynomial[E] = theRing.factory().parsePoly(string, coefficientDomain, variable)
 
     /**
       * @inheritdoc
       */
-    override val toString: String = domain.toString(coefficientDomain.toString, variables)
+    override val toString: String = theRing.toString(coefficientDomain.toString, variables)
 
     /**
       * Constant polynomial with specified value
       */
-    override def getConstant(value: E) = domain.factory().createConstant(value)
+    override def getConstant(value: E) = theRing.factory().createConstant(value)
 
     /**
       * Add coefficient ring element
@@ -577,7 +595,7 @@ object Rings {
     /**
       * Value of integer in coefficient ring
       */
-    override def cfValue(i: Int): E = coefficientDomain.domain.valueOf(i.asInstanceOf[Long])
+    override def cfValue(i: Int): E = coefficientDomain.theRing.valueOf(i.asInstanceOf[Long])
   }
 
   private type Ordering = Comparator[DegreeVector[_]]
@@ -585,13 +603,18 @@ object Rings {
   /**
     * Ring of multivariate polynomials
     *
-    * @param domain    the [[PolynomialRing]]
+    * @param theRing   the [[PolynomialRing]]
     * @param variables the variables
     */
   sealed abstract class IMultivariateRing[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
-  (override val domain: poly.PolynomialRing[Poly],
+  (override val theRing: poly.PolynomialRing[Poly],
    variables: Array[String],
-   ordering: Ordering) extends PolynomialRing[Poly, E](domain, variables)
+   ordering: Ordering) extends PolynomialRing[Poly, E](theRing, variables) {
+    /**
+      * The type of monomials
+      */
+    type MonomialType = Term
+  }
 
 
   /**
@@ -607,7 +630,7 @@ object Rings {
     /**
       * Constant polynomial with specified value
       */
-    override def getConstant(value: Long): MultivariatePolynomialZp64 = domain.valueOf(value)
+    override def getConstant(value: Long): MultivariatePolynomialZp64 = theRing.valueOf(value)
 
     /**
       * Add coefficient ring element
@@ -680,17 +703,17 @@ object Rings {
     /**
       * @inheritdoc
       */
-    override def parse(string: String): MultivariatePolynomial[E] = domain.factory().parsePoly(string, coefficientDomain, variables)
+    override def parse(string: String): MultivariatePolynomial[E] = theRing.factory().parsePoly(string, coefficientDomain, variables)
 
     /**
       * @inheritdoc
       */
-    override val toString: String = domain.toString(coefficientDomain.toString, variables)
+    override val toString: String = theRing.toString(coefficientDomain.toString, variables)
 
     /**
       * Constant polynomial with specified value
       */
-    override def getConstant(value: E) = domain.factory().createConstant(value)
+    override def getConstant(value: E) = theRing.factory().createConstant(value)
 
     /**
       * Add coefficient ring element
