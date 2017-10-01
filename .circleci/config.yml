@@ -1,4 +1,9 @@
 version: 2
+
+branches:
+  ignore:
+    - docs
+    
 jobs:
   build:
     docker:
