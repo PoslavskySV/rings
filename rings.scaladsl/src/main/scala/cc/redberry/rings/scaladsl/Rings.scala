@@ -18,6 +18,8 @@ import scala.language.{existentials, implicitConversions, postfixOps}
   */
 object Rings {
 
+  implicit def asBigInteger(v: BigInt): BigInteger = new BigInteger(v.bigInteger)
+
   /**
     * Simple wrapper around [[Ring]] used to unify PolynomialRing and Ring
     *
@@ -81,8 +83,10 @@ object Rings {
       * Pretty toString
       */
     final def show(arg: Any): String = arg match {
+      case obj: Array[_] =>
+        obj.map(show).mkString("[", ",", "]")
       case obj: Traversable[_] =>
-        obj.map(_show).toString
+        obj.map(show).toString
       case obj: FactorDecomposition[_] =>
         obj.toString((element: T forSome {type T <: IPolynomial[T]}) => show(element))
       case any@_ => _show(any)
@@ -133,7 +137,7 @@ object Rings {
   /**
     * Ring of rationals
     */
-  final case class Rationals[E](ring: Ring[E]) extends Ring[Rational[E]](rings.Rings.Rationals(ring)) {
+  final case class Frac[E](ring: Ring[E]) extends Ring[Rational[E]](rings.Rings.Rationals(ring)) {
     private val rationalsDomain: rings.Rationals[E] = theRing.asInstanceOf[rings.Rationals[E]]
 
     /**
@@ -450,6 +454,13 @@ object Rings {
       */
     def apply(modulus: BigInteger, exponent: Int, variable: String)
     = GaloisField[BigInteger](rings.Rings.GF(modulus, exponent), variable)
+
+    /**
+      * Create Galois field with cardinality `modulus ^ exponent` represented by univariate polynomials with
+      * specified variable
+      */
+    def apply(modulus: BigInt, exponent: Int, variable: String)
+    = GaloisField[BigInteger](rings.Rings.GF(new BigInteger(modulus.bigInteger), exponent), variable)
 
     /**
       * Create Galois field from the specified irreducible polynomial and represented by univariate polynomials with

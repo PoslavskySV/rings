@@ -39,6 +39,8 @@ object implicits {
 
     def **(exponent: Int): E = ring.pow(self, exponent)
 
+    def pow(exponent: Int): E = ring.pow(self, exponent)
+
     def ^(exponent: Int): E = this.**(exponent)
 
     def unary_- : E = ring.negate(self)
@@ -75,10 +77,14 @@ object implicits {
     def ===(other: Long): Boolean = self == constant(other)
 
     def ===(other: E): Boolean = self == other
+
+    def show: String = ring show self
+
+    def println: Unit = scala.Predef.println(show)
   }
 
   implicit def withRationalOperators[E]
-  (self: Rational[E])(implicit ring: Rationals[E]): RingOperators[Rational[E]] = new RingOperators(self)(ring)
+  (self: Rational[E])(implicit ring: Frac[E]): RingOperators[Rational[E]] = new RingOperators(self)(ring)
 
   @specialized(Long)
   private final case class
@@ -124,8 +130,6 @@ object implicits {
 
   sealed abstract class IPolynomialOperators[Poly <: IPolynomial[Poly], E]
   (self: Poly)(implicit ring: PolynomialRing[Poly, E]) extends RingOperators[Poly](self)(ring) {
-
-    def show(): String = ring.show(self)
 
     def +(element: E): Poly = ring.add(self, element)
 

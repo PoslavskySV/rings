@@ -356,6 +356,18 @@ public final class BigPrimes {
      * @return list of prime factors of n
      * @throws IllegalArgumentException if n is negative
      */
+    public static long[] primeFactors(long num) {
+        return primeFactors(BigInteger.valueOf(num)).stream().mapToLong(BigInteger::longValueExact).toArray();
+    }
+
+    /**
+     * Prime factors decomposition. The algorithm switches between trial divisions, Pollard's p-1, Pollard's rho and
+     * quadratic sieve.
+     *
+     * @param num number to factorize
+     * @return list of prime factors of n
+     * @throws IllegalArgumentException if n is negative
+     */
     public static List<BigInteger> primeFactors(BigInteger num) {
         ArrayList<BigInteger> factors = new ArrayList<>();
 

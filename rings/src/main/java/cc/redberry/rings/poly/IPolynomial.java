@@ -264,6 +264,20 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      */
     Poly add(Poly oth);
 
+
+    /**
+     * Adds {@code oth} to {@code this}.
+     *
+     * @param oth the polynomials
+     * @return {@code this + oth}
+     */
+    @SuppressWarnings("unchecked")
+    default Poly add(Poly... oth) {
+        for (Poly t : oth)
+            add(t);
+        return (Poly) this;
+    }
+
     /**
      * Subtracts {@code oth} from {@code this}.
      *
@@ -271,6 +285,19 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      * @return {@code this - oth}
      */
     Poly subtract(Poly oth);
+
+    /**
+     * Subtracts {@code oth} from {@code this}.
+     *
+     * @param oth the polynomial
+     * @return {@code this - oth}
+     */
+    @SuppressWarnings("unchecked")
+    default Poly subtract(Poly... oth) {
+        for (Poly t : oth)
+            subtract(t);
+        return (Poly) this;
+    }
 
     /**
      * Negates this and returns

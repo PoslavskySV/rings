@@ -6,7 +6,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * Prime factorization of 32-bit integers
+ * Prime factorization of 32-bit integers. The code is taken from Apache Commons Math.
  *
  * @since 1.0
  */

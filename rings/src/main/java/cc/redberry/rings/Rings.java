@@ -39,7 +39,7 @@ public final class Rings {
      *
      * @param ring the ring that numerators and denominators belong to
      */
-    public static <E> Rationals<E> Rationals(Ring<E> ring) {
+    public static <E> Rationals<E> Frac(Ring<E> ring) {
         return new Rationals<>(ring);
     }
 
@@ -117,7 +117,7 @@ public final class Rings {
      *
      * @param modulus the modulus
      */
-    public static UnivariateRing<UnivariatePolynomialZp64> UnivariateRingZp(long modulus) {
+    public static UnivariateRing<UnivariatePolynomialZp64> UnivariateRingZp64(long modulus) {
         return new UnivariateRing<>(UnivariatePolynomialZp64.zero(modulus));
     }
 
@@ -126,7 +126,7 @@ public final class Rings {
      *
      * @param modulus the modulus
      */
-    public static UnivariateRing<UnivariatePolynomialZp64> UnivariateRingZp(IntegersZp64 modulus) {
+    public static UnivariateRing<UnivariatePolynomialZp64> UnivariateRingZp64(IntegersZp64 modulus) {
         return new UnivariateRing<>(UnivariatePolynomialZp64.zero(modulus));
     }
 
@@ -198,7 +198,7 @@ public final class Rings {
      * @param monomialOrder the monomial order
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
-    MultivariateRingZp(int nVariables, long modulus, Comparator<DegreeVector> monomialOrder) {
+    MultivariateRingZp64(int nVariables, long modulus, Comparator<DegreeVector> monomialOrder) {
         return new MultivariateRing<>(MultivariatePolynomialZp64.zero(nVariables, Zp64(modulus), monomialOrder));
     }
 
@@ -209,8 +209,8 @@ public final class Rings {
      * @param modulus    the modulus
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
-    MultivariateRingZp(int nVariables, long modulus) {
-        return MultivariateRingZp(nVariables, modulus, MonomialOrder.LEX);
+    MultivariateRingZp64(int nVariables, long modulus) {
+        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.LEX);
     }
 
     /**
@@ -220,7 +220,7 @@ public final class Rings {
      * @param modulus    the modulus
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
-    MultivariateRingZp(int nVariables, IntegersZp64 modulus) {
+    MultivariateRingZp64(int nVariables, IntegersZp64 modulus) {
         return new MultivariateRing<>(MultivariatePolynomialZp64.zero(nVariables, modulus, MonomialOrder.LEX));
     }
 

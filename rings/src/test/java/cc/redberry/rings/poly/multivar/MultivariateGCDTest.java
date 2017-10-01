@@ -2220,7 +2220,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
                 if (monic)
                     // make monic in main variable by adding some monomial
-                    p.add(p.createUnivariateMonomial(0, p.degreeSum() + 1));
+                    p.add(p.createMonomial(0, p.degreeSum() + 1));
 
                 if (p.isZero()) {
                     --i;
@@ -2256,7 +2256,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
                 if (monic)
                     // make monic in main variable by adding some monomial
-                    p.add(p.createUnivariateMonomial(0, p.degreeSum() + 1));
+                    p.add(p.createMonomial(0, p.degreeSum() + 1));
 
                 if (p.isZero()) {
                     --i;

@@ -4,7 +4,7 @@ import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly.IPolynomial
 import cc.redberry.rings.poly.PolynomialMethods.{Factor, PolynomialGCD}
 import cc.redberry.rings.poly.multivar._
-import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariateGCD, UnivariateInterpolation, UnivariatePolynomialZ64}
+import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariateInterpolation, UnivariatePolynomialZ64}
 import cc.redberry.rings.primes.SmallPrimes
 import cc.redberry.rings.scaladsl.Rings._
 import org.apache.commons.math3.random.Well1024a
@@ -255,37 +255,5 @@ class RingsTest {
     def apply(generators: Seq[MultivariatePolynomialZp64])(implicit ring: MultivariateRingZp64) = Ideal[MonomialZp64, MultivariatePolynomialZp64, Long](generators.toSet)(ring)
 
     def apply[E](generators: Seq[MultivariatePolynomial[E]])(implicit ring: MultivariateRing[E]) = Ideal[Monomial[E], MultivariatePolynomial[E], E](generators.toSet)(ring)
-  }
-
-  @Test
-  def xxxx: Unit = {
-    import implicits._
-
-    val polyRing = MultivariateRingZp64(2, Array("x", "y", "z"))
-
-    implicit val ring = Rationals(polyRing)
-
-    val a = ring("(x + y + z)/(x - y)")
-    val b = ring("(x^2 - y + z)/(x + y)")
-    val c = ring("(x^2 + y - z^2)/(x - y)")
-    val sum = a * b ** 2 / c - a * c / b ** 3 + b ** 4 * c / a
-
-    //        println(sum)
-
-    assert(sum % a === 0)
-    println(Factor(sum.denominator))
-    //    println(Factor(sum.numerator))
-  }
-
-  @Test
-  def zxzxjchzkcj: Unit = {
-    import implicits._
-
-    implicit val ring = MultivariateRingZp64(30203, Array("a", "b", "c"))
-
-    println(Factor(ring("20407*c+15337*b^2*c+15309*a*b^3+21682*a*b^3*c^2+16926*a^3*b^3*c")))
-    println(Factor(ring("1398*b^2*c^2+28996*a*c^3+8241*a*b^2*c+14631*a^2*b*c+19151*a^3*b^3")))
-    println(Factor(ring("3422*b^2*c^2+23893*a+20695*a*b*c+18374*a*b^2+29283*a^3*b^2*c")))
-    println(Factor(ring("7620*c^2+24026*b*c^2+6319*a^2")))
   }
 }

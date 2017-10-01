@@ -82,18 +82,20 @@ public final class IntegersZp extends AIntegers {
 
     @Override
     public BigInteger add(BigInteger a, BigInteger b) {
+        a = valueOf(a); b = valueOf(b);
         BigInteger r = a.add(b), rm = r.subtract(modulus);
         return rm.signum() >= 0 ? rm : r;
     }
 
     @Override
     public BigInteger subtract(BigInteger a, BigInteger b) {
+        a = valueOf(a); b = valueOf(b);
         BigInteger r = a.subtract(b);
         return r.signum() < 0 ? r.add(modulus) : r;
     }
 
     @Override
-    public BigInteger negate(BigInteger element) {return element.isZero() ? element : modulus.subtract(element);}
+    public BigInteger negate(BigInteger element) {return element.isZero() ? element : modulus.subtract(valueOf(element));}
 
     @Override
     public BigInteger multiply(BigInteger a, BigInteger b) {return modulus(a.multiply(b));}

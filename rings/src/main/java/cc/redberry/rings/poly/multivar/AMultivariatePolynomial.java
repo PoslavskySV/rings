@@ -236,7 +236,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param degree   the monomial degree
      * @return monomial {@code variable ^ degree}
      */
-    public final Poly createUnivariateMonomial(int variable, int degree) {
+    public final Poly createMonomial(int variable, int degree) {
         int[] degreeVector = new int[nVariables];
         degreeVector[variable] = degree;
         return create(createTermWithUnitCoefficient(degreeVector));
@@ -555,7 +555,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         for (int i = uPoly.degree(); i >= 0; --i) {
             if (uPoly.isZeroAt(i))
                 continue;
-            result.add(result.createUnivariateMonomial(variable, i).multiply(uPoly.get(i)));
+            result.add(result.createMonomial(variable, i).multiply(uPoly.get(i)));
         }
         return result;
     }

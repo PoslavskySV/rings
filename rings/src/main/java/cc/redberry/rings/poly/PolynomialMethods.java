@@ -207,6 +207,28 @@ public final class PolynomialMethods {
      *
      * @param base     the base
      * @param exponent the non-negative exponent
+     * @return {@code base} in a power of {@code e}
+     */
+    public static <T extends IPolynomial<T>> T polyPow(final T base, long exponent) {
+        return polyPow(base, exponent, true);
+    }
+
+    /**
+     * Returns {@code base} in a power of non-negative {@code exponent}
+     *
+     * @param base     the base
+     * @param exponent the non-negative exponent
+     * @return {@code base} in a power of {@code e}
+     */
+    public static <T extends IPolynomial<T>> T polyPow(final T base, BigInteger exponent) {
+        return polyPow(base, exponent, true);
+    }
+
+    /**
+     * Returns {@code base} in a power of non-negative {@code exponent}
+     *
+     * @param base     the base
+     * @param exponent the non-negative exponent
      * @param copy     whether to clone {@code base}; if not the data of {@code base} will be lost
      * @return {@code base} in a power of {@code e}
      */

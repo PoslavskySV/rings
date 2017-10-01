@@ -52,7 +52,7 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
     @Override
     @SuppressWarnings("unchecked")
     public Poly variable(int variable) {
-        return factory.createUnivariateMonomial(variable, 1);
+        return factory.createMonomial(variable, 1);
     }
 
     /**

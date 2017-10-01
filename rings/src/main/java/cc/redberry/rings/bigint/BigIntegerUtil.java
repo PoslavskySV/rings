@@ -66,6 +66,9 @@ public final class BigIntegerUtil {
         if (exponent < 0)
             throw new IllegalArgumentException();
 
+        if (exponent < Integer.MAX_VALUE)
+            return pow(base, (int) exponent);
+        
         BigInteger result = ONE;
         BigInteger k2p = base;
         for (; ; ) {
@@ -76,6 +79,18 @@ public final class BigIntegerUtil {
                 return result;
             k2p = k2p.multiply(k2p);
         }
+    }
+
+    /**
+     * Returns {@code base} in a power of {@code e} (non negative)
+     *
+     * @param base     base
+     * @param exponent exponent (non negative)
+     * @return {@code base} in a power of {@code e}
+     * @throws ArithmeticException if the result overflows a long
+     */
+    public static BigInteger pow(final BigInteger base, int exponent) {
+        return base.pow(exponent);
     }
 
     /**
