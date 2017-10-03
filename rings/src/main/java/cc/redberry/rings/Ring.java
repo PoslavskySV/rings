@@ -2,6 +2,7 @@ package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.Well44497b;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -615,6 +616,13 @@ public interface Ring<E> extends
      */
     @Override
     Iterator<E> iterator();
+
+    /**
+     * Returns a random element from this ring
+     *
+     * @return random element from this ring
+     */
+    default E randomElement() { return randomElement(new Well44497b(0xabcdef));}
 
     /**
      * Returns a random element from this ring

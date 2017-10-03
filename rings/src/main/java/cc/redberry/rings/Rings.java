@@ -1,13 +1,8 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.UnivariateRing;
-import cc.redberry.rings.poly.multivar.DegreeVector;
-import cc.redberry.rings.poly.multivar.MonomialOrder;
-import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
-import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
+import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.IrreduciblePolynomials;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -103,6 +98,15 @@ public final class Rings {
     }
 
     /**
+     * Ring of univariate polynomials with specified factory
+     *
+     * @param factory factory
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialRing<Poly> UnivariateRing(Poly factory){
+        return new UnivariateRing<>(factory);
+    }
+
+    /**
      * Ring of univariate polynomials over integers (Z[x])
      */
     public static final UnivariateRing<UnivariatePolynomial<BigInteger>> UnivariateRingZ = UnivariateRing(Z);
@@ -168,6 +172,16 @@ public final class Rings {
     public static <E> MultivariateRing<MultivariatePolynomial<E>>
     MultivariateRing(int nVariables, Ring<E> coefficientRing) {
         return MultivariateRing(nVariables, coefficientRing, MonomialOrder.LEX);
+    }
+
+    /**
+     * Ring of multivariate polynomials with specified factory
+     *
+     * @param factory factory
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    PolynomialRing<Poly> MultivariateRing(Poly factory){
+        return new MultivariateRing<>(factory);
     }
 
     /**
@@ -245,5 +259,17 @@ public final class Rings {
     MultivariateRing<MultivariatePolynomial<uPoly>>
     MultivariateRingGF(int nVariables, FiniteField<uPoly> gf) {
         return MultivariateRing(nVariables, gf);
+    }
+
+
+    /**
+     * Generic factory for polynomial ring
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>> PolynomialRing<Poly> PolynomialRing(Poly factory){
+        if(factory instanceof IUnivariatePolynomial)
+            return (PolynomialRing<Poly>) UnivariateRing((IUnivariatePolynomial)factory);
+        else
+            return (PolynomialRing<Poly>) MultivariateRing((AMultivariatePolynomial)factory);
     }
 }

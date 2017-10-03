@@ -111,6 +111,24 @@ public final class PolynomialMethods {
     }
 
     /**
+     * Returns quotient and remainder of a and b.
+     *
+     * @param a the dividend
+     * @param b the divider
+     * @return {quotient, remainder}
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>>
+    Poly remainder(Poly a, Poly b) {
+        if (a instanceof IUnivariatePolynomial)
+            return  (Poly) UnivariateDivision.remainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
+        else if (a instanceof AMultivariatePolynomial)
+            return (Poly) MultivariateDivision.divideAndRemainder((AMultivariatePolynomial) a, (AMultivariatePolynomial) b)[1];
+        else
+            throw new RuntimeException();
+    }
+
+    /**
      * Returns the quotient of a and b or throws {@code ArithmeticException} if exact division is not possible
      *
      * @param a the dividend

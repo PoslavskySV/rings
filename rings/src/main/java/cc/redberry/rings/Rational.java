@@ -1,5 +1,7 @@
 package cc.redberry.rings;
 
+import cc.redberry.rings.bigint.BigInteger;
+
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -237,6 +239,33 @@ public final class Rational<E>
             den = ring.multiply(denominator, other.denominator);
         }
         return new Rational<>(ring, num, den);
+    }
+
+    /**
+     * Raise this in a power {@code exponent}
+     *
+     * @param exponent exponent
+     */
+    public Rational<E> pow(int exponent) {
+        return new Rational<>(ring, ring.pow(numerator, exponent), ring.pow(denominator, exponent));
+    }
+
+    /**
+     * Raise this in a power {@code exponent}
+     *
+     * @param exponent exponent
+     */
+    public Rational<E> pow(long exponent) {
+        return new Rational<>(ring, ring.pow(numerator, exponent), ring.pow(denominator, exponent));
+    }
+
+    /**
+     * Raise this in a power {@code exponent}
+     *
+     * @param exponent exponent
+     */
+    public Rational<E> pow(BigInteger exponent) {
+        return new Rational<>(ring, ring.pow(numerator, exponent), ring.pow(denominator, exponent));
     }
 
     /**
