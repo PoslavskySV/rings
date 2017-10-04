@@ -58,7 +58,17 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
      * @return the polynomial
      */
     public static UnivariatePolynomialZp64 create(long modulus, long[] data) {
-        IntegersZp64 ring = new IntegersZp64(modulus);
+        return create(new IntegersZp64(modulus), data);
+    }
+
+    /**
+     * Creates poly with specified coefficients represented as signed integers reducing them modulo {@code modulus}
+     *
+     * @param ring the ring
+     * @param data    coefficients
+     * @return the polynomial
+     */
+    public static UnivariatePolynomialZp64 create(IntegersZp64 ring, long[] data) {
         ring.modulus(data);
         return new UnivariatePolynomialZp64(ring, data);
     }
