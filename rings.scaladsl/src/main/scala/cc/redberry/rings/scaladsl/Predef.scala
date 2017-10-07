@@ -5,6 +5,8 @@ import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly.FiniteField
 import cc.redberry.rings.{IntegersZp64, Rational, poly}
 
+import scala.language.implicitConversions
+
 /**
   *
   * @since 1.0
@@ -19,7 +21,7 @@ private[scaladsl] trait Predef {
 
   implicit def asBigInteger(v: Long): BigInteger = BigInteger.valueOf(v)
 
-  implicit def asRingElement[E](v: Int)(implicit ring: Ring[E]) = ring.valueOf(v)
+  implicit def asRingElement[E](v: Int)(implicit ring: Ring[E]): E = ring.valueOf(v)
 
   implicit def asRingElement[E](v: Long)(implicit ring: Ring[E]) = ring.valueOf(v)
 
@@ -27,6 +29,18 @@ private[scaladsl] trait Predef {
     * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
     */
   implicit def ringMethods[Poly <: IPolynomial[Poly], E](ring: PolynomialRing[Poly, E]): poly.PolynomialRing[Poly] = ring.theRing
+
+  /**
+    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    */
+  implicit def ringMethods[E](ring: UnivariateRing[E]): poly.UnivariateRing[UnivariatePolynomial[E]]
+  = ring.theRing.asInstanceOf[poly.UnivariateRing[UnivariatePolynomial[E]]]
+
+  /**
+    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    */
+  implicit def ringMethods(ring: UnivariateRingZp64): poly.UnivariateRing[UnivariatePolynomialZp64]
+  = ring.theRing.asInstanceOf[poly.UnivariateRing[UnivariatePolynomialZp64]]
 
   /**
     * Delegate [[FiniteField]] methods fo [[GaloisField64]]
@@ -46,7 +60,7 @@ private[scaladsl] trait Predef {
   /**
     * Implicitly convert [[rings.Ring]] to [[Ring]]
     */
-  implicit def asRing[E](ring: rings.Ring[E]) = new Ring[E](ring)
+  implicit def asRing[E](ring: rings.Ring[E]): Ring[E] = new Ring[E](ring)
 
   /**
     * Implicitly convert [[IntegersZp64]] to [[Ring]]

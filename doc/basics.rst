@@ -1,26 +1,27 @@
 .. _ref-basicconcepts:
 
-==============
-Basic concepts
-==============
+==========
+User guide
+==========
 
 
 
 Integers
 ========
 
-There are two basic types of integer numbers that we have to deal with when doing algebra in computer: machine integers and arbitrary-precision integers. For the machine integers the Java's primitive 64-bit ``long`` type is used (since most modern CPUs are 64-bit). Internally |Rings| use machine numbers for representing integers modulo prime numbers less than :math:`2^{64}` which is done for performance reasons (see :ref:`ref-machine-arithmetic`). For the arbitrary-precision integers |Rings| use improved ``BigInteger`` class `github.com/tbuktu/bigint <https://github.com/tbuktu/bigint>`_ (`cc.redberry.rings.bigint.BigInteger`_) instead of built-in ``java.math.BigInteger``. The improved ``BigInteger`` has Schönhage-Strassen multiplication and Barrett division algorithms for large integers which is a significant performance improvement in comparison to native Java's implementation.
+There are two basic types of integer numbers that we have to deal with when doing algebra in computer: machine integers and arbitrary-precision integers. For the machine integers the Java's primitive 64-bit ``long`` type is used (since most modern CPUs are 64-bit). Internally |Rings| use machine numbers for representing integers modulo prime numbers less than :math:`2^{64}` which is done for performance reasons (see :ref:`ref-machine-arithmetic`). For the arbitrary-precision integers |Rings| use improved ``BigInteger`` class `github.com/tbuktu/bigint <https://github.com/tbuktu/bigint>`_ (`cc.redberry.rings.bigint.BigInteger`_) instead of built-in ``java.math.BigInteger``. The improved `BigInteger`_ has Schönhage-Strassen multiplication and Barrett division algorithms for large integers which is a significant performance improvement in comparison to native Java's implementation.
 
 
 .. _cc.redberry.rings.bigint.BigInteger: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/bigint/BigInteger.java
+.. _BigInteger: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/bigint/BigInteger.java
 
 Prime numbers
 """""""""""""
 
 In many applications it is necessary to test primality of integer number (``isPrime(number)``) or to generate some prime numbers at random (``nextPrime(number)``). This is realized in the following two classes:
 
- - `SmallPrimes`_ for numbers less than :math:`2^{32}`. It uses Miller-Rabin probabilistic primality test for int type in such a way that a result is always guaranteed (code is adapted from `Apache Commons Math <http://commons.apache.org/proper/commons-math/>`_).
- - `BigPrimes`_ for arbitrary large numbers. It switches between Pollard-Rho, Pollard-P1 and Quadratic Sieve algorithms for prime factorization and also uses probabilistic Miller-Rabin test and strong Lucas test for primality testing.
+ - `SmallPrimes`_ for numbers less than :math:`2^{32}`. It uses *Miller-Rabin* probabilistic primality test for int type in such a way that a result is always guaranteed (code is adapted from `Apache Commons Math <http://commons.apache.org/proper/commons-math/>`_).
+ - `BigPrimes`_ for arbitrary large numbers. It switches between *Pollard-Rho*, *Pollard-P1* and *Quadratic Sieve* algorithms for prime factorization and also uses probabilistic *Miller-Rabin test* and strong *Lucas test* for primality testing.
 
 
 The following examples give some illustrations:
@@ -100,7 +101,7 @@ It is worst to mention, that multiplication defined in `IntegersZp64`_ is especi
 
    		// Z/p with p = 2^31 - 1 (Mersenne prime) - fits 32-bit word
 		IntegersZp64 field32 = new IntegersZp64((1L << 31) - 1L);
-		// does cause long overflow - fast 
+		// does not cause long overflow - fast 
 		assert field32.multiply(0xabcdef12, 0x12345678) == 0x7e86a4d6;
 
 
@@ -123,7 +124,7 @@ It is worst to mention, that multiplication defined in `IntegersZp64`_ is especi
 Rings
 =====
 
-The concept of mathematical ring is implemented in the generic interface `Ring<E>`_ which defines all basic algebraic operations over the elements of type ``E``. The simplest example is the ring of integers :math:`Z` (`Rings.Z`_), which operates with ``BigInteger`` instances and simply delegates all operations like ``+`` or ``*`` to methods of class ``BigInteger``. A little bit more complicated ring is a ring of integers modulo some number :math:`Z_p`:
+The concept of mathematical ring is implemented in the generic interface `Ring<E>`_ which defines all basic algebraic operations over the elements of type ``E``. The simplest example is the ring of integers :math:`Z` (`Rings.Z`_), which operates with `BigInteger`_ instances and simply delegates all operations like ``+`` or ``*`` to methods of class `BigInteger`_. A little bit more complicated ring is a ring of integers modulo some number :math:`Z_p`:
 
 .. tabs::
 
@@ -169,7 +170,7 @@ In fact the interface `Ring<E>`_ defines algebraic operations inherent both for 
 		// Field operation:
 		E reciprocal(E element);
 
-In the case when a particular ring is (e.g. :math:`Z`) is not a field, the invocation of corresponding method (``reciprocal``) will produce ``ArithmeticException``. Each `Ring<E>`_ implementation provides the information about its mathematical origin and all properties like cardinality, characteristic etc. Additionally it defines ``parse(String)`` method to convert strings into ring elements:
+In the case when a particular ring is (e.g. :math:`Z`) is not a field, the invocation of field method (``reciprocal``) will produce ``ArithmeticException``. Each `Ring<E>`_ implementation provides the information about its mathematical nature (ring/Euclidean ring/field) and all properties like cardinality, characteristic etc. Additionally it defines ``parse(String)`` method to convert strings into ring elements:
 
 
 .. tabs::
@@ -208,7 +209,7 @@ In the case when a particular ring is (e.g. :math:`Z`) is not a field, the invoc
 Examples of rings
 """""""""""""""""
 
-The shortcut methods for different rings are placed in `cc.redberry.rings.Rings`_ class. Below is the list of basic rings defined in |Rings|:
+The shortcut methods for different rings are placed in `cc.redberry.rings.Rings`_ class  (Scala shortcuts are directly in ``scaladsl`` package object). Below is the list of basic rings defined in |Rings|:
 
 +----------------------------------------+---------------------------------------------------------------------+---------------------------------------+
 | Ring                                   | Description                                                         | Code in Rings                         |
@@ -242,13 +243,10 @@ The shortcut methods for different rings are placed in `cc.redberry.rings.Rings`
 .. [*] Class `IntegersZp64`_ which represents :math:`Z_p` with :math:`p < 2^{64}` does not inherit `Ring<E>`_ interface (see :ref:`ref-machine-arithmetic`)
 
 
-Scala DSL defines a wrapper class `Ring[E]`_ with implicit conversion to Java's `Ring<E>`_ for the reasons described below (see :ref:`ref-basics-polynomials`). So in Scala constructor methods from `cc.redberry.rings.Rings`_ are defined in `cc.redberry.rings.scaladsl.Rings`_.
-
-
 Galois fields
 ^^^^^^^^^^^^^
 
-Galois field :math:`GF(p^q)` with prime characteristic :math:`p` and cardinality :math:`p^q` can be can be created by specifying :math:`p` and :math:`q` in which case the irreducible polynomial will be generated automatically or by explicitly specifying the irreducible:
+Galois field :math:`GF(p^q)` with prime characteristic :math:`p` and cardinality :math:`p^q` can be created by specifying :math:`p` and :math:`q` in which case the irreducible polynomial will be generated automatically or by explicitly specifying the irreducible:
 
 .. tabs::
 
@@ -348,6 +346,61 @@ The common GCD is automatically canceled in the numerator and denominator. Fract
 		System.out.println(field.add(a, b));
 
 
+
+Scala DSL
+"""""""""
+
+Scala DSL allows to use standard mathematical operators for elements of rings:
+
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		import syntax._
+
+		implicit val ring = UnivariateRing(Zp(3), "x")
+		val (a, b) = ring("1 + 2*x^2", "1 - x")
+
+		// compiles to ring.add(a, b)
+		val add = a + b
+		// compiles to ring.subtract(a, b)
+		val sub = a - b
+		// compiles to ring.multiply(a, b)
+		val mul = a * b
+		// compiles to ring.divideExact(a, b)
+		val div = a / b
+		// compiles to ring.divideAndRemainder(a, b)
+		val divRem = a /% b
+		// compiles to ring.increment(a, b)
+		val inc = a ++
+		// compiles to ring.decrement(a, b)
+		val dec = a --
+		// compiles to ring.negate(a, b)
+		val neg = -a
+
+
+Note that in the above example the ring is defined as ``implicit val``, in which case the math operations are delegated to the implicit ring instance. Consider the difference:
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		import syntax._
+
+		val a: Integer = 10
+		val b: Integer = 11
+
+		// no any implicit Ring[Integer] instance in the scope
+		// compiles to a.add(b) (integer addition)
+		assert(a + b === 21)
+
+		implicit val ring = Zp(13)
+		// compiles to ring.add(a, b) (addition mod 13)
+		assert(a + b === 8)
+
+
+
 .. _Ring<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Ring.java
 
 .. _Ring[E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
@@ -357,6 +410,8 @@ The common GCD is automatically canceled in the numerator and denominator. Fract
 .. _cc.redberry.rings.Rings: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Rings.java
 
 .. _cc.redberry.rings.scaladsl.Rings: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
+
+.. _cc.redberry.rings.scaladsl: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/package.scala
 
 .. _UnivariateDivision: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java
 
@@ -374,9 +429,216 @@ Polynomials and polynomial rings
    :align: center
 
 
+The first thing about the internal representation of polynomials is that polynomial instances do not store the information about particular string names of variables. Variables are treated just as "the first variable", "the second variable" and so on without specifying particular names ("x" or "y"). As result string names of variables should be specifically stored somewhere. Some illusrtations:
+
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		import syntax._
+		// when parsing "x" will be considered as the "first variable"
+		// and "y" as "the second", then in the result the particular
+		// names "x" and "y" are erased
+		val poly1 = MultivariatePolynomial.parse("x^2 + x*y", "x", "y")
+		// parse the same polynomial but using "a" and "b" instead of "x" and "y"
+		val poly2 = MultivariatePolynomial.parse("a^2 + a*b", "a", "b")
+		// polynomials are equal (no matter which variable names were used when parsing)
+		assert(poly1 == poly2)
+		// degree in the first variable
+		assert(poly1.degree(0) == 2)
+		// degree in the second variable
+		assert(poly1.degree(1) == 1)
+
+		// this poly differs from poly2 since now "a" is "the second"
+		// variable and "b" is "the first"
+		val poly3 = MultivariatePolynomial.parse("a^2 + a*b", "b", "a")
+		assert(poly3 != poly2)
+		// swap the first and the second variables and the result is equal to poly2
+		assert(poly3.swapVariables(0, 1) == poly2)
+
+
+		// the default toString() will use the default
+		// variables "a", "b", "c"  and so on (alphabetical)
+		// the result will be "a*b + a^2"
+		println(poly1)
+		// specify which variable names use for printing
+		// the result will be "x*y + x^2"
+		println(poly1.toString(Array("x", "y")))
+		// the result will be "y*x + y^2"
+		println(poly1.toString(Array("y", "x")))
+
+	.. code-tab:: java
+
+		// when parsing "x" will be considered as the "first variable"
+		// and "y" as "the second" => in the result the particular
+		// names "x" and "y" are erased
+		MultivariatePolynomial<BigInteger> poly1 = MultivariatePolynomial.parse("x^2 + x*y", "x", "y");
+		// parse the same polynomial but using "a" and "b" instead of "x" and "y"
+		MultivariatePolynomial<BigInteger> poly2 = MultivariatePolynomial.parse("a^2 + a*b", "a", "b");
+		// polynomials are equal (no matter which variable names were used when parsing)
+		assert poly1.equals(poly2);
+		// degree in the first variable
+		assert poly1.degree(0) == 2;
+		// degree in the second variable
+		assert poly1.degree(1) == 1;
+
+		// this poly differs from poly2 since now "a" is "the second"
+		// variable and "b" is "the first"
+		MultivariatePolynomial<BigInteger> poly3 = MultivariatePolynomial.parse("a^2 + a*b", "b", "a");
+		assert !poly3.equals(poly2);
+		// swap the first and the second variables and the result is equal to poly2
+		assert AMultivariatePolynomial.swapVariables(poly3, 0, 1).equals(poly2);
+
+
+		// the default toString() will use the default
+		// variables "a", "b", "c"  and so on (alphabetical)
+		// the result will be "a*b + a^2"
+		System.out.println(poly1);
+		// specify which variable names use for printing
+		// the result will be "x*y + x^2"
+		System.out.println(poly1.toString(new String[]{"x", "y"}));
+		// the result will be "y*x + y^2"
+		System.out.println(poly1.toString(new String[]{"y", "x"}));
+
+
+With Scala DSL the information about string names of variables may be stored in the ring instance:
+
+.. tabs::
+
+	.. code-tab:: scala
+
+	    // "x" is the first variable "y" is the second
+	    val ring = MultivariateRing(Z, Array("x", "y"))
+	    // parse polynomial
+	    val poly = ring("x^2 + x*y")
+	    // the result will be "x*y + x^2"
+	    println(ring show poly)
+
+
+The second general note about implementation of polynomials is that polynomial instances are in general mutable. Methods which may modify the instance are available in Java API, while all math operations applied using Scala DSL (with operators ``+``, ``-`` etc.) are not modifier:
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		val ring = UnivariateRing(Z, "x")
+		val (p1, p2, p3) = ring("x", "x^2", "x^3")
+
+		// this WILL modify p1
+		p1.add(p2)
+		// this will NOT modify p2
+		p2.copy().add(p3)
+		// this will NOT modify p2
+		ring.add(p2, p3)
+		// this will NOT modify p2
+		p2 + p3
+
+	.. code-tab:: java
+
+		UnivariatePolynomial
+		        p1 = UnivariatePolynomial.parse("x", Z),
+		        p2 = UnivariatePolynomial.parse("x^2", Z),
+		        p3 = UnivariatePolynomial.parse("x^3", Z);
+
+		// this WILL modify p1
+		p1.add(p2);
+		// this will NOT modify p2
+		p2.copy().add(p3);
 
 
 .. _IPolynomial<PolyType>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/IPolynomial.java
 
-Scala DSL
-=========
+Univariate polynomials
+""""""""""""""""""""""
+
+|Rings| have two separate implementation of univariate polynomials:
+
+ - `UnivariatePolynomialZp64`_  --- univariate polynomials over :math:`Z_p` with :math:`p < 2^{64}`. Implementation of `UnivariatePolynomialZp64`_ uses specifically optimized data structure and efficient algorithms for arithmetics in :math:`Z_p` (see :ref:`ref-machine-arithmetic`)
+ - `UnivariatePolynomial<E>`_ --- univariate polynomials over generic coefficient ring `Ring<E>`_
+
+Internally both implementations use dense data structure (array of coefficients) and Karatsuba's algrotithm (Sec. 8.1 in [vzGG03]_) for multiplication.
+
+
+Division with remainder
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Division with remainder is implemented in `UnivariateDivision`_ class. There two algorithms: plain division (Sec. 11 in [vzGG03]_)
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		import syntax._
+
+		implicit val ring = UnivariateRingZp64(17, "x")
+		// some random divider
+		val divider = ring.randomElement()
+		// some random dividend
+		val dividend = 1 + 2 * divider + 3 * divider.pow(2)
+
+		// quotient and remainder using built-in methods
+		val (divPlain, remPlain) = dividend /% divider
+
+		// precomputed Newton inverses, need to calculate it only once
+		implicit val invMod = divider.precomputedInverses
+		// quotient and remainder computed using fast
+		// algorithm with precomputed Newton inverses
+		val (divFast, remFast) = dividend /%% divider
+
+		// results are the same
+		assert((divPlain, remPlain) == (divFast, remFast))
+
+	.. code-tab:: java
+
+		UnivariateRing<UnivariatePolynomialZp64> ring = UnivariateRingZp64(17);
+		// some random divider
+		UnivariatePolynomialZp64 divider = ring.randomElement();
+		// some random dividend
+		UnivariatePolynomialZp64 dividend = ring.add(
+		        ring.valueOf(1),
+		        ring.multiply(ring.valueOf(2), divider),
+		        ring.multiply(ring.valueOf(3), ring.pow(divider, 2)));
+
+		// quotient and remainder using built-in methods
+		UnivariatePolynomialZp64[] divRemPlain
+		        = UnivariateDivision.divideAndRemainder(dividend, divider, true);
+
+		// precomputed Newton inverses, need to calculate it only once
+		UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod
+		        = UnivariateDivision.fastDivisionPreConditioning(divider);
+		// quotient and remainder computed using fast
+		// algorithm with precomputed Newton inverses
+
+		UnivariatePolynomialZp64[] divRemFast
+		        = UnivariateDivision.divideAndRemainderFast(dividend, divider, invMod, true);
+
+		// results are the same
+		assert Arrays.equals(divRemPlain, divRemFast);
+
+
+Univariate GCD
+^^^^^^^^^^^^^^
+
+
+Univariate interpolation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Univariate factorization
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Testing irreducibility 
+^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+.. _UnivariatePolynomialZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.java
+
+.. _UnivariatePolynomial<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomial.java
+
+.. _UnivariateDivision: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java
+
+
+Multivariate polynomials
+""""""""""""""""""""""""

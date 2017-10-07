@@ -1,38 +1,35 @@
 package cc.redberry.rings
 
-import java.util.Comparator
-
-import cc.redberry.rings.bigint.BigInteger
-
 /**
   *
   * @since 1.0
   */
 package object scaladsl extends Predef {
 
-  type Ordering = Comparator[DegreeVector[_]]
-  type Integer = BigInteger
+  type Ordering = java.util.Comparator[DegreeVector[_]]
+  type Integer = bigint.BigInteger
 
-  type IPolynomial[P <: cc.redberry.rings.poly.IPolynomial[P]]
-  = cc.redberry.rings.poly.IPolynomial[P]
-  type IUnivariatePolynomial[P <: cc.redberry.rings.poly.univar.IUnivariatePolynomial[P]]
-  = cc.redberry.rings.poly.univar.IUnivariatePolynomial[P]
+  type IPolynomial[P <: poly.IPolynomial[P]]
+  = poly.IPolynomial[P]
+  type IUnivariatePolynomial[P <: poly.univar.IUnivariatePolynomial[P]]
+  = poly.univar.IUnivariatePolynomial[P]
 
-  type UnivariatePolynomial[E] = cc.redberry.rings.poly.univar.UnivariatePolynomial[E]
-  type UnivariatePolynomialZp64 = cc.redberry.rings.poly.univar.UnivariatePolynomialZp64
+  type UnivariatePolynomial[E] = poly.univar.UnivariatePolynomial[E]
+  type UnivariatePolynomialZp64 = poly.univar.UnivariatePolynomialZp64
+  type PrecomputedInverse[Poly <: IUnivariatePolynomial[Poly]] = poly.univar.UnivariateDivision.InverseModMonomial[Poly]
 
-  type DegreeVector[E <: cc.redberry.rings.poly.multivar.DegreeVector[E]] = cc.redberry.rings.poly.multivar.DegreeVector[E]
-  type MonomialZp64 = cc.redberry.rings.poly.multivar.MonomialZp64
-  type Monomial[E] = cc.redberry.rings.poly.multivar.Monomial[E]
+  type DegreeVector[E <: poly.multivar.DegreeVector[E]] = poly.multivar.DegreeVector[E]
+  type MonomialZp64 = poly.multivar.MonomialZp64
+  type Monomial[E] = poly.multivar.Monomial[E]
 
   type AMultivariatePolynomial[
-  T <: cc.redberry.rings.poly.multivar.DegreeVector[T],
-  P <: cc.redberry.rings.poly.multivar.AMultivariatePolynomial[T, P]]
-  = cc.redberry.rings.poly.multivar.AMultivariatePolynomial[T, P]
-  type MultivariatePolynomial[E] = cc.redberry.rings.poly.multivar.MultivariatePolynomial[E]
-  type MultivariatePolynomialZp64 = cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64
+  T <: poly.multivar.DegreeVector[T],
+  P <: poly.multivar.AMultivariatePolynomial[T, P]]
+  = poly.multivar.AMultivariatePolynomial[T, P]
+  type MultivariatePolynomial[E] = poly.multivar.MultivariatePolynomial[E]
+  type MultivariatePolynomialZp64 = poly.multivar.MultivariatePolynomialZp64
 
-  type FactorDecomposition[P <: IPolynomial[P]] = cc.redberry.rings.poly.FactorDecomposition[P]
+  type FactorDecomposition[P <: IPolynomial[P]] = poly.FactorDecomposition[P]
 
   private[scaladsl] trait LowPrioritySyntax
     extends PolynomialSetSyntax

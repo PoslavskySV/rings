@@ -7,6 +7,7 @@ import cc.redberry.rings.poly.multivar._
 import cc.redberry.rings.poly.univar._
 import cc.redberry.rings.primes.SmallPrimes
 import org.apache.commons.math3.random.{Well1024a, Well44497a}
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.junit.Assert.{assertEquals, assertFalse, assertNotEquals, assertTrue}
 import org.junit.{Assert, Test}
 
@@ -641,10 +642,65 @@ class SyntaxTest {
 
   @Test
   def monomials: Unit = {
-    import syntax._
     implicit val ring = MultivariateRingZp64(3, Array("x", "y", "z"))
 
     val m1 = MonomialZp64(3, "x" -> 1, "y" -> 2)
     val m2 = MonomialZp64(3, "x" -> 1, "y" -> 3)
   }
+
+  @Test
+  def integers1: Unit = {
+    import syntax._
+
+    val ring = Zp(2)
+    val a = ring("2")
+    val b = ring("3")
+    assertEquals(ring(5), a + b)
+
+    implicit val implicitRing = ring
+    assertEquals(ring(1), a + b)
+  }
+
+  @Test
+  def testUnivariateRingOps2: Unit = {
+    import syntax._
+
+    val ring = UnivariateRingZp64(17, "x")
+
+    val divider = ring("1 + x + x^2 + x^3").pow(15)
+    val list = (1 until 1000)
+      .map(_ => ring.randomElement(divider.degree() * 3 / 2, divider.degree() * 2, new Well1024a()))
+
+    // precomputed Newton inverses
+    implicit val invMod: PrecomputedInverse[UnivariatePolynomialZp64] = divider.precomputedInverses
+
+    var (timePlain, timeFast) = (new DescriptiveStatistics(), new DescriptiveStatistics())
+
+    var counter = 0
+    for (el <- list) {
+      counter += 1
+      if (counter == list.length / 10) {
+        timePlain.clear()
+        timeFast.clear()
+      }
+
+      var start = System.nanoTime()
+      // quotient and remainder using built-in methods
+      val divRemPlain = el /% divider
+      timePlain .addValue(  System.nanoTime() - start )
+
+
+      start = System.nanoTime()
+      // quotient and remainder computed using fast
+      // algorithm with Newton iterations
+      val divRemFast = el /%% divider
+      timeFast .addValue(  System.nanoTime() - start )
+
+      assert(divRemPlain == divRemFast)
+    }
+
+    println(timePlain)
+    println(timeFast)
+  }
+
 }

@@ -1,6 +1,7 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
+import cc.redberry.rings.Rational
 
 class RingOps[E](self: E)(ring: Ring[E]) {
   private def constant(value: Int): E = ring.valueOf(value)
@@ -60,6 +61,8 @@ class RingOps[E](self: E)(ring: Ring[E]) {
 
   def ++ : E = ring.increment(self)
 
+  def unary_++ : E = ring.increment(self)
+
   def -- : E = ring.decrement(self)
 
   def gcd(other: E): E = ring.gcd(self, other)
@@ -95,6 +98,10 @@ trait RingSupport[E] {
 
 object RingSupport {
   implicit def polyRingSupport[Poly <: IPolynomial[Poly], E]: RingSupport[Poly] = ev => rings.Rings.PolynomialRing(ev)
+
+  implicit def rationalRingSupport[E]: RingSupport[Rational[E]] = ev => rings.Rings.Frac(ev.ring)
+
+  implicit def integersRingSupport: RingSupport[Integer] = _ => rings.Rings.Z
 }
 
 class PolynomialSetOps[Poly <: IPolynomial[Poly]](self: Poly) {
@@ -110,13 +117,13 @@ class PolynomialCfOps[Poly <: IPolynomial[Poly], E](self: Poly)(pRing: Polynomia
 
   def cc: E = pRing.cc(self)
 
-  def +(other: E): Poly = pRing.add(self, other)
+  def +(other: E): Poly = pRing.addConstant(self, other)
 
-  def -(other: E): Poly = pRing.subtract(self, other)
+  def -(other: E): Poly = pRing.subtractConstant(self, other)
 
-  def *(other: E): Poly = pRing.multiply(self, other)
+  def *(other: E): Poly = pRing.multiplyConstant(self, other)
 
-  def /(other: E): Poly = pRing.divide(self, other)
+  def /(other: E): Poly = pRing.divideConstant(self, other)
 
   def /%(other: E): (Poly, Poly) = pRing.divideAndRemainder(self, other)
 }
@@ -131,6 +138,18 @@ class UnivariateOps[Poly <: IUnivariatePolynomial[Poly]](self: Poly)(ring: Ring[
   def composition(poly: Poly): Poly = ring valueOf self.composition(poly)
 
   def @@(index: Int): Poly = ring valueOf self.getAsPoly(index)
+
+  def /%%(oth: Poly)(implicit inv: rings.poly.univar.UnivariateDivision.InverseModMonomial[Poly])
+  : (Poly, Poly) = {
+    val qd = rings.poly.univar.UnivariateDivision.divideAndRemainderFast(self, oth, inv, true)
+    (qd(0), qd(1))
+  }
+
+  def %%(oth: Poly)(implicit inv: rings.poly.univar.UnivariateDivision.InverseModMonomial[Poly])
+  : Poly = rings.poly.univar.UnivariateDivision.remainderFast(self, oth, inv, true)
+
+  def precomputedInverses: PrecomputedInverse[Poly]
+  = rings.poly.univar.UnivariateDivision.fastDivisionPreConditioningWithLCCorrection(self)
 }
 
 class UnivariateCfOps[Poly <: IUnivariatePolynomial[Poly], E](self: Poly)(pRing: IUnivariateRing[Poly, E]) {
@@ -172,11 +191,11 @@ class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynom
 }
 
 class CfOps[E, Poly <: IPolynomial[Poly]](self: E)(ring: PolynomialRing[Poly, E]) {
-  def +(poly: Poly): Poly = ring.add(poly, self)
+  def +(poly: Poly): Poly = ring.addConstant(poly, self)
 
-  def -(poly: Poly): Poly = ring.negate(ring.subtract(poly, self))
+  def -(poly: Poly): Poly = ring.negate(ring.subtractConstant(poly, self))
 
-  def *(poly: Poly): Poly = ring.multiply(poly, self)
+  def *(poly: Poly): Poly = ring.multiplyConstant(poly, self)
 }
 
 class IntegerOps[E](self: Int)(ring: Ring[E]) {
@@ -186,4 +205,3 @@ class IntegerOps[E](self: Int)(ring: Ring[E]) {
 
   def *(oth: E): E = ring.multiply(oth, ring valueOf self)
 }
-

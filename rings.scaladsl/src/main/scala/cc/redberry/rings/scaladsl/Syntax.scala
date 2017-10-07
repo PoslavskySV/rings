@@ -63,4 +63,3 @@ trait CfSyntax {
 trait IntegerSyntax {
   implicit def integerOps[E](self: Int)(implicit ring: Ring[E]) = new IntegerOps[E](self)(ring)
 }
-

@@ -1156,6 +1156,26 @@ public final class UnivariateDivision {
     }
 
     /**
+     * Returns {@code {quotient, remainder}} of {@code dividend} and {@code divider}
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @param copy     whether to clone {@code dividend}; if not, the remainder will be placed directly to {@code
+     *                 dividend} and {@code dividend} data will be lost
+     * @param invMod   precomputed Newton inverses
+     * @return {quotient, remainder} or {@code null} if the division is not possible
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IUnivariatePolynomial<Poly>> Poly[] divideAndRemainderFast(Poly dividend, Poly divider, InverseModMonomial<Poly> invMod, boolean copy) {
+        if (dividend instanceof UnivariatePolynomialZp64)
+            return (Poly[]) divideAndRemainderFast((UnivariatePolynomialZp64) dividend, (UnivariatePolynomialZp64) divider, (InverseModMonomial) invMod, copy);
+        else if (dividend instanceof UnivariatePolynomial)
+            return (Poly[]) divideAndRemainderFast((UnivariatePolynomial) dividend, (UnivariatePolynomial) divider, (InverseModMonomial) invMod, copy);
+        else
+            throw new RuntimeException(dividend.getClass().toString());
+    }
+
+    /**
      * Divides {@code dividend} by {@code divider} or throws {@code ArithmeticException} if exact division is not
      * possible
      *

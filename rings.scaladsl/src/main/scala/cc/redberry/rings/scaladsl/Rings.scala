@@ -32,10 +32,10 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
     **/
   override def parse(string: String): E = theRing parse string
 
-  /**
-    * Parse polynomial
-    */
+  /** Parse */
   final def apply(string: String): E = parse(string)
+
+  final def apply(int: Int): E = theRing.valueOf(int)
 
   final def apply(a: String, b: String): (E, E) = (parse(a), parse(b))
 
@@ -75,6 +75,8 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
   final def show(arg: Any): String = arg match {
     case obj: Array[_] =>
       obj.map(show).mkString("[", ",", "]")
+    case obj: Product =>
+      obj.productIterator.map(show).mkString("(", ",", ")")
     case obj: Traversable[_] =>
       obj.map(show).toString
     case obj: FactorDecomposition[_] =>
@@ -206,22 +208,22 @@ abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
   /**
     * Add coefficient ring element
     */
-  def add(poly: Poly, el: E): Poly
+  def addConstant(poly: Poly, el: E): Poly
 
   /**
     * Subtract coefficient ring element
     */
-  def subtract(poly: Poly, el: E): Poly
+  def subtractConstant(poly: Poly, el: E): Poly
 
   /**
     * Multiply by coefficient ring element
     */
-  def multiply(poly: Poly, el: E): Poly
+  def multiplyConstant(poly: Poly, el: E): Poly
 
   /**
     * Divide by coefficient ring element
     */
-  def divide(poly: Poly, el: E): Poly
+  def divideConstant(poly: Poly, el: E): Poly
 
   /**
     * Divide by coefficient ring element
@@ -297,25 +299,25 @@ final case class GaloisField64
   /**
     * Add coefficient ring element
     */
-  override def add(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def addConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().add(el)
 
   /**
     * Subtract coefficient ring element
     */
-  override def subtract(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def subtractConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().subtract(el)
 
   /**
     * Multiply by coefficient ring element
     */
-  override def multiply(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def multiplyConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().multiply(el)
 
   /**
     * Divide by coefficient ring element
     */
-  override def divide(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def divideConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().divide(el)
 
   /**
@@ -398,25 +400,25 @@ final case class GaloisField[E]
   /**
     * Add coefficient ring element
     */
-  override def add(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def addConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().add(el)
 
   /**
     * Subtract coefficient ring element
     */
-  override def subtract(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def subtractConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().subtract(el)
 
   /**
     * Multiply by coefficient ring element
     */
-  override def multiply(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def multiplyConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().multiply(el)
 
   /**
     * Divide by coefficient ring element
     */
-  override def divide(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def divideConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().divideExact(el)
 
   /**
@@ -513,25 +515,25 @@ final case class UnivariateRingZp64 private(coefficientDomain: IntegersZp64, ove
   /**
     * Add coefficient ring element
     */
-  override def add(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def addConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().add(el)
 
   /**
     * Subtract coefficient ring element
     */
-  override def subtract(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def subtractConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().subtract(el)
 
   /**
     * Multiply by coefficient ring element
     */
-  override def multiply(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def multiplyConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().multiply(el)
 
   /**
     * Divide by coefficient ring element
     */
-  override def divide(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
+  override def divideConstant(poly: UnivariatePolynomialZp64, el: Long): UnivariatePolynomialZp64
   = poly.copy().divide(el)
 
   /**
@@ -614,25 +616,25 @@ final case class UnivariateRing[E](coefficientDomain: Ring[E], override val vari
   /**
     * Add coefficient ring element
     */
-  override def add(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def addConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().add(el)
 
   /**
     * Subtract coefficient ring element
     */
-  override def subtract(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def subtractConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().subtract(el)
 
   /**
     * Multiply by coefficient ring element
     */
-  override def multiply(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def multiplyConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().multiply(el)
 
   /**
     * Divide by coefficient ring element
     */
-  override def divide(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
+  override def divideConstant(poly: UnivariatePolynomial[E], el: E): UnivariatePolynomial[E]
   = poly.copy().divideExact(el)
 
   /**
@@ -711,25 +713,25 @@ final case class MultivariateRingZp64
   /**
     * Add coefficient ring element
     */
-  override def add(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
+  override def addConstant(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
   = poly.copy().add(el)
 
   /**
     * Subtract coefficient ring element
     */
-  override def subtract(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
+  override def subtractConstant(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
   = poly.copy().subtract(el)
 
   /**
     * Multiply by coefficient ring element
     */
-  override def multiply(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
+  override def multiplyConstant(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
   = poly.copy().multiply(el)
 
   /**
     * Divide by coefficient ring element
     */
-  override def divide(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
+  override def divideConstant(poly: MultivariatePolynomialZp64, el: Long): MultivariatePolynomialZp64
   = poly.copy().divide(el)
 
   /**
@@ -815,25 +817,25 @@ final case class MultivariateRing[E]
   /**
     * Add coefficient ring element
     */
-  override def add(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
+  override def addConstant(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
   = poly.copy().add(el)
 
   /**
     * Subtract coefficient ring element
     */
-  override def subtract(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
+  override def subtractConstant(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
   = poly.copy().subtract(el)
 
   /**
     * Multiply by coefficient ring element
     */
-  override def multiply(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
+  override def multiplyConstant(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
   = poly.copy().multiply(el)
 
   /**
     * Divide by coefficient ring element
     */
-  override def divide(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
+  override def divideConstant(poly: MultivariatePolynomial[E], el: E): MultivariatePolynomial[E]
   = poly.copy().divideExact(el)
 
   /**
