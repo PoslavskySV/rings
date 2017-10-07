@@ -557,7 +557,10 @@ Univariate polynomials
  - `UnivariatePolynomialZp64`_  --- univariate polynomials over :math:`Z_p` with :math:`p < 2^{64}`. Implementation of `UnivariatePolynomialZp64`_ uses specifically optimized data structure and efficient algorithms for arithmetics in :math:`Z_p` (see :ref:`ref-machine-arithmetic`)
  - `UnivariatePolynomial<E>`_ --- univariate polynomials over generic coefficient ring `Ring<E>`_
 
-Internally both implementations use dense data structure (array of coefficients) and Karatsuba's algrotithm (Sec. 8.1 in [vzGG03]_) for multiplication.
+Internally both implementations use dense data structure (array of coefficients) and Karatsuba's algrotithm (Sec. 8.1 in [vzGG03]_) for multiplication. 
+
+ - `JavaDoc`_
+ - `JavaDoc`_
 
 
 Division with remainder
@@ -620,16 +623,35 @@ Division with remainder is implemented in `UnivariateDivision`_ class. There two
 Univariate GCD
 ^^^^^^^^^^^^^^
 
-
-Univariate interpolation
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 Univariate factorization
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Testing irreducibility 
 ^^^^^^^^^^^^^^^^^^^^^^
+
+Univariate interpolation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+
+
+Multivariate polynomials
+""""""""""""""""""""""""
+
+
+Division with remainders
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multivariate GCD
+^^^^^^^^^^^^^^^^
+
+Multivariate factorization
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Multivariate Interpolation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 
 
