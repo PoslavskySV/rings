@@ -453,7 +453,7 @@ object GF {
     * Create Galois field with cardinality `modulus ^ exponent` represented by univariate polynomials with
     * specified variable
     */
-  def apply(modulus: Long, exponent: Int, variable: String)
+  def apply(modulus: Long, exponent: Int, variable: String = "z")
   = GaloisField64(rings.Rings.GF(modulus, exponent), variable)
 
   /**
@@ -462,13 +462,6 @@ object GF {
     */
   def apply(irreducible: UnivariatePolynomialZp64, variable: String)
   = GaloisField64(rings.Rings.GF(irreducible), variable)
-
-  /**
-    * Create Galois field with cardinality `modulus ^ exponent` represented by univariate polynomials with
-    * specified variable
-    */
-  def apply(modulus: Integer, exponent: Int, variable: String)
-  = GaloisField[Integer](rings.Rings.GF(modulus, exponent), variable)
 
   /**
     * Create Galois field with cardinality `modulus ^ exponent` represented by univariate polynomials with

@@ -3,6 +3,7 @@ package cc.redberry.rings;
 import cc.redberry.libdivide4j.FastDivision.*;
 import cc.redberry.rings.poly.MachineArithmetic;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.Well44497b;
 
 import static cc.redberry.libdivide4j.FastDivision.*;
 
@@ -127,6 +128,15 @@ public final class IntegersZp64 implements java.io.Serializable {
      */
     public long randomElement(RandomGenerator rnd) {
         return modulus(rnd.nextLong());
+    }
+
+    /**
+     * Returns a random element from this ring
+     *
+     * @return random element from this ring
+     */
+    public long randomElement() {
+        return randomElement(new Well44497b(System.nanoTime()));
     }
 
     /**

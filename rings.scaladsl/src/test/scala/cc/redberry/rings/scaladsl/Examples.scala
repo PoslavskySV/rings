@@ -1,9 +1,11 @@
 package cc.redberry.rings.scaladsl
 
+import cc.redberry.rings
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial
 import org.junit.Test
 
 import scala.language.postfixOps
+import scala.util.Random
 
 /**
   *
@@ -13,6 +15,7 @@ import scala.language.postfixOps
 class Examples {
   @Test
   def test1: Unit = {
+
     import syntax._
     // when parsing "x" will be considered as the "first variable"
     // and "y" as "the second" => in the result the particular
@@ -127,24 +130,176 @@ class Examples {
 
   @Test
   def test7: Unit = {
-import syntax._
+    import syntax._
 
-implicit val ring = UnivariateRingZp64(17, "x")
-// some random divider
-val divider = ring.randomElement()
-// some random dividend
-val dividend = 1 + 2 * divider + 3 * divider.pow(2)
+    implicit val ring = UnivariateRingZp64(17, "x")
+    // some random divider
+    val divider = ring.randomElement()
+    // some random dividend
+    val dividend = 1 + 2 * divider + 3 * divider.pow(2)
 
-// quotient and remainder using built-in methods
-val (divPlain, remPlain) = dividend /% divider
+    // quotient and remainder using built-in methods
+    val (divPlain, remPlain) = dividend /% divider
 
-// precomputed Newton inverses, need to calculate it only once
-implicit val invMod: PrecomputedInverse[UnivariatePolynomialZp64] = divider.precomputedInverses
-// quotient and remainder computed using fast
-// algorithm with precomputed Newton inverses
-val (divFast, remFast) = dividend /%% divider
+    // precomputed Newton inverses, need to calculate it only once
+    implicit val invMod: PrecomputedInverse[UnivariatePolynomialZp64] = divider.precomputedInverses
+    // quotient and remainder computed using fast
+    // algorithm with precomputed Newton inverses
+    val (divFast, remFast) = dividend /%% divider
 
-// result is the same
-assert((divPlain, remPlain) == (divFast, remFast))
+    // result is the same
+    assert((divPlain, remPlain) == (divFast, remFast))
+  }
+
+  @Test
+  def test8: Unit = {
+    import rings.poly.univar.UnivariateGCD._
+    import syntax._
+
+    // Polynomials over field
+    val ringZp = UnivariateRingZp64(17, "x")
+    val a = ringZp("1 + 3*x + 2*x^2")
+    val b = ringZp("1 - x^2")
+    // Euclid and Half-GCD algorithms for polynomials over field
+    assert(EuclidGCD(a, b) == HalfGCD(a, b))
+    // Extended Euclidean algorithm
+    val (gcd, s, t) = ExtendedEuclidGCD(a, b) match {
+      case Array(gcd, s, t) => (gcd, s, t)
+    }
+    assert(a * s + b * t == gcd)
+    // Extended Half-GCD algorithm
+    val (gcd1, s1, t1) = ExtendedHalfGCD(a, b) match {
+      case Array(gcd, s, t) => (gcd, s, t)
+    }
+    assert((gcd1, s1, t1) == (gcd, s, t))
+
+
+    // Polynomials over Z
+    val ringZ = UnivariateRing(Z, "x")
+    val aZ = ringZ("1 + 3*x + 2*x^2")
+    val bZ = ringZ("1 - x^2")
+    // GCD for polynomials over Z
+    assert(ModularGCD(aZ, bZ) == ringZ("1 + x"))
+
+    // Bivariate polynomials represented as Z[y][x]
+    val ringXY = UnivariateRing(UnivariateRing(Z, "y"), "x")
+    val aXY = ringXY("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2")
+    val bXY = ringXY("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2")
+    // Subresultant sequence
+    val subResultants = SubresultantRemainders(aXY, bXY)
+    // The GCD
+    val gcdXY = subResultants.gcd.primitivePart
+    assert(aXY % gcdXY === 0 && bXY % gcdXY === 0)
+  }
+
+
+  @Test
+  def test9: Unit = {
+    import rings.poly.PolynomialMethods._
+    import rings.poly.univar.UnivariateSquareFreeFactorization._
+    import rings.scaladsl.syntax._
+
+    // ring GF(13^5)[x] (coefficient domain is finite field)
+    val ringF = UnivariateRing(GF(13, 5, "z"), "x")
+    // some random polynomial composed from some factors
+    val polyF = ringF.randomElement() * ringF.randomElement() * ringF.randomElement().pow(10)
+    // perform square-free factorization
+    println(ringF show SquareFreeFactorization(polyF))
+    // perform complete factorization
+    println(ringF show Factor(polyF))
+
+
+    // ring Q[x]
+    val ringQ = UnivariateRing(Q, "x")
+    // some random polynomial composed from some factors
+    val polyQ = ringQ.randomElement() * ringQ.randomElement() * ringQ.randomElement().pow(10)
+    // perform square-free factorization
+    println(ringQ show SquareFreeFactorization(polyQ))
+    // perform complete factorization
+    println(ringQ show Factor(polyQ))
+  }
+
+
+  @Test
+  def test10: Unit = {
+    import rings.poly.univar.IrreduciblePolynomials._
+    val random = new Random()
+
+    // random irreducible polynomial in Z/2[x] of degree 10
+    val poly1: UnivariatePolynomialZp64 = randomIrreduciblePolynomial(2, 10, random)
+    assert(poly1.degree() == 10)
+    assert(irreducibleQ(poly1))
+
+    // random irreducible polynomial in Z/2[x] of degree 10
+    val poly2: UnivariatePolynomial[Integer] = randomIrreduciblePolynomial(Zp(2).theRing, 10, random)
+    assert(poly2.degree() == 10)
+    assert(irreducibleQ(poly2))
+
+    // random irreducible polynomial in GF(11^15)[x] of degree 10
+    val poly3: UnivariatePolynomial[UnivariatePolynomialZp64] = randomIrreduciblePolynomial(GF(11, 15).theRing, 10, random)
+    assert(poly3.degree() == 10)
+    assert(irreducibleQ(poly3))
+
+    // random irreducible polynomial in Z[x] of degree 10
+    val poly4: UnivariatePolynomial[Integer] = randomIrreduciblePolynomialOverZ(10, random)
+    assert(poly4.degree() == 10)
+    assert(irreducibleQ(poly4))
+  }
+
+  @Test
+  def test11: Unit = {
+    import rings.poly.univar.UnivariateInterpolation._
+
+    // points
+    val points = Array(1L, 2L, 3L, 12L)
+    // values
+    val values = Array(3L, 2L, 1L, 6L)
+
+    val result = new InterpolationZp64(Zp64(17))
+      .update(points, values)
+      .getInterpolatingPolynomial
+
+    assert(points.zipWithIndex.forall { case (point, i) => result.evaluate(point) == values(i) })
+
+  }
+
+
+  @Test
+  def test12: Unit = {
+
+    /*  Lagrange interpolation formula */
+    def lagrange[Poly <: IUnivariatePolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: IUnivariateRing[Poly, E]) = {
+      import syntax._
+      points.indices
+        .foldLeft(ring getZero) { case (sum, i) =>
+          sum + points.indices
+            .filter(_ != i)
+            .foldLeft(ring getConstant values(i)) { case (product, j) =>
+              implicit val cfRing = ring.cfRing
+              val E: E = points(i) - points(j)
+              product * (ring.`x` - points(j)) / E
+            }
+        }
+    }
+
+    import rings.poly.univar.UnivariateInterpolation._
+    import syntax._
+
+    // coefficient ring GF(13, 5)
+    implicit val cfRing = GF(13, 5, "z")
+    val z = cfRing("z")
+    // some points
+    val points = Array(1 + z, 2 + z, 3 + z, 12 + z)
+    // some values
+    val values = Array(3 + z, 2 + z, 1 + z, 6 + z)
+
+    // interpolate with Newton iterations
+    val withNewton = new Interpolation(cfRing)
+      .update(points, values)
+      .getInterpolatingPolynomial
+    // interpolate using Lagrange formula
+    val withLagrange = lagrange(points, values)(UnivariateRing(cfRing, "x"))
+    // results are the same
+    assert(withNewton == withLagrange)
   }
 }

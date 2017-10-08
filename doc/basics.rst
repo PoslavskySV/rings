@@ -1,3 +1,7 @@
+.. |br| raw:: html
+
+   <br/>
+
 .. _ref-basicconcepts:
 
 ==========
@@ -547,32 +551,36 @@ The second general note about implementation of polynomials is that polynomial i
 		p2.copy().add(p3);
 
 
+TODO polynomial API 
+
 .. _IPolynomial<PolyType>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/IPolynomial.java
 
 Univariate polynomials
 """"""""""""""""""""""
 
-|Rings| have two separate implementation of univariate polynomials:
+|Rings| have two separate implementations of univariate polynomials:
 
  - `UnivariatePolynomialZp64`_  --- univariate polynomials over :math:`Z_p` with :math:`p < 2^{64}`. Implementation of `UnivariatePolynomialZp64`_ uses specifically optimized data structure and efficient algorithms for arithmetics in :math:`Z_p` (see :ref:`ref-machine-arithmetic`)
  - `UnivariatePolynomial<E>`_ --- univariate polynomials over generic coefficient ring `Ring<E>`_
 
 Internally both implementations use dense data structure (array of coefficients) and Karatsuba's algrotithm (Sec. 8.1 in [vzGG03]_) for multiplication. 
 
- - `JavaDoc`_
- - `JavaDoc`_
-
+ 
 
 Division with remainder
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Division with remainder is implemented in `UnivariateDivision`_ class. There two algorithms: plain division (Sec. 11 in [vzGG03]_)
+There are several algorithms for division with remainder of univariate polynomials implemented in |Rings|:
+
+ - ``UnivariateDivision.divideAndRemainderClassic`` |br| Plain division
+ - ``UnivariateDivision.pseudoDivideAndRemainder`` |br| Plain pseudo division of polynomials over non-fields
+ - ``UnivariateDivision.divideAndRemainderFast`` |br| Fast division via Newton iterations (Sec. 11 in [vzGG03]_)
+
+The upper-level methods ``UnivariateDivision.divideAndRemainder`` switches between plain and fast division depending on the input. The algorithm with Newton iterations allows to precompute Newton inverses for the divider and then use it for divisions by that divider. This allows to achieve considerable performance boost when need to do several divisions with a fixed divider (e.g. for implementation of Galois fields). Examples:
 
 .. tabs::
 
 	.. code-tab:: scala
-
-		import syntax._
 
 		implicit val ring = UnivariateRingZp64(17, "x")
 		// some random divider
@@ -612,7 +620,6 @@ Division with remainder is implemented in `UnivariateDivision`_ class. There two
 		        = UnivariateDivision.fastDivisionPreConditioning(divider);
 		// quotient and remainder computed using fast
 		// algorithm with precomputed Newton inverses
-
 		UnivariatePolynomialZp64[] divRemFast
 		        = UnivariateDivision.divideAndRemainderFast(dividend, divider, invMod, true);
 
@@ -620,21 +627,311 @@ Division with remainder is implemented in `UnivariateDivision`_ class. There two
 		assert Arrays.equals(divRemPlain, divRemFast);
 
 
+Details of implementation can be found in `UnivariateDivision`_.
+
+
 Univariate GCD
 ^^^^^^^^^^^^^^
+
+|Rings| have several algorithms for univariate GCD:
+
+ - ``UnivariateGCD.EuclidGCD`` and ``UnivariateGCD.ExtedndedEuclidGCD`` |br|  Euclidean algorithm (and its extended version)
+ - ``UnivariateGCD.HalfGCD`` and ``UnivariateGCD.ExtedndedHalfGCD`` |br|  Half-GCD (and its extended version) (Sec. 11 [vzGG03]_)
+ - ``UnivariateGCD.SubresultantRemainders`` |br|  Subresultant sequences (Sec. 7.3 in [GCL92]_)
+ - ``UnivariateGCD.ModularGCD`` |br|  Modular GCD (Sec. 6.7 in [vzGG03]_, small primes version)
+
+The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidean algorithm and Half-GCD for polynomials in :math:`F[x]` where :math:`F` is a finite field. For polynomials in :math:`Z[x]` and :math:`Q[x]` the modular algorithm is used (small primes version). In other cases algorithm with subresultant sequences is used. Examples:
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		import poly.univar.UnivariateGCD._
+
+		// Polynomials over field
+		val ringZp = UnivariateRingZp64(17, "x")
+		val a = ringZp("1 + 3*x + 2*x^2")
+		val b = ringZp("1 - x^2")
+		// Euclid and Half-GCD algorithms for polynomials over field
+		assert(EuclidGCD(a, b) == HalfGCD(a, b))
+		// Extended Euclidean algorithm
+		val (gcd, s, t) = ExtendedEuclidGCD(a, b) match {case Array(gcd, s, t) => (gcd, s, t)}
+		assert(a * s + b * t == gcd)
+		// Extended Half-GCD algorithm
+		val (gcd1, s1, t1) = ExtendedHalfGCD(a, b) match {case Array(gcd, s, t) => (gcd, s, t)}
+		assert((gcd1, s1, t1) == (gcd, s, t))
+
+
+		// Polynomials over Z
+		val ringZ = UnivariateRing(Z, "x")
+		val aZ = ringZ("1 + 3*x + 2*x^2")
+		val bZ = ringZ("1 - x^2")
+		// GCD for polynomials over Z
+		assert(ModularGCD(aZ, bZ) == ringZ("1 + x"))
+
+
+		// Bivariate polynomials represented as Z[y][x]
+		val ringXY = UnivariateRing(UnivariateRing(Z, "y"), "x")
+		val aXY = ringXY("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2")
+		val bXY = ringXY("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2")
+		// Subresultant sequence
+		val subResultants = SubresultantRemainders(aXY, bXY)
+		// The GCD
+		val gcdXY = subResultants.gcd.primitivePart
+		assert(aXY % gcdXY === 0 && bXY % gcdXY === 0)
+
+	.. code-tab:: java
+
+		// Polynomials over field
+		UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(1, 3, 2).modulus(17);
+		UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(1, 0, -1).modulus(17);
+		// Euclid and Half-GCD algorithms for polynomials over field
+		assert EuclidGCD(a, b).equals(HalfGCD(a, b));
+		// Extended Euclidean algorithm
+		UnivariatePolynomialZp64[] xgcd = ExtendedEuclidGCD(a, b);
+		assert a.copy().multiply(xgcd[1]).add(b.copy().multiply(xgcd[2])).equals(xgcd[0]);
+		// Extended Half-GCD algorithm
+		UnivariatePolynomialZp64[] xgcd1 = ExtendedHalfGCD(a, b);
+		assert Arrays.equals(xgcd, xgcd1);
+
+
+		// Polynomials over Z
+		UnivariatePolynomial<BigInteger> aZ = UnivariatePolynomial.create(1, 3, 2);
+		UnivariatePolynomial<BigInteger> bZ = UnivariatePolynomial.create(1, 0, -1);
+		// GCD for polynomials over Z
+		assert ModularGCD(aZ, bZ).equals(UnivariatePolynomial.create(1, 1));
+
+
+		// Bivariate polynomials represented as Z[y][x]
+		UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
+		        ringXY = UnivariateRing(UnivariateRing(Z));
+		UnivariatePolynomial<UnivariatePolynomial<BigInteger>>
+		        aXY = ringXY.parse("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2"),
+		        bXY = ringXY.parse("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2");
+		//// Subresultant sequence
+		PolynomialRemainders<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
+		        subResultants = SubresultantRemainders(aXY, bXY);
+		// The GCD
+		UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcdXY = subResultants.gcd().primitivePart();
+		assert UnivariateDivision.remainder(aXY, gcdXY, true).isZero();
+		assert UnivariateDivision.remainder(bXY, gcdXY, true).isZero();
+
+Details of implementation can be found in `UnivariateGCD`_.
+
 
 Univariate factorization
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Testing irreducibility 
+Implementation of univariate factorization in |Rings| is distributed over several classes:
+
+ - ``UnivariateSquareFreeFactorization`` |br| Square-free factorization of univariate polynomials. In the case of zero characteristic Yun's algorithm is used (Sec. 14.6 in [vzGG03]_), otherwise Musser's algorithm is used (Sec. 8.3 in [GCL92]_, [Mus71]_).
+ - ``DistinctDegreeFactorization`` |br| Distinct-degree factorization. Internally there are several algorithms: plain (Sec. 14.2 in [vzGG03]_), adapted version with precomputed :math:`x`-powers, and Victor Shoup's baby-step giant-step algorithm [Sho95]_. The upper-level method swithces between these algorithms depending on the input.
+ - ``EqualDegreeFactorization`` |br| Equal-degree factorization using Cantor-Zassenhaus algorithm in both odd and even characteristic (Sec. 14.3 in [vzGG03]_).
+ - ``UnivariateFactorization`` |br| Defines upper-level methods and implements factorization over :math:`Z`. In the latter case Hensel lifting (combined linear/quadratic) is used to lift factoization modulo some prime number to actual factorization over :math:`Z` and naive recombination to reconstruct correct factors. Examples:
+   
+Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field or :math:`Z` or :math:`Q`. Examples:
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		// ring GF(13^5)[x] (coefficient domain is finite field)
+		val ringF = UnivariateRing(GF(13, 5, "z"), "x")
+		// some random polynomial composed from some factors
+		val polyF = ringF.randomElement() * ringF.randomElement() * ringF.randomElement().pow(10)
+		// perform square-free factorization
+		println(ringF show FactorSquareFree(polyF))
+		// perform complete factorization
+		println(ringF show Factor(polyF))
+
+
+		// ring Q[x]
+		val ringQ = UnivariateRing(Q, "x")
+		// some random polynomial composed from some factors
+		val polyQ = ringQ.randomElement() * ringQ.randomElement() * ringQ.randomElement().pow(10)
+		// perform square-free factorization
+		println(ringQ show FactorSquareFree(polyQ))
+		// perform complete factorization
+		println(ringQ show Factor(polyQ))
+
+	.. code-tab:: java
+
+		// ring GF(13^5)[x] (coefficient domain is finite field)
+		UnivariateRing<UnivariatePolynomial<UnivariatePolynomialZp64>> ringF = UnivariateRing(GF(13, 5));
+		// some random polynomial composed from some factors
+		UnivariatePolynomial<UnivariatePolynomialZp64> polyF = ringF.randomElement().multiply(ringF.randomElement().multiply(polyPow(ringF.randomElement(), 10)));
+
+		// perform square-free factorization
+		System.out.println(FactorSquareFree(polyF));
+		// perform complete factorization
+		System.out.println(Factor(polyF));
+
+
+		// ring Q[x]
+		UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> ringQ = UnivariateRing(Q);
+		// some random polynomial composed from some factors
+		UnivariatePolynomial<Rational<BigInteger>> polyQ = ringQ.randomElement().multiply(ringQ.randomElement().multiply(polyPow(ringQ.randomElement(), 10)));
+		// perform square-free factorization
+		System.out.println(FactorSquareFree(polyQ));
+		// perform complete factorization
+		System.out.println(Factor(polyQ));
+
+The details about implementation can be found in `UnivariateSquareFreeFactorization`_, `DistinctDegreeFactorization`_, `EqualDegreeFactorization`_ and `UnivariateFactorization`_.
+
+.. _UnivariateSquareFreeFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java
+.. _DistinctDegreeFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java
+.. _EqualDegreeFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/EqualDegreeFactorization.java
+.. _UnivariateFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java
+
+
+
+Testing irreducibility
 ^^^^^^^^^^^^^^^^^^^^^^
+
+Irreducibility test and generation of random irreducible polynomials are availble from ``IrreduciblePolynomials``. For irreducibility testing of polynomials over finite fields the algorithm described in Sec. 14.9 in [vzGG03]_ is used. Methods implemented in ``IrreduciblePolynomials`` are used for construction of arbitrary Galois fields. Examples:
+
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		import rings.poly.univar.IrreduciblePolynomials._
+		val random = new Random()
+
+		// random irreducible polynomial in Z/2[x] of degree 10 (UnivariatePolynomialZp64)
+		val poly1 = randomIrreduciblePolynomial(2, 10, random)
+		assert(poly1.degree() == 10)
+		assert(irreducibleQ(poly1))
+
+		// random irreducible polynomial in Z/2[x] of degree 10 (UnivariatePolynomial[Integer])
+		val poly2 = randomIrreduciblePolynomial(Zp(2).theRing, 10, random)
+		assert(poly2.degree() == 10)
+		assert(irreducibleQ(poly2))
+
+		// random irreducible polynomial in GF(11^15)[x] of degree 10 (this may take few seconds)
+		val poly3 = randomIrreduciblePolynomial(GF(11, 15).theRing, 10, random)
+		assert(poly3.degree() == 10)
+		assert(irreducibleQ(poly3))
+
+		// random irreducible polynomial in Z[x] of degree 10
+		val poly4 = randomIrreduciblePolynomialOverZ(10, random)
+		assert(poly4.degree() == 10)
+		assert(irreducibleQ(poly4))
+
+	.. code-tab:: java
+
+		Well44497b random = new Well44497b();
+
+		// random irreducible polynomial in Z/2[x] of degree 10
+		UnivariatePolynomialZp64 poly1 = randomIrreduciblePolynomial(2, 10, random);
+		assert poly1.degree() == 10;
+		assert irreducibleQ(poly1);
+
+		// random irreducible polynomial in Z/2[x] of degree 10
+		UnivariatePolynomial<BigInteger> poly2 = randomIrreduciblePolynomial(Zp(2), 10, random);
+		assert poly2.degree() == 10;
+		assert irreducibleQ(poly2);
+
+		// random irreducible polynomial in GF(11^15)[x] of degree 10 (this may take few seconds)
+		UnivariatePolynomial<UnivariatePolynomialZp64> poly3 = randomIrreduciblePolynomial(GF(11, 15), 10, random);
+		assert poly3.degree() == 10;
+		assert irreducibleQ(poly3);
+
+		// random irreducible polynomial in Z[x] of degree 10
+		UnivariatePolynomial<BigInteger> poly4 = randomIrreduciblePolynomialOverZ(10, random);
+		assert poly4.degree() == 10;
+		assert irreducibleQ(poly4);
+
+
+The details about implementation can be found in  `IrreduciblePolynomials`_.
+
+
+.. _IrreduciblePolynomials: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java
+
+
 
 Univariate interpolation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+Polynomial interpolation via Newton method can be done in the following way:
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		import rings.poly.univar.UnivariateInterpolation._
+
+		// points
+		val points = Array(1L, 2L, 3L, 12L)
+		// values
+		val values = Array(3L, 2L, 1L, 6L)
+
+		// interpolate using Newton method
+		val result = new InterpolationZp64(Zp64(17))
+		  .update(points, values)
+		  .getInterpolatingPolynomial
+
+		// result.evaluate(points(i)) = values(i)
+		assert(points.zipWithIndex.forall { case (point, i) => result.evaluate(point) == values(i) })
 
 
+	.. code-tab:: java
 
+		// points
+		long[] points = {1L, 2L, 3L, 12L};
+		// values
+		long[] values = {3L, 2L, 1L, 6L};
+
+		// interpolate using Newton method
+		UnivariatePolynomialZp64 result = new InterpolationZp64(Zp64(17))
+		        .update(points, values)
+		        .getInterpolatingPolynomial();
+
+		// result.evaluate(points(i)) = values(i)
+		assert IntStream.range(0, points.length).allMatch(i -> result.evaluate(points[i]) == values[i]);
+
+
+With Scala DSL it is quite easy to implement Lagrange interpolation formula:
+
+
+.. tabs::
+
+	.. code-tab:: scala
+
+		/*  Lagrange interpolation formula */
+		def lagrange[Poly <: IUnivariatePolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: IUnivariateRing[Poly, E]) = {
+		  import syntax._
+		  points.indices
+		    .foldLeft(ring getZero) { case (sum, i) =>
+		      sum + points.indices
+		        .filter(_ != i)
+		        .foldLeft(ring getConstant values(i)) { case (product, j) =>
+		          implicit val cfRing = ring.cfRing
+		          val E: E = points(i) - points(j)
+		          product * (ring.`x` - points(j)) / E
+		        }
+		    }
+		}
+
+		import rings.poly.univar.UnivariateInterpolation._
+		import syntax._
+
+		// coefficient ring GF(13, 5)
+		implicit val cfRing = GF(13, 5, "z")
+		val z = cfRing("z")
+		// some points
+		val points = Array(1 + z, 2 + z, 3 + z, 12 + z)
+		// some values
+		val values = Array(3 + z, 2 + z, 1 + z, 6 + z)
+
+		// interpolate with Newton iterations
+		val withNewton = new Interpolation(cfRing)
+		  .update(points, values)
+		  .getInterpolatingPolynomial
+		// interpolate using Lagrange formula
+		val withLagrange = lagrange(points, values)(UnivariateRing(cfRing, "x"))
+		// results are the same
+		assert(withNewton == withLagrange)
 
 Multivariate polynomials
 """"""""""""""""""""""""
@@ -660,6 +957,8 @@ Multivariate Interpolation
 .. _UnivariatePolynomial<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomial.java
 
 .. _UnivariateDivision: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java
+
+.. _UnivariateGCD: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java
 
 
 Multivariate polynomials

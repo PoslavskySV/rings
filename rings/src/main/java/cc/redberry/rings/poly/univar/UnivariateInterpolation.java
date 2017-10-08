@@ -102,10 +102,9 @@ public final class UnivariateInterpolation {
      */
     public static UnivariatePolynomialZp64 interpolateNewton(IntegersZp64 ring, long[] points, long[] values) {
         checkInput(points, values);
-        InterpolationZp64 interpolation = new InterpolationZp64(ring);
-        for (int i = 0; i < points.length; i++)
-            interpolation.update(points[i], values[i]);
-        return interpolation.getInterpolatingPolynomial();
+        return new InterpolationZp64(ring)
+                .update(points, values)
+                .getInterpolatingPolynomial();
     }
 
     private static void checkInput(Object[] points, Object[] values) {
@@ -124,10 +123,9 @@ public final class UnivariateInterpolation {
      */
     public static <E> UnivariatePolynomial<E> interpolateNewton(Ring<E> ring, E[] points, E[] values) {
         checkInput(points, values);
-        Interpolation<E> interpolation = new Interpolation<>(ring);
-        for (int i = 0; i < points.length; i++)
-            interpolation.update(points[i], values[i]);
-        return interpolation.getInterpolatingPolynomial();
+        return new Interpolation<>(ring)
+                .update(points, values)
+                .getInterpolatingPolynomial();
     }
 
     /**
@@ -163,13 +161,13 @@ public final class UnivariateInterpolation {
          * @param point evaluation point
          * @param value polynomial value at {@code point}
          */
-        public void update(long point, long value) {
+        public InterpolationZp64 update(long point, long value) {
             if (points.isEmpty()) {
                 poly.multiply(value);
                 points.add(point);
                 values.add(value);
                 mixedRadix.add(value);
-                return;
+                return this;
             }
             long reciprocal = poly.subtract(point, points.get(0));
             long accumulator = mixedRadix.get(0);
@@ -187,6 +185,19 @@ public final class UnivariateInterpolation {
 
             points.add(point);
             values.add(value);
+            return this;
+        }
+
+        /**
+         * Updates interpolation, so that interpolating polynomial satisfies {@code interpolation[point] = value}
+         *
+         * @param points evaluation points
+         * @param values polynomial values at {@code points}
+         */
+        public InterpolationZp64 update(long[] points, long[] values) {
+            for (int i = 0; i < points.length; i++)
+                update(points[i], values[i]);
+            return this;
         }
 
         /**
@@ -251,13 +262,13 @@ public final class UnivariateInterpolation {
          * @param point evaluation point
          * @param value polynomial value at {@code point}
          */
-        public void update(E point, E value) {
+        public Interpolation<E> update(E point, E value) {
             if (points.isEmpty()) {
                 points.add(point);
                 values.add(value);
                 mixedRadix.add(value);
                 poly.multiply(value);
-                return;
+                return this;
             }
             E reciprocal = ring.subtract(point, points.get(0));
             E accumulator = mixedRadix.get(0);
@@ -275,6 +286,19 @@ public final class UnivariateInterpolation {
 
             points.add(point);
             values.add(value);
+            return this;
+        }
+
+        /**
+         * Updates interpolation, so that interpolating polynomial satisfies {@code interpolation[point] = value}
+         *
+         * @param points evaluation points
+         * @param values polynomial values at {@code points}
+         */
+        public Interpolation<E> update(E[] points, E[] values) {
+            for (int i = 0; i < points.length; i++)
+                update(points[i], values[i]);
+            return this;
         }
 
         /**

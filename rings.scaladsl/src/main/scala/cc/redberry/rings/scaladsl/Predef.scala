@@ -4,8 +4,10 @@ import cc.redberry.rings
 import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly.FiniteField
 import cc.redberry.rings.{IntegersZp64, Rational, poly}
+import org.apache.commons.math3.random.{AbstractRandomGenerator, RandomGenerator}
 
 import scala.language.implicitConversions
+import scala.util.Random
 
 /**
   *
@@ -25,6 +27,13 @@ private[scaladsl] trait Predef {
 
   implicit def asRingElement[E](v: Long)(implicit ring: Ring[E]) = ring.valueOf(v)
 
+  implicit def asRandomGenerator(rnd: Random): RandomGenerator = new randomGenerator(rnd)
+
+  private class randomGenerator(val random: Random) extends AbstractRandomGenerator {
+    override def nextDouble(): Double = random.nextDouble()
+
+    override def setSeed(seed: Long): Unit = random.setSeed(seed)
+  }
   /**
     * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
     */
@@ -76,6 +85,13 @@ private[scaladsl] trait Predef {
     * Field of rationals (Q)
     */
   val Q: Ring[Rational[BigInteger]] = rings.Rings.Q
+
+  /**
+    * Field of integers modulo `modulus`
+    *
+    * @param modulus the modulus
+    */
+  def Zp64(modulus: Long): rings.IntegersZp64 = rings.Rings.Zp64(modulus)
 
   /**
     * Field of integers modulo `modulus`
@@ -134,7 +150,7 @@ private[scaladsl] trait Predef {
     def apply[E](cf: E, exponents: Int*) = new Monomial[E](exponents.toArray, cf)
 
     def apply[E](cf: E, exponents: (String, Int)*)
-             (implicit ring: PolynomialRing[MultivariatePolynomial[E], E]) = {
+                (implicit ring: PolynomialRing[MultivariatePolynomial[E], E]) = {
       val exps: Array[Int] = new Array[Int](exponents.length)
       exponents.foreach(e => exps(ring.index(e._1)) = e._2)
       new Monomial[E](exps, cf)

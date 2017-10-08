@@ -1,14 +1,8 @@
 package cc.redberry.rings.poly;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
-import cc.redberry.rings.poly.multivar.MultivariateDivision;
-import cc.redberry.rings.poly.multivar.MultivariateFactorization;
-import cc.redberry.rings.poly.multivar.MultivariateGCD;
-import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
-import cc.redberry.rings.poly.univar.UnivariateDivision;
-import cc.redberry.rings.poly.univar.UnivariateFactorization;
-import cc.redberry.rings.poly.univar.UnivariateGCD;
+import cc.redberry.rings.poly.multivar.*;
+import cc.redberry.rings.poly.univar.*;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import java.util.stream.StreamSupport;
@@ -34,6 +28,23 @@ public final class PolynomialMethods {
             return (FactorDecomposition<Poly>) UnivariateFactorization.Factor((IUnivariatePolynomial) poly);
         else if (poly instanceof AMultivariatePolynomial)
             return (FactorDecomposition<Poly>) MultivariateFactorization.Factor((AMultivariatePolynomial) poly);
+        else
+            throw new RuntimeException();
+    }
+
+    /**
+     * Square-free factorization of polynomial.
+     *
+     * @param poly the polynomial
+     * @return irreducible square-free factor decomposition
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>>
+    FactorDecomposition<Poly> FactorSquareFree(Poly poly) {
+        if (poly instanceof IUnivariatePolynomial)
+            return (FactorDecomposition<Poly>) UnivariateSquareFreeFactorization.SquareFreeFactorization((IUnivariatePolynomial) poly);
+        else if (poly instanceof AMultivariatePolynomial)
+            return (FactorDecomposition<Poly>) MultivariateSquareFreeFactorization.SquareFreeFactorization((AMultivariatePolynomial) poly);
         else
             throw new RuntimeException();
     }

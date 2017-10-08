@@ -50,6 +50,13 @@ public final class Rings {
      *
      * @param modulus the modulus (arbitrary large)
      */
+    public static IntegersZp Zp(long modulus) {return new IntegersZp(modulus);}
+
+    /**
+     * Ring of integers modulo {@code modulus} (arbitrary large modulus)
+     *
+     * @param modulus the modulus (arbitrary large)
+     */
     public static IntegersZp Zp(BigInteger modulus) {return new IntegersZp(modulus);}
 
     /**
