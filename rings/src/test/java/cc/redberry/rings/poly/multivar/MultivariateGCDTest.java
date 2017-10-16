@@ -762,7 +762,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
         MultivariatePolynomialZp64 gcd1 = ZippelGCD(la1, lb1);
 
-        skeleton = skeleton.setDomain(la1.ring);
+        skeleton = skeleton.setRing(la1.ring);
         MultivariatePolynomialZp64 intrp = interpolateGCD(la1, lb1, skeleton, getRandom());
         assertEquals(gcd1.monic(), intrp.monic());
     }
@@ -812,11 +812,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 }
 
                 rnd.setSeed(seed = rnd.nextLong());
-                actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.ring), rnd);
+                actual = interpolateGCD(la1, lb1, skeleton.setRing(la1.ring), rnd);
                 if (actual == null) {
                     ++badEvaluations;
                     // bad evaluation point => try over
-                    actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.ring), rnd);
+                    actual = interpolateGCD(la1, lb1, skeleton.setRing(la1.ring), rnd);
                 }
                 assertEquals(gcd.monic(), actual.monic());
             } catch (Throwable thr) {
@@ -917,11 +917,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         System.out.println(gcd0.sameSkeletonQ(skeleton));
 
         rnd.setSeed(-7756222446675659124L);
-        MultivariatePolynomialZp64 actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.ring), rnd);
+        MultivariatePolynomialZp64 actual = interpolateGCD(la1, lb1, skeleton.setRing(la1.ring), rnd);
         if (actual == null) {
             System.out.println("bad evaluation");
             // bad evaluation point => try over
-            actual = interpolateGCD(la1, lb1, skeleton.setDomain(la1.ring), rnd);
+            actual = interpolateGCD(la1, lb1, skeleton.setRing(la1.ring), rnd);
         }
         assertEquals(gcd0.monic(), actual.monic());
     }
@@ -2213,7 +2213,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                         p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), domain, LEX, rnd);
 
                 // make coefficients small
-                p = p.setRing(66).setDomain(domain);
+                p = p.setRing(66).setRing(domain);
 
                 if (primitive)
                     p = MultivariatePolynomialZp64.asNormalMultivariate(p.asOverUnivariateEliminate(0).primitivePart(), 0);

@@ -5,16 +5,15 @@ Quick tour
 ==========
 
 
-The following imports will be in general enough for most examples in this documentation:
+The first step in |Rings| is to import the main modules: 
 
 .. tabs::
 
    .. code-tab:: scala
 
 		import cc.redberry.rings.poly.PolynomialMethods._
-		import cc.redberry.rings.scaladsl.Rings._
-		import cc.redberry.rings.scaladsl.implicits._
-
+		import cc.redberry.rings.scaladsl._
+		import syntax._
 
    .. code-tab:: java
 
@@ -23,8 +22,8 @@ The following imports will be in general enough for most examples in this docume
 		import cc.redberry.rings.poly.univar.*
 		import cc.redberry.rings.poly.multivar.*
 
-		import static cc.redberry.rings.poly.PolynomialMethods.*
 		import static cc.redberry.rings.Rings.*
+		import static cc.redberry.rings.poly.PolynomialMethods.*
 		
 
 
@@ -34,6 +33,9 @@ The following imports will be in general enough for most examples in this docume
 Univariate polynomial factorization
 ===================================
 
+Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field or :math:`Z` or :math:`Q`.
+
+----
 
 Factor polynomial in :math:`Z_{17}[x]`:
 

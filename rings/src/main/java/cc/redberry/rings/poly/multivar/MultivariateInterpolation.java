@@ -3,6 +3,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Ring;
+import cc.redberry.rings.poly.PolynomialRing;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
@@ -32,10 +33,9 @@ public final class MultivariateInterpolation {
     @SuppressWarnings("unchecked")
     public static <E> MultivariatePolynomial<E> interpolateNewton(int variable, E[] points, MultivariatePolynomial<E>[] values) {
         checkInput(points, values);
-        MultivariateInterpolation.Interpolation<E> interpolation = new MultivariateInterpolation.Interpolation<>(variable, points[0], values[0]);
-        for (int i = 1; i < points.length; i++)
-            interpolation.update(points[i], values[i]);
-        return interpolation.getInterpolatingPolynomial();
+        return new MultivariateInterpolation.Interpolation<>(variable, values[0])
+                .update(points, values)
+                .getInterpolatingPolynomial();
 //        int length = points.length;
 //
 //        // Newton's representation
@@ -106,8 +106,18 @@ public final class MultivariateInterpolation {
         public Interpolation(int variable, MultivariatePolynomial<E> factory) {
             this.variable = variable;
             this.lins = factory.createOne();
-            this.poly = factory.clone();
+            this.poly = factory.createOne();
             this.ring = poly.ring;
+        }
+
+        /**
+         * Start new interpolation
+         *
+         * @param variable interpolating variable
+         * @param factory  factory polynomial
+         */
+        public Interpolation(int variable, PolynomialRing<MultivariatePolynomial<E>> factory) {
+            this(variable, factory.factory());
         }
 
         /**
@@ -116,12 +126,13 @@ public final class MultivariateInterpolation {
          * @param point evaluation point
          * @param value polynomial value at {@code point}
          */
-        public void update(E point, MultivariatePolynomial<E> value) {
+        public Interpolation<E> update(E point, MultivariatePolynomial<E> value) {
             if (points.isEmpty()) {
+                poly.multiply(value);
                 points.add(point);
                 values.add(value);
                 mixedRadix.add(value.clone());
-                return;
+                return this;
             }
             E reciprocal = ring.subtract(point, points.get(0));
             MultivariatePolynomial<E> accumulator = mixedRadix.get(0).clone();
@@ -138,7 +149,21 @@ public final class MultivariateInterpolation {
 
             points.add(point);
             values.add(value);
+            return this;
         }
+
+        /**
+         * Updates interpolation, so that interpolating polynomial satisfies {@code interpolation[point] = value}
+         *
+         * @param points evaluation points
+         * @param values polynomial values at {@code point}
+         */
+        public Interpolation<E> update(E[] points, MultivariatePolynomial<E>[] values) {
+            for (int i = 0; i < points.length; i++)
+                update(points[i], values[i]);
+            return this;
+        }
+
 
         /**
          * Returns variable used in the interpolation
@@ -214,12 +239,42 @@ public final class MultivariateInterpolation {
         }
 
         /**
+         * Start new interpolation
+         *
+         * @param variable interpolating variable
+         * @param factory  factory polynomial
+         */
+        public InterpolationZp64(int variable, MultivariatePolynomialZp64 factory) {
+            this.variable = variable;
+            this.lins = factory.createOne();
+            this.poly = factory.createOne();
+            this.ring = poly.ring;
+        }
+
+        /**
+         * Start new interpolation
+         *
+         * @param variable interpolating variable
+         * @param factory  factory polynomial
+         */
+        public InterpolationZp64(int variable, PolynomialRing<MultivariatePolynomialZp64> factory) {
+            this(variable, factory.factory());
+        }
+
+        /**
          * Updates interpolation, so that interpolating polynomial satisfies {@code interpolation[point] = value}
          *
          * @param point evaluation point
          * @param value polynomial value at {@code point}
          */
-        public void update(long point, MultivariatePolynomialZp64 value) {
+        public InterpolationZp64 update(long point, MultivariatePolynomialZp64 value) {
+            if (points.isEmpty()) {
+                poly.multiply(value);
+                points.add(point);
+                values.add(value);
+                mixedRadix.add(value.clone());
+                return this;
+            }
             long reciprocal = ring.subtract(point, points.get(0));
             MultivariatePolynomialZp64 accumulator = mixedRadix.get(0).clone();
             for (int i = 1; i < points.size(); ++i) {
@@ -235,6 +290,19 @@ public final class MultivariateInterpolation {
 
             points.add(point);
             values.add(value);
+            return this;
+        }
+
+        /**
+         * Updates interpolation, so that interpolating polynomial satisfies {@code interpolation[point] = value}
+         *
+         * @param points evaluation points
+         * @param values polynomial values at {@code point}
+         */
+        public InterpolationZp64 update(long points[], MultivariatePolynomialZp64 values[]) {
+            for (int i = 0; i < points.length; i++)
+                update(points[i], values[i]);
+            return this;
         }
 
         /**

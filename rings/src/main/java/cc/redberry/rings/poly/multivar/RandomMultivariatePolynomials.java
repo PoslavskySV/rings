@@ -12,7 +12,6 @@ import java.util.Comparator;
 /**
  * Methods to generate random multivariate polynomials.
  *
-
  * @since 1.0
  */
 public final class RandomMultivariatePolynomials {
@@ -111,5 +110,23 @@ public final class RandomMultivariatePolynomials {
             terms[i] = new MonomialZp64(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
         }
         return MultivariatePolynomialZp64.create(nVars, ring, ordering, terms);
+    }
+
+    /**
+     * Generates random multivariate polynomial
+     *
+     * @param factory factory polynomial
+     * @param degree  maximal degree of the result
+     * @param size    number of elements in the result
+     * @param rnd     random source
+     * @return random polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly randomPolynomial(Poly factory, int degree, int size, RandomGenerator rnd) {
+        if (factory instanceof MultivariatePolynomialZp64)
+            return (Poly) randomPolynomial(((MultivariatePolynomialZp64) factory).nVariables, degree, size, ((MultivariatePolynomialZp64) factory).ring, ((MultivariatePolynomialZp64) factory).ordering, rnd);
+        else
+            return (Poly) randomPolynomial(((MultivariatePolynomial) factory).nVariables, degree, size, ((MultivariatePolynomial) factory).ring, ((MultivariatePolynomial) factory).ordering, rnd);
     }
 }

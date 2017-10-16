@@ -3,7 +3,9 @@ package cc.redberry.rings.poly;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.multivar.MultivariateDivision;
 import cc.redberry.rings.poly.multivar.MultivariateGCD;
+import cc.redberry.rings.poly.multivar.RandomMultivariatePolynomials;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.Well44497b;
 
 /**
  * Ring of multivariate polynomials.
@@ -53,6 +55,33 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
     @SuppressWarnings("unchecked")
     public Poly variable(int variable) {
         return factory.createMonomial(variable, 1);
+    }
+
+    /**
+     * Generates random multivariate polynomial
+     *
+     * @param degree maximal degree of the result
+     * @param size   number of elements in the result
+     * @param rnd    random source
+     * @return random polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public Poly randomElement(int degree, int size, RandomGenerator rnd) {
+        return (Poly) RandomMultivariatePolynomials.randomPolynomial((AMultivariatePolynomial) factory, degree, size, rnd);
+    }
+
+    private static final RandomGenerator privateRandom = new Well44497b(System.nanoTime());
+
+    /**
+     * Generates random multivariate polynomial
+     *
+     * @param degree maximal degree of the result
+     * @param size   number of elements in the result
+     * @return random polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public Poly randomElement(int degree, int size) {
+        return randomElement(degree, size, privateRandom);
     }
 
     /**

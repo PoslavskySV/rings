@@ -2,6 +2,7 @@ package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
 import cc.redberry.rings.Rational
+import cc.redberry.rings.poly.multivar.MultivariateDivision
 
 class RingOps[E](self: E)(ring: Ring[E]) {
   private def constant(value: Int): E = ring.valueOf(value)
@@ -61,8 +62,6 @@ class RingOps[E](self: E)(ring: Ring[E]) {
 
   def ++ : E = ring.increment(self)
 
-  def unary_++ : E = ring.increment(self)
-
   def -- : E = ring.decrement(self)
 
   def gcd(other: E): E = ring.gcd(self, other)
@@ -101,7 +100,7 @@ object RingSupport {
 
   implicit def rationalRingSupport[E]: RingSupport[Rational[E]] = ev => rings.Rings.Frac(ev.ring)
 
-  implicit def integersRingSupport: RingSupport[Integer] = _ => rings.Rings.Z
+  implicit def integersRingSupport: RingSupport[IntZ] = _ => rings.Rings.Z
 }
 
 class PolynomialSetOps[Poly <: IPolynomial[Poly]](self: Poly) {
@@ -133,7 +132,7 @@ class UnivariateOps[Poly <: IUnivariatePolynomial[Poly]](self: Poly)(ring: Ring[
 
   def >>(offset: Int): Poly = ring valueOf self.copy().shiftRight(offset)
 
-  def apply(from: Int, to: Int): Poly = ring valueOf self.copy().getRange(from, to)
+  def apply(from: Int, to: Int): Poly = ring valueOf self.getRange(from, to)
 
   def composition(poly: Poly): Poly = ring valueOf self.composition(poly)
 
@@ -176,6 +175,29 @@ class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomia
   }
 
   def swapVariables(i: Int, j: Int): Poly = rings.poly.multivar.AMultivariatePolynomial.swapVariables[Term, Poly](self, i, j)
+
+  def /%/%(other: (Poly, Poly)): (Poly, Poly, Poly) = {
+    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2)
+    (r(0), r(1), r(2))
+  }
+
+  def /%/%(other: (Poly, Poly, Poly)): (Poly, Poly, Poly, Poly) = {
+    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2, other._3)
+    (r(0), r(1), r(2), r(3))
+  }
+
+  def /%/%(other: (Poly, Poly, Poly, Poly)): (Poly, Poly, Poly, Poly, Poly) = {
+    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2, other._3, other._4)
+    (r(0), r(1), r(2), r(3), r(4))
+  }
+
+  def /%/%(other: (Poly, Poly, Poly, Poly, Poly)): (Poly, Poly, Poly, Poly, Poly, Poly) = {
+    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2, other._3, other._4, other._5)
+    (r(0), r(1), r(2), r(3), r(4), r(5))
+  }
+
+  def /%/%*(other: Poly*): Array[Poly] =
+    MultivariateDivision.divideAndRemainder[Term, Poly](self, other: _*)
 }
 
 class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)(pRing: IMultivariateRing[Term, Poly, E]) {

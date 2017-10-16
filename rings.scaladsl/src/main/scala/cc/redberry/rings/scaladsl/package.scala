@@ -1,13 +1,13 @@
 package cc.redberry.rings
 
+
 /**
-  *
   * @since 1.0
   */
 package object scaladsl extends Predef {
 
   type Ordering = java.util.Comparator[DegreeVector[_]]
-  type Integer = bigint.BigInteger
+  type IntZ = bigint.BigInteger
 
   type IPolynomial[P <: poly.IPolynomial[P]]
   = poly.IPolynomial[P]

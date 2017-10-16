@@ -663,7 +663,7 @@ public final class MultivariateGCD {
                 IntegersZp64 lDomain = new IntegersZp64(prime);
 
                 // calculate new GCD using previously calculated skeleton via sparse interpolation
-                MultivariatePolynomialZp64 modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(lDomain), random);
+                MultivariatePolynomialZp64 modularGCD = interpolateGCD(aMod, bMod, base.setRingUnsafe(lDomain), random);
                 if (modularGCD == null) {
                     // interpolation failed => assumed form is wrong => start over
                     continue main_loop;
@@ -726,7 +726,7 @@ public final class MultivariateGCD {
                     base.terms.add(baseTerm.setCoefficient(newCoeff));
                 }
 
-                base = base.setDomainUnsafe(new IntegersZp64(newBasePrime));
+                base = base.setRingUnsafe(new IntegersZp64(newBasePrime));
                 basePrime = newBasePrime;
 
                 // two trials didn't change the result, probably we are done
@@ -766,7 +766,7 @@ public final class MultivariateGCD {
                 IntegersZp64 lDomain = new IntegersZp64(prime);
 
                 // calculate new GCD using previously calculated skeleton via sparse interpolation
-                MultivariatePolynomialZp64 modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(lDomain), random);
+                MultivariatePolynomialZp64 modularGCD = interpolateGCD(aMod, bMod, base.setRingUnsafe(lDomain), random);
                 if (modularGCD == null) {
                     // interpolation failed => assumed form is wrong => start over
                     continue main_loop;
@@ -822,7 +822,7 @@ public final class MultivariateGCD {
                     bBase.terms.add(baseTerm.setCoefficient(newCoeff));
                 }
 
-                bBase = bBase.setDomainUnsafe(new IntegersZp(newBasePrime));
+                bBase = bBase.setRingUnsafe(new IntegersZp(newBasePrime));
                 bBasePrime = newBasePrime;
 
                 // two trials didn't change the result, probably we are done
@@ -1181,7 +1181,7 @@ public final class MultivariateGCD {
                     continue;
 
                 // calculate new GCD using previously calculated skeleton via sparse interpolation
-                MultivariatePolynomial<uPoly> modularGCD = interpolateGCD(aMod, bMod, base.setDomainUnsafe(fField), random);
+                MultivariatePolynomial<uPoly> modularGCD = interpolateGCD(aMod, bMod, base.setRingUnsafe(fField), random);
                 if (modularGCD == null) {
                     // interpolation failed => assumed form is wrong => start over
                     continue main_loop;
@@ -1241,7 +1241,7 @@ public final class MultivariateGCD {
                 basePrime = newBasePrime;
 
                 // set ring back to the normal univariate ring
-                base = base.setDomainUnsafe(univariateRing);
+                base = base.setRingUnsafe(univariateRing);
                 // two trials didn't change the result, probably we are done
                 MultivariatePolynomial<uPoly> candidate = base.clone().primitivePart();
                 if (basePrime.degree() >= uDegreeBound || (previousBase != null && candidate.equals(previousBase))) {

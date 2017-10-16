@@ -52,6 +52,18 @@ private[scaladsl] trait Predef {
   = ring.theRing.asInstanceOf[poly.UnivariateRing[UnivariatePolynomialZp64]]
 
   /**
+    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    */
+  implicit def ringMethods[E](ring: MultivariateRing[E]): poly.MultivariateRing[MultivariatePolynomial[E]]
+  = ring.theRing.asInstanceOf[poly.MultivariateRing[MultivariatePolynomial[E]]]
+
+  /**
+    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    */
+  implicit def ringMethods(ring: MultivariateRingZp64): poly.MultivariateRing[MultivariatePolynomialZp64]
+  = ring.theRing.asInstanceOf[poly.MultivariateRing[MultivariatePolynomialZp64]]
+
+  /**
     * Delegate [[FiniteField]] methods fo [[GaloisField64]]
     */
   implicit def ringMethods(ring: GaloisField64): FiniteField[UnivariatePolynomialZp64] = ring.theRing

@@ -622,7 +622,7 @@ public interface Ring<E> extends
      *
      * @return random element from this ring
      */
-    default E randomElement() { return randomElement(new Well44497b(System.nanoTime()));}
+    default E randomElement() { return randomElement(Rings.privateRandom);}
 
     /**
      * Returns a random element from this ring

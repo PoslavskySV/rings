@@ -384,12 +384,12 @@ class SyntaxTest {
 
     {
       val ring = UnivariateRing(Zp(SmallPrimes.nextPrime(10000)), "x")
-      val points = (1 to 50).map(BigInteger.valueOf).toArray[Integer]
-      val values: Array[Integer] = scala.util.Random.shuffle(points.toSeq).toArray[Integer]
+      val points = (1 to 50).map(BigInteger.valueOf).toArray[IntZ]
+      val values: Array[IntZ] = scala.util.Random.shuffle(points.toSeq).toArray[IntZ]
 
       Assert.assertEquals(
         interpolate(points.toSeq, values.toSeq)(ring),
-        UnivariateInterpolation.interpolateLagrange[Integer](ring.coefficientDomain, points, values)
+        UnivariateInterpolation.interpolateLagrange[IntZ](ring.coefficientDomain, points, values)
       )
     }
 
@@ -687,14 +687,14 @@ class SyntaxTest {
       var start = System.nanoTime()
       // quotient and remainder using built-in methods
       val divRemPlain = el /% divider
-      timePlain .addValue(  System.nanoTime() - start )
+      timePlain.addValue(System.nanoTime() - start)
 
 
       start = System.nanoTime()
       // quotient and remainder computed using fast
       // algorithm with Newton iterations
       val divRemFast = el /%% divider
-      timeFast .addValue(  System.nanoTime() - start )
+      timeFast.addValue(System.nanoTime() - start)
 
       assert(divRemPlain == divRemFast)
     }
@@ -703,4 +703,17 @@ class SyntaxTest {
     println(timeFast)
   }
 
+  @Test
+  def testMultivariateRingOps2: Unit = {
+    import syntax._
+    implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
+
+    val poly = ring("x + y + x")
+    val p1 = ring("x - y + x")
+    val p2 = ring("x + y - x")
+
+    println(poly /%/% (p1, p2))
+    println(poly /%/% (p1, p2, p2))
+    println(poly /%/% (p1, p2, p2, p1))
+  }
 }

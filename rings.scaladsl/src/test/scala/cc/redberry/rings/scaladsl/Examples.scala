@@ -1,10 +1,11 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
-import cc.redberry.rings.poly.multivar.MultivariatePolynomial
+import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial, RandomMultivariatePolynomials}
+import cc.redberry.rings.primes.SmallPrimes
 import org.junit.Test
 
-import scala.language.postfixOps
+import scala.language.{existentials, postfixOps}
 import scala.util.Random
 
 /**
@@ -78,7 +79,8 @@ class Examples {
   def test4: Unit = {
     import syntax._
 
-    val ring = Zp(2)
+    val ring = Q
+
     val a = ring("2/3")
     val b = ring("3/4")
 
@@ -116,8 +118,8 @@ class Examples {
   def test6: Unit = {
     import syntax._
 
-    val a: Integer = 10
-    val b: Integer = 11
+    val a: IntZ = 10
+    val b: IntZ = 11
 
     // compiles to a.add(b) (integer addition)
     assert(a + b === 21)
@@ -231,7 +233,7 @@ class Examples {
     assert(irreducibleQ(poly1))
 
     // random irreducible polynomial in Z/2[x] of degree 10
-    val poly2: UnivariatePolynomial[Integer] = randomIrreduciblePolynomial(Zp(2).theRing, 10, random)
+    val poly2: UnivariatePolynomial[IntZ] = randomIrreduciblePolynomial(Zp(2).theRing, 10, random)
     assert(poly2.degree() == 10)
     assert(irreducibleQ(poly2))
 
@@ -241,7 +243,7 @@ class Examples {
     assert(irreducibleQ(poly3))
 
     // random irreducible polynomial in Z[x] of degree 10
-    val poly4: UnivariatePolynomial[Integer] = randomIrreduciblePolynomialOverZ(10, random)
+    val poly4: UnivariatePolynomial[IntZ] = randomIrreduciblePolynomialOverZ(10, random)
     assert(poly4.degree() == 10)
     assert(irreducibleQ(poly4))
   }
@@ -301,5 +303,416 @@ class Examples {
     val withLagrange = lagrange(points, values)(UnivariateRing(cfRing, "x"))
     // results are the same
     assert(withNewton == withLagrange)
+  }
+
+  @Test
+  def test13 = {
+    /*  Lagrange interpolation formula */
+    def lagrange[Poly <: IUnivariatePolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: IUnivariateRing[Poly, E]) = {
+      import syntax._
+      points.indices
+        .foldLeft(ring getZero) { case (sum, i) =>
+          sum + points.indices
+            .filter(_ != i)
+            .foldLeft(ring getConstant values(i)) { case (product, j) =>
+              implicit val cfRing = ring.cfRing
+              val E: E = points(i) - points(j)
+              product * (ring.`x` - points(j)) / E
+            }
+        }
+    }
+  }
+
+  @Test
+  def test14 = {
+
+    /**
+      * @tparam Poly type of polynomials
+      */
+    def genericFunc[Poly <: IPolynomial[Poly]](poly: Poly): Poly = {
+      import syntax._
+      poly.pow(2) * 3 + poly * 2 + 1
+    }
+
+    // univariate polynomials over Zp64
+    val uRing = UnivariateRingZp64(17, "x")
+    println(uRing show genericFunc(uRing("1 + 2*x + 3*x^2")))
+
+    // multivariate polynomials over Z
+    val mRing = MultivariateRing(Z, Array("x", "y", "z"))
+    println(mRing show genericFunc(mRing("1 + x + y + z")))
+  }
+
+  @Test
+  def test15 = {
+
+    /**
+      * @tparam Poly type of polynomials
+      * @tparam E    type of polynomial coefficients
+      */
+    def genericFuncWithRing[Poly <: IPolynomial[Poly], E](poly: Poly)
+                                                         (implicit ring: PolynomialRing[Poly, E]): Poly = {
+      import syntax._
+      poly.pow(2) * 3 + poly * 2 + 1
+    }
+
+    // univariate polynomials over Zp64
+    val uRing = UnivariateRingZp64(17, "x")
+    println(uRing show genericFuncWithRing(uRing("1 + 2*x + 3*x^2"))(uRing))
+
+    // multivariate polynomials over Z
+    val mRing = MultivariateRing(Z, Array("x", "y", "z"))
+    println(mRing show genericFuncWithRing(mRing("1 + x + y + z"))(mRing))
+  }
+
+
+  @Test
+  def test16 = {
+    /**
+      * @tparam Poly type of polynomials
+      * @tparam E    type of polynomial coefficients
+      */
+    def genericFunc[Poly <: IPolynomial[Poly], E](poly: Poly): Poly = {
+      import syntax._
+      poly.pow(2) * 3 + poly * 2 + 1
+    }
+
+    /**
+      * @tparam Poly type of polynomials
+      * @tparam E    type of polynomial coefficients
+      */
+    def genericFuncWithRing[Poly <: IPolynomial[Poly], E](poly: Poly)
+                                                         (implicit ring: PolynomialRing[Poly, E]): Poly = {
+      import syntax._
+      poly.pow(2) * 3 + poly * 2 + 1
+    }
+
+    import syntax._
+    // GF(13^4)
+    implicit val gf = GF(13, 4, "z")
+    // some element of GF(13^4)
+    val poly = gf("1 + z + z^2 + z^3 + z^4").pow(10)
+
+    val noring = genericFunc(poly)
+    println(noring)
+
+    val withring = genericFuncWithRing(poly)
+    println(withring)
+
+    assert(noring != withring)
+  }
+
+
+  @Test
+  def test17 = {
+    /**
+      * @tparam Poly type of univariate polynomials
+      * @tparam E    type of polynomial coefficients
+      */
+    def genericFunc[Poly <: IUnivariatePolynomial[Poly], E](poly: Poly) = ???
+
+    /**
+      * @tparam Poly type of univariate polynomials
+      * @tparam E    type of polynomial coefficients
+      */
+    def genericFuncWithRing[Poly <: IUnivariatePolynomial[Poly], E](poly: Poly)
+                                                                   (implicit ring: IUnivariateRing[Poly, E]) = ???
+  }
+
+  @Test
+  def test18: Unit = {
+    /**
+      * @tparam Monomial type of monomials
+      * @tparam Poly     type of multivariate polynomials
+      * @tparam E        type of polynomial coefficients
+      */
+    def genericFunc[
+    Monomial <: DegreeVector[Monomial],
+    Poly <: AMultivariatePolynomial[Monomial, Poly],
+    E
+    ](poly: Poly) = ???
+
+    /**
+      * @tparam Monomial type of monomials
+      * @tparam Poly     type of multivariate polynomials
+      * @tparam E        type of polynomial coefficients
+      */
+    def genericFuncWithRing[Monomial <: DegreeVector[Monomial], Poly <: AMultivariatePolynomial[Monomial, Poly], E](poly: Poly)
+                                                                                                                   (implicit ring: IMultivariateRing[Monomial, Poly, E]) = ???
+
+    implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
+    import ring.{MonomialType, PolyType, CoefficientType}
+
+    val poly = ring.randomElement()
+
+    // call generic func directly
+    genericFunc[MonomialType, PolyType, CoefficientType](poly)
+    genericFuncWithRing[MonomialType, PolyType, CoefficientType](poly)
+
+    // define shortcuts
+    val func = (p: ring.PolyType) =>
+      genericFunc[MonomialType, PolyType, CoefficientType](p)
+
+    val funcWithRing = (p: ring.PolyType) => genericFuncWithRing[MonomialType, PolyType, CoefficientType](p)(ring)
+
+    func(poly)
+    funcWithRing(poly)
+
+    MonomialOrder.LEX
+  }
+
+
+  @Test
+  def test19: Unit = {
+    import syntax._
+    val ring = MultivariateRing(Z, Array("x", "y"), MonomialOrder.GREVLEX)
+
+    // poly in GREVLEX
+    val poly = ring("x + x^2*y^2 + x*y")
+    assert(poly.ordering == MonomialOrder.GREVLEX)
+
+    // poly in LEX
+    val poly2 = poly.setOrdering(MonomialOrder.LEX)
+    assert(poly2.ordering == MonomialOrder.LEX)
+
+    // poly in GREVLEX (ordering of lhs is used)
+    val add = poly + poly2
+    assert(add.ordering == MonomialOrder.GREVLEX)
+
+    // poly in LEX (ordering of lhs is used)
+    val add2 = poly2 + poly
+    assert(add2.ordering == MonomialOrder.LEX)
+  }
+
+  @Test
+  def test20: Unit = {
+    import syntax._
+    val ring = MultivariateRing(Z, Array("x", "y", "z"), MonomialOrder.LEX)
+
+    val dividend = ring("x - x^2*y^2 + 2*x*y + 1 - z*y^2*x^2 + z").pow(3)
+
+    val divider1 = ring("x + y")
+    val divider2 = ring("x + z")
+    val divider3 = ring("y + z")
+
+    {
+      val (quot1, quot2, rem) = dividend /%/% (divider1, divider2)
+      assert(dividend == divider1 * quot1 + divider2 * quot2 + rem)
+    }
+
+
+    {
+      val (quot1, quot2, quot3, rem) = dividend /%/% (divider1, divider2, divider3)
+      assert(dividend == divider1 * quot1 + divider2 * quot2 + divider3 * quot3 + rem)
+    }
+  }
+
+  @Test
+  def test21: Unit = {
+    import syntax._
+    import rings.poly.multivar.MultivariateGCD._
+
+
+    // some large finite field
+    val modulus = SmallPrimes.nextPrime(1 << 15)
+    val ring = MultivariateRingZp64(modulus, Array("x", "y", "z"))
+
+    val a = ring("x^2 - x*y + z^5")
+    val b = ring("x^2 + x*y^7 + x*y*z^2")
+
+    val gcd = ring("x + y + z")
+    val poly1 = a * gcd
+    val poly2 = b * gcd
+
+    // EZGCD in finite field
+    val ez = EZGCD(poly1, poly2)
+    assert(ez == gcd)
+
+    // EEZGCD in finite field
+    val eez = EEZGCD[ring.MonomialType, ring.PolyType](poly1, poly2)
+    assert(eez == gcd)
+
+    // ZippelGCD in finite field
+    val zippel = ZippelGCD(poly1, poly2)
+    assert(zippel == gcd)
+
+    // some very small finite field (Z/2)
+    val z2 = Zp64(2)
+    val z2GCD = gcd.setRing(z2)
+    val z2Poly1 = a.setRing(z2) * z2GCD
+    val z2Poly2 = b.setRing(z2) * z2GCD
+
+    // Kaltofen’s & Monagan’s generic modular GCD
+    val modGF = ModularGCDInGF(z2Poly1, z2Poly2)
+    assert(modGF == z2GCD)
+
+    // Z
+    val zGCD = gcd.setRing[IntZ](Z)
+    val zPoly1 = a.setRing[IntZ](Z) * zGCD
+    val zPoly2 = b.setRing[IntZ](Z) * zGCD
+
+    // Modular GCD in Z with sparse interpolation
+    val mod = ModularGCD(zPoly1, zPoly2)
+    assert(mod == zGCD)
+  }
+
+
+  @Test
+  def test22: Unit = {
+    import syntax._
+    import rings.poly.multivar.MultivariateGCD._
+
+    val ring = MultivariateRing(Z, Array("x", "y", "z"))
+    val (rndDegree, rndSize) = (5, 5)
+
+    // some random gcd
+    val gcd = ring.randomElement(rndDegree, rndSize)
+    // array of random polynomials which have gcd
+    val polys = (0 until 10).map(_ => ring.randomElement(rndDegree, rndSize) * gcd)
+
+    // fast algorithm for array of polynomials will be used
+    val fastGCD = PolynomialGCD(polys: _*)
+    // slow step-by-step gcd calculation
+    val slowGCD = polys.foldLeft(ring.getZero)((p1, p2) => PolynomialGCD(p1, p2))
+    // result the same
+    assert(fastGCD == slowGCD)
+
+  }
+
+  @Test
+  def test23: Unit = {
+    import syntax._
+    import rings.poly.PolynomialMethods._
+
+    // ring GF(13^5)[x, y, z] (coefficient domain is finite field)
+    val ringF = MultivariateRing(GF(13, 5), Array("x", "y", "z"))
+
+    // generate random poly of degree 5 and size 5
+    def randomPolyF = ringF.randomElement(5, 5) + 1
+
+    // some random polynomial composed from some factors
+    val polyF = randomPolyF * randomPolyF * randomPolyF.pow(2)
+    // perform square-free factorization
+    println(ringF show FactorSquareFree(polyF))
+    // perform complete factorization
+    println(ringF show Factor(polyF))
+
+
+    // ring Q[x, y, z]
+    val ringQ = MultivariateRing(Q, Array("x", "y", "z"))
+
+    def randomPolyQ = ringQ.randomElement(5, 5) + 1
+
+    // some random polynomial composed from some factors
+    val polyQ = randomPolyQ * randomPolyQ * randomPolyQ.pow(2)
+    // perform square-free factorization
+    println(ringQ show FactorSquareFree(polyQ))
+    // perform complete factorization
+    println(ringQ show Factor(polyQ))
+
+
+  }
+
+  @Test
+  def test24: Unit = {
+    import syntax._
+    import rings.poly.multivar.MultivariateInterpolation._
+
+    // ring GF(13^6)[x, y, z]
+    implicit val ring = MultivariateRing(GF(13, 6, "t"), Array("x", "y", "z"))
+    val (x, y, z) = ring("x", "y", "z")
+
+    // coefficient ring GF(13^6)
+    val cfRing = ring.cfRing
+    val t = cfRing("t")
+    // some points for interpolation
+    val points: Array[ring.CoefficientType] = {
+      // hide implicit ring
+      val ring: Any = null
+      // enable operations in cfRing
+      implicit val _ = cfRing
+      Array(1 + t, 2 + t, 3 + t, 12 + t)
+    }
+
+    // some values for interpolation
+    val values = Array(x + y, x.pow(2) + y * t, y.pow(3), x.pow(4) * t + y)
+
+    // interpolation polynomial values for variable z
+    val result = new Interpolation(ring.variable("z"), ring)
+      .update(points, values)
+      .getInterpolatingPolynomial
+
+    assert(points.zipWithIndex.forall { case (point, i) => result("z" -> point) == values(i) })
+  }
+
+
+  @Test
+  def test25: Unit = {
+    import syntax._
+
+    // Galois field GF(7^10) represented by univariate polynomials
+    // in variable "z" over Z/7 modulo some irreducible polynomial
+    // (irreducible polynomial will be generated automatically)
+    val gf7_10 = GF(7, 10, "z")
+    assert(gf7_10.characteristic == Z(7))
+    assert(gf7_10.cardinality == Z(7).pow(10))
+
+
+    // GF(7^3) generated by irreducible polynomial "1 + 3*z + z^2 + z^3"
+    val gf7_3 = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
+    assert(gf7_3.characteristic == Z(7))
+    assert(gf7_3.cardinality == Z(7 * 7 * 7))
+
+    // Mersenne prime 2^107 - 1
+    val characteristic = Z(2).pow(107) - 1
+    // Galois field GF((2^107 - 1) ^ 16)
+    implicit val field = GF(characteristic, 16, "z")
+
+    assert(field.cardinality() == characteristic.pow(16))
+  }
+
+  @Test
+  def test26: Unit = {
+    import syntax._
+    {
+      // Ring Z/3[x]
+      val zp3x = UnivariateRingZp64(3, "x")
+      // parse univariate poly from string
+      val p1 = zp3x("4 + 8*x + 13*x^2")
+      val p2 = zp3x("4 - 8*x + 13*x^2")
+      assert(p1 + p2 == zp3x("2 - x^2"))
+
+
+      // GF(7^3)
+      val cfRing = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
+      // GF(7^3)[x]
+      val gfx = UnivariateRing(cfRing, "x")
+      // parse univariate poly from string
+      val r1 = gfx("4 + (8 + z)*x + (13 - z^43)*x^2")
+      val r2 = gfx("4 - (8 + z)*x + (13 + z^43)*x^2")
+      assert(r1 + r2 == gfx("1 - 2*x^2"))
+      val (div, rem) = r1 /% r2
+      assert(r1 == r2 * div + rem)
+    }
+    {
+      // Ring Z/3[x, y, z]
+      val zp3xyz = MultivariateRingZp64(3, Array("x", "y", "z"))
+      // parse univariate poly from string
+      val p1 = zp3xyz("4 + 8*x*y + 13*x^2*z^5")
+      val p2 = zp3xyz("4 - 8*x*y + 13*x^2*z^5")
+      assert(p1 + p2 == zp3xyz("2 - x^2*z^5"))
+
+
+      // GF(7^3)
+      val cfRing = GF(UnivariateRingZp64(7, "t")("1 + 3*t + t^2 + t^3"), "t")
+      // GF(7^3)[x, y, z]
+      val gfxyz = MultivariateRing(cfRing, Array("x", "y", "z"))
+      // parse univariate poly from string
+      val r1 = gfxyz("4 + (8 + t)*x*y + (13 - t^43)*x^2*z^5")
+      val r2 = gfxyz("4 - (8 + t)*x*y + (13 + t^43)*x^2*z^5")
+      assert(r1 + r2 == gfxyz("1 - 2*x^2*z^5"))
+      val (div, rem) = r1 /% r2
+      assert(r1 == r2 * div + rem)
+    }
   }
 }

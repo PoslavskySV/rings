@@ -37,6 +37,10 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
 
   final def apply(int: Int): E = theRing.valueOf(int)
 
+  final def apply(int: BigInt): E = theRing.valueOfBigInteger(int)
+
+  final def apply(int: IntZ): E = theRing.valueOfBigInteger(int)
+
   final def apply(a: String, b: String): (E, E) = (parse(a), parse(b))
 
   final def apply(a: String, b: String, c: String): (E, E, E)
@@ -51,11 +55,11 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
   /**
     * @inheritdoc
     **/
-  override def toString: String = theRing toString
+  override def toString: String = Objects.toString( theRing )
 
 
   /** element class  */
-  private val eClass: Class[_ <: E] = theRing.getZero.getClass
+  private lazy val eClass: Class[_ <: E] = theRing.getZero.getClass
 
   /**
     * Reflection: determines whether is element of this
@@ -123,6 +127,11 @@ abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
   final type CoefficientType = E
 
   /**
+    * Type of polynomials
+    */
+  final type PolyType = ElementType
+
+  /**
     * The coefficient ring
     */
   def cfRing: Ring[E]
@@ -169,6 +178,11 @@ abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
     * Index of variable with specified string representation
     */
   final def index(variable: String): Int = variables.indexOf(variable)
+
+  /**
+    * Index of variable with specified string representation
+    */
+  final def variable(variable: String): Int = index(variable)
 
   /**
     * String representation of this ring
@@ -467,8 +481,8 @@ object GF {
     * Create Galois field with cardinality `modulus ^ exponent` represented by univariate polynomials with
     * specified variable
     */
-  def apply(modulus: BigInt, exponent: Int, variable: String)
-  = GaloisField[Integer](rings.Rings.GF(new Integer(modulus.bigInteger), exponent), variable)
+  def apply(modulus: IntZ, exponent: Int, variable: String)
+  = GaloisField[IntZ](rings.Rings.GF(modulus, exponent), variable)
 
   /**
     * Create Galois field from the specified irreducible polynomial and represented by univariate polynomials with
@@ -692,7 +706,7 @@ sealed abstract class IMultivariateRing[Term <: DegreeVector[Term], Poly <: AMul
 final case class MultivariateRingZp64
 (coefficientDomain: IntegersZp64, override val variables: Array[String], ordering: Ordering)
   extends IMultivariateRing[MonomialZp64, MultivariatePolynomialZp64, Long](
-    rings.Rings.MultivariateRingZp64(variables.length, coefficientDomain), variables, ordering) {
+    rings.Rings.MultivariateRingZp64(variables.length, coefficientDomain, ordering), variables, ordering) {
   /**
     * The coefficient ring
     */
@@ -777,7 +791,7 @@ object MultivariateRingZp64 {
 final case class MultivariateRing[E]
 (coefficientDomain: Ring[E], override val variables: Array[String], ordering: Ordering)
   extends IMultivariateRing[Monomial[E], MultivariatePolynomial[E], E](
-    rings.Rings.MultivariateRing(variables.length, scaladsl.ringMethods(coefficientDomain)), variables, ordering) {
+    rings.Rings.MultivariateRing(variables.length, scaladsl.ringMethods(coefficientDomain), ordering), variables, ordering) {
   /**
     * The coefficient ring
     */

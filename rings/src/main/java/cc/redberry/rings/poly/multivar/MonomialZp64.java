@@ -52,13 +52,13 @@ public final class MonomialZp64 extends DegreeVector<MonomialZp64> {
     }
 
     /** Reduces the coefficient modulo new modulus */
-    public MonomialZp64 setDomain(IntegersZp64 newDomain) {
+    public MonomialZp64 setRing(IntegersZp64 newDomain) {
         long e = newDomain.modulus(coefficient);
         return coefficient == e ? this : new MonomialZp64(exponents, totalDegree, e);
     }
 
     /** Set's the coefficient to {@code newRing.valueOf(coefficient) } */
-    public <E> Monomial<E> setDomain(Ring<E> newRing) {
+    public <E> Monomial<E> setRing(Ring<E> newRing) {
         E e = newRing.valueOf(coefficient);
         return new Monomial<>(exponents, totalDegree, e);
     }

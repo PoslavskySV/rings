@@ -165,7 +165,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
         assertEquals(parse0("18 + 18*a^2 + 18*a^3", vars), poly.evaluate(1, 1));
 
         IntegersZp64 pDomain = new IntegersZp64(17);
-        assertEquals(parse("1 + a^2 + a^3", pDomain, LEX, vars), poly.setDomain(pDomain).evaluate(1, 1));
+        assertEquals(parse("1 + a^2 + a^3", pDomain, LEX, vars), poly.setRing(pDomain).evaluate(1, 1));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
         poly = poly.evaluate(0, 1);
         assertEquals(UnivariatePolynomialZ64.create(9, 0, 11).modulus(domain.modulus), poly.asUnivariate());
 
-        assertEquals(poly.setDomain(Integers), asMultivariate(UnivariatePolynomialZ64.create(9, 0, 11).modulus(Integers.modulus), 2, 1, poly.ordering));
+        assertEquals(poly.setRing(Integers), asMultivariate(UnivariatePolynomialZ64.create(9, 0, 11).modulus(Integers.modulus), 2, 1, poly.ordering));
         assertEquals(poly, asMultivariate(UnivariatePolynomialZ64.create(9, 0, 11).modulus(domain.modulus), 2, 1, poly.ordering));
     }
 

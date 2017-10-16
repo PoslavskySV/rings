@@ -54,7 +54,7 @@ public final class Monomial<E> extends DegreeVector<Monomial<E>> {
     }
 
     /** Set's the coefficient to {@code newRing.valueOf(coefficient) } */
-    public Monomial<E> setDomain(Ring<E> newRing) {
+    public Monomial<E> setRing(Ring<E> newRing) {
         E e = newRing.valueOf(coefficient);
         return coefficient == e ? this : new Monomial<>(exponents, totalDegree, e);
     }

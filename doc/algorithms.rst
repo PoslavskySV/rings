@@ -1,3 +1,12 @@
+.. |br| raw:: html
+
+   <br/>
+
+.. |_| unicode:: 0xA0 
+   :trim:
+
+.. |____| replace:: |_|
+
 ========================================
 Index of algorithms implemented in Rings
 ========================================
@@ -7,87 +16,87 @@ Index of algorithms implemented in Rings
 Univariate polynomials
 ======================
 
-1. *Karatsuba multiplication* [vzGG03]_ (Sec. 8.1) used (in some adapted form) for multiplication of univariate polynomials: 
+1. *Karatsuba multiplication* |____| (Sec. 8.1 in [GaGe03]_) |br| used with some adaptations for multiplication of univariate polynomials: 
 
  - `UnivariatePolynomial.multiply <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomial.java>`_
  - `UnivariatePolynomialZp64.multiply <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.java>`_
 	 
-2. *Half-GCD and Extended Half-GCD* [vzGG03]_ (Sec. 11) used (in some adapted form inspired by [NTL]_) for univariate GCD:
+2. *Half-GCD and Extended Half-GCD* |____| (Sec. 11 in [GaGe03]_) |br| used with adaptations inspired by [ShoNTL]_ implementation for univariate GCD:
 
  - `UnivariateGCD.HalfGCD  <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java>`_
  - `UnivariateGCD.ExtendedHalfGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java>`_
  
-3. *Subresultant polynomial remainder sequences* [GCL92]_ (Sec. 7.3):
+3. *Subresultant polynomial remainder sequences* |____| (Sec. 7.3 in [GeCL92]_):
 
  - `UnivariateGCD.SubresultantRemainders <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java>`_
 
-4. *Modular GCD in* :math:`Z[x]` *and* :math:`Q[x]` [vzGG03]_ (Sec. 6.7), small primes version is used:
+4. *Modular GCD in* :math:`Z[x]` *and* :math:`Q[x]` |____| (Sec. 6.7 in [GaGe03]_, small primes version):
 
  - `UnivariateGCD.ModularGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java>`_
 
-5. *Fast univariate division with Newton iteration* [vzGG03]_ (Sec. 9.1) used everywhere where multiple divisions (remainders) by the same divider are performed:
+5. *Fast univariate division with Newton iteration* |____| (Sec. 9.1 in [GaGe03]_) |br| used everywhere where multiple divisions (remainders) by the same divider are performed:
 
  - `UnivariateDivision.fastDivisionPreConditioning <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java>`_
  - `UnivariateDivision.divideAndRemainderFast <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java>`_
  
-6. *Univariate square-free factorization in zero characteristic (Yun's algorithm)* [vzGG03]_ (Sec. 14.6):
+6. *Univariate square-free factorization in zero characteristic (Yun's algorithm)* |____| (Sec. 14.6 in [GaGe03]_):
 
  - `UnivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java>`_
      
-7. *Univariate square-free factorization in non-zero characteristic (Musser's algorithm)* [Mus71]_, [GCL92]_ (Sec. 8.3):
+7. *Univariate square-free factorization in non-zero characteristic (Musser's algorithm)* |____| (Sec. 8.3 in [GeCL92]_, [Muss71]_):
 
  - `UnivariateSquareFreeFactorization.SquareFreeFactorizationMusser <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java>`_
  - `UnivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java>`_
  
-8. *Distinct-degree factorization* [vzGG03]_ (Sec. 14.2) plain version and adapted version (which is actually used) with precomputed :math:`x`-powers:
+8. *Distinct-degree factorization* |____| (Sec. 14.2 in [GaGe03]_) |br| plain version and adapted version with precomputed :math:`x`-powers (used by default):
 
  - `DistinctDegreeFactorization.DistinctDegreeFactorizationPlain <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java>`_
  - `DistinctDegreeFactorization.DistinctDegreeFactorizationPrecomputedExponents <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java>`_
 
-9. *Shoup's baby-step giant-step algorithm for distinct-degree factorization* [Sho95]_ used for factorization over fields with large cardinality:
+9. *Shoup's baby-step giant-step algorithm for distinct-degree factorization* |____| ([Shou95]_) |br| used for factorization over fields with large cardinality:
 
  - `DistinctDegreeFactorization.DistinctDegreeFactorizationShoup <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java>`_
 
-10. *Univariate modular composition* plain algorithm with Horner schema:
+10. *Univariate modular composition* |br| plain algorithm with Horner schema:
  
  - `ModularComposition.compositionHorner <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/ModularComposition.java>`_
 
-11. *Brent-Kung algorithm* for univariate modular composition [BK98]_, [Sho95]_:
+11. *Brent-Kung univariate modular composition* |____| ([BreK98]_, [Shou95]_):
 
  - `ModularComposition.compositionBrentKung <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/ModularComposition.java>`_
 
-12. *Cantor-Zassenhaus algorithm (equal-degree splitting)* [vzGG03]_ (Sec. 14.3) both for odd and even characteristic:
+12. *Cantor-Zassenhaus algorithm (equal-degree splitting)* |____| (Sec. 14.3 in [GaGe03]_) |br| both for odd and even characteristic:
 
  - `EqualDegreeFactorization.CantorZassenhaus <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/EqualDegreeFactorization.java>`_
 
-13. *Univaraite linear p-adic Hensel lifting* [GCL92]_ (Sec. 6.5):
+13. *Univaraite linear p-adic Hensel lifting* |____| (Sec. 6.5 in [GeCL92]_):
 
  - `univar.HenselLifting.createLinearLift <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java>`_
  - `univar.HenselLifting.liftFactorization <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java>`_
 
-14. *Univaraite quadratic p-adic Hensel lifting* [vzGG03]_ (Sec. 15.4-15.5):
+14. *Univaraite quadratic p-adic Hensel lifting* |____| (Sec. 15.4-15.5 in [GaGe03]_):
 
  - `univar.HenselLifting.createQuadraticLift <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java>`_
  - `univar.HenselLifting.liftFactorization <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java>`_
 
-15. *Univariate polynomial factorization over finite fields* Musser's square free factorization -> distinct-degree factorization (either x-powers or Shoup's algorithm) -> Cantor-Zassenhaus equal-degree factorization:
+15. *Univariate polynomial factorization over finite fields* |br| uses Musser's square free factorization followed by distinct-degree factorization (either :math:`x`-powers or Shoup's algorithm) followed by Cantor-Zassenhaus equal-degree factorization:
 
  - `UnivariateFactorization.FactorInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java>`_
 
-16. *Univariate polynomial factorization over Z and Q* factorization modulo small prime -> Hensel lifting (adaptive linear/quadratic):
+16. *Univariate polynomial factorization over Z and Q* |br| uses factorization modulo small prime followed by Hensel lifting (adaptive linear/quadratic) and naive recombination:
 
  - `UnivariateFactorization.FactorInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java>`_
  - `UnivariateFactorization.FactorInQ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java>`_
 
-17. *Univariate irreducibility test* [vzGG03]_ (Sec. 14.9):
+17. *Univariate irreducibility test* |____| (Sec. 14.9 in [GaGe03]_):
 
  - `IrreduciblePolynomials.irreducibleQ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java>`_
 
-18. *Ben-Or’s generation of irreducible polynomials* [vzGG03]_ (Sec. 14.9):
+18. *Ben-Or’s generation of irreducible polynomials* |____| (Sec. 14.9 in [GaGe03]_):
 
  - `IrreduciblePolynomials.randomIrreduciblePolynomial <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java>`_
 
-19. *Univariate polynomial interpolation* Lagrange and Newton methods:
+19. *Univariate polynomial interpolation* |br| Lagrange and Newton methods:
 
  - `UnivariateInterpolation <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateInterpolation.java>`_
 
@@ -96,53 +105,53 @@ Multivariate polynomials
 ========================
 
 
-20. *Brown GCD over finite fields* [Bro71]_, [GCL92]_ (Sec. 7.4), [Yan09]_:
+20. *Brown GCD over finite fields* |____| ([Brow71]_, Sec. 7.4 in [GeCL92]_, [Yang09]_):
 
  - `MultivariateGCD.BrownGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-21. *Zippel's sparse GCD over finite fields* [Zip79]_, [Zip93]_, [dKMW05]_, [Yan09]_ both for monic (with fast Vandermonde systems) and non-monic (LINZIP) cases:
+21. *Zippel's sparse GCD over finite fields* |____| ([Zipp79]_, [Zipp93]_, [dKMW05]_, [Yang09]_) |br| both for monic (with fast Vandermonde systems) and non-monic (LINZIP) cases:
 
  - `MultivariateGCD.ZippelGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-22. *Extended Zassenhaus GCD (EZ-GCD) over finite fields* [GCL92]_ (Sec. 7.6), [MY73]_:
+22. *Extended Zassenhaus GCD (EZ-GCD) over finite fields* |____| (Sec. 7.6 in [GeCL92]_, [MosY73]_):
 
  - `MultivariateGCD.EZGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-23. *Enhanced Extended Zassenhaus GCD (EEZ-GCD) over finite fields* [Wan80]_:
+23. *Enhanced Extended Zassenhaus GCD (EEZ-GCD) over finite fields* |____| ([Wang80]_):
 
  - `MultivariateGCD.EEZGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-24. *Modular GCD over Z with sparse interpolation* [Zip79]_, [Zip93]_, [dKMW05]_ (the same interpolation techniques as in `ZippelGCD` is used):
+24. *Modular GCD over Z with sparse interpolation* |____| ([Zipp79]_, [Zipp93]_, [dKMW05]_) |br| (the same interpolation techniques as in `ZippelGCD` is used):
 
  - `MultivariateGCD.ModularGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-25. *Kaltofen's & Monagan's generic modular GCD* [KM99]_ used for computing multivariate GCD over finite fields of very small cardinality
+25. *Kaltofen's & Monagan's generic modular GCD* |____| ([KalM99]_) |br| used for computing multivariate GCD over finite fields of very small cardinality:
 
  - `MultivariateGCD.ModularGCDInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-26. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* [Lee13]_:
+26. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* |____| ([LeeM13]_):
 
  - `MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
 
-27. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* [Mus71]_, [GCL92]_ (Sec. 8.3):
+27. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* |____| ([Muss71]_, Sec. 8.3 in [GeCL92]_):
 
 - `MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
 - `MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
 
-28. *Bernardin's fast dense multivariate Hensel lifting* [Ber99]_, [Lee13]_ both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
+28. *Bernardin's fast dense multivariate Hensel lifting* |____| ([Bern99]_, [LeeM13]_) |br| both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
 
 - `multivar.HenselLifting <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java>`_
 
-29. *Fast dense bivariate factorization with recombination* [Ber99]_, [Lee13]_:
+29. *Fast dense bivariate factorization with recombination* |____| ([Bern99]_, [LeeM13]_):
 
 - `MultivariateFactorization.bivariateDenseFactorSquareFreeInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 - `MultivariateFactorization.bivariateDenseFactorSquareFreeInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-30. *Kaltofen's multivariate factorization in finite fields* [Kal85]_, [Lee13]_; modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to [Lee13]_, but at the same time has many differences in details:
+30. *Kaltofen's multivariate factorization in finite fields* |____| ([Kalt85]_, [LeeM13]_) |br| modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to [LeeM13]_, but at the same time has many differences in details:
 
 - `MultivariateFactorization.factorInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-31. *Kaltofen's multivariate factorization Z* [Kal85]_, [Lee13]_ (the same modifications as for finite field algorithm are made):
+31. *Kaltofen's multivariate factorization Z* |____| ([Kalt85]_, [LeeM13]_) |br| (with the same modifications as for algorithm for finite fields):
 
 - `MultivariateFactorization.factorInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
@@ -154,38 +163,38 @@ Multivariate polynomials
 References
 ==========
 
-.. [vzGG03] J. von zur Gathen and J. Gerhard. Modern computer algebra (2. ed.). Cambridge University Press, 2003.
+.. [GaGe03] J von zur Gathen and J Gerhard. Modern computer algebra (2 ed.). Cambridge University Press, 2003.
 
-.. [NTL] V. Shoup. NTL: A library for doing number theory. www.shoup.net/ntl
+.. [ShoNTL] V Shoup. NTL: A library for doing number theory. www.shoup.net/ntl
 
-.. [GCL92] K. O. Geddes, S. R. Czapor, G. Labahn. Algorithms for Computer Algebra. 1992.
+.. [GeCL92] K O Geddes, S R Czapor, G Labahn. Algorithms for Computer Algebra. 1992.
 
-.. [Mus71] D.R. Musser,  Algorithms for polynomial factorization, Ph.D. Thesis, University of Wisconsin, 1971.
+.. [Muss71] D R Musser. Algorithms for polynomial factorization, Ph.D. Thesis, University of Wisconsin, 1971.
 
-.. [Sho95] V. Shoup. A new polynomial factorization algorithm and its implementation. J. Symb. Comput., 20(4):363–397, 1995.
+.. [Shou95] V Shoup. A new polynomial factorization algorithm and its implementation. J. Symb. Comput., 20(4):363–397, 1995.
 
-.. [BK98] R.P. Brent and H.T. Kung. Fast algorithms for manipulating formal power series. J. Assoc. Comput. Math. 25:581-595, 1978
+.. [BreK98] R P Brent and H T Kung. Fast algorithms for manipulating formal power series. J. Assoc. Comput. Math. 25:581-595, 1978
 
-.. [Bro71] W. S. Brown. On Euclid’s algorithm and the computation of polynomial greatest common divisors. J. ACM, 18(4):478–504, 1971.
+.. [Brow71] W S Brown. On Euclid’s algorithm and the computation of polynomial greatest common divisors. J. ACM, 18(4):478–504, 1971.
 
-.. [Zip79] R. E. Zippel. Probabilistic algorithms for sparse polynomials. In Proceedings of the International Symposiumon on Symbolic and Algebraic Computation, EUROSAM ’79, pages 216–226, London, UK, UK, 1979. Springer-Verlag.
+.. [Zipp79] R E Zippel. Probabilistic algorithms for sparse polynomials. In Proceedings of the International Symposiumon on Symbolic and Algebraic Computation, EUROSAM ’79, pages 216–226, London, UK, UK, 1979. Springer-Verlag.
 
-.. [Zip93] R. E. Zippel. Effective Polynomial Computation. Kluwer International Series in Engineering and Computer Science. Kluwer Academic Publishers, 1993.
+.. [Zipp93] R E Zippel. Effective Polynomial Computation. Kluwer International Series in Engineering and Computer Science. Kluwer Academic Publishers, 1993.
 
-.. [dKMW05] J. de Kleine, M. B. Monagan, A. D. Wittkopf. Algorithms for the Non-monic Case of the Sparse Modular GCD Algorithm. Proceeding of ISSAC ’05, ACM Press, pp. 124-131 , 2005.
+.. [dKMW05] J de Kleine, M B Monagan, A D Wittkopf. Algorithms for the Non-monic Case of the Sparse Modular GCD Algorithm. Proceeding of ISSAC ’05, ACM Press, pp. 124-131 , 2005.
 
-.. [Yan09] S. Yang. Computing the greatest common divisor of multivariate polynomials over finite fields. Master’s thesis, Simon Fraser University, 2009.
+.. [Yang09] S Yang. Computing the greatest common divisor of multivariate polynomials over finite fields. Master’s thesis, Simon Fraser University, 2009.
 
-.. [MY73] J. Moses and D.Y.Y.Yun, "The EZGCD Algorithm," pp. 159-166 in Proc. ACM Annual Conference, (1973).
+.. [MosY73] J Moses and D Y Y Yun, "The EZGCD Algorithm," pp. 159-166 in Proc. ACM Annual Conference, (1973).
 
-.. [Wan80] P.S. Wang, "The EEZ-GCD Algorithm," ACM SIGSAMBull., 14 pp. 50-60 (1980).
+.. [Wang80] P S Wang, "The EEZ-GCD Algorithm," ACM SIGSAMBull., 14 pp. 50-60 (1980).
 
-.. [KM99] E. Kaltofen, M. B. Monagan. On the Genericity of the Modular Polynomial GCD Algorithm. Proceeding of ISSAC ’99, ACM Press, 59-66, 1999.
+.. [KalM99] E Kaltofen, M. B. Monagan. On the Genericity of the Modular Polynomial GCD Algorithm. Proceeding of ISSAC ’99, ACM Press, 59-66, 1999.
 
-.. [Ber99] L. Bernardin. Factorization of Multivariate Polynomials over Finite Fields. PhD thesis, ETH Zu ̈rich, 1999.
+.. [Bern99] L Bernardin. Factorization of Multivariate Polynomials over Finite Fields. PhD thesis, ETH Zu ̈rich, 1999.
 
-.. [Lee13] M. M.-D. Lee, Factorization of multivariate polynomials,  Ph.D. thesis, University of Kaiserslautern, 2013
+.. [LeeM13] M M-D Lee, Factorization of multivariate polynomials,  Ph.D. thesis, University of Kaiserslautern, 2013
 
-.. [Kal85] E. Kaltofen. Sparse Hensel lifting. In EUROCAL 85 European Conf. Comput. Algebra Proc. Vol. 2, pages 4–17, 1985.
+.. [Kalt85] E Kaltofen. Sparse Hensel lifting. In EUROCAL 85 European Conf. Comput. Algebra Proc. Vol. 2, pages 4–17, 1985.
 
 

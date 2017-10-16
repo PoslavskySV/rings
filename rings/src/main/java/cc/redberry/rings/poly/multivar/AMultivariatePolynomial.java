@@ -183,11 +183,16 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
 
     /* private factory */
     final Poly create(MonomialSet<Term> terms) {
-        return create(nVariables, terms);
+        return create(nVariables, ordering, terms);
     }
 
     /* private factory */
-    abstract Poly create(int nVariables, MonomialSet<Term> terms);
+    final Poly create(int nVariables, MonomialSet<Term> terms) {
+        return create(nVariables, ordering, terms);
+    }
+
+    /* private factory */
+    abstract Poly create(int nVariables, Comparator<DegreeVector> ordering, MonomialSet<Term> terms);
 
     /**
      * Creates multivariate polynomial over the same ring as this from the list of monomials
@@ -251,7 +256,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final Poly setOrdering(Comparator<DegreeVector> newOrdering) {
         MonomialSet<Term> newData = new MonomialSet<>(newOrdering);
         newData.putAll(terms);
-        return create(newData);
+        return create(nVariables, newOrdering, newData);
     }
 
     /** release caches */

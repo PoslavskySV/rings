@@ -73,7 +73,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public static <E> MultivariatePolynomial<E> create(int nVariables, Ring<E> ring, Comparator<DegreeVector> ordering, Iterable<Monomial<E>> terms) {
         MonomialSet<Monomial<E>> map = new MonomialSet<>(ordering);
         for (Monomial<E> term : terms)
-            add(map, term.setDomain(ring), ring);
+            add(map, term.setRing(ring), ring);
 
         return new MultivariatePolynomial<>(nVariables, ring, ordering, map);
     }
@@ -434,7 +434,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    MultivariatePolynomial<E> create(int nVariables, MonomialSet<Monomial<E>> monomialTerms) {
+    MultivariatePolynomial<E> create(int nVariables, Comparator<DegreeVector> ordering, MonomialSet<Monomial<E>> monomialTerms) {
         return new MultivariatePolynomial<>(nVariables, ring, ordering, monomialTerms);
     }
 
@@ -546,12 +546,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return clone();
         MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
         for (Monomial<E> e : terms)
-            add(newData, e.setDomain(newRing));
+            add(newData, e.setRing(newRing));
         return new MultivariatePolynomial<>(nVariables, newRing, ordering, newData);
     }
 
     /** internal API */
-    public MultivariatePolynomial<E> setDomainUnsafe(Ring<E> newRing) {
+    public MultivariatePolynomial<E> setRingUnsafe(Ring<E> newRing) {
         return new MultivariatePolynomial<>(nVariables, newRing, ordering, terms);
     }
 
@@ -1540,7 +1540,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> parsePoly(String string) {
-        MultivariatePolynomial<E> r = parse(string, ring, ordering, WithVariables.defaultVars(nVariables));
+        MultivariatePolynomial<E> r = parse(string, ring, ordering);
         if (r.nVariables != nVariables)
             throw new IllegalArgumentException(String.format("nVariables %s != %s, not from this field: %s", r.nVariables, nVariables, string));
         return r;

@@ -93,7 +93,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public static MultivariatePolynomialZp64 create(int nVariables, IntegersZp64 ring, Comparator<DegreeVector> ordering, Iterable<MonomialZp64> terms) {
         MonomialSet<MonomialZp64> map = new MonomialSet<>(ordering);
         for (MonomialZp64 term : terms)
-            add(map, term.setDomain(ring), ring);
+            add(map, term.setRing(ring), ring);
 
         return new MultivariatePolynomialZp64(nVariables, ring, ordering, map);
     }
@@ -404,7 +404,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
-    MultivariatePolynomialZp64 create(int nVariables, MonomialSet<MonomialZp64> lMonomialTerms) {
+    MultivariatePolynomialZp64 create(int nVariables, Comparator<DegreeVector> ordering, MonomialSet<MonomialZp64> lMonomialTerms) {
         return new MultivariatePolynomialZp64(nVariables, ring, ordering, lMonomialTerms);
     }
 
@@ -507,7 +507,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      */
     @SuppressWarnings("unchecked")
     public MultivariatePolynomialZp64 setRing(long newModulus) {
-        return setDomain(new IntegersZp64(newModulus));
+        return setRing(new IntegersZp64(newModulus));
     }
 
     /**
@@ -517,10 +517,10 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return a copy of this reduced to the ring specified by {@code newDomain}
      */
     @SuppressWarnings("unchecked")
-    public MultivariatePolynomialZp64 setDomain(IntegersZp64 newDomain) {
+    public MultivariatePolynomialZp64 setRing(IntegersZp64 newDomain) {
         MonomialSet<MonomialZp64> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 e : terms)
-            add(newData, e.setDomain(newDomain));
+            add(newData, e.setRing(newDomain));
         return new MultivariatePolynomialZp64(nVariables, newDomain, ordering, newData);
     }
 
@@ -531,15 +531,15 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return a copy of this reduced to the ring specified by {@code newRing}
      */
     @SuppressWarnings("unchecked")
-    public <E> MultivariatePolynomial<E> setDomain(Ring<E> newRing) {
+    public <E> MultivariatePolynomial<E> setRing(Ring<E> newRing) {
         MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 e : terms)
-            MultivariatePolynomial.add(newData, e.setDomain(newRing), newRing);
+            MultivariatePolynomial.add(newData, e.setRing(newRing), newRing);
         return new MultivariatePolynomial(nVariables, newRing, ordering, newData);
     }
 
     /** internal API */
-    public MultivariatePolynomialZp64 setDomainUnsafe(IntegersZp64 newDomain) {
+    public MultivariatePolynomialZp64 setRingUnsafe(IntegersZp64 newDomain) {
         return new MultivariatePolynomialZp64(nVariables, newDomain, ordering, terms);
     }
 
@@ -1418,7 +1418,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
 
     @Override
     public MultivariatePolynomialZp64 parsePoly(String string) {
-        MultivariatePolynomialZp64 r = parse(string, ring, ordering, WithVariables.defaultVars(nVariables));
+        MultivariatePolynomialZp64 r = parse(string, ring, ordering);
         if (r.nVariables != nVariables)
             throw new IllegalArgumentException("not from this field");
         return r;

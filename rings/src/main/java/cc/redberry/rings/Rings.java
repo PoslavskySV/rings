@@ -7,7 +7,9 @@ import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.IrreduciblePolynomials;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well19937c;
+import org.apache.commons.math3.random.Well44497b;
 
 import java.util.Comparator;
 
@@ -18,6 +20,8 @@ import java.util.Comparator;
  */
 public final class Rings {
     private Rings() {}
+
+    static RandomGenerator privateRandom = new Well44497b(System.nanoTime());
 
     /**
      * Ring of integers (Z)
@@ -109,7 +113,7 @@ public final class Rings {
      *
      * @param factory factory
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialRing<Poly> UnivariateRing(Poly factory){
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialRing<Poly> UnivariateRing(Poly factory) {
         return new UnivariateRing<>(factory);
     }
 
@@ -187,7 +191,7 @@ public final class Rings {
      * @param factory factory
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    PolynomialRing<Poly> MultivariateRing(Poly factory){
+    PolynomialRing<Poly> MultivariateRing(Poly factory) {
         return new MultivariateRing<>(factory);
     }
 
@@ -237,12 +241,24 @@ public final class Rings {
     /**
      * Ring of multivariate polynomials over Zp integers (Zp[x1, x2, ...])
      *
+     * @param nVariables    the number of variables
+     * @param modulus       the modulus
+     * @param monomialOrder monomial order
+     */
+    public static MultivariateRing<MultivariatePolynomialZp64>
+    MultivariateRingZp64(int nVariables, IntegersZp64 modulus, Comparator<DegreeVector> monomialOrder) {
+        return new MultivariateRing<>(MultivariatePolynomialZp64.zero(nVariables, modulus, monomialOrder));
+    }
+
+    /**
+     * Ring of multivariate polynomials over Zp integers (Zp[x1, x2, ...])
+     *
      * @param nVariables the number of variables
      * @param modulus    the modulus
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
     MultivariateRingZp64(int nVariables, IntegersZp64 modulus) {
-        return new MultivariateRing<>(MultivariatePolynomialZp64.zero(nVariables, modulus, MonomialOrder.LEX));
+        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.LEX);
     }
 
     /**
@@ -273,10 +289,10 @@ public final class Rings {
      * Generic factory for polynomial ring
      */
     @SuppressWarnings("unchecked")
-    public static <Poly extends IPolynomial<Poly>> PolynomialRing<Poly> PolynomialRing(Poly factory){
-        if(factory instanceof IUnivariatePolynomial)
-            return (PolynomialRing<Poly>) UnivariateRing((IUnivariatePolynomial)factory);
+    public static <Poly extends IPolynomial<Poly>> PolynomialRing<Poly> PolynomialRing(Poly factory) {
+        if (factory instanceof IUnivariatePolynomial)
+            return (PolynomialRing<Poly>) UnivariateRing((IUnivariatePolynomial) factory);
         else
-            return (PolynomialRing<Poly>) MultivariateRing((AMultivariatePolynomial)factory);
+            return (PolynomialRing<Poly>) MultivariateRing((AMultivariatePolynomial) factory);
     }
 }
