@@ -1,9 +1,9 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
-import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial, RandomMultivariatePolynomials}
+import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial}
 import cc.redberry.rings.primes.SmallPrimes
-import org.junit.Test
+import org.junit.{Ignore, Test}
 
 import scala.language.{existentials, postfixOps}
 import scala.util.Random
@@ -409,14 +409,14 @@ class Examples {
       * @tparam Poly type of univariate polynomials
       * @tparam E    type of polynomial coefficients
       */
-    def genericFunc[Poly <: IUnivariatePolynomial[Poly], E](poly: Poly) = ???
+    def genericFunc[Poly <: IUnivariatePolynomial[Poly], E](poly: Poly) = poly
 
     /**
       * @tparam Poly type of univariate polynomials
       * @tparam E    type of polynomial coefficients
       */
     def genericFuncWithRing[Poly <: IUnivariatePolynomial[Poly], E](poly: Poly)
-                                                                   (implicit ring: IUnivariateRing[Poly, E]) = ???
+                                                                   (implicit ring: IUnivariateRing[Poly, E]) = poly
   }
 
   @Test
@@ -430,7 +430,7 @@ class Examples {
     Monomial <: DegreeVector[Monomial],
     Poly <: AMultivariatePolynomial[Monomial, Poly],
     E
-    ](poly: Poly) = ???
+    ](poly: Poly) = poly
 
     /**
       * @tparam Monomial type of monomials
@@ -438,10 +438,11 @@ class Examples {
       * @tparam E        type of polynomial coefficients
       */
     def genericFuncWithRing[Monomial <: DegreeVector[Monomial], Poly <: AMultivariatePolynomial[Monomial, Poly], E](poly: Poly)
-                                                                                                                   (implicit ring: IMultivariateRing[Monomial, Poly, E]) = ???
+                                                                                                                   (implicit ring: IMultivariateRing[Monomial, Poly, E]) = poly
+
 
     implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
-    import ring.{MonomialType, PolyType, CoefficientType}
+    import ring.{CoefficientType, MonomialType, PolyType}
 
     val poly = ring.randomElement()
 
@@ -509,8 +510,8 @@ class Examples {
 
   @Test
   def test21: Unit = {
-    import syntax._
     import rings.poly.multivar.MultivariateGCD._
+    import syntax._
 
 
     // some large finite field
@@ -559,8 +560,8 @@ class Examples {
 
   @Test
   def test22: Unit = {
-    import syntax._
     import rings.poly.multivar.MultivariateGCD._
+    import syntax._
 
     val ring = MultivariateRing(Z, Array("x", "y", "z"))
     val (rndDegree, rndSize) = (5, 5)
@@ -574,15 +575,16 @@ class Examples {
     val fastGCD = PolynomialGCD(polys: _*)
     // slow step-by-step gcd calculation
     val slowGCD = polys.foldLeft(ring.getZero)((p1, p2) => PolynomialGCD(p1, p2))
-    // result the same
-    assert(fastGCD == slowGCD)
+    // result the same (to within a sign)
+    assert(fastGCD ~== slowGCD)
 
   }
 
+  @Ignore
   @Test
   def test23: Unit = {
-    import syntax._
     import rings.poly.PolynomialMethods._
+    import syntax._
 
     // ring GF(13^5)[x, y, z] (coefficient domain is finite field)
     val ringF = MultivariateRing(GF(13, 5), Array("x", "y", "z"))
@@ -615,8 +617,8 @@ class Examples {
 
   @Test
   def test24: Unit = {
-    import syntax._
     import rings.poly.multivar.MultivariateInterpolation._
+    import syntax._
 
     // ring GF(13^6)[x, y, z]
     implicit val ring = MultivariateRing(GF(13, 6, "t"), Array("x", "y", "z"))
@@ -714,5 +716,24 @@ class Examples {
       val (div, rem) = r1 /% r2
       assert(r1 == r2 * div + rem)
     }
+  }
+
+
+  @Test
+  def test1111 = {
+
+    import cc.redberry.rings.poly.univar.UnivariateGCD._
+    import syntax._
+
+    // The ring Z/17[x]
+    implicit val ring = UnivariateRingZp64(17, "x")
+
+    val x = ring("x")
+
+    val (gcd, s, t) = PolynomialExtendedGCD(1 + x + x.pow(2) + x.pow(3), 1 + 2 * x + 9 * x.pow(2)).tuple3
+
+    println(s)
+    println(t)
+    println(gcd)
   }
 }

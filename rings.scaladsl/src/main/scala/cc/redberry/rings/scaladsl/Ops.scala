@@ -48,6 +48,8 @@ class RingOps[E](self: E)(ring: Ring[E]) {
 
   def /(other: E): E = ring.divideExact(self, other)
 
+  def reciprocal: E = ring.reciprocal(self)
+
   def pow(exponent: Int): E = ring.pow(self, exponent)
 
   def **(exponent: Int): E = ring.pow(self, exponent)
@@ -80,6 +82,10 @@ class RingOps[E](self: E)(ring: Ring[E]) {
 
   def ===(other: E): Boolean = self == other
 
+  def ~==(other: E): Boolean = self == other || ring.negate(self) == other
+
+  def ~!=(other: E): Boolean = ! ~==(other)
+
   def =!=(other: Int): Boolean = self != constant(other)
 
   def =!=(other: Long): Boolean = self != constant(other)
@@ -96,11 +102,17 @@ trait RingSupport[E] {
 }
 
 object RingSupport {
-  implicit def polyRingSupport[Poly <: IPolynomial[Poly], E]: RingSupport[Poly] = ev => rings.Rings.PolynomialRing(ev)
+  implicit def polyRingSupport[Poly <: IPolynomial[Poly], E]: RingSupport[Poly] = new RingSupport[Poly] {
+    override def ringEv(ev: Poly): Ring[Poly] = rings.Rings.PolynomialRing(ev)
+  }
 
-  implicit def rationalRingSupport[E]: RingSupport[Rational[E]] = ev => rings.Rings.Frac(ev.ring)
+  implicit def rationalRingSupport[E]: RingSupport[Rational[E]] = new RingSupport[Rational[E]] {
+    override def ringEv(ev: Rational[E]): Ring[Rational[E]] =  rings.Rings.Frac(ev.ring)
+  }
 
-  implicit def integersRingSupport: RingSupport[IntZ] = _ => rings.Rings.Z
+  implicit def integersRingSupport: RingSupport[IntZ] = new RingSupport[IntZ] {
+    override def ringEv(ev: IntZ): Ring[IntZ] = rings.Rings.Z
+  }
 }
 
 class PolynomialSetOps[Poly <: IPolynomial[Poly]](self: Poly) {
@@ -218,6 +230,8 @@ class CfOps[E, Poly <: IPolynomial[Poly]](self: E)(ring: PolynomialRing[Poly, E]
   def -(poly: Poly): Poly = ring.negate(ring.subtractConstant(poly, self))
 
   def *(poly: Poly): Poly = ring.multiplyConstant(poly, self)
+
+  def /(poly: Poly): Poly = ring.divideExact(ring.getConstant(self), poly)
 }
 
 class IntegerOps[E](self: Int)(ring: Ring[E]) {
@@ -226,4 +240,6 @@ class IntegerOps[E](self: Int)(ring: Ring[E]) {
   def -(oth: E): E = ring.negate(ring.subtract(oth, ring valueOf self))
 
   def *(oth: E): E = ring.multiply(oth, ring valueOf self)
+
+  def /(oth: E): E = ring.divideExact(ring valueOf self, oth)
 }

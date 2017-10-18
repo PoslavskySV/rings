@@ -423,7 +423,7 @@ public class Examples {
         MultivariatePolynomial<BigInteger> slowGCD = Arrays.stream(polys)
                 .reduce(ring.getZero(), MultivariateGCD::PolynomialGCD);
         // result the same
-        assert fastGCD.equals(slowGCD);
+        assert fastGCD.equals(slowGCD) || fastGCD.equals(slowGCD.negate());
     }
 
     @Test
@@ -622,5 +622,49 @@ public class Examples {
                 div = divRem[0],
                 rem = divRem[1];
         assert r1.equals(gfxyz.add(gfxyz.multiply(r2, div), rem));
+    }
+
+    @Test
+    public void test25() throws Exception {
+        FiniteField<UnivariatePolynomialZp64> ring = GF(17, 9);
+
+        UnivariatePolynomialZp64 a = ring.randomElement();
+        UnivariatePolynomialZp64 b = ring.pow(a, 1000);
+        UnivariatePolynomialZp64 c = ring.reciprocal(b);
+
+        assert ring.multiply(b, c).isOne();
+
+        UnivariatePolynomialZp64 some = ring.add(
+                ring.divideExact(a, ring.add(b, c)),
+                ring.pow(a, 6),
+                ring.negate(ring.multiply(a, b, c)));
+    }
+
+    @Test
+    public void test26() throws Exception {
+        // Z[x, y, z]
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z, MonomialOrder.LEX);
+
+        MultivariatePolynomial<BigInteger>
+                x = ring.variable(0),
+                y = ring.variable(1),
+                z = ring.variable(2);
+
+        // do some math
+        MultivariatePolynomial<BigInteger> a = ring.decrement(ring.pow(ring.add(x, y, z), 2));
+        MultivariatePolynomial<BigInteger> b = ring.add(
+                ring.pow(ring.add(x, ring.negate(y), ring.negate(z), ring.getNegativeOne()), 2),
+                x, y, z, ring.getNegativeOne());
+        MultivariatePolynomial<BigInteger> c = ring.add(
+                ring.pow(ring.add(a, b, ring.getOne()), 9),
+                ring.negate(a), ring.negate(b), ring.getNegativeOne());
+
+        // reduce c modulo a and b (multivariate division with remainder)
+        MultivariatePolynomial<BigInteger>[] divRem = MultivariateDivision.divideAndRemainder(c, a, b);
+        MultivariatePolynomial<BigInteger>
+                div1 = divRem[0],
+                div2 = divRem[1],
+                rem = divRem[2];
+
     }
 }

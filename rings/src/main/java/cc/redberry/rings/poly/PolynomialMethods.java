@@ -103,6 +103,23 @@ public final class PolynomialMethods {
             throw new RuntimeException();
     }
 
+
+    /**
+     * Computes {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}. Half-GCD algorithm is used.
+     *
+     * @param a the univariate polynomial
+     * @param b the univariate  polynomial
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
+     * @see UnivariateGCD#PolynomialExtendedGCD(IUnivariatePolynomial, IUnivariatePolynomial)
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends IUnivariatePolynomial<T>> T[] PolynomialExtendedGCD(T a, T b) {
+        if (a.isOverField())
+            return UnivariateGCD.PolynomialExtendedGCD(a, b);
+        else
+            throw new IllegalArgumentException("Polynomial over field is expected");
+    }
+
     /**
      * Returns quotient and remainder of a and b.
      *
@@ -132,7 +149,7 @@ public final class PolynomialMethods {
     public static <Poly extends IPolynomial<Poly>>
     Poly remainder(Poly a, Poly b) {
         if (a instanceof IUnivariatePolynomial)
-            return  (Poly) UnivariateDivision.remainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
+            return (Poly) UnivariateDivision.remainder((IUnivariatePolynomial) a, (IUnivariatePolynomial) b, true);
         else if (a instanceof AMultivariatePolynomial)
             return (Poly) MultivariateDivision.divideAndRemainder((AMultivariatePolynomial) a, (AMultivariatePolynomial) b)[1];
         else

@@ -55,7 +55,7 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
   /**
     * @inheritdoc
     **/
-  override def toString: String = Objects.toString( theRing )
+  override def toString: String = Objects.toString(theRing)
 
 
   /** element class  */
@@ -83,8 +83,6 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
       obj.productIterator.map(show).mkString("(", ",", ")")
     case obj: Traversable[_] =>
       obj.map(show).toString
-    case obj: FactorDecomposition[_] =>
-      obj.toString((element: T forSome {type T <: IPolynomial[T]}) => show(element))
     case any@_ => _show(any)
   }
 }
@@ -147,11 +145,17 @@ abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
     */
   override def parse(string: String): Poly = theRing.parse(string, variables)
 
+  private lazy val toStringSupport: ToStringSupport[Any] = new ToStringSupport[Any] {
+    override def toString(element: Any): String = show(element)
+  }
+
   /**
     * To string
     */
   override def _show(obj: Any): String = obj match {
     case el: E if cfRing.isElement(el) => cfRing.show(el)
+    case obj: FactorDecomposition[PolyType] =>
+      obj.toString(toStringSupport.asInstanceOf[ToStringSupport[PolyType]])
     case wv: WithVariables => show(wv)
     case _ => super._show(obj)
   }
@@ -505,7 +509,7 @@ object GF {
   * @param coefficientDomain coefficient ring
   * @param variable          variable
   */
-final case class UnivariateRingZp64 private(coefficientDomain: IntegersZp64, override val variable: String)
+final case class UnivariateRingZp64 private(override val variable: String, coefficientDomain: IntegersZp64)
   extends IUnivariateRing[UnivariatePolynomialZp64, Long](rings.Rings.UnivariateRingZp64(coefficientDomain), variable) {
   val modulus: Long = coefficientDomain.modulus
 
@@ -574,12 +578,12 @@ object UnivariateRingZp64 {
   /**
     * Zp[variable] with specified modulus
     */
-  def apply(modulus: Long, variable: String): UnivariateRingZp64 = new UnivariateRingZp64(new IntegersZp64(modulus), variable)
+  def apply(modulus: Long, variable: String): UnivariateRingZp64 = new UnivariateRingZp64(variable, new IntegersZp64(modulus))
 
   /**
     * Zp[variable] with specified coefficient ring (Zp)
     */
-  def apply(domain: IntegersZp64, variable: String) = new UnivariateRingZp64(domain, variable)
+  def apply(domain: IntegersZp64, variable: String) = new UnivariateRingZp64(variable, domain)
 }
 
 /**

@@ -168,4 +168,14 @@ private[scaladsl] trait Predef {
       new Monomial[E](exps, cf)
     }
   }
+
+  final class RichArrayTuple[Poly](arr: Array[Poly]) {
+    def tuple2: (Poly, Poly) = (arr(0), arr(1))
+
+    def tuple3: (Poly, Poly, Poly) = (arr(0), arr(1), arr(2))
+
+    def tuple4: (Poly, Poly, Poly, Poly) = (arr(0), arr(1), arr(2), arr(3))
+  }
+
+  implicit def arrayToTuple[Poly](arr: Array[Poly]): RichArrayTuple[Poly] = new RichArrayTuple(arr)
 }

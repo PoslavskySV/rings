@@ -55,7 +55,7 @@ public final class UnivariateRing<Poly extends IUnivariatePolynomial<Poly>> exte
      */
     public Poly randomElement(int minDegree, int maxDegree, RandomGenerator rnd) {
         return RandomUnivariatePolynomials.randomPoly(factory, minDegree +
-                minDegree == maxDegree ? 0 : rnd.nextInt(maxDegree - minDegree), rnd);
+                (minDegree == maxDegree ? 0 : rnd.nextInt(maxDegree - minDegree)), rnd);
     }
 
     /**

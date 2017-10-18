@@ -1,9 +1,6 @@
 package cc.redberry.rings.poly;
 
-import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
-import cc.redberry.rings.poly.multivar.MultivariateDivision;
-import cc.redberry.rings.poly.multivar.MultivariateGCD;
-import cc.redberry.rings.poly.multivar.RandomMultivariatePolynomials;
+import cc.redberry.rings.poly.multivar.*;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well44497b;
 
