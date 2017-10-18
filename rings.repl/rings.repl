@@ -1,0 +1,38 @@
+#!/bin/bash
+
+ringsVersion=2.0
+
+if [ -z ${RINGS_SCALADSL_JAR+x} ]; then
+	importString="import \$ivy.\`cc.redberry::rings:${ringsVersion}\`"
+else 
+	importString="interp.load.cp(Path(\"${RINGS_SCALADSL_JAR}\"))"
+fi
+
+amm \
+	-b "Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings" \
+	--predef-code \
+		'import ammonite.ops._ 
+		'"$importString"'
+		
+		@ 
+		 
+		import cc.redberry.rings
+		import rings.{bigint, primes, linear, poly}
+		import poly.{univar, multivar}
+		import poly.PolynomialMethods._
+		import multivar.MonomialOrder._
+		import rings.scaladsl._
+		import syntax._
+		implicit val $$tPrintBigInteger    : pprint.TPrint[IntZ]               = pprint.TPrint.literal[IntZ]("IntZ")
+		implicit val $$tPrintRational      : pprint.TPrint[rings.Rational[_]]  = pprint.TPrint.literal[rings.Rational[_]]("Rational")
+		implicit val $$tPrintMonomialOrder : pprint.TPrint[Ordering]           = pprint.TPrint.literal[Ordering]("MonomialOrder")
+		repl.pprinter() = repl.pprinter().copy(additionalHandlers = {
+		  case (f: Ordering) => pprint.Tree.Literal(f match {
+		    case LEX      => "LEX"
+		    case ALEX     => "ALEX"
+		    case GRLEX    => "GRLEX"
+		    case GREVLEX  => "GREVLEX"
+		    case _        => f.toString
+		  })
+		})
+		def exit = System.exit(0)'
