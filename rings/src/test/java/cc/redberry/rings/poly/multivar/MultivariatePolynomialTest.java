@@ -226,7 +226,7 @@ public class MultivariatePolynomialTest extends AMultivariateTest {
                             rndd.nextInt(1, 5),
                             rndd.nextInt(1, 10),
                             ring, LEX, rnd);
-            MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(), ring, LEX, Arrays.copyOf(vars, poly.nVariables));
+            MultivariatePolynomial<BigInteger> parsed = parse(poly.toString(vars), ring, LEX, Arrays.copyOf(vars, poly.nVariables));
             assertEquals(poly, parsed);
         }
     }

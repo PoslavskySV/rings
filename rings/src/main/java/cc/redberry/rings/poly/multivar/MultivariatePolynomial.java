@@ -1542,7 +1542,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> parsePoly(String string) {
         MultivariatePolynomial<E> r = parse(string, ring, ordering);
         if (r.nVariables != nVariables)
-            throw new IllegalArgumentException(String.format("nVariables %s != %s, not from this field: %s", r.nVariables, nVariables, string));
+            return parsePoly(string, WithVariables.defaultVars(nVariables));
         return r;
     }
 

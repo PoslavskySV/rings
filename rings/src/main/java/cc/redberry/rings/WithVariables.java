@@ -18,10 +18,16 @@ public interface WithVariables {
      * @param nVars number of variable
      */
     static String[] defaultVars(int nVars) {
-        char v = 'a';
+        if (nVars == 1)
+            return new String[]{"x"};
+        if (nVars == 2)
+            return new String[]{"x", "y"};
+        if (nVars == 3)
+            return new String[]{"x", "y", "z"};
+
         String[] vars = new String[nVars];
-        for (int i = 0; i < nVars; i++)
-            vars[i] = Character.toString(v++);
+        for (int i = 1; i <= nVars; i++)
+            vars[i - 1] = "x" + i;
         return vars;
     }
 }

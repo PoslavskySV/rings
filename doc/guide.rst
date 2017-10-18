@@ -868,14 +868,15 @@ The first thing about the internal representation of polynomials is that polynom
 
 
 		// the default toString() will use the default
-		// variables "a", "b", "c"  and so on (alphabetical)
-		// the result will be "a*b + a^2"
+		// variables "x", "y", "z"  (if more variables 
+		// then it will use "x1", "x2", ... , "xN")
+		// the result will be "x*y + x^2"
 		println(poly1)
 		// specify which variable names use for printing
-		// the result will be "x*y + x^2"
-		println(poly1.toString(Array("x", "y")))
-		// the result will be "y*x + y^2"
-		println(poly1.toString(Array("y", "x")))
+		// the result will be "a*b + a^2"
+		println(poly1.toString(Array("a", "b")))
+		// the result will be "a*b + b^2"
+		println(poly1.toString(Array("b", "a")))
 
 	.. code-tab:: java
 
@@ -901,14 +902,15 @@ The first thing about the internal representation of polynomials is that polynom
 
 
 		// the default toString() will use the default
-		// variables "a", "b", "c"  and so on (alphabetical)
-		// the result will be "a*b + a^2"
+		// variables "x", "y", "z"  (if more variables 
+		// then it will use "x1", "x2", ... , "xN")
+		// the result will be "x*y + x^2"
 		System.out.println(poly1);
 		// specify which variable names use for printing
-		// the result will be "x*y + x^2"
-		System.out.println(poly1.toString(new String[]{"x", "y"}));
-		// the result will be "y*x + y^2"
-		System.out.println(poly1.toString(new String[]{"y", "x"}));
+		// the result will be "a*b + a^2"
+		System.out.println(poly1.toString(new String[]{"a", "b"}));
+		// the result will be "a*b + b^2"
+		System.out.println(poly1.toString(new String[]{"b", "a"}));
 
 
 With Scala DSL the information about string names of variables may be stored in the ring instance. In Scala DSL, when parsing polynomial via ``ring(string)`` it is allowed to use only those variables that were specified when instantiating the ring. To get the internally used integer index of variable there is ``ring.index("stringVar")`` method; to print polynomial using the stored strings for variables there is ``ring.show(object)`` method. Illustration:

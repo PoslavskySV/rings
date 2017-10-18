@@ -62,7 +62,7 @@ public class ParserTest extends AMultivariateTest {
                 .map(s -> MultivariatePolynomial.parse(s, domain, vars))
                 .toArray(MultivariatePolynomial[]::new);
         for (int i = 0; i < arr.length; i++) {
-            Assert.assertEquals(strs[i].replace("x", "a"), arr[i].toString());
+            Assert.assertEquals(strs[i], arr[i].toString(vars));
             Assert.assertEquals(arr[i], arr[i].parsePoly(arr[i].toString()));
         }
     }
