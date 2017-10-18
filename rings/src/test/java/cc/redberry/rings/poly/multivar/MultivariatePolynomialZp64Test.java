@@ -233,7 +233,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
                             rndd.nextInt(1, 5),
                             rndd.nextInt(1, 10),
                             domain.asGenericRing(), LEX, rnd));
-            MultivariatePolynomialZp64 parsed = parse(poly.toString(), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
+            MultivariatePolynomialZp64 parsed = parse(poly.toString(vars), domain, LEX, Arrays.copyOf(vars, poly.nVariables));
             assertEquals(poly, parsed);
         }
     }
