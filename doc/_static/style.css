@@ -13,3 +13,8 @@
 	font: normal Lucida Sans, Lucida Sans Unicode, Lucida Grande, sans-serif; 
 	font-variant: small-caps;
 }
+
+.feature {
+	/*color: #006633;*/
+	font-style: italic;
+}

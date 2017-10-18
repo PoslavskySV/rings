@@ -9,6 +9,44 @@ User guide
 ==========
 
 
+Rings library structure
+=======================
+
+|Rings| library has the following structure:
+
+ - ``rings`` |br| the core of |Rings| library written entirely in Java. It includes:
+ 
+ 	- ``rings.bigint`` |br| arbitrary precision integers (fork of `tbuktu/bigint <https://github.com/tbuktu/bigint>`_)
+ 	- ``rings.primes`` |br| prime numbers including prime factorization, primality test etc.
+ 	- ``rings.poly.univar`` |br| univariate polynomials and algorithms with them including GCD and factorization
+ 	- ``rings.poly.multivar`` |br| multivariate polynomials and algorithms with them including GCD, factorization, Groebner basis etc.
+ 
+ - ``rings.scaladsl`` |br| Scala wrappers and syntax definitions for |Rings|
+
+
+Examples in this user guide require some imports to be in the scope. The following code snippet includes all possible imports that may be required to run examples:
+
+.. tabs::
+
+   .. code-tab:: scala
+
+   		import cc.redberry.rings
+   		import rings.{bigint, primes, poly}
+		import rings.poly.{univar, multivar}
+		import rings.scaladsl._
+		import syntax._
+
+   .. code-tab:: java
+
+		import cc.redberry.rings.*
+		import cc.redberry.rings.poly.*
+		import cc.redberry.rings.poly.univar.*
+		import cc.redberry.rings.poly.multivar.*
+
+		import static cc.redberry.rings.poly.PolynomialMethods.*
+		import static cc.redberry.rings.Rings.*
+
+
 
 Integers
 ========
@@ -39,6 +77,9 @@ There are two basic types of integer numbers that we have to deal with when doin
 
 .. _rings.bigint.BigInteger: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/bigint/BigInteger.java
 .. _BigInteger: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/bigint/BigInteger.java
+
+
+.. _ref-primes:
 
 Prime numbers
 """""""""""""
@@ -557,6 +598,8 @@ Illustrations:
 
 Further details about multivariate polynomials are in :ref:`ref-multivariate-polynomials` section.
 
+.. _ref-scala-dsl:
+
 Scala DSL
 =========
 
@@ -800,6 +843,8 @@ The first thing about the internal representation of polynomials is that polynom
 .. tabs::
 
 	.. code-tab:: scala
+
+		import multivar.MultivariatePolynomial
 
 		// when parsing "x" will be considered as the "first variable"
 		// and "y" as "the second", then in the result the particular
@@ -1049,6 +1094,7 @@ While in case of ``UnivariateRingZp64`` or ``MultivariateRing`` both ``genericFu
 
 .. _IPolynomial<PolyType>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/IPolynomial.java
 
+.. _ref-polynomial-methods:
 
 Polynomial GCD, factorization and division with remainder
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -1267,6 +1313,8 @@ The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidea
 
 Details of implementation can be found in `UnivariateGCD`_.
 
+
+.. _ref-univariate-factorization:
 
 Univariate factorization
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1890,6 +1938,8 @@ Details of implementation can be found in `MultivariateGCD`_.
 
 .. _MultivariateGCD: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java
 
+
+.. _ref-multivariate-factorization:
 
 Multivariate factorization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

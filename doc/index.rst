@@ -1,97 +1,50 @@
 .. role:: rings
   :class: rings
 
+.. role:: feature
+  :class: feature
+
 .. |br| raw:: html
 
    <br/>
 
 
 
-########################################################
 Rings: efficient Java/Scala library for polynomial rings
 ########################################################
 
-|Rings| is an efficient implementation of both univariate and multivariate polynomial algebra over arbitrary coefficient rings. |Rings| make use of asymptotically fast algorithms for basic algebraic operations as well as for advanced methods like GCDs and polynomial factorization and give performance comparable (or even better in some cases) to well known solutions like Singular/NTL/FLINT/Maple/Mathematica.
+|Rings| is an efficient implementation of univariate and multivariate polynomial algebra over arbitrary coefficient rings. It make use of asymptotically fast algorithms for basic algebraic operations as well as for advanced methods like GCDs and polynomial factorization. Performance achieved in |Rings| is comparable to well known solutions like Singular/NTL/FLINT/Maple/Mathematica.
 
+The key features of |Rings| include:
 
-.. admonition:: my title goes here
-   :class: myOwnStyle
+ * :ref:`Polynomials → <ref-basics-polynomials>` |br| :feature:`Univariate and multivariate polynomials over arbitrary coefficient rings`
 
-   this is the admonition text
+ * :ref:`Polynomial GCD → <ref-polynomial-methods>` |br| :feature:`Polynomial GCD over arbitrary coefficient domains`
 
-
-.. admonition:: Features
-    
-    * Univariate and multivariate polynomials over arbitrary coefficient rings
-
-     * Polynomial factorization and GCDs over arbitrary coefficient rings
-     
-     * Galois fields and abstract algebra
-     
-     * Efficient implementation and overall high performance
-
-.. .. rubric:: title
-
-..    Never, ever, use this code!
-
-
-.. important:: 
-    Samples in the repository are already converted to 
-
-
-
-.. hint:: 
-    Samples in the repository are already converted to 
-
-
-.. tip:: 
-    Samples in the repository are already converted to 
-
-
-.. attention:: 
-    Samples in the repository are already converted to 
-
-.. glossary::
-
-   environment
-      A structure where information about all documents under the root is
-      saved, and used for cross-referencing.  The environment is pickled
-      after the parsing stage, so that successive runs only need to read
-      and parse new and changed documents.
-
-   source directory
-      The directory which, including its subdirectories, contains all
-      source files for one Sphinx project.
-
-**Features:**
-
-
- * Univariate and multivariate polynomials over arbitrary coefficient rings
-
- * Polynomial factorization and GCDs over arbitrary coefficient rings
+ * :ref:`Univariate factorization → <ref-univariate-factorization>` |br| :feature:`Univariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q`
+   
+ * :ref:`Multivariate factorization → <ref-multivariate-factorization>` |br| :feature:`Multivariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q`
  
- * Galois fields and abstract algebra
- 
- * Efficient implementation and overall high performance
+ * :ref:`Algebra → <ref-rings>` |br| :feature:`Arbitrary rings, Galois fields etc`
+
+ * :ref:`Scala DSL → <ref-scala-dsl>` |br| :feature:`Powerful domain specific language in Scala`
+   
+ * :ref:`Fast → <ref-some-benchamrks>` |br| :feature:`Really fast library suitable for real-world computational challenges`
 
 
-
+For a quick overview of what |Rings| can do proceed to :ref:`ref-quickstart` and try out |Rings|\ *.repl*.
 
 .. toctree::
-   :caption: Getting started
+   :caption: Documentation:
    :maxdepth: 3
 
-   installation
    quickstart
-
-.. _main-actions:
-
-.. toctree::
-   :caption: User guide
-   :maxdepth: 5
-
-   basics
+   guide
    algorithms
 
-.. _special-cases:
+
+License
+=======
+
+Apache License, Version 2.0 http://www.apache.org/licenses/LICENSE-2.0.txt
 
