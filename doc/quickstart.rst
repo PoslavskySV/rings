@@ -22,7 +22,7 @@ To taste what |Rings| can do, one can try interactive |Rings| session with `Ammo
 .. code-block:: bash
 
 	$ sudo curl -L -o /usr/local/bin/amm https://git.io/v5Tct && sudo chmod +x /usr/local/bin/amm
-	$ sudo curl -L -o /usr/local/bin/rings.repl https://git.io/vd90N && chmod +x /usr/local/bin/rings.repl
+	$ sudo curl -L -o /usr/local/bin/rings.repl https://git.io/vdQ6P && chmod +x /usr/local/bin/rings.repl
 
 and run:
 
