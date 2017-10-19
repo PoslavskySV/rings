@@ -331,7 +331,7 @@ Some benchmarks
 
 In the following plots performance of Rings is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at [GitHub](https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks). In all benchamrks random polynomials were used.
 
-![image](https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/bench_fac_multi_Z.png?raw=true)
+![image](https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/bench_gcd_Z.png?raw=true)
 
 Polynomial GCD performance on random sparse multivariate polynomials in *Z\[x, y, z\]* with about 100 terms, and degree equal to 20 in each variable. Rings are about 3 times faster.
 
