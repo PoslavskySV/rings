@@ -1,6 +1,13 @@
 .. image:: https://circleci.com/gh/PoslavskySV/rings.svg?style=svg
    :target: https://circleci.com/gh/PoslavskySV/rings
 
+.. image:: http://www.javadoc.io/badge/cc.redberry/rings.svg
+   :target: http://www.javadoc.io/doc/cc.redberry/rings
+
+.. image:: http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?color=blue&label=scaladoc
+   :target: http://www.javadoc.io/doc/cc.redberry/rings.scaladsl_2.12
+
+
 .. role:: feature
   :class: feature
 
