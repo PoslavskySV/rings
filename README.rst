@@ -1,13 +1,21 @@
-.. image:: https://circleci.com/gh/PoslavskySV/rings.svg?style=svg
+.. image:: https://img.shields.io/circleci/project/github/PoslavskySV/rings.svg?style=flat
    :target: https://circleci.com/gh/PoslavskySV/rings
 
 .. image:: http://www.javadoc.io/badge/cc.redberry/rings.svg
    :target: http://www.javadoc.io/doc/cc.redberry/rings
 
-.. image:: http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?color=blue&label=scaladoc
+.. image:: http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?label=scaladoc
    :target: http://www.javadoc.io/doc/cc.redberry/rings.scaladsl_2.12
 
+.. image:: https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat
+   :target: https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.0%7Cjar
 
+.. image:: https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat
+   :target: https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.0%7Cjar
+   
+.. image:: https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat
+   :target: https://opensource.org/licenses/Apache-2.0
+   
 .. role:: feature
   :class: feature
 
