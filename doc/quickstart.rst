@@ -22,7 +22,7 @@ To taste what |Rings| can do, one can try interactive |Rings| session with `Ammo
 .. code-block:: bash
 
 	$ sudo curl -L -o /usr/local/bin/amm https://git.io/v5Tct && sudo chmod +x /usr/local/bin/amm
-	$ sudo curl -L -o /usr/local/bin/rings.repl https://git.io/vdQ6P && chmod +x /usr/local/bin/rings.repl
+	$ sudo curl -L -o /usr/local/bin/rings.repl https://git.io/vd7EY && chmod +x /usr/local/bin/rings.repl
 
 and run:
 
@@ -64,8 +64,6 @@ For using |Rings| solely in Java there is Maven artifact:
 	    <artifactId>rings</artifactId>
 	    <version>2.0</version>
 	</dependency>
-
-
 
 Examples: algebra, GCDs, factorization
 ======================================
@@ -619,7 +617,7 @@ Ring of multivariate polynomials over elements of Galois field :math:`GF(7^{3})[
 Some benchmarks
 ===============
 
-In the following plots performance of |Rings| is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found on GitHub. In all benchamrks random polynomials were used.
+In the following plots performance of |Rings| is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at `GitHub <https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks>`_. In all benchamrks random polynomials were used.
 
 
 .. figure:: _static/bench_gcd_Z.png
