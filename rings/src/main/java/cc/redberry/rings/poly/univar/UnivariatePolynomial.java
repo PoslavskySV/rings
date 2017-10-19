@@ -60,6 +60,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @param data the coefficients
      * @return new univariate polynomial over specified ring with specified coefficients
      */
+    @SuppressWarnings("unchecked")
     public static <E> UnivariatePolynomial<E> create(Ring<E> ring, E... data) {
         ring.setToValueOf(data);
         return new UnivariatePolynomial<>(ring, data);

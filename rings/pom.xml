@@ -7,6 +7,12 @@
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
     <version>2.0</version>
+    <packaging>jar</packaging>
+    <name>rings</name>
+    <url>https://github.com/PoslavskySV/rings/</url>
+    <description>
+        Rings: efficient Java/Scala library for polynomial rings
+    </description>
 
     <parent>
         <groupId>org.sonatype.oss</groupId>
@@ -14,6 +20,34 @@
         <version>9</version>
         <relativePath/>
     </parent>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>PoslavskySV</id>
+            <email>stvlpos@mail.ru</email>
+            <name>Stanislav Poslavsky</name>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+                <role>tester</role>
+                <role>documentation</role>
+            </roles>
+            <timezone>UTC+04:00</timezone>
+            <url>https://github.com/PoslavskySV</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/PoslavskySV/rings.git</connection>
+    </scm>
 
     <build>
         <plugins>

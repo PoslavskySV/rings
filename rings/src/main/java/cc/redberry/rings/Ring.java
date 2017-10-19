@@ -105,6 +105,7 @@ public interface Ring<E> extends
      * @param elements elements to sum
      * @return sum of the array
      */
+    @SuppressWarnings("unchecked")
     default E add(E... elements) {
         E r = elements[0];
         for (int i = 1; i < elements.length; i++)
@@ -156,6 +157,7 @@ public interface Ring<E> extends
      * @param elements the elements
      * @return product of the array
      */
+    @SuppressWarnings("unchecked")
     default E multiply(E... elements) {
         E r = elements[0];
         for (int i = 1; i < elements.length; i++)
@@ -326,6 +328,7 @@ public interface Ring<E> extends
      * @param elements the elements
      * @return gcd
      */
+    @SuppressWarnings("unchecked")
     default E gcd(E... elements) {
         return gcd(Arrays.asList(elements));
     }

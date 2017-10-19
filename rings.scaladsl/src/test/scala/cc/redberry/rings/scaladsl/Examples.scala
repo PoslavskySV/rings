@@ -717,23 +717,4 @@ class Examples {
       assert(r1 == r2 * div + rem)
     }
   }
-
-
-  @Test
-  def test1111 = {
-
-    import cc.redberry.rings.poly.univar.UnivariateGCD._
-    import syntax._
-
-    // The ring Z/17[x]
-    implicit val ring = UnivariateRingZp64(17, "x")
-
-    val x = ring("x")
-
-    val (gcd, s, t) = PolynomialExtendedGCD(1 + x + x.pow(2) + x.pow(3), 1 + 2 * x + 9 * x.pow(2)).tuple3
-
-    println(s)
-    println(t)
-    println(gcd)
-  }
 }
