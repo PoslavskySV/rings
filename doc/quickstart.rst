@@ -621,24 +621,28 @@ In the following plots performance of |Rings| is compared to Wolfram Mathematica
 
 
 .. figure:: _static/bench_gcd_Z.png
+   :scale: 50%
    :align: center
 
    Polynomial GCD performance on random sparse multivariate polynomials in :math:`Z[x, y, z]` with about 100 terms, and degree equal to 20 in each variable. |Rings| is about 3 times faster.
 
 
 .. figure:: _static/bench_gcd_Z2.png
+   :scale: 50%
    :align: center
 
    Polynomial GCD performance on random sparse multivariate polynomials in :math:`Z_2[x, y, z]` with about 100 terms, and degree equal to 20 in each variable. Points marked with red color are those where Mathematica failed to obtain result in less than 3 minutes. |Rings| is about 100 times faster.
 
 
 .. figure:: _static/bench_fac_uni_Zp.png
+   :scale: 50%
    :align: center
 
    Univariate factorization performance on random polynomials in :math:`Z_{32771}[x]` of degree 250. |Rings| is about 15% slower (this difference remains the same for polynomials of larger degrees).
 
 
 .. figure:: _static/bench_fac_multi_Z.png
+   :scale: 50%
    :align: center
 
    Multivariate factorization performance on random sparse polynomials in :math:`Z[x_1, x_2, x_3, x_4]` with at least 2 factors with size 100 and degree 10 in each variable.  |Rings| is about 9 times faster.
