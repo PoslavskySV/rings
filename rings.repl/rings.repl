@@ -3,7 +3,7 @@
 ringsVersion=2.0
 
 if [ -z ${RINGS_SCALADSL_JAR+x} ]; then
-	importString="import \$ivy.\`cc.redberry::rings:${ringsVersion}\`"
+	importString="import \$ivy.\`cc.redberry::rings.scaladsl:${ringsVersion}\`"
 else 
 	importString="interp.load.cp(Path(\"${RINGS_SCALADSL_JAR}\"))"
 fi
