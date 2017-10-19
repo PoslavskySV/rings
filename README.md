@@ -331,19 +331,19 @@ Some benchmarks
 
 In the following plots performance of Rings is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at [GitHub](https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks). In all benchamrks random polynomials were used.
 
-![image](https://github.com/PoslavskySV/rings/blob/master/doc/_static/bench_fac_multi_Z.png?raw=true)
+![image](https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/bench_fac_multi_Z.png?raw=true)
 
 Polynomial GCD performance on random sparse multivariate polynomials in *Z\[x, y, z\]* with about 100 terms, and degree equal to 20 in each variable. Rings are about 3 times faster.
 
-![image](https://github.com/PoslavskySV/rings/blob/master/doc/_static/bench_gcd_Z2.png?raw=true)
+![image](https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/bench_gcd_Z2.png?raw=true)
 
 Polynomial GCD performance on random sparse multivariate polynomials in *Z_2\[x, y, z\]* with about 100 terms, and degree equal to 20 in each variable. Points marked with red color are those where Mathematica failed to obtain result in less than 3 minutes. Rings are about 100 times faster.
 
-![image](https://github.com/PoslavskySV/rings/blob/master/doc/_static/bench_fac_uni_Zp.png?raw=true)
+![image](https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/bench_fac_uni_Zp.png?raw=true)
 
 Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* of degree 250. Rings are about 15% slower (this difference remains the same for polynomials of larger degrees).
 
-![image](https://github.com/PoslavskySV/rings/blob/master/doc/_static/bench_fac_multi_Z.png?raw=true)
+![image](https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/bench_fac_multi_Z.png?raw=true)
 
 Multivariate factorization performance on random sparse polynomials in *Z\[x_1, x_2, x_3, x_4\]* with at least 2 factors with size 100 and degree 10 in each variable. Rings are about 9 times faster.
 
