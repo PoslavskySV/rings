@@ -344,7 +344,7 @@ Polynomial GCD performance on random sparse multivariate polynomials in *Z_2\[x,
 
 Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* of degree 250. Rings are about 15% slower (this difference remains the same for polynomials of larger degrees).
 
-<img src="doc/_static/bench_fac_multi_Z" width="600">
+<img src="doc/_static/bench_fac_multi_Z.png" width="600">
 
 Multivariate factorization performance on random sparse polynomials in *Z\[x_1, x_2, x_3, x_4\]* with at least 2 factors with size 100 and degree 10 in each variable. Rings are about 9 times faster.
 
