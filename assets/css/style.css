@@ -4,5 +4,5 @@
 @import "{{ site.theme }}";
 
 pre, code {
-    font-size: 11px;
+    font-size: 11px !important;
 }
