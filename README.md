@@ -27,7 +27,7 @@ Set up
 
 ### Interactive Rings shell
 
-To taste what Rings can do, one can try interactive session with [Ammonite REPL](http://ammonite.io). Type the following commands at the prompt to install Rings*.repl*:
+To taste what Rings can do, one can try interactive session with [Ammonite REPL](http://ammonite.io). Type the following commands at the prompt to install Rings<i>.repl</i>:
 
 ``` scala
 $ sudo curl -L -o /usr/local/bin/amm https://git.io/v5Tct && sudo chmod +x /usr/local/bin/amm
@@ -75,7 +75,7 @@ For using Rings solely in Java there is Maven artifact:
 Examples: algebra, GCDs, factorization
 --------------------------------------
 
-Below examples can be evaluated directly in the Rings*.repl*. If using Rings in Scala, the following preambula will import all required things from Rings library:
+Below examples can be evaluated directly in the Rings<i>.repl</i>. If using Rings in Scala, the following preambula will import all required things from Rings library:
 
 ``` scala
 import cc.redberry.rings
