@@ -346,7 +346,7 @@ Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* o
 
 <img src="doc/_static/bench_fac_uni_Zp_1000.png" width="600">
 
-Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* of degree 100. Rings are about 50% faster.
+Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* of degree 1000. Rings are about 50% faster.
 
 <img src="doc/_static/bench_fac_multi_Z.png" width="600">
 
