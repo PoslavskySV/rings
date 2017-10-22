@@ -1,6 +1,103 @@
 #!/bin/bash
 
 ringsVersion=2.0
+ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings."
+
+# CHECK JAVA VERSION
+java="java"
+jsedstring="s/.*1\.\(.*\)\..*/\1/"
+jVersion=$($java -version 2>&1 | grep version | awk '{ print $3 }' | sed $jsedstring)
+if [[ $jVersion -lt 8 ]];
+then
+    echo "Wrong version of java. Please use Java 8 or higher."
+    exit 1
+fi
+
+# CHECK AVAILABLE RAM
+os=`uname`
+delta=100
+case $os in
+    Darwin)
+        freeBlocks=$(vm_stat | grep free | awk '{ print $3 }' | sed 's/\.//')
+        inactiveBlocks=$(vm_stat | grep inactive | awk '{ print $3 }' | sed 's/\.//')
+        speculativeBlocks=$(vm_stat | grep speculative | awk '{ print $3 }' | sed 's/\.//')
+        freeMb=$((($freeBlocks+$speculativeBlocks)*4096/1048576))
+        inactiveMb=$(($inactiveBlocks*4096/1048576))
+        maxMb=$((($freeMb+$inactiveMb-$delta)))
+    ;;
+    Linux)
+        rFreeMb=$(free -m | grep Mem | awk '{ print $4 }')
+        maxMb=$(($rFreeMb-$delta))
+    ;;
+    FreeBSD)
+        freeBlocks=$(vmstat -s | grep -E 'free$' | awk '{ print $1 }')
+        inactiveBlocks=$(vmstat -s | grep inactive | awk '{ print $1 }')
+        freeMb=$(( ($freeBlocks+$inactiveBlocks)*4096/1048576 ))
+        maxMb=$(($freeMb-$delta))
+    ;;
+    *)
+       echo "Your operation system $os is not supported."
+       exit 1
+    ;;
+esac
+
+# ringsArgs=()
+javaArgs=()
+
+needXmxXms=true
+
+while [[ $# > 0 ]]
+do
+    key="$1"
+    shift
+    case $key in
+        -D*|-X*|-ea|-agentlib*)
+            javaArgs+=(${key})
+
+            case $key in
+                -Xmx*|-Xms*)
+                    needXmxXms=false
+                    ;;
+            esac
+
+            ;;
+         -v|--version)
+            echo "$ringsString"
+            exit 0
+            ;;
+         --print-jargs)
+			printJArgs=true
+			;;
+        *)
+			echo "Unknown option: $key"
+			exit 1
+            # ringsArgs+=("${key}")
+            ;;
+    esac
+done
+
+
+if [[ ${needXmxXms} == true ]]
+then
+    targetXmx=12000
+
+    if [[ $targetXmx -gt $maxMb ]];
+    then
+        targetXmx=$maxMb
+    fi
+
+    javaArgs+=("-Xmx${targetXmx}m")
+
+    targetXms=$((${targetXmx}*2/3))
+
+    if [[ $targetXms -lt 2000 ]];
+    then
+        targetXms=$targetXmx
+    fi
+
+    javaArgs+=("-Xms${targetXms}m")
+fi
+
 
 if [ -z ${RINGS_SCALADSL_JAR+x} ]; then
 	importString="import \$ivy.\`cc.redberry::rings.scaladsl:${ringsVersion}\`"
@@ -8,8 +105,14 @@ else
 	importString="interp.load.cp(Path(\"${RINGS_SCALADSL_JAR}\"))"
 fi
 
-amm \
-	-b "Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings" \
+if [ "$printJArgs" == "true" ]
+then
+	echo "-XX:+AggressiveOpts ${javaArgs[@]}"
+fi
+
+JAVA_OPTS="-XX:+AggressiveOpts ${javaArgs[@]}" amm \
+	-b "Running Ammonite Repl
+$ringsString" \
 	--predef-code \
 		'import ammonite.ops._ 
 		'"$importString"'
