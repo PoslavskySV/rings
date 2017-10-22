@@ -638,7 +638,14 @@ In the following plots performance of |Rings| is compared to Wolfram Mathematica
    :scale: 50%
    :align: center
 
-   Univariate factorization performance on random polynomials in :math:`Z_{32771}[x]` of degree 250. |Rings| is about 15% slower (this difference remains the same for polynomials of larger degrees).
+   Univariate factorization performance on random polynomials in :math:`Z_{32771}[x]` of degree 250. |Rings| is about 15% slower.
+
+
+.. figure:: _static/bench_fac_uni_Zp_1000.png
+   :scale: 50%
+   :align: center
+
+   Univariate factorization performance on random polynomials in :math:`Z_{32771}[x]` of degree 100. |Rings| are about 50% faster.
 
 
 .. figure:: _static/bench_fac_multi_Z.png
