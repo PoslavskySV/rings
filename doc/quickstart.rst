@@ -17,14 +17,20 @@ Set up
 Interactive Rings shell
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-To taste what |Rings| can do, one can try interactive |Rings| session with `Ammonite REPL <http://ammonite.io>`_. Type the following commands at the prompt to install |Rings|\ *.repl*:
+To taste what |Rings| can do, one can try interactive |Rings| session with `Ammonite REPL <http://ammonite.io>`_. One can install |Rings|\ *.repl* with Homebrew:
+
+.. code-block:: bash
+
+	$ brew install PoslavskySV/rings/rings.repl
+
+or just by typing the following commands at the prompt:
 
 .. code-block:: bash
 
 	$ sudo curl -L -o /usr/local/bin/amm https://git.io/v5Tct && sudo chmod +x /usr/local/bin/amm
 	$ sudo curl -L -o /usr/local/bin/rings.repl https://git.io/vd7EY && chmod +x /usr/local/bin/rings.repl
 
-and run:
+Now run |Rings|\ *.repl*:
 
 .. code-block:: scala
 
@@ -197,7 +203,7 @@ Univariate extended GCD in :math:`Z_{17}[x]`:
 		
 		val poly1 = 1 + x + x.pow(2) + x.pow(3)
 		val poly2 = 1 + 2 * x + 9 * x.pow(2)
-		val (gcd, s, t) = PolynomialExtendedGCD(poly1, poly2).tuple3
+		val (gcd, s, t) = PolynomialExtendedGCD(poly1, poly2) match { case Array(gcd,s,t) => (gcd,s,t) }
 
 		println((gcd, s, t))
 
