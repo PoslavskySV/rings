@@ -21,7 +21,7 @@ Univariate polynomials
  - `UnivariatePolynomial.multiply <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomial.java>`_
  - `UnivariatePolynomialZp64.multiply <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.java>`_
 	 
-2. *Half-GCD and Extended Half-GCD* |____| (Sec. 11 in [GaGe03]_) |br| used with adaptations inspired by [ShoNTL]_ implementation for univariate GCD:
+2. *Half-GCD and Extended Half-GCD* |____| (Sec. 11 in [GaGe03]_) |br| used (with adaptations inspired by [ShoNTL]_) for univariate GCD:
 
  - `UnivariateGCD.HalfGCD  <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java>`_
  - `UnivariateGCD.ExtendedHalfGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java>`_

@@ -12,13 +12,13 @@ Rings is an efficient implementation of univariate and multivariate polynomial a
 
 The key features of Rings include:
 
-> -   [Polynomials →](http://rings.readthedocs.io/en/latest/guide.html#ref-basics-polynomials) Univariate and multivariate polynomials over arbitrary coefficient rings
-> -   [Polynomial GCD →](http://rings.readthedocs.io/en/latest/guide.html#ref-polynomial-methods) Polynomial GCD over arbitrary coefficient domains
-> -   [Univariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-univariate-factorization) Univariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
-> -   [Multivariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-multivariate-factorization) Multivariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
-> -   [Algebra →](http://rings.readthedocs.io/en/latest/guide.html#ref-rings) Arbitrary rings, Galois fields etc
-> -   [Scala DSL →](http://rings.readthedocs.io/en/latest/guide.html#ref-scala-dsl) Powerful domain specific language in Scala
-> -   [Fast →](http://rings.readthedocs.io/en/latest/quickstart.html#ref-some-benchamrks) Really fast library suitable for real-world computational challenges
+> -  [Polynomials →](http://rings.readthedocs.io/en/latest/guide.html#ref-basics-polynomials) Univariate and multivariate polynomials over arbitrary coefficient rings
+> -  [Polynomial GCD →](http://rings.readthedocs.io/en/latest/guide.html#ref-polynomial-methods) Polynomial GCD over arbitrary coefficient domains
+> -  [Univariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-univariate-factorization) Univariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
+> -  [Multivariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-multivariate-factorization) Multivariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
+> -  [Algebra →](http://rings.readthedocs.io/en/latest/guide.html#ref-rings) Arbitrary rings, Galois fields etc
+> -  [Scala DSL →](http://rings.readthedocs.io/en/latest/guide.html#ref-scala-dsl) Powerful domain specific language in Scala
+> -  [Fast →](http://rings.readthedocs.io/en/latest/quickstart.html#ref-some-benchamrks) Really fast library suitable for real-world computational challenges
 
 The full documentation is available at [<http://rings.readthedocs.io>](https://rings.readthedocs.io).
 
@@ -27,14 +27,20 @@ Set up
 
 ### Interactive Rings shell
 
-To taste what Rings can do, one can try interactive session with [Ammonite REPL](http://ammonite.io). Type the following commands at the prompt to install Rings<i>.repl</i>:
+To taste what Rings can do, one can try interactive session with [Ammonite REPL](http://ammonite.io). You can install Rings<i>.repl</i> with Homebrew:
 
-``` scala
+``` bash
+$ brew install PoslavskySV/rings/rings.repl
+```
+
+or just by typing the following commands at the prompt:
+
+``` bash
 $ sudo curl -L -o /usr/local/bin/amm https://git.io/v5Tct && sudo chmod +x /usr/local/bin/amm
 $ sudo curl -L -o /usr/local/bin/rings.repl https://git.io/vd7EY && chmod +x /usr/local/bin/rings.repl
 ```
 
-and run:
+Now run Rings<i>.repl</i>:
 
 ``` scala
 $ rings.repl
@@ -139,7 +145,7 @@ val x = ring("x")
 
 val poly1 = 1 + x + x.pow(2) + x.pow(3)
 val poly2 = 1 + 2 * x + 9 * x.pow(2)
-val (gcd, s, t) = PolynomialExtendedGCD(poly1, poly2).tuple3
+val (gcd, s, t) = PolynomialExtendedGCD(poly1, poly2) match { case Array(gcd,s,t) => (gcd,s,t) }
 
 println((gcd, s, t))
 ```
@@ -358,145 +364,177 @@ Index of algorithms implemented in Rings
 
 ### Univariate polynomials
 
-1.  *Karatsuba multiplication*   (Sec. 8.1 in \[GaGe03\]) used with some adaptations for multiplication of univariate polynomials:
+1. *Karatsuba multiplication* (Sec. 8.1 in \[GaGe03\]) 
 
-> -   [UnivariatePolynomial.multiply](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomial.java)
-> -   [UnivariatePolynomialZp64.multiply](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.java)
+   used with some adaptations for multiplication of univariate polynomials:
 
-2.  *Half-GCD and Extended Half-GCD*   (Sec. 11 in \[GaGe03\]) used with adaptations inspired by \[ShoNTL\] implementation for univariate GCD:
+   > -  [UnivariatePolynomial.multiply](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomial.java)
+   > -  [UnivariatePolynomialZp64.multiply](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.java)
 
-> -   [UnivariateGCD.HalfGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
-> -   [UnivariateGCD.ExtendedHalfGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
+2. *Half-GCD and Extended Half-GCD* (Sec. 11 in \[GaGe03\]) 
 
-3.  *Subresultant polynomial remainder sequences*   (Sec. 7.3 in \[GeCL92\]):
+   used (with adaptations inspired by \[ShoNTL\]) for univariate GCD:
 
-> -   [UnivariateGCD.SubresultantRemainders](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
+   > -  [UnivariateGCD.HalfGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
+   > -  [UnivariateGCD.ExtendedHalfGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
 
-4.  *Modular GCD in* *Z*\[*x*\] *and* *Q*\[*x*\]   (Sec. 6.7 in \[GaGe03\], small primes version):
+3. *Subresultant polynomial remainder sequences* (Sec. 7.3 in \[GeCL92\]):
 
-> -   [UnivariateGCD.ModularGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
+   > -  [UnivariateGCD.SubresultantRemainders](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
 
-5.  *Fast univariate division with Newton iteration*   (Sec. 9.1 in \[GaGe03\]) used everywhere where multiple divisions (remainders) by the same divider are performed:
+4. *Modular GCD in* *Z*\[*x*\] *and* *Q*\[*x*\] (Sec. 6.7 in \[GaGe03\], small primes version):
 
-> -   [UnivariateDivision.fastDivisionPreConditioning](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java)
-> -   [UnivariateDivision.divideAndRemainderFast](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java)
+   > -  [UnivariateGCD.ModularGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java)
 
-6.  *Univariate square-free factorization in zero characteristic (Yun's algorithm)*   (Sec. 14.6 in \[GaGe03\]):
+5. *Fast univariate division with Newton iteration* (Sec. 9.1 in \[GaGe03\]) 
 
-> -   [UnivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java)
+   used everywhere where multiple divisions (remainders) by the same divider are performed:
 
-7.  *Univariate square-free factorization in non-zero characteristic (Musser's algorithm)*   (Sec. 8.3 in \[GeCL92\], \[Muss71\]):
+   > -  [UnivariateDivision.fastDivisionPreConditioning](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java)
+   > -  [UnivariateDivision.divideAndRemainderFast](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java)
 
-> -   [UnivariateSquareFreeFactorization.SquareFreeFactorizationMusser](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java)
-> -   [UnivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java)
+6. *Univariate square-free factorization in zero characteristic (Yun's algorithm)* (Sec. 14.6 in \[GaGe03\]):
 
-8.  *Distinct-degree factorization*   (Sec. 14.2 in \[GaGe03\]) plain version and adapted version with precomputed *x*-powers (used by default):
+   > -  [UnivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java)
 
-> -   [DistinctDegreeFactorization.DistinctDegreeFactorizationPlain](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java)
-> -   [DistinctDegreeFactorization.DistinctDegreeFactorizationPrecomputedExponents](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java)
+7. *Univariate square-free factorization in non-zero characteristic (Musser's algorithm)* (Sec. 8.3 in \[GeCL92\], \[Muss71\]):
 
-9.  *Shoup's baby-step giant-step algorithm for distinct-degree factorization*   (\[Shou95\]) used for factorization over fields with large cardinality:
+   > -  [UnivariateSquareFreeFactorization.SquareFreeFactorizationMusser](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java)
+   > -  [UnivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java)
 
-> -   [DistinctDegreeFactorization.DistinctDegreeFactorizationShoup](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java)
+8. *Distinct-degree factorization* (Sec. 14.2 in \[GaGe03\])
 
-10.  *Univariate modular composition* plain algorithm with Horner schema:
+   plain version and adapted version with precomputed *x*-powers (used by default):
 
-> -   [ModularComposition.compositionHorner](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/ModularComposition.java)
+   > -  [DistinctDegreeFactorization.DistinctDegreeFactorizationPlain](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java)
+   > -  [DistinctDegreeFactorization.DistinctDegreeFactorizationPrecomputedExponents](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java)
 
-11.  *Brent-Kung univariate modular composition*   (\[BreK98\], \[Shou95\]):
+9. *Shoup's baby-step giant-step algorithm for distinct-degree factorization* (\[Shou95\])
 
-> -   [ModularComposition.compositionBrentKung](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/ModularComposition.java)
+   used for factorization over fields with large cardinality:
 
-12.  *Cantor-Zassenhaus algorithm (equal-degree splitting)*   (Sec. 14.3 in \[GaGe03\]) both for odd and even characteristic:
+   > -  [DistinctDegreeFactorization.DistinctDegreeFactorizationShoup](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java)
 
-> -   [EqualDegreeFactorization.CantorZassenhaus](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/EqualDegreeFactorization.java)
+10. *Univariate modular composition*
 
-13.  *Univaraite linear p-adic Hensel lifting*   (Sec. 6.5 in \[GeCL92\]):
+    plain algorithm with Horner schema:
 
-> -   [univar.HenselLifting.createLinearLift](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
-> -   [univar.HenselLifting.liftFactorization](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
+    > -  [ModularComposition.compositionHorner](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/ModularComposition.java)
 
-14.  *Univaraite quadratic p-adic Hensel lifting*   (Sec. 15.4-15.5 in \[GaGe03\]):
+11. *Brent-Kung univariate modular composition* (\[BreK98\], \[Shou95\]):
 
-> -   [univar.HenselLifting.createQuadraticLift](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
-> -   [univar.HenselLifting.liftFactorization](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
+    > -  [ModularComposition.compositionBrentKung](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/ModularComposition.java)
 
-15.  *Univariate polynomial factorization over finite fields* uses Musser's square free factorization followed by distinct-degree factorization (either *x*-powers or Shoup's algorithm) followed by Cantor-Zassenhaus equal-degree factorization:
+12. *Cantor-Zassenhaus algorithm (equal-degree splitting)* (Sec. 14.3 in \[GaGe03\])
 
-> -   [UnivariateFactorization.FactorInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java)
+    both for odd and even characteristic:
 
-16.  *Univariate polynomial factorization over Z and Q* uses factorization modulo small prime followed by Hensel lifting (adaptive linear/quadratic) and naive recombination:
+    > -  [EqualDegreeFactorization.CantorZassenhaus](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/EqualDegreeFactorization.java)
 
-> -   [UnivariateFactorization.FactorInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java)
-> -   [UnivariateFactorization.FactorInQ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java)
+13. *Univaraite linear p-adic Hensel lifting* (Sec. 6.5 in \[GeCL92\]):
 
-17.  *Univariate irreducibility test*   (Sec. 14.9 in \[GaGe03\]):
+    > -  [univar.HenselLifting.createLinearLift](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
+    > -  [univar.HenselLifting.liftFactorization](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
 
-> -   [IrreduciblePolynomials.irreducibleQ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java)
+14. *Univaraite quadratic p-adic Hensel lifting* (Sec. 15.4-15.5 in \[GaGe03\]):
 
-18.  *Ben-Or’s generation of irreducible polynomials*   (Sec. 14.9 in \[GaGe03\]):
+    > -  [univar.HenselLifting.createQuadraticLift](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
+    > -  [univar.HenselLifting.liftFactorization](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/HenselLifting.java)
 
-> -   [IrreduciblePolynomials.randomIrreduciblePolynomial](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java)
+15. *Univariate polynomial factorization over finite fields*
 
-19.  *Univariate polynomial interpolation* Lagrange and Newton methods:
+    uses Musser's square free factorization followed by distinct-degree factorization (either *x*-powers or Shoup's algorithm) followed by Cantor-Zassenhaus equal-degree factorization:
 
-> -   [UnivariateInterpolation](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateInterpolation.java)
+    > -  [UnivariateFactorization.FactorInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java)
+
+16. *Univariate polynomial factorization over Z and Q*
+
+    uses factorization modulo small prime followed by Hensel lifting (adaptive linear/quadratic) and naive recombination:
+
+    > -  [UnivariateFactorization.FactorInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java)
+    > -  [UnivariateFactorization.FactorInQ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java)
+
+17. *Univariate irreducibility test* (Sec. 14.9 in \[GaGe03\]):
+
+    > -  [IrreduciblePolynomials.irreducibleQ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java)
+
+18. *Ben-Or’s generation of irreducible polynomials* (Sec. 14.9 in \[GaGe03\]):
+
+    > -  [IrreduciblePolynomials.randomIrreduciblePolynomial](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java)
+
+19. *Univariate polynomial interpolation*
+
+    Lagrange and Newton methods:
+
+    > -  [UnivariateInterpolation](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateInterpolation.java)
 
 ### Multivariate polynomials
 
-20.  *Brown GCD over finite fields*   (\[Brow71\], Sec. 7.4 in \[GeCL92\], \[Yang09\]):
+20. *Brown GCD over finite fields* (\[Brow71\], Sec. 7.4 in \[GeCL92\], \[Yang09\]):
 
-> -   [MultivariateGCD.BrownGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+    > -  [MultivariateGCD.BrownGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
-21.  *Zippel's sparse GCD over finite fields*   (\[Zipp79\], \[Zipp93\], \[dKMW05\], \[Yang09\]) both for monic (with fast Vandermonde systems) and non-monic (LINZIP) cases:
+21. *Zippel's sparse GCD over finite fields* (\[Zipp79\], \[Zipp93\], \[dKMW05\], \[Yang09\])
 
-> -   [MultivariateGCD.ZippelGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+     both for monic (with fast Vandermonde systems) and non-monic (LINZIP) cases:
 
-22.  *Extended Zassenhaus GCD (EZ-GCD) over finite fields*   (Sec. 7.6 in \[GeCL92\], \[MosY73\]):
+    > -  [MultivariateGCD.ZippelGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
-> -   [MultivariateGCD.EZGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+22. *Extended Zassenhaus GCD (EZ-GCD) over finite fields* (Sec. 7.6 in \[GeCL92\], \[MosY73\]):
 
-23.  *Enhanced Extended Zassenhaus GCD (EEZ-GCD) over finite fields*   (\[Wang80\]):
+    > -  [MultivariateGCD.EZGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
-> -   [MultivariateGCD.EEZGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+23. *Enhanced Extended Zassenhaus GCD (EEZ-GCD) over finite fields* (\[Wang80\]):
 
-24.  *Modular GCD over Z with sparse interpolation*   (\[Zipp79\], \[Zipp93\], \[dKMW05\]) (the same interpolation techniques as in ZippelGCD is used):
+    > -  [MultivariateGCD.EEZGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
-> -   [MultivariateGCD.ModularGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+24. *Modular GCD over Z with sparse interpolation* (\[Zipp79\], \[Zipp93\], \[dKMW05\])
 
-25.  *Kaltofen's & Monagan's generic modular GCD*   (\[KalM99\]) used for computing multivariate GCD over finite fields of very small cardinality:
+    (the same interpolation techniques as in ZippelGCD is used):
 
-> -   [MultivariateGCD.ModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+    > -  [MultivariateGCD.ModularGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
-26.  *Multivariate square-free factorization in zero characteristic (Yun's algorithm)*   (\[LeeM13\]):
+25. *Kaltofen's & Monagan's generic modular GCD* (\[KalM99\])
 
-> -   [MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
+    used for computing multivariate GCD over finite fields of very small cardinality:
 
-27.  *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)*   (\[Muss71\], Sec. 8.3 in \[GeCL92\]):
+    > -  [MultivariateGCD.ModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
-> -   [MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
-> -   [MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
+26. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* (\[LeeM13\]):
 
-28.  *Bernardin's fast dense multivariate Hensel lifting*   (\[Bern99\], \[LeeM13\]) both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
+    > -  [MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
 
-> -   [multivar.HenselLifting](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java)
+27. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* (\[Muss71\], Sec. 8.3 in \[GeCL92\]):
 
-29.  *Fast dense bivariate factorization with recombination*   (\[Bern99\], \[LeeM13\]):
+    > -  [MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
+    > -  [MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
 
-> -   [MultivariateFactorization.bivariateDenseFactorSquareFreeInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
-> -   [MultivariateFactorization.bivariateDenseFactorSquareFreeInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
+28. *Bernardin's fast dense multivariate Hensel lifting* (\[Bern99\], \[LeeM13\])
 
-30.  *Kaltofen's multivariate factorization in finite fields*   (\[Kalt85\], \[LeeM13\]) modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to \[LeeM13\], but at the same time has many differences in details:
+    both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
 
-> -   [MultivariateFactorization.factorInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
+    > -  [multivar.HenselLifting](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java)
 
-31.  *Kaltofen's multivariate factorization Z*   (\[Kalt85\], \[LeeM13\]) (with the same modifications as for algorithm for finite fields):
+29. *Fast dense bivariate factorization with recombination* (\[Bern99\], \[LeeM13\]):
 
-> -   [MultivariateFactorization.factorInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
+    > -  [MultivariateFactorization.bivariateDenseFactorSquareFreeInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
+    > -  [MultivariateFactorization.bivariateDenseFactorSquareFreeInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
 
-32.  *Multivariate polynomial interpolation with Newton method*:
+30. *Kaltofen's multivariate factorization in finite fields* (\[Kalt85\], \[LeeM13\])
 
-> -   [MultivariateInterpolation](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateInterpolation.java)
+    modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to \[LeeM13\], but at the same time has many differences in details:
+
+    > -  [MultivariateFactorization.factorInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
+
+31. *Kaltofen's multivariate factorization Z* (\[Kalt85\], \[LeeM13\])
+
+    (with the same modifications as for algorithm for finite fields):
+
+    > -  [MultivariateFactorization.factorInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
+
+32. *Multivariate polynomial interpolation with Newton method*:
+
+    > -  [MultivariateInterpolation](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateInterpolation.java)
 
 ### References
 
