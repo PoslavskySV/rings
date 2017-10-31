@@ -654,6 +654,13 @@ In the following plots performance of |Rings| is compared to Wolfram Mathematica
    Univariate factorization performance on random polynomials in :math:`Z_{32771}[x]` of degree 1000. |Rings| are about 50% faster.
 
 
+.. figure:: _static/bench_fac_uni_Zp_flint_ntl.png
+   :scale: 50%
+   :align: center
+
+   Univariate factorization performance on polynomials of the form :math:`(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)` in :math:`Z_{17}[x]`. NTL version 10.4.0 and FLINT version 2.5.2_1 were also used. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
+
+
 .. figure:: _static/bench_fac_multi_Z.png
    :scale: 50%
    :align: center
