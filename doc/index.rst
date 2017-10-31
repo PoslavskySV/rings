@@ -32,7 +32,7 @@ The key features of |Rings| include:
  * :ref:`Fast → <ref-some-benchamrks>` |br| :feature:`Really fast library suitable for real-world computational challenges`
 
 
-For a quick overview of what |Rings| can do proceed to :ref:`ref-quickstart` and try out |Rings|\ *.repl*.
+For a quick overview of what |Rings| can do proceed to :ref:`ref-quickstart` and try out |Rings|\ *.repl*. Rings are hosted at GitHub: https://github.com/PoslavskySV/rings.
 
 .. toctree::
    :caption: Documentation:
@@ -41,6 +41,7 @@ For a quick overview of what |Rings| can do proceed to :ref:`ref-quickstart` and
    quickstart
    guide
    algorithms
+
 
 
 License
