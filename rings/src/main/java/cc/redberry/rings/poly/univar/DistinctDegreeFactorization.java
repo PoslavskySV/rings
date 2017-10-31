@@ -120,87 +120,11 @@ public final class DistinctDegreeFactorization {
     /** Shoup's parameter */
     private static final double SHOUP_BETA = 0.5;
 
-    /** Baby step / giant step components for d.d.f. in Shoup's algorithm */
-    private static <Poly extends IUnivariatePolynomial<Poly>> BabyGiantSteps<Poly> generateBabyGiantSteps(Poly poly) {
-        int n = poly.degree();
-        int l = (int) Math.ceil(Math.pow(1.0 * n, SHOUP_BETA));
-        int m = (int) Math.ceil(1.0 * n / 2 / l);
-
-        UnivariateDivision.InverseModMonomial<Poly> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
-        ArrayList<Poly> xPowers = xPowers(poly, invMod);
-
-        //baby steps
-        ArrayList<Poly> babySteps = new ArrayList<>();
-        babySteps.add(poly.createMonomial(1)); // <- add x
-        Poly xPower = xPowers.get(1); // x^p mod poly
-        babySteps.add(xPower); // <- add x^p mod poly
-        for (int i = 0; i <= l - 2; ++i)
-            babySteps.add(xPower = powModulusMod(xPower, poly, invMod, xPowers));
-
-        // <- xPower = x^(p^l) mod poly
-
-        //giant steps
-        ArrayList<Poly> giantSteps = new ArrayList<>();
-        giantSteps.add(poly.createMonomial(1)); // <- add x
-        giantSteps.add(xPower);
-        Poly xPowerBig = xPower;
-        int tBrentKung = (int) Math.sqrt(poly.degree());
-        ArrayList<Poly> hPowers = polyPowers(xPowerBig, poly, invMod, tBrentKung);
-        for (int i = 0; i < m - 1; ++i)
-            giantSteps.add(xPowerBig = compositionBrentKung(xPowerBig, hPowers, poly, invMod, tBrentKung));
-
-        return new BabyGiantSteps<>(l, m, babySteps, giantSteps, invMod);
-    }
-
     /** Shoup's main gcd loop */
     private static <T extends IUnivariatePolynomial<T>> void DistinctDegreeFactorizationShoup(T poly,
                                                                                               BabyGiantSteps<T> steps,
                                                                                               FactorDecomposition<T> result) {
         //generate each I_j
-        ArrayList<T> iBases = new ArrayList<>();
-        for (int j = 0; j <= steps.m; ++j) {
-            T iBase = poly.createOne();
-            for (int i = 0; i <= steps.l - 1; ++i) {
-                T tmp = steps.giantSteps.get(j).clone().subtract(steps.babySteps.get(i));
-                iBase = polyMultiplyMod(iBase, tmp, poly, steps.invMod, false);
-            }
-            iBases.add(iBase);
-        }
-
-        T current = poly.clone();
-        for (int j = 1; j <= steps.m; ++j) {
-            T gcd = UnivariateGCD.PolynomialGCD(current, iBases.get(j));
-            if (gcd.isConstant())
-                continue;
-            current = UnivariateDivision.quotient(current, gcd, false);
-            for (int i = steps.l - 1; i >= 0; --i) {
-                T tmp = UnivariateGCD.PolynomialGCD(gcd, steps.giantSteps.get(j).clone().subtract(steps.babySteps.get(i)));
-                if (!tmp.isConstant())
-                    result.addFactor(tmp.clone().monic(), steps.l * j - i);
-
-                gcd = UnivariateDivision.quotient(gcd, tmp, false);
-            }
-        }
-        if (!current.isOne())
-            result.addFactor(current.monic(), current.degree());
-    }
-
-
-    /** Shoup's main gcd loop */
-    private static <T extends IUnivariatePolynomial<T>> void DistinctDegreeFactorizationShoupLazy(T poly,
-                                                                                                  LazyBabyGiantSteps<T> steps,
-                                                                                                  FactorDecomposition<T> result) {
-        //generate each I_j
-//        ArrayList<T> iBases = new ArrayList<>();
-//        for (int j = 0; j <= steps.m; ++j) {
-//            T iBase = poly.createOne();
-//            for (int i = 0; i <= steps.l - 1; ++i) {
-//                T tmp = steps.giantStep(j).clone().subtract(steps.babySteps.get(i));
-//                iBase = polyMultiplyMod(iBase, tmp, poly, steps.invMod, false);
-//            }
-//            iBases.add(iBase);
-//        }
-
         T current = poly.clone();
         for (int j = 1; j <= steps.m; ++j) {
             T iBase = poly.createOne();
@@ -226,6 +150,7 @@ public final class DistinctDegreeFactorization {
             result.addFactor(current.monic(), current.degree());
     }
 
+
     /**
      * Performs distinct-degree factorization for square-free polynomial {@code poly} using Victor Shoup's baby step /
      * giant step algorithm.
@@ -240,27 +165,10 @@ public final class DistinctDegreeFactorization {
         Poly factor = poly.lcAsPoly();
         poly = poly.clone().monic();
         FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(factor);
-        DistinctDegreeFactorizationShoup(poly, generateBabyGiantSteps(poly), result);
+        DistinctDegreeFactorizationShoup(poly, new BabyGiantSteps<>(poly), result);
         return result;
     }
 
-    /**
-     * Performs distinct-degree factorization for square-free polynomial {@code poly} using Victor Shoup's baby step /
-     * giant step algorithm.
-     *
-     * <p> In the case of not square-free input, the algorithm works, but the resulting d.d.f. may be incomplete.
-     *
-     * @param poly the polynomial
-     * @return distinct-degree decomposition of {@code poly}
-     */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> DistinctDegreeFactorizationShoupLazy(Poly poly) {
-        Util.ensureOverFiniteField(poly);
-        Poly factor = poly.lcAsPoly();
-        poly = poly.clone().monic();
-        FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(factor);
-        DistinctDegreeFactorizationShoupLazy(poly, new LazyBabyGiantSteps<>(poly), result);
-        return result;
-    }
 
     /** baby/giant steps for Shoup's d.d.f. algorithm */
     private static final class BabyGiantSteps<Poly extends IUnivariatePolynomial<Poly>> {
@@ -269,23 +177,7 @@ public final class DistinctDegreeFactorization {
         final ArrayList<Poly> giantSteps;
         final UnivariateDivision.InverseModMonomial<Poly> invMod;
 
-        public BabyGiantSteps(int l, int m, ArrayList<Poly> babySteps, ArrayList<Poly> giantSteps, UnivariateDivision.InverseModMonomial<Poly> invMod) {
-            this.l = l;
-            this.m = m;
-            this.babySteps = babySteps;
-            this.giantSteps = giantSteps;
-            this.invMod = invMod;
-        }
-    }
-
-    /** baby/giant steps for Shoup's d.d.f. algorithm */
-    private static final class LazyBabyGiantSteps<Poly extends IUnivariatePolynomial<Poly>> {
-        final int l, m;
-        final ArrayList<Poly> babySteps;
-        final ArrayList<Poly> giantSteps;
-        final UnivariateDivision.InverseModMonomial<Poly> invMod;
-
-        public LazyBabyGiantSteps(Poly poly) {
+        public BabyGiantSteps(Poly poly) {
             int n = poly.degree();
             l = (int) Math.ceil(Math.pow(1.0 * n, SHOUP_BETA));
             m = (int) Math.ceil(1.0 * n / 2 / l);
@@ -345,7 +237,7 @@ public final class DistinctDegreeFactorization {
         if (poly.degree < DEGREE_SWITCH_TO_SHOUP)
             return DistinctDegreeFactorizationPrecomputedExponents(poly);
         else
-            return DistinctDegreeFactorizationShoupLazy(poly);
+            return DistinctDegreeFactorizationShoup(poly);
     }
 
     /**
@@ -362,7 +254,7 @@ public final class DistinctDegreeFactorization {
         if (poly instanceof UnivariatePolynomialZp64)
             return (FactorDecomposition<Poly>) DistinctDegreeFactorization((UnivariatePolynomialZp64) poly);
         else
-            return DistinctDegreeFactorizationShoupLazy(poly);
+            return DistinctDegreeFactorizationShoup(poly);
     }
 
 
