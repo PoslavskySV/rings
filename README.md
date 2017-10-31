@@ -354,6 +354,11 @@ Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* o
 
 Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* of degree 1000. Rings are about 50% faster.
 
+<img src="doc/_static/bench_fac_uni_Zp_flint_ntl.png" width="600">
+
+Univariate factorization performance on polynomials of the form *(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)* in *Z_{17}[x]*. NTL version 10.4.0 and FLINT version 2.5.2_1 were also used. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
+
+
 <img src="doc/_static/bench_fac_multi_Z.png" width="600">
 
 Multivariate factorization performance on random sparse polynomials in *Z\[x_1, x_2, x_3, x_4\]* with at least 2 factors with size 100 and degree 10 in each variable. Rings are about 9 times faster.
