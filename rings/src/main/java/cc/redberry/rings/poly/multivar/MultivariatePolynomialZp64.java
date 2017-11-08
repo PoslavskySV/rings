@@ -798,6 +798,8 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * #eliminate(int, long)})
      */
     MultivariatePolynomialZp64 evaluate(int variable, lPrecomputedPowers powers) {
+        if (degree(variable) == 0)
+            return clone();
         if (powers.value == 0)
             return evaluateAtZero(variable);
         MonomialSet<MonomialZp64> newData = new MonomialSet<>(ordering);

@@ -863,6 +863,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * #eliminate(int, long)})
      */
     MultivariatePolynomial<E> evaluate(int variable, PrecomputedPowers<E> powers) {
+        if (degree(variable) == 0)
+            return clone();
         if (ring.isZero(powers.value))
             return evaluateAtZero(variable);
         MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
@@ -1372,6 +1374,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd) {
+        if (degree(variable) == 0)
+            return clone();
         //desired skeleton
         Set<DegreeVector> skeleton = getSkeletonExcept(variable);
         MultivariatePolynomial<E> tmp;

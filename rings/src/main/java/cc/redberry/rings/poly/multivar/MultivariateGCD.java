@@ -318,24 +318,72 @@ public final class MultivariateGCD {
 
         int
                 nVariables = a.nVariables,
-                nUsedVariables = 0, // number of really present variables in gcd
-                nRedundantVariables = 0, // number of variables that present either in a or b but do not appear in the gcd
-                lastGCDVariable = -1, // last variable that present in both input polynomials
                 aDegrees[] = a.degrees(),
                 bDegrees[] = b.degrees(),
                 degreeBounds[] = new int[nVariables]; // degree bounds for gcd
 
-        // determine initial degree bounds for gcd
-        for (int i = 0; i < nVariables; i++) {
-            if ((aDegrees[i] == 0 && bDegrees[i] != 0) || (aDegrees[i] != 0 && bDegrees[i] == 0))
-                ++nRedundantVariables;
-
+        // populate initial gcd degree bounds
+        for (int i = 0; i < nVariables; i++)
             degreeBounds[i] = Math.min(aDegrees[i], bDegrees[i]);
+
+        GCDInput<Term, Poly> earlyGCD;
+        earlyGCD = getRidOfUnusedVariables(a, b, gcdAlgorithm, monomialGCD, degreeBounds);
+        if (earlyGCD != null)
+            return earlyGCD;
+
+        if (a.isOverFiniteField()) {
+            // adjust only for finite field ground domains
+            // for Z and Q this test is very time consuming and unnecessary
+            adjustDegreeBounds(a, b, degreeBounds);
+
+            earlyGCD = getRidOfUnusedVariables(a, b, gcdAlgorithm, monomialGCD, degreeBounds);
+            if (earlyGCD != null)
+                return earlyGCD;
+        }
+
+        // now swap variables so that the first variable will have the maximal degree (univariate gcd is fast),
+        // and all non-used variables are at the end of poly's
+
+        int[] variables = ArraysUtil.sequence(nVariables);
+        //sort in descending order
+        ArraysUtil.quickSort(ArraysUtil.negate(degreeBounds), variables);
+        ArraysUtil.negate(degreeBounds);//recover degreeBounds
+
+        int lastGCDVariable = 0; //recalculate lastPresentVariable
+        for (; lastGCDVariable < degreeBounds.length; ++lastGCDVariable)
+            if (degreeBounds[lastGCDVariable] == 0)
+                break;
+        --lastGCDVariable;
+
+        a = AMultivariatePolynomial.renameVariables(a, variables);
+        b = AMultivariatePolynomial.renameVariables(b, variables);
+
+        // check whether coefficient ring cardinality is large enough
+        int finiteExtensionDegree = 1;
+        int cardinalityBound = 5 * ArraysUtil.max(degreeBounds);
+        if (ringSize != null && ringSize.isInt() && ringSize.intValueExact() < cardinalityBound) {
+            long ds = ringSize.intValueExact();
+            finiteExtensionDegree = 2;
+            long tmp = ds;
+            for (; tmp < cardinalityBound; ++finiteExtensionDegree)
+                tmp = tmp * ds;
+        }
+        return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastGCDVariable, finiteExtensionDegree);
+    }
+
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    GCDInput<Term, Poly> getRidOfUnusedVariables(Poly a, Poly b, BiFunction<Poly, Poly, Poly> gcdAlgorithm,
+                                                 Term monomialGCD, int[] degreeBounds) {
+        int
+                nVariables = a.nVariables,
+                nUsedVariables = 0, // number of really present variables in gcd
+                lastGCDVariable = -1; // last variable that present in both input polynomials
+
+        for (int i = 0; i < nVariables; i++)
             if (degreeBounds[i] != 0) {
                 ++nUsedVariables;
                 lastGCDVariable = i;
             }
-        }
 
         if (nUsedVariables == 0)
             // gcd is constant => 1
@@ -354,7 +402,7 @@ public final class MultivariateGCD {
             return new GCDInput<>(poly.multiply(monomialGCD));
         }
 
-        if (nRedundantVariables > 0) {
+        if (nUsedVariables != nVariables) {
             // some of the variables are present only in either a or b but not in both simultaneously
             // call this vars {dummies} and the rest vars as {used}
             // => then we can consider polynomials as over R[{used}][{dummies}] and calculate
@@ -379,34 +427,79 @@ public final class MultivariateGCD {
             return new GCDInput<>(gcd.multiply(monomialGCD));
         }
 
-        // now swap variables so that the first variable will have the maximal degree (univariate gcd is fast),
-        // and all non-used variables are at the end of poly's
+        return null;
+    }
 
-        int[] variables = ArraysUtil.sequence(nVariables);
-        //sort in descending order
-        ArraysUtil.quickSort(ArraysUtil.negate(degreeBounds), variables);
-        ArraysUtil.negate(degreeBounds);//recover degreeBounds
+    @SuppressWarnings("unchecked")
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void adjustDegreeBounds(Poly a, Poly b, int[] gcdDegreeBounds) {
+        if (a instanceof MultivariatePolynomialZp64)
+            adjustDegreeBounds((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b, gcdDegreeBounds);
+        else
+            adjustDegreeBounds((MultivariatePolynomial) a, (MultivariatePolynomial) b, gcdDegreeBounds);
+    }
 
-        lastGCDVariable = 0; //recalculate lastPresentVariable
-        for (; lastGCDVariable < degreeBounds.length; ++lastGCDVariable)
-            if (degreeBounds[lastGCDVariable] == 0)
-                break;
-        --lastGCDVariable;
+    private static void adjustDegreeBounds(MultivariatePolynomialZp64 a,
+                                           MultivariatePolynomialZp64 b,
+                                           int[] gcdDegreeBounds) {
+        int nVariables = a.nVariables;
+//        for (int i = 0; i < nVariables; i++)
+//            if (gcdDegreeBounds[i] == 0) {
+//                if (a.degree(i) != 0)
+//                    a = a.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
+//                if (b.degree(i) != 0)
+//                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
+//            }
 
-        a = AMultivariatePolynomial.renameVariables(a, variables);
-        b = AMultivariatePolynomial.renameVariables(b, variables);
-
-        // check whether coefficient ring cardinality is large enough
-        int finiteExtensionDegree = 1;
-        int cardinalityBound = 5 * ArraysUtil.max(degreeBounds);
-        if (ringSize != null && ringSize.isInt() && ringSize.intValueExact() < cardinalityBound) {
-            long ds = ringSize.intValueExact();
-            finiteExtensionDegree = 2;
-            long tmp = ds;
-            for (; tmp < cardinalityBound; ++finiteExtensionDegree)
-                tmp = tmp * ds;
+        int[] vars = new int[nVariables];
+        long[] subs = new long[nVariables];
+        RandomGenerator rnd = PrivateRandom.getRandom();
+        for (int i = 0; i < nVariables; i++) {
+            vars[i] = i;
+            do {
+                subs[i] = a.ring.randomElement(rnd);
+            } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
         }
-        return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastGCDVariable, finiteExtensionDegree);
+        for (int i = 0; i < nVariables; i++) {
+            UnivariatePolynomialZp64
+                    ua = a.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate(),
+                    ub = b.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate();
+            if (ua.degree() != a.degree(i) || ub.degree() != b.degree(i))
+                continue;
+            gcdDegreeBounds[i] = Math.min(gcdDegreeBounds[i], UnivariateGCD.PolynomialGCD(ua, ub).degree());
+        }
+    }
+
+    private static <E> void adjustDegreeBounds(MultivariatePolynomial<E> a,
+                                               MultivariatePolynomial<E> b,
+                                               int[] gcdDegreeBounds) {
+        int nVariables = a.nVariables;
+//        for (int i = 0; i < nVariables; i++)
+//            if (gcdDegreeBounds[i] == 0) {
+//                if (a.degree(i) != 0)
+//                    a = a.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
+//                if (b.degree(i) != 0)
+//                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
+//            }
+
+        int[] vars = new int[nVariables];
+        E[] subs = a.ring.createArray(nVariables);
+        RandomGenerator rnd = PrivateRandom.getRandom();
+        for (int i = 0; i < nVariables; i++) {
+            vars[i] = i;
+            do {
+                subs[i] = a.ring.randomElement(rnd);
+            } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
+        }
+
+        for (int i = 0; i < nVariables; i++) {
+            UnivariatePolynomial<E>
+                    ua = a.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate(),
+                    ub = b.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate();
+            if (ua.degree() != a.degree(i) || ub.degree() != b.degree(i))
+                continue;
+            gcdDegreeBounds[i] = Math.min(gcdDegreeBounds[i], UnivariateGCD.PolynomialGCD(ua, ub).degree());
+        }
     }
 
     /** gcd with monomial */
