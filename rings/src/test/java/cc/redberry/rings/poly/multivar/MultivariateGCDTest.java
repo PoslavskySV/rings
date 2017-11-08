@@ -1255,7 +1255,6 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF));
     }
 
-
     @Test
     public void testSmallDomain2() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
