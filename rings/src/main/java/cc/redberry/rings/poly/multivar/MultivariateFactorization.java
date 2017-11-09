@@ -2591,8 +2591,12 @@ public final class MultivariateFactorization {
             } else {
                 // switch to Z/p and lift
                 MultivariatePolynomial<BigInteger> base = poly.setRing(zpDomain);
-                if (!biFactorsMain.constantFactor.isOne())
-                    base.divideByLC(biFactorsMain.constantFactor);
+                if (!biFactorsMain.constantFactor.isOne()) {
+                    BigInteger correction = biFactorsMain.constantFactor.lc();
+                    base.multiply(zpDomain.pow(correction, biFactorsMain.size() - 1));
+                    for (MultivariatePolynomial<BigInteger> f : biFactorsMain.factors)
+                        f.multiply(correction);
+                }
 
                 biFactorsArrayMainZ = liftZ(base, zpDomain, evaluationZp,
                         biFactorsMain.factors.toArray(base.createArray(biFactorsMain.size())), null);
