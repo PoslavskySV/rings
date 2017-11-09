@@ -390,7 +390,7 @@ public final class MultivariateGCD {
 
         // check whether coefficient ring cardinality is large enough
         int finiteExtensionDegree = 1;
-        int cardinalityBound = 5 * ArraysUtil.max(degreeBounds);
+        int cardinalityBound = 9 * ArraysUtil.max(degreeBounds);
         if (ringSize != null && ringSize.isInt() && ringSize.intValueExact() < cardinalityBound) {
             long ds = ringSize.intValueExact();
             finiteExtensionDegree = 2;
@@ -472,8 +472,8 @@ public final class MultivariateGCD {
     }
 
     private static void adjustDegreeBounds(MultivariatePolynomialZp64 a,
-                                   MultivariatePolynomialZp64 b,
-                                   int[] gcdDegreeBounds) {
+                                           MultivariatePolynomialZp64 b,
+                                           int[] gcdDegreeBounds) {
         int nVariables = a.nVariables;
 //        for (int i = 0; i < nVariables; i++)
 //            if (gcdDegreeBounds[i] == 0) {
@@ -1268,10 +1268,10 @@ public final class MultivariateGCD {
             ugcd = ugcd.multiply(contentGCD);
             return gcdInput.restoreGCD(MultivariatePolynomialZp64.asNormalMultivariate(ugcd, uVariable));
         }
-        throw new RuntimeException();
+        throw new RuntimeException("\na: " + a + "\nb: " + b);
     }
 
-    private static final int MAX_OVER_ITERATIONS = 8;
+    private static final int MAX_OVER_ITERATIONS = 16;
 
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     MultivariatePolynomial<uPoly> ModularGCDInGF0(
@@ -1681,7 +1681,7 @@ public final class MultivariateGCD {
     /** Maximal number of fails before switch to a new homomorphism */
     private static final int MAX_SPARSE_INTERPOLATION_FAILS = 1000;
     /** Maximal number of sparse interpolations after interpolation.numberOfPoints() > degreeBounds[variable] */
-    private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 128;
+    private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 64;
 
     @SuppressWarnings("unchecked")
     private static <E> MultivariatePolynomial<E> ZippelGCD(

@@ -350,7 +350,6 @@ public class MultivariateFactorizationTest extends APolynomialTest {
             long start = System.nanoTime();
             Assert.assertEquals(1, bivariateDenseFactorSquareFreeInGF(poly).size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-            ;
         }
     }
 
@@ -1174,7 +1173,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         }
     }
 
-    @Test
+    @Test(timeout = 200000)
     public void testMultivariateFactorizationRandom4_SmallDomain_b() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};
@@ -1194,6 +1193,10 @@ public class MultivariateFactorizationTest extends APolynomialTest {
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
         }
+        //12s
+        //3s
+        //15s
+        //18s
     }
 
     @Test

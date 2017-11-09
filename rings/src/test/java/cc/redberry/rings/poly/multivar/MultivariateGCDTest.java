@@ -2007,6 +2007,50 @@ public class MultivariateGCDTest extends AMultivariateTest {
         Assert.assertTrue(poly.asUnivariate(1).content().isConstant());
     }
 
+    @Test(timeout = 100000)
+    public void testSmallDomain4() throws Exception {
+        IntegersZp64 domain = new IntegersZp64(3);
+        String[] vars = {"a", "b", "c", "d", "e"};
+
+        MultivariatePolynomialZp64 arr[] = {
+                MultivariatePolynomialZp64.parse("1+2*c^3*d^2+2*b^3*c^3*d^3*e+a*c^3*d*e+2*a^2*b^3*c^2*d^2*e^3+a^2*b^3*c^3*e^2", domain, vars),
+                MultivariatePolynomialZp64.parse("1+b^3*c^2*d^3*e^3+a*c^3*d*e^2+2*a^3*e^3+2*a^3*b^3*d*e^3+2*a^3*b^3*c*d^3*e", domain, vars),
+                MultivariatePolynomialZp64.parse("1+2*a*b^3*c+a^2*d^3*e", domain, vars),
+                MultivariatePolynomialZp64.parse("1+2*b^3*c^3*d^3*e+2*a*b^2*c*d^2*e^3+a*b^3*c^2*d*e^2+a^3*b^2*c^3*d^2", domain, vars),
+        }, base = arr[0].createOne().multiply(arr);
+
+        MultivariatePolynomialZp64 gcd = MultivariatePolynomialZp64.parse("2+x3^3*x5^3+2*x2*x3*x4^3*x5+2*x2*x3*x4^3*x5^2+x2*x3^4*x4^3*x5^4+x2^2*x4^3+2*x2^2*x3^2*x4^6*x5^3+2*x2^2*x3^3*x4^3*x5^3+x2^3*x3*x4^6*x5^2+2*x2^3*x3^2*x5+x2^3*x3^5*x5^4+2*x2^4*x3^3*x4^3*x5^2+2*x2^4*x3^3*x4^3*x5^3+x2^4*x3^6*x4^3*x5^5+x2^5*x3^2*x4^3*x5+2*x2^5*x3^4*x4^6*x5^4+2*x2^5*x3^5*x4^3*x5^4+x2^6*x3^3*x4^6*x5^3+x1^3*x3*x4+2*x1^3*x3^2*x4^3*x5^2+2*x1^3*x3^4*x4*x5^3+x1^3*x3^5*x4^3*x5^5+x1^3*x2*x3^2*x4^4*x5+x1^3*x2*x3^2*x4^4*x5^2+x1^3*x2*x3^3*x5^3+2*x1^3*x2*x3^3*x4^6*x5^4+2*x1^3*x2*x3^5*x4^4*x5^4+2*x1^3*x2^2*x3*x4^4+x1^3*x2^2*x3^2*x4^2*x5^3+x1^3*x2^2*x3^3*x4^7*x5^3+x1^3*x2^2*x3^4*x4^3*x5^4+x1^3*x2^2*x3^4*x4^4*x5^3+2*x1^3*x2^2*x3^5*x4^2*x5^6+2*x1^3*x2^3*x4^2*x5^3+x1^3*x2^3*x4^3*x5+2*x1^3*x2^3*x3^2*x4^7*x5^2+x1^3*x2^3*x3^3*x4*x5+2*x1^3*x2^3*x3^3*x4^3*x5^3+2*x1^3*x2^3*x3^3*x4^3*x5^4+x1^3*x2^3*x3^3*x4^5*x5^5+2*x1^3*x2^3*x3^4*x4^3*x5^3+x1^3*x2^3*x3^7*x4^3*x5^6+2*x1^3*x2^4*x3*x4^5*x5^4+x1^3*x2^4*x3*x4^6*x5^3+x1^3*x2^4*x3^4*x4^4*x5^2+x1^3*x2^4*x3^5*x5^4+2*x1^3*x2^4*x3^5*x4^6*x5^5+x1^3*x2^5*x4^5*x5^3+2*x1^3*x2^5*x3^3*x4^4*x5+x1^3*x2^5*x3^4*x4^2*x5^4+x1^3*x2^5*x3^6*x4^3*x5^5+2*x1^3*x2^5*x3^7*x4^2*x5^7+2*x1^3*x2^6*x3^2*x4^2*x5^4+x1^3*x2^6*x3^2*x4^3*x5^2+x1^3*x2^6*x3^5*x4*x5^2+2*x1^3*x2^6*x3^5*x4^3*x5^4+2*x1^3*x2^6*x3^5*x4^3*x5^5+x1^3*x2^6*x3^5*x4^5*x5^6+2*x1^3*x2^7*x3^3*x4^5*x5^5+x1^3*x2^7*x3^3*x4^6*x5^4+x1^3*x2^7*x3^6*x4^4*x5^3+x1^3*x2^8*x3^2*x4^5*x5^4+2*x1^3*x2^8*x3^5*x4^4*x5^2+x1^6*x3^3*x4^4*x5^2+2*x1^6*x3^6*x4^4*x5^5+2*x1^6*x2*x3^4*x4*x5^3+x1^6*x2*x3^4*x4^7*x5^4+x1^6*x2*x3^5*x4^3*x5^5+2*x1^6*x2^2*x3^3*x4^3*x5^3+2*x1^6*x2^2*x3^5*x4^4*x5^4+x1^6*x2^2*x3^6*x4^3*x5^6+x1^6*x2^3*x3*x4^3*x5^3+2*x1^6*x2^3*x3*x4^4*x5+2*x1^6*x2^3*x3^2*x4^5*x5^5+2*x1^6*x2^3*x3^4*x4^2*x5+x1^6*x2^3*x3^4*x4^4*x5^3+x1^6*x2^3*x3^4*x4^4*x5^4+2*x1^6*x2^3*x3^4*x4^6*x5^5+2*x1^6*x2^3*x3^5*x4^2*x5^6+x1^6*x2^3*x3^5*x4^4*x5^3+x1^6*x2^4*x3^2*x4^6*x5^4+2*x1^6*x2^4*x3^2*x4^7*x5^3+2*x1^6*x2^4*x3^3*x4^3*x5^4+2*x1^6*x2^4*x3^5*x4^5*x5^2+x1^6*x2^4*x3^7*x4^3*x5^6+2*x1^6*x2^5*x3*x4^6*x5^3+x1^6*x2^5*x3^2*x4^4*x5^6+x1^6*x2^5*x3^4*x4^5*x5+2*x1^6*x2^5*x3^5*x4^3*x5^4+x1^6*x2^6*x4^5*x5^4+2*x1^6*x2^6*x3^3*x4^4*x5^2+2*x1^6*x2^6*x3^4*x4^5*x5^6+2*x1^6*x2^6*x3^7*x4^2*x5^7+x1^6*x2^6*x3^7*x4^4*x5^4+2*x1^6*x2^7*x3^5*x4^3*x5^5+x1^6*x2^8*x3^4*x4^4*x5^7+2*x1^6*x2^8*x3^7*x4^3*x5^5+x1^6*x2^9*x3^2*x4^5*x5^5+2*x1^6*x2^9*x3^5*x4^4*x5^3+2*x1^9*x2*x3^6*x4^4*x5^5+x1^9*x2^3*x3^3*x4^6*x5^5+x1^9*x2^3*x3^6*x4^3*x5^6+2*x1^9*x2^3*x3^6*x4^5*x5^3+x1^9*x2^4*x3^4*x4^4*x5^4+2*x1^9*x2^5*x3^3*x4^5*x5^6+x1^9*x2^5*x3^6*x4^4*x5^4+2*x1^9*x2^6*x3*x4^6*x5^4+x1^9*x2^6*x3^4*x4^5*x5^2", domain, vars);
+
+        MultivariatePolynomialZp64 a = MultivariateFactorization.orderByDegrees(base, false, -1).ordered;
+        MultivariatePolynomialZp64 b = a.derivative(0);
+
+        for (int i = 1; i < 5; i++) {
+            System.out.println(i);
+            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            Assert.assertFalse(PolynomialGCD(a, b).isConstant());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+        //12s
+        //3s
+        //25s
+        //18s
+    }
+
+    @Test(timeout = 100000)
+    public void testSmallDomain5() throws Exception {
+        IntegersZp64 domain = new IntegersZp64(3);
+        String[] vars = {"x", "y"};
+
+        MultivariatePolynomialZp64 a = MultivariatePolynomialZp64.parse("y^2+y^3+x*y^2+x*y^3+2*x^3*y^6+2*x^4*y^2+2*x^4*y^3+x^4*y^5+2*x^5*y^2+x^5*y^3+x^5*y^9+2*x^6+2*x^6*y^3+2*x^6*y^5+2*x^6*y^8+2*x^6*y^9+2*x^7+2*x^7*y^5+x^7*y^6+x^7*y^9+2*x^8*y^5+x^8*y^6+2*x^8*y^12+x^9*y^3+x^9*y^8+2*x^9*y^9+2*x^9*y^12+x^10*y^8+x^10*y^9+x^11*y^5+2*x^11*y^6+x^11*y^9+2*x^11*y^11+x^12*y^5+2*x^12*y^6+2*x^12*y^9+2*x^12*y^11+x^12*y^12+x^13*y^12+2*x^14*y^8+x^14*y^9+x^14*y^12+x^14*y^14+x^16*y^11+x^17*y^11+2*x^19*y^14", domain, vars);
+        MultivariatePolynomialZp64 b = MultivariatePolynomialZp64.parse("1+y^4+2*y^5+2*y^9+x+x*y^4+2*x*y^5+2*x*y^9+x^3*y^8+x^3*y^12+2*x^4+x^4*y^3+2*x^4*y^4+x^4*y^5+x^4*y^7+x^4*y^9+2*x^5+2*x^5*y^4+2*x^5*y^5+x^5*y^6+2*x^5*y^9+2*x^5*y^11+x^6*y^2+x^6*y^5+x^6*y^6+2*x^6*y^7+x^6*y^9+2*x^6*y^10+x^6*y^11+x^7*y^2+x^7*y^6+2*x^7*y^7+2*x^7*y^8+2*x^7*y^11+2*x^7*y^12+2*x^8*y^3+2*x^8*y^7+2*x^8*y^8+2*x^8*y^12+x^8*y^14+2*x^9*y^5+2*x^9*y^6+x^9*y^10+x^9*y^11+x^9*y^14+x^10*y^10+2*x^10*y^11+x^11*y^7+x^11*y^8+2*x^11*y^11+2*x^11*y^12+2*x^11*y^13+x^12*y^7+x^12*y^8+x^12*y^11+2*x^12*y^13+2*x^12*y^14+2*x^13*y^9+2*x^13*y^14+2*x^14*y^10+2*x^14*y^11+2*x^14*y^14+x^14*y^16+x^15*y^12+x^16*y^13+x^17*y^13+2*x^19*y^16", domain, vars);
+
+        for (int i = 5; i < 100; i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            assertFalse(PolynomialGCD(a, b).isConstant());
+        }
+    }
+
     /* =============================================== Test data =============================================== */
 
     /** sample data for test of GCD */
