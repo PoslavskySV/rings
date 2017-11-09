@@ -1,9 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
@@ -25,10 +22,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.*;
 
+import static cc.redberry.rings.poly.PolynomialMethods.Factor;
+import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.MultivariateFactorization.bivariateDenseFactorSquareFreeInGF;
+import static cc.redberry.rings.poly.multivar.MultivariateFactorization.factorPrimitiveInGF;
 
 /**
  * @since 1.0
@@ -1975,6 +1974,31 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         }
     }
 
+    @Test
+    public void testMultivariateFactorization42() throws Exception {
+        Ring<BigInteger> ring = Rings.Zp(524287);
+        MultivariatePolynomial<BigInteger>
+                p1 = polyPow(MultivariatePolynomial.parse("1 + 3*a*b + 5*b*c + 7*c*d + 9*d*e + 11*e*f + 13*f*g + 15*g*a", ring), 3),
+                p2 = polyPow(MultivariatePolynomial.parse("1 + 3*a*c + 5*b*d + 7*c*e + 9*f*e + 11*g*f + 13*f*a + 15*g*b", ring), 3),
+                p3 = polyPow(MultivariatePolynomial.parse("1 + 3*a*d + 5*b*e + 7*c*f + 9*f*g + 11*g*a + 13*f*b + 15*g*c", ring), 3),
+                poly = p1.multiply(p2, p3);
+        poly.decrement();
+        Assert.assertEquals(3, factorPrimitiveInGF(poly).size());
+    }
+
+    @Test(timeout = 600_000)
+    public void testMultivariateFactorization43() throws Exception {
+        Ring<BigInteger> ring = Rings.Z;
+        MultivariatePolynomial<BigInteger>
+                p1 = polyPow(MultivariatePolynomial.parse("1 + 3*a*b + 5*b*c + 7*c*d + 9*d*e + 11*e*f + 13*f*g + 15*g*a", ring), 3),
+                p2 = polyPow(MultivariatePolynomial.parse("1 + 3*a*c + 5*b*d + 7*c*e + 9*f*e + 11*g*f + 13*f*a + 15*g*b", ring), 3),
+                p3 = polyPow(MultivariatePolynomial.parse("1 + 3*a*d + 5*b*e + 7*c*f + 9*f*g + 11*g*a + 13*f*b + 15*g*c", ring), 3),
+                poly = p1.multiply(p2, p3);
+        poly.decrement();
+        List<MultivariatePolynomial<BigInteger>> l = new ArrayList<>(Arrays.asList(poly.derivative()));
+        l.add(poly);
+        Assert.assertEquals(2, Factor(poly).size());
+    }
 
     /* ==================================== Test data =============================================== */
 

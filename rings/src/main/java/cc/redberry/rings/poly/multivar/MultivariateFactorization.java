@@ -1827,6 +1827,25 @@ public final class MultivariateFactorization {
                                     AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables - 1, 0, poly.ordering)))
                             .toArray(FactorDecomposition[]::new);
 
+
+                    // <- set same polys in ulcFactors with the same single reference!
+                    // NOTE: this is very important since we will use polynomials as references
+                    // when doing lifting!
+                    //
+                    // comment: normally in most cases this is done automatically by GCDFreeBasis routine
+                    // but in some cases (symmetric polynomials) this is not the case and manual correction required
+                    for (int l = 0; l < ilcFactors.length; l++)
+                        for (int m = 0; m < ilcFactors[l].factors.size(); m++) {
+                            Poly p = ilcFactors[l].factors.get(m);
+                            for (int l1 = l; l1 < ilcFactors.length; l1++) {
+                                int m1Begin = l1 == l ? m + 1 : 0;
+                                for (int m1 = m1Begin; m1 < ilcFactors[l1].factors.size(); m1++)
+                                    if (ilcFactors[l1].factors.get(m1).equals(p))
+                                        ilcFactors[l1].factors.set(m1, p);
+                            }
+                        }
+
+
                     // pick unique factors from lc decompositions (complete square-free )
                     Set<Poly> ilcFactorsSet = Arrays.stream(ilcFactors)
                             .flatMap(FactorDecomposition::streamWithoutConstant)
@@ -2448,6 +2467,24 @@ public final class MultivariateFactorization {
                             .map(decomposition -> decomposition.map(p -> (MultivariatePolynomial<BigInteger>)
                                     AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables - 1, 0, poly.ordering)))
                             .toArray(FactorDecomposition[]::new);
+
+
+                    // <- set same polys in ulcFactors with the same single reference!
+                    // NOTE: this is very important since we will use polynomials as references
+                    // when doing lifting!
+                    //
+                    // comment: normally in most cases this is done automatically by GCDFreeBasis routine
+                    // but in some cases (symmetric polynomials) this is not the case and manual correction required
+                    for (int l = 0; l < ilcFactors.length; l++)
+                        for (int m = 0; m < ilcFactors[l].factors.size(); m++) {
+                            MultivariatePolynomial<BigInteger> p = ilcFactors[l].factors.get(m);
+                            for (int l1 = l; l1 < ilcFactors.length; l1++) {
+                                int m1Begin = l1 == l ? m + 1 : 0;
+                                for (int m1 = m1Begin; m1 < ilcFactors[l1].factors.size(); m1++)
+                                    if (ilcFactors[l1].factors.get(m1).equals(p))
+                                        ilcFactors[l1].factors.set(m1, p);
+                            }
+                        }
 
                     // pick unique factors from lc decompositions (complete square-free)
                     Set<MultivariatePolynomial<BigInteger>> ilcFactorsSet = Arrays.stream(ilcFactors)

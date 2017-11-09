@@ -387,6 +387,15 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
+     * Returns the maximal degree of variables in this polynomial
+     *
+     * @return the maximal degree of variables in this polynomial
+     */
+    public int degreeMax() {
+        return ArraysUtil.max(degrees());
+    }
+
+    /**
      * Returns the degree of this polynomial with respect to specified variable
      *
      * @param variable the variable
