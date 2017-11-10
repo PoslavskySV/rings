@@ -318,7 +318,7 @@ Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4,x_5]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 10 terms and degree 5 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z524287_5vars_rings_vs_singular.png
    :scale: 50%
@@ -326,7 +326,7 @@ Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4,x_5]`
    
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 10 terms and degree 5 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
 
 
 
