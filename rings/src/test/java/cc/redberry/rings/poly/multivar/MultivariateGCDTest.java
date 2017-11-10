@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
 
+import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
+import static cc.redberry.rings.poly.multivar.AMultivariatePolynomial.renameVariables;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.divideExact;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.dividesQ;
@@ -1080,9 +1082,21 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 b = parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", ring, LEX, vars),
                 gcd = parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", ring, LEX, vars);
 
+        int[] newVariables = {4, 1, 3, 2, 0};
+        a = renameVariables(a, newVariables);
+        b = renameVariables(b, newVariables);
+        gcd = renameVariables(gcd, newVariables);
+
+        newVariables = MultivariateGCD.inversePermutation(new int[]{1, 3, 2, 0, 4});
+        a = renameVariables(a, newVariables);
+        b = renameVariables(b, newVariables);
+        gcd = renameVariables(gcd, newVariables);
+
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
+        System.out.println(Arrays.toString(a.degrees()));
+        System.out.println(Arrays.toString(b.degrees()));
         System.out.println(a);
         System.out.println(b);
 
@@ -1106,6 +1120,40 @@ public class MultivariateGCDTest extends AMultivariateTest {
         //
         //        8ms
         //        138ms
+    }
+
+    @Test(timeout = 10000)
+    public void testGCDInput() throws Exception {
+        PrivateRandom.getRandom().setSeed(1232);
+        String[] vars = {"a", "b", "c", "d", "e"};
+        IntegersZp64 ring = Rings.Zp64(1031);
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", ring, LEX, vars),
+                b = MultivariatePolynomialZp64.parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", ring, LEX, vars),
+                gcd = MultivariatePolynomialZp64.parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", ring, LEX, vars);
+
+        int[] newVariables = {4, 1, 3, 2, 0};
+        a = renameVariables(a, newVariables);
+        b = renameVariables(b, newVariables);
+        gcd = renameVariables(gcd, newVariables);
+
+        newVariables = MultivariateGCD.inversePermutation(new int[]{1, 3, 2, 0, 4});
+        a = renameVariables(a, newVariables);
+        b = renameVariables(b, newVariables);
+        gcd = renameVariables(gcd, newVariables);
+
+        a = a.divideOrNull(a.monomialContent());
+        b = b.divideOrNull(b.monomialContent());
+        gcd = gcd.divideOrNull(gcd.monomialContent());
+
+        a = a.clone().multiply(gcd);
+        b = b.clone().multiply(gcd);
+
+//        System.out.println(Arrays.toString(a.degrees()));
+//        System.out.println(Arrays.toString(b.degrees()));
+//        System.out.println(Arrays.toString(gcd.degrees()));
+
+        assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
     }
 
     @Test
@@ -1945,6 +1993,62 @@ public class MultivariateGCDTest extends AMultivariateTest {
         b = b.multiply(gcd);
         for (int i = 0; i < 10; i++)
             assertEquals(gcd, PolynomialGCD(a, b));
+    }
+
+    @Test(timeout = 10_000)
+    public void testPolynomialGCD4() throws Exception {
+        Ring<BigInteger> ring = Rings.Z;
+        MultivariatePolynomial<BigInteger>
+                p1 = polyPow(MultivariatePolynomial.parse("1 + 3*a*b + 5*b*c + 7*c*d + 9*d*e + 11*e*f + 13*f*g + 15*g*a", ring), 3),
+                p2 = polyPow(MultivariatePolynomial.parse("1 + 3*a*c + 5*b*d + 7*c*e + 9*f*e + 11*g*f + 13*f*a + 15*g*b", ring), 3),
+                p3 = polyPow(MultivariatePolynomial.parse("1 + 3*a*d + 5*b*e + 7*c*f + 9*f*g + 11*g*a + 13*f*b + 15*g*c", ring), 3),
+                poly = p1.multiply(p2, p3);
+        poly.decrement();
+        Assert.assertTrue(poly.asUnivariate(1).content().isConstant());
+    }
+
+    @Test(timeout = 100000)
+    public void testSmallDomain4() throws Exception {
+        IntegersZp64 domain = new IntegersZp64(3);
+        String[] vars = {"a", "b", "c", "d", "e"};
+
+        MultivariatePolynomialZp64 arr[] = {
+                MultivariatePolynomialZp64.parse("1+2*c^3*d^2+2*b^3*c^3*d^3*e+a*c^3*d*e+2*a^2*b^3*c^2*d^2*e^3+a^2*b^3*c^3*e^2", domain, vars),
+                MultivariatePolynomialZp64.parse("1+b^3*c^2*d^3*e^3+a*c^3*d*e^2+2*a^3*e^3+2*a^3*b^3*d*e^3+2*a^3*b^3*c*d^3*e", domain, vars),
+                MultivariatePolynomialZp64.parse("1+2*a*b^3*c+a^2*d^3*e", domain, vars),
+                MultivariatePolynomialZp64.parse("1+2*b^3*c^3*d^3*e+2*a*b^2*c*d^2*e^3+a*b^3*c^2*d*e^2+a^3*b^2*c^3*d^2", domain, vars),
+        }, base = arr[0].createOne().multiply(arr);
+
+        MultivariatePolynomialZp64 gcd = MultivariatePolynomialZp64.parse("2+x3^3*x5^3+2*x2*x3*x4^3*x5+2*x2*x3*x4^3*x5^2+x2*x3^4*x4^3*x5^4+x2^2*x4^3+2*x2^2*x3^2*x4^6*x5^3+2*x2^2*x3^3*x4^3*x5^3+x2^3*x3*x4^6*x5^2+2*x2^3*x3^2*x5+x2^3*x3^5*x5^4+2*x2^4*x3^3*x4^3*x5^2+2*x2^4*x3^3*x4^3*x5^3+x2^4*x3^6*x4^3*x5^5+x2^5*x3^2*x4^3*x5+2*x2^5*x3^4*x4^6*x5^4+2*x2^5*x3^5*x4^3*x5^4+x2^6*x3^3*x4^6*x5^3+x1^3*x3*x4+2*x1^3*x3^2*x4^3*x5^2+2*x1^3*x3^4*x4*x5^3+x1^3*x3^5*x4^3*x5^5+x1^3*x2*x3^2*x4^4*x5+x1^3*x2*x3^2*x4^4*x5^2+x1^3*x2*x3^3*x5^3+2*x1^3*x2*x3^3*x4^6*x5^4+2*x1^3*x2*x3^5*x4^4*x5^4+2*x1^3*x2^2*x3*x4^4+x1^3*x2^2*x3^2*x4^2*x5^3+x1^3*x2^2*x3^3*x4^7*x5^3+x1^3*x2^2*x3^4*x4^3*x5^4+x1^3*x2^2*x3^4*x4^4*x5^3+2*x1^3*x2^2*x3^5*x4^2*x5^6+2*x1^3*x2^3*x4^2*x5^3+x1^3*x2^3*x4^3*x5+2*x1^3*x2^3*x3^2*x4^7*x5^2+x1^3*x2^3*x3^3*x4*x5+2*x1^3*x2^3*x3^3*x4^3*x5^3+2*x1^3*x2^3*x3^3*x4^3*x5^4+x1^3*x2^3*x3^3*x4^5*x5^5+2*x1^3*x2^3*x3^4*x4^3*x5^3+x1^3*x2^3*x3^7*x4^3*x5^6+2*x1^3*x2^4*x3*x4^5*x5^4+x1^3*x2^4*x3*x4^6*x5^3+x1^3*x2^4*x3^4*x4^4*x5^2+x1^3*x2^4*x3^5*x5^4+2*x1^3*x2^4*x3^5*x4^6*x5^5+x1^3*x2^5*x4^5*x5^3+2*x1^3*x2^5*x3^3*x4^4*x5+x1^3*x2^5*x3^4*x4^2*x5^4+x1^3*x2^5*x3^6*x4^3*x5^5+2*x1^3*x2^5*x3^7*x4^2*x5^7+2*x1^3*x2^6*x3^2*x4^2*x5^4+x1^3*x2^6*x3^2*x4^3*x5^2+x1^3*x2^6*x3^5*x4*x5^2+2*x1^3*x2^6*x3^5*x4^3*x5^4+2*x1^3*x2^6*x3^5*x4^3*x5^5+x1^3*x2^6*x3^5*x4^5*x5^6+2*x1^3*x2^7*x3^3*x4^5*x5^5+x1^3*x2^7*x3^3*x4^6*x5^4+x1^3*x2^7*x3^6*x4^4*x5^3+x1^3*x2^8*x3^2*x4^5*x5^4+2*x1^3*x2^8*x3^5*x4^4*x5^2+x1^6*x3^3*x4^4*x5^2+2*x1^6*x3^6*x4^4*x5^5+2*x1^6*x2*x3^4*x4*x5^3+x1^6*x2*x3^4*x4^7*x5^4+x1^6*x2*x3^5*x4^3*x5^5+2*x1^6*x2^2*x3^3*x4^3*x5^3+2*x1^6*x2^2*x3^5*x4^4*x5^4+x1^6*x2^2*x3^6*x4^3*x5^6+x1^6*x2^3*x3*x4^3*x5^3+2*x1^6*x2^3*x3*x4^4*x5+2*x1^6*x2^3*x3^2*x4^5*x5^5+2*x1^6*x2^3*x3^4*x4^2*x5+x1^6*x2^3*x3^4*x4^4*x5^3+x1^6*x2^3*x3^4*x4^4*x5^4+2*x1^6*x2^3*x3^4*x4^6*x5^5+2*x1^6*x2^3*x3^5*x4^2*x5^6+x1^6*x2^3*x3^5*x4^4*x5^3+x1^6*x2^4*x3^2*x4^6*x5^4+2*x1^6*x2^4*x3^2*x4^7*x5^3+2*x1^6*x2^4*x3^3*x4^3*x5^4+2*x1^6*x2^4*x3^5*x4^5*x5^2+x1^6*x2^4*x3^7*x4^3*x5^6+2*x1^6*x2^5*x3*x4^6*x5^3+x1^6*x2^5*x3^2*x4^4*x5^6+x1^6*x2^5*x3^4*x4^5*x5+2*x1^6*x2^5*x3^5*x4^3*x5^4+x1^6*x2^6*x4^5*x5^4+2*x1^6*x2^6*x3^3*x4^4*x5^2+2*x1^6*x2^6*x3^4*x4^5*x5^6+2*x1^6*x2^6*x3^7*x4^2*x5^7+x1^6*x2^6*x3^7*x4^4*x5^4+2*x1^6*x2^7*x3^5*x4^3*x5^5+x1^6*x2^8*x3^4*x4^4*x5^7+2*x1^6*x2^8*x3^7*x4^3*x5^5+x1^6*x2^9*x3^2*x4^5*x5^5+2*x1^6*x2^9*x3^5*x4^4*x5^3+2*x1^9*x2*x3^6*x4^4*x5^5+x1^9*x2^3*x3^3*x4^6*x5^5+x1^9*x2^3*x3^6*x4^3*x5^6+2*x1^9*x2^3*x3^6*x4^5*x5^3+x1^9*x2^4*x3^4*x4^4*x5^4+2*x1^9*x2^5*x3^3*x4^5*x5^6+x1^9*x2^5*x3^6*x4^4*x5^4+2*x1^9*x2^6*x3*x4^6*x5^4+x1^9*x2^6*x3^4*x4^5*x5^2", domain, vars);
+
+        MultivariatePolynomialZp64 a = MultivariateFactorization.orderByDegrees(base, false, -1).ordered;
+        MultivariatePolynomialZp64 b = a.derivative(0);
+
+        for (int i = 1; i < 5; i++) {
+            System.out.println(i);
+            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            Assert.assertFalse(PolynomialGCD(a, b).isConstant());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+        //12s
+        //3s
+        //25s
+        //18s
+    }
+
+    @Test(timeout = 100000)
+    public void testSmallDomain5() throws Exception {
+        IntegersZp64 domain = new IntegersZp64(3);
+        String[] vars = {"x", "y"};
+
+        MultivariatePolynomialZp64 a = MultivariatePolynomialZp64.parse("y^2+y^3+x*y^2+x*y^3+2*x^3*y^6+2*x^4*y^2+2*x^4*y^3+x^4*y^5+2*x^5*y^2+x^5*y^3+x^5*y^9+2*x^6+2*x^6*y^3+2*x^6*y^5+2*x^6*y^8+2*x^6*y^9+2*x^7+2*x^7*y^5+x^7*y^6+x^7*y^9+2*x^8*y^5+x^8*y^6+2*x^8*y^12+x^9*y^3+x^9*y^8+2*x^9*y^9+2*x^9*y^12+x^10*y^8+x^10*y^9+x^11*y^5+2*x^11*y^6+x^11*y^9+2*x^11*y^11+x^12*y^5+2*x^12*y^6+2*x^12*y^9+2*x^12*y^11+x^12*y^12+x^13*y^12+2*x^14*y^8+x^14*y^9+x^14*y^12+x^14*y^14+x^16*y^11+x^17*y^11+2*x^19*y^14", domain, vars);
+        MultivariatePolynomialZp64 b = MultivariatePolynomialZp64.parse("1+y^4+2*y^5+2*y^9+x+x*y^4+2*x*y^5+2*x*y^9+x^3*y^8+x^3*y^12+2*x^4+x^4*y^3+2*x^4*y^4+x^4*y^5+x^4*y^7+x^4*y^9+2*x^5+2*x^5*y^4+2*x^5*y^5+x^5*y^6+2*x^5*y^9+2*x^5*y^11+x^6*y^2+x^6*y^5+x^6*y^6+2*x^6*y^7+x^6*y^9+2*x^6*y^10+x^6*y^11+x^7*y^2+x^7*y^6+2*x^7*y^7+2*x^7*y^8+2*x^7*y^11+2*x^7*y^12+2*x^8*y^3+2*x^8*y^7+2*x^8*y^8+2*x^8*y^12+x^8*y^14+2*x^9*y^5+2*x^9*y^6+x^9*y^10+x^9*y^11+x^9*y^14+x^10*y^10+2*x^10*y^11+x^11*y^7+x^11*y^8+2*x^11*y^11+2*x^11*y^12+2*x^11*y^13+x^12*y^7+x^12*y^8+x^12*y^11+2*x^12*y^13+2*x^12*y^14+2*x^13*y^9+2*x^13*y^14+2*x^14*y^10+2*x^14*y^11+2*x^14*y^14+x^14*y^16+x^15*y^12+x^16*y^13+x^17*y^13+2*x^19*y^16", domain, vars);
+
+        for (int i = 5; i < 100; i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            assertFalse(PolynomialGCD(a, b).isConstant());
+        }
     }
 
     /* =============================================== Test data =============================================== */

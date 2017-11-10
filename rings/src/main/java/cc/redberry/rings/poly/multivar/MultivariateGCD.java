@@ -86,10 +86,44 @@ public final class MultivariateGCD {
         if (arr.length == 2)
             return algorithm.apply(arr[0], arr[1]);
 
+        // quick checks
+        for (Poly p : arr) {
+            if (p.isConstant())
+                return (Poly) arr[0].createOne();
+            if (p.isMonomial()) {
+                DegreeVector monomial = p.lt();
+                for (Poly el : arr)
+                    monomial = el.commonContent(monomial);
+                return (Poly) arr[0].create(monomial);
+            }
+        }
+
+
+        // <- choosing strategy of gcd
+
+        // first sort polys by "sparsity"
+        Arrays.sort(arr, Comparator.comparingInt(AMultivariatePolynomial::size));
+        int
+                minSize = arr[0].size(),
+                maxSize = arr[arr.length - 1].size();
+
+        if (maxSize / minSize > 20) {
+            int split = 1;
+            for (; split < arr.length && arr[split].size() < maxSize / 3; ++split) ;
+            // use "divide and conqueror" strategy
+            if (split > 1) {
+                Poly smallGCD = PolynomialGCD(Arrays.copyOf(arr, split));
+                Poly[] rest = (Poly[]) smallGCD.createArray(arr.length - split + 1);
+                rest[0] = smallGCD;
+                System.arraycopy(arr, split, rest, 1, arr.length - split);
+
+                return PolynomialGCD(rest);
+            }
+        }
+
         //choose poly of minimal total degree
         int iMin = 0, degSum = arr[0].degreeSum();
         for (int i = 1; i < arr.length; ++i) {
-            //fixme pick monomial!
             int t = arr[i].degreeSum();
             if (t < degSum) {
                 iMin = i;
@@ -235,7 +269,7 @@ public final class MultivariateGCD {
     }
 
     /** structure with required input for GCD algorithms */
-    private static final class GCDInput<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
+    static final class GCDInput<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
         /** input polynomials (with variables renamed) and earlyGCD if possible (in trivial cases) */
         final Poly aReduced, bReduced, earlyGCD;
         /** gcd degree bounds, mapping used to rename variables so that degreeBounds are in descending order */
@@ -300,7 +334,7 @@ public final class MultivariateGCD {
     }
 
     /** prepare input for modular GCD algorithms (Brown, Zippel, LinZip) */
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDInput<Term, Poly> preparedGCDInput(Poly a, Poly b, BiFunction<Poly, Poly, Poly> gcdAlgorithm) {
         Poly trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null)
@@ -331,15 +365,11 @@ public final class MultivariateGCD {
         if (earlyGCD != null)
             return earlyGCD;
 
-        if (a.isOverFiniteField()) {
-            // adjust only for finite field ground domains
-            // for Z and Q this test is very time consuming and unnecessary
-            adjustDegreeBounds(a, b, degreeBounds);
+        adjustDegreeBounds(a, b, degreeBounds);
 
-            earlyGCD = getRidOfUnusedVariables(a, b, gcdAlgorithm, monomialGCD, degreeBounds);
-            if (earlyGCD != null)
-                return earlyGCD;
-        }
+        earlyGCD = getRidOfUnusedVariables(a, b, gcdAlgorithm, monomialGCD, degreeBounds);
+        if (earlyGCD != null)
+            return earlyGCD;
 
         // now swap variables so that the first variable will have the maximal degree (univariate gcd is fast),
         // and all non-used variables are at the end of poly's
@@ -360,7 +390,7 @@ public final class MultivariateGCD {
 
         // check whether coefficient ring cardinality is large enough
         int finiteExtensionDegree = 1;
-        int cardinalityBound = 5 * ArraysUtil.max(degreeBounds);
+        int cardinalityBound = 9 * ArraysUtil.max(degreeBounds);
         if (ringSize != null && ringSize.isInt() && ringSize.intValueExact() < cardinalityBound) {
             long ds = ringSize.intValueExact();
             finiteExtensionDegree = 2;
@@ -435,6 +465,8 @@ public final class MultivariateGCD {
     void adjustDegreeBounds(Poly a, Poly b, int[] gcdDegreeBounds) {
         if (a instanceof MultivariatePolynomialZp64)
             adjustDegreeBounds((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b, gcdDegreeBounds);
+        else if (a.isOverZ())
+            adjustDegreeBoundsZ((MultivariatePolynomial) a, (MultivariatePolynomial) b, gcdDegreeBounds);
         else
             adjustDegreeBounds((MultivariatePolynomial) a, (MultivariatePolynomial) b, gcdDegreeBounds);
     }
@@ -494,6 +526,35 @@ public final class MultivariateGCD {
 
         for (int i = 0; i < nVariables; i++) {
             UnivariatePolynomial<E>
+                    ua = a.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate(),
+                    ub = b.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate();
+            if (ua.degree() != a.degree(i) || ub.degree() != b.degree(i))
+                continue;
+            gcdDegreeBounds[i] = Math.min(gcdDegreeBounds[i], UnivariateGCD.PolynomialGCD(ua, ub).degree());
+        }
+    }
+
+    private static void adjustDegreeBoundsZ(MultivariatePolynomial<BigInteger> a,
+                                            MultivariatePolynomial<BigInteger> b,
+                                            int[] gcdDegreeBounds) {
+        int nVariables = a.nVariables;
+//        for (int i = 0; i < nVariables; i++)
+//            if (gcdDegreeBounds[i] == 0) {
+//                if (a.degree(i) != 0)
+//                    a = a.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
+//                if (b.degree(i) != 0)
+//                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
+//            }
+
+        int[] vars = new int[nVariables];
+        BigInteger[] subs = a.ring.createArray(nVariables);
+        for (int i = 0; i < subs.length; i++) {
+            vars[i] = i;
+            subs[i] = BigInteger.ONE;
+        }
+
+        for (int i = 0; i < nVariables; i++) {
+            UnivariatePolynomial<BigInteger>
                     ua = a.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate(),
                     ub = b.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate();
             if (ua.degree() != a.degree(i) || ub.degree() != b.degree(i))
@@ -598,8 +659,8 @@ public final class MultivariateGCD {
         /** gcd of content and leading coefficient of a and b given as Zp[x_k][x_1 ... x_{k-1}] */
         final uPoly contentGCD, lcGCD;
 
-        public PrimitiveInput(Poly aPrimitive, Poly bPrimitive,
-                              uPoly contentGCD, uPoly lcGCD) {
+        PrimitiveInput(Poly aPrimitive, Poly bPrimitive,
+                       uPoly contentGCD, uPoly lcGCD) {
             this.aPrimitive = aPrimitive;
             this.bPrimitive = bPrimitive;
             this.contentGCD = contentGCD;
@@ -1207,10 +1268,10 @@ public final class MultivariateGCD {
             ugcd = ugcd.multiply(contentGCD);
             return gcdInput.restoreGCD(MultivariatePolynomialZp64.asNormalMultivariate(ugcd, uVariable));
         }
-        throw new RuntimeException();
+        throw new RuntimeException("\na: " + a + "\nb: " + b);
     }
 
-    private static final int MAX_OVER_ITERATIONS = 8;
+    private static final int MAX_OVER_ITERATIONS = 16;
 
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     MultivariatePolynomial<uPoly> ModularGCDInGF0(
@@ -1620,7 +1681,7 @@ public final class MultivariateGCD {
     /** Maximal number of fails before switch to a new homomorphism */
     private static final int MAX_SPARSE_INTERPOLATION_FAILS = 1000;
     /** Maximal number of sparse interpolations after interpolation.numberOfPoints() > degreeBounds[variable] */
-    private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 32;
+    private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 64;
 
     @SuppressWarnings("unchecked")
     private static <E> MultivariatePolynomial<E> ZippelGCD(
@@ -1771,7 +1832,8 @@ public final class MultivariateGCD {
                 denseInterpolation.update(randomPoint, cVal);
 
                 // do division test
-                if (tmpDegreeBounds[variable] <= denseInterpolation.numberOfPoints()
+                if ((tmpDegreeBounds[variable] <= denseInterpolation.numberOfPoints()
+                        && denseInterpolation.numberOfPoints() - tmpDegreeBounds[variable] < 3)
                         || previousInterpolation.equals(denseInterpolation.getInterpolatingPolynomial())) {
                     MultivariatePolynomial<E> result = doDivisionCheck(a, b, contentGCD, denseInterpolation, variable);
                     if (result != null)
@@ -2698,7 +2760,8 @@ public final class MultivariateGCD {
                 denseInterpolation.update(randomPoint, cVal);
 
                 // do division test
-                if (tmpDegreeBounds[variable] <= denseInterpolation.numberOfPoints()
+                if ((tmpDegreeBounds[variable] <= denseInterpolation.numberOfPoints()
+                        && denseInterpolation.numberOfPoints() - tmpDegreeBounds[variable] < 3)
                         || previousInterpolation.equals(denseInterpolation.getInterpolatingPolynomial())) {
                     MultivariatePolynomialZp64 result = doDivisionCheck(a, b, contentGCD, denseInterpolation, variable);
                     if (result != null)

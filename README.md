@@ -18,7 +18,7 @@ The key features of Rings include:
 > -  [Multivariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-multivariate-factorization) Multivariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
 > -  [Algebra →](http://rings.readthedocs.io/en/latest/guide.html#ref-rings) Arbitrary rings, Galois fields etc
 > -  [Scala DSL →](http://rings.readthedocs.io/en/latest/guide.html#ref-scala-dsl) Powerful domain specific language in Scala
-> -  [Fast →](http://rings.readthedocs.io/en/latest/quickstart.html#ref-some-benchamrks) Really fast library suitable for real-world computational challenges
+> -  [Fast →](http://rings.readthedocs.io/en/latest/benchmarks.html) Really fast library suitable for real-world computational challenges
 
 The full documentation is available at [<http://rings.readthedocs.io>](https://rings.readthedocs.io).
 
@@ -332,36 +332,31 @@ implicit val ring = MultivariateRing(cfRing, Array("a", "b", "c"))
 val poly = ring("1 - (1 - z^3) * a^6*b + (1 - 2*z) * c^33 + a^66")
 ```
 
-Some benchmarks
----------------
+Highlighted benchmarks
+----------------------
 
 In the following plots performance of Rings is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at [GitHub](https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks). In all benchamrks random polynomials were used.
 
 
-<img src="doc/_static/bench_gcd_Z.png" width="600">
+<img src="doc/_static/gcd_z2_4vars_rings_vs_singular.png" width="600">
 
-Polynomial GCD performance on random sparse multivariate polynomials in *Z\[x, y, z\]* with about 100 terms, and degree equal to 20 in each variable. Rings are about 3 times faster.
+Rings vs Singular performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z_2[x_1,x_2,x_3,x_4]* each with 40 terms and degree 20 in each variable
 
-<img src="doc/_static/bench_gcd_Z2.png" width="600">
+<img src="doc/_static/gcd_z_4vars_rings_vs_wolfram.png" width="600">
 
-Polynomial GCD performance on random sparse multivariate polynomials in *Z_2\[x, y, z\]* with about 100 terms, and degree equal to 20 in each variable. Points marked with red color are those where Mathematica failed to obtain result in less than 3 minutes. Rings are about 100 times faster.
+Rings vs Mathematica performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]* each with 40 terms and degree 20 in each variable
 
-<img src="doc/_static/bench_fac_uni_Zp.png" width="600">
+<img src="doc/_static/factor_z2_3vars_rings_vs_singular.png" width="600">
 
-Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* of degree 250. Rings are about 15% slower.
+Rings vs Singular performance of *factor(a b)* for random polynomials *(a, b) \in Z_2\[x,y,z\]* each with 20 terms and degree 10 in each variable
 
-<img src="doc/_static/bench_fac_uni_Zp_1000.png" width="600">
+<img src="doc/_static/factor_z_3vars_rings_vs_wolfram.png" width="600">
 
-Univariate factorization performance on random polynomials in *Z_{32771}\[x\]* of degree 1000. Rings are about 50% faster.
+Rings vs Mathematica performance of *factor(a b)* for random polynomials *(a, b) \in Z\[x,y,z\]* each with 20 terms and degree 10 in each variable
 
 <img src="doc/_static/bench_fac_uni_Zp_flint_ntl.png" width="600">
 
-Univariate factorization performance on polynomials of the form *(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)* in *Z_{17}[x]*. NTL version 10.4.0 and FLINT version 2.5.2_1 were also used. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
-
-
-<img src="doc/_static/bench_fac_multi_Z.png" width="600">
-
-Multivariate factorization performance on random sparse polynomials in *Z\[x_1, x_2, x_3, x_4\]* with at least 2 factors with size 100 and degree 10 in each variable. Rings are about 9 times faster.
+Univariate factorization performance on polynomials of the form *(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)* in *Z_{17}[x]*. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
 
 
 Index of algorithms implemented in Rings

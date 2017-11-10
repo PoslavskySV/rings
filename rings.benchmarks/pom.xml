@@ -58,7 +58,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.12</version>
                 <configuration>
-                    <argLine>-Xmx1024m</argLine>
+                    <argLine>-Xmx4024m</argLine>
                     <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
