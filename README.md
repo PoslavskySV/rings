@@ -18,7 +18,7 @@ The key features of Rings include:
 > -  [Multivariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-multivariate-factorization) Multivariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
 > -  [Algebra →](http://rings.readthedocs.io/en/latest/guide.html#ref-rings) Arbitrary rings, Galois fields etc
 > -  [Scala DSL →](http://rings.readthedocs.io/en/latest/guide.html#ref-scala-dsl) Powerful domain specific language in Scala
-> -  [Fast →](http://rings.readthedocs.io/en/latest/quickstart.html#ref-some-benchamrks) Really fast library suitable for real-world computational challenges
+> -  [Fast →](http://rings.readthedocs.io/en/latest/benchmarks.html) Really fast library suitable for real-world computational challenges
 
 The full documentation is available at [<http://rings.readthedocs.io>](https://rings.readthedocs.io).
 
