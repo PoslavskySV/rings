@@ -1,9 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
@@ -25,10 +22,15 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
+import static cc.redberry.rings.poly.PolynomialMethods.Factor;
+import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.MultivariateFactorization.bivariateDenseFactorSquareFreeInGF;
+import static cc.redberry.rings.poly.multivar.MultivariateFactorization.factorPrimitiveInGF;
 
 /**
  * @since 1.0
@@ -351,7 +353,6 @@ public class MultivariateFactorizationTest extends APolynomialTest {
             long start = System.nanoTime();
             Assert.assertEquals(1, bivariateDenseFactorSquareFreeInGF(poly).size());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
-            ;
         }
     }
 
@@ -1175,7 +1176,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         }
     }
 
-    @Test
+    @Test(timeout = 200000)
     public void testMultivariateFactorizationRandom4_SmallDomain_b() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};
@@ -1195,6 +1196,10 @@ public class MultivariateFactorizationTest extends APolynomialTest {
             Assert.assertEquals(4, decomposition.size());
             FactorDecompositionTest.assertFactorization(base, decomposition);
         }
+        //12s
+        //3s
+        //15s
+        //18s
     }
 
     @Test
@@ -1975,6 +1980,40 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         }
     }
 
+    @Test
+    public void testMultivariateFactorization42() throws Exception {
+        Ring<BigInteger> ring = Rings.Zp(524287);
+        MultivariatePolynomial<BigInteger>
+                p1 = polyPow(MultivariatePolynomial.parse("1 + 3*a*b + 5*b*c + 7*c*d + 9*d*e + 11*e*f + 13*f*g + 15*g*a", ring), 3),
+                p2 = polyPow(MultivariatePolynomial.parse("1 + 3*a*c + 5*b*d + 7*c*e + 9*f*e + 11*g*f + 13*f*a + 15*g*b", ring), 3),
+                p3 = polyPow(MultivariatePolynomial.parse("1 + 3*a*d + 5*b*e + 7*c*f + 9*f*g + 11*g*a + 13*f*b + 15*g*c", ring), 3),
+                poly = p1.multiply(p2, p3);
+        poly.decrement();
+        Assert.assertEquals(3, factorPrimitiveInGF(poly).size());
+    }
+
+    @Test(timeout = 600_000)
+    public void testMultivariateFactorization43() throws Exception {
+        Ring<BigInteger> ring = Rings.Z;
+        MultivariatePolynomial<BigInteger>
+                p1 = polyPow(MultivariatePolynomial.parse("1 + 3*a*b + 5*b*c + 7*c*d + 9*d*e + 11*e*f + 13*f*g + 15*g*a", ring), 3),
+                p2 = polyPow(MultivariatePolynomial.parse("1 + 3*a*c + 5*b*d + 7*c*e + 9*f*e + 11*g*f + 13*f*a + 15*g*b", ring), 3),
+                p3 = polyPow(MultivariatePolynomial.parse("1 + 3*a*d + 5*b*e + 7*c*f + 9*f*g + 11*g*a + 13*f*b + 15*g*c", ring), 3),
+                poly = p1.multiply(p2, p3);
+        poly.decrement();
+        List<MultivariatePolynomial<BigInteger>> l = new ArrayList<>(Arrays.asList(poly.derivative()));
+        l.add(poly);
+        Assert.assertEquals(2, Factor(poly).size());
+    }
+
+    @Test(timeout = 10000)
+    public void testMultivariateFactorization44() throws Exception {
+        for (int i = 0; i < 50; i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.parse("25104542697922606374180382796611903776*x^5*y^7*z^4+20534636095763889368932021297717635120*x^6*y^7*z^5+76297700033840376318392368872790943968*x^7*y^4*z^7-26574785740999558717642330744030288047*x^7*y^6*z^4+17324112943714387939253008546475979840*x^8*y^3*z^3+62408844645806356433165500595194302160*x^8*y^4*z^8+14170517235134724116322359611873960800*x^9*y^3*z^4-80766061159845213267443892965900078721*x^9*y^3*z^7-18338696512889824461965469610690129230*x^10*y^2*z^3");
+            Assert.assertEquals(5, Factor(poly).size());
+        }
+    }
 
     /* ==================================== Test data =============================================== */
 

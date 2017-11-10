@@ -620,49 +620,55 @@ Ring of multivariate polynomials over elements of Galois field :math:`GF(7^{3})[
 
 .. _ref-some-benchamrks:
 
-Some benchmarks
-===============
+Highlighted benchmarks
+======================
 
-In the following plots performance of |Rings| is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at `GitHub <https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks>`_. In all benchamrks random polynomials were used.
+Full benchmarks can be found at :ref:`ref-benchmarks` page. Benchmarks presented below were executed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The complete source code of benchmarks can be found at `GitHub <https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks>`_. The following software were used:
+
+ - `Mathematica <http://www.wolfram.com/mathematica>`_ (version 11.1.1.0)
+ - `Singular <https://www.singular.uni-kl.de>`_ (version 4.1.0)
+ - `NTL <http://www.shoup.net/ntl/>`_ (version 10.4.0)
+ - `FLINT <http://www.flintlib.org>`_ (version 2.5.2_1)
 
 
-.. figure:: _static/bench_gcd_Z.png
+.. figure:: _static/gcd_z2_4vars_rings_vs_singular.png
    :scale: 50%
    :align: center
 
-   Polynomial GCD performance on random sparse multivariate polynomials in :math:`Z[x, y, z]` with about 100 terms, and degree equal to 20 in each variable. |Rings| is about 3 times faster.
+   ..
 
+   |Rings| vs |Singular| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z_2[x_1,x_2,x_3,x_4]` each with 40 terms and degree 20 in each variable
 
-.. figure:: _static/bench_gcd_Z2.png
+.. figure:: _static/gcd_z_4vars_rings_vs_wolfram.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Mathematica| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 40 terms and degree 20 in each variable
+
+.. figure:: _static/factor_z2_3vars_rings_vs_singular.png
    :scale: 50%
    :align: center
 
-   Polynomial GCD performance on random sparse multivariate polynomials in :math:`Z_2[x, y, z]` with about 100 terms, and degree equal to 20 in each variable. Points marked with red color are those where Mathematica failed to obtain result in less than 3 minutes. |Rings| is about 100 times faster.
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_2[x,y,z]` each with 20 terms and degree 10 in each variable
 
 
-.. figure:: _static/bench_fac_uni_Zp.png
+.. figure:: _static/factor_z_3vars_rings_vs_wolfram.png
    :scale: 50%
    :align: center
 
-   Univariate factorization performance on random polynomials in :math:`Z_{32771}[x]` of degree 250. |Rings| is about 15% slower.
+   ..
 
-
-.. figure:: _static/bench_fac_uni_Zp_1000.png
-   :scale: 50%
-   :align: center
-
-   Univariate factorization performance on random polynomials in :math:`Z_{32771}[x]` of degree 1000. |Rings| are about 50% faster.
+   |Rings| vs |Mathematica| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
 
 
 .. figure:: _static/bench_fac_uni_Zp_flint_ntl.png
    :scale: 50%
    :align: center
 
-   Univariate factorization performance on polynomials of the form :math:`(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)` in :math:`Z_{17}[x]`. NTL version 10.4.0 and FLINT version 2.5.2_1 were also used. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
+   ..
 
-
-.. figure:: _static/bench_fac_multi_Z.png
-   :scale: 50%
-   :align: center
-
-   Multivariate factorization performance on random sparse polynomials in :math:`Z[x_1, x_2, x_3, x_4]` with at least 2 factors with size 100 and degree 10 in each variable.  |Rings| is about 9 times faster.
+   Univariate factorization performance on polynomials of the form :math:`(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)` in :math:`Z_{17}[x]`. At small degrees the performance is identical, while at large degrees |NTL| and |FLINT| have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
