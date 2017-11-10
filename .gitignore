@@ -2,3 +2,4 @@ out
 doc/_build
 local.sh
 Plots.nb
+Plots2.nb

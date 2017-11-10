@@ -19,6 +19,22 @@ rst_epilog = """
   :class: rings
   
 .. |Rings| replace:: :rings:`Rings`
+
+.. role:: mma
+  :class: mma
+
+.. role:: singular
+  :class: singular
+
+
+.. |Singular| replace:: :singular:`Singular`
+
+.. |Mathematica| replace:: :mma:`Mathematica`
+
+.. |NTL| replace:: :singular:`NTL`
+
+.. |FLINT| replace:: :singular:`FLINT`
+
 """
 
 # If extensions (or modules to document with autodoc) are in another directory,
