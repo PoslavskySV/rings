@@ -967,7 +967,10 @@ public final class UnivariateGCD {
         if (bound2.isLong()
                 && UnivariatePolynomial.maxAbsCoefficient(a).isLong()
                 && UnivariatePolynomial.maxAbsCoefficient(b).isLong())
-            return ModularGCD(UnivariatePolynomial.asOverZ64(a), UnivariatePolynomial.asOverZ64(b)).toBigPoly();
+            try {
+                // long overflow may occur here in very very rare cases
+                return ModularGCD(UnivariatePolynomial.asOverZ64(a), UnivariatePolynomial.asOverZ64(b)).toBigPoly();
+            } catch (ArithmeticException e) {}
 
         UnivariatePolynomialZ64 previousBase = null;
         UnivariatePolynomialZp64 base = null;
