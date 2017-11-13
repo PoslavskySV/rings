@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ringsVersion=2.0
+ringsVersion=2.1
 ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings."
 
 # CHECK JAVA VERSION
