@@ -164,6 +164,8 @@ class UnivariateOps[Poly <: IUnivariatePolynomial[Poly]](self: Poly)(ring: Ring[
 }
 
 class UnivariateCfOps[Poly <: IUnivariatePolynomial[Poly], E](self: Poly)(pRing: IUnivariateRing[Poly, E]) {
+  def toTraversable: TraversableOnce[E] = (0 to self.degree()).map(pRing.at(self, _))
+
   def at(index: Int): E = pRing.at(self, index)
 
   def eval(point: E): E = pRing.eval(self, point)
@@ -228,6 +230,11 @@ class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomia
 }
 
 class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)(pRing: IMultivariateRing[Term, Poly, E]) {
+  def toTraversable: TraversableOnce[Term] = {
+    import scala.collection.JavaConverters._
+    self.asScala
+  }
+
   def eval(i: Int, value: E): Poly = pRing.eval(self, i, value)
 
   def eval(subs: (String, E)): Poly = eval(pRing.index(subs._1), subs._2)
