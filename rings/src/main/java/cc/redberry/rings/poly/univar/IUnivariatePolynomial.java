@@ -17,7 +17,7 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      * @return the degree of this polynomial
      */
     @Override
-    default int size() {return degree();}
+    default int size() {return degree() + 1;}
 
     /**
      * Returns whether i-th coefficient of this is zero
