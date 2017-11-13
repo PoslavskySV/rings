@@ -107,7 +107,7 @@ object RingSupport {
   }
 
   implicit def rationalRingSupport[E]: RingSupport[Rational[E]] = new RingSupport[Rational[E]] {
-    override def ringEv(ev: Rational[E]): Ring[Rational[E]] =  rings.Rings.Frac(ev.ring)
+    override def ringEv(ev: Rational[E]): Ring[Rational[E]] = rings.Rings.Frac(ev.ring)
   }
 
   implicit def integersRingSupport: RingSupport[IntZ] = new RingSupport[IntZ] {
@@ -210,6 +210,21 @@ class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomia
 
   def /%/%*(other: Poly*): Array[Poly] =
     MultivariateDivision.divideAndRemainder[Term, Poly](self, other: _*)
+
+  def %%(other: (Poly, Poly)): Poly =
+    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2)
+
+  def %%(other: (Poly, Poly, Poly)): Poly =
+    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2, other._3)
+
+  def %%(other: (Poly, Poly, Poly, Poly)): Poly =
+    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2, other._3, other._4)
+
+  def %%(other: (Poly, Poly, Poly, Poly, Poly)): Poly =
+    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2, other._3, other._4, other._5)
+
+  def %%*(other: Poly*): Poly =
+    MultivariateDivision.remainder[Term, Poly](self, other: _*)
 }
 
 class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)(pRing: IMultivariateRing[Term, Poly, E]) {

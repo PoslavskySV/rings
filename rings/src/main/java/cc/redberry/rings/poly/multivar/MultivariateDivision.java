@@ -89,8 +89,8 @@ public final class MultivariateDivision {
      * @return array of quotients and remainder at the last position
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly remainder(Poly dividend, Poly[] dividers) {
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly remainder(Poly dividend, Poly... dividers) {
         Poly[] r = divideAndRemainder(dividend, dividers);
         return r[r.length - 1];
     }
@@ -103,7 +103,7 @@ public final class MultivariateDivision {
      * @return array of quotients and remainder at the last position
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Collection<Poly> dividers) {
         Poly[] r = divideAndRemainder(dividend, dividers.toArray(dividend.createArray(dividers.size())));
         return r[r.length - 1];
@@ -117,7 +117,7 @@ public final class MultivariateDivision {
      * @return array of quotients and remainder at the last position
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Poly divider) {
         Poly[] r = divideAndRemainder(dividend, divider);
         return r[r.length - 1];

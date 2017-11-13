@@ -717,4 +717,16 @@ class Examples {
       assert(r1 == r2 * div + rem)
     }
   }
+
+  @Test
+  def test27: Unit = {
+    import syntax._
+
+    implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
+    val poly = ring("x^2*y^2 + x + y")
+
+    val rem = poly %% (ring("x + y"), ring("x - y"))
+
+    println(rem)
+  }
 }
