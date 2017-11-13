@@ -125,6 +125,7 @@ $ringsString" \
 		import poly.PolynomialMethods._
 		import multivar.MonomialOrder._
 		import rings.scaladsl._
+		import util._
 		import syntax._
 		implicit val $$tPrintBigInteger    : pprint.TPrint[IntZ]               = pprint.TPrint.literal[IntZ]("IntZ")
 		implicit val $$tPrintRational      : pprint.TPrint[rings.Rational[_]]  = pprint.TPrint.literal[rings.Rational[_]]("Rational")
