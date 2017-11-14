@@ -22,30 +22,43 @@ public final class Rational<E>
     /** The denominator. */
     public final E denominator;
 
+    private static <E> void normalize(Ring<E> ring, E[] nd) {
+        E numerator = nd[0];
+        E denominator = nd[1];
+
+        if (ring.isZero(numerator))
+            denominator = ring.getOne();
+
+        if (ring.isUnit(denominator)) {
+            numerator = ring.divideExact(numerator, denominator);
+            denominator = ring.getOne();
+        }
+        if (ring.signum(denominator) < 0) {
+            denominator = ring.negate(denominator);
+            numerator = ring.negate(numerator);
+        }
+
+        nd[0] = numerator;
+        nd[1] = denominator;
+    }
+
     /**
      * Constructs rational with the specified numerator and denominator
      */
     public Rational(Ring<E> ring, E numerator, E denominator) {
         if (ring.isZero(denominator))
             throw new ArithmeticException("division by zero");
-        this.ring = ring;
         if (!ring.isZero(numerator)) {
             E gcd = ring.gcd(numerator, denominator);
             numerator = ring.divideExact(numerator, gcd);
             denominator = ring.divideExact(denominator, gcd);
-
-            if (ring.isUnit(denominator)) {
-                numerator = ring.divideExact(numerator, denominator);
-                denominator = ring.getOne();
-            }
         }
 
-        if (ring.signum(denominator) < 0) {
-            denominator = ring.negate(denominator);
-            numerator = ring.negate(numerator);
-        }
-        this.numerator = numerator;
-        this.denominator = denominator;
+        E[] nd = ring.createArray(numerator, denominator);
+        normalize(ring, nd);
+        this.ring = ring;
+        this.numerator = nd[0];
+        this.denominator = nd[1];
     }
 
     /**
@@ -73,13 +86,11 @@ public final class Rational<E>
 
     /* private constructor without gcd reduction */
     private Rational(boolean b, Ring<E> ring, E numerator, E denominator) {
-        if (ring.isUnit(denominator)) {
-            numerator = ring.divideExact(numerator, denominator);
-            denominator = ring.getOne();
-        }
+        E[] nd = ring.createArray(numerator, denominator);
+        normalize(ring, nd);
         this.ring = ring;
-        this.numerator = numerator;
-        this.denominator = denominator;
+        this.numerator = nd[0];
+        this.denominator = nd[1];
     }
 
     /**
