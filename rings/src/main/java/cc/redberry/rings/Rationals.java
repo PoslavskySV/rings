@@ -176,8 +176,9 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     @Override
     public Rational<E> randomElement(RandomGenerator rnd) {
         long den;
-        do {den = rnd.nextInt();} while (den == 0);
-        return new Rational<>(ring, ring.valueOf(rnd.nextInt()), ring.valueOf(den));
+        E eden;
+        do {den = rnd.nextInt();} while (ring.isZero(eden = ring.valueOf(den)));
+        return new Rational<>(ring, ring.valueOf(rnd.nextInt()), eden);
     }
 
     public Rational<E> parse(ElementParser<E> parser, String string) {

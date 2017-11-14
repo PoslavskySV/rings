@@ -45,8 +45,62 @@ public final class MultivariateFactorization {
             return FactorInZ((MultivariatePolynomial) poly);
         else if (Util.isOverRationals(poly))
             return (FactorDecomposition<Poly>) FactorInQ((MultivariatePolynomial) poly);
-        else
+        else {
+            FactorDecomposition<Poly> factors = tryNested(poly, MultivariateFactorization::Factor);
+            if (factors != null)
+                return factors;
             throw new RuntimeException("Unsupported ring: " + poly.coefficientRingToString());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <Poly extends AMultivariatePolynomial<?, Poly>>
+    FactorDecomposition<Poly> tryNested(Poly poly, Function<Poly, FactorDecomposition<Poly>> factorFunction) {
+        if (MultivariateGCD.isOverUnivariate(poly))
+            return FactorOverUnivariate((MultivariatePolynomial) poly, (Function) factorFunction);
+        else if (MultivariateGCD.isOverUnivariateZp64(poly))
+            return FactorOverUnivariateZp64((MultivariatePolynomial) poly, (Function) factorFunction);
+        else if (MultivariateGCD.isOverMultivariate(poly))
+            return FactorOverMultivariate((MultivariatePolynomial) poly, (Function) factorFunction);
+        else if (MultivariateGCD.isOverMultivariateZp64(poly))
+            return FactorOverMultivariateZp64((MultivariatePolynomial) poly, (Function) factorFunction);
+        return null;
+    }
+
+    private static <E> FactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<E>>>
+    FactorOverUnivariate(MultivariatePolynomial<UnivariatePolynomial<E>> poly,
+                         Function<MultivariatePolynomial<E>, FactorDecomposition<MultivariatePolynomial<E>>> factorFunction) {
+        return factorFunction.apply(
+                MultivariatePolynomial.asNormalMultivariate(poly, 0)).
+                map(p -> p.asOverUnivariateEliminate(0));
+    }
+
+    private static FactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>>
+    FactorOverUnivariateZp64(MultivariatePolynomial<UnivariatePolynomialZp64> poly,
+                             Function<MultivariatePolynomialZp64, FactorDecomposition<MultivariatePolynomialZp64>> factorFunction) {
+        return factorFunction.apply(
+                MultivariatePolynomialZp64.asNormalMultivariate(poly, 0)).
+                map(p -> p.asOverUnivariateEliminate(0));
+    }
+
+    private static <E> FactorDecomposition<MultivariatePolynomial<MultivariatePolynomial<E>>>
+    FactorOverMultivariate(MultivariatePolynomial<MultivariatePolynomial<E>> poly,
+                           Function<MultivariatePolynomial<E>, FactorDecomposition<MultivariatePolynomial<E>>> factorFunction) {
+        int[] cfVars = ArraysUtil.sequence(poly.lc().nVariables);
+        int[] mainVars = ArraysUtil.sequence(poly.lc().nVariables, poly.lc().nVariables + poly.nVariables);
+        return factorFunction.apply(
+                MultivariatePolynomial.asNormalMultivariate(poly, cfVars, mainVars))
+                .map(p -> p.asOverMultivariateEliminate(cfVars));
+    }
+
+    private static FactorDecomposition<MultivariatePolynomial<MultivariatePolynomialZp64>>
+    FactorOverMultivariateZp64(MultivariatePolynomial<MultivariatePolynomialZp64> poly,
+                               Function<MultivariatePolynomialZp64, FactorDecomposition<MultivariatePolynomialZp64>> factorFunction) {
+        int[] cfVars = ArraysUtil.sequence(poly.lc().nVariables);
+        int[] mainVars = ArraysUtil.sequence(poly.lc().nVariables, poly.lc().nVariables + poly.nVariables);
+        return factorFunction.apply(
+                MultivariatePolynomialZp64.asNormalMultivariate(poly, cfVars, mainVars))
+                .map(p -> p.asOverMultivariateEliminate(cfVars));
     }
 
     /**
@@ -2127,26 +2181,28 @@ public final class MultivariateFactorization {
                 FactorRef<Poly>
                         a = allFactors.get(i),
                         b = allFactors.get(j);
+                if (a == null || b == null)
+                    continue;
 
                 Poly gcd = PolynomialMethods.PolynomialGCD(a.factor(), b.factor());
                 if (gcd.isConstant())
                     continue;
 
                 Poly
-                        aReduced = PolynomialMethods.divideAndRemainder(a.factor(), gcd)[0],
-                        bReduced = PolynomialMethods.divideAndRemainder(b.factor(), gcd)[0];
+                        aReduced = PolynomialMethods.divideExact(a.factor(), gcd),
+                        bReduced = PolynomialMethods.divideExact(b.factor(), gcd);
 
                 if (bReduced.isConstant())
-                    allFactors.remove(j);
+                    allFactors.set(j, null);
 
-                a.update(aReduced, gcd);
-                b.update(bReduced, gcd);
+                TIntArrayList aGCDIndexes = a.update(aReduced, gcd);
+                TIntArrayList bGCDIndexes = b.update(bReduced, gcd);
 
                 FactorRef<Poly> gcdRef = new FactorRef<>();
                 gcdRef.decompositions.addAll(a.decompositions);
-                gcdRef.indexes.addAll(a.indexes);
+                gcdRef.indexes.addAll(aGCDIndexes);
                 gcdRef.decompositions.addAll(b.decompositions);
-                gcdRef.indexes.addAll(b.indexes);
+                gcdRef.indexes.addAll(bGCDIndexes);
 
                 allFactors.add(gcdRef);
             }
@@ -2189,12 +2245,12 @@ public final class MultivariateFactorization {
         final List<FactorDecomposition<Poly>> decompositions;
         final TIntArrayList indexes;
 
-        public FactorRef() {
+        FactorRef() {
             this.decompositions = new ArrayList<>();
             this.indexes = new TIntArrayList();
         }
 
-        public FactorRef(FactorDecomposition<Poly> decomposition, int index) {
+        FactorRef(FactorDecomposition<Poly> decomposition, int index) {
             this.decompositions = new ArrayList<>();
             this.indexes = new TIntArrayList();
             decompositions.add(decomposition);
@@ -2203,13 +2259,16 @@ public final class MultivariateFactorization {
 
         Poly factor() {return decompositions.get(0).get(indexes.get(0));}
 
-        void update(Poly reduced, Poly gcd) {
+        TIntArrayList update(Poly reduced, Poly gcd) {
+            TIntArrayList gcdIndexes = new TIntArrayList(indexes.size());
             // add gcd to all required decompositions
             for (int i = 0; i < decompositions.size(); i++) {
                 FactorDecomposition<Poly> decomposition = decompositions.get(i);
                 decomposition.factors.set(indexes.get(i), reduced); // <- just in case
+                gcdIndexes.add(decomposition.size());
                 decomposition.addFactor(gcd, decomposition.getExponent(indexes.get(i)));
             }
+            return gcdIndexes;
         }
     }
 

@@ -26,10 +26,19 @@ public final class Rational<E>
      * Constructs rational with the specified numerator and denominator
      */
     public Rational(Ring<E> ring, E numerator, E denominator) {
+        if (ring.isZero(denominator))
+            throw new ArithmeticException("division by zero");
         this.ring = ring;
-        E gcd = ring.gcd(numerator, denominator);
-        numerator = ring.divideExact(numerator, gcd);
-        denominator = ring.divideExact(denominator, gcd);
+        if (!ring.isZero(numerator)) {
+            E gcd = ring.gcd(numerator, denominator);
+            numerator = ring.divideExact(numerator, gcd);
+            denominator = ring.divideExact(denominator, gcd);
+
+            if (ring.isUnit(denominator)) {
+                numerator = ring.divideExact(numerator, denominator);
+                denominator = ring.getOne();
+            }
+        }
 
         if (ring.signum(denominator) < 0) {
             denominator = ring.negate(denominator);
@@ -64,6 +73,10 @@ public final class Rational<E>
 
     /* private constructor without gcd reduction */
     private Rational(boolean b, Ring<E> ring, E numerator, E denominator) {
+        if (ring.isUnit(denominator)) {
+            numerator = ring.divideExact(numerator, denominator);
+            denominator = ring.getOne();
+        }
         this.ring = ring;
         this.numerator = numerator;
         this.denominator = denominator;
