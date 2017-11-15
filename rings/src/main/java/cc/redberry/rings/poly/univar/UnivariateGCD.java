@@ -9,8 +9,12 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.bigint.ChineseRemainders;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.poly.Util.Tuple2;
+import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.DegreeVector;
+import cc.redberry.rings.poly.multivar.MultivariateGCD;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
@@ -53,10 +57,31 @@ public final class UnivariateGCD {
             Ring ring = ((UnivariatePolynomial) a).ring;
             if (ring.equals(Rings.Z))
                 return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-            else
+            else {
+                T r = tryNested(a, b);
+                if (r != null)
+                    return r;
                 return (T) SubresultantRemainders((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+            }
         } else
-            throw new RuntimeException(a.getClass().toString());
+            throw new RuntimeException();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends IUnivariatePolynomial<T>> T tryNested(T a, T b) {
+        if (a instanceof UnivariatePolynomial && ((UnivariatePolynomial) a).ring instanceof MultivariateRing)
+            return (T) PolynomialGCDOverMultivariate((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        return null;
+    }
+
+    private static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    UnivariatePolynomial<Poly> PolynomialGCDOverMultivariate(UnivariatePolynomial<Poly> a,
+                                                             UnivariatePolynomial<Poly> b) {
+        return MultivariateGCD.PolynomialGCD(
+                AMultivariatePolynomial.asMultivariate(a, 0, true),
+                AMultivariatePolynomial.asMultivariate(b, 0, true))
+                .asUnivariateEliminate(0);
     }
 
     private static <E> UnivariatePolynomial<Rational<E>> PolynomialGCDInQ(

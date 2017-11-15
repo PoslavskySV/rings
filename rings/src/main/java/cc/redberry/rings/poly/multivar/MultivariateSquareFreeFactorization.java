@@ -28,6 +28,13 @@ public final class MultivariateSquareFreeFactorization {
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
+        if (poly instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) poly).ring.getZero() instanceof IPolynomial) {
+            FactorDecomposition<Poly> factors = MultivariateFactorization.tryNested(poly,
+                    MultivariateSquareFreeFactorization::SquareFreeFactorization);
+            if (factors != null)
+                return factors;
+        }
         if (poly.coefficientRingCharacteristic().isZero())
             return SquareFreeFactorizationYunZeroCharacteristics(poly);
         else

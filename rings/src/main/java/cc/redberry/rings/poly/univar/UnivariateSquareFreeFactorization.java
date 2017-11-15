@@ -4,6 +4,7 @@ import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.multivar.MultivariateSquareFreeFactorization;
 
 import java.util.Arrays;
 
@@ -37,7 +38,11 @@ public final class UnivariateSquareFreeFactorization {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> FactorDecomposition<T> SquareFreeFactorization(T poly) {
-        if (poly.coefficientRingCharacteristic().isZero())
+        if (UnivariateFactorization.isOverMultivariate(poly))
+            return (FactorDecomposition<T>) UnivariateFactorization.FactorOverMultivariate((UnivariatePolynomial) poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
+        else if (UnivariateFactorization.isOverUnivariate(poly))
+            return (FactorDecomposition<T>) UnivariateFactorization.FactorOverUnivariate((UnivariatePolynomial) poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
+        else if (poly.coefficientRingCharacteristic().isZero())
             return SquareFreeFactorizationYunZeroCharacteristics(poly);
         else
             return SquareFreeFactorizationMusser(poly);

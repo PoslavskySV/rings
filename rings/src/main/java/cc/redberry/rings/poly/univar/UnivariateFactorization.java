@@ -5,16 +5,16 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
-import cc.redberry.rings.poly.MachineArithmetic;
-import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.Util.Tuple2;
+import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.HenselLifting.QuadraticLiftAbstract;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.util.ArraysUtil;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static cc.redberry.rings.poly.univar.Conversions64bit.asOverZp64;
@@ -45,8 +45,39 @@ public final class UnivariateFactorization {
             return FactorInZ(poly);
         else if (Util.isOverRationals(poly))
             return FactorInQ((UnivariatePolynomial) poly);
+        else if (isOverMultivariate(poly))
+            return (FactorDecomposition<Poly>) FactorOverMultivariate((UnivariatePolynomial) poly, MultivariateFactorization::Factor);
+        else if (isOverUnivariate(poly))
+            return (FactorDecomposition<Poly>) FactorOverUnivariate((UnivariatePolynomial) poly, MultivariateFactorization::Factor);
         else
             throw new RuntimeException("ring is not supported: " + poly.coefficientRingToString());
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends IUnivariatePolynomial<T>> boolean isOverMultivariate(T poly) {
+        return (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring instanceof MultivariateRing);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends IUnivariatePolynomial<T>> boolean isOverUnivariate(T poly) {
+        return (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring instanceof UnivariateRing);
+    }
+
+    static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    FactorDecomposition<UnivariatePolynomial<Poly>>
+    FactorOverMultivariate(UnivariatePolynomial<Poly> poly,
+                           Function<Poly, FactorDecomposition<Poly>> factorFunction) {
+        return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 0, true))
+                .map(p -> p.asUnivariateEliminate(0));
+    }
+
+    static <uPoly extends IUnivariatePolynomial<uPoly>>
+    FactorDecomposition<UnivariatePolynomial<uPoly>>
+    FactorOverUnivariate(UnivariatePolynomial<uPoly> poly,
+                         Function<MultivariatePolynomial<uPoly>, FactorDecomposition<MultivariatePolynomial<uPoly>>> factorFunction) {
+        return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 1, 0, MonomialOrder.LEX))
+                .map(MultivariatePolynomial::asUnivariate);
     }
 
     /**
