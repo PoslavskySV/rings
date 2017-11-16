@@ -524,6 +524,20 @@ public final class ArraysUtil {
         return s;
     }
 
+    public static int multiply(final int[] array, int from, int to) {
+        int s = 1;
+        for (int i = from; i < to; ++i)
+            s *= array[i];
+        return s;
+    }
+
+    public static double multiplyToDouble(final int[] array, int from, int to) {
+        double s = 1.;
+        for (int i = from; i < to; ++i)
+            s *= array[i];
+        return s;
+    }
+
     public static int or(final long[] array) {
         return or(array, 0, array.length);
     }

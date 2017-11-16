@@ -451,19 +451,19 @@ public class HenselLiftingTest extends AMultivariateTest {
 
     @Test
     public void testSparse1() throws Exception {
-        String[] vars = {"x1", "x2", "x3"};
+        String[] vars = {"x1", "x2", "x3", "x4"};
         MultivariatePolynomial<BigInteger>
                 factors[] = new MultivariatePolynomial[]
                 {
-                        MultivariatePolynomial.parse("x1^2 + x2 + x3", vars),
-                        MultivariatePolynomial.parse("x1^2*x2^2 - x2 - 1", vars),
-                        MultivariatePolynomial.parse("x1^3 + x3", vars)
+                        MultivariatePolynomial.parse("x1^2 + x2 + x3*x4^2", vars),
+                        MultivariatePolynomial.parse("x1^2*x2^2 - x2 - 1 + x2*x4^3", vars),
+                        MultivariatePolynomial.parse("x1^3 + x3 + x2*x4", vars)
                 };
         MultivariatePolynomial[] biFactors = Arrays.stream(factors).map(f -> f.evaluate(2, 1)).toArray(MultivariatePolynomial[]::new);
         MultivariatePolynomial[] lcs = Arrays.stream(factors).map(f -> f.lc(0)).toArray(MultivariatePolynomial[]::new);
         MultivariatePolynomial<BigInteger> base = multiply(factors);
 
-        System.out.println(HenselLifting.mkEquations(base, biFactors, lcs));
+        System.out.println(HenselLifting.sparseLifting(base, biFactors, lcs));
     }
 
     /* ==================================== Test data =============================================== */

@@ -303,6 +303,18 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
+     * Sparsity level: size / (product of degrees)
+     */
+    public double sparsity() {
+        double sparsity = size();
+        for (int d : degrees()) {
+            if (d != 0)
+                sparsity /= (d + 1);
+        }
+        return sparsity;
+    }
+
+    /**
      * Makes a copy of this with the specified variable dropped
      *
      * @param variable the variable
@@ -569,7 +581,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @throws IllegalArgumentException if this is not effectively a univariate polynomial
      */
     public final UnivariatePolynomial<Poly> asUnivariateEliminate(int variable) {
-        MultivariateRing<Poly> ring = new MultivariateRing<>(createZero().dropVariable(variable, true));
+        MultivariateRing<Poly> ring = new MultivariateRing<>(createZero().dropVariable(variable));
         Poly[] univarData = ring.createZeroesArray(degree(variable) + 1);
         for (Term e : terms)
             univarData[e.exponents[variable]].add(e.without(variable));
@@ -587,7 +599,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         Poly result = factory.createZero();
         for (int i = 0; i <= univariate.degree(); i++) {
             Poly cf = univariate.get(i);
-            if(join)
+            if (join)
                 cf = cf.insertVariable(uVariable);
             result.add(cf.multiply(factory.createMonomial(uVariable, i)));
         }
