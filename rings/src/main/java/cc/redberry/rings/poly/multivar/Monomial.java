@@ -53,6 +53,11 @@ public final class Monomial<E> extends DegreeVector<Monomial<E>> {
         return new Monomial<>(newDegree, newTotalDegree, coefficient);
     }
 
+    @Override
+    public Monomial<E> setCoefficientFrom(Monomial<E> oth) {
+        return new Monomial<>(exponents, totalDegree, oth.coefficient);
+    }
+
     /** Set's the coefficient to {@code newRing.valueOf(coefficient) } */
     public Monomial<E> setRing(Ring<E> newRing) {
         E e = newRing.valueOf(coefficient);

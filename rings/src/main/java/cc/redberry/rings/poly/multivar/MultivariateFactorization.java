@@ -1415,7 +1415,7 @@ public final class MultivariateFactorization {
 
         @SuppressWarnings("unchecked")
         LeadingCoefficientData(Poly lc) {
-            lc = lc.dropVariable(0, true);
+            lc = lc.dropVariable(0);
             this.lc = lc;
             this.lcSqFreeDecomposition = MultivariateSquareFreeFactorization.SquareFreeFactorization(lc);
             this.lcSqFreePart = lcSqFreeDecomposition.squareFreePart();

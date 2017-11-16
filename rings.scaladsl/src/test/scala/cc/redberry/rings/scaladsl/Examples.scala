@@ -1,8 +1,11 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
+import cc.redberry.rings.Rational
+import cc.redberry.rings.poly.PolynomialMethods
 import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial}
 import cc.redberry.rings.primes.SmallPrimes
+import org.apache.commons.math3.random.Well1024a
 import org.junit.{Ignore, Test}
 
 import scala.language.{existentials, postfixOps}
@@ -728,5 +731,33 @@ class Examples {
     val rem = poly %% (ring("x + y"), ring("x - y"))
 
     println(rem)
+  }
+
+  @Test
+  def test28: Unit = {
+    import syntax._
+
+    val inner1 = Zp64(17)
+    val inner2 = UnivariateRingZp64(inner1, "t")
+    val inner3 = Frac(inner2)
+    val inner4 = MultivariateRing(inner3, Array("u, v"))
+    implicit val ring = UnivariateRing(inner4, "x")
+
+    val rnd = new Well1024a()
+    val poly = (0 to 3).map { _ =>
+      val num = inner2.randomElement(33, rnd)
+      val den = inner2.randomElement(33, rnd)
+      println(inner3 show num)
+      println(inner3 show den)
+      val rat = new Rational[inner2.ElementType](inner2, num, den)
+      println(inner3 show rat)
+      val x = ring.randomElement(3, rnd)
+      println(ring show x)
+      println()
+      val r = x.add(inner4.randomElement(3, 3).add(rat))
+      r
+    }.fold(ring.getOne) { _ * _ }
+
+    println(ring show PolynomialMethods.Factor(poly).size())
   }
 }

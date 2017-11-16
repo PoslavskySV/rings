@@ -1,7 +1,7 @@
 package cc.redberry.rings.scaladsl
 
 /**
-  * @since 1.0
+  * @since 2.1
   */
 object util {
 

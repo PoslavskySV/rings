@@ -303,17 +303,27 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
-     * Makes a copy of this with the specified variable replaced with the unit
+     * Makes a copy of this with the specified variable dropped
      *
-     * @param variable  the variable
-     * @param eliminate whether to reduces the resulting {@code nVariables} by one (eliminate variable from degree
-     *                  vectors) or not
+     * @param variable the variable
      */
-    public final Poly dropVariable(int variable, boolean eliminate) {
+    public final Poly dropVariable(int variable) {
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
             newData.add(term.without(variable));
-        return create(eliminate ? nVariables - 1 : nVariables, newData);
+        return create(nVariables - 1, newData);
+    }
+
+    /**
+     * Makes a copy of this with the specified variable replaced with the unit
+     *
+     * @param variables the variables
+     */
+    public final Poly dropVariables(int[] variables) {
+        MonomialSet<Term> newData = new MonomialSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.without(variables));
+        return create(nVariables - variables.length, newData);
     }
 
     /**
@@ -345,10 +355,20 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @see #insertVariable(int)
      */
     public final Poly joinNewVariable() {
+        return joinNewVariables(1);
+    }
+
+    /**
+     * Returns a copy of this with {@code nVariables = nVariables + m}
+     *
+     * @return a copy of this with n additional (last) variables added
+     * @see #insertVariable(int)
+     */
+    public final Poly joinNewVariables(int n) {
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
-            newData.add(term.joinNewVariable());
-        return create(nVariables + 1, newData);
+            newData.add(term.joinNewVariables(n));
+        return create(nVariables + n, newData);
     }
 
     /** internal API */
@@ -498,6 +518,28 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
             if (e.exponents[variable] != exponent)
                 continue;
             result.add(e.setZero(variable));
+        }
+        return result;
+    }
+
+    /**
+     * Returns a coefficient before {@code variables^exponents} as a multivariate polynomial
+     *
+     * @param variables the variables
+     * @param exponents the exponents
+     * @return coefficient before {@code variables^exponents} as a multivariate polynomial
+     */
+    public final Poly coefficientOf(int[] variables, int[] exponents) {
+        if (variables.length != exponents.length)
+            throw new IllegalArgumentException();
+
+        Poly result = createZero();
+        out:
+        for (Term e : terms) {
+            for (int i = 0; i < variables.length; i++)
+                if (e.exponents[variables[i]] != exponents[i])
+                    continue out;
+            result.add(e.setZero(variables));
         }
         return result;
     }

@@ -1,17 +1,18 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
 import cc.redberry.rings.Ring;
-import cc.redberry.rings.poly.IPolynomial;
-import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.PolynomialMethods;
-import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.Rings;
+import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.lPrecomputedPowersHolder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.lUSubstitution;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.util.ArraysUtil;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Hensel lifting.
@@ -1063,6 +1064,247 @@ public final class HenselLifting {
             updatePair(0, updates[0], updates[1], pDegree);
             for (int i = 0; i < factors.length - 2; i++)
                 updatePair(i + 1, null, updates[i + 2], pDegree);
+        }
+    }
+
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Object mkEquations(Poly base, Poly[] biFactors, Poly[] lc) {
+        List<List<Term>>
+                fixeds = new ArrayList<>(),
+                unknowns = new ArrayList<>();
+
+
+        int nUnknowns = 0;
+        for (int i = 0; i < biFactors.length; ++i) {
+            List<Term>
+                    fixed = new ArrayList<>(),
+                    unknown = new ArrayList<>();
+            fixeds.add(fixed);
+            unknowns.add(unknown);
+
+            mkEquation(biFactors[i], lc[i], fixed, unknown);
+            nUnknowns += unknown.size();
+        }
+
+        List<Poly> factors = new ArrayList<>();
+        int unkCounter = base.nVariables;
+        for (int i = 0; i < biFactors.length; i++) {
+            Poly sFactor = base.createZero().joinNewVariables(nUnknowns);
+            for (Term f : fixeds.get(i))
+                sFactor.add(f.joinNewVariables(nUnknowns));
+            for (int j = 0; j < unknowns.get(i).size(); j++) {
+                sFactor.add(unknowns.get(i).get(j).joinNewVariables(nUnknowns).set(unkCounter, 1));
+                ++unkCounter;
+            }
+            factors.add(sFactor);
+        }
+
+        Poly times = factors.stream().reduce(factors.get(0).createOne(), (a, b) -> a.multiply(b));
+
+        MultivariatePolynomial<Poly> baseMatching =
+                base.asOverMultivariate(ArraysUtil.sequence(2, base.nVariables));
+
+
+        List<Equation<Term, Poly>> equations = new ArrayList<>();
+        for (Monomial<Poly> rhs : baseMatching) {
+            // rhs in R[x0, x1, ...., xN]
+            // lhs in R[x0, x1, ...., xN, u1, ... uL]
+            Poly lhs = times.coefficientOf(new int[]{0, 1}, Arrays.copyOf(rhs.exponents, 2));
+            Equation<Term, Poly> eq = new Equation<>(lhs, rhs.coefficient);
+
+            if (!eq.isConsistent())
+                return null;
+
+            if (!eq.isIdentity())
+                equations.add(eq);
+        }
+
+
+        equations.forEach(System.out::println);
+
+        System.out.println("====");
+
+        main:
+        while (true) {
+            List<Equation<Term, Poly>> linear =
+                    equations.stream().filter(Equation::isLinear).collect(Collectors.toList());
+
+            System.out.println("Linear: " + linear);
+            if (linear.isEmpty())
+                return null;
+
+            // search what we can solve
+
+            List<Equation<Term, Poly>> block = new ArrayList<>();
+            for (int i = 0; i < linear.size(); i++) {
+                Equation<Term, Poly> eq = linear.get(i);
+                block.add(eq);
+                for (int j = 0; j < linear.size(); j++) {
+                    if (i == j)
+                        continue;
+
+                    Equation<Term, Poly> eq2 = linear.get(j);
+                    if (eq.canBeSolvedWith(eq2))
+                        block.add(eq2);
+                }
+
+                if (block.size() >= eq.nUnknowns) {
+                    // try to solve the block
+                    System.out.println("block: " + block);
+                    BlockSolution<Term, Poly> blockSolution = solveBlock(block);
+                    System.out.println(blockSolution);
+                    if (blockSolution != null) {
+                        // remove all block equations
+                        equations.removeAll(block);
+                        for (int k = 0; k < equations.size(); k++)
+                            equations.set(k, equations.get(k).substituteSolutions(blockSolution));
+                        continue main;
+                    }
+                } else
+                    block.clear();
+            }
+
+            if (block.isEmpty())
+                // nothing can be solved
+                return null;
+
+
+            break;
+        }
+
+        return 1;
+    }
+
+    static <
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    BlockSolution<Term, Poly> solveBlock(List<Equation<Term, Poly>> eqs) {
+        Poly cfFactory = eqs.get(0).rhs;
+        PolynomialRing<Poly> polyRing = Rings.PolynomialRing(cfFactory);
+        Ring<Rational<Poly>> eqRing = Rings.Frac(polyRing);
+
+        List<Rational<Poly>[]> lhs = new ArrayList<>();
+        List<Rational<Poly>> rhs = new ArrayList<>();
+        int nUnknowns = eqs.get(0).nUnknowns;
+        int[] unknowns = eqs.get(0).getUnknowns();
+        for (int i = 0; i < eqs.size(); i++) {
+            Equation<Term, Poly> eq = eqs.get(i);
+            Rational<Poly>[] row = new Rational[nUnknowns];
+            for (int j = 0; j < row.length; j++) {
+                MultivariatePolynomial<Poly> cf = eq.lhs.coefficientOf(unknowns[j], 1);
+                assert cf.size() <= 1;
+                row[j] = new Rational<>(polyRing, cf.cc());
+            }
+            lhs.add(row);
+            rhs.add(new Rational<>(polyRing, eq.rhs));
+        }
+
+
+        Rational<Poly>[] rSolution = LinearSolver.solve(eqRing, lhs.toArray(new Rational[lhs.size()][]), rhs.toArray(new Rational[rhs.size()]));
+        if (rSolution == null)
+            return null;
+
+        Poly[] solution = cfFactory.createArray(rSolution.length);
+        for (int i = 0; i < rSolution.length; i++) {
+            Rational<Poly> r = rSolution[i];
+            if (!r.denominator.isOne())
+                return null;
+            solution[i] = r.numerator;
+        }
+
+        return new BlockSolution<>(unknowns, solution);
+    }
+
+    static final class BlockSolution<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        final int[] unknowns;
+        final Poly[] solutions;
+
+        public BlockSolution(int[] unknowns, Poly[] solutions) {
+            this.unknowns = unknowns;
+            this.solutions = solutions;
+        }
+
+        @Override
+        public String toString() {
+            return "solution: " + Arrays.toString(solutions);
+
+        }
+    }
+
+    static final class Equation<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        // lhs in R[x0, x1, ...., xN][u1, ... uL]
+        final MultivariatePolynomial<Poly> lhs;
+        // rhs in R[x0, x1, ...., xN]
+        final Poly rhs;
+
+        final int[] lhsDegrees;
+        final int unknownDegreesSum;
+        final int nUnknowns;
+
+        Equation(Poly lhs, Poly rhs) {
+            this(lhs.asOverMultivariateEliminate(ArraysUtil.sequence(0, rhs.nVariables)), rhs);
+        }
+
+        Equation(MultivariatePolynomial<Poly> lhs, Poly rhs) {
+            this.lhs = lhs;
+            this.rhs = rhs;
+            this.lhsDegrees = this.lhs.degrees();
+            this.unknownDegreesSum = ArraysUtil.sum(lhsDegrees);
+            int nUnknowns = 0;
+            for (int i = 0; i < lhsDegrees.length; i++)
+                nUnknowns += lhsDegrees[i] == 0 ? 0 : 1;
+            this.nUnknowns = nUnknowns;
+        }
+
+        boolean isConsistent() {
+            return unknownDegreesSum != 0
+                    || lhs.cc().equals(rhs);
+        }
+
+        boolean canBeSolvedWith(Equation<Term, Poly> other) {
+            for (int i = 0; i < lhsDegrees.length; i++)
+                if (other.lhsDegrees[i] > lhsDegrees[i])
+                    return false;
+            return true;
+        }
+
+        boolean isIdentity() { return unknownDegreesSum == 0;}
+
+        boolean isLinear() { return unknownDegreesSum == 1;}
+
+        int[] getUnknowns() {
+            int[] unknowns = new int[nUnknowns];
+            int i = -1;
+            for (int j = 0; j < lhsDegrees.length; j++)
+                if (lhsDegrees[j] != 0)
+                    unknowns[++i] = j;
+            return unknowns;
+        }
+
+        Equation<Term, Poly> substituteSolutions(BlockSolution<Term, Poly> solution) {
+            return new Equation<>(lhs.evaluate(solution.unknowns, solution.solutions), rhs);
+        }
+
+        @Override
+        public String toString() {
+            return lhs.toString() + " = " + rhs;
+        }
+    }
+
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void mkEquation(Poly biPoly, Poly lc, List<Term> fixed, List<Term> unknown) {
+        int xDeg = biPoly.degree(0);
+        for (Term term : biPoly.terms) {
+            if (term.exponents[0] == xDeg) {
+                Poly cf = lc.coefficientOf(1, term.exponents[1]);
+                assert cf.size() <= 1;
+                fixed.add(term.setCoefficientFrom(cf.lt()));
+            } else
+                unknown.add(term);
         }
     }
 }

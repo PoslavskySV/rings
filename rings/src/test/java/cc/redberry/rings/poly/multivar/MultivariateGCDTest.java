@@ -2007,7 +2007,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         Assert.assertTrue(poly.asUnivariate(1).content().isConstant());
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 1000000)
     public void testSmallDomain4() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};

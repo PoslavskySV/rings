@@ -58,6 +58,35 @@ public class LinearSolverTest extends AbstractTest {
     }
 
     @Test
+    public void test2a() throws Exception {
+        long[][] lhs0 = {
+                {14945154, 0, 0, 0, 0, 0, 0, 0},
+                {14945154, 0, 0, 0, 0, 0, 0, 0},
+                {14945154, 0, 0, 0, 0, 0, 0, 0},
+                {15840518, 0, 0, 0, 0, 0, 0, 23072526},
+                {0, 1, 0, 0, 0, 0, 0, 0},
+                {0, 1, 0, 0, 0, 0, 0, 18556231},
+                {0, 0, 7274769, 0, 0, 0, 0, 0},
+                {0, 0, 1285016, 0, 0, 0, 0, 2411651},
+                {0, 0, 0, 9614891, 7274769, 0, 0, 0},
+                {0, 0, 0, 4514307, 1285016, 0, 0, 17488741},
+                {0, 0, 0, 0, 0, 9614891, 0, 0},
+                {0, 0, 0, 0, 0, 4514307, 0, 7852752},
+                {0, 0, 0, 0, 0, 0, 9614891, 0},
+                {0, 0, 0, 0, 0, 0, 4514307, 22089485}};
+        long[] rhs0 = {1, 1, 1, 0, 22655879, 0, 12777324, 0, 1128298, 0, 20152010, 0, 4506067, 0};
+        long modulus = 23072527;
+
+        BigInteger[][] lhs = convert(lhs0);
+        BigInteger[] rhs = convert(rhs0);
+
+        IntegersZp domain = new IntegersZp(modulus);
+        BigInteger[] solution = solve(domain, lhs, rhs);
+        long[] expected = {16402965, 22655879, 11505290, 2916536, 13894224, 7600529, 2132874, 14945154};
+        Assert.assertArrayEquals(convert(expected), solution);
+    }
+
+    @Test
     public void test3() throws Exception {
         long[][] lhs0 = {
                 {1, 0, 0, 0, 0, 0, 0, 0},

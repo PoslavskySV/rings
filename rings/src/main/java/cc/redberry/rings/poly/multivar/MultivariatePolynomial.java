@@ -315,7 +315,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
             add(terms, newTerm, ring);
         }
-        return new MultivariatePolynomial<>(nVariables, ring, ordering, terms);
+        return new MultivariatePolynomial<>(nVariables - variables.length, ring, ordering, terms);
     }
 
     /**
