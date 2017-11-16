@@ -101,7 +101,12 @@ public final class Util {
             denominator = integralRing.lcm(denominator, cf.denominator);
 
         final E d = denominator;
-        return new Tuple2<>(poly.mapCoefficients(integralRing, cf -> cf.multiply(d).numerator), denominator);
+        MultivariatePolynomial<E> integral = poly.mapCoefficients(integralRing, cf -> {
+            Rational<E> r = cf.multiply(d);
+            assert integralRing.isOne(r.denominator);
+            return r.numerator;
+        });
+        return new Tuple2<>(integral, denominator);
     }
 
     public static <E> UnivariatePolynomial<Rational<E>> asOverRationals(Ring<Rational<E>> field, UnivariatePolynomial<E> poly) {

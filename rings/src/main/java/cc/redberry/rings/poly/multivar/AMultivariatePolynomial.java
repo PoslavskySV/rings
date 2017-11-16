@@ -561,6 +561,40 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
+     * Converts this polynomial to a univariate polynomial over specified variable with the multivariate coefficient
+     * ring.
+     *
+     * @param variable variable which will be treated as univariate variable
+     * @return univariate polynomial over the ring of multivariate coefficients
+     * @throws IllegalArgumentException if this is not effectively a univariate polynomial
+     */
+    public final UnivariatePolynomial<Poly> asUnivariateEliminate(int variable) {
+        MultivariateRing<Poly> ring = new MultivariateRing<>(createZero().dropVariable(variable, true));
+        Poly[] univarData = ring.createZeroesArray(degree(variable) + 1);
+        for (Term e : terms)
+            univarData[e.exponents[variable]].add(e.without(variable));
+        return UnivariatePolynomial.createUnsafe(ring, univarData);
+    }
+
+    /**
+     * */
+    public static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly asMultivariate(UnivariatePolynomial<Poly> univariate, int uVariable, boolean join) {
+        Poly factory = univariate.get(0);
+        if (join)
+            factory = factory.insertVariable(uVariable);
+        Poly result = factory.createZero();
+        for (int i = 0; i <= univariate.degree(); i++) {
+            Poly cf = univariate.get(i);
+            if(join)
+                cf = cf.insertVariable(uVariable);
+            result.add(cf.multiply(factory.createMonomial(uVariable, i)));
+        }
+        return result;
+    }
+
+    /**
      * Converts this to a multivariate polynomial with coefficients being univariate polynomials over {@code variable}
      *
      * @param variable variable
