@@ -41,6 +41,7 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
     private FactorDecomposition(Poly constantFactor, List<Poly> factors, TIntArrayList exponents) {
         if (!constantFactor.isConstant())
             throw new IllegalArgumentException("Factor " + constantFactor + " is not a constant.");
+        assert factors.size() == exponents.size();
         this.constantFactor = constantFactor;
         this.factors = factors;
         this.exponents = exponents;
@@ -417,6 +418,12 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
 
     /** decomposition with specified factors and exponents */
     public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> of(Poly constantFactor, List<Poly> factors, TIntArrayList exponents) {
+        if (factors.size() != exponents.size())
+            throw new IllegalArgumentException();
+
+        factors = new ArrayList<>(factors);
+        exponents = new TIntArrayList(exponents);
+
         for (int i = factors.size() - 1; i >= 0; --i)
             if (factors.get(i).isConstant()) {
                 constantFactor.multiply(PolynomialMethods.polyPow(factors.get(i), exponents.get(i)));

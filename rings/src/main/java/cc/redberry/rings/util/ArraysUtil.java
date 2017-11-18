@@ -418,9 +418,16 @@ public final class ArraysUtil {
     }
 
     public static int max(int[] array) {
-        int a = -1;
+        int a = Integer.MIN_VALUE;
         for (int i : array)
             a = Math.max(a, i);
+        return a;
+    }
+
+    public static int max(int[] array, int from , int to) {
+        int a = Integer.MIN_VALUE;;
+        for (int i = from; i < to; i++)
+            a = Math.max(a, array[i]);
         return a;
     }
 
@@ -432,12 +439,18 @@ public final class ArraysUtil {
     }
 
     public static int min(int[] array) {
-        int a = -1;
+        int a = Integer.MAX_VALUE;
         for (int i : array)
             a = Math.min(a, i);
         return a;
     }
 
+    public static int min(int[] array, int from , int to) {
+        int a = Integer.MAX_VALUE;
+        for (int i = from; i < to; i++)
+            a = Math.min(a, array[i]);
+        return a;
+    }
 
     public static int[] min(int[] a, int[] b) {
         int[] r = new int[a.length];
@@ -508,6 +521,20 @@ public final class ArraysUtil {
         int s = 0;
         for (int i = from; i < to; ++i)
             s += array[i];
+        return s;
+    }
+
+    public static int multiply(final int[] array, int from, int to) {
+        int s = 1;
+        for (int i = from; i < to; ++i)
+            s *= array[i];
+        return s;
+    }
+
+    public static double multiplyToDouble(final int[] array, int from, int to) {
+        double s = 1.;
+        for (int i = from; i < to; ++i)
+            s *= array[i];
         return s;
     }
 

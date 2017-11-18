@@ -9,9 +9,7 @@ import com.wolfram.jlink.KernelLink;
 import com.wolfram.jlink.MathLinkException;
 import com.wolfram.jlink.MathLinkFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -142,33 +140,41 @@ class Bench {
      * Calculate gcd of two polynomials with Singular
      */
     static ExternalResult singularFactor(AMultivariatePolynomial poly) throws Exception {
+        File tmpFile = File.createTempFile("singular", "poly");
+        tmpFile.deleteOnExit();
+        try {
+            try (FileOutputStream fo = new FileOutputStream(tmpFile)) {
+                fo.write(String.format("poly p = %s;\n", poly).getBytes());
+            }
+            String[] singularCmds = {
+                    "system(\"--ticks-per-sec\",1000);",
+                    String.format("ring r = %s,(%s),dp;", poly.isOverFiniteField() ? poly.coefficientRingCardinality() : "0", String.join(",", WithVariables.defaultVars(poly.nVariables))),
+                    String.format("< \"%s\";", tmpFile.getAbsolutePath()),
+                    "int t = timer;",
+                    "list g = factorize(p);",
+                    "int elapsed = timer-t;",
+                    "print(1);",
+                    "print(\"SEPARATOR\");",
+                    "print(elapsed);",
+                    "exit;"
+            };
+            String cmd = Arrays.stream(singularCmds).reduce((l, r) -> l + r).get();
+            Process process = new ProcessBuilder(SINGULAR,
+                    "-q")
+                    .redirectErrorStream(true)
+                    .start();
 
-        String[] singularCmds = {
-                "system(\"--ticks-per-sec\",1000);",
-                String.format("ring r = %s,(%s),dp;", poly.isOverFiniteField() ? poly.coefficientRingCardinality() : "0", String.join(",", WithVariables.defaultVars(poly.nVariables))),
-                String.format("poly p = %s;", poly),
-                "int t = timer;",
-                "list g = factorize(p);",
-                "int elapsed = timer-t;",
-                "print(g);",
-                "print(\"SEPARATOR\");",
-                "print(elapsed);",
-                "exit;"
-        };
-        String cmd = Arrays.stream(singularCmds).reduce((l, r) -> l + r).get();
-        Process process = new ProcessBuilder(SINGULAR,
-                "-q")
-                .redirectErrorStream(true)
-                .start();
+            process.getOutputStream().write(cmd.getBytes());
+            process.getOutputStream().flush();
+            process.getOutputStream().close();
 
-        process.getOutputStream().write(cmd.getBytes());
-        process.getOutputStream().flush();
-        process.getOutputStream().close();
-
-        process.waitFor();
-        String singularOut = new BufferedReader(new InputStreamReader(process.getInputStream())).lines().reduce((l, r) -> l + r).get();
-        String[] split = singularOut.split("SEPARATOR");
-        return new ExternalResult(split[0], (long) (Double.valueOf(split[1]) * 1000_000));
+            process.waitFor();
+            String singularOut = new BufferedReader(new InputStreamReader(process.getInputStream())).lines().reduce((l, r) -> l + r).orElse("SEPARATOR");
+            String[] split = singularOut.split("SEPARATOR");
+            return new ExternalResult(split[0], (long) (Double.valueOf(split[1]) * 1000_000));
+        } finally {
+            tmpFile.delete();
+        }
     }
 
 

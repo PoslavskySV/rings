@@ -44,6 +44,14 @@ public final class MultivariateGCD {
         return PolynomialGCD(arr, MultivariateGCD::PolynomialGCD);
     }
 
+    @SuppressWarnings("unchecked")
+    static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly poly, Poly[] arr) {
+        Poly[] all = (Poly[]) poly.createArray(arr.length + 1);
+        all[0] = poly;
+        System.arraycopy(arr, 0, all, 1, arr.length);
+        return PolynomialGCD(all);
+    }
+
     /**
      * Calculates greatest common divisor of the array of polynomials
      *

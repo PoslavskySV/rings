@@ -1121,7 +1121,6 @@ public class MultivariateFactorizationTest extends APolynomialTest {
                 MultivariatePolynomialZp64.parse("1+b^3*c*d^2+a*b*c^2*d*e^2+a^2*b^3*c^2*f^3+a^3*b^2*c^3", domain, vars),
                 MultivariatePolynomialZp64.parse("1+a*b*c*d*e*f^3+a*b^3*c*d*e^3*f^2+a^2*c*d^2*e*f^3+a^3*b^3*d^3*e", domain, vars),
         }, base = multiply(arr);
-        //System.out.println(base);
         for (int i = 0; i < its(1, 1); i++) {
             System.out.println(i);
             PrivateRandom.getRandom().setSeed(i);
@@ -1221,6 +1220,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
                 MultivariatePolynomialZp64.parse("1+2*a*b^3*c+a^2*d^3*e", domain, vars),
                 MultivariatePolynomialZp64.parse("1+2*b^3*c^3*d^3*e+2*a*b^2*c*d^2*e^3+a*b^3*c^2*d*e^2+a^3*b^2*c^3*d^2", domain, vars),
         }, base = multiply(arr);
+        System.out.println(base.sparsity());
         for (int i = 0; i < its(5, 5); i++) {
             //System.out.println(i);
             PrivateRandom.getRandom().setSeed(i + 1);

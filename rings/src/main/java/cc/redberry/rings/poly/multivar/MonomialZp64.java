@@ -68,6 +68,11 @@ public final class MonomialZp64 extends DegreeVector<MonomialZp64> {
         return new MonomialZp64(newDegree, newTotalDegree, coefficient);
     }
 
+    @Override
+    public MonomialZp64 setCoefficientFrom(MonomialZp64 oth) {
+        return new MonomialZp64(exponents, totalDegree, oth.coefficient);
+    }
+
     /** Set's monomial coefficient to a specified value */
     public MonomialZp64 setCoefficient(long value) {
         return value == coefficient ? this : new MonomialZp64(exponents, totalDegree, value);
