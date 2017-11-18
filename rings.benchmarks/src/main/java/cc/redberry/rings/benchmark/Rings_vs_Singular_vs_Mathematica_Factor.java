@@ -32,9 +32,9 @@ public class Rings_vs_Singular_vs_Mathematica_Factor {
         silent = false;
 
 
-        for (int nVariables = 3; nVariables <= 5; nVariables++) {
-            MATHEMATICA_TIMEOUT_SECONDS = 100;
-            doFactorMathematica = nVariables <= 4;
+        for (int nVariables = 3; nVariables <= 7; nVariables++) {
+            MATHEMATICA_TIMEOUT_SECONDS = 300;
+            doFactorMathematica = nVariables <= 3;
 
             System.out.println("#variables = " + nVariables);
 
@@ -42,9 +42,9 @@ public class Rings_vs_Singular_vs_Mathematica_Factor {
             int size = 20;
             int degree = 10;
 
-            timings = run(nVariables, degree, size, 2, nIterations, Rings.Z, false);
+            timings = run(nVariables, degree, size, 3, nIterations, Rings.Z, false);
             writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings", "target", String.format("factor_z_%s.tsv", nVariables)), timings);
-            timings = run(nVariables, degree, size, 2, nIterations, Rings.Z, true);
+            timings = run(nVariables, degree, size, 3, nIterations, Rings.Z, true);
             writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings", "target", String.format("factor_z_coprime_%s.tsv", nVariables)), timings);
 
             for (long prime : new long[]{(1 << 19) - 1, 2}) {
@@ -105,18 +105,23 @@ public class Rings_vs_Singular_vs_Mathematica_Factor {
                 if (coprime)
                     poly.increment();
 
+                //System.out.println(poly.sparsity());
+
                 writer.write(poly.toString());
                 writer.newLine();
 
                 long start = System.nanoTime();
                 FactorDecomposition<MultivariatePolynomial<BigInteger>> ringsResult = PolynomialMethods.Factor(poly);
                 long ringsTime = System.nanoTime() - start;
+                //System.out.println(ringsTime);
 
                 ExternalResult singularResult = singularFactor(poly);
                 long singularTime = singularResult.nanoTime;
+                //System.out.println(singularTime);
 
                 ExternalResult mmaResult = mathematicaFactor(poly);
                 long mmaTime = mmaResult.nanoTime;
+                //System.out.println(mmaTime );
 
                 timings[i] = new long[]{ringsTime, singularTime, mmaTime};
                 if (!silent)

@@ -873,7 +873,6 @@ public final class HenselLifting {
         if (from == 2 && base.sparsity() < SPARSITY_THRESHOLD) {
             Poly[] sparseFactors = sparseLifting(base, factors, factorsLC);
             if (sparseFactors != null) {
-                System.out.println("SPARSE");
                 System.arraycopy(sparseFactors, 0, factors, 0, factors.length);
                 return;
             }
