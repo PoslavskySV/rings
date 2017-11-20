@@ -761,9 +761,9 @@ Operators defined on multivariate polynomials:
 +-------------------------------+-----------------------------------------------------------------------+
 | ``a /%/%* (dividers*)``       | ``MultivariateDivision.divideAndRemainder(a, dividers: _*)``          |
 +-------------------------------+-----------------------------------------------------------------------+
-| ``a %% (tuple)``              | ``MultivariateDivision.remainder(a, tuple: _*)``             |
+| ``a %% (tuple)``              | ``MultivariateDivision.remainder(a, tuple: _*)``                      |
 +-------------------------------+-----------------------------------------------------------------------+
-| ``a %%* (dividers*)``         | ``MultivariateDivision.remainder(a, dividers: _*)``          |
+| ``a %%* (dividers*)``         | ``MultivariateDivision.remainder(a, dividers: _*)``                   |
 +-------------------------------+-----------------------------------------------------------------------+
 
 
