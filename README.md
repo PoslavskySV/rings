@@ -337,24 +337,23 @@ Highlighted benchmarks
 
 In the following plots performance of Rings is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at [GitHub](https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks). In all benchamrks random polynomials were used.
 
-
-<img src="doc/_static/gcd_z_5vars_rings_vs_singular.png" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_z_5vars_rings_vs_singular.png?raw=true" width="600">
 
 Rings vs Singular performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]* each with 40 terms and degree 20 in each variable
 
-<img src="doc/_static/gcd_z_5vars_rings_vs_wolfram.png" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_z_5vars_rings_vs_wolfram.png?raw=true" width="600">
 
 Rings vs Mathematica performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]* each with 40 terms and degree 20 in each variable
 
-<img src="doc/_static/factor_z2_7vars_rings_vs_singular.png" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor_z2_7vars_rings_vs_singular.png?raw=true" width="600">
 
 Rings vs Singular performance of *factor(a b c)* for random polynomials *(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6,x_7]* each with 20 terms and degree 10 in each variable
 
-<img src="doc/_static/factor_z_3vars_rings_vs_wolfram.png" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor_z_3vars_rings_vs_wolfram.png?raw=true" width="600">
 
 Rings vs Mathematica performance of *factor(a b c)* for random polynomials *(a, b, c) \in Z\[x,y,z\]* each with 20 terms and degree 10 in each variable
 
-<img src="doc/_static/bench_fac_uni_Zp_flint_ntl.png" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/bench_fac_uni_Zp_flint_ntl.png?raw=true" width="600">
 
 Univariate factorization performance on polynomials of the form *(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)* in *Z_{17}[x]*. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
 
