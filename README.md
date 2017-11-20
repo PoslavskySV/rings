@@ -51,13 +51,16 @@ Rings 2.1: efficient Java/Scala library for polynomial rings
 ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
 
 @ val poly1 = ring("x + y - z").pow(8) 
-poly1: MultivariatePolynomial[IntZ] = z^8-8*y*z^7+28*y^2*z^6-56*y^3*z^5+70*y^4*z^4-56...
+poly1: MultivariatePolynomial[IntZ] = z^8-8*y*z^7+28*y^2*z^6-56*y^3*z^5+70*...
 
 @ val poly2 = ring("x - y + z").pow(8) 
-poly1: MultivariatePolynomial[IntZ] = z^8-8*y*z^7+28*y^2*z^6-56*y^3*z^5+70*y^4*z^4-56...
+poly1: MultivariatePolynomial[IntZ] = z^8-8*y*z^7+28*y^2*z^6-56*y^3*z^5+70*...
 
 @ Factor(poly1 - poly2)
-res13: FactorDecomposition[MultivariatePolynomial[IntZ]] = 16*x*(-z+y)*(z^2-2*y*z+y^2+x^2)*(z^4-4*y*z^3+6*y^2*z^2-4*y^3*z+y^4+6*x^2*z^2-12*x^2*y*z+6*x^2*y^2+x^4)
+res13: FactorDecomposition[MultivariatePolynomial[IntZ]] = 
+       16*(x)*((-1)*z+y)
+       *(z^4-4*y*z^3+6*y^2*z^2-4*y^3*z+y^4+6*x^2*z^2-12*x^2*y*z+6*x^2*y^2+x^4)
+       *(z^2-2*y*z+y^2+x^2)
 ```
 
 ### Java/Scala library
