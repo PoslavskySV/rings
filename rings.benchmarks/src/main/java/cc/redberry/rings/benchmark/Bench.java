@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 class Bench {
@@ -78,39 +79,89 @@ class Bench {
 
     static boolean doRunSingular = true;
 
+    static final class SingularGCD {
+        final AMultivariatePolynomial a, b;
+
+
+        public SingularGCD(AMultivariatePolynomial a, AMultivariatePolynomial b) {
+            this.a = a;
+            this.b = b;
+        }
+
+        Process process = null;
+
+        ExternalResult run() throws IOException, InterruptedException {
+            if (!doRunSingular)
+                return new ExternalResult("", -1);
+            File tmpFile = File.createTempFile("singular", "poly");
+            tmpFile.deleteOnExit();
+            try {
+                try (FileOutputStream fo = new FileOutputStream(tmpFile)) {
+                    fo.write(String.format("poly poly1 = %s;\n", a).getBytes());
+                    fo.write(String.format("poly poly2 = %s;\n", b).getBytes());
+                }
+                String[] singularCmds = {
+                        "system(\"--ticks-per-sec\",1000);",
+                        String.format("ring r = %s,(%s),dp;", a.isOverFiniteField() ? a.coefficientRingCardinality() : "0", String.join(",", WithVariables.defaultVars(a.nVariables))),
+                        String.format("< \"%s\";", tmpFile.getAbsolutePath()),
+                        "int t = timer;",
+                        "poly g = gcd(poly1, poly2);",
+                        "int elapsed = timer-t;",
+                        "print(1);",
+                        "print(\"SEPARATOR\");",
+                        "print(elapsed);",
+                        "exit;"
+                };
+                String cmd = Arrays.stream(singularCmds).reduce((l, r) -> l + r).get();
+                process = new ProcessBuilder(SINGULAR,
+                        "-q")
+                        .redirectErrorStream(true)
+                        .start();
+
+                process.getOutputStream().write(cmd.getBytes());
+                process.getOutputStream().flush();
+                process.getOutputStream().close();
+
+                process.waitFor();
+                String singularOut = new BufferedReader(new InputStreamReader(process.getInputStream())).lines().reduce((l, r) -> l + r).orElse("");
+                if (!singularOut.contains("SEPARATOR"))
+                    //<- there was a error in Singular
+                    return new ExternalResult("", Long.MAX_VALUE);
+
+                String[] split = singularOut.split("SEPARATOR");
+                return new ExternalResult(split[0], (long) (Double.valueOf(split[1]) * 1000_000));
+            } finally {
+                tmpFile.delete();
+            }
+        }
+
+        ExternalResult run(long millis) throws ExecutionException, InterruptedException {
+            if (!doRunSingular)
+                return new ExternalResult("", -1);
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            FutureTask<ExternalResult> task = new FutureTask<>(this::run);
+            executor.execute(task);
+            try {
+                return task.get(millis, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                task.cancel(true);
+                return new ExternalResult("-1", -1)
+                        ;
+            } finally {
+                if (process != null)
+                    process.destroyForcibly();
+                executor.shutdown();
+            }
+        }
+    }
+
     /**
      * Calculate gcd of two polynomials with Singular
      */
     static ExternalResult singularGCD(MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b) throws Exception {
         if (!doRunSingular)
             return new ExternalResult("", -1);
-        String[] singularCmds = {
-                "system(\"--ticks-per-sec\",1000);",
-                String.format("ring r = %s,(%s),dp;", a.isOverFiniteField() ? a.coefficientRingCardinality() : "0", String.join(",", WithVariables.defaultVars(a.nVariables))),
-                String.format("poly poly1 = %s;", a),
-                String.format("poly poly2 = %s;", b),
-                "int t = timer;",
-                "poly g = gcd(poly1, poly2);",
-                "int elapsed = timer-t;",
-                "print(g);",
-                "print(\"SEPARATOR\");",
-                "print(elapsed);",
-                "exit;"
-        };
-        String cmd = Arrays.stream(singularCmds).reduce((l, r) -> l + r).get();
-        Process process = new ProcessBuilder(SINGULAR,
-                "-q")
-                .redirectErrorStream(true)
-                .start();
-
-        process.getOutputStream().write(cmd.getBytes());
-        process.getOutputStream().flush();
-        process.getOutputStream().close();
-
-        process.waitFor();
-        String singularOut = new BufferedReader(new InputStreamReader(process.getInputStream())).lines().reduce((l, r) -> l + r).get();
-        String[] split = singularOut.split("SEPARATOR");
-        return new ExternalResult(split[0], (long) (Double.valueOf(split[1]) * 1000_000));
+        return new SingularGCD(a, b).run();
     }
 
     static boolean doFactorMathematica = true;
@@ -136,45 +187,79 @@ class Bench {
         return new ExternalResult(split[1], (long) (Double.valueOf(split[0]) * 1000_000_000));
     }
 
+    static final class SingularFactor {
+        final AMultivariatePolynomial poly;
+
+        SingularFactor(AMultivariatePolynomial poly) {
+            this.poly = poly;
+        }
+
+        Process process = null;
+
+        ExternalResult run() throws IOException, InterruptedException {
+            File tmpFile = File.createTempFile("singular", "poly");
+            tmpFile.deleteOnExit();
+            try {
+                try (FileOutputStream fo = new FileOutputStream(tmpFile)) {
+                    fo.write(String.format("poly p = %s;\n", poly).getBytes());
+                }
+                String[] singularCmds = {
+                        "system(\"--ticks-per-sec\",1000);",
+                        String.format("ring r = %s,(%s),dp;", poly.isOverFiniteField() ? poly.coefficientRingCardinality() : "0", String.join(",", WithVariables.defaultVars(poly.nVariables))),
+                        String.format("< \"%s\";", tmpFile.getAbsolutePath()),
+                        "int t = timer;",
+                        "list g = factorize(p);",
+                        "int elapsed = timer-t;",
+                        "print(1);",
+                        "print(\"SEPARATOR\");",
+                        "print(elapsed);",
+                        "exit;"
+                };
+                String cmd = Arrays.stream(singularCmds).reduce((l, r) -> l + r).get();
+                process = new ProcessBuilder(SINGULAR,
+                        "-q")
+                        .redirectErrorStream(true)
+                        .start();
+
+                process.getOutputStream().write(cmd.getBytes());
+                process.getOutputStream().flush();
+                process.getOutputStream().close();
+
+                process.waitFor();
+                String singularOut = new BufferedReader(new InputStreamReader(process.getInputStream())).lines().reduce((l, r) -> l + r).orElse("");
+                if (!singularOut.contains("SEPARATOR"))
+                    //<- there was a error in Singular
+                    return new ExternalResult("", Long.MAX_VALUE);
+
+                String[] split = singularOut.split("SEPARATOR");
+                return new ExternalResult(split[0], (long) (Double.valueOf(split[1]) * 1000_000));
+            } finally {
+                tmpFile.delete();
+            }
+        }
+
+        ExternalResult run(long millis) throws ExecutionException, InterruptedException {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            FutureTask<ExternalResult> task = new FutureTask<>(this::run);
+            executor.execute(task);
+            try {
+                return task.get(millis, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                task.cancel(true);
+                return new ExternalResult("-1", -1);
+            } finally {
+                if (process != null)
+                    process.destroyForcibly();
+                executor.shutdown();
+            }
+        }
+    }
+
     /**
      * Calculate gcd of two polynomials with Singular
      */
     static ExternalResult singularFactor(AMultivariatePolynomial poly) throws Exception {
-        File tmpFile = File.createTempFile("singular", "poly");
-        tmpFile.deleteOnExit();
-        try {
-            try (FileOutputStream fo = new FileOutputStream(tmpFile)) {
-                fo.write(String.format("poly p = %s;\n", poly).getBytes());
-            }
-            String[] singularCmds = {
-                    "system(\"--ticks-per-sec\",1000);",
-                    String.format("ring r = %s,(%s),dp;", poly.isOverFiniteField() ? poly.coefficientRingCardinality() : "0", String.join(",", WithVariables.defaultVars(poly.nVariables))),
-                    String.format("< \"%s\";", tmpFile.getAbsolutePath()),
-                    "int t = timer;",
-                    "list g = factorize(p);",
-                    "int elapsed = timer-t;",
-                    "print(1);",
-                    "print(\"SEPARATOR\");",
-                    "print(elapsed);",
-                    "exit;"
-            };
-            String cmd = Arrays.stream(singularCmds).reduce((l, r) -> l + r).get();
-            Process process = new ProcessBuilder(SINGULAR,
-                    "-q")
-                    .redirectErrorStream(true)
-                    .start();
-
-            process.getOutputStream().write(cmd.getBytes());
-            process.getOutputStream().flush();
-            process.getOutputStream().close();
-
-            process.waitFor();
-            String singularOut = new BufferedReader(new InputStreamReader(process.getInputStream())).lines().reduce((l, r) -> l + r).orElse("SEPARATOR");
-            String[] split = singularOut.split("SEPARATOR");
-            return new ExternalResult(split[0], (long) (Double.valueOf(split[1]) * 1000_000));
-        } finally {
-            tmpFile.delete();
-        }
+        return new SingularFactor(poly).run();
     }
 
 

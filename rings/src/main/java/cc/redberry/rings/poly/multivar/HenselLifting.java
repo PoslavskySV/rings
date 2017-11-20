@@ -844,7 +844,7 @@ public final class HenselLifting {
     /**
      * Sparsity threshold when to try sparse Hensel lifting
      */
-    private static final double SPARSITY_THRESHOLD = 0.01;
+    private static final double SPARSITY_THRESHOLD = 0.1;
 
     /**
      * Multifactor multivariate Hensel lifting
@@ -871,7 +871,15 @@ public final class HenselLifting {
         }
 
         if (from == 2 && base.sparsity() < SPARSITY_THRESHOLD) {
-            Poly[] sparseFactors = sparseLifting(base, factors, factorsLC);
+            Poly[] sparseFactors = null;
+
+            try {
+                // ArithmeticException may raise in rare cases in Zp[X] where p is not a prime
+                // (exception actually arises when calculating some GCDs, since some non-unit elements
+                //  may be picked up from at random from Zp in randomized methods)
+                sparseFactors = sparseLifting(base, factors, factorsLC);
+            } catch (ArithmeticException ignore) { }
+
             if (sparseFactors != null) {
                 System.arraycopy(sparseFactors, 0, factors, 0, factors.length);
                 return;
@@ -1085,15 +1093,13 @@ public final class HenselLifting {
 
     /*=========================== Sparse Hensel lifting from bivariate factors =============================*/
 
+    private static final long MAX_TERMS_IN_EXPAND_FORM = 8_388_608L;
+
     /**
      * Sparse Hensel lifting
      */
     static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] sparseLifting(Poly base, Poly[] biFactors, Poly[] lc) {
-        double mulComplexity = 1.0 * base.size() * base.size();
-        double denseLiftingComplexityEst = mulComplexity * Math.pow(ArraysUtil.multiplyToDouble(base.degrees(), 2, base.nVariables), 2);
-        double gcdComplexity = ArraysUtil.sum(base.degrees()) * Math.pow(base.size(), 3);
-
         List<List<Term>>
                 // terms that are fixed
                 determinedTerms = new ArrayList<>(),
@@ -1102,6 +1108,7 @@ public final class HenselLifting {
 
         // total number of unknown terms
         int nUnknowns = 0;
+        long estimatedExpandedSize = 1;
         for (int i = 0; i < biFactors.length; ++i) {
             List<Term>
                     // fixed terms
@@ -1114,7 +1121,12 @@ public final class HenselLifting {
 
             populateUnknownTerms(biFactors[i], lc == null ? base.createOne() : lc[i], fixed, unknown);
             nUnknowns += unknown.size();
+            estimatedExpandedSize *= unknown.size();
         }
+
+        if (estimatedExpandedSize > 1024L * base.size() || estimatedExpandedSize > MAX_TERMS_IN_EXPAND_FORM)
+            // too large problem for sparse lifting -> probably we will run out of memory
+            return null;
 
         // true factors represented as R[x1, x2, ..., xN, u1, ..., uK]
         List<Poly> trueFactors = new ArrayList<>();

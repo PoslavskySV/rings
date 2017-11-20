@@ -83,7 +83,7 @@ Performance of GCD in :math:`Z_2[x_1,x_2,x_3,x_4]`
 GCD in :math:`Z_2[x_1,x_2,x_3,x_4, x_5]`
 ----------------------------------------
 
-In all these tests |Singular| failed to obtain result within 3000 seconds, while |Rings| calculated GCD within less than 5 seconds.
+In all these tests |Singular| failed to obtain result within 500 seconds, while |Rings| calculated GCD within less than 5 seconds.
 
 
 
@@ -167,9 +167,15 @@ GCD in :math:`Z[x_1,x_2,x_3,x_4]`
 GCD in :math:`Z[x_1,x_2,x_3,x_4,x_5]`
 --------------------------------------
 
-In all these tests |Singular| failed to obtain result within 3000 seconds, so we present only |Rings| vs |Mathematica| comparison.
+.. figure:: _static/gcd_z_5vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
 
-.. figure:: _static/gcd_z_4vars_rings_vs_wolfram.png
+   ..
+
+   |Rings| vs |Singular| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 40 terms and degree 20 in each variable
+
+.. figure:: _static/gcd_z_5vars_rings_vs_wolfram.png
    :scale: 50%
    :align: center
    
@@ -177,7 +183,16 @@ In all these tests |Singular| failed to obtain result within 3000 seconds, so we
 
    |Rings| vs |Mathematica| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 40 terms and degree 20 in each variable
 
-.. figure:: _static/gcd_coprime_z_4vars_rings_vs_wolfram.png
+
+.. figure:: _static/gcd_coprime_z_5vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Singular| performance of :math:`gcd(a g + 1, b g)` (coprime input) for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 40 terms and degree 20 in each variable
+
+.. figure:: _static/gcd_coprime_z_5vars_rings_vs_wolfram.png
    :scale: 50%
    :align: center
    
@@ -185,18 +200,38 @@ In all these tests |Singular| failed to obtain result within 3000 seconds, so we
 
    |Rings| vs |Mathematica| performance of :math:`gcd(a g + 1, b g)` (coprime input) for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 40 terms and degree 20 in each variable
 
+GCD in :math:`Z[x_1,x_2,x_3,x_4,x_5,x_6]`
+-----------------------------------------
+
+In all these tests |Singular| failed to obtain result within 500 seconds, so we present only |Rings| vs |Mathematica| comparison.
+
+.. figure:: _static/gcd_z_6vars_rings_vs_wolfram.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Mathematica| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5,x_6]` each with 40 terms and degree 20 in each variable
+
+.. figure:: _static/gcd_coprime_z_6vars_rings_vs_wolfram.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Mathematica| performance of :math:`gcd(a g + 1, b g)` (coprime input) for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5,x_6]` each with 40 terms and degree 20 in each variable
+
 
 Multivariate factorization
 ==========================
 
-Multivariate factorization performance was tested on random polynomials in the following way. Two polynomials :math:`a` and :math:`b` with 20 terms and degree 10 in each variable were generated at random. Then the factorizations of :math:`(a b)` (should give at least two factors) and :math:`(a b + 1)` (usually irreducible) were calculated.  So the input polynomials had about **~400 terms** and **degree 20** in each variable. Tests were performed for polynomials in 3, 4 and 5 variables over :math:`Z`, :math:`Z_2` and :math:`Z_{524287}` ground rings. 
+Multivariate factorization performance was tested on random polynomials in the following way. Three polynomials :math:`a`, :math:`b` and :math:`c` with 20 terms and degree 10 in each variable were generated at random. Then the factorizations of :math:`(a b c)` (should give at least three factors) and :math:`(a b c + 1)` (usually irreducible) were calculated.  So the input polynomials had about **~8000 terms** and **degree 30** in each variable. Tests were performed for polynomials in 3, 4, 5, 6 and 7 variables over :math:`Z`, :math:`Z_2` and :math:`Z_{524287}` ground rings. 
 
 
 .. admonition:: Brief conclusion
 
-   - for non-trivial factorization problems |Singular| is considerably faster than |Rings| and |Rings| are considerably faster than |Mathematica|
    - for irreducible polynomials |Rings| are faster than |Singular|
-   - for small problems |Rings| and |Singular| are comparably fast
+   - |Rings| and |Singular| are comparably fast
    - |Rings| performs better on dense problems
    
 
@@ -216,7 +251,7 @@ Factorization in :math:`Z_2[x,y,z]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_2[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_2[x,y,z]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z2_3vars_rings_vs_singular.png
    :scale: 50%
@@ -224,7 +259,7 @@ Factorization in :math:`Z_2[x,y,z]`
    
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_2[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_2[x,y,z]` each with 20 terms and degree 10 in each variable
 
 
 Factorization in :math:`Z_2[x_1,x_2,x_3,x_4]`
@@ -236,7 +271,7 @@ Factorization in :math:`Z_2[x_1,x_2,x_3,x_4]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_2[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z2_4vars_rings_vs_singular.png
    :scale: 50%
@@ -244,7 +279,7 @@ Factorization in :math:`Z_2[x_1,x_2,x_3,x_4]`
    
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_2[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
 
 Factorization in :math:`Z_2[x_1,x_2,x_3,x_4,x_5]`
 -------------------------------------------------
@@ -255,7 +290,7 @@ Factorization in :math:`Z_2[x_1,x_2,x_3,x_4,x_5]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_2[x_1,x_2,x_3,x_4,x_5]` each with 10 terms and degree 5 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z2_5vars_rings_vs_singular.png
    :scale: 50%
@@ -263,7 +298,45 @@ Factorization in :math:`Z_2[x_1,x_2,x_3,x_4,x_5]`
    
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_2[x_1,x_2,x_3,x_4,x_5]` each with 10 terms and degree 5 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
+
+Factorization in :math:`Z_2[x_1,x_2,x_3,x_4,x_5,x_6]`
+-----------------------------------------------------
+
+.. figure:: _static/factor_z2_6vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6]` each with 20 terms and degree 10 in each variable
+
+.. figure:: _static/factor_irred_z2_6vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6]` each with 20 terms and degree 10 in each variable
+
+Factorization in :math:`Z_2[x_1,x_2,x_3,x_4,x_5,x_6,x_7]`
+---------------------------------------------------------
+
+.. figure:: _static/factor_z2_7vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6,x_7]` each with 20 terms and degree 10 in each variable
+
+.. figure:: _static/factor_irred_z2_7vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6,x_7]` each with 20 terms and degree 10 in each variable
 
 
 Multivariate factorization over :math:`Z_{524287}`
@@ -279,7 +352,7 @@ Factorization in :math:`Z_{524287}[x,y,z]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_{524287}[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_{524287}[x,y,z]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z524287_3vars_rings_vs_singular.png
    :scale: 50%
@@ -287,7 +360,7 @@ Factorization in :math:`Z_{524287}[x,y,z]`
    
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_{524287}[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_{524287}[x,y,z]` each with 20 terms and degree 10 in each variable
 
 
 Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4]`
@@ -299,7 +372,7 @@ Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z524287_4vars_rings_vs_singular.png
    :scale: 50%
@@ -307,7 +380,7 @@ Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4]`
    
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
 
 Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4,x_5]`
 --------------------------------------------------------
@@ -318,7 +391,7 @@ Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4,x_5]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z524287_5vars_rings_vs_singular.png
    :scale: 50%
@@ -326,13 +399,53 @@ Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4,x_5]`
    
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
+
+
+Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4,x_5,x_6]`
+------------------------------------------------------------
+
+.. figure:: _static/factor_z524287_6vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5,x_6]` each with 20 terms and degree 10 in each variable
+
+.. figure:: _static/factor_irred_z524287_6vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5,x_6]` each with 20 terms and degree 10 in each variable
+
+
+Factorization in :math:`Z_{524287}[x_1,x_2,x_3,x_4,x_5,x_6,x_7]`
+----------------------------------------------------------------
+
+.. figure:: _static/factor_z524287_7vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5,x_6,x_7]` each with 20 terms and degree 10 in each variable
+
+.. figure:: _static/factor_irred_z524287_7vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+   
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z_{524287}[x_1,x_2,x_3,x_4,x_5,x_6,x_7]` each with 20 terms and degree 10 in each variable
+
 
 
 
 Multivariate factorization over :math:`Z`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 
 
 Factorization in :math:`Z[x,y,z]`
@@ -344,7 +457,7 @@ Factorization in :math:`Z[x,y,z]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_z_3vars_rings_vs_wolfram.png
    :scale: 50%
@@ -352,7 +465,7 @@ Factorization in :math:`Z[x,y,z]`
 
    ..
 
-   |Rings| vs |Mathematica| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Mathematica| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z_3vars_rings_vs_singular.png
    :scale: 50%
@@ -360,7 +473,7 @@ Factorization in :math:`Z[x,y,z]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z_3vars_rings_vs_wolfram.png
    :scale: 50%
@@ -368,7 +481,7 @@ Factorization in :math:`Z[x,y,z]`
 
    ..
 
-   |Rings| vs |Mathematica| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Mathematica| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
 
 
 Factorization in :math:`Z[x_1,x_2,x_3,x_4]`
@@ -382,7 +495,7 @@ For non-trivial factorization problems, |Mathematica| failed to obtain result in
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z_4vars_rings_vs_singular.png
    :scale: 50%
@@ -390,15 +503,7 @@ For non-trivial factorization problems, |Mathematica| failed to obtain result in
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
-
-.. figure:: _static/factor_irred_z_4vars_rings_vs_wolfram.png
-   :scale: 50%
-   :align: center
-
-   ..
-
-   |Rings| vs |Mathematica| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4]` each with 20 terms and degree 10 in each variable
 
 
 Factorization in :math:`Z[x_1,x_2,x_3,x_4,x_5]`
@@ -412,7 +517,7 @@ Factorization in :math:`Z[x_1,x_2,x_3,x_4,x_5]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
 
 .. figure:: _static/factor_irred_z_5vars_rings_vs_singular.png
    :scale: 50%
@@ -420,12 +525,54 @@ Factorization in :math:`Z[x_1,x_2,x_3,x_4,x_5]`
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b + 1)` (irreducible) for random polynomials :math:`(a, b) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 20 terms and degree 10 in each variable
 
 
+Factorization in :math:`Z[x_1,x_2,x_3,x_4,x_5,x_6]`
+---------------------------------------------------
 
-Multivariate factorization on large non-random polynomials
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+|Mathematica| failed to obtain result in a reasonable time, so it is not shown here.
+
+.. figure:: _static/factor_z_6vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4,x_5,x_6]` each with 20 terms and degree 10 in each variable
+
+.. figure:: _static/factor_irred_z_6vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4,x_5,x_6]` each with 20 terms and degree 10 in each variable
+
+Factorization in :math:`Z[x_1,x_2,x_3,x_4,x_5,x_6,x_7]`
+-------------------------------------------------------
+
+|Mathematica| failed to obtain result in a reasonable time, so it is not shown here.
+
+.. figure:: _static/factor_z_7vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4,x_5,x_6,x_7]` each with 20 terms and degree 10 in each variable
+
+.. figure:: _static/factor_irred_z_7vars_rings_vs_singular.png
+   :scale: 50%
+   :align: center
+
+   ..
+
+   |Rings| vs |Singular| performance of :math:`factor(a b c + 1)` (irreducible) for random polynomials :math:`(a, b, c) \in Z[x_1,x_2,x_3,x_4,x_5,x_6,x_7]` each with 20 terms and degree 10 in each variable
+
+
+Multivariate factorization on large not very sparse polynomials
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To check how the above plots obtained with random polynomials scale to a really huge and more dense input, the following factorizations were tested.
 

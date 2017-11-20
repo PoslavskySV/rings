@@ -13,30 +13,31 @@ import java.nio.file.Paths;
 import static cc.redberry.rings.benchmark.Bench.*;
 
 public class Rings_vs_Singular_vs_Mathematica_GCD {
+    static long SINGULAR_TIMEOUT = 300_000;
+
     public static void main(String[] args) throws Exception {
         // warm up
         run(3, 5, 3, 100, Rings.Z, false);
         System.out.println("warmed");
         silent = false;
         long[][] timings;
-        for (int nVariables = 3; nVariables <= 5; ++nVariables) {
-            MATHEMATICA_TIMEOUT_SECONDS = 100;
+        for (int nVariables = 3; nVariables <= 7; ++nVariables) {
+            MATHEMATICA_TIMEOUT_SECONDS = 300;
 
-            int nIterations = 900 / nVariables / nVariables;
-
-            doRunSingular = nVariables != 5;
+            int nIterations = 100;
 
             doFactorMathematica = true;
+            doRunSingular = false;
             timings = run(nVariables, 20, 40, nIterations, Rings.Z, false);
-            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings", "target", String.format("gcd_in_z_%s.tsv", nVariables)), timings);
+            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z_%s.tsv", nVariables)), timings);
             timings = run(nVariables, 20, 40, nIterations, Rings.Z, true);
-            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings", "target", String.format("gcd_in_z_coprime_%s.tsv", nVariables)), timings);
+            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z_coprime_%s.tsv", nVariables)), timings);
 
             doFactorMathematica = false;
             timings = run(nVariables, 20, 40, nIterations, Rings.Zp(2), false);
-            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings", "target", String.format("gcd_in_z2_%s.tsv", nVariables)), timings);
+            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z2_%s.tsv", nVariables)), timings);
             timings = run(nVariables, 20, 40, nIterations, Rings.Zp(2), true);
-            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings", "target", String.format("gcd_in_z2_coprime_%s.tsv", nVariables)), timings);
+            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z2_coprime_%s.tsv", nVariables)), timings);
         }
     }
 
@@ -57,11 +58,12 @@ public class Rings_vs_Singular_vs_Mathematica_GCD {
             int nIterations,
             Ring<BigInteger> cfRing,
             boolean coprime) throws Exception {
-        if (!silent)
-            System.out.println("\tRings\tSingular\tMathematica");
         long[][] timings = new long[nIterations][];
         MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(nVariables, cfRing);
+        System.out.println("Ring: " + ring);
         for (int i = 0; i < nIterations; i++) {
+            if (!silent)
+                System.out.println("\n-> " + i);
             MultivariatePolynomial<BigInteger>
                     a = ring.randomElement(degree, size),
                     b = ring.randomElement(degree, size),
@@ -77,15 +79,20 @@ public class Rings_vs_Singular_vs_Mathematica_GCD {
             MultivariatePolynomial<BigInteger> ringsResult = PolynomialMethods.PolynomialGCD(a, b);
             long ringsTime = System.nanoTime() - start;
 
-            ExternalResult singularResult = singularGCD(a, b);
+            if (!silent)
+                System.out.println("Rings:" + TimeUnits.nanosecondsToString(ringsTime));
+
+            ExternalResult singularResult = new SingularGCD(a, b).run(SINGULAR_TIMEOUT);
             long singularTime = singularResult.nanoTime;
+            if (!silent)
+                System.out.println("Singular:" + TimeUnits.nanosecondsToString(singularTime));
 
             ExternalResult mmaResult = mathematicaGCD(a, b);
             long mmaTime = mmaResult.nanoTime;
+            if (!silent)
+                System.out.println("MMA:" + TimeUnits.nanosecondsToString(mmaTime));
 
             timings[i] = new long[]{ringsTime, singularTime, mmaTime};
-            if (!silent)
-                System.out.println(i + "\t" + TimeUnits.nanosecondsToString(ringsTime) + "\t" + TimeUnits.nanosecondsToString(singularTime) + "\t" + TimeUnits.nanosecondsToString(mmaTime));
         }
         return timings;
     }

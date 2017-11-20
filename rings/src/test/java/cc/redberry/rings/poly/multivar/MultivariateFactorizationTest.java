@@ -2128,6 +2128,12 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         Assert.assertEquals(4, Factor(poly).size());
     }
 
+    @Test(timeout = 200_000)
+    public void testMultivariateFactorization46() throws Exception {
+        MultivariatePolynomial<BigInteger> poly = PolynomialMethods.polyPow(MultivariatePolynomial.parse("z+3*y^2+x^3*y"), 50).decrement();
+        Assert.assertEquals(6, PolynomialMethods.Factor(poly).size());
+    }
+
     /* ==================================== Test data =============================================== */
 
     static double DETALIZATION_PERCENT = 100;
