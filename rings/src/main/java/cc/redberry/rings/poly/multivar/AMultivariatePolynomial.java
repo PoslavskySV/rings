@@ -303,17 +303,39 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
-     * Makes a copy of this with the specified variable replaced with the unit
-     *
-     * @param variable  the variable
-     * @param eliminate whether to reduces the resulting {@code nVariables} by one (eliminate variable from degree
-     *                  vectors) or not
+     * Sparsity level: size / (product of degrees)
      */
-    public final Poly dropVariable(int variable, boolean eliminate) {
+    public double sparsity() {
+        double sparsity = size();
+        for (int d : degrees()) {
+            if (d != 0)
+                sparsity /= (d + 1);
+        }
+        return sparsity;
+    }
+
+    /**
+     * Makes a copy of this with the specified variable dropped
+     *
+     * @param variable the variable
+     */
+    public final Poly dropVariable(int variable) {
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
             newData.add(term.without(variable));
-        return create(eliminate ? nVariables - 1 : nVariables, newData);
+        return create(nVariables - 1, newData);
+    }
+
+    /**
+     * Makes a copy of this with the specified variable replaced with the unit
+     *
+     * @param variables the variables
+     */
+    public final Poly dropVariables(int[] variables) {
+        MonomialSet<Term> newData = new MonomialSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.without(variables));
+        return create(nVariables - variables.length, newData);
     }
 
     /**
@@ -345,10 +367,20 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @see #insertVariable(int)
      */
     public final Poly joinNewVariable() {
+        return joinNewVariables(1);
+    }
+
+    /**
+     * Returns a copy of this with {@code nVariables = nVariables + m}
+     *
+     * @return a copy of this with n additional (last) variables added
+     * @see #insertVariable(int)
+     */
+    public final Poly joinNewVariables(int n) {
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
-            newData.add(term.joinNewVariable());
-        return create(nVariables + 1, newData);
+            newData.add(term.joinNewVariables(n));
+        return create(nVariables + n, newData);
     }
 
     /** internal API */
@@ -503,6 +535,28 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
+     * Returns a coefficient before {@code variables^exponents} as a multivariate polynomial
+     *
+     * @param variables the variables
+     * @param exponents the exponents
+     * @return coefficient before {@code variables^exponents} as a multivariate polynomial
+     */
+    public final Poly coefficientOf(int[] variables, int[] exponents) {
+        if (variables.length != exponents.length)
+            throw new IllegalArgumentException();
+
+        Poly result = createZero();
+        out:
+        for (Term e : terms) {
+            for (int i = 0; i < variables.length; i++)
+                if (e.exponents[variables[i]] != exponents[i])
+                    continue out;
+            result.add(e.setZero(variables));
+        }
+        return result;
+    }
+
+    /**
      * Converts this polynomial to a univariate polynomial over specified variable with the multivariate coefficient
      * ring.
      *
@@ -516,6 +570,40 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         for (Term e : terms)
             univarData[e.exponents[variable]].add(e.set(variable, 0));
         return UnivariatePolynomial.createUnsafe(ring, univarData);
+    }
+
+    /**
+     * Converts this polynomial to a univariate polynomial over specified variable with the multivariate coefficient
+     * ring.
+     *
+     * @param variable variable which will be treated as univariate variable
+     * @return univariate polynomial over the ring of multivariate coefficients
+     * @throws IllegalArgumentException if this is not effectively a univariate polynomial
+     */
+    public final UnivariatePolynomial<Poly> asUnivariateEliminate(int variable) {
+        MultivariateRing<Poly> ring = new MultivariateRing<>(createZero().dropVariable(variable));
+        Poly[] univarData = ring.createZeroesArray(degree(variable) + 1);
+        for (Term e : terms)
+            univarData[e.exponents[variable]].add(e.without(variable));
+        return UnivariatePolynomial.createUnsafe(ring, univarData);
+    }
+
+    /**
+     * */
+    public static <Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly asMultivariate(UnivariatePolynomial<Poly> univariate, int uVariable, boolean join) {
+        Poly factory = univariate.get(0);
+        if (join)
+            factory = factory.insertVariable(uVariable);
+        Poly result = factory.createZero();
+        for (int i = 0; i <= univariate.degree(); i++) {
+            Poly cf = univariate.get(i);
+            if (join)
+                cf = cf.insertVariable(uVariable);
+            result.add(cf.multiply(factory.createMonomial(uVariable, i)));
+        }
+        return result;
     }
 
     /**

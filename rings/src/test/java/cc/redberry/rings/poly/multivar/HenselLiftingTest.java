@@ -3,6 +3,8 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.combinatorics.Combinatorics;
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Ring;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.PolynomialMethods;
@@ -12,6 +14,7 @@ import cc.redberry.rings.poly.multivar.HenselLifting.lEvaluation;
 import cc.redberry.rings.poly.multivar.MultivariateFactorization.IEvaluationLoop;
 import cc.redberry.rings.poly.multivar.MultivariateFactorization.lEvaluationLoop;
 import cc.redberry.rings.poly.test.FactorizationInput;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.test.Benchmark;
@@ -449,6 +452,64 @@ public class HenselLiftingTest extends AMultivariateTest {
 //        }
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testSparse1() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4"};
+        MultivariatePolynomial<BigInteger>
+                factors[] = new MultivariatePolynomial[]
+                {
+                        MultivariatePolynomial.parse("x1^2 + x2 + x3*x4^2", vars),
+                        MultivariatePolynomial.parse("x1^2*x2^2 - x2 - 1 + x2*x4^3", vars),
+                        MultivariatePolynomial.parse("x1^3 + x3 + x2*x4", vars)
+                };
+        MultivariatePolynomial[] biFactors = Arrays.stream(factors).map(f -> f.evaluate(2, 1)).toArray(MultivariatePolynomial[]::new);
+        MultivariatePolynomial[] lcs = Arrays.stream(factors).map(f -> f.lc(0)).toArray(MultivariatePolynomial[]::new);
+        MultivariatePolynomial<BigInteger> base = multiply(factors);
+
+        System.out.println(HenselLifting.sparseLifting(base, biFactors, lcs));
+    }
+
+    @Ignore
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testSparse2() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        Ring<BigInteger> ring = Rings.Zp(23011);
+        MultivariatePolynomial<BigInteger>
+
+                factors[] = new MultivariatePolynomial[]
+                {
+                        MultivariatePolynomial.parse("19297*z^2+12296*y+22390*x*y^2*z+14233*x^2*y*z+11337*x^2*y*z^2", ring, vars),
+                        MultivariatePolynomial.parse("1+17123*x*y^3*z+109*x^3*y", ring, vars),
+                        MultivariatePolynomial.parse("17192*y+20877*x+2281*x*y*z^3+13749*x*y^2*z+6683*x*y^2*z^3+15833*x^3*y^2*z", ring, vars)
+                };
+        MultivariatePolynomial<BigInteger> base = multiply(factors);
+        System.out.println(base.sparsity());
+        for (int i = 1; i < 11111112; i++) {
+            //{BigInteger.valueOf(5581), BigInteger.ZERO};
+            BigInteger[] ss = {ring.randomElement(), ring.randomElement()};
+
+            Evaluation<BigInteger> ev = new Evaluation<>(3, ss, ring, base.ordering);
+            UnivariatePolynomial[] uFactors = Arrays.stream(factors).map(f -> ev.evaluateFrom(f, 1).asUnivariate()).toArray(UnivariatePolynomial[]::new);
+            MultivariatePolynomial[] biFactors = Arrays.stream(factors).map(f -> ev.evaluateFrom(f, 2)).toArray(MultivariatePolynomial[]::new);
+
+            if (!allCoprime(uFactors))
+                continue;
+            if (!allCoprime(biFactors))
+                continue;
+            if (!IntStream.range(0, uFactors.length).allMatch(j -> factors[j].degree(0) == uFactors[j].degree()))
+                continue;
+            try {
+                MultivariatePolynomial[] lcs = Arrays.stream(factors).map(f -> f.lc(0)).toArray(MultivariatePolynomial[]::new);
+                // System.out.println(Arrays.toString(HenselLifting.sparseLifting(base, biFactors, lcs)));
+                HenselLifting.multivariateLift0(base, biFactors, lcs, ev, base.degrees(), 2);
+                Assert.assertArrayEquals(factors, biFactors);
+            } catch (Throwable r) {
+                System.out.println(Arrays.toString(ss));
+            }
+        }
+    }
 
     /* ==================================== Test data =============================================== */
 
@@ -521,10 +582,20 @@ public class HenselLiftingTest extends AMultivariateTest {
                     timing.addValue(System.nanoTime() - start);
 
 
-                    if (correctLC || Arrays.stream(factorsLC).allMatch(Poly::isConstant))
-                        Assert.assertArrayEquals(sample.factors, uFactors);
-                    else
-                        Assert.assertEquals(sample.poly, evaluation.modImage(multiply(uFactors), sample.poly.degrees()));
+                    try {
+                        if (correctLC || Arrays.stream(factorsLC).allMatch(Poly::isConstant))
+                            Assert.assertArrayEquals(sample.factors, uFactors);
+                        else
+                            Assert.assertEquals(sample.poly, evaluation.modImage(multiply(uFactors), sample.poly.degrees()));
+                    } catch (AssertionError err) {
+                        System.out.println("\n============ Error ============");
+                        System.out.println("Domain: " + sample.poly.coefficientRingToString());
+                        System.out.println("Polynomial: " + sample.poly);
+                        System.out.println("Expected factorization: " + Arrays.toString(sample.factors));
+                        System.out.println("Actual factorization: " + Arrays.toString(uFactors));
+                        System.out.println("Evaluation: " + evaluation);
+                        throw err;
+                    }
                     continue main;
                 }
                 throw new RuntimeException();
@@ -547,9 +618,9 @@ public class HenselLiftingTest extends AMultivariateTest {
         return p[0].createOne().multiply(p);
     }
 
-    private static <Poly extends AMultivariatePolynomial> boolean allCoprime(Poly... factors) {
+    private static <Poly extends IPolynomial> boolean allCoprime(Poly... factors) {
         return StreamSupport
                 .stream(Spliterators.spliteratorUnknownSize(Combinatorics.combinations(factors.length, 2), Spliterator.ORDERED), false)
-                .allMatch(arr -> MultivariateGCD.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
+                .allMatch(arr -> PolynomialMethods.PolynomialGCD(factors[arr[0]], factors[arr[1]]).isOne());
     }
 }

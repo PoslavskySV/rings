@@ -335,26 +335,25 @@ val poly = ring("1 - (1 - z^3) * a^6*b + (1 - 2*z) * c^33 + a^66")
 Highlighted benchmarks
 ----------------------
 
-
 In the following plots performance of Rings is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at [GitHub](https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks). In all benchamrks random polynomials were used.
 
-<img src="https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/gcd_z2_4vars_rings_vs_singular.png?raw=true" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_z_5vars_rings_vs_singular.png?raw=true" width="600">
 
-Rings vs Singular performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z_2[x_1,x_2,x_3,x_4]* each with 40 terms and degree 20 in each variable
+Rings vs Singular performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]* each with 40 terms and degree 20 in each variable
 
-<img src="https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/gcd_z_4vars_rings_vs_wolfram.png?raw=true" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_z_5vars_rings_vs_wolfram.png?raw=true" width="600">
 
 Rings vs Mathematica performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]* each with 40 terms and degree 20 in each variable
 
-<img src="https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/factor_z2_3vars_rings_vs_singular.png?raw=true" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor_z2_7vars_rings_vs_singular.png?raw=true" width="600">
 
-Rings vs Singular performance of *factor(a b)* for random polynomials *(a, b) \in Z_2\[x,y,z\]* each with 20 terms and degree 10 in each variable
+Rings vs Singular performance of *factor(a b c)* for random polynomials *(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6,x_7]* each with 20 terms and degree 10 in each variable
 
-<img src="https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/factor_z_3vars_rings_vs_wolfram.png?raw=true" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor_z_3vars_rings_vs_wolfram.png?raw=true" width="600">
 
-Rings vs Mathematica performance of *factor(a b)* for random polynomials *(a, b) \in Z\[x,y,z\]* each with 20 terms and degree 10 in each variable
+Rings vs Mathematica performance of *factor(a b c)* for random polynomials *(a, b, c) \in Z\[x,y,z\]* each with 20 terms and degree 10 in each variable
 
-<img src="https://github.com/PoslavskySV/rings/blob/gh-pages/doc/_static/bench_fac_uni_Zp_flint_ntl.png?raw=true" width="600">
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/bench_fac_uni_Zp_flint_ntl.png?raw=true" width="600">
 
 Univariate factorization performance on polynomials of the form *(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)* in *Z_{17}[x]*. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
 
@@ -515,24 +514,28 @@ Index of algorithms implemented in Rings
 
     > -  [multivar.HenselLifting](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java)
 
-29. *Fast dense bivariate factorization with recombination* (\[Bern99\], \[LeeM13\]):
+29. *Sparse Hensel lifting* (\[Kalt85\], \[LeeM13\])
+
+    > - [multivar.HenselLifting](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java)
+
+30. *Fast dense bivariate factorization with recombination* (\[Bern99\], \[LeeM13\]):
 
     > -  [MultivariateFactorization.bivariateDenseFactorSquareFreeInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
     > -  [MultivariateFactorization.bivariateDenseFactorSquareFreeInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
 
-30. *Kaltofen's multivariate factorization in finite fields* (\[Kalt85\], \[LeeM13\])
+31. *Kaltofen's multivariate factorization in finite fields* (\[Kalt85\], \[LeeM13\])
 
     modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to \[LeeM13\], but at the same time has many differences in details:
 
     > -  [MultivariateFactorization.factorInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
 
-31. *Kaltofen's multivariate factorization Z* (\[Kalt85\], \[LeeM13\])
+32. *Kaltofen's multivariate factorization Z* (\[Kalt85\], \[LeeM13\])
 
     (with the same modifications as for algorithm for finite fields):
 
     > -  [MultivariateFactorization.factorInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
 
-32. *Multivariate polynomial interpolation with Newton method*:
+33. *Multivariate polynomial interpolation with Newton method*:
 
     > -  [MultivariateInterpolation](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateInterpolation.java)
 

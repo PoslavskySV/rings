@@ -31,15 +31,12 @@ public class ChineseRemaindersTest extends AbstractTest {
         BigInteger[] remainders = {BigInteger.valueOf(2123), BigInteger.valueOf(7213)};
         BigInteger crt = ChineseRemainders.ChineseRemainders(coprimes, remainders);
         BigInteger sup = Arrays.stream(coprimes).reduce(ONE, BigInteger::multiply);
-        System.out.println(crt);
 
         assertCRT(coprimes, remainders, crt);
 
         crt = toSymMod(crt, sup);
-        System.out.println(crt);
         assertCRT(coprimes, remainders, crt);
     }
-
 
     @Test
     public void test2() throws Exception {
@@ -188,9 +185,7 @@ public class ChineseRemaindersTest extends AbstractTest {
             }
 
             BigInteger crt = ChineseRemainders.ChineseRemainders(comprimes, remainders);
-            for (int j = 0; j < n; j++) {
-                Assert.assertEquals(crt.mod(comprimes[j]), remainders[j]);
-            }
+            assertCRT(comprimes, remainders, crt);
         }
     }
 
@@ -218,6 +213,12 @@ public class ChineseRemaindersTest extends AbstractTest {
     }
 
     static void assertCRT(BigInteger[] coprimes, BigInteger[] rems, BigInteger crt) {
+        BigInteger total = BigInteger.ONE;
+        for (BigInteger coprime : coprimes)
+            total = total.multiply(coprime);
+
+        Assert.assertTrue(crt.compareTo(total) < 0);
+
         for (int i = 0; i < coprimes.length; i++)
             Assert.assertEquals(rems[i].mod(coprimes[i]), crt.mod(coprimes[i]));
     }

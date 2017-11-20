@@ -26,6 +26,7 @@ public class Rings_vs_Singular_vs_Mathematica_Factor3 {
 
             System.out.println("Ring: " + ring);
 
+            System.out.println(poly.sparsity());
             for (int i = 0; i < 5; ++i) {
                 long start = System.nanoTime();
                 int size = MultivariateFactorization.Factor(poly).size();

@@ -93,7 +93,7 @@ abstract class APolynomialRing<Poly extends IPolynomial<Poly>> extends ARing<Pol
 
     @Override
     public boolean isUnit(Poly element) {
-        return element.isOverField() ? element.isConstant() : isOne(element);
+        return element.isOverField() ? element.isConstant() : (isOne(element) || isMinusOne(element));
     }
 
     @Override

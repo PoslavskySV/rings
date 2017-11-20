@@ -3,6 +3,9 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FiniteField;
+import cc.redberry.rings.poly.IPolynomial;
+import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
@@ -2007,7 +2010,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         Assert.assertTrue(poly.asUnivariate(1).content().isConstant());
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 1000000)
     public void testSmallDomain4() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};
@@ -2048,6 +2051,34 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (int i = 5; i < 100; i++) {
             PrivateRandom.getRandom().setSeed(i);
             assertFalse(PolynomialGCD(a, b).isConstant());
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testNestedRing1() throws Exception {
+        for (Ring<?> inner1 : Arrays.asList(
+                Rings.GF(7, 3),
+                Rings.UnivariateRing(Rings.Z),
+                Rings.UnivariateRingZp64(17))) {
+            MultivariateRing<?> inner2 = Rings.MultivariateRing(2, inner1);
+            UnivariateRing<?> inner3 = Rings.UnivariateRing(inner2);
+            MultivariateRing<?> ring = Rings.MultivariateRing(2, inner3);
+
+            for (int i = 0; i < its(8, 16); ++i) {
+                AMultivariatePolynomial
+                        a = ring.randomElement(3, 5),
+                        b = ring.randomElement(3, 5),
+                        c = ring.randomElement(3, 5);
+
+                a.multiply((IPolynomial) c);
+                b.multiply((IPolynomial) c);
+
+                AMultivariatePolynomial gcd = MultivariateGCD.PolynomialGCD(a, b);
+                Assert.assertTrue(dividesQ(a, gcd));
+                Assert.assertTrue(dividesQ(b, gcd));
+                Assert.assertTrue(dividesQ(gcd, c));
+            }
         }
     }
 

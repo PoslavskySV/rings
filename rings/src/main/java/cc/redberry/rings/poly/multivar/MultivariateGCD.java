@@ -6,10 +6,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.bigint.ChineseRemainders;
 import cc.redberry.rings.linear.LinearSolver;
-import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.MachineArithmetic;
-import cc.redberry.rings.poly.UnivariateRing;
-import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.PrimesIterator;
@@ -45,6 +42,14 @@ public final class MultivariateGCD {
      */
     public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly... arr) {
         return PolynomialGCD(arr, MultivariateGCD::PolynomialGCD);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly poly, Poly[] arr) {
+        Poly[] all = (Poly[]) poly.createArray(arr.length + 1);
+        all[0] = poly;
+        System.arraycopy(arr, 0, all, 1, arr.length);
+        return PolynomialGCD(all);
     }
 
     /**
@@ -244,9 +249,89 @@ public final class MultivariateGCD {
                 else
                     return (Poly) ZippelGCD((MultivariatePolynomial) a, (MultivariatePolynomial) b);
             } else
-                throw new RuntimeException("GCD over " + ring + " ring not supported.");
+                return tryNested(a, b);
         } else
-            throw new RuntimeException();
+            return tryNested(a, b);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Poly extends AMultivariatePolynomial> Poly tryNested(Poly a, Poly b) {
+        if (isOverUnivariate(a))
+            return (Poly) PolynomialGCDOverUnivariate((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        else if (isOverUnivariateZp64(a))
+            return (Poly) PolynomialGCDOverUnivariateZp64((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        else if (isOverMultivariate(a))
+            return (Poly) PolynomialGCDOverMultivariate((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        else if (isOverMultivariateZp64(a))
+            return (Poly) PolynomialGCDOverMultivariateZp64((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+
+        throw new RuntimeException("Multivariate GCD over " + a.coefficientRingToString() + " ring not supported.");
+    }
+
+    static <Poly extends AMultivariatePolynomial>
+    boolean isOverUnivariate(Poly p) {
+        return p instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) p).ring instanceof UnivariateRing
+                && ((MultivariatePolynomial) p).lc() instanceof UnivariatePolynomial;
+    }
+
+    private static <E> MultivariatePolynomial<UnivariatePolynomial<E>>
+    PolynomialGCDOverUnivariate(MultivariatePolynomial<UnivariatePolynomial<E>> a,
+                                MultivariatePolynomial<UnivariatePolynomial<E>> b) {
+        return PolynomialGCD(
+                MultivariatePolynomial.asNormalMultivariate(a, 0),
+                MultivariatePolynomial.asNormalMultivariate(b, 0))
+                .asOverUnivariateEliminate(0);
+    }
+
+    static <Poly extends AMultivariatePolynomial>
+    boolean isOverMultivariate(Poly p) {
+        return p instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) p).ring instanceof MultivariateRing
+                && ((MultivariatePolynomial) p).lc() instanceof MultivariatePolynomial;
+    }
+
+    private static <E> MultivariatePolynomial<MultivariatePolynomial<E>>
+    PolynomialGCDOverMultivariate(MultivariatePolynomial<MultivariatePolynomial<E>> a,
+                                  MultivariatePolynomial<MultivariatePolynomial<E>> b) {
+        int[] cfVars = ArraysUtil.sequence(a.lc().nVariables);
+        int[] mainVars = ArraysUtil.sequence(a.lc().nVariables, a.lc().nVariables + a.nVariables);
+        return PolynomialGCD(
+                MultivariatePolynomial.asNormalMultivariate(a, cfVars, mainVars),
+                MultivariatePolynomial.asNormalMultivariate(b, cfVars, mainVars))
+                .asOverMultivariateEliminate(cfVars);
+    }
+
+    static <Poly extends AMultivariatePolynomial>
+    boolean isOverUnivariateZp64(Poly p) {
+        return p instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) p).ring instanceof UnivariateRing
+                && ((MultivariatePolynomial) p).lc() instanceof UnivariatePolynomialZp64;
+    }
+
+    private static MultivariatePolynomial<UnivariatePolynomialZp64>
+    PolynomialGCDOverUnivariateZp64(MultivariatePolynomial<UnivariatePolynomialZp64> a,
+                                    MultivariatePolynomial<UnivariatePolynomialZp64> b) {
+        return PolynomialGCD(
+                MultivariatePolynomialZp64.asNormalMultivariate(a, 0),
+                MultivariatePolynomialZp64.asNormalMultivariate(b, 0)).asOverUnivariateEliminate(0);
+    }
+
+    static <Poly extends AMultivariatePolynomial>
+    boolean isOverMultivariateZp64(Poly p) {
+        return p instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) p).ring instanceof MultivariateRing
+                && ((MultivariatePolynomial) p).lc() instanceof MultivariatePolynomialZp64;
+    }
+
+    private static MultivariatePolynomial<MultivariatePolynomialZp64>
+    PolynomialGCDOverMultivariateZp64(MultivariatePolynomial<MultivariatePolynomialZp64> a,
+                                      MultivariatePolynomial<MultivariatePolynomialZp64> b) {
+        int[] cfVars = ArraysUtil.sequence(a.lc().nVariables);
+        int[] mainVars = ArraysUtil.sequence(a.lc().nVariables, a.lc().nVariables + a.nVariables);
+        return PolynomialGCD(
+                MultivariatePolynomialZp64.asNormalMultivariate(a, cfVars, mainVars),
+                MultivariatePolynomialZp64.asNormalMultivariate(b, cfVars, mainVars)).asOverMultivariateEliminate(cfVars);
     }
 
     private static <E> MultivariatePolynomial<Rational<E>> PolynomialGCDOverRationals(
@@ -318,6 +403,8 @@ public final class MultivariateGCD {
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly trivialGCD(Poly a, Poly b) {
+        if (a == b)
+            return a.clone();
         if (a.isZero())
             return b.clone();
         if (b.isZero())
@@ -869,7 +956,8 @@ public final class MultivariateGCD {
 
                     if (imageTerm.coefficient == 0) {
                         // term is absent in the modularGCD => remove it from the base
-                        base.subtract(baseTerm);
+                        // base.subtract(baseTerm);
+                        iterator.aIterator.remove();
                         continue;
                     }
 
@@ -965,7 +1053,8 @@ public final class MultivariateGCD {
 
                     if (imageTerm.coefficient.isZero()) {
                         // term is absent in the modularGCD => remove it from the base
-                        bBase.subtract(baseTerm);
+                        // bBase.subtract(baseTerm);
+                        iterator.aIterator.remove();
                         continue;
                     }
 

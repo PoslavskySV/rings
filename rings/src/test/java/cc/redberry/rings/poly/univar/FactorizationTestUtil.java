@@ -2,7 +2,7 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.util.ArraysUtil;
-import org.apache.commons.math3.random.RandomDataGenerator;
+import cc.redberry.rings.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.List;

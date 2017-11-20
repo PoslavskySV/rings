@@ -50,6 +50,8 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector<MonomialTer
      */
     public abstract MonomialTerm setDegreeVector(int[] newDegree, int newTotalDegree);
 
+    public abstract MonomialTerm setCoefficientFrom(MonomialTerm oth);
+
     /**
      * Set the degree vector to a new value
      *
@@ -116,7 +118,12 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector<MonomialTer
 
     /** Joins new variable (with zero exponent) to this monomial */
     public final MonomialTerm joinNewVariable() {
-        return setDegreeVector(Arrays.copyOf(exponents, exponents.length + 1), totalDegree);
+        return joinNewVariables(1);
+    }
+
+    /** Joins new variables (with zero exponents) to this monomial */
+    public final MonomialTerm joinNewVariables(int n) {
+        return setDegreeVector(Arrays.copyOf(exponents, exponents.length + n), totalDegree);
     }
 
     /** internal API */
@@ -195,6 +202,16 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector<MonomialTer
      */
     public final MonomialTerm without(int variable) {
         return setDegreeVector(ArraysUtil.remove(exponents, variable), totalDegree - exponents[variable]);
+    }
+
+    /**
+     * Drops specified variables (number of variables will be reduced)
+     *
+     * @param variables the variables
+     * @return new monomial
+     */
+    public final MonomialTerm without(int[] variables) {
+        return setDegreeVector(ArraysUtil.remove(exponents, variables));
     }
 
     /**

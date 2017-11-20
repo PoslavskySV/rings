@@ -61,7 +61,7 @@ int main()
 {
    setbuf(stdout, NULL);
 
-   cout << "degree" << "\t" << "NTLTime" << "\t" << "FlintTime" << "\n";
+   //cout << "degree" << "\t" << "NTLTime" << "\t" << "FlintTime" << "\n";
 
    for (long l = 4; l <= 12; l += 1) {
       for (long idx = 0; idx < 10; idx++) {

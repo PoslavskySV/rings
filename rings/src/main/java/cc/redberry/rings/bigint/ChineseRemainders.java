@@ -208,7 +208,7 @@ public final class ChineseRemainders {
         for (int i = 0; i < primes.length; i++) {
             BigInteger mi = m.divide(primes[i]);
             BigInteger eea = bezout0(mi, primes[i]);
-            result = result.add(mi.multiply(eea.multiply(remainders[i]).mod(primes[i])));
+            result = result.add(mi.multiply(eea.multiply(remainders[i]).mod(primes[i]))).mod(m);
         }
         return result;
     }
