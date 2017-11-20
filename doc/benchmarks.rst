@@ -24,8 +24,8 @@ Multivariate GCD performance was tested on random polynomials in the following w
 
 .. admonition:: Brief conclusion
 
+   - for non trivial GCD problems |Rings| are several orders of magnitude faster than |Singular| (on polynomials over all domains) and |Mathematica| (on polynomials over finite fields) and slightly faster than |Mathematica| for polynomials over Z
    - for a relatively prime polynomials, all tools show comparable (very good) performace
-   - for non trivial GCD problems |Rings| are considerably faster
 
 
 Multivariate GCD over :math:`Z_2`
@@ -230,10 +230,9 @@ Multivariate factorization performance was tested on random polynomials in the f
 
 .. admonition:: Brief conclusion
 
-   - for irreducible polynomials |Rings| are faster than |Singular|
-   - |Rings| and |Singular| are comparably fast
-   - |Rings| performs better on dense problems
-   
+   - |Rings| and |Singular| are comparably fast and |Mathematica| is hopelessly slow
+   - for irreducible polynomials |Rings| are considerably faster than |Singular|
+   - |Rings| perform better on dense problems
 
 
 Multivariate factorization over :math:`Z_2`

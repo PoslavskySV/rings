@@ -275,6 +275,22 @@ public final class UnivariatePolynomialArithmetic {
         }
     }
 
+    /**
+     * Returns {@code base} in a power of non-negative {@code exponent} modulo {@code polyModulus}
+     *
+     * @param base        the base
+     * @param exponent    the non-negative exponent
+     * @param polyModulus the modulus
+     * @param copy        whether to clone {@code base}; if not the data of {@code base} will be lost
+     * @return {@code base} in a power of {@code e} modulo {@code polyModulus}
+     * @see UnivariateDivision#fastDivisionPreConditioning(IUnivariatePolynomial)
+     */
+    public static <T extends IUnivariatePolynomial<T>> T polyPowMod(final T base, BigInteger exponent,
+                                                                    T polyModulus,
+                                                                    boolean copy) {
+       return polyPowMod(base, exponent, polyModulus, UnivariateDivision.fastDivisionPreConditioning(polyModulus), copy);
+    }
+
     /** switch between plain and log2 algorithms */
     private static final long MONOMIAL_MOD_EXPONENT_THRESHOLD = 64;
 

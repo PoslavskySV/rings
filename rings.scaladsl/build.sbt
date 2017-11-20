@@ -33,6 +33,6 @@ releaseCrossBuild := true // true if you cross-build the project for multiple Sc
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   runClean,
-  runTest,
+  //runTest,
   releaseStepCommand("publishSigned")
 )
