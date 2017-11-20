@@ -2523,7 +2523,7 @@ public final class MultivariateFactorization {
                     // map to multivariate factors for further Hensel lifting
                     FactorDecomposition<MultivariatePolynomial<BigInteger>>[]
                             ilcFactors = Arrays.stream(ulcFactors)
-                            .map(decomposition -> decomposition.map(p -> (MultivariatePolynomial<BigInteger>)
+                            .map(decomposition -> decomposition.map(p ->
                                     AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables - 1, 0, poly.ordering)))
                             .toArray(FactorDecomposition[]::new);
 
