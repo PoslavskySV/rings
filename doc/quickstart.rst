@@ -631,15 +631,15 @@ Full benchmarks can be found at :ref:`ref-benchmarks` page. Benchmarks presented
  - `FLINT <http://www.flintlib.org>`_ (version 2.5.2_1)
 
 
-.. figure:: _static/gcd_z2_4vars_rings_vs_singular.png
+.. figure:: _static/gcd_z_5vars_rings_vs_singular.png
    :scale: 50%
    :align: center
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z_2[x_1,x_2,x_3,x_4]` each with 40 terms and degree 20 in each variable
+   |Rings| vs |Singular| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 40 terms and degree 20 in each variable
 
-.. figure:: _static/gcd_z_4vars_rings_vs_wolfram.png
+.. figure:: _static/gcd_z_5vars_rings_vs_wolfram.png
    :scale: 50%
    :align: center
    
@@ -647,13 +647,13 @@ Full benchmarks can be found at :ref:`ref-benchmarks` page. Benchmarks presented
 
    |Rings| vs |Mathematica| performance of :math:`gcd(a g, b g)` for random polynomials :math:`(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]` each with 40 terms and degree 20 in each variable
 
-.. figure:: _static/factor_z2_3vars_rings_vs_singular.png
+.. figure:: _static/factor_z2_7vars_rings_vs_singular.png
    :scale: 50%
    :align: center
 
    ..
 
-   |Rings| vs |Singular| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z_2[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Singular| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6,x_7]` each with 20 terms and degree 10 in each variable
 
 
 .. figure:: _static/factor_z_3vars_rings_vs_wolfram.png
@@ -662,7 +662,7 @@ Full benchmarks can be found at :ref:`ref-benchmarks` page. Benchmarks presented
 
    ..
 
-   |Rings| vs |Mathematica| performance of :math:`factor(a b)` for random polynomials :math:`(a, b) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
+   |Rings| vs |Mathematica| performance of :math:`factor(a b c)` for random polynomials :math:`(a, b, c) \in Z[x,y,z]` each with 20 terms and degree 10 in each variable
 
 
 .. figure:: _static/bench_fac_uni_Zp_flint_ntl.png
