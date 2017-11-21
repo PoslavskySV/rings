@@ -20,7 +20,7 @@ All benchmarks presented below were executed on MacBook Pro (15-inch, 2017), 3,1
 Multivariate GCD
 ================
 
-Multivariate GCD performance was tested on random polynomials in the following way. Polynomials :math:`a`, :math:`b` and :math:`g` with 40 terms and degree 20 in each variable were generated at random. Then the GCDs :math:`gcd(a g, b g)` (should result in multiple of :math:`g`) and :math:`gcd(a g + 1, b g)` (usually 1) were calculated. So the input polynomials had about **~1000 terms** and **degree 40** in each variable. Tests were performed for polynomials in 3, 4 and 5 variables over :math:`Z` and :math:`Z_2` ground rings. 
+Multivariate GCD performance was tested on random polynomials in the following way. Polynomials :math:`a`, :math:`b` and :math:`g` with 40 terms and degree 20 in each variable were generated at random. Then the GCDs :math:`gcd(a g, b g)` (should result in multiple of :math:`g`) and :math:`gcd(a g + 1, b g)` (usually 1) were calculated. So the input polynomials had about **~1000 terms** and **degree 40 in each variable** (so the total degree of input was :math:`40 * n`, where :math:`n` is the number of variables). Tests were performed for polynomials in 3, 4 and 5 variables over :math:`Z` and :math:`Z_2` ground rings. 
 
 .. admonition:: Brief conclusion
 
@@ -225,7 +225,7 @@ In all these tests |Singular| failed to obtain result within 500 seconds, so we 
 Multivariate factorization
 ==========================
 
-Multivariate factorization performance was tested on random polynomials in the following way. Three polynomials :math:`a`, :math:`b` and :math:`c` with 20 terms and degree 10 in each variable were generated at random. Then the factorizations of :math:`(a b c)` (should give at least three factors) and :math:`(a b c + 1)` (usually irreducible) were calculated.  So the input polynomials had about **~8000 terms** and **degree 30** in each variable. Tests were performed for polynomials in 3, 4, 5, 6 and 7 variables over :math:`Z`, :math:`Z_2` and :math:`Z_{524287}` ground rings. 
+Multivariate factorization performance was tested on random polynomials in the following way. Three polynomials :math:`a`, :math:`b` and :math:`c` with 20 terms and degree 10 in each variable were generated at random. Then the factorizations of :math:`(a b c)` (should give at least three factors) and :math:`(a b c + 1)` (usually irreducible) were calculated.  So the input polynomials had about **~8000 terms** and **degree 30 in each variable** (so the total degree of input was :math:`30 * n`, where :math:`n` is the number of variables). Tests were performed for polynomials in 3, 4, 5, 6 and 7 variables over :math:`Z`, :math:`Z_2` and :math:`Z_{524287}` ground rings. 
 
 
 .. admonition:: Brief conclusion
