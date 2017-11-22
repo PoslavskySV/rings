@@ -4,6 +4,8 @@ import cc.redberry.rings
 import cc.redberry.rings.IntegersZp64
 import cc.redberry.rings.bigint.BigInteger
 
+import scala.language.implicitConversions
+
 /**
   *
   * @since 1.0
@@ -62,4 +64,8 @@ private[scaladsl] final class RingZp64(val theRing: IntegersZp64) extends rings.
   override def iterator() = Range(0, theRing.modulus.toInt).iterator.map(_.toLong).asInstanceOf
 
   override def compare(o1: Long, o2: Long) = java.lang.Long.compare(o1, o2)
+}
+
+private[scaladsl] object RingZp64 {
+  implicit def asRing(ring: IntegersZp64): RingZp64 = new RingZp64(ring)
 }

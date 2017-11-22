@@ -4,6 +4,7 @@ import cc.redberry.rings
 import cc.redberry.rings.Rational
 import cc.redberry.rings.poly.PolynomialMethods
 import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial}
+import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic
 import cc.redberry.rings.primes.SmallPrimes
 import org.apache.commons.math3.random.Well1024a
 import org.junit.{Ignore, Test}
@@ -759,5 +760,39 @@ class Examples {
     }.fold(ring.getOne) { _ * _ }
 
     println(ring show PolynomialMethods.Factor(poly).size())
+  }
+
+  @Test
+  def test29: Unit = {
+    import syntax._
+
+    // ground field Z/17
+    val zpRing = Zp64(17)
+    // very large BigInteger
+    val n = Z(1).shiftLeft(750)
+    // some number
+    val r = 19
+
+    // some poly a
+    val a = UnivariatePolynomialZp64(1, 2, 3, 4, 3, 2, 1)(zpRing)
+    // x^1
+    val x = UnivariatePolynomialZp64(0, 1)(zpRing)
+    // x - a
+    val xa = x - a
+    // x^r - 1
+    val xr = x.pow(r) - 1
+
+    // Newton iterations for (X^r - 1)^(-1) (used in fast division)
+    val xrInv = xr.precomputedInverses
+
+    import UnivariatePolynomialArithmetic._
+
+    // compute (X-a)^n mod (X^r - 1)
+    val xan = polyPowMod(a, n, xr, xrInv, true)
+    // compute X^n - a mod (X^r - 1)
+    val xna = polySubtractMod(polyPowMod(x, n, xr, xrInv, true), a, xr, xrInv, true)
+
+    println(xan)
+    println(xna)
   }
 }
