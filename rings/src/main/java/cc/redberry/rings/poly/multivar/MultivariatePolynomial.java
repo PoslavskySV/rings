@@ -2,13 +2,15 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
-import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.iterator.TLongObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Arrays;
@@ -1365,8 +1367,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return multiply(oth.cc());
 
         if (size() > KRONECKER_THRESHOLD && oth.size() > KRONECKER_THRESHOLD)
-            return loadFrom(multiplyKronecker(oth).terms);
+            return multiplyKronecker(oth);
+        else
+            return multiplyClassic(oth);
+    }
 
+    private MultivariatePolynomial<E> multiplyClassic(MultivariatePolynomial<E> oth) {
         MonomialSet<Monomial<E>> newMap = new MonomialSet<>(ordering);
         for (Monomial<E> othElement : oth.terms)
             for (Monomial<E> thisElement : terms)
@@ -1382,15 +1388,27 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         for (int i = 0; i < resultDegrees.length; i++)
             resultDegrees[i] = thisDegrees[i] + othDegrees[i];
 
-        int[] map = KroneckerMap(resultDegrees);
-        return fromKronecker(this, multiplySparseUnivariate(ring, toKronecker(map), oth.toKronecker(map)), map);
+        long[] map = KroneckerMap(resultDegrees);
+        if (map == null)
+            return multiplyClassic(oth);
+
+        // check that degrees fit long
+        double threshold = 0.;
+        for (int i = 0; i < nVariables; i++)
+            threshold += 1.0 * resultDegrees[i] * map[i];
+        threshold *= 2;
+
+        if (threshold > Long.MAX_VALUE)
+            return null;
+
+        return fromKronecker(multiplySparseUnivariate(ring, toKronecker(map), oth.toKronecker(map)), map);
     }
 
     /**
      * Convert to Kronecker's representation
      */
-    private TIntObjectHashMap<CfHolder<E>> toKronecker(int[] kroneckerMap) {
-        TIntObjectHashMap<CfHolder<E>> result = new TIntObjectHashMap<>(size());
+    private TLongObjectHashMap<CfHolder<E>> toKronecker(long[] kroneckerMap) {
+        TLongObjectHashMap<CfHolder<E>> result = new TLongObjectHashMap<>(size());
         for (Monomial<E> term : this) {
             int exponent = term.exponents[0];
             for (int i = 1; i < term.exponents.length; i++)
@@ -1401,18 +1419,18 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return result;
     }
 
-    private static <E> TIntObjectHashMap<CfHolder<E>> multiplySparseUnivariate(Ring<E> ring,
-                                                                               TIntObjectHashMap<CfHolder<E>> a,
-                                                                               TIntObjectHashMap<CfHolder<E>> b) {
-        TIntObjectHashMap<CfHolder<E>> result = new TIntObjectHashMap<>(a.size() + b.size());
-        TIntObjectIterator<CfHolder<E>> ait = a.iterator();
+    private static <E> TLongObjectHashMap<CfHolder<E>> multiplySparseUnivariate(Ring<E> ring,
+                                                                                TLongObjectHashMap<CfHolder<E>> a,
+                                                                                TLongObjectHashMap<CfHolder<E>> b) {
+        TLongObjectHashMap<CfHolder<E>> result = new TLongObjectHashMap<>(a.size() + b.size());
+        TLongObjectIterator<CfHolder<E>> ait = a.iterator();
         while (ait.hasNext()) {
             ait.advance();
-            TIntObjectIterator<CfHolder<E>> bit = b.iterator();
+            TLongObjectIterator<CfHolder<E>> bit = b.iterator();
             while (bit.hasNext()) {
                 bit.advance();
 
-                int deg = ait.key() + bit.key();
+                long deg = ait.key() + bit.key();
                 E val = ring.multiply(ait.value().coefficient, bit.value().coefficient);
 
                 CfHolder<E> r = result.putIfAbsent(deg, new CfHolder<>(val));
@@ -1423,24 +1441,24 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return result;
     }
 
-    private static <E> MultivariatePolynomial<E> fromKronecker(MultivariatePolynomial<E> factory,
-                                                               TIntObjectHashMap<CfHolder<E>> p,
-                                                               int[] kroneckerMap) {
-        int nVariables = factory.nVariables;
-        MultivariatePolynomial<E> result = factory.createZero();
-        TIntObjectIterator<CfHolder<E>> it = p.iterator();
+    private MultivariatePolynomial<E> fromKronecker(TLongObjectHashMap<CfHolder<E>> p,
+                                                    long[] kroneckerMap) {
+        terms.clear();
+        TLongObjectIterator<CfHolder<E>> it = p.iterator();
         while (it.hasNext()) {
             it.advance();
-            int exponent = it.key();
-            int[] exponents = new int[factory.nVariables];
-            for (int i = 0; i < factory.nVariables; i++) {
-                int div = exponent / kroneckerMap[factory.nVariables - i - 1];
+            if (ring.isZero(it.value().coefficient))
+                continue;
+            long exponent = it.key();
+            int[] exponents = new int[nVariables];
+            for (int i = 0; i < nVariables; i++) {
+                long div = exponent / kroneckerMap[nVariables - i - 1];
                 exponent = exponent - (div * kroneckerMap[nVariables - i - 1]);
-                exponents[nVariables - i - 1] = div;
+                exponents[nVariables - i - 1] = MachineArithmetic.safeToInt(div);
             }
-            result.add(new Monomial<E>(exponents, it.value().coefficient));
+            terms.add(new Monomial<>(exponents, it.value().coefficient));
         }
-        return result;
+        return this;
     }
 
     static final class CfHolder<E> {

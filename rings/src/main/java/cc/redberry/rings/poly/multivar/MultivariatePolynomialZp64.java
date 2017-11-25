@@ -10,8 +10,9 @@ import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.ArraysUtil;
-import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.iterator.TLongObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Arrays;
@@ -1242,8 +1243,12 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             return multiply(oth.cc());
 
         if (size() > KRONECKER_THRESHOLD && oth.size() > KRONECKER_THRESHOLD)
-            return loadFrom(multiplyKronecker(oth).terms);
+            return multiplyKronecker(oth);
+        else
+            return multiplyClassic(oth);
+    }
 
+    private MultivariatePolynomialZp64 multiplyClassic(MultivariatePolynomialZp64 oth) {
         MonomialSet<MonomialZp64> newMap = new MonomialSet<>(ordering);
         for (MonomialZp64 othElement : oth.terms)
             for (MonomialZp64 thisElement : terms)
@@ -1259,17 +1264,29 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         for (int i = 0; i < resultDegrees.length; i++)
             resultDegrees[i] = thisDegrees[i] + othDegrees[i];
 
-        int[] map = KroneckerMap(resultDegrees);
-        return fromKronecker(this, multiplySparseUnivariate(ring, toKronecker(map), oth.toKronecker(map)), map);
+        long[] map = KroneckerMap(resultDegrees);
+        if (map == null)
+            return multiplyClassic(oth);
+
+        // check that degrees fit long
+        double threshold = 0.;
+        for (int i = 0; i < nVariables; i++)
+            threshold += 1.0 * resultDegrees[i] * map[i];
+        threshold *= 2;
+
+        if (threshold > Long.MAX_VALUE)
+            return null;
+
+        return fromKronecker(multiplySparseUnivariate(ring, toKronecker(map), oth.toKronecker(map)), map);
     }
 
     /**
      * Convert to Kronecker's representation
      */
-    private TIntObjectHashMap<CfHolder> toKronecker(int[] kroneckerMap) {
-        TIntObjectHashMap<CfHolder> result = new TIntObjectHashMap<>(size());
+    private TLongObjectHashMap<CfHolder> toKronecker(long[] kroneckerMap) {
+        TLongObjectHashMap<CfHolder> result = new TLongObjectHashMap<>(size());
         for (MonomialZp64 term : this) {
-            int exponent = term.exponents[0];
+            long exponent = term.exponents[0];
             for (int i = 1; i < term.exponents.length; i++)
                 exponent += term.exponents[i] * kroneckerMap[i];
             assert !result.contains(exponent);
@@ -1278,18 +1295,18 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return result;
     }
 
-    private static TIntObjectHashMap<CfHolder> multiplySparseUnivariate(IntegersZp64 ring,
-                                                                        TIntObjectHashMap<CfHolder> a,
-                                                                        TIntObjectHashMap<CfHolder> b) {
-        TIntObjectHashMap<CfHolder> result = new TIntObjectHashMap<>(a.size() + b.size());
-        TIntObjectIterator<CfHolder> ait = a.iterator();
+    private static TLongObjectHashMap<CfHolder> multiplySparseUnivariate(IntegersZp64 ring,
+                                                                         TLongObjectHashMap<CfHolder> a,
+                                                                         TLongObjectHashMap<CfHolder> b) {
+        TLongObjectHashMap<CfHolder> result = new TLongObjectHashMap<>(a.size() + b.size());
+        TLongObjectIterator<CfHolder> ait = a.iterator();
         while (ait.hasNext()) {
             ait.advance();
-            TIntObjectIterator<CfHolder> bit = b.iterator();
+            TLongObjectIterator<CfHolder> bit = b.iterator();
             while (bit.hasNext()) {
                 bit.advance();
 
-                int deg = ait.key() + bit.key();
+                long deg = ait.key() + bit.key();
                 long val = ring.multiply(ait.value().coefficient, bit.value().coefficient);
 
                 CfHolder r = result.putIfAbsent(deg, new CfHolder(val));
@@ -1300,24 +1317,24 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return result;
     }
 
-    private static MultivariatePolynomialZp64 fromKronecker(MultivariatePolynomialZp64 factory,
-                                                            TIntObjectHashMap<CfHolder> p,
-                                                            int[] kroneckerMap) {
-        int nVariables = factory.nVariables;
-        MultivariatePolynomialZp64 result = factory.createZero();
-        TIntObjectIterator<CfHolder> it = p.iterator();
+    private MultivariatePolynomialZp64 fromKronecker(TLongObjectHashMap<CfHolder> p,
+                                                     long[] kroneckerMap) {
+        terms.clear();
+        TLongObjectIterator<CfHolder> it = p.iterator();
         while (it.hasNext()) {
             it.advance();
-            int exponent = it.key();
-            int[] exponents = new int[factory.nVariables];
-            for (int i = 0; i < factory.nVariables; i++) {
-                int div = exponent / kroneckerMap[factory.nVariables - i - 1];
+            if (it.value().coefficient == 0)
+                continue;
+            long exponent = it.key();
+            int[] exponents = new int[nVariables];
+            for (int i = 0; i < nVariables; i++) {
+                long div = exponent / kroneckerMap[nVariables - i - 1];
                 exponent = exponent - (div * kroneckerMap[nVariables - i - 1]);
-                exponents[nVariables - i - 1] = div;
+                exponents[nVariables - i - 1] = MachineArithmetic.safeToInt(div);
             }
-            result.add(new MonomialZp64(exponents, it.value().coefficient));
+            terms.add(new MonomialZp64(exponents, it.value().coefficient));
         }
-        return result;
+        return this;
     }
 
     static final class CfHolder {

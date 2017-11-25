@@ -446,12 +446,11 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
         return inv;
     }
 
-
     @Test
     public void testKroneckerMultiplication1() throws Exception {
-        MultivariateRing<MultivariatePolynomialZp64> pRing = Rings.MultivariateRing(MultivariatePolynomialZp64.zero(4, Rings.Zp64(17), LEX));
+        MultivariateRing<MultivariatePolynomialZp64> pRing = Rings.MultivariateRing(MultivariatePolynomialZp64.zero(7, Rings.Zp64(17), LEX));
         RandomGenerator rnd = getRandom();
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < its(1000, 1000); i++) {
             MultivariatePolynomialZp64
                     a = pRing.randomElement(5, 5 + rnd.nextInt(300), rnd),
                     b = pRing.randomElement(5, 5 + rnd.nextInt(300), rnd);
