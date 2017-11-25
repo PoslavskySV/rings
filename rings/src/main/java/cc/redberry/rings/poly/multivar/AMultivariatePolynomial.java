@@ -1189,4 +1189,15 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final String toString() {
         return toString(WithVariables.defaultVars(nVariables));
     }
+
+    static int[] KroneckerMap(int[] degrees) {
+        int[] result = new int[degrees.length];
+        result[0] = 1;
+        for (int i = 1; i < degrees.length; i++) {
+            result[i] = 1;
+            for (int j = 0; j < i; j++)
+                result[i] *= 2 * degrees[j] + 1;
+        }
+        return result;
+    }
 }

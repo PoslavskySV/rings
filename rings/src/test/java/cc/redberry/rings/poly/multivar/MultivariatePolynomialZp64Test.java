@@ -1,14 +1,18 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
+import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.TimeUnits;
 import com.carrotsearch.hppc.LongObjectHashMap;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
-import com.koloboke.compile.KolobokeMap;
+import gnu.trove.iterator.TIntObjectIterator;
+import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -456,6 +460,61 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
 
 
     @Test
+    public void testKroneckerMultiplication1() throws Exception {
+        MultivariateRing<MultivariatePolynomialZp64> pRing = Rings.MultivariateRing(MultivariatePolynomialZp64.zero(3, Rings.Zp64(17), LEX));
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < 10000; i++) {
+            MultivariatePolynomialZp64
+                    a = pRing.randomElement(5, 5 + rnd.nextInt(300), rnd),
+                    b = pRing.randomElement(5, 5 + rnd.nextInt(300), rnd);
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = Integer.MAX_VALUE;
+            MultivariatePolynomialZp64 plain = a.clone().multiply(b);
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = 0;
+            MultivariatePolynomialZp64 kronecker = a.clone().multiply(b);
+            assertEquals(plain, kronecker);
+        }
+    }
+
+    @Benchmark
+    @Test
+    public void testKroneckerMultiplication2() throws Exception {
+        MultivariateRing<MultivariatePolynomialZp64> pRing =
+                Rings.MultivariateRing(MultivariatePolynomialZp64.zero(4, Rings.Zp64(17), LEX));
+
+        for (int i = 0; i < 1000; i++) {
+            MultivariatePolynomialZp64
+                    a = pRing.randomElement(5, 550),
+                    b = pRing.randomElement(5, 550);
+            System.out.println(a.sparsity());
+            System.out.println(b.sparsity());
+            int nIts = 1;
+            long size = 0;
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = Integer.MAX_VALUE;
+            long start = System.nanoTime();
+            MultivariatePolynomialZp64 ev = a.clone().multiply(b);
+            for (int j = 0; j < nIts; j++)
+                size += a.clone().multiply(b).size();
+            double plain = System.nanoTime() - start;
+
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = 10;
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 ev2 = a.clone().multiply(b);
+            for (int j = 0; j < nIts; j++)
+                size += a.clone().multiply(b).size();
+            double kronecker = System.nanoTime() - start;
+
+            System.out.println(1.0 * a.size() * b.size() / (size / 2 / (nIts + 1)));
+            System.out.println(plain / kronecker);
+            assertEquals(ev, ev2);
+            System.out.println();
+        }
+    }
+
+    @Test
     public void perf() throws Exception {
         IntegersZp64 domain = new IntegersZp64(Integer.MAX_VALUE);
         String[] vars = {"a", "b", "c", "d"};
@@ -514,13 +573,11 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
             System.out.println(btree3.equals(p));
 
 
-
             start = System.nanoTime();
             TLongObjectHashMap<PackedMonomial> fast2 = multiplyC(domain, aPacked2, bPacked2);
             System.out.println("Fast2 " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
             MultivariatePolynomialZp64 btree2 = toPoly2(a.nVariables, domain, fast2);
             System.out.println(btree2.equals(p));
-
 
 
             start = System.nanoTime();
@@ -617,7 +674,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
 
 
     static KMap fromPoly3(MultivariatePolynomialZp64 poly) {
-        KMap map  = KMap.withExpectedSize(poly.size());
+        KMap map = KMap.withExpectedSize(poly.size());
         for (MonomialZp64 m : poly) {
             long hash = pack(m.exponents, m.totalDegree);
             assert !map.containsKey(hash);
@@ -693,8 +750,8 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
             LongObjectHashMap<PackedMonomial> a,
             LongObjectHashMap<PackedMonomial> b) {
         LongObjectHashMap<PackedMonomial> newMap = new LongObjectHashMap<>(a.size() * b.size(), 0.98f);
-        for (ObjectCursor<PackedMonomial > othElement : a.values())
-            for (ObjectCursor<PackedMonomial > thisElement : b.values())
+        for (ObjectCursor<PackedMonomial> othElement : a.values())
+            for (ObjectCursor<PackedMonomial> thisElement : b.values())
                 add(newMap, thisElement.value.multiply(othElement.value, ring.multiply(thisElement.value.coefficient, othElement.value.coefficient)), ring);
         return newMap;
     }
@@ -724,6 +781,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
 
         }
     }
+
     private static void add(LongObjectHashMap<PackedMonomial> polynomial, PackedMonomial term, IntegersZp64 ring) {
         if (term.coefficient == 0)
             return;
@@ -831,5 +889,165 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
         PackedMonomial multiply(PackedMonomial oth, long newCoeff) {
             return new PackedMonomial(hash + oth.hash, newCoeff);
         }
+    }
+
+    @Test
+    public void name() throws Exception {
+        IntegersZp64 domain = new IntegersZp64(Integer.MAX_VALUE);
+        String[] vars = {"a", "b", "c", "d"};
+        MultivariatePolynomialZp64
+                a = parse("1 + a + b + c + d + a*b + a^2*d", domain, vars),
+                b = parse("1 - a*d + b^2 + c - d + a*c + c^2*d", domain, vars);
+
+        a = PolynomialMethods.polyPow(parse("1 + a + b + c + d + a*b + a^2*d", domain, vars), 5);
+        b = PolynomialMethods.polyPow(parse("a*d*c + b^2 + c - d*a^4 + a*c*d + c^2*d", domain, vars), 5);
+        a = a.subtract(b);
+        b = b.multiply(a);
+        a = a.square();
+
+        System.out.println(a.size());
+        System.out.println(a.sparsity());
+        System.out.println(Arrays.toString(a.degrees()));
+
+        System.out.println(b.size());
+        System.out.println(b.sparsity());
+        System.out.println(Arrays.toString(b.degrees()));
+
+
+        for (int i = 0; i < 100; i++) {
+            long start = System.nanoTime();
+            MultivariatePolynomialZp64 mk = multiplyKronecker2(a, b);
+            System.out.println("Kronecker:  " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            System.out.println(1.0 * a.size() * b.size() / mk.size());
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 plain = a.clone().multiply(b);
+            System.out.println("Plain:      " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(plain.equals(mk));
+        }
+
+    }
+
+    static MultivariatePolynomialZp64 multiplyKronecker(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b) {
+        int[] deg = new int[a.nVariables];
+        int[] adegs = a.degrees();
+        int[] bdegs = b.degrees();
+        for (int i = 0; i < deg.length; i++) {
+            deg[i] = adegs[i] + bdegs[i];
+        }
+
+        int[] map = kroneckerMap(deg);
+        MultivariatePolynomialZp64 akr = kronecker(a, map);
+        MultivariatePolynomialZp64 bkr = kronecker(b, map);
+
+        System.out.println(akr.degree());
+        System.out.println(bkr.degree());
+        return fromKronecker(akr.multiply(bkr), map);
+    }
+
+    static MultivariatePolynomialZp64 multiplyKronecker2(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b) {
+        int[] deg = new int[a.nVariables];
+        int[] adegs = a.degrees();
+        int[] bdegs = b.degrees();
+        for (int i = 0; i < deg.length; i++) {
+            deg[i] = adegs[i] + bdegs[i];
+        }
+
+        int[] map = kroneckerMap(deg);
+        TIntObjectHashMap<long[]> akr = kronecker2(a, map);
+        TIntObjectHashMap<long[]> bkr = kronecker2(b, map);
+
+        return fromKronecker2(a, mul(a.ring, akr, bkr), map);
+    }
+
+    static int[] kroneckerMap(int[] degrees) {
+        int[] map = new int[degrees.length];
+        map[0] = 1;
+        for (int i = 1; i < degrees.length; i++) {
+            map[i] = 1;
+            for (int j = 0; j < i; j++) {
+                map[i] *= (2 * degrees[j] + 1);
+            }
+        }
+        return map;
+    }
+
+    static MultivariatePolynomialZp64 kronecker(MultivariatePolynomialZp64 p, int[] kroneckerMap) {
+        MultivariatePolynomialZp64 univar = MultivariatePolynomialZp64.create(1, p.ring, p.ordering);
+        for (MonomialZp64 term : p) {
+            int exponent = term.exponents[0];
+            for (int i = 1; i < term.exponents.length; i++)
+                exponent += term.exponents[i] * kroneckerMap[i];
+            univar.add(new MonomialZp64(1, 0, exponent, term.coefficient));
+        }
+        return univar;
+    }
+
+
+    static MultivariatePolynomialZp64 fromKronecker(MultivariatePolynomialZp64 p, int[] kroneckerMap) {
+        int nvars = kroneckerMap.length;
+        MultivariatePolynomialZp64 multivar = MultivariatePolynomialZp64.create(nvars, p.ring, p.ordering);
+        for (MonomialZp64 term : p) {
+            int exponent = term.exponents[0];
+            int[] exponents = new int[nvars];
+            for (int i = 0; i < nvars; i++) {
+                int div = exponent / kroneckerMap[nvars - i - 1];
+                exponent = exponent - (div * kroneckerMap[nvars - i - 1]);
+                exponents[nvars - i - 1] = div;
+            }
+            multivar.add(new MonomialZp64(exponents, term.coefficient));
+        }
+        return multivar;
+    }
+
+    static TIntObjectHashMap<long[]> kronecker2(MultivariatePolynomialZp64 p, int[] kroneckerMap) {
+        TIntObjectHashMap<long[]> univar = new TIntObjectHashMap<long[]>(p.size());
+        for (MonomialZp64 term : p) {
+            int exponent = term.exponents[0];
+            for (int i = 1; i < term.exponents.length; i++)
+                exponent += term.exponents[i] * kroneckerMap[i];
+            assert !univar.contains(exponent);
+            univar.put(exponent, new long[]{term.coefficient});
+        }
+        return univar;
+    }
+
+    static MultivariatePolynomialZp64 fromKronecker2(MultivariatePolynomialZp64 fac, TIntObjectHashMap<long[]> p, int[] kroneckerMap) {
+        int nvars = kroneckerMap.length;
+        MultivariatePolynomialZp64 multivar = MultivariatePolynomialZp64.create(nvars, fac.ring, fac.ordering);
+        TIntObjectIterator<long[]> it = p.iterator();
+        while (it.hasNext()) {
+            it.advance();
+            int exponent = it.key();
+            int[] exponents = new int[nvars];
+            for (int i = 0; i < nvars; i++) {
+                int div = exponent / kroneckerMap[nvars - i - 1];
+                exponent = exponent - (div * kroneckerMap[nvars - i - 1]);
+                exponents[nvars - i - 1] = div;
+            }
+            multivar.add(new MonomialZp64(exponents, it.value()[0]));
+        }
+        return multivar;
+    }
+
+    static TIntObjectHashMap<long[]> mul(IntegersZp64 ring, TIntObjectHashMap<long[]> a, TIntObjectHashMap<long[]> b) {
+        TIntObjectHashMap<long[]> result = new TIntObjectHashMap<>(a.size() + b.size());
+        TIntObjectIterator<long[]> ait = a.iterator();
+        while (ait.hasNext()) {
+            ait.advance();
+            TIntObjectIterator<long[]> bit = b.iterator();
+            while (bit.hasNext()) {
+                bit.advance();
+
+                int deg = ait.key() + bit.key();
+                long val = ring.multiply(ait.value()[0], bit.value()[0]);
+
+                long[] r = result.putIfAbsent(deg, new long[]{val});
+                if (r != null) {
+                    r[0] = ring.add(r[0], val);
+                }
+            }
+        }
+        return result;
     }
 }
