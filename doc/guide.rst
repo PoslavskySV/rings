@@ -1334,7 +1334,7 @@ Implementation of univariate factorization in |Rings| is distributed over severa
  - ``EqualDegreeFactorization`` |br| Equal-degree factorization using Cantor-Zassenhaus algorithm in both odd and even characteristic (Sec. 14.3 in [GaGe03]_).
  - ``UnivariateFactorization`` |br| Defines upper-level methods and implements factorization over :math:`Z`. In the latter case Hensel lifting (combined linear/quadratic) is used to lift factorization modulo some 32-bit prime number to actual factorization over :math:`Z` and naive recombination to reconstruct correct factors. Examples:
    
-Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field or :math:`Z` or :math:`Q`. Examples:
+Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field, :math:`Z`,  :math:`Q` or other polynomial ring. Examples:
 
 .. tabs::
 
@@ -1955,9 +1955,9 @@ Multivariate factorization
 Implementation of multivariate factorization in |Rings| is distributed over two classes:
 
  - ``MultivariateSquareFreeFactorization`` |br| Square-free factorization of multivariate polynomials. In the case of zero characteristic Yun's algorithm is used (Sec. 14.6 in [GaGe03]_), otherwise Musser's algorithm is used (Sec. 8.3 in [GeCL92]_, [Muss71]_).
- - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z` and :math:`Q`. In the case of bivariate polynomials |Rings| use fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Still for multivariate Hensel lifting the fast quasi-dense algorithm due to Bernardin is used (see [Bern99]_ and [LeeM13]_). 
+ - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z` and :math:`Q`. In the case of bivariate polynomials |Rings| use fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Both sparse lifting and fast quasi-dense algorithm due to Bernardin (see [Bern99]_ and [LeeM13]_) are used. 
    
-Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]` where :math:`F` is either finite field or :math:`Z` or :math:`Q`. Examples:
+Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]` where :math:`F` is either finite field, :math:`Z`, :math:`Q` or other polynomial ring. Examples:
 
 .. tabs::
 
