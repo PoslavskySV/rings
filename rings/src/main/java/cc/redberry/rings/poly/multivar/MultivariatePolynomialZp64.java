@@ -1229,7 +1229,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return loadFrom(newMap);
     }
 
-    static int KRONECKER_THRESHOLD = 256 ;
+    static int KRONECKER_THRESHOLD = 256;
 
     @Override
     public MultivariatePolynomialZp64 multiply(MultivariatePolynomialZp64 oth) {
@@ -1242,7 +1242,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             return multiply(oth.cc());
 
         if (size() > KRONECKER_THRESHOLD && oth.size() > KRONECKER_THRESHOLD)
-            return multiplyKronecker(oth);
+            return loadFrom(multiplyKronecker(oth).terms);
 
         MonomialSet<MonomialZp64> newMap = new MonomialSet<>(ordering);
         for (MonomialZp64 othElement : oth.terms)

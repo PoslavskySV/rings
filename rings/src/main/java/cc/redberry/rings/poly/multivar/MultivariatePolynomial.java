@@ -1352,7 +1352,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return multiply(ring.valueOfBigInteger(factor));
     }
 
-    static int KRONECKER_THRESHOLD = 256 ;
+    static int KRONECKER_THRESHOLD = 256;
 
     @Override
     public MultivariatePolynomial<E> multiply(MultivariatePolynomial<E> oth) {
@@ -1365,7 +1365,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return multiply(oth.cc());
 
         if (size() > KRONECKER_THRESHOLD && oth.size() > KRONECKER_THRESHOLD)
-            return multiplyKronecker(oth);
+            return loadFrom(multiplyKronecker(oth).terms);
 
         MonomialSet<Monomial<E>> newMap = new MonomialSet<>(ordering);
         for (Monomial<E> othElement : oth.terms)
@@ -1402,8 +1402,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     private static <E> TIntObjectHashMap<CfHolder<E>> multiplySparseUnivariate(Ring<E> ring,
-                                                                        TIntObjectHashMap<CfHolder<E>> a,
-                                                                        TIntObjectHashMap<CfHolder<E>> b) {
+                                                                               TIntObjectHashMap<CfHolder<E>> a,
+                                                                               TIntObjectHashMap<CfHolder<E>> b) {
         TIntObjectHashMap<CfHolder<E>> result = new TIntObjectHashMap<>(a.size() + b.size());
         TIntObjectIterator<CfHolder<E>> ait = a.iterator();
         while (ait.hasNext()) {
@@ -1424,8 +1424,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     private static <E> MultivariatePolynomial<E> fromKronecker(MultivariatePolynomial<E> factory,
-                                                            TIntObjectHashMap<CfHolder<E>> p,
-                                                            int[] kroneckerMap) {
+                                                               TIntObjectHashMap<CfHolder<E>> p,
+                                                               int[] kroneckerMap) {
         int nVariables = factory.nVariables;
         MultivariatePolynomial<E> result = factory.createZero();
         TIntObjectIterator<CfHolder<E>> it = p.iterator();
