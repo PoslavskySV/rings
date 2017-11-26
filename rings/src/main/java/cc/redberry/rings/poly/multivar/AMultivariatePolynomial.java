@@ -1209,4 +1209,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         }
         return result;
     }
+
+    /* shared constant */
+    /** when to switch to Kronecker's method */
+    static int KRONECKER_THRESHOLD = 256;
 }

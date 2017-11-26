@@ -1354,8 +1354,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return multiply(ring.valueOfBigInteger(factor));
     }
 
-    static int KRONECKER_THRESHOLD = 256;
-
     @Override
     public MultivariatePolynomial<E> multiply(MultivariatePolynomial<E> oth) {
         assertSameCoefficientRingWith(oth);
@@ -1410,7 +1408,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     private TLongObjectHashMap<CfHolder<E>> toKronecker(long[] kroneckerMap) {
         TLongObjectHashMap<CfHolder<E>> result = new TLongObjectHashMap<>(size());
         for (Monomial<E> term : this) {
-            int exponent = term.exponents[0];
+            long exponent = term.exponents[0];
             for (int i = 1; i < term.exponents.length; i++)
                 exponent += term.exponents[i] * kroneckerMap[i];
             assert !result.contains(exponent);

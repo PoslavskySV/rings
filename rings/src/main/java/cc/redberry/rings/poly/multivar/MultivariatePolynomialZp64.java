@@ -1230,8 +1230,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return loadFrom(newMap);
     }
 
-    static int KRONECKER_THRESHOLD = 256;
-
     @Override
     public MultivariatePolynomialZp64 multiply(MultivariatePolynomialZp64 oth) {
         assertSameCoefficientRingWith(oth);
