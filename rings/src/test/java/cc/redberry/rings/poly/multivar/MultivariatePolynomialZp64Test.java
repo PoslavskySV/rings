@@ -1,8 +1,11 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
+import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -441,5 +444,60 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
         for (int i = permutation.length - 1; i >= 0; --i)
             inv[permutation[i]] = i;
         return inv;
+    }
+
+    @Test
+    public void testKroneckerMultiplication1() throws Exception {
+        MultivariateRing<MultivariatePolynomialZp64> pRing = Rings.MultivariateRing(MultivariatePolynomialZp64.zero(7, Rings.Zp64(17), LEX));
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(1000, 1000); i++) {
+            MultivariatePolynomialZp64
+                    a = pRing.randomElement(5, 5 + rnd.nextInt(300), rnd),
+                    b = pRing.randomElement(5, 5 + rnd.nextInt(300), rnd);
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = Integer.MAX_VALUE;
+            MultivariatePolynomialZp64 plain = a.clone().multiply(b);
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = 0;
+            MultivariatePolynomialZp64 kronecker = a.clone().multiply(b);
+            assertEquals(plain, kronecker);
+        }
+    }
+
+    @Benchmark
+    @Test
+    public void testKroneckerMultiplication2() throws Exception {
+        MultivariateRing<MultivariatePolynomialZp64> pRing =
+                Rings.MultivariateRing(MultivariatePolynomialZp64.zero(4, Rings.Zp64(17), LEX));
+
+        for (int i = 0; i < 1000; i++) {
+            MultivariatePolynomialZp64
+                    a = pRing.randomElement(5, 550),
+                    b = pRing.randomElement(5, 550);
+            System.out.println(a.sparsity());
+            System.out.println(b.sparsity());
+            int nIts = 1;
+            long size = 0;
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = Integer.MAX_VALUE;
+            long start = System.nanoTime();
+            MultivariatePolynomialZp64 ev = a.clone().multiply(b);
+            for (int j = 0; j < nIts; j++)
+                size += a.clone().multiply(b).size();
+            double plain = System.nanoTime() - start;
+
+
+            MultivariatePolynomialZp64.KRONECKER_THRESHOLD = 10;
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 ev2 = a.clone().multiply(b);
+            for (int j = 0; j < nIts; j++)
+                size += a.clone().multiply(b).size();
+            double kronecker = System.nanoTime() - start;
+
+            System.out.println(1.0 * a.size() * b.size() / (size / 2 / (nIts + 1)));
+            System.out.println(plain / kronecker);
+            assertEquals(ev, ev2);
+            System.out.println();
+        }
     }
 }

@@ -1189,4 +1189,28 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final String toString() {
         return toString(WithVariables.defaultVars(nVariables));
     }
+
+    static long[] KroneckerMap(int[] degrees) {
+        long[] result = new long[degrees.length];
+        result[0] = 1L;
+        for (int i = 1; i < degrees.length; i++) {
+            result[i] = 1L;
+            double check = 1;
+            for (int j = 0; j < i; j++) {
+                long b = 2L * degrees[j] + 1;
+                result[i] *= b;
+                check *= b;
+            }
+
+            if (check > Long.MAX_VALUE) {
+                // long overflow -> can't use Kronecker's trick
+                return null;
+            }
+        }
+        return result;
+    }
+
+    /* shared constant */
+    /** when to switch to Kronecker's method */
+    static int KRONECKER_THRESHOLD = 256;
 }

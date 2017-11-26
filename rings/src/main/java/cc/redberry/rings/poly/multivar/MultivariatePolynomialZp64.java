@@ -10,7 +10,9 @@ import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.ArraysUtil;
+import gnu.trove.iterator.TLongObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;
+import gnu.trove.map.hash.TLongObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Arrays;
@@ -1237,12 +1239,108 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             return this;
         if (oth.isConstant())
             return multiply(oth.cc());
+
+        if (size() > KRONECKER_THRESHOLD && oth.size() > KRONECKER_THRESHOLD)
+            return multiplyKronecker(oth);
+        else
+            return multiplyClassic(oth);
+    }
+
+    private MultivariatePolynomialZp64 multiplyClassic(MultivariatePolynomialZp64 oth) {
         MonomialSet<MonomialZp64> newMap = new MonomialSet<>(ordering);
         for (MonomialZp64 othElement : oth.terms)
             for (MonomialZp64 thisElement : terms)
                 add(newMap, thisElement.multiply(othElement, ring.multiply(thisElement.coefficient, othElement.coefficient)), ring);
 
         return loadFrom(newMap);
+    }
+
+    private MultivariatePolynomialZp64 multiplyKronecker(MultivariatePolynomialZp64 oth) {
+        int[] resultDegrees = new int[nVariables];
+        int[] thisDegrees = degrees();
+        int[] othDegrees = oth.degrees();
+        for (int i = 0; i < resultDegrees.length; i++)
+            resultDegrees[i] = thisDegrees[i] + othDegrees[i];
+
+        long[] map = KroneckerMap(resultDegrees);
+        if (map == null)
+            return multiplyClassic(oth);
+
+        // check that degrees fit long
+        double threshold = 0.;
+        for (int i = 0; i < nVariables; i++)
+            threshold += 1.0 * resultDegrees[i] * map[i];
+        threshold *= 2;
+
+        if (threshold > Long.MAX_VALUE)
+            return multiplyClassic(oth);
+
+        return fromKronecker(multiplySparseUnivariate(ring, toKronecker(map), oth.toKronecker(map)), map);
+    }
+
+    /**
+     * Convert to Kronecker's representation
+     */
+    private TLongObjectHashMap<CfHolder> toKronecker(long[] kroneckerMap) {
+        TLongObjectHashMap<CfHolder> result = new TLongObjectHashMap<>(size());
+        for (MonomialZp64 term : this) {
+            long exponent = term.exponents[0];
+            for (int i = 1; i < term.exponents.length; i++)
+                exponent += term.exponents[i] * kroneckerMap[i];
+            assert !result.contains(exponent);
+            result.put(exponent, new CfHolder(term.coefficient));
+        }
+        return result;
+    }
+
+    private static TLongObjectHashMap<CfHolder> multiplySparseUnivariate(IntegersZp64 ring,
+                                                                         TLongObjectHashMap<CfHolder> a,
+                                                                         TLongObjectHashMap<CfHolder> b) {
+        TLongObjectHashMap<CfHolder> result = new TLongObjectHashMap<>(a.size() + b.size());
+        TLongObjectIterator<CfHolder> ait = a.iterator();
+        while (ait.hasNext()) {
+            ait.advance();
+            TLongObjectIterator<CfHolder> bit = b.iterator();
+            while (bit.hasNext()) {
+                bit.advance();
+
+                long deg = ait.key() + bit.key();
+                long val = ring.multiply(ait.value().coefficient, bit.value().coefficient);
+
+                CfHolder r = result.putIfAbsent(deg, new CfHolder(val));
+                if (r != null)
+                    r.coefficient = ring.add(r.coefficient, val);
+            }
+        }
+        return result;
+    }
+
+    private MultivariatePolynomialZp64 fromKronecker(TLongObjectHashMap<CfHolder> p,
+                                                     long[] kroneckerMap) {
+        terms.clear();
+        TLongObjectIterator<CfHolder> it = p.iterator();
+        while (it.hasNext()) {
+            it.advance();
+            if (it.value().coefficient == 0)
+                continue;
+            long exponent = it.key();
+            int[] exponents = new int[nVariables];
+            for (int i = 0; i < nVariables; i++) {
+                long div = exponent / kroneckerMap[nVariables - i - 1];
+                exponent = exponent - (div * kroneckerMap[nVariables - i - 1]);
+                exponents[nVariables - i - 1] = MachineArithmetic.safeToInt(div);
+            }
+            terms.add(new MonomialZp64(exponents, it.value().coefficient));
+        }
+        return this;
+    }
+
+    static final class CfHolder {
+        long coefficient = 0;
+
+        CfHolder(long coefficient) {
+            this.coefficient = coefficient;
+        }
     }
 
     @Override
