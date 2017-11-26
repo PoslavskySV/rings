@@ -1273,7 +1273,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         threshold *= 2;
 
         if (threshold > Long.MAX_VALUE)
-            return null;
+            return multiplyClassic(oth);
 
         return fromKronecker(multiplySparseUnivariate(ring, toKronecker(map), oth.toKronecker(map)), map);
     }

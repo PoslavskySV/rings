@@ -1397,7 +1397,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         threshold *= 2;
 
         if (threshold > Long.MAX_VALUE)
-            return null;
+            return multiplyClassic(oth);
 
         return fromKronecker(multiplySparseUnivariate(ring, toKronecker(map), oth.toKronecker(map)), map);
     }
