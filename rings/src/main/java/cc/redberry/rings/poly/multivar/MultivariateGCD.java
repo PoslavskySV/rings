@@ -293,7 +293,7 @@ public final class MultivariateGCD {
 
         if (isDenseGCDProblem(a, b))
             // use EEZGCD with ModularGCD for dense problems
-            return ModularGCDInZ(a, b, (u, v) -> EEZGCD(u, v, true));
+            return ModularGCDInZ(a, b, (u, v) -> EEZGCD(u, v, true), true);
         else
             // use ZippelGCD for sparse problems
             return ZippelGCDInZ(a, b);
@@ -302,9 +302,6 @@ public final class MultivariateGCD {
     private static final double SPARSITY_THRESHOLD = 0.25;
 
     private static <Poly extends AMultivariatePolynomial> boolean isDenseGCDProblem(Poly a, Poly b) {
-        if (a.sparsity2() > SPARSITY_THRESHOLD && b.sparsity2() > SPARSITY_THRESHOLD) {
-            System.out.println(" ==== DENSE PROBLEM ==== ");
-        }
         return a.sparsity2() > SPARSITY_THRESHOLD && b.sparsity2() > SPARSITY_THRESHOLD;
     }
 
@@ -1242,6 +1239,23 @@ public final class MultivariateGCD {
     public static MultivariatePolynomial<BigInteger> ModularGCDInZ(MultivariatePolynomial<BigInteger> a,
                                                                    MultivariatePolynomial<BigInteger> b,
                                                                    BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64> gcdInZp) {
+        return ModularGCDInZ(a, b, gcdInZp, false);
+    }
+
+    /**
+     * Modular GCD algorithm for polynomials over Z.
+     *
+     * @param a              the first polynomial
+     * @param b              the second polynomial
+     * @param gcdInZp        algorithm for gcd in Zp
+     * @param switchToSparse whether to switch to Zippel algorithm in case of sparse input
+     * @return GCD of two polynomials
+     */
+    @SuppressWarnings("ConstantConditions")
+    static MultivariatePolynomial<BigInteger> ModularGCDInZ(MultivariatePolynomial<BigInteger> a,
+                                                            MultivariatePolynomial<BigInteger> b,
+                                                            BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64> gcdInZp,
+                                                            boolean switchToSparse) {
         Util.ensureOverZ(a, b);
         if (a == b)
             return a.clone();
@@ -1255,13 +1269,14 @@ public final class MultivariateGCD {
 
         a = a.clone().divideOrNull(aContent);
         b = b.clone().divideOrNull(bContent);
-        return ModularGCDInZ0(a, b, gcdInZp).multiply(contentGCD);
+        return ModularGCDInZ0(a, b, gcdInZp, switchToSparse).multiply(contentGCD);
     }
 
     static MultivariatePolynomial<BigInteger> ModularGCDInZ0(
             MultivariatePolynomial<BigInteger> a,
             MultivariatePolynomial<BigInteger> b,
-            BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64> gcdInZp) {
+            BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64> gcdInZp,
+            boolean switchToSparse) {
 
         GCDInput<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
                 gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCDInZ);
@@ -1270,6 +1285,9 @@ public final class MultivariateGCD {
 
         a = gcdInput.aReduced;
         b = gcdInput.bReduced;
+
+        if (switchToSparse && !isDenseGCDProblem(a, b))
+            gcdInput.restoreGCD(PolynomialGCD(a, b));
 
         BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
 
