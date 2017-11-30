@@ -390,7 +390,7 @@ public class Examples {
                 z2Poly2 = b.setRing(z2).multiply(z2GCD);
 
         // Kaltofen’s & Monagan’s generic modular GCD
-        MultivariatePolynomialZp64 modGF = ModularGCDInGF(z2Poly1, z2Poly2);
+        MultivariatePolynomialZp64 modGF = MultivariateGCD.KaltofenMonaganSparseModularGCDInGF(z2Poly1, z2Poly2);
         assert modGF.equals(z2GCD);
 
         // Z

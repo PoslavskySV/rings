@@ -1638,7 +1638,7 @@ public final class MultivariateFactorization {
         Poly lc = poly.lc(0);
         LeadingCoefficientData<Term, Poly> lcData = new LeadingCoefficientData<>(lc);
 
-        IEvaluationLoop<Term, Poly> evaluations = getEvaluations(poly);
+        IEvaluationLoop<Term, Poly> evaluations = getEvaluationsGF(poly);
         // number of attempts to find a suitable evaluation point
         int nAttempts = 0;
         // maximal number of bivariate factors
@@ -2082,7 +2082,7 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    IEvaluationLoop<Term, Poly> getEvaluations(Poly factory) {
+    IEvaluationLoop<Term, Poly> getEvaluationsGF(Poly factory) {
         if (factory instanceof MultivariatePolynomialZp64)
             return (IEvaluationLoop<Term, Poly>) new lEvaluationLoop((MultivariatePolynomialZp64) factory);
         else
@@ -2358,7 +2358,7 @@ public final class MultivariateFactorization {
         // coefficients bound
         BigInteger bound2 = coefficientsBound(poly).multiply(coefficientsBound(lc)).shiftLeft(1);
 
-        IEvaluationLoop<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> evaluations = new EvaluationLoopZ(poly); //getEvaluations(poly);
+        IEvaluationLoop<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> evaluations = new EvaluationLoopZ(poly); //getEvaluationsGF(poly);
 
         // maximal number of bivariate factors
         int nBivariateFactors = Integer.MAX_VALUE;

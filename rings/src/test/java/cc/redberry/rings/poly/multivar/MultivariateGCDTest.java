@@ -12,6 +12,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
+import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.RandomDataGenerator;
 import cc.redberry.rings.util.RandomUtil;
 import cc.redberry.rings.util.TimeUnits;
@@ -1266,7 +1267,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             a1 = a1.multiply(gcd1);
             b1 = b1.multiply(gcd1);
 
-            assertEquals(gcd1.monic(), ModularGCDInGF(a1, b1).monic());
+            assertEquals(gcd1.monic(), KaltofenMonaganSparseModularGCDInGF(a1, b1).monic());
         }
     }
 
@@ -1281,8 +1282,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
         sampleData.minModulusBits = 2;
         sampleData.maxModulusBits = 5;
         testGCDAlgorithm(sampleData, nIterations,
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF),
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF));
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::KaltofenMonaganSparseModularGCDInGF),
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::KaltofenMonaganSparseModularGCDInGF));
     }
 
     @Test
@@ -1302,8 +1303,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 sampleData = filterZeros(fixVariables(source, nVars));
 
         testGCDAlgorithm(sampleData, nIterations,
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF),
-                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::ModularGCDInGF));
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::KaltofenMonaganSparseModularGCDInGF),
+                GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::KaltofenMonaganSparseModularGCDInGF));
     }
 
     @Test
@@ -1323,7 +1324,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
         for (int i = 0; i < its(5, 5); i++) {
             timestamp();
-            MultivariatePolynomialZp64 gcd = ModularGCDInGF(a, b);
+            MultivariatePolynomialZp64 gcd = MultivariateGCD.KaltofenMonaganSparseModularGCDInGF(a, b);
             timeElapsed();
 
             assertTrue(dividesQ(a, gcd));
@@ -2114,6 +2115,34 @@ public class MultivariateGCDTest extends AMultivariateTest {
         testGCDAlgorithms(sampleData, nIterations, GCDAlgorithm.named("Modular gcd in Z", zAlg));
     }
 
+    @Test
+    public void testEEZGCD8() throws Exception {
+        IntegersZp64 cfRing = Rings.Zp64(7);
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("y^3+y^4+x*y^4+5*x*y^5+4*x^2+6*x^2*y^2+4*x^2*y^3+4*x^2*y^4+3*x^2*y^5+6*x^2*y^6+x^3+x^3*y+5*x^3*y^2+6*x^3*y^3+x^3*y^4+5*x^3*y^5+6*x^3*y^6+5*x^4*y+4*x^4*y^2+4*x^4*y^3+2*x^4*y^4+2*x^4*y^5+4*x^4*y^6+6*x^4*y^7+4*x^4*y^8+2*x^5+2*x^5*y+x^5*y^2+3*x^5*y^3+x^5*y^4+x^5*y^5+3*x^5*y^6+3*x^5*y^8+3*x^5*y^9+4*x^7*y+5*x^7*y^2+2*x^7*y^3+3*x^7*y^4+4*x^7*y^5+3*x^7*y^6+5*x^7*y^7+5*x^7*y^8+3*x^7*y^9+4*x^7*y^10+x^7*y^11+5*x^8+5*x^8*y+4*x^8*y^2+6*x^8*y^3+x^8*y^4+3*x^8*y^5+6*x^8*y^6+3*x^8*y^7+4*x^8*y^8+x^8*y^9+3*x^8*y^10+5*x^8*y^11+6*x^9+6*x^9*y+6*x^9*y^2+4*x^9*y^3+6*x^9*y^4+3*x^9*y^5+5*x^9*y^6+4*x^9*y^7+4*x^9*y^8+3*x^9*y^9+4*x^9*y^11+6*x^9*y^12+5*x^10*y+2*x^10*y^3+4*x^10*y^4+2*x^10*y^5+2*x^10*y^6+x^10*y^7+2*x^10*y^8+3*x^10*y^10+4*x^10*y^11+5*x^11*y+4*x^11*y^2+3*x^11*y^3+6*x^11*y^4+5*x^11*y^6+5*x^11*y^7+x^11*y^8+5*x^11*y^9+6*x^11*y^10+2*x^12*y^6+5*x^12*y^8+3*x^12*y^9+3*x^12*y^10+x^12*y^11", cfRing),
+                b = MultivariatePolynomialZp64.parse("2*y^2+2*y^3+3*x*y^2+3*x*y^4+2*x^2*y^3+4*x^2*y^5+4*x^3+4*x^3*y+3*x^3*y^2+2*x^3*y^4+x^3*y^5+6*x^3*y^6+x^4+5*x^4*y+3*x^4*y^2+2*x^4*y^3+4*x^4*y^5+x^4*y^6+x^5+6*x^5*y+2*x^5*y^2+4*x^5*y^3+6*x^5*y^4+6*x^5*y^5+x^5*y^6+3*x^5*y^7+x^5*y^8+6*x^6+6*x^6*y+2*x^6*y^2+x^6*y^3+6*x^6*y^4+5*x^6*y^6+4*x^6*y^7+6*x^6*y^8+5*x^6*y^9+2*x^7+x^7*y+3*x^7*y^2+x^7*y^4+x^7*y^6+4*x^7*y^8+x^7*y^9+2*x^7*y^10+4*x^8+x^8*y+4*x^8*y^3+x^8*y^4+2*x^8*y^5+2*x^8*y^6+6*x^8*y^7+2*x^8*y^10+3*x^8*y^11+3*x^9+x^9*y+x^9*y^2+4*x^9*y^3+2*x^9*y^4+5*x^9*y^5+2*x^9*y^6+3*x^9*y^7+6*x^9*y^9+4*x^9*y^10+4*x^9*y^11+x^10+3*x^10*y+3*x^10*y^2+5*x^10*y^3+4*x^10*y^4+6*x^10*y^5+5*x^10*y^6+3*x^10*y^7+6*x^10*y^8+3*x^10*y^9+3*x^10*y^10+6*x^10*y^12+3*x^11+2*x^11*y+5*x^11*y^2+2*x^11*y^3+2*x^11*y^4+x^11*y^5+5*x^11*y^6+3*x^11*y^7+5*x^11*y^8+4*x^11*y^9+x^11*y^10+3*x^11*y^11+x^12+6*x^12*y+x^12*y^3+5*x^12*y^4+6*x^12*y^5+3*x^12*y^6+6*x^12*y^7+4*x^12*y^8+x^12*y^9+5*x^12*y^10+2*x^13*y^5+x^13*y^6+2*x^13*y^7+3*x^13*y^9+x^13*y^10+4*x^13*y^11+3*x^14*y^5+5*x^14*y^6+5*x^14*y^7+x^14*y^9+2*x^14*y^10", cfRing),
+                g = a.clone().subtract(b);
+        assertEquals(ZippelGCD(a, b), EEZGCD(a, b));
+        a.multiply(g);
+        b.multiply(g);
+        assertEquals(ZippelGCD(a, b), EEZGCD(a, b));
+    }
+
+    @Ignore
+    @Benchmark
+    @Test
+    public void testEEZGCD_random4() throws Exception {
+        RandomGenerator rnd = getRandom();
+        int nVarsMin = 4, nVarsMax = 4, minDegree = 1, maxDegree = 5, minSize = 550, maxSize = 560;
+        int nIterations = its(10, 200);
+
+        lGCDSampleDataZp sampleData = new lGCDSampleDataZp(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
+        testGCDAlgorithms(sampleData, nIterations,
+                GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD),
+                GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD)
+        );
+    }
+
     /* =============================================== Test data =============================================== */
 
     /** sample data for test of GCD */
@@ -2265,7 +2294,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         final DescriptiveStatistics
                 medFactorsSize = new DescriptiveStatistics(),
                 medFactorsDegree = new DescriptiveStatistics(),
+                medFactorsSparsity = new DescriptiveStatistics(),
+                medFactorsSparsity2 = new DescriptiveStatistics(),
                 medGCDSize = new DescriptiveStatistics(),
+                medGCDSparsity = new DescriptiveStatistics(),
+                medGCDSparsity2 = new DescriptiveStatistics(),
                 medGCDDegree = new DescriptiveStatistics(),
                 medFactorsUsedVariables = new DescriptiveStatistics(),
                 medGCDUsedVariables = new DescriptiveStatistics();
@@ -2290,18 +2323,39 @@ public class MultivariateGCDTest extends AMultivariateTest {
             medFactorsUsedVariables.addValue(sample.a.nUsedVariables());
             medFactorsUsedVariables.addValue(sample.b.nUsedVariables());
             medGCDUsedVariables.addValue(sample.gcd.nUsedVariables());
+
+            medFactorsSparsity.addValue(sample.a.sparsity());
+            medFactorsSparsity.addValue(sample.b.sparsity());
+            medGCDSparsity.addValue(sample.gcd.sparsity());
+
+            medFactorsSparsity2.addValue(sample.a.sparsity2());
+            medFactorsSparsity2.addValue(sample.b.sparsity2());
+            medGCDSparsity2.addValue(sample.gcd.sparsity2());
+
             return sample;
         }
 
         abstract GCDSample<Term, Poly> nextSample0(boolean primitive, boolean monic);
 
+        static double med(DescriptiveStatistics stat) {
+            double p = stat.getPercentile(0.5);
+            if (p <= 1.1)
+                return stat.getMean();
+            return p;
+        }
+
         final void printSamplesStatistics() {
-            System.out.println("Median polys size : " + medFactorsSize.getPercentile(0.5));
-            System.out.println("Median gcd   size : " + medGCDSize.getPercentile(0.5));
-            System.out.println("Median polys deg  : " + medFactorsDegree.getPercentile(0.5));
-            System.out.println("Median gcd   deg  : " + medGCDDegree.getPercentile(0.5));
-            System.out.println("Median poly nVars : " + medFactorsUsedVariables.getPercentile(0.5));
-            System.out.println("Median gcd  nVars : " + medGCDUsedVariables.getPercentile(0.5));
+            System.out.println("Median polys size : " + med(medFactorsSize));
+            System.out.println("Median gcd   size : " + med(medGCDSize));
+            System.out.println("Median polys deg  : " + med(medFactorsDegree));
+            System.out.println("Median gcd   deg  : " + med(medGCDDegree));
+            System.out.println("Median poly nVars : " + med(medFactorsUsedVariables));
+            System.out.println("Median gcd  nVars : " + med(medGCDUsedVariables));
+            System.out.println("Median polys sparsity  : " + med(medFactorsSparsity));
+            System.out.println("Median gcd sparsity    : " + med(medGCDSparsity));
+            System.out.println("Median polys sparsity2 : " + med(medFactorsSparsity2));
+            System.out.println("Median gcd sparsity2   : " + med(medGCDSparsity2));
+
         }
     }
 
