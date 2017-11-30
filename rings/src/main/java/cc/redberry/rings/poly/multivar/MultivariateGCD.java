@@ -120,12 +120,12 @@ public final class MultivariateGCD {
             for (; split < arr.length && arr[split].size() < maxSize / 3; ++split) ;
             // use "divide and conqueror" strategy
             if (split > 1) {
-                Poly smallGCD = PolynomialGCD(Arrays.copyOf(arr, split));
+                Poly smallGCD = PolynomialGCD(Arrays.copyOf(arr, split), algorithm);
                 Poly[] rest = (Poly[]) smallGCD.createArray(arr.length - split + 1);
                 rest[0] = smallGCD;
                 System.arraycopy(arr, split, rest, 1, arr.length - split);
 
-                return PolynomialGCD(rest);
+                return PolynomialGCD(rest, algorithm);
             }
         }
 
@@ -1248,8 +1248,6 @@ public final class MultivariateGCD {
         if (a.isZero()) return b.clone();
         if (b.isZero()) return a.clone();
 
-        if (a.degree() < b.degree())
-            return ZippelGCDInZ(b, a);
         BigInteger aContent = a.content(), bContent = b.content();
         BigInteger contentGCD = BigIntegerUtil.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
