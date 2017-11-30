@@ -68,7 +68,7 @@ public final class BigIntegerUtil {
 
         if (exponent < Integer.MAX_VALUE)
             return pow(base, (int) exponent);
-        
+
         BigInteger result = ONE;
         BigInteger k2p = base;
         for (; ; ) {
@@ -209,5 +209,27 @@ public final class BigIntegerUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Factorial of a number
+     */
+    public static BigInteger factorial(int number) {
+        BigInteger r = BigInteger.ONE;
+        for (int i = 1; i <= number; i++)
+            r = r.multiply(i);
+        return r;
+    }
+
+    /**
+     * Binomial coefficient
+     */
+    public static BigInteger binomial(int n, int k) {
+        if (k > n - k)
+            k = n - k;
+        BigInteger b = BigInteger.ONE;
+        for (int i = 1, m = n; i <= k; i++, m--)
+            b = b.multiply(m).divideExact(BigInteger.valueOf(i));
+        return b;
     }
 }

@@ -937,7 +937,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("a + 17*b + 2*c"),
                 b = parse("3*a + b - c"),
                 gcd = parse("1273465812736485821734523745*a*b - 21475715234*b - c");
-        assertEquals(gcd, ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)));
+        assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
     @Test
@@ -946,7 +946,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("1234324234*a + 12317*b + 2*c"),
                 b = parse("3*a + 143423423423423412314*b - c"),
                 gcd = parse("1273465812736485821734523745*a*b - 21475715234*b - 143423423423423412314123123*c");
-        assertEquals(gcd, ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)));
+        assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
     @Test
@@ -956,7 +956,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("5*b^6*c^15*d^3+4*b^8*c*d^11+17492152*a^2*b^8*c^15*d^10+8*a^2*b^10*d^11+9*a^3*b^2*c^10*d+5*a^4*b*c^5*d^3+6*a^4*b^13*c^3*d^13+17492156*a^8*b^6*c^12*d^4+5*a^9*b^9*d^11+5*a^10*b^6*c^15*d^10"),
                 b = parse("b^8*d^3+a^4*b^2*c^7*d+4*a^5*d^2+4*a^5*b^6*c+17492153*a^7*c^8*d^6"),
                 gcd = parse("7*a^2*b^7*c^9*d^6+17492158*a^2*b^8*c*d^9+4*a^2*b^9*c^7*d^3+3*a^3*d+7*a^3*b^2*c^2*d^2+4*a^3*b^2*c^2*d^3+17492156*a^3*b^9*c^9*d^3+a^5*b^6*c^9*d^2+17492153*a^6*b^8*c^3*d^3+8*a^9*b^3*c^6*d^8+9*a^9*b^6*c^4*d^5");
-        assertEquals(gcd, ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)));
+        assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
     @Test
@@ -966,7 +966,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("4*a*b^7*c*d^2+a^2*b^6*c^8*d^4+7*a^3*b^5*c^6*d^4+5*a^4*b^3*c*d^7+6*a^5*b^4*c^7+8*a^7*c^8*d+a^8*b^5*c^3*d^2"),
                 b = parse("25987600*b^18*c^17*d^14+25987597*a*b^9*c^9*d^2+2*a^2*b^7*c^12*d^7+4*a^4*b^14*c^11*d^2+6*a^6*b^2*d+2*a^6*b^3*c^16*d^14+5*a^9*b^17*c^16*d^2+a^14*b^18*c^17*d^4"),
                 gcd = parse("25987593*a^4*c^4*d^4+9*a^6*c^3*d^10+7*a^6*b^14*c^4*d^7+8*a^7*b^9*c^13*d+7*a^9*b^2*c^13*d^4+2*a^10*b^6*c^9*d^7+2*a^11*b^5*c^7*d^3+2*a^11*b^12*c^13*d^14+7*a^14*b^8*c^14*d^3+6*a^14*b^13*c^4*d^11");
-        assertEquals(gcd, ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)));
+        assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
     @Test
@@ -976,7 +976,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("5*a*b^5*c^10*d^7*e^16+2*a^4*b^3*c^9*d^6*e^8+5*a^4*b^6*c^16*d^11*e^2+a^4*b^13*d^5*e^6+30844060*a^5*b*c^9*d^8*e^12+4*a^8*b*c^17*d^11*e^3+9*a^8*b^13*c^16*d^17*e^11+a^9*b^2*c^2*d^10*e^14+5*a^9*b^6*c^3*d^7*e^4+7*a^9*b^8*c^3*d^16*e^2+9*a^14*b^5*c^2*d^3*e^16"),
                 b = parse("7*b^6*c^18*d^5*e+30844053*a^2*b^8*c^10*d^8*e^6+a^3*b^14*c^4*d^11*e^7+a^4*b^10*c*d^15*e^18+3*a^15*b^9*c^3*e^11+5*a^18*b^13*c^16*d^15*e^15"),
                 gcd = parse("9*a^3*b^11*c^7*d^4*e^6+30844059*a^5*b^6*c^15*d^8*e^10+8*a^5*b^10*c^15*d^2*e^9+5*a^10*b^11*c^7*d^9*e^16+2*a^13*b^3*c^13*d^6*e^2+30844060*a^14*b^3*c^6*d^3*e^13+30844055*a^14*b^6*c^4*d^13+30844055*a^14*b^17*c^2*d^8*e^13+2*a^17*b^5*c^7*d*e^11");
-        assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
+        assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
 
     @Test
@@ -987,7 +987,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                     a = parse("8*a*c^5*d^10*e^5+31118523*a*b^3*c^5*d^8*e^10+a^2*b^7*c*d*e^12+4*a^2*b^8*c*d^9*e^10+31118524*a^3*b^5*c^14*d^5*e^13+31118529*a^4*b^3*c^12*d^6*e^8+3*a^5*b^4*d^11*e^9+31118526*a^5*b^8*c^6*d^12*e+4*a^7*b^13*c^11*d^3+31118529*a^9*b^12*c^4*d^2*e^11+5*a^11*b^9*c^2*d*e^11+8*a^13*b^13*c^7*d^2*e^8+8*a^14*b^5*c^14*d^6*e^4"),
                     b = parse("31118526*c^3*d^4*e^2+31118530*b^4*c^6*d^5*e^6+5*a*b*c^4*d^4*e^3+31118527*a*b^3*d*e^2+31118525*a^2*b*c^7*d*e^4+5*a^2*b^4*c^8*d^2*e^5+6*a^2*b^6*d^7*e^5+9*a^2*b^7*c^8*d*e^5+4*a^4*b^6*e^7+3*a^5*b^2*c^6*d^4*e^3+31118529*a^7*b*c^2*d^5*e^8+8*a^7*b^3*c^3*d^4*e^5+7*a^8*b*c^2*d^5*e^8+6*a^8*b^3*c^3*d^5*e^3"),
                     gcd = parse("2*c^3*d*e^5+31118524*b^6*c^2*d^3*e^4+31118528*a^2*b^3*c^2*d^3+7*a^3*b*c^3*d^2+5*a^3*b^3*c^4*d^5*e^2+31118527*a^4*c^2*d^3+7*a^4*b*c*d*e^4+9*a^4*b*c^6*d^3*e^4+5*a^5*d^2*e^2+4*a^6*b^2*c^4*e+7*a^6*b^3*c^5*d^4*e^3");
-            assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
+            assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
         }
     }
 
@@ -998,7 +998,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("5*b*d^4+2*a^3*b*c*d^4+a^5*b^2*c^2*d^6+6*a^5*b^5*c^3*d^6+4*a^6*b*c^2+8*a^6*b^5*c^5*d^5"),
                 b = parse("8*a*b*c^3*d^6+4*a*b^4*c*d+4*a*b^5*c*d^3+3*a^3*b^4*c^2"),
                 gcd = parse("5*a^7*b^2*c^13*d^4");
-        assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
+        assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
 
     @Test
@@ -1008,7 +1008,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("8*a*b^19*c^11+8*a^3*b^4*c^9+7*a^3*b^10*c^12+3*a^5*b^14*c^21+7*a^9*b^21*c+8*a^10*b^8*c^5+a^14*b^21*c^12+15477328*a^21*b^20*c^8"),
                 b = parse("15477335*b^8*c^4+7*b^9*c^8+15477332*a^3*b^13*c^4+15477335*a^9*b^13*c^6+15477328*a^12*c^9"),
                 gcd = parse("15477332*a^10*b^13*c^5+7*a^14*b^5*c^3+6*a^19*b^12*c^5+2*a^19*b^12*c^13+15477329*a^20*b*c^19+15477332*a^20*b^8*c^12+7*a^21*b^8*c^2");
-        assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
+        assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
 
     @Test
@@ -1018,7 +1018,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse("428678675174997*b - 576309141757314*c - 1799929908190992*b*c + 43581966762456*b^2*c + 2155012404966050*c^2 + 1356161027210220*b*c^2 - 162945010788840*b^2*c^2 - 579102861059775*b^6*c^2 + 667785318790236*b^5*c^3 + 569898197386650*b^6*c^3 - 41635029186864*b^7*c^3", vars),
                 b = parse("-c", vars),
                 gcd = parse("-2287341106126463750*b^7*c^5 + 1532098182980478300*b^8*c^5 - 946030127950514950*b^4*c^6 + 633666328207734108*b^5*c^6 + 723818682898978700*b^6*c^6 - 2410587259891460925*b^7*c^6 + 67657454221929000*b^8*c^6 + 299366928422627212*b^3*c^7 - 997003974528718653*b^4*c^7 + 27982704417344040*b^5*c^7 + 31963832309981000*b^6*c^7 - 101990974478857750*b^7*c^7 + 13220043258527560*b^3*c^8 - 42182835947642390*b^4*c^8", vars);
-        assertTrue(dividesQ(ModularGCD(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
+        assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
 //
 //    @Test
@@ -1052,7 +1052,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 new GCDSampleDataGeneric<>(Rings.Z, 3, 5, 5, 15, 5, 15, rnd);
 
         testGCDAlgorithms(sampleData, nIterations,
-                GCDAlgorithm.named("Modular gcd", MultivariateGCD::ModularGCD));
+                GCDAlgorithm.named("Modular gcd", MultivariateGCD::ZippelGCDInZ));
     }
 
     @Test
@@ -1071,7 +1071,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                         BigInteger.valueOf(100));
 
         testGCDAlgorithms(sampleData, nIterations,
-                GCDAlgorithm.named("ModularGCD", MultivariateGCD::ModularGCD));
+                GCDAlgorithm.named("ZippelGCDInZ", MultivariateGCD::ZippelGCDInZ));
     }
 
     @Ignore
@@ -1106,11 +1106,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (int i = 0; i < 1000; i++) {
             System.out.println();
             long start = System.nanoTime();
-            System.out.println(ModularGCD(a.clone().increment(), b));
+            System.out.println(ZippelGCDInZ(a.clone().increment(), b));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
-            assertTrue(dividesQ(ModularGCD(a, b), gcd));
+            assertTrue(dividesQ(ZippelGCDInZ(a, b), gcd));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
 
@@ -2080,6 +2080,38 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 Assert.assertTrue(dividesQ(gcd, c));
             }
         }
+    }
+
+    @Test
+    public void testModularGCDInZ1() throws Exception {
+        BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64>
+                modAlg = MultivariateGCD::ZippelGCD;
+
+        MultivariatePolynomial<BigInteger>
+                a = parse("x*y*z^2 + y*z*x^6 + 1"),
+                b = parse("x*y*z^2 + 12342134234233*y*z*x^6 - 123*z + x"),
+                g = parse("x^6*y + 1212423413*y*z^7*x^6 - 1231241234234*z + 164287246876423*y"),
+                ag = a.clone().multiply(g),
+                bg = b.clone().multiply(g);
+
+
+        assertEquals(g.primitivePart(), ModularGCDInZ(ag, bg, modAlg).primitivePart());
+    }
+
+    @Test
+    public void testModularGCDInZRandom1() throws Exception {
+        BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64>
+                modAlg = MultivariateGCD::ZippelGCD;
+
+        BiFunction<MultivariatePolynomial<BigInteger>, MultivariatePolynomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                zAlg = (a, b) -> MultivariateGCD.ModularGCDInZ(a, b, modAlg);
+
+        int nIterations = its(1000, 3000);
+        RandomGenerator rnd = getRandom();
+        GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
+                new GCDSampleDataGeneric<>(Rings.Z, 3, 5, 5, 15, 5, 15, rnd);
+
+        testGCDAlgorithms(sampleData, nIterations, GCDAlgorithm.named("Modular gcd in Z", zAlg));
     }
 
     /* =============================================== Test data =============================================== */

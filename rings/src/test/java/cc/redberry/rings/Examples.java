@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.PolynomialMethods.*;
 import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
-import static cc.redberry.rings.poly.multivar.MultivariateGCD.ModularGCD;
+import static cc.redberry.rings.poly.multivar.MultivariateGCD.ZippelGCDInZ;
 import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.ModularGCD;
@@ -400,7 +400,7 @@ public class Examples {
                 zPoly2 = b.setRing(Z).multiply(zGCD);
 
         // Modular GCD in Z with sparse interpolation
-        MultivariatePolynomial<BigInteger> mod = ModularGCD(zPoly1, zPoly2);
+        MultivariatePolynomial<BigInteger> mod = ZippelGCDInZ(zPoly1, zPoly2);
         assert mod.equals(zGCD);
     }
 

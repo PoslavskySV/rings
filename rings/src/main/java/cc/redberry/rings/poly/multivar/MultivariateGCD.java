@@ -1,7 +1,10 @@
 package cc.redberry.rings.poly.multivar;
 
 
-import cc.redberry.rings.*;
+import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.bigint.ChineseRemainders;
@@ -237,21 +240,72 @@ public final class MultivariateGCD {
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly a, Poly b) {
         a.assertSameCoefficientRingWith(b);
+        if (a.isOverFiniteField())
+            return PolynomialGCDinGF(a, b);
+        if (a.isOverZ())
+            return (Poly) PolynomialGCDinZ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        if (Util.isOverRationals(a))
+            return (Poly) PolynomialGCDInQ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        if (a.isOverField())
+            return (Poly) ZippelGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
+        return tryNested(a, b);
+    }
+
+    /**
+     * Calculates greatest common divisor of two multivariate polynomials over finite fields
+     *
+     * @param a the first poly
+     * @param b the second poly
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCDinGF(Poly a, Poly b) {
+        a.assertSameCoefficientRingWith(b);
+        if (!a.isOverFiniteField())
+            throw new IllegalArgumentException();
+
+        // use EEZGCD for dense problems
+        if (isDenseGCDProblem(a, b))
+            return (Poly) EEZGCD(a, b, true);
+
+        // use ZippelGCD for sparse problems
         if (a instanceof MultivariatePolynomialZp64)
             return (Poly) ZippelGCD((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b);
-        else if (a instanceof MultivariatePolynomial) {
-            Ring ring = ((MultivariatePolynomial) a).ring;
-            if (Rings.Z.equals(ring))
-                return (Poly) ModularGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
-            else if (ring.isField()) {
-                if (Util.isOverRationals(a))
-                    return (Poly) PolynomialGCDOverRationals((MultivariatePolynomial) a, (MultivariatePolynomial) b);
-                else
-                    return (Poly) ZippelGCD((MultivariatePolynomial) a, (MultivariatePolynomial) b);
-            } else
-                return tryNested(a, b);
-        } else
-            return tryNested(a, b);
+        if (a instanceof MultivariatePolynomial)
+            return (Poly) ZippelGCD((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * Calculates greatest common divisor of two multivariate polynomials over Z
+     *
+     * @param a the first poly
+     * @param b the second poly
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    public static MultivariatePolynomial<BigInteger> PolynomialGCDinZ(MultivariatePolynomial<BigInteger> a,
+                                                                      MultivariatePolynomial<BigInteger> b) {
+        a.assertSameCoefficientRingWith(b);
+        if (!a.isOverZ())
+            throw new IllegalArgumentException();
+
+        if (isDenseGCDProblem(a, b))
+            // use EEZGCD with ModularGCD for dense problems
+            return ModularGCDInZ(a, b, (u, v) -> EEZGCD(u, v, true));
+        else
+            // use ZippelGCD for sparse problems
+            return ZippelGCDInZ(a, b);
+    }
+
+    private static final double SPARSITY_THRESHOLD = 0.25;
+
+    private static <Poly extends AMultivariatePolynomial> boolean isDenseGCDProblem(Poly a, Poly b) {
+        if (a.sparsity2() > SPARSITY_THRESHOLD && b.sparsity2() > SPARSITY_THRESHOLD) {
+            System.out.println(" ==== DENSE PROBLEM ==== ");
+        }
+        return a.sparsity2() > SPARSITY_THRESHOLD && b.sparsity2() > SPARSITY_THRESHOLD;
     }
 
     @SuppressWarnings("unchecked")
@@ -334,7 +388,7 @@ public final class MultivariateGCD {
                 MultivariatePolynomialZp64.asNormalMultivariate(b, cfVars, mainVars)).asOverMultivariateEliminate(cfVars);
     }
 
-    private static <E> MultivariatePolynomial<Rational<E>> PolynomialGCDOverRationals(
+    private static <E> MultivariatePolynomial<Rational<E>> PolynomialGCDInQ(
             MultivariatePolynomial<Rational<E>> a,
             MultivariatePolynomial<Rational<E>> b) {
         Tuple2<MultivariatePolynomial<E>, E> aRat = Util.toCommonDenominator(a);
@@ -805,14 +859,14 @@ public final class MultivariateGCD {
     /* =========================================== Multivariate GCD over Z ========================================== */
 
     /**
-     * Modular GCD algorithm for polynomials over Z.
+     * Sparse modular GCD algorithm for polynomials over Z.
      *
      * @param a the first polynomial
      * @param b the second polynomial
      * @return GCD of two polynomials
      */
     @SuppressWarnings("ConstantConditions")
-    public static MultivariatePolynomial<BigInteger> ModularGCD(MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b) {
+    public static MultivariatePolynomial<BigInteger> ZippelGCDInZ(MultivariatePolynomial<BigInteger> a, MultivariatePolynomial<BigInteger> b) {
         Util.ensureOverZ(a, b);
         if (a == b)
             return a.clone();
@@ -820,7 +874,7 @@ public final class MultivariateGCD {
         if (b.isZero()) return a.clone();
 
         if (a.degree() < b.degree())
-            return ModularGCD(b, a);
+            return ZippelGCDInZ(b, a);
         BigInteger aContent = a.content(), bContent = b.content();
         BigInteger contentGCD = BigIntegerUtil.gcd(aContent, bContent);
         if (a.isConstant() || b.isConstant())
@@ -828,26 +882,26 @@ public final class MultivariateGCD {
 
         a = a.clone().divideOrNull(aContent);
         b = b.clone().divideOrNull(bContent);
-        return ModularGCD0(a, b).multiply(contentGCD);
+        return ZippelGCDInZ0(a, b).multiply(contentGCD);
     }
 
-    static MultivariatePolynomial<BigInteger> ModularGCD0(
+    static MultivariatePolynomial<BigInteger> ZippelGCDInZ0(
             MultivariatePolynomial<BigInteger> a,
             MultivariatePolynomial<BigInteger> b) {
 
         GCDInput<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                gcdInput = preparedGCDInput(a, b, MultivariateGCD::ModularGCD);
+                gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCDInZ);
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
         a = gcdInput.aReduced;
         b = gcdInput.bReduced;
 
-        MultivariatePolynomial<BigInteger> pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ModularGCD);
+        MultivariatePolynomial<BigInteger> pContentGCD = contentGCD(a, b, 0, MultivariateGCD::ZippelGCDInZ);
         if (!pContentGCD.isConstant()) {
             a = MultivariateDivision.divideExact(a, pContentGCD);
             b = MultivariateDivision.divideExact(b, pContentGCD);
-            return gcdInput.restoreGCD(ModularGCD(a, b).multiply(pContentGCD));
+            return gcdInput.restoreGCD(ZippelGCDInZ(a, b).multiply(pContentGCD));
         }
 
         BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
@@ -1176,6 +1230,138 @@ public final class MultivariateGCD {
         }
     }
 
+    /**
+     * Modular GCD algorithm for polynomials over Z.
+     *
+     * @param a       the first polynomial
+     * @param b       the second polynomial
+     * @param gcdInZp algorithm for gcd in Zp
+     * @return GCD of two polynomials
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static MultivariatePolynomial<BigInteger> ModularGCDInZ(MultivariatePolynomial<BigInteger> a,
+                                                                   MultivariatePolynomial<BigInteger> b,
+                                                                   BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64> gcdInZp) {
+        Util.ensureOverZ(a, b);
+        if (a == b)
+            return a.clone();
+        if (a.isZero()) return b.clone();
+        if (b.isZero()) return a.clone();
+
+        if (a.degree() < b.degree())
+            return ZippelGCDInZ(b, a);
+        BigInteger aContent = a.content(), bContent = b.content();
+        BigInteger contentGCD = BigIntegerUtil.gcd(aContent, bContent);
+        if (a.isConstant() || b.isConstant())
+            return a.createConstant(contentGCD);
+
+        a = a.clone().divideOrNull(aContent);
+        b = b.clone().divideOrNull(bContent);
+        return ModularGCDInZ0(a, b, gcdInZp).multiply(contentGCD);
+    }
+
+    static MultivariatePolynomial<BigInteger> ModularGCDInZ0(
+            MultivariatePolynomial<BigInteger> a,
+            MultivariatePolynomial<BigInteger> b,
+            BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64> gcdInZp) {
+
+        GCDInput<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCDInZ);
+        if (gcdInput.earlyGCD != null)
+            return gcdInput.earlyGCD;
+
+        a = gcdInput.aReduced;
+        b = gcdInput.bReduced;
+
+        BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
+
+        // the base polynomial
+        MultivariatePolynomial<BigInteger> base = null;
+        PrimesIterator primesLoop = new PrimesIterator(1031);
+        BigInteger bBasePrime = null;
+
+        main_loop:
+        while (true) {
+            // prepare the skeleton
+            BigInteger bPrime = BigInteger.valueOf(primesLoop.take());
+            IntegersZp bRing = new IntegersZp(bPrime);
+
+            // reduce Z -> Zp
+            MultivariatePolynomial<BigInteger>
+                    abMod = a.setRing(bRing),
+                    bbMod = b.setRing(bRing);
+            if (!abMod.sameSkeletonQ(a) || !bbMod.sameSkeletonQ(b))
+                continue;
+
+            MultivariatePolynomialZp64
+                    aMod = MultivariatePolynomial.asOverZp64(abMod),
+                    bMod = MultivariatePolynomial.asOverZp64(bbMod);
+
+            // gcd in Zp
+            MultivariatePolynomialZp64 modGCD = gcdInZp.apply(aMod, bMod);
+            if (modGCD.isConstant())
+                return gcdInput.restoreGCD(a.createOne());
+
+            long lLcGCD = lcGCD.mod(bPrime).longValueExact();
+            // scale to correct l.c.
+            modGCD = modGCD.monic(lLcGCD);
+
+            if (base == null) {
+                base = modGCD.toBigPoly();
+                bBasePrime = bPrime;
+                continue;
+            }
+
+            IntegersZp64 pRing = bRing.asMachineRing();
+
+            //lifting
+            BigInteger newBasePrime = bBasePrime.multiply(bPrime);
+            long monicFactor = pRing.multiply(
+                    pRing.reciprocal(modGCD.lc()),
+                    lcGCD.mod(bPrime).longValueExact());
+
+            PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                    iterator = new PairIterator<>(base, modGCD.toBigPoly());
+            while (iterator.hasNext()) {
+                iterator.advance();
+
+                Monomial<BigInteger>
+                        baseTerm = iterator.aTerm,
+                        imageTerm = iterator.bTerm;
+
+                if (baseTerm.coefficient.isZero())
+                    // term is absent in the base
+                    continue;
+
+                if (imageTerm.coefficient.isZero()) {
+                    // term is absent in the modularGCD => remove it from the base
+                    // bBase.subtract(baseTerm);
+                    iterator.aIterator.remove();
+                    continue;
+                }
+
+                long oth = pRing.multiply(imageTerm.coefficient.longValueExact(), monicFactor);
+
+                // update base term
+                BigInteger newCoeff = ChineseRemainders.ChineseRemainders(bBasePrime, bPrime, baseTerm.coefficient, BigInteger.valueOf(oth));
+                base.terms.add(baseTerm.setCoefficient(newCoeff));
+            }
+
+            base = base.setRingUnsafe(new IntegersZp(newBasePrime));
+            bBasePrime = newBasePrime;
+
+            // two trials didn't change the result, probably we are done
+            MultivariatePolynomial<BigInteger> candidate = MultivariatePolynomial.asPolyZSymmetric(base).primitivePart();
+            //first check b since b is less degree
+            if (!MultivariateDivision.dividesQ(b, candidate))
+                continue;
+
+            if (!MultivariateDivision.dividesQ(a, candidate))
+                continue;
+
+            return gcdInput.restoreGCD(candidate);
+        }
+    }
 
     /* ======================== Multivariate GCD over finite fields with small cardinality ========================== */
 
@@ -3909,7 +4095,6 @@ public final class MultivariateGCD {
         }
     }
 
-
     /* =============================================== EEZ-GCD algorithm ============================================ */
 
     /**
@@ -3922,6 +4107,20 @@ public final class MultivariateGCD {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly EEZGCD(Poly a, Poly b) {
+        return EEZGCD(a, b, false);
+    }
+
+    /**
+     * Calculates GCD of two multivariate polynomials over Zp using enhanced EZ algorithm
+     *
+     * @param a              the first multivariate polynomial
+     * @param b              the second multivariate polynomial
+     * @param switchToSparse whether to switch to a better algorithm if input is sparse
+     * @return greatest common divisor of {@code a} and {@code b}
+     */
+    @SuppressWarnings("unchecked")
+    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly EEZGCD(Poly a, Poly b, boolean switchToSparse) {
         a.assertSameCoefficientRingWith(b);
         if (canConvertToZp64(a))
             return convert(EEZGCD(asOverZp64(a), asOverZp64(b)));
@@ -3950,9 +4149,13 @@ public final class MultivariateGCD {
         a = gcdInput2.aReduced;
         b = gcdInput2.bReduced;
 
-        Poly result = gcdInput2.earlyGCD != null
-                ? gcdInput2.earlyGCD
-                : gcdInput2.restoreGCD(EEZGCD0(a, b, PrivateRandom.getRandom()));
+        Poly result;
+        if (gcdInput2.earlyGCD != null)
+            result = gcdInput2.earlyGCD;
+        else if (switchToSparse && !isDenseGCDProblem(a, b))
+            result = gcdInput2.restoreGCD(PolynomialGCDinGF(a, b));
+        else
+            result = gcdInput2.restoreGCD(EEZGCD0(a, b, PrivateRandom.getRandom()));
 
         result = result.multiply(content);
         return gcdInput.restoreGCD(result);

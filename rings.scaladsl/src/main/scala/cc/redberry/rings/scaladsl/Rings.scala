@@ -214,9 +214,11 @@ abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
   protected[scaladsl] final def divRem(a: Poly, b: Poly): (Poly, Poly) = {
     val qd = theRing.divideAndRemainder(a, b)
     if (qd == null)
-      throw new ArithmeticException(s"not divisible with remainder: ${this show a} / ${this show b}")
+      throw new ArithmeticException(s"not divisible with remainder: ${this show a } / ${this show b }")
     (qd(0), qd(1))
   }
+
+  final def apply(value: E): Poly = getConstant(value)
 
   /**
     * Constant polynomial with specified value
