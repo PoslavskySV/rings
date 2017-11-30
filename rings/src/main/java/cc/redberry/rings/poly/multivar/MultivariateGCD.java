@@ -310,15 +310,6 @@ public final class MultivariateGCD {
                 && b.sparsity2() > SPARSITY_THRESHOLD;
     }
 
-    private static void info(AMultivariatePolynomial poly) {
-        System.out.println("Size       :  " + poly.size());
-        System.out.println("Sparsity   :  " + poly.sparsity());
-        System.out.println("Sparsity2  :  " + poly.sparsity2());
-        System.out.println("Degrees    :  " + Arrays.toString(poly.degrees()));
-        System.out.println("Max degree :  " + poly.degreeMax());
-        System.out.println("Degree sum :  " + poly.degreeSum());
-    }
-
     @SuppressWarnings("unchecked")
     private static <Poly extends AMultivariatePolynomial> Poly tryNested(Poly a, Poly b) {
         if (isOverUnivariate(a))
