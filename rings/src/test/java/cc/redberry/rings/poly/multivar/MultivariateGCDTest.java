@@ -2107,7 +2107,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BiFunction<MultivariatePolynomial<BigInteger>, MultivariatePolynomial<BigInteger>, MultivariatePolynomial<BigInteger>>
                 zAlg = (a, b) -> MultivariateGCD.ModularGCDInZ(a, b, modAlg);
 
-        int nIterations = its(1000, 3000);
+        int nIterations = its(1000, 1000);
         RandomGenerator rnd = getRandom();
         GCDSampleData<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> sampleData =
                 new GCDSampleDataGeneric<>(Rings.Z, 3, 5, 5, 15, 5, 15, rnd);

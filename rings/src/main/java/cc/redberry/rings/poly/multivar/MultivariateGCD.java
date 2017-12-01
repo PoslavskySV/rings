@@ -299,15 +299,15 @@ public final class MultivariateGCD {
             return ZippelGCDInZ(a, b);
     }
 
-    private static final double SPARSITY_THRESHOLD = 0.25;
+    private static final double SPARSITY2_THRESHOLD = 0.5;
     private static final int SPARSITY_SIZE_THRESHOLD = 256;
 
     private static <Poly extends AMultivariatePolynomial> boolean isDenseGCDProblem(Poly a, Poly b) {
         return a.nVariables >= 4
                 && a.size() > SPARSITY_SIZE_THRESHOLD
                 && b.size() > SPARSITY_SIZE_THRESHOLD
-                && a.sparsity2() > SPARSITY_THRESHOLD
-                && b.sparsity2() > SPARSITY_THRESHOLD;
+                && a.sparsity2() > SPARSITY2_THRESHOLD
+                && b.sparsity2() > SPARSITY2_THRESHOLD;
     }
 
     @SuppressWarnings("unchecked")

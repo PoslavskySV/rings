@@ -1796,12 +1796,14 @@ Multivariate GCD
 
  - ``BrownGCD`` |br| Brown's GCD for multivariate polynomials over finite fields (see [Brow71]_, Sec 7.4 in [GeCL92]_, [Yang09]_).
  - ``ZippelGCD`` |br| Zippel's sparse algorithm for multivariate GCD over fields. Works both in case of monic polynomials with fast Vandermonde linear systems (see [Zipp79]_, [Zipp93]_) and in case of non-monic input (LINZIP, see [dKMW05]_, [Yang09]_).
- - ``ModularGCD`` |br| Modular GCD for multivariate polynomials over Z with sparse interpolation (see [Zipp79]_, [Zipp93]_, [dKMW05]_) (the same interpolation techniques as in ZippelGCD is used).
- - ``ModularGCDInGF`` |br| Kaltofen's & Monagan's generic modular GCD (see [KalM99]_) for multivariate polynomials over finite fields with very small cardinality.
+ - ``ZippelGCDInZ`` |br| Zippel's sparse algorithm for multivariate GCD over Z (see [Zipp79]_, [Zipp93]_, [dKMW05]_) (the same interpolation techniques as in ZippelGCD is used)..
+ - ``ModularGCDInZ`` |br| Standard modular algorithm (small primes) for GCD over Z.
+ - ``KaltofenMonaganSparseModularGCDInGF`` |br| Kaltofen's & Monagan's generic modular GCD (see [KalM99]_) for multivariate polynomials over finite fields with very small cardinality with sparse Zippel's techniques similar to ZippelGCDInZ
+ - ``KaltofenMonaganEEZModularGCDInGF`` |br| Kaltofen's & Monagan's generic modular GCD (see [KalM99]_) for multivariate polynomials over finite fields with very small cardinality with EEZ-GCD used for modular images
  - ``EZGCD`` |br| Extended Zassenhaus GCD (EZ-GCD) for multivariate polynomials over finite fields (see Sec. 7.6 in [GeCL92]_ and [MosY73]_).
  - ``EEZGCD`` |br| Enhanced Extended Zassenhaus GCD (EEZ-GCD) for multivariate polynomials over finite fields (see [Wang80]_).
 
-The upper-level method ``MultivariateGCD.PolynomialGCD`` uses ``ZippelGCD`` for polynomials over finite fields (it shows the best performance in practice). In case of finite fields of very small cardinality ``ModularGCDInGF`` is used. ``ModularGCD`` is used for polynomials in :math:`Z[x]` and :math:`Q[x]`. Algorithms ``BrownGCD`` and ``ZippelGCD`` automatically switch to ``ModularGCDInGF`` in case if the coefficient domain has insufficiently large cardinality. Examples:
+The upper-level method ``MultivariateGCD.PolynomialGCD`` switches between Zippel-like algorithms and EEZ-GCD based algorithms. The latter are used only on a very dense problems (which occur rarely), while the former are actually used in most cases. In case of finite fields of very small cardinality Kaltofen's & Monagan's algorithm is used. Examples:
 
 .. tabs::
 
@@ -1950,7 +1952,7 @@ Details of implementation can be found in `MultivariateGCD`_.
 .. _ref-multivariate-factorization:
 
 Multivariate factorization
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^ 
 
 Implementation of multivariate factorization in |Rings| is distributed over two classes:
 

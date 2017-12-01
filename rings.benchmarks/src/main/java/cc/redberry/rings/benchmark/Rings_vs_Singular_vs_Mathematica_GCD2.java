@@ -3,7 +3,6 @@ package cc.redberry.rings.benchmark;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.multivar.MultivariateGCD;
@@ -14,104 +13,56 @@ import java.util.Arrays;
 
 /**
  * @author Stanislav Poslavsky
- * @since 1.0
+ * @since 2.2
  */
 public class Rings_vs_Singular_vs_Mathematica_GCD2 {
-
-
-//    public static void main(String[] args) throws Exception {
-//        // warm up
-////        run(3, 5, 3, 100, Rings.Z, false);
-//        System.out.println("warmed");
-//        silent = false;
-//        TDoubleHashSet db = new TDoubleHashSet();
-//        for (int nVariables = 5; nVariables <= 7; ++nVariables) {
-//
-//            int nIterations = 100;
-//
-//            db.addAll(run(nVariables, 20, 40, nIterations, Rings.Z, false));
-//            db.addAll(run(nVariables, 20, 40, nIterations, Rings.Z, true));
-//            db.addAll(run(nVariables, 20, 40, nIterations, Rings.Zp(2), false));
-//            db.addAll(run(nVariables, 20, 40, nIterations, Rings.Zp(2), true));
-//        }
-//
-//        DescriptiveStatistics ds = new DescriptiveStatistics();
-//        for (double v : db.toArray()) {
-//            ds.addValue(v);
-//        }
-//        System.out.println(ds);
-//    }
-//
-//    static double[] run(
-//            int nVariables,
-//            int degree,
-//            int size,
-//            int nIterations,
-//            Ring<BigInteger> cfRing,
-//            boolean coprime) throws Exception {
-//        TDoubleHashSet db = new TDoubleHashSet();
-//        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(nVariables, cfRing);
-//        for (int i = 0; i < nIterations; i++) {
-//            MultivariatePolynomial<BigInteger>
-//                    a = ring.randomElement(degree, size),
-//                    b = ring.randomElement(degree, size),
-//                    gcd = ring.randomElement(degree, size);
-//            a = a.multiply(gcd);
-//            b = b.multiply(gcd);
-//            db.add(a.sparsity2());
-//            db.add(b.sparsity2());
-//        }
-//        return db.toArray();
-//    }
-
-
-    static BigInteger formula(int integer, int nPartitions) {
-        return BigIntegerUtil.binomial(integer + nPartitions - 1, integer);
-    }
-
     public static void main(String[] args) throws Exception {
 
-        for (Ring<BigInteger> ring : new Ring[]{Rings.Z, Rings.Zp(1031)}) {
-            MultivariatePolynomial<BigInteger>
-                    a = MultivariatePolynomial.parse("1 + 3*a + 5*b + 7*c + 9*d + 11*e + 13*f + 15*g", ring),
-                    b = MultivariatePolynomial.parse("1 - 3*a + 5*b - 7*c + 9*d - 11*e + 13*f - 15*g", ring),
-                    g = MultivariatePolynomial.parse("1 + 3*a - 5*b + 7*c - 9*d + 11*e - 13*f + 15*g", ring);
-            int exp = 5;
-            a = PolynomialMethods.polyPow(a, exp);
-            a.decrement();
-            b = PolynomialMethods.polyPow(b, exp);
-            g = PolynomialMethods.polyPow(g, exp);
-            g.increment();
+        for (Ring<BigInteger> ring : new Ring[]{Rings.Z, Rings.Zp((1 << 19) - 1)}) {
+            System.out.println("Ring: " + ring);
 
-            MultivariatePolynomial<BigInteger> ag = a.clone().multiply(g);
-            MultivariatePolynomial<BigInteger> bg = b.clone().multiply(g);
+            for (int exp = 4; exp < 7; exp++) {
+                System.out.println("\n\n\n\n");
+                System.out.println("<><><><><><><><><><><><><><><><><><><><><><><><><><><>");
+                System.out.println("exp: " + exp);
 
+                MultivariatePolynomial<BigInteger>
+                        a = MultivariatePolynomial.parse("1 + 3*a + 5*b + 7*c + 9*d + 11*e + 13*f + 15*g", ring),
+                        b = MultivariatePolynomial.parse("1 - 3*a + 5*b - 7*c + 9*d - 11*e + 13*f - 15*g", ring),
+                        g = MultivariatePolynomial.parse("1 + 3*a - 5*b + 7*c - 9*d + 11*e - 13*f + 15*g", ring);
 
-            info(a, "a");
-            info(b, "b");
-            info(g, "g");
+                a = PolynomialMethods.polyPow(a, exp);
+                a.decrement();
+                b = PolynomialMethods.polyPow(b, exp);
+                g = PolynomialMethods.polyPow(g, exp);
+                g.increment();
 
-            info(ag, "ag");
-            info(bg, "bg");
+                MultivariatePolynomial<BigInteger> ag = a.clone().multiply(g);
+                MultivariatePolynomial<BigInteger> bg = b.clone().multiply(g);
 
-            for (int i = 0; i < 5; ++i) {
-                long start = System.nanoTime();
-                int size = MultivariateGCD.PolynomialGCD(ag, bg).size();
-                long ringsTime = System.nanoTime() - start;
-                if (i == 0)
-                    System.out.println("#factors = " + size);
+//                info(a, "a");
+//                info(b, "b");
+//                info(g, "g");
+//
+//                info(ag, "ag");
+//                info(bg, "bg");
 
-                System.out.println(TimeUnits.nanosecondsToString(ringsTime));
+                System.out.println("\n=================\n");
+                for (int i = 0; i < 5; ++i) {
+                    long start = System.nanoTime();
+                    int size = MultivariateGCD.PolynomialGCD(ag, bg).size();
+                    long ringsTime = System.nanoTime() - start;
 
-                // MMA and Singular should be called directly
-                //
-                // long singularTime = Bench.singularFactor(poly).nanoTime;
-                // System.out.println(singularTime);
-                //
-                // long mmaTime = Bench.singularFactor(poly).nanoTime;
-                // System.out.println(mmaTime);
-                //
-                // System.out.println(i + "\t" + TimeUnits.nanosecondsToString(ringsTime) + "\t" + TimeUnits.nanosecondsToString(singularTime) + "\t" + TimeUnits.nanosecondsToString(mmaTime));
+                    System.out.println("Rings: " + TimeUnits.nanosecondsToString(ringsTime));
+
+                    long singularTime = Bench.singularGCD(ag, bg).nanoTime;
+                    System.out.println("Singular: " + TimeUnits.nanosecondsToString(singularTime));
+
+                    long mmaTime = Bench.mathematicaGCD(ag, bg).nanoTime;
+                    System.out.println("MMA: " + TimeUnits.nanosecondsToString(mmaTime));
+
+                    System.out.println();
+                }
             }
         }
     }
