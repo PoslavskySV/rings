@@ -795,4 +795,102 @@ class Examples {
     println(xan)
     println(xna)
   }
+
+  @Test
+  def test30: Unit = {
+    import syntax._
+
+    /**
+      * Some generic function
+      *
+      * @tparam Poly type of polynomial
+      * @tparam Coef type of polynomial coefficients
+      */
+    def genericFunc[Poly <: IPolynomial[Poly], Coef]
+    (poly: Poly)(implicit ring: PolynomialRing[Poly, Coef]): Poly = {
+      // implicit coefficient ring (setups algebraic operators on type Coef)
+      implicit val cfRing: Ring[Coef] = ring.cfRing
+
+      // c.c. and l.c. are of type Coef
+      val (cc: Coef, lc: Coef) = (poly.cc, poly.lc)
+      // do some calculations
+      val l: Coef = (cc + lc).pow(10)
+      // return the result
+      if (ring.characteristic === 2)
+        poly - l
+      else
+        l + l * poly
+    }
+
+    implicit val uRing = UnivariateRing(Z, "x")
+    // Coef will be inferred as IntZ and Poly as UnivariatePolynomial[IntZ]
+    val ur: UnivariatePolynomial[IntZ] = genericFunc(uRing("x^2 + 2"))
+
+    implicit val mRing = MultivariateRingZp64(17, Array("x", "y", "z"))
+    // Coef will be inferred as Long and Poly as MultivariatePolynomialZp64
+    val mr: MultivariatePolynomialZp64 = genericFunc(mRing("x^2 + 2 + y + z"))
+  }
+
+
+  @Test
+  def test31: Unit = {
+    import syntax._
+
+    /** Lagrange polynomial interpolation formula */
+    def lagrange[Poly <: IUnivariatePolynomial[Poly], Coef]
+    (points: Seq[Coef], values: Seq[Coef])
+    (implicit ring: IUnivariateRing[Poly, Coef]) = {
+      // implicit coefficient ring (setups algebraic operators on type Coef)
+      implicit val cfRing: Ring[Coef] = ring.cfRing
+      if (!cfRing.isField) throw new IllegalArgumentException
+      points.indices
+        .foldLeft(ring(0)) { case (sum, i) =>
+          sum + points.indices
+            .filter(_ != i)
+            .foldLeft(ring(values(i))) { case (product, j) =>
+              product * (ring.`x` - points(j)) / (points(i) - points(j))
+            }
+        }
+    }
+
+    def interpolate[Poly <: IUnivariatePolynomial[Poly], Coef]
+    (points: Seq[(Coef, Coef)])
+    (implicit ring: IUnivariateRing[Poly, Coef]) = {
+      // implicit coefficient ring (setups algebraic operators on type Coef)
+      implicit val cfRing: Ring[Coef] = ring.cfRing
+      if (!cfRing.isField) throw new IllegalArgumentException
+      points.indices
+        .foldLeft(ring(0)) { case (sum, i) =>
+          sum + points.indices
+            .filter(_ != i)
+            .foldLeft(ring(points(i)._2)) { case (product, j) =>
+              product * (ring.`x` - points(j)._1) / (points(i)._1 - points(j)._1)
+            }
+        }
+    }
+
+    // coefficient ring Frac(Z/13[a,b,c])
+    val cfRing = Frac(MultivariateRingZp64(2, Array("a", "b", "c")))
+    val (a, b, c) = cfRing("a", "b", "c")
+
+    implicit val ring = UnivariateRing(cfRing, "x")
+    // interpolate with Lagrange formula
+    val data = Seq(a -> b, b -> c, c -> a)
+    val poly = interpolate(data)
+    assert(data.forall { case (p, v) => poly.eval(p) == v })
+
+    println(poly)
+
+
+    //UnivariatePolynomial[Rational[MultivariatePolynomialZp64]]
+
+    //    // Q[x]
+    //    implicit val ringA = UnivariateRing(Q, "x")
+    //    // Coef will be inferred as IntZ and Poly as UnivariatePolynomial[IntZ]
+    //    val ur: UnivariatePolynomial[Rational[IntZ]]
+    //    = lagrange(
+    //      Array(1, 2, 3).map(Q(_)),
+    //      Array(5, 4, 3).map(Q(_))
+    //    )
+  }
 }
