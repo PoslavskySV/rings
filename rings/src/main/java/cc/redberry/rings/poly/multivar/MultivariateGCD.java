@@ -1451,16 +1451,6 @@ public final class MultivariateGCD {
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
-        a = gcdInput.aReduced;
-        b = gcdInput.bReduced;
-
-        MultivariatePolynomial<E> pContentGCD = contentGCD(a, b, 0, (u, v) -> KaltofenMonaganModularGCDInGF(u, v, algorithm));
-        if (!pContentGCD.isConstant()) {
-            a = MultivariateDivision.divideExact(a, pContentGCD);
-            b = MultivariateDivision.divideExact(b, pContentGCD);
-            return gcdInput.restoreGCD(KaltofenMonaganModularGCDInGF(a, b, algorithm).multiply(pContentGCD));
-        }
-
         return KaltofenMonaganModularGCDInGF(gcdInput, algorithm);
     }
 
@@ -1476,6 +1466,14 @@ public final class MultivariateGCD {
             KaltofenMonaganAlgorithm algorithm) {
         MultivariatePolynomial<E> a = gcdInput.aReduced;
         MultivariatePolynomial<E> b = gcdInput.bReduced;
+
+        MultivariatePolynomial<E> pContentGCD = contentGCD(a, b, 0, (u, v) -> KaltofenMonaganModularGCDInGF(u, v, algorithm));
+        if (!pContentGCD.isConstant()) {
+            a = MultivariateDivision.divideExact(a, pContentGCD);
+            b = MultivariateDivision.divideExact(b, pContentGCD);
+            return gcdInput.restoreGCD(KaltofenMonaganModularGCDInGF(a, b, algorithm).multiply(pContentGCD));
+        }
+
         for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable)
             if (a.ring instanceof IntegersZp && a.coefficientRingCardinality().isLong()) {
                 // use machine integers
@@ -1608,16 +1606,6 @@ public final class MultivariateGCD {
         if (gcdInput.earlyGCD != null)
             return gcdInput.earlyGCD;
 
-        a = gcdInput.aReduced;
-        b = gcdInput.bReduced;
-
-        MultivariatePolynomialZp64 pContentGCD = contentGCD(a, b, 0, (u, v) -> KaltofenMonaganModularGCDInGF(u, v, algorithm));
-        if (!pContentGCD.isConstant()) {
-            a = MultivariateDivision.divideExact(a, pContentGCD);
-            b = MultivariateDivision.divideExact(b, pContentGCD);
-            return gcdInput.restoreGCD(KaltofenMonaganModularGCDInGF(a, b, algorithm).multiply(pContentGCD));
-        }
-
         return lKaltofenMonaganModularGCDInGF(gcdInput, algorithm);
     }
 
@@ -1632,6 +1620,13 @@ public final class MultivariateGCD {
             KaltofenMonaganAlgorithm<UnivariatePolynomialZp64> algorithm) {
         MultivariatePolynomialZp64 a = gcdInput.aReduced;
         MultivariatePolynomialZp64 b = gcdInput.bReduced;
+        MultivariatePolynomialZp64 pContentGCD = contentGCD(a, b, 0, (u, v) -> KaltofenMonaganModularGCDInGF(u, v, algorithm));
+
+        if (!pContentGCD.isConstant()) {
+            a = MultivariateDivision.divideExact(a, pContentGCD);
+            b = MultivariateDivision.divideExact(b, pContentGCD);
+            return gcdInput.restoreGCD(KaltofenMonaganModularGCDInGF(a, b, algorithm).multiply(pContentGCD));
+        }
 
         for (int uVariable = a.nVariables - 1; uVariable >= 0; --uVariable) {
             MultivariatePolynomial<UnivariatePolynomialZp64>
