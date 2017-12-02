@@ -557,7 +557,7 @@ class Examples {
     val zPoly2 = b.setRing[IntZ](Z) * zGCD
 
     // Modular GCD in Z with sparse interpolation
-    val mod = KaltofenMonaganSparseModularGCDInGF(zPoly1, zPoly2)
+    val mod = ZippelGCDInZ(zPoly1, zPoly2)
     assert(mod == zGCD)
   }
 
