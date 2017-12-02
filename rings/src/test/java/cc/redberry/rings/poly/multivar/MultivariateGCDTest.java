@@ -2,10 +2,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.IPolynomial;
-import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
@@ -2141,6 +2138,26 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD),
                 GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD)
         );
+    }
+
+    @Ignore("issue #20")
+    @Test
+    public void testSmallDomain6() throws Exception {
+        IntegersZp64 ring = Rings.Zp64(3);
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("1 + a + 5*b + 7*c + d + 11*e + 13*f + g", ring),
+                b = MultivariatePolynomialZp64.parse("1 - a + 5*b - 7*c + d - 11*e + 13*f - g", ring),
+                g = MultivariatePolynomialZp64.parse("1 + a - 5*b + 7*c - d + 11*e - 13*f + g", ring);
+
+        int exp = 7;
+        a = PolynomialMethods.polyPow(a, exp);
+        b = PolynomialMethods.polyPow(b, exp);
+        g = PolynomialMethods.polyPow(g, exp);
+
+        MultivariatePolynomialZp64 ag = a.clone().multiply(g);
+        MultivariatePolynomialZp64 bg = b.clone().multiply(g);
+
+        System.out.println(PolynomialGCD(ag, bg));
     }
 
     /* =============================================== Test data =============================================== */
