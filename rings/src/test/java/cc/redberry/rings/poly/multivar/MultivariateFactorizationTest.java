@@ -2134,6 +2134,14 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         Assert.assertEquals(6, PolynomialMethods.Factor(poly).size());
     }
 
+    @Test
+    public void testMultivariateFactorization47() throws Exception {
+        MultivariatePolynomialZp64 poly = PolynomialMethods.polyPow(
+                MultivariatePolynomialZp64.parse("x^2*y - z^2*x^3 - y^2*z - 1", Rings.Zp64(2)), 20).decrement();
+
+        FactorDecompositionTest.assertFactorization(poly, Factor(poly));
+    }
+
     /* ==================================== Test data =============================================== */
 
     static double DETALIZATION_PERCENT = 100;

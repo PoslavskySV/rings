@@ -548,7 +548,7 @@ class Examples {
     val z2Poly2 = b.setRing(z2) * z2GCD
 
     // Kaltofen’s & Monagan’s generic modular GCD
-    val modGF = ModularGCDInGF(z2Poly1, z2Poly2)
+    val modGF = KaltofenMonaganSparseModularGCDInGF(z2Poly1, z2Poly2)
     assert(modGF == z2GCD)
 
     // Z
@@ -557,7 +557,7 @@ class Examples {
     val zPoly2 = b.setRing[IntZ](Z) * zGCD
 
     // Modular GCD in Z with sparse interpolation
-    val mod = ModularGCD(zPoly1, zPoly2)
+    val mod = KaltofenMonaganSparseModularGCDInGF(zPoly1, zPoly2)
     assert(mod == zGCD)
   }
 
@@ -892,5 +892,13 @@ class Examples {
     //      Array(1, 2, 3).map(Q(_)),
     //      Array(5, 4, 3).map(Q(_))
     //    )
+  }
+
+  @Test
+  def test32 : Unit = {
+    import syntax._
+    implicit val ring = MultivariateRing(Zp(2), Array("x", "y", "z"))
+    val poly = ring("x^2*y - z^2*x^3 - y^2*z - 1").pow(20) - 1
+    println(PolynomialMethods.Factor(poly))
   }
 }
