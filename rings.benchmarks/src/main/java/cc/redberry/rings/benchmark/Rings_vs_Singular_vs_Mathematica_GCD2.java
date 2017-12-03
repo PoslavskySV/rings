@@ -18,26 +18,24 @@ import java.util.Arrays;
 public class Rings_vs_Singular_vs_Mathematica_GCD2 {
     public static void main(String[] args) throws Exception {
 
-        for (Ring<BigInteger> ring : new Ring[]{Rings.Z, Rings.Zp((1 << 19) - 1)}) {
+        for (Ring<BigInteger> ring : new Ring[]{Rings.Zp((1 << 19) - 1), Rings.Z}) {
             System.out.println("Ring: " + ring);
 
-            for (int exp = 4; exp < 7; exp++) {
+            for (int exp = 7; exp < 8; exp++) {
                 System.out.println("\n\n\n\n");
                 System.out.println("<><><><><><><><><><><><><><><><><><><><><><><><><><><>");
                 System.out.println("exp: " + exp);
 
                 MultivariatePolynomial<BigInteger>
                         a = MultivariatePolynomial.parse("1 + 3*a + 5*b + 7*c + 9*d + 11*e + 13*f + 15*g", ring),
-                        b = MultivariatePolynomial.parse("1 - 3*a + 5*b - 7*c + 9*d - 11*e + 13*f - 15*g", ring),
-                        g = MultivariatePolynomial.parse("1 + 3*a - 5*b + 7*c - 9*d + 11*e - 13*f + 15*g", ring);
+                        b = MultivariatePolynomial.parse("1 - 3*a - 5*b - 7*c + 9*d - 11*e - 13*f + 15*g", ring),
+                        g = MultivariatePolynomial.parse("1 + 3*a + 5*b + 7*c + 9*d + 11*e + 13*f - 15*g", ring);
 
-                a = PolynomialMethods.polyPow(a, exp);
-                a.decrement();
-                b = PolynomialMethods.polyPow(b, exp);
-                g = PolynomialMethods.polyPow(g, exp);
-                g.increment();
+                a = PolynomialMethods.polyPow(a, exp).decrement();
+                b = PolynomialMethods.polyPow(b, exp).increment();
+                g = PolynomialMethods.polyPow(g, exp).add(ring.valueOf(3));
 
-                MultivariatePolynomial<BigInteger> ag = a.clone().multiply(g);
+                MultivariatePolynomial<BigInteger> ag = a.clone().multiply(g).increment();
                 MultivariatePolynomial<BigInteger> bg = b.clone().multiply(g);
 
 //                info(a, "a");
@@ -48,9 +46,10 @@ public class Rings_vs_Singular_vs_Mathematica_GCD2 {
 //                info(bg, "bg");
 
                 System.out.println("\n=================\n");
-                for (int i = 0; i < 5; ++i) {
+                for (int i = 0; i < 3; ++i) {
                     long start = System.nanoTime();
                     int size = MultivariateGCD.PolynomialGCD(ag, bg).size();
+                    System.out.println(size);
                     long ringsTime = System.nanoTime() - start;
 
                     System.out.println("Rings: " + TimeUnits.nanosecondsToString(ringsTime));

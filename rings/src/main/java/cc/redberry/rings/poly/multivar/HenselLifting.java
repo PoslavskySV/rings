@@ -587,7 +587,7 @@ public final class HenselLifting {
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     UnivariatePolynomial<uPoly>[] bivariateLiftDense(
             UnivariatePolynomial<uPoly> baseSeries, uPoly[] factors, int degreeBound) {
-        AllProductsCache<uPoly> uFactors = new AllProductsCache(factors);
+        AllProductsCache<uPoly> uFactors = new AllProductsCache<>(factors);
         // univariate multifactor diophantine solver
         UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
 
