@@ -71,7 +71,7 @@ public final class UnivariateSquareFreeFactorization {
             throw new IllegalArgumentException("Characteristics 0 expected");
 
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(poly);
+            return FactorDecomposition.of(poly);
 
         // x^2 + x^3 -> x^2 (1 + x)
         int exponent = 0;
@@ -94,7 +94,7 @@ public final class UnivariateSquareFreeFactorization {
     @SuppressWarnings("ConstantConditions")
     static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationYun0(Poly poly) {
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(poly);
+            return FactorDecomposition.of(poly);
 
         Poly content = poly.contentAsPoly();
         if (poly.signumOfLC() < 0)
@@ -102,9 +102,9 @@ public final class UnivariateSquareFreeFactorization {
 
         poly = poly.clone().divideByLC(content);
         if (poly.degree() <= 1)
-            return FactorDecomposition.singleFactor(content, poly);
+            return FactorDecomposition.of(content, poly);
 
-        FactorDecomposition<Poly> factorization = FactorDecomposition.constantFactor(content);
+        FactorDecomposition<Poly> factorization = FactorDecomposition.of(content);
         SquareFreeFactorizationYun0(poly, factorization);
         return factorization;
     }
@@ -145,7 +145,7 @@ public final class UnivariateSquareFreeFactorization {
             throw new IllegalArgumentException("Characteristics 0 expected");
 
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(poly);
+            return FactorDecomposition.of(poly);
 
         Poly content = poly.contentAsPoly();
         if (poly.signumOfLC() < 0)
@@ -153,9 +153,9 @@ public final class UnivariateSquareFreeFactorization {
 
         poly = poly.clone().divideByLC(content);
         if (poly.degree() <= 1)
-            return FactorDecomposition.singleFactor(content, poly);
+            return FactorDecomposition.of(content, poly);
 
-        FactorDecomposition<Poly> factorization = FactorDecomposition.constantFactor(content);
+        FactorDecomposition<Poly> factorization = FactorDecomposition.of(content);
         SquareFreeFactorizationMusserZeroCharacteristics0(poly, factorization);
         return factorization;
     }
@@ -200,10 +200,10 @@ public final class UnivariateSquareFreeFactorization {
         poly = poly.monic();
 
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(lc);
+            return FactorDecomposition.of(lc);
 
         if (poly.degree() <= 1)
-            return FactorDecomposition.singleFactor(lc, poly);
+            return FactorDecomposition.of(lc, poly);
 
         FactorDecomposition<Poly> factorization;
         // x^2 + x^3 -> x^2 (1 + x)
@@ -217,7 +217,7 @@ public final class UnivariateSquareFreeFactorization {
             factorization.addFactor(poly.createMonomial(1), exponent);
         }
 
-        return factorization.setConstantFactor(lc);
+        return factorization.setUnit(lc);
     }
 
     /** {@code poly} will be destroyed */
@@ -225,19 +225,19 @@ public final class UnivariateSquareFreeFactorization {
     private static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
         poly.monic();
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(poly);
+            return FactorDecomposition.of(poly);
 
         if (poly.degree() <= 1)
-            return FactorDecomposition.singleFactor(poly.createOne(), poly);
+            return FactorDecomposition.of(poly);
 
         Poly derivative = poly.derivative();
         if (!derivative.isZero()) {
             Poly gcd = UnivariateGCD.PolynomialGCD(poly, derivative);
             if (gcd.isConstant())
-                return FactorDecomposition.singleFactor(poly.createOne(), poly);
+                return FactorDecomposition.of(poly);
             Poly quot = UnivariateDivision.divideAndRemainder(poly, gcd, false)[0]; // can safely destroy poly (not used further)
 
-            FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(poly.createOne());
+            FactorDecomposition<Poly> result = FactorDecomposition.of(poly.createOne());
             int i = 0;
             //if (!quot.isConstant())
             while (true) {
@@ -264,7 +264,7 @@ public final class UnivariateSquareFreeFactorization {
             Poly pRoot = pRoot(poly);
             FactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
             fd.raiseExponents(poly.coefficientRingCharacteristic().intValueExact());
-            return fd.setConstantFactor(poly.createOne());
+            return fd.setUnit(poly.createOne());
         }
     }
 

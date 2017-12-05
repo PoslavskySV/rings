@@ -142,7 +142,7 @@ class SyntaxTest {
 
   @Test
   def testPolynomialRingOps2: Unit = {
-    def genericAssertions[Poly <: IPolynomial[Poly], E](implicit ring: PolynomialRing[Poly, E]) = {
+    def genericAssertions[Poly <: IPolynomial[Poly], E](implicit ring: IPolynomialRing[Poly, E]) = {
       import syntax._
 
       val x = ring("x")
@@ -263,7 +263,7 @@ class SyntaxTest {
 
   @Test
   def testPolynomialRingOps4: Unit = {
-    def genericAssertions[E <: IPolynomial[E]](implicit ring: PolynomialRing[UnivariatePolynomial[E], E]) = {
+    def genericAssertions[E <: IPolynomial[E]](implicit ring: IPolynomialRing[UnivariatePolynomial[E], E]) = {
       import syntax._
 
       val x: UnivariatePolynomial[E] = ring("x")
@@ -368,7 +368,7 @@ class SyntaxTest {
 
   @Test
   def testGenericFunction: Unit = {
-    def interpolate[Poly <: IPolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: PolynomialRing[Poly, E]) = {
+    def interpolate[Poly <: IPolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: IPolynomialRing[Poly, E]) = {
       import syntax._
       points.indices
         .foldLeft(ring getZero) { case (sum, i) =>
@@ -410,7 +410,7 @@ class SyntaxTest {
 
       assertEquals(
         interpolate(points.toSeq, values.toSeq),
-        UnivariateInterpolation.interpolateNewton(ring.coefficientDomain, points, values)
+        UnivariateInterpolation.interpolateNewton(ring.coefficientRing, points, values)
       )
     }
   }
@@ -523,7 +523,6 @@ class SyntaxTest {
       assertEquals(12, evaled.degree("z"))
 
 
-
       val mod1 = p mod ideal
       assertEquals(0, mod1.degree("x"))
       assertEquals(14, mod1.degree("y"))
@@ -611,11 +610,11 @@ class SyntaxTest {
 
     // calculate GCD
     val gcd = PolynomialGCD(poly1 * poly3, poly2 * poly4)
-    println(s"gcd : ${ring show gcd}")
+    println(s"gcd : ${ring show gcd }")
 
     // factor some complicated poly
     val factors = Factor(poly1 * poly2 ** 2 * poly3 ** 3 * poly4 ** 4)
-    println(s"factors : ${ring show factors}")
+    println(s"factors : ${ring show factors }")
   }
 
   @Test
@@ -634,10 +633,10 @@ class SyntaxTest {
     implicit val ring = gf2
 
     println(s"ring: $ring")
-    println(s"ring cardinality: ${ring.cardinality()}")
-    println(s"ring characteristic: ${ring.characteristic()}")
-    println(s"ring pp base: ${ring.perfectPowerBase()}")
-    println(s"ring pp exponent: ${ring.perfectPowerExponent()}")
+    println(s"ring cardinality: ${ring.cardinality() }")
+    println(s"ring characteristic: ${ring.characteristic() }")
+    println(s"ring pp base: ${ring.perfectPowerBase() }")
+    println(s"ring pp exponent: ${ring.perfectPowerExponent() }")
 
     val rndPoly = ring.randomElement(new Well1024a())
     println(ring show rndPoly)
@@ -719,5 +718,14 @@ class SyntaxTest {
     println(poly /%/% (p1, p2))
     println(poly /%/% (p1, p2, p2))
     println(poly /%/% (p1, p2, p2, p1))
+  }
+
+  @Test
+  def testParse1: Unit = {
+    import syntax._
+
+    implicit val gf = GF(17, 3, "t")
+    implicit val ring = MultivariateRing(gf, Array("x", "y", "z"))
+    val t = ring("t")
   }
 }

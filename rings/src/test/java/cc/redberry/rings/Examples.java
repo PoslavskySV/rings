@@ -3,7 +3,7 @@ package cc.redberry.rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.PolynomialRing;
+import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
@@ -280,7 +280,7 @@ public class Examples {
      */
     static <Monomial extends DegreeVector<Monomial>,
             Poly extends AMultivariatePolynomial<Monomial, Poly>>
-    Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) { return null; }
+    Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
     @Test
     public void test12() throws Exception {

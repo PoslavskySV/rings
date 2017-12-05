@@ -10,7 +10,7 @@ import java.util.Iterator;
 /**
  * @since 1.0
  */
-abstract class APolynomialRing<Poly extends IPolynomial<Poly>> extends ARing<Poly> implements PolynomialRing<Poly> {
+abstract class APolynomialRing<Poly extends IPolynomial<Poly>> extends ARing<Poly> implements IPolynomialRing<Poly> {
     private static final long serialVersionUID = 1L;
 
     /** the factory polynomial */

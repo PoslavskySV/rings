@@ -3,7 +3,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Ring;
-import cc.redberry.rings.poly.PolynomialRing;
+import cc.redberry.rings.poly.IPolynomialRing;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
@@ -116,7 +116,7 @@ public final class MultivariateInterpolation {
          * @param variable interpolating variable
          * @param factory  factory polynomial
          */
-        public Interpolation(int variable, PolynomialRing<MultivariatePolynomial<E>> factory) {
+        public Interpolation(int variable, IPolynomialRing<MultivariatePolynomial<E>> factory) {
             this(variable, factory.factory());
         }
 
@@ -257,7 +257,7 @@ public final class MultivariateInterpolation {
          * @param variable interpolating variable
          * @param factory  factory polynomial
          */
-        public InterpolationZp64(int variable, PolynomialRing<MultivariatePolynomialZp64> factory) {
+        public InterpolationZp64(int variable, IPolynomialRing<MultivariatePolynomialZp64> factory) {
             this(variable, factory.factory());
         }
 

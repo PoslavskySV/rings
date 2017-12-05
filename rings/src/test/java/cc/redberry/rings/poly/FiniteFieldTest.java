@@ -45,7 +45,7 @@ public class FiniteFieldTest {
         FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.FactorInGF(poly);
         System.out.println(factors);
         System.out.println(poly);
-        System.out.println(factors.toPolynomial());
+        System.out.println(factors.multiply());
     }
 
     @Test

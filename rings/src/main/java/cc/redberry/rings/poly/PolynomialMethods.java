@@ -224,6 +224,18 @@ public final class PolynomialMethods {
     }
 
     /**
+     * Returns whether specified polynomial is irreducible
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>>
+    boolean irreducibleQ(Poly poly) {
+        if (poly instanceof IUnivariatePolynomial)
+            return IrreduciblePolynomials.irreducibleQ((IUnivariatePolynomial) poly);
+        else
+            return MultivariateFactorization.Factor((AMultivariatePolynomial) poly).isTrivial();
+    }
+
+    /**
      * Returns {@code base} in a power of non-negative {@code exponent}.
      *
      * @param base     the base

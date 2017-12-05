@@ -142,7 +142,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     public Rational<E> valueOf(Rational<E> val) {
         if (val.ring.equals(ring))
             return val;
-        else return new Rational<E>(ring, ring.valueOf(val.numerator), ring.valueOf(val.denominator));
+        else return new Rational<>(ring, ring.valueOf(val.numerator), ring.valueOf(val.denominator));
     }
 
     @Override
@@ -179,6 +179,12 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         E eden;
         do {den = rnd.nextInt();} while (ring.isZero(eden = ring.valueOf(den)));
         return new Rational<>(ring, ring.valueOf(rnd.nextInt()), eden);
+    }
+
+    public Rational<E> randomNonTrivialElement(RandomGenerator rnd) {
+        E den;
+        do {den = ring.randomElement(rnd);} while (ring.isZero(den));
+        return new Rational<>(ring, ring.randomElement(rnd), den);
     }
 
     public Rational<E> parse(ElementParser<E> parser, String string) {

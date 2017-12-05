@@ -18,7 +18,7 @@ import java.util.Iterator;
  * @since 1.0
  */
 public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
-        extends ARing<Poly> implements PolynomialRing<Poly> {
+        extends ARing<Poly> implements IPolynomialRing<Poly> {
     private static final long serialVersionUID = 1L;
 
     /** GF(3^3) */
@@ -160,7 +160,12 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
 
     @Override
     public Poly gcd(Poly a, Poly b) {
-        return UnivariateGCD.PolynomialGCD(a, b);
+        return a;
+    }
+
+    @Override
+    public Factors<Poly> factor(Poly element) {
+        return Factors.unit(this, element);
     }
 
     @Override

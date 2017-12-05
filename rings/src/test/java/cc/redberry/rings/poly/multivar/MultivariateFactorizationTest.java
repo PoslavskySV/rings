@@ -381,12 +381,12 @@ public class MultivariateFactorizationTest extends APolynomialTest {
 
         MultivariateFactorization.GCDFreeBasis(decomps);
 
-        Assert.assertEquals(d1.toPolynomial(), decomps[0].toPolynomial());
-        Assert.assertEquals(d2.toPolynomial(), decomps[1].toPolynomial());
-        Assert.assertEquals(d3.toPolynomial(), decomps[2].toPolynomial());
+        Assert.assertEquals(d1.multiply(), decomps[0].multiply());
+        Assert.assertEquals(d2.multiply(), decomps[1].multiply());
+        Assert.assertEquals(d3.multiply(), decomps[2].multiply());
 
-        System.out.println(d1.toPolynomial().equals(decomps[0].toPolynomial()));
-        System.out.println(Arrays.toString(UnivariateDivision.divideAndRemainder(d1.toPolynomial(), decomps[0].toPolynomial(), true)));
+        System.out.println(d1.multiply().equals(decomps[0].multiply()));
+        System.out.println(Arrays.toString(UnivariateDivision.divideAndRemainder(d1.multiply(), decomps[0].multiply(), true)));
         for (FactorDecomposition<UnivariatePolynomialZp64> decomp : decomps)
             System.out.println(decomp.size() + " => " + decomp);
     }
@@ -400,7 +400,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
 
         FactorDecomposition<UnivariatePolynomial<BigInteger>>
                 d1 = FactorDecomposition.of(Arrays.asList(a)),
-                d2 = FactorDecomposition.of(b.contentAsPoly(), Arrays.asList(b.primitivePart())),
+                d2 = FactorDecomposition.of(Arrays.asList(b.primitivePart())).addFactor(b.contentAsPoly(), 1),
                 d3 = FactorDecomposition.of(Arrays.asList(c));
 
         @SuppressWarnings("unchecked")
@@ -438,10 +438,10 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         MultivariateFactorization.GCDFreeBasis(decomps);
         System.out.println(Arrays.asList(decomps));
 
-        Assert.assertEquals(d1.toPolynomial(), decomps[0].toPolynomial());
-        Assert.assertEquals(d2.toPolynomial(), decomps[1].toPolynomial());
-        Assert.assertEquals(d3.toPolynomial(), decomps[2].toPolynomial());
-        Assert.assertEquals(d4.toPolynomial(), decomps[3].toPolynomial());
+        Assert.assertEquals(d1.multiply(), decomps[0].multiply());
+        Assert.assertEquals(d2.multiply(), decomps[1].multiply());
+        Assert.assertEquals(d3.multiply(), decomps[2].multiply());
+        Assert.assertEquals(d4.multiply(), decomps[3].multiply());
     }
 
     @Test
@@ -767,6 +767,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
 
         FactorDecomposition<MultivariatePolynomialZp64> factors = MultivariateFactorization.factorPrimitiveInGF(base, false);
+        System.out.println(factors);
         Assert.assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(base, factors);
     }
@@ -1971,12 +1972,12 @@ public class MultivariateFactorizationTest extends APolynomialTest {
 
         FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.Factor(poly);
         Assert.assertEquals(6, factors.size());
-        Assert.assertEquals(poly, factors.toPolynomial());
+        Assert.assertEquals(poly, factors.multiply());
 
         poly = poly.setRing(new IntegersZp(Integer.MAX_VALUE));
         factors = MultivariateFactorization.Factor(poly);
         Assert.assertEquals(6, factors.size());
-        Assert.assertEquals(poly, factors.toPolynomial());
+        Assert.assertEquals(poly, factors.multiply());
     }
 
 
@@ -1996,7 +1997,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
             long start = System.nanoTime();
             FactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.Factor(poly);
             Assert.assertEquals(4, factors.size());
-            Assert.assertEquals(poly, factors.toPolynomial());
+            Assert.assertEquals(poly, factors.multiply());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }
@@ -2017,7 +2018,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
             long start = System.nanoTime();
             FactorDecomposition<MultivariatePolynomial<Rational<BigInteger>>> factors = MultivariateFactorization.Factor(poly);
             Assert.assertEquals(4, factors.size());
-            Assert.assertEquals(poly, factors.toPolynomial());
+            Assert.assertEquals(poly, factors.multiply());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }
@@ -2076,7 +2077,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
                 AMultivariatePolynomial poly = multiply(a, b);
                 FactorDecomposition<?> factors = Factor(poly);
                 Assert.assertTrue(factors.sumExponents() >= 2);
-                Assert.assertEquals(poly, factors.toPolynomial());
+                Assert.assertEquals(poly, factors.multiply());
             }
         }
     }
@@ -2114,7 +2115,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
                 FactorDecomposition<?> fs = Factor(poly);
 
                 Assert.assertTrue(4 <= fs.sumExponents());
-                Assert.assertEquals(poly, fs.toPolynomial());
+                Assert.assertEquals(poly, fs.multiply());
 
             }
         }

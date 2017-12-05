@@ -41,7 +41,7 @@ package object scaladsl extends Predef {
       with IntegerSyntax
 
   object syntax extends LowPrioritySyntax {
-    implicit def cfOps[E, Poly <: IPolynomial[Poly]](self: E)(implicit pRing: PolynomialRing[Poly, E])
+    implicit def cfOps[E, Poly <: IPolynomial[Poly]](self: E)(implicit pRing: IPolynomialRing[Poly, E])
     = new CfOps[E, Poly](self)(pRing)
 
     implicit def ringOps[E](lhs: E)(implicit ringSupport: RingSupport[E]): RingOps[E] = new RingOps[E](lhs)(ringSupport.ringEv(lhs))

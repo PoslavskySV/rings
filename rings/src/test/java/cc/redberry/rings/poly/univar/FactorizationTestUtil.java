@@ -16,7 +16,7 @@ final class FactorizationTestUtil {
         for (int i = 0; i < factorization.factors.size(); i++)
             assertEquals("Factor's degree is not divisible by d.d.f. exponent",
                     0, factorization.factors.get(i).degree() % factorization.exponents.get(i));
-        assertEquals(poly, factorization.toPolynomialIgnoringExponents());
+        assertEquals(poly, factorization.multiplyIgnoreExponents());
     }
 
 

@@ -37,7 +37,7 @@ public final class EqualDegreeFactorization {
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> CantorZassenhaus(Poly input, int d) {
         Util.ensureOverFiniteField(input);
-        FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(input.lcAsPoly());
+        FactorDecomposition<Poly> result = FactorDecomposition.unit(input.lcAsPoly());
         if (!input.coefficientRingCardinality().testBit(0))
             //even characteristic => GF2p
             CantorZassenhaus(input, d, result, input.coefficientRingPerfectPowerExponent().intValueExact());

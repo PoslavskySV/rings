@@ -98,7 +98,7 @@ public class MultivariateInterpolationTest extends AMultivariateTest {
             int var = rndd.nextInt(0, nVars - 1);
             int degree = base.degrees()[var];
 
-            MultivariateInterpolation.Interpolation<BigInteger> interpolation = null;
+            MultivariateInterpolation.Interpolation<BigInteger> interpolation = new MultivariateInterpolation.Interpolation<>(var, base);
             TIntHashSet seen = new TIntHashSet();
             for (int i = 0; i <= degree + 2; i++) {
                 int iPoint = rndd.nextInt(0, domain.modulus.intValue() - 1);
@@ -109,10 +109,7 @@ public class MultivariateInterpolationTest extends AMultivariateTest {
                 BigInteger point = BigInteger.valueOf(iPoint);
                 MultivariatePolynomial<BigInteger> evaluated = base.evaluate(var, point);
 
-                if (interpolation == null)
-                    interpolation = new MultivariateInterpolation.Interpolation<>(var, point, evaluated);
-                else
-                    interpolation.update(point, evaluated);
+                interpolation.update(point, evaluated);
             }
 
             BigInteger[] points = interpolation.getPoints().toArray(new BigInteger[0]);

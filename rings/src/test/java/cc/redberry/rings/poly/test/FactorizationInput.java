@@ -27,7 +27,7 @@ public final class FactorizationInput {
         }
 
         public void assertFactorization(FactorDecomposition<Poly> factorization) {
-            Assert.assertEquals(poly, factorization.toPolynomial());
+            Assert.assertEquals(poly, factorization.multiply());
             Assert.assertTrue(factors.length <= factorization.sumExponents());
         }
     }

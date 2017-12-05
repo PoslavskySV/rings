@@ -7,7 +7,7 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
-import cc.redberry.rings.bigint.ChineseRemainders;
+import cc.redberry.rings.ChineseRemainders;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.Util.Tuple2;

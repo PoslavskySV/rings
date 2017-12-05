@@ -66,7 +66,7 @@ public final class MultivariateSquareFreeFactorization {
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void addMonomial(FactorDecomposition<Poly> decomposition, Poly poly) {
         assert poly.isMonomial();
-        decomposition.addConstantFactor(poly.lcAsPoly());
+        decomposition.addUnit(poly.lcAsPoly());
         poly = poly.monic();
 
         Term term = poly.lt();
@@ -116,9 +116,7 @@ public final class MultivariateSquareFreeFactorization {
 
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
-        FactorDecomposition<Poly> decomposition
-                = FactorDecomposition
-                .constantFactor(content[0]);
+        FactorDecomposition<Poly> decomposition = FactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationYun0(poly, decomposition);
         return decomposition;
@@ -171,9 +169,7 @@ public final class MultivariateSquareFreeFactorization {
 
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
-        FactorDecomposition<Poly> decomposition
-                = FactorDecomposition
-                .constantFactor(content[0]);
+        FactorDecomposition<Poly> decomposition = FactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationMusserZeroCharacteristics0(poly, decomposition);
         return decomposition;
@@ -227,9 +223,7 @@ public final class MultivariateSquareFreeFactorization {
         Poly lc = poly.lcAsPoly();
         FactorDecomposition<Poly> fct = SquareFreeFactorizationMusser0(poly);
         addMonomial(fct, content[1]);
-        return fct
-                .addFactor(content[0], 1)
-                .addFactor(lc, 1);
+        return fct.addFactor(content[0], 1).addFactor(lc, 1);
     }
 
     /** {@code poly} will be destroyed */
@@ -238,19 +232,19 @@ public final class MultivariateSquareFreeFactorization {
     FactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
         poly.monic();
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(poly);
+            return FactorDecomposition.unit(poly);
 
         if (poly.degree() <= 1)
-            return FactorDecomposition.singleFactor(poly.createOne(), poly);
+            return FactorDecomposition.of(poly);
 
         Poly[] derivative = poly.derivative();
         if (!Arrays.stream(derivative).allMatch(IPolynomial::isZero)) {
             Poly gcd = MultivariateGCD.PolynomialGCD(poly, derivative);
             if (gcd.isConstant())
-                return FactorDecomposition.singleFactor(poly.createOne(), poly);
+                return FactorDecomposition.of(poly);
             Poly quot = divideExact(poly, gcd); // can safely destroy poly (not used further)
 
-            FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(poly.createOne());
+            FactorDecomposition<Poly> result = FactorDecomposition.unit(poly.createOne());
             int i = 0;
             //if (!quot.isConstant())
             while (true) {
@@ -277,7 +271,7 @@ public final class MultivariateSquareFreeFactorization {
             Poly pRoot = pRoot(poly);
             FactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
             fd.raiseExponents(poly.coefficientRingCharacteristic().intValueExact());
-            return fd.setConstantFactor(poly.createOne());
+            return fd.setUnit(poly.createOne());
         }
     }
 

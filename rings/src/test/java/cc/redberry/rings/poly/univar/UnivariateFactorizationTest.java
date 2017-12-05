@@ -83,8 +83,8 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                 if (n % 100 == 0) {
                     FactorDecomposition<UnivariatePolynomial<BigInteger>> bFactors = UnivariateFactorization.FactorInGF(poly.toBigPoly());
                     FactorDecomposition<UnivariatePolynomial<BigInteger>> converted = UnivariateFactorization.convertFactorizationToBigIntegers(lFactors);
-                    converted.canonicalForm();
-                    bFactors.canonicalForm();
+                    converted.canonical();
+                    bFactors.canonical();
                     Assert.assertEquals(converted, bFactors);
                 }
             } catch (Throwable e) {
@@ -434,6 +434,6 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
 
         FactorDecomposition<UnivariatePolynomial<Rational<BigInteger>>> fct = UnivariateFactorization.Factor(poly);
         Assert.assertEquals(3, fct.size());
-        Assert.assertEquals(poly, fct.toPolynomial());
+        Assert.assertEquals(poly, fct.multiply());
     }
 }
