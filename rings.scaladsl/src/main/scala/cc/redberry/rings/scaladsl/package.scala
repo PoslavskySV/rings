@@ -1,5 +1,7 @@
 package cc.redberry.rings
 
+import cc.redberry.rings.poly.PolynomialFactorDecomposition
+
 
 /**
   * @since 1.0
@@ -29,7 +31,7 @@ package object scaladsl extends Predef {
   type MultivariatePolynomial[E] = poly.multivar.MultivariatePolynomial[E]
   type MultivariatePolynomialZp64 = poly.multivar.MultivariatePolynomialZp64
 
-  type FactorDecomposition[P <: IPolynomial[P]] = poly.FactorDecomposition[P]
+  type PolynomialFactorDecomposition[P <: IPolynomial[P]] = poly.PolynomialFactorDecomposition[P]
 
   private[scaladsl] trait LowPrioritySyntax
     extends PolynomialSetSyntax
@@ -41,7 +43,7 @@ package object scaladsl extends Predef {
       with IntegerSyntax
 
   object syntax extends LowPrioritySyntax {
-    implicit def cfOps[E, Poly <: IPolynomial[Poly]](self: E)(implicit pRing: PolynomialRing[Poly, E])
+    implicit def cfOps[E, Poly <: IPolynomial[Poly]](self: E)(implicit pRing: IPolynomialRing[Poly, E])
     = new CfOps[E, Poly](self)(pRing)
 
     implicit def ringOps[E](lhs: E)(implicit ringSupport: RingSupport[E]): RingOps[E] = new RingOps[E](lhs)(ringSupport.ringEv(lhs))

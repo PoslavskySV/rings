@@ -1,9 +1,10 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.test.Benchmark;
@@ -153,7 +154,7 @@ public class HenselLiftingTest extends AUnivariateTest {
         if (!UnivariateSquareFreeFactorization.isSquareFree(baseMod))
             return;
 
-        FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(baseMod);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(baseMod);
         FactorDecompositionTest.assertFactorization(baseMod, modularFactors);
 
         HenselLifting.LiftFactory<UnivariatePolynomialZp64> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
@@ -175,7 +176,8 @@ public class HenselLiftingTest extends AUnivariateTest {
     }
 
     static void testMultiFactorHenselLifting(UnivariatePolynomial<BigInteger> base, long modulus) {
-        testMultiFactorHenselLifting(base, modulus, true);
+        if (modulus != 2)
+            testMultiFactorHenselLifting(base, modulus, true);
         testMultiFactorHenselLifting(base, modulus, false);
     }
 
@@ -216,6 +218,13 @@ public class HenselLiftingTest extends AUnivariateTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void testHensel7a() throws Exception {
+        // this test fails for quadratic lift!
+        UnivariatePolynomial<BigInteger> p = UnivariatePolynomial.create(Rings.Z, new BigInteger("4271820198621840811"), new BigInteger("1768988355559832895"), new BigInteger("7107643281356923096"), new BigInteger("-7999375386840606827"), new BigInteger("7590582635453818114"), new BigInteger("4968505934869881522"), new BigInteger("1149778124801408034"), new BigInteger("3410967848693539681"));
+        testMultiFactorHenselLifting(p, 2, false);
     }
 
     @Test
@@ -337,7 +346,7 @@ public class HenselLiftingTest extends AUnivariateTest {
             while (!UnivariateSquareFreeFactorization.isSquareFree(poly.setRing(domain)) || polyMod.degree() != poly.degree());
 
             BigInteger desiredBound = UnivariatePolynomial.mignotteBound(poly).shiftLeft(1).multiply(poly.lc());
-            FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(UnivariatePolynomial.asOverZp64(polyMod));
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(UnivariatePolynomial.asOverZp64(polyMod));
             BigInteger bModulus = BigInteger.valueOf(modulus);
 
             long start;

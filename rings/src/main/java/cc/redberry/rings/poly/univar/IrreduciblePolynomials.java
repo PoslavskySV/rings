@@ -100,19 +100,19 @@ public final class IrreduciblePolynomials {
     }
 
     /**
-     * Generated random irreducible polynomial over finite field of degree {@code degree}
+     * Generated random irreducible polynomial over specified ring of degree {@code degree}
      *
-     * @param ring   finite field ring
+     * @param ring   coefficient ring
      * @param degree the degree
      * @param rnd    random source
      * @return irreducible polynomial
      */
     public static <E> UnivariatePolynomial<E> randomIrreduciblePolynomial(Ring<E> ring, int degree, RandomGenerator rnd) {
-        if (!ring.isFiniteField())
-            throw new IllegalArgumentException("Not a finite ring.");
         UnivariatePolynomial<E> poly;
         do {
-            poly = RandomUnivariatePolynomials.randomMonicPoly(degree, ring, rnd);
+            poly = RandomUnivariatePolynomials.randomPoly(degree, ring, rnd);
+            if (ring.isField())
+                poly.monic();
         } while (!irreducibleQ(poly));
         assert poly.degree == degree;
         return poly;
@@ -132,16 +132,14 @@ public final class IrreduciblePolynomials {
     }
 
     /**
-     * Generated random irreducible Zp polynomial of degree {@code degree}
+     * Generated random irreducible polynomial of degree {@code degree}
      *
-     * @param factory tyep marker
+     * @param factory type marker
      * @param degree  the degree
      * @param rnd     random source
      * @return irreducible polynomial
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> Poly randomIrreduciblePolynomial(Poly factory, int degree, RandomGenerator rnd) {
-        if (!factory.isOverFiniteField())
-            throw new IllegalArgumentException("Not a finite ring.");
         Poly poly;
         do {
             poly = RandomUnivariatePolynomials.randomPoly(factory, degree, rnd);

@@ -436,6 +436,15 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
         return r;
     }
 
+    /** overcome Java generics... */
+    default Poly[] createArray(Poly a, Poly b, Poly c) {
+        Poly[] r = createArray(3);
+        r[0] = a;
+        r[1] = b;
+        r[2] = c;
+        return r;
+    }
+
     /**
      * Parse string representation of polynomial
      *

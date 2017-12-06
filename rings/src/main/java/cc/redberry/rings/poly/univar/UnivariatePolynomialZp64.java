@@ -65,7 +65,7 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
      * Creates poly with specified coefficients represented as signed integers reducing them modulo {@code modulus}
      *
      * @param ring the ring
-     * @param data    coefficients
+     * @param data coefficients
      * @return the polynomial
      */
     public static UnivariatePolynomialZp64 create(IntegersZp64 ring, long[] data) {
@@ -173,6 +173,11 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
         return new UnivariatePolynomialZp64(ring, new long[]{1L}, 0);
     }
 
+    @Override
+    public UnivariatePolynomialZp64 setCoefficientRingFrom(UnivariatePolynomialZp64 univariatePolynomialZp64) {
+        return setModulus(univariatePolynomialZp64.ring);
+    }
+
     /** Returns the modulus */
     public long modulus() {return ring.modulus;}
 
@@ -190,6 +195,18 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     public UnivariatePolynomialZp64 setModulus(long newModulus) {
         long[] newData = data.clone();
         IntegersZp64 newDomain = new IntegersZp64(newModulus);
+        newDomain.modulus(newData);
+        return new UnivariatePolynomialZp64(newDomain, newData);
+    }
+
+    /**
+     * Creates new Zp[x] polynomial by coping the coefficients of this and reducing them modulo new modulus.
+     *
+     * @param newDomain the new domain
+     * @return the copy of this reduced modulo new modulus
+     */
+    public UnivariatePolynomialZp64 setModulus(IntegersZp64 newDomain) {
+        long[] newData = data.clone();
         newDomain.modulus(newData);
         return new UnivariatePolynomialZp64(newDomain, newData);
     }

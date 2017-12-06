@@ -1,6 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -12,11 +12,11 @@ import static org.junit.Assert.assertEquals;
 final class FactorizationTestUtil {
     public FactorizationTestUtil() {}
 
-    public static <T extends IUnivariatePolynomial<T>> void assertDistinctDegreeFactorization(T poly, FactorDecomposition<T> factorization) {
+    public static <T extends IUnivariatePolynomial<T>> void assertDistinctDegreeFactorization(T poly, PolynomialFactorDecomposition<T> factorization) {
         for (int i = 0; i < factorization.factors.size(); i++)
             assertEquals("Factor's degree is not divisible by d.d.f. exponent",
                     0, factorization.factors.get(i).degree() % factorization.exponents.get(i));
-        assertEquals(poly, factorization.toPolynomialIgnoringExponents());
+        assertEquals(poly, factorization.multiplyIgnoreExponents());
     }
 
 

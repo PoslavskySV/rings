@@ -1,7 +1,7 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.Util;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -35,9 +35,9 @@ public final class EqualDegreeFactorization {
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> CantorZassenhaus(Poly input, int d) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> CantorZassenhaus(Poly input, int d) {
         Util.ensureOverFiniteField(input);
-        FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(input.lcAsPoly());
+        PolynomialFactorDecomposition<Poly> result = PolynomialFactorDecomposition.unit(input.lcAsPoly());
         if (!input.coefficientRingCardinality().testBit(0))
             //even characteristic => GF2p
             CantorZassenhaus(input, d, result, input.coefficientRingPerfectPowerExponent().intValueExact());
@@ -53,7 +53,7 @@ public final class EqualDegreeFactorization {
      * @param d     distinct degree
      * @return irreducible factor of {@code poly}
      */
-    private static <T extends IUnivariatePolynomial<T>> void CantorZassenhaus(T input, int d, FactorDecomposition<T> result, int pPower) {
+    private static <T extends IUnivariatePolynomial<T>> void CantorZassenhaus(T input, int d, PolynomialFactorDecomposition<T> result, int pPower) {
         assert input.degree() % d == 0;
         int nFactors = input.degree() / d;
         if (input.degree() == 1 || nFactors == 1) {

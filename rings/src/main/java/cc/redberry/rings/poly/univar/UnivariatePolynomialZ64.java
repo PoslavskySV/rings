@@ -95,6 +95,11 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
         return new UnivariatePolynomialZ64(new long[]{value}, 0);
     }
 
+    @Override
+    public UnivariatePolynomialZ64 setCoefficientRingFrom(UnivariatePolynomialZ64 univariatePolynomialZ64) {
+        return univariatePolynomialZ64.clone();
+    }
+
     /**
      * Reduces this polynomial modulo {@code modulus} and returns the result.
      *

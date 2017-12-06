@@ -42,10 +42,10 @@ public class FiniteFieldTest {
                 poly = poly1.clone().multiply(poly2).multiply(poly1.clone().add(poly2));
 
 //        System.out.println(poly1.monic());
-        FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.FactorInGF(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.FactorInGF(poly);
         System.out.println(factors);
         System.out.println(poly);
-        System.out.println(factors.toPolynomial());
+        System.out.println(factors.multiply());
     }
 
     @Test

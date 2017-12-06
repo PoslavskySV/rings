@@ -71,6 +71,26 @@ public final class Rational<E>
     }
 
     /**
+     * Reduces this rational to normal form by doing division with remainder, that is if {@code numerator = div *
+     * denominator + rem} then the array {@code (div, rem/denominator)} will be returned. If either div or rem is zero
+     * an singleton array with this instance will be returned.
+     */
+    @SuppressWarnings("unchecked")
+    public Rational<E>[] normal() {
+        if (isIntegral())
+            return new Rational[]{this};
+
+        E[] qd = ring.divideAndRemainder(numerator, denominator);
+        if (qd[0] == null)
+            throw new RuntimeException("division with remainder is not supported.");
+
+        if (ring.isZero(qd[0]) || ring.isZero(qd[1]))
+            return new Rational[]{this};
+
+        return new Rational[]{new Rational(ring, qd[0]), new Rational(ring, qd[1], denominator)};
+    }
+
+    /**
      * Constructs zero
      */
     public static <E> Rational<E> zero(Ring<E> ring) {

@@ -4,7 +4,7 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.IrreduciblePolynomials;
@@ -32,12 +32,12 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
 
         for (int i = 0; i < AbstractTest.its(1, 5); i++) {
             long start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> yun = MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics(poly);
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> yun = MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics(poly);
             System.out.println("Yun: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
             FactorDecompositionTest.assertFactorization(poly, yun);
 
             start = System.nanoTime();
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> mus = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> mus = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
             System.out.println("Musser: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
 
             FactorDecompositionTest.assertFactorization(poly, mus);
@@ -96,7 +96,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
         MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
-        FactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
+        PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
         FactorDecompositionTest.assertFactorization(lPoly, decomposition);
     }
 
@@ -109,7 +109,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square());
 
         MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
-        FactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
+        PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
         FactorDecompositionTest.assertFactorization(lPoly, decomposition);
     }
 
@@ -135,7 +135,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
 
-        FactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(poly);
+        PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(poly);
         FactorDecompositionTest.assertFactorization(poly, decomposition);
     }
 
@@ -144,7 +144,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c", "d", "e", "f", "g", "h"};
         for (Ring<BigInteger> ring : Arrays.<Ring<BigInteger>>asList(new IntegersZp(2), Rings.Z)) {
             MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.parse("a^2*b^4*c*e^5", ring, vars);
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> expected = FactorDecomposition.empty(poly);
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> expected = PolynomialFactorDecomposition.empty(poly);
             expected.addFactor(MultivariatePolynomial.parse("a", ring, vars), 2);
             expected.addFactor(MultivariatePolynomial.parse("b", ring, vars), 4);
             expected.addFactor(MultivariatePolynomial.parse("c", ring, vars), 1);

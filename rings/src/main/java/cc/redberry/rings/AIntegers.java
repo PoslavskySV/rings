@@ -30,12 +30,7 @@ abstract class AIntegers extends ARing<BigInteger> {
 
     @Override
     public final BigInteger parse(String string) {
-        return valueOf(new BigInteger(string));
-    }
-
-    @Override
-    public final BigInteger gcd(BigInteger a, BigInteger b) {
-        return a.gcd(b);
+        return valueOf(new BigInteger(string.trim()));
     }
 
     @Override

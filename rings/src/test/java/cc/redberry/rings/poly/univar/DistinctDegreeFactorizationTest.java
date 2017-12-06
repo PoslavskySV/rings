@@ -2,8 +2,7 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
-import cc.redberry.rings.poly.test.APolynomialTest;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.univar.FactorizationTestUtil.PolynomialSource;
 import cc.redberry.rings.poly.univar.FactorizationTestUtil.RandomSource;
 import cc.redberry.rings.poly.univar.FactorizationTestUtil.ShoupSource;
@@ -32,7 +31,7 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(0, -1, -1, -1, 0, 1, -1, 1, 1).modulus(3);
-        FactorDecomposition<UnivariatePolynomialZp64> f = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> f = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
         assertDistinctDegreeFactorization(poly, f);
     }
 
@@ -45,8 +44,8 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
                 .multiply(UnivariatePolynomialZ64
                         .create(3, 3, 1)
                         .modulus(modulus));
-        FactorDecomposition<UnivariatePolynomialZp64> plain = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
-        FactorDecomposition<UnivariatePolynomialZp64> shoup = DistinctDegreeFactorization.DistinctDegreeFactorizationShoup(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> plain = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> shoup = DistinctDegreeFactorization.DistinctDegreeFactorizationShoup(poly);
         assertDistinctDegreeFactorization(poly, plain);
         assertDistinctDegreeFactorization(poly, shoup);
         assertEquals(plain, shoup);
@@ -61,8 +60,8 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
                 .multiply(UnivariatePolynomialZ64
                         .create(4, 9, 1)
                         .modulus(modulus));
-        FactorDecomposition<UnivariatePolynomialZp64> plain = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
-        FactorDecomposition<UnivariatePolynomialZp64> shoup = DistinctDegreeFactorization.DistinctDegreeFactorizationShoup(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> plain = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> shoup = DistinctDegreeFactorization.DistinctDegreeFactorizationShoup(poly);
         assertDistinctDegreeFactorization(poly, plain);
         assertDistinctDegreeFactorization(poly, shoup);
         assertEquals(plain, shoup);
@@ -185,31 +184,31 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
 
     enum DDFAlgorithm {
         Plain {
-            FactorizationTestUtil.WithTiming<FactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly) {
+            FactorizationTestUtil.WithTiming<PolynomialFactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly) {
                 long start = System.nanoTime();
-                FactorDecomposition<UnivariatePolynomialZp64> r = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
+                PolynomialFactorDecomposition<UnivariatePolynomialZp64> r = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
                 long timing = System.nanoTime() - start;
                 return new FactorizationTestUtil.WithTiming<>(r, timing);
             }
         },
         XPowers {
-            FactorizationTestUtil.WithTiming<FactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly) {
+            FactorizationTestUtil.WithTiming<PolynomialFactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly) {
                 long start = System.nanoTime();
-                FactorDecomposition<UnivariatePolynomialZp64> r = DistinctDegreeFactorization.DistinctDegreeFactorizationPrecomputedExponents(poly);
+                PolynomialFactorDecomposition<UnivariatePolynomialZp64> r = DistinctDegreeFactorization.DistinctDegreeFactorizationPrecomputedExponents(poly);
                 long timing = System.nanoTime() - start;
                 return new FactorizationTestUtil.WithTiming<>(r, timing);
             }
         },
         Shoup {
-            FactorizationTestUtil.WithTiming<FactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly) {
+            FactorizationTestUtil.WithTiming<PolynomialFactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly) {
                 long start = System.nanoTime();
-                FactorDecomposition<UnivariatePolynomialZp64> r = DistinctDegreeFactorization.DistinctDegreeFactorizationShoup(poly);
+                PolynomialFactorDecomposition<UnivariatePolynomialZp64> r = DistinctDegreeFactorization.DistinctDegreeFactorizationShoup(poly);
                 long timing = System.nanoTime() - start;
                 return new FactorizationTestUtil.WithTiming<>(r, timing);
             }
         };
 
-        abstract FactorizationTestUtil.WithTiming<FactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly);
+        abstract FactorizationTestUtil.WithTiming<PolynomialFactorDecomposition<UnivariatePolynomialZp64>> factor(UnivariatePolynomialZp64 poly);
     }
 
     final class BenchmarkRunner {
@@ -276,14 +275,14 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
                     UnivariatePolynomialZp64 poly = source.take(modulus);
                     degrees.addValue(poly.degree);
                     try {
-                        Map<DDFAlgorithm, FactorizationTestUtil.WithTiming<FactorDecomposition<UnivariatePolynomialZp64>>> results = algorithms.stream().collect(Collectors.toMap(al -> al, al -> al.factor(poly)));
+                        Map<DDFAlgorithm, FactorizationTestUtil.WithTiming<PolynomialFactorDecomposition<UnivariatePolynomialZp64>>> results = algorithms.stream().collect(Collectors.toMap(al -> al, al -> al.factor(poly)));
                         DDFAlgorithm baseAlgorithm = algorithms.stream().findFirst().get();
-                        FactorDecomposition<UnivariatePolynomialZp64> baseDecomposition = results.get(baseAlgorithm).val;
+                        PolynomialFactorDecomposition<UnivariatePolynomialZp64> baseDecomposition = results.get(baseAlgorithm).val;
                         factors.addValue(baseDecomposition.factors.size());
                         results.forEach((alg, res) -> {
                             performance.get(alg).addValue(res.nanoSeconds);
 
-                            FactorDecomposition<UnivariatePolynomialZp64> c = res.val;
+                            PolynomialFactorDecomposition<UnivariatePolynomialZp64> c = res.val;
                             try {
                                 assertDistinctDegreeFactorization(poly, c);
                                 assertEquals(baseDecomposition.factors.size(), c.factors.size());
@@ -370,7 +369,7 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64
                 .create(19, 20, 13, 10, 26, 19, 6, 29, 13, 20, 10, 12, 20, 3, 21, 16, 25, 10, 26, 22, 25, 2, 23, 29, 21, 14, 8, 26, 16, 7, 7, 1)
                 .modulus(31);
-        FactorDecomposition<UnivariatePolynomialZp64> factorization = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> factorization = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
         assertEquals(5, factorization.factors.size());
         assertDistinctDegreeFactorization(poly, factorization);
     }
@@ -380,7 +379,7 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64
                 .create(9, 7, 2, 3, 10, 1, 1)
                 .modulus(11);
-        FactorDecomposition<UnivariatePolynomialZp64> factorization = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> factorization = DistinctDegreeFactorization.DistinctDegreeFactorizationPlain(poly);
         assertDistinctDegreeFactorization(poly, factorization);
     }
 
@@ -389,13 +388,13 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64
                 .create(172, 85, 84, 151, 122, 53, 107, 117, 82, 152, 133, 151, 178, 1)
                 .modulus(181);
-        FactorDecomposition<UnivariatePolynomialZp64> fct = DistinctDegreeFactorization.DistinctDegreeFactorizationComplete(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> fct = DistinctDegreeFactorization.DistinctDegreeFactorizationComplete(poly);
         assertFactorization(poly, fct);
     }
 
     @Test
     public void test5() throws Exception {
-        FactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
         assertDistinctDegreeFactorization(bigPoly, ddf);
         assertEquals(2, ddf.factors.size());
     }
@@ -405,7 +404,7 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
         for (int i = 0; i < its(10, 50); i++) {
             UnivariatePolynomialZp64 bigPoly = this.bigPoly.setModulus(getModulusRandom(20));
             long start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);
             System.out.println("Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.ring.modulus + "): " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -417,7 +416,7 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
         for (int i = 0; i < its(10, 50); i++) {
             UnivariatePolynomialZp64 bigPoly = this.bigPoly.setModulus(modulus);
             long start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);
             System.out.println("Time (deg(poly) = " + bigPoly.degree + ", modulus = " + bigPoly.ring.modulus + "): " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
@@ -429,7 +428,7 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
         for (int i = 0; i < its(100, 50); i++) {
             UnivariatePolynomialZp64 bigPoly = this.bigPoly.setModulus(getModulusRandom(20));//.truncate(15);
             long start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> ddf = DistinctDegreeFactorization.DistinctDegreeFactorization(bigPoly);
             assertDistinctDegreeFactorization(bigPoly, ddf);
             long time = System.nanoTime() - start;
             boolean b = UnivariateGCD.EuclidGCD(bigPoly.toBigPoly().square(), bigPoly.toBigPoly().square().derivative()).isConstant();
@@ -450,7 +449,7 @@ public class DistinctDegreeFactorizationTest extends AUnivariateTest {
         BigInteger modulus = BigInteger.LONG_MAX_VALUE;
         modulus = modulus.multiply(modulus).nextProbablePrime();
         UnivariatePolynomial<BigInteger> polyMod = poly.setRing(new IntegersZp(modulus));
-        FactorDecomposition<UnivariatePolynomial<BigInteger>> f = DistinctDegreeFactorization(polyMod);
+        PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> f = DistinctDegreeFactorization(polyMod);
         assertDistinctDegreeFactorization(polyMod, f);
     }
 }
