@@ -164,8 +164,8 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
     }
 
     @Override
-    public Factors<Poly> factor(Poly element) {
-        return Factors.unit(this, element);
+    public FactorDecomposition<Poly> factor(Poly element) {
+        return FactorDecomposition.unit(this, element);
     }
 
     @Override

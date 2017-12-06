@@ -64,13 +64,13 @@ public final class Integers extends AIntegers {
     }
 
     @Override
-    public Factors<BigInteger> factorSquareFree(BigInteger element) {
+    public FactorDecomposition<BigInteger> factorSquareFree(BigInteger element) {
         return factor(element);
     }
 
     @Override
-    public Factors<BigInteger> factor(BigInteger element) {
-        return Factors.of(this, BigPrimes.primeFactors(element));
+    public FactorDecomposition<BigInteger> factor(BigInteger element) {
+        return FactorDecomposition.of(this, BigPrimes.primeFactors(element));
     }
 
     @Override

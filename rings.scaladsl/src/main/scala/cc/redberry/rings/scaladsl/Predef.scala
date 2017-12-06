@@ -3,7 +3,7 @@ package cc.redberry.rings.scaladsl
 import cc.redberry.rings
 import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly.FiniteField
-import cc.redberry.rings.{IntegersZp64, poly}
+import cc.redberry.rings.{FactorDecomposition, IntegersZp64, poly}
 import org.apache.commons.math3.random.{AbstractRandomGenerator, RandomGenerator}
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
@@ -198,6 +198,6 @@ private[scaladsl] trait Predef {
 
   implicit def arrayToTuple[Poly](arr: Array[Poly]): RichArrayTuple[Poly] = new RichArrayTuple(arr)
 
-  implicit def factors2Seq[E](factors: rings.Factors[E]): Seq[(E, Int)] =
+  implicit def factors2Seq[E](factors: FactorDecomposition[E]): Seq[(E, Int)] =
     (factors.factors.asScala zip factors.exponents.toArray().toSeq).toSeq
 }

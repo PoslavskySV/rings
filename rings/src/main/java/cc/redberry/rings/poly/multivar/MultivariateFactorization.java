@@ -38,15 +38,15 @@ public final class MultivariateFactorization {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    FactorDecomposition<Poly> Factor(final Poly poly) {
+    PolynomialFactorDecomposition<Poly> Factor(final Poly poly) {
         if (poly.isOverFiniteField())
-            return (FactorDecomposition<Poly>) FactorInGF((AMultivariatePolynomial) poly);
+            return (PolynomialFactorDecomposition<Poly>) FactorInGF((AMultivariatePolynomial) poly);
         else if (poly.isOverZ())
             return FactorInZ((MultivariatePolynomial) poly);
         else if (Util.isOverRationals(poly))
-            return (FactorDecomposition<Poly>) FactorInQ((MultivariatePolynomial) poly);
+            return (PolynomialFactorDecomposition<Poly>) FactorInQ((MultivariatePolynomial) poly);
         else {
-            FactorDecomposition<Poly> factors = tryNested(poly, MultivariateFactorization::Factor);
+            PolynomialFactorDecomposition<Poly> factors = tryNested(poly, MultivariateFactorization::Factor);
             if (factors != null)
                 return factors;
             throw new RuntimeException("Unsupported ring: " + poly.coefficientRingToString());
@@ -55,7 +55,7 @@ public final class MultivariateFactorization {
 
     @SuppressWarnings("unchecked")
     static <Poly extends AMultivariatePolynomial<?, Poly>>
-    FactorDecomposition<Poly> tryNested(Poly poly, Function<Poly, FactorDecomposition<Poly>> factorFunction) {
+    PolynomialFactorDecomposition<Poly> tryNested(Poly poly, Function<Poly, PolynomialFactorDecomposition<Poly>> factorFunction) {
         if (MultivariateGCD.isOverUnivariate(poly))
             return FactorOverUnivariate((MultivariatePolynomial) poly, (Function) factorFunction);
         else if (MultivariateGCD.isOverUnivariateZp64(poly))
@@ -67,25 +67,25 @@ public final class MultivariateFactorization {
         return null;
     }
 
-    private static <E> FactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<E>>>
+    private static <E> PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<E>>>
     FactorOverUnivariate(MultivariatePolynomial<UnivariatePolynomial<E>> poly,
-                         Function<MultivariatePolynomial<E>, FactorDecomposition<MultivariatePolynomial<E>>> factorFunction) {
+                         Function<MultivariatePolynomial<E>, PolynomialFactorDecomposition<MultivariatePolynomial<E>>> factorFunction) {
         return factorFunction.apply(
                 MultivariatePolynomial.asNormalMultivariate(poly, 0)).
                 map(p -> p.asOverUnivariateEliminate(0));
     }
 
-    private static FactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>>
+    private static PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>>
     FactorOverUnivariateZp64(MultivariatePolynomial<UnivariatePolynomialZp64> poly,
-                             Function<MultivariatePolynomialZp64, FactorDecomposition<MultivariatePolynomialZp64>> factorFunction) {
+                             Function<MultivariatePolynomialZp64, PolynomialFactorDecomposition<MultivariatePolynomialZp64>> factorFunction) {
         return factorFunction.apply(
                 MultivariatePolynomialZp64.asNormalMultivariate(poly, 0)).
                 map(p -> p.asOverUnivariateEliminate(0));
     }
 
-    private static <E> FactorDecomposition<MultivariatePolynomial<MultivariatePolynomial<E>>>
+    private static <E> PolynomialFactorDecomposition<MultivariatePolynomial<MultivariatePolynomial<E>>>
     FactorOverMultivariate(MultivariatePolynomial<MultivariatePolynomial<E>> poly,
-                           Function<MultivariatePolynomial<E>, FactorDecomposition<MultivariatePolynomial<E>>> factorFunction) {
+                           Function<MultivariatePolynomial<E>, PolynomialFactorDecomposition<MultivariatePolynomial<E>>> factorFunction) {
         int[] cfVars = ArraysUtil.sequence(poly.lc().nVariables);
         int[] mainVars = ArraysUtil.sequence(poly.lc().nVariables, poly.lc().nVariables + poly.nVariables);
         return factorFunction.apply(
@@ -93,9 +93,9 @@ public final class MultivariateFactorization {
                 .map(p -> p.asOverMultivariateEliminate(cfVars));
     }
 
-    private static FactorDecomposition<MultivariatePolynomial<MultivariatePolynomialZp64>>
+    private static PolynomialFactorDecomposition<MultivariatePolynomial<MultivariatePolynomialZp64>>
     FactorOverMultivariateZp64(MultivariatePolynomial<MultivariatePolynomialZp64> poly,
-                               Function<MultivariatePolynomialZp64, FactorDecomposition<MultivariatePolynomialZp64>> factorFunction) {
+                               Function<MultivariatePolynomialZp64, PolynomialFactorDecomposition<MultivariatePolynomialZp64>> factorFunction) {
         int[] cfVars = ArraysUtil.sequence(poly.lc().nVariables);
         int[] mainVars = ArraysUtil.sequence(poly.lc().nVariables, poly.lc().nVariables + poly.nVariables);
         return factorFunction.apply(
@@ -109,7 +109,7 @@ public final class MultivariateFactorization {
      * @param polynomial the polynomial
      * @return factor decomposition
      */
-    public static <E> FactorDecomposition<MultivariatePolynomial<Rational<E>>> FactorInQ(MultivariatePolynomial<Rational<E>> polynomial) {
+    public static <E> PolynomialFactorDecomposition<MultivariatePolynomial<Rational<E>>> FactorInQ(MultivariatePolynomial<Rational<E>> polynomial) {
         Tuple2<MultivariatePolynomial<E>, E> cmd = Util.toCommonDenominator(polynomial);
         MultivariatePolynomial<E> integral = cmd._1;
         E denominator = cmd._2;
@@ -125,7 +125,7 @@ public final class MultivariateFactorization {
      * @return factor decomposition
      */
     @SuppressWarnings("unchecked")
-    public static FactorDecomposition<MultivariatePolynomial<BigInteger>> FactorInZ(final MultivariatePolynomial<BigInteger> polynomial) {
+    public static PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> FactorInZ(final MultivariatePolynomial<BigInteger> polynomial) {
         return Factor(polynomial, MultivariateFactorization::factorPrimitiveInZ);
     }
 
@@ -138,7 +138,7 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> FactorInGF(final Poly polynomial) {
+    PolynomialFactorDecomposition<Poly> FactorInGF(final Poly polynomial) {
         if (canConvertToZp64(polynomial))
             return FactorInGF(asOverZp64(polynomial)).map(Conversions64bit::convert);
 
@@ -154,23 +154,23 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     private static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> Factor(final Poly polynomial, Function<Poly, FactorDecomposition<Poly>> algorithm) {
+    PolynomialFactorDecomposition<Poly> Factor(final Poly polynomial, Function<Poly, PolynomialFactorDecomposition<Poly>> algorithm) {
         if (polynomial.isEffectiveUnivariate())
             return factorUnivariate(polynomial);
 
-        FactorDecomposition<Poly>
+        PolynomialFactorDecomposition<Poly>
                 // square-free decomposition
                 sqf = MultivariateSquareFreeFactorization.SquareFreeFactorization(polynomial),
                 // the result
-                res = FactorDecomposition.unit(sqf.unit);
+                res = PolynomialFactorDecomposition.unit(sqf.unit);
         for (int i = 0; i < sqf.size(); i++) {
             Poly factor = sqf.get(i);
             // factor into primitive polynomials
-            FactorDecomposition<Poly> primitiveFactors = factorToPrimitive(factor);
+            PolynomialFactorDecomposition<Poly> primitiveFactors = factorToPrimitive(factor);
             res.addUnit(primitiveFactors.unit, sqf.getExponent(i));
             for (Poly primitiveFactor : primitiveFactors) {
                 // factor each primitive polynomial
-                FactorDecomposition<Poly> pFactors = algorithm.apply(primitiveFactor);
+                PolynomialFactorDecomposition<Poly> pFactors = algorithm.apply(primitiveFactor);
                 res.addUnit(pFactors.unit, sqf.getExponent(i));
                 for (Poly pFactor : pFactors)
                     res.addFactor(pFactor, sqf.getExponent(i));
@@ -183,19 +183,19 @@ public final class MultivariateFactorization {
 
     @SuppressWarnings("unchecked")
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorUnivariate(Poly poly) {
+    PolynomialFactorDecomposition<Poly> factorUnivariate(Poly poly) {
         int uVar = poly.univariateVariable();
-        FactorDecomposition<? extends IUnivariatePolynomial>
+        PolynomialFactorDecomposition<? extends IUnivariatePolynomial>
                 uFactors = UnivariateFactorization.Factor(poly.asUnivariate());
         return uFactors.map(u -> (Poly) AMultivariatePolynomial.asMultivariate(u, poly.nVariables, uVar, poly.ordering));
     }
 
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorToPrimitive(Poly poly) {
+    PolynomialFactorDecomposition<Poly> factorToPrimitive(Poly poly) {
         if (poly.isEffectiveUnivariate())
-            return FactorDecomposition.of(poly);
-        FactorDecomposition<Poly> result = FactorDecomposition.empty(poly);
+            return PolynomialFactorDecomposition.of(poly);
+        PolynomialFactorDecomposition<Poly> result = PolynomialFactorDecomposition.empty(poly);
         for (int i = 0; i < poly.nVariables; i++) {
             Poly factor = poly.asUnivariate(i).content();
             result.addFactor(factor, 1);
@@ -215,7 +215,7 @@ public final class MultivariateFactorization {
     private interface FactorizationAlgorithm<
             Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
-        FactorDecomposition<Poly> factor(Poly poly, boolean switchToExtensionField);
+        PolynomialFactorDecomposition<Poly> factor(Poly poly, boolean switchToExtensionField);
     }
 
 
@@ -234,7 +234,7 @@ public final class MultivariateFactorization {
      * @param poly primitive, square-free bivariate polynomial over Zp
      * @return factor decomposition
      */
-    private static FactorDecomposition<MultivariatePolynomialZp64> factorInExtensionField(
+    private static PolynomialFactorDecomposition<MultivariatePolynomialZp64> factorInExtensionField(
             MultivariatePolynomialZp64 poly,
             FactorizationAlgorithm<Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>> algorithm) {
 
@@ -245,7 +245,7 @@ public final class MultivariateFactorization {
                     IrreduciblePolynomials.randomIrreduciblePolynomial(
                             ring.modulus, startingDegree++, cc.redberry.rings.poly.multivar.PrivateRandom.getRandom()));
 
-            FactorDecomposition<MultivariatePolynomialZp64> result =
+            PolynomialFactorDecomposition<MultivariatePolynomialZp64> result =
                     factorInExtensionField(poly, extensionField, algorithm);
 
             if (result != null)
@@ -259,12 +259,12 @@ public final class MultivariateFactorization {
      * @param poly primitive, square-free bivariate polynomial over Zp
      * @return factor decomposition
      */
-    private static FactorDecomposition<MultivariatePolynomialZp64> factorInExtensionField(
+    private static PolynomialFactorDecomposition<MultivariatePolynomialZp64> factorInExtensionField(
             MultivariatePolynomialZp64 poly,
             FiniteField<UnivariatePolynomialZp64> extensionField,
             FactorizationAlgorithm<Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>> algorithm) {
 
-        FactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>> factorization
+        PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>> factorization
                 = algorithm.factor(poly.mapCoefficients(extensionField, extensionField::valueOf), false);
         if (factorization == null)
             // too small extension
@@ -272,7 +272,7 @@ public final class MultivariateFactorization {
         if (!factorization.unit.cc().isConstant())
             return null;
 
-        FactorDecomposition<MultivariatePolynomialZp64> result = FactorDecomposition.unit(poly.createConstant(factorization.unit.cc().cc()));
+        PolynomialFactorDecomposition<MultivariatePolynomialZp64> result = PolynomialFactorDecomposition.unit(poly.createConstant(factorization.unit.cc().cc()));
         for (int i = 0; i < factorization.size(); i++) {
             if (!factorization.get(i).stream().allMatch(p -> p.isConstant()))
                 return null;
@@ -288,7 +288,7 @@ public final class MultivariateFactorization {
      * @return factor decomposition
      */
     private static <E>
-    FactorDecomposition<MultivariatePolynomial<E>> factorInExtensionField(
+    PolynomialFactorDecomposition<MultivariatePolynomial<E>> factorInExtensionField(
             MultivariatePolynomial<E> poly,
             FactorizationAlgorithm<Monomial<UnivariatePolynomial<E>>, MultivariatePolynomial<UnivariatePolynomial<E>>> algorithm) {
         Ring<E> ring = poly.ring;
@@ -299,7 +299,7 @@ public final class MultivariateFactorization {
                     IrreduciblePolynomials.randomIrreduciblePolynomial(
                             ring, startingDegree++, cc.redberry.rings.poly.multivar.PrivateRandom.getRandom()));
 
-            FactorDecomposition<MultivariatePolynomial<E>> result =
+            PolynomialFactorDecomposition<MultivariatePolynomial<E>> result =
                     factorInExtensionField(poly, extensionField, algorithm);
 
             if (result != null)
@@ -314,11 +314,11 @@ public final class MultivariateFactorization {
      * @return factor decomposition
      */
     private static <E>
-    FactorDecomposition<MultivariatePolynomial<E>> factorInExtensionField(
+    PolynomialFactorDecomposition<MultivariatePolynomial<E>> factorInExtensionField(
             MultivariatePolynomial<E> poly,
             FiniteField<UnivariatePolynomial<E>> extensionField,
             FactorizationAlgorithm<Monomial<UnivariatePolynomial<E>>, MultivariatePolynomial<UnivariatePolynomial<E>>> algorithm) {
-        FactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<E>>> factorization
+        PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<E>>> factorization
                 = algorithm.factor(poly.mapCoefficients(extensionField, c -> UnivariatePolynomial.constant(poly.ring, c)), false);
         if (factorization == null)
             // too small extension
@@ -326,7 +326,7 @@ public final class MultivariateFactorization {
         if (!factorization.unit.cc().isConstant())
             return null;
 
-        FactorDecomposition<MultivariatePolynomial<E>> result = FactorDecomposition.unit(poly.createConstant(factorization.unit.cc().cc()));
+        PolynomialFactorDecomposition<MultivariatePolynomial<E>> result = PolynomialFactorDecomposition.unit(poly.createConstant(factorization.unit.cc().cc()));
         for (int i = 0; i < factorization.size(); i++) {
             if (!factorization.get(i).stream().allMatch(UnivariatePolynomial::isConstant))
                 return null;
@@ -471,7 +471,7 @@ public final class MultivariateFactorization {
      * @param poly primitive, square-free bivariate polynomial over Zp
      * @return factor decomposition
      */
-    static FactorDecomposition<MultivariatePolynomialZp64>
+    static PolynomialFactorDecomposition<MultivariatePolynomialZp64>
     bivariateDenseFactorSquareFreeInGF(MultivariatePolynomialZp64 poly) {
         return bivariateDenseFactorSquareFreeInGF(poly, true);
     }
@@ -483,7 +483,7 @@ public final class MultivariateFactorization {
      * @param switchToExtensionField whether to switch to extension field if ring cardinality is too small
      * @return factor decomposition
      */
-    static FactorDecomposition<MultivariatePolynomialZp64>
+    static PolynomialFactorDecomposition<MultivariatePolynomialZp64>
     bivariateDenseFactorSquareFreeInGF(MultivariatePolynomialZp64 poly, boolean switchToExtensionField, boolean doGCDTest) {
         assert poly.nUsedVariables() <= 2 && IntStream.range(2, poly.nVariables).allMatch(i -> poly.degree(i) == 0) : poly;
 
@@ -491,7 +491,7 @@ public final class MultivariateFactorization {
             return factorUnivariate(poly);
 
         if (isBivariateCertainlyIrreducible(poly))
-            return FactorDecomposition.of(poly);
+            return PolynomialFactorDecomposition.of(poly);
 
         MultivariatePolynomialZp64 reducedPoly = poly;
         int[] degreeBounds = reducedPoly.degrees();
@@ -519,7 +519,7 @@ public final class MultivariateFactorization {
                     continue;
                 MultivariatePolynomialZp64 dGCD = MultivariateGCD.PolynomialGCD(derivative, reducedPoly);
                 if (!dGCD.isConstant()) {
-                    FactorDecomposition<MultivariatePolynomialZp64>
+                    PolynomialFactorDecomposition<MultivariatePolynomialZp64>
                             gcdFactorization = bivariateDenseFactorSquareFreeInGF(dGCD, switchToExtensionField, doGCDTest),
                             restFactorization = bivariateDenseFactorSquareFreeInGF(MultivariateDivision.divideExact(reducedPoly, dGCD), switchToExtensionField, doGCDTest);
 
@@ -543,7 +543,7 @@ public final class MultivariateFactorization {
         // substitution value for second variable
         long ySubstitution = -1;
         // univariate factorization
-        FactorDecomposition<UnivariatePolynomialZp64> uFactorization = null;
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> uFactorization = null;
 
         // number of univariate factorizations tried
         int univariateFactorizations = 0;
@@ -588,10 +588,10 @@ public final class MultivariateFactorization {
                 // ensure that univariate image is also square free
                 continue;
 
-            FactorDecomposition<UnivariatePolynomialZp64> factorization = UnivariateFactorization.FactorSquareFreeInGF(uImage);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> factorization = UnivariateFactorization.FactorSquareFreeInGF(uImage);
             if (factorization.size() == 1)
                 // irreducible polynomial
-                return FactorDecomposition.of(poly);
+                return PolynomialFactorDecomposition.of(poly);
 
 
             if (uFactorization == null || factorization.size() < uFactorization.size()) {
@@ -650,7 +650,7 @@ public final class MultivariateFactorization {
             lifted = Arrays.copyOfRange(lifted, 1, lifted.length);
 
         // factors are lifted => do recombination
-        FactorDecomposition<MultivariatePolynomialZp64> result = denseBivariateRecombination(reducedPoly, baseSeries, lifted, evaluation, liftDegree);
+        PolynomialFactorDecomposition<MultivariatePolynomialZp64> result = denseBivariateRecombination(reducedPoly, baseSeries, lifted, evaluation, liftDegree);
 
         if (swapVariables)
             // reconstruct original variables order
@@ -660,7 +660,7 @@ public final class MultivariateFactorization {
     }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void swap(FactorDecomposition<Poly> factorDecomposition) {
+    void swap(PolynomialFactorDecomposition<Poly> factorDecomposition) {
         for (int i = 0; i < factorDecomposition.factors.size(); i++)
             factorDecomposition.factors.set(i, AMultivariatePolynomial.swapVariables(factorDecomposition.get(i), 0, 1));
     }
@@ -671,7 +671,7 @@ public final class MultivariateFactorization {
      * @param poly primitive, square-free bivariate polynomial over Zp
      * @return factor decomposition
      */
-    static <E> FactorDecomposition<MultivariatePolynomial<E>>
+    static <E> PolynomialFactorDecomposition<MultivariatePolynomial<E>>
     bivariateDenseFactorSquareFreeInGF(MultivariatePolynomial<E> poly) {
         return bivariateDenseFactorSquareFreeInGF(poly, true);
     }
@@ -683,7 +683,7 @@ public final class MultivariateFactorization {
      * @param switchToExtensionField whether to switch to extension field if ring cardinality is too small
      * @return factor decomposition
      */
-    static <E> FactorDecomposition<MultivariatePolynomial<E>>
+    static <E> PolynomialFactorDecomposition<MultivariatePolynomial<E>>
     bivariateDenseFactorSquareFreeInGF(MultivariatePolynomial<E> poly, boolean switchToExtensionField, boolean doGCDTest) {
         assert poly.nUsedVariables() <= 2 && IntStream.range(2, poly.nVariables).allMatch(i -> poly.degree(i) == 0);
 
@@ -691,7 +691,7 @@ public final class MultivariateFactorization {
             return factorUnivariate(poly);
 
         if (isBivariateCertainlyIrreducible(poly))
-            return FactorDecomposition.of(poly);
+            return PolynomialFactorDecomposition.of(poly);
 
         MultivariatePolynomial<E> reducedPoly = poly;
         int[] degreeBounds = reducedPoly.degrees();
@@ -719,7 +719,7 @@ public final class MultivariateFactorization {
                     continue;
                 MultivariatePolynomial<E> dGCD = MultivariateGCD.PolynomialGCD(xDerivative, reducedPoly);
                 if (!dGCD.isConstant()) {
-                    FactorDecomposition<MultivariatePolynomial<E>>
+                    PolynomialFactorDecomposition<MultivariatePolynomial<E>>
                             gcdFactorization = bivariateDenseFactorSquareFreeInGF(dGCD, switchToExtensionField),
                             restFactorization = bivariateDenseFactorSquareFreeInGF(MultivariateDivision.divideExact(reducedPoly, dGCD), switchToExtensionField);
 
@@ -743,7 +743,7 @@ public final class MultivariateFactorization {
         // substitution value for second variable
         E ySubstitution = null;
         // univariate factorization
-        FactorDecomposition<UnivariatePolynomial<E>> uFactorization = null;
+        PolynomialFactorDecomposition<UnivariatePolynomial<E>> uFactorization = null;
 
         // number of univariate factorizations tried
         int univariateFactorizations = 0;
@@ -786,10 +786,10 @@ public final class MultivariateFactorization {
                 // ensure that univariate image is also square free
                 continue;
 
-            FactorDecomposition<UnivariatePolynomial<E>> factorization = UnivariateFactorization.FactorSquareFreeInGF(uImage);
+            PolynomialFactorDecomposition<UnivariatePolynomial<E>> factorization = UnivariateFactorization.FactorSquareFreeInGF(uImage);
             if (factorization.size() == 1)
                 // irreducible polynomial
-                return FactorDecomposition.of(poly);
+                return PolynomialFactorDecomposition.of(poly);
 
 
             if (uFactorization == null || factorization.size() < uFactorization.size()) {
@@ -848,7 +848,7 @@ public final class MultivariateFactorization {
             lifted = Arrays.copyOfRange(lifted, 1, factors.length);
 
         // factors are lifted => do recombination
-        FactorDecomposition<MultivariatePolynomial<E>> result = denseBivariateRecombination(reducedPoly, baseSeries, lifted, evaluation, liftDegree);
+        PolynomialFactorDecomposition<MultivariatePolynomial<E>> result = denseBivariateRecombination(reducedPoly, baseSeries, lifted, evaluation, liftDegree);
 
         if (swapVariables)
             // reconstruct original variables order
@@ -899,7 +899,7 @@ public final class MultivariateFactorization {
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
-    FactorDecomposition<Poly> denseBivariateRecombination(
+    PolynomialFactorDecomposition<Poly> denseBivariateRecombination(
             Poly factory,
             UnivariatePolynomial<uPoly> poly,
             UnivariatePolynomial<uPoly>[] modularFactors,
@@ -907,7 +907,7 @@ public final class MultivariateFactorization {
             int liftDegree) {
 
         int[] modIndexes = naturalSequenceRef(modularFactors.length);
-        FactorDecomposition<Poly> trueFactors = FactorDecomposition.empty(factory);
+        PolynomialFactorDecomposition<Poly> trueFactors = PolynomialFactorDecomposition.empty(factory);
         UnivariatePolynomial<uPoly> fRest = poly;
         int s = 1;
 
@@ -954,7 +954,7 @@ public final class MultivariateFactorization {
      * @param poly primitive, square-free bivariate polynomial over Z
      * @return factor decomposition
      */
-    static FactorDecomposition<MultivariatePolynomial<BigInteger>>
+    static PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>>
     bivariateDenseFactorSquareFreeInZ(MultivariatePolynomial<BigInteger> poly) {
         assert poly.nUsedVariables() <= 2 && IntStream.range(2, poly.nVariables).allMatch(i -> poly.degree(i) == 0);
 
@@ -962,7 +962,7 @@ public final class MultivariateFactorization {
             return factorUnivariate(poly);
 
         if (isBivariateCertainlyIrreducible(poly))
-            return FactorDecomposition.of(poly);
+            return PolynomialFactorDecomposition.of(poly);
 
         MultivariatePolynomial<BigInteger> content = poly.contentAsPoly();
         MultivariatePolynomial<BigInteger> reducedPoly = content.isOne() ? poly : poly.clone().divideByLC(content);
@@ -980,7 +980,7 @@ public final class MultivariateFactorization {
         assert !xDerivative.isZero();
         MultivariatePolynomial<BigInteger> dGCD = MultivariateGCD.PolynomialGCD(xDerivative, reducedPoly);
         if (!dGCD.isConstant()) {
-            FactorDecomposition<MultivariatePolynomial<BigInteger>>
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>>
                     gcdFactorization = bivariateDenseFactorSquareFreeInZ(dGCD),
                     restFactorization = bivariateDenseFactorSquareFreeInZ(MultivariateDivision.divideExact(reducedPoly, dGCD));
 
@@ -996,7 +996,7 @@ public final class MultivariateFactorization {
         // substitution value for second variable
         BigInteger ySubstitution = null;
         // univariate factorization
-        FactorDecomposition<UnivariatePolynomial<BigInteger>> uFactorization = null;
+        PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> uFactorization = null;
 
         // number of univariate factorizations tried
         int univariateFactorizations = 0;
@@ -1032,10 +1032,10 @@ public final class MultivariateFactorization {
                 // ensure that univariate image is also square free
                 continue;
 
-            FactorDecomposition<UnivariatePolynomial<BigInteger>> factorization = UnivariateFactorization.FactorSquareFreeInZ(uImage);
+            PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> factorization = UnivariateFactorization.FactorSquareFreeInZ(uImage);
             if (factorization.size() == 1)
                 // irreducible polynomial
-                return FactorDecomposition.of(poly);
+                return PolynomialFactorDecomposition.of(poly);
 
             if (uFactorization == null || factorization.size() < uFactorization.size()) {
                 // better univariate factorization found
@@ -1120,7 +1120,7 @@ public final class MultivariateFactorization {
         // factors are lifted => do recombination
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> baseSeriesZ =
                 seriesExpansionDenseZ(reducedPoly, ySubstitution);
-        FactorDecomposition<MultivariatePolynomial<BigInteger>> result = denseBivariateRecombinationZ(
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> result = denseBivariateRecombinationZ(
                 reducedPoly, baseZp, baseSeriesZ, liftedZp, evaluation, ySubstitution, zpDomain, liftDegree);
 
         if (swapVariables)
@@ -1168,7 +1168,7 @@ public final class MultivariateFactorization {
     }
 
     /** naive recombination for lifting to factorization in Z */
-    static FactorDecomposition<MultivariatePolynomial<BigInteger>> denseBivariateRecombinationZ(
+    static PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> denseBivariateRecombinationZ(
             MultivariatePolynomial<BigInteger> baseZ,
             MultivariatePolynomial<BigInteger> factoryZp,
             UnivariatePolynomial<UnivariatePolynomial<BigInteger>> baseSeriesZ,
@@ -1179,7 +1179,7 @@ public final class MultivariateFactorization {
             int liftDegree) {
 
         int[] modIndexes = naturalSequenceRef(modularFactorsZp.length);
-        FactorDecomposition<MultivariatePolynomial<BigInteger>> trueFactors = FactorDecomposition.empty(baseZ);
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> trueFactors = PolynomialFactorDecomposition.empty(baseZ);
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> fRest = baseSeriesZ;
         int s = 1;
 
@@ -1297,23 +1297,23 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly>
+    PolynomialFactorDecomposition<Poly>
     bivariateDenseFactorSquareFreeInGF(Poly poly, boolean switchToExtensionField) {
         if (poly instanceof MultivariatePolynomialZp64)
-            return (FactorDecomposition<Poly>) bivariateDenseFactorSquareFreeInGF((MultivariatePolynomialZp64) poly, switchToExtensionField, true);
+            return (PolynomialFactorDecomposition<Poly>) bivariateDenseFactorSquareFreeInGF((MultivariatePolynomialZp64) poly, switchToExtensionField, true);
         else
-            return (FactorDecomposition<Poly>) bivariateDenseFactorSquareFreeInGF((MultivariatePolynomial) poly, switchToExtensionField, true);
+            return (PolynomialFactorDecomposition<Poly>) bivariateDenseFactorSquareFreeInGF((MultivariatePolynomial) poly, switchToExtensionField, true);
     }
 
     /* ================================ Multivariate factorization over finite fields ================================ */
 
     @SuppressWarnings("unchecked")
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorInExtensionFieldGeneric(Poly poly, FactorizationAlgorithm<Term, Poly> algorithm) {
+    PolynomialFactorDecomposition<Poly> factorInExtensionFieldGeneric(Poly poly, FactorizationAlgorithm<Term, Poly> algorithm) {
         if (poly instanceof MultivariatePolynomialZp64)
-            return (FactorDecomposition<Poly>) factorInExtensionField((MultivariatePolynomialZp64) poly, (FactorizationAlgorithm<Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>>) algorithm);
+            return (PolynomialFactorDecomposition<Poly>) factorInExtensionField((MultivariatePolynomialZp64) poly, (FactorizationAlgorithm<Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>>) algorithm);
         else if (poly instanceof MultivariatePolynomial)
-            return (FactorDecomposition<Poly>) factorInExtensionField((MultivariatePolynomial) poly, (FactorizationAlgorithm) algorithm);
+            return (PolynomialFactorDecomposition<Poly>) factorInExtensionField((MultivariatePolynomial) poly, (FactorizationAlgorithm) algorithm);
         else
             throw new RuntimeException();
     }
@@ -1414,7 +1414,7 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorPrimitiveInGF(final Poly polynomial) {
+    PolynomialFactorDecomposition<Poly> factorPrimitiveInGF(final Poly polynomial) {
         return factorPrimitiveInGF(polynomial, true);
     }
 
@@ -1428,7 +1428,7 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorPrimitiveInGF(
+    PolynomialFactorDecomposition<Poly> factorPrimitiveInGF(
             final Poly polynomial,
             boolean switchToExtensionField) {
 
@@ -1437,7 +1437,7 @@ public final class MultivariateFactorization {
 
         // order the polynomial by degrees
         OrderByDegrees<Term, Poly> input = orderByDegrees(polynomial, true, -1);
-        FactorDecomposition<Poly> decomposition = factorPrimitiveInGF0(input.ordered, switchToExtensionField);
+        PolynomialFactorDecomposition<Poly> decomposition = factorPrimitiveInGF0(input.ordered, switchToExtensionField);
         if (decomposition == null)
             return null;
         return decomposition.map(input::restoreOrder);
@@ -1452,7 +1452,7 @@ public final class MultivariateFactorization {
         /** the original leading coefficient */
         final Poly lc;
         /** its square-free decomposition */
-        final FactorDecomposition<Poly> lcSqFreeDecomposition;
+        final PolynomialFactorDecomposition<Poly> lcSqFreeDecomposition;
         /** square-free part of l.c. */
         final Poly lcSqFreePart;
         /**
@@ -1586,7 +1586,7 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorPrimitiveInGF0(
+    PolynomialFactorDecomposition<Poly> factorPrimitiveInGF0(
             final Poly poly,
             boolean switchToExtensionField) {
         return factorPrimitiveInGF0(poly, -1, switchToExtensionField);
@@ -1598,7 +1598,7 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorPrimitiveInGF0(
+    PolynomialFactorDecomposition<Poly> factorPrimitiveInGF0(
             final Poly initialPoly,
             final int fixSecondVar,
             boolean switchToExtensionField) {
@@ -1619,7 +1619,7 @@ public final class MultivariateFactorization {
 
         Poly dGCD = MultivariateGCD.PolynomialGCD(xDerivative, poly);
         if (!dGCD.isConstant()) {
-            FactorDecomposition<Poly>
+            PolynomialFactorDecomposition<Poly>
                     gcdFactorization = factorPrimitiveInGF(dGCD, switchToExtensionField),
                     restFactorization = factorPrimitiveInGF(MultivariateDivision.divideExact(poly, dGCD), switchToExtensionField);
 
@@ -1690,7 +1690,7 @@ public final class MultivariateFactorization {
                 continue;
 
             // factor bivariate image
-            FactorDecomposition<Poly> biFactorsMain =
+            PolynomialFactorDecomposition<Poly> biFactorsMain =
                     bivariateDenseFactorSquareFreeInGF(bivariateImage, false);
             if (biFactorsMain == null)
                 if (switchToExtensionField)
@@ -1699,7 +1699,7 @@ public final class MultivariateFactorization {
                     return null;
 
             if (biFactorsMain.size() == 1)
-                return FactorDecomposition.of(initialPoly);
+                return PolynomialFactorDecomposition.of(initialPoly);
 
             if (biFactorsMain.size() > nBivariateFactors) {
                 ++nFailedWithSuperfluousFactors;
@@ -1749,7 +1749,7 @@ public final class MultivariateFactorization {
                                 || biImage.lc(0).degree(freeVariable) != lc.degree(freeVariable))
                             continue;
 
-                        FactorDecomposition<Poly> fct = bivariateDenseFactorSquareFreeInGF(
+                        PolynomialFactorDecomposition<Poly> fct = bivariateDenseFactorSquareFreeInGF(
                                 orderByDegrees(biImage, true, -1).ordered, false);
                         if (fct != null && fct.size() < nBivariateFactors) {
                             nBivariateFactors = fct.size();
@@ -1793,7 +1793,7 @@ public final class MultivariateFactorization {
                     }
 
                     // bivariate factors in F[x1, x_i]
-                    FactorDecomposition<Poly> biFactors;
+                    PolynomialFactorDecomposition<Poly> biFactors;
                     if (freeVariable == 1)
                         biFactors = biFactorsMain;
                     else {
@@ -1866,20 +1866,20 @@ public final class MultivariateFactorization {
                     //        .equals(biFactorsMain.map(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).monic());
 
                     // square-free decomposition of the leading coefficients of bivariate factors
-                    FactorDecomposition[] ulcFactors = (FactorDecomposition[])
+                    PolynomialFactorDecomposition[] ulcFactors = (PolynomialFactorDecomposition[])
                             biFactors.factors.stream()
                                     .map(f -> UnivariateSquareFreeFactorization.SquareFreeFactorization(f.lc(0).asUnivariate()))
-                                    .toArray(FactorDecomposition[]::new);
+                                    .toArray(PolynomialFactorDecomposition[]::new);
 
                     // move to GCD-free basis of sq.-f. decomposition (univariate, because fast)
                     GCDFreeBasis(ulcFactors);
 
                     // map to multivariate factors for further Hensel lifting
-                    FactorDecomposition<Poly>[]
+                    PolynomialFactorDecomposition<Poly>[]
                             ilcFactors = Arrays.stream(ulcFactors)
                             .map(decomposition -> decomposition.map(p -> (Poly)
                                     AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables - 1, 0, poly.ordering)))
-                            .toArray(FactorDecomposition[]::new);
+                            .toArray(PolynomialFactorDecomposition[]::new);
 
 
                     // <- set same polys in ulcFactors with the same single reference!
@@ -1902,7 +1902,7 @@ public final class MultivariateFactorization {
 
                     // pick unique factors from lc decompositions (complete square-free )
                     Set<Poly> ilcFactorsSet = Arrays.stream(ilcFactors)
-                            .flatMap(FactorDecomposition::streamWithoutUnit)
+                            .flatMap(PolynomialFactorDecomposition::streamWithoutUnit)
                             .collect(Collectors.toSet());
                     Poly[] ilcFactorsSqFree = ilcFactorsSet
                             .toArray(poly.createArray(ilcFactorsSet.size()));
@@ -2016,8 +2016,8 @@ public final class MultivariateFactorization {
                 HenselLifting.multivariateLift0(base, biFactorsArrayMain, null, evaluation, poly.degrees(), 2);
             }
 
-            FactorDecomposition<Poly> factorization
-                    = FactorDecomposition.of(Arrays.asList(biFactorsArrayMain))
+            PolynomialFactorDecomposition<Poly> factorization
+                    = PolynomialFactorDecomposition.of(Arrays.asList(biFactorsArrayMain))
                     .monic()
                     .setUnit(poly.lcAsPoly());
 
@@ -2044,7 +2044,7 @@ public final class MultivariateFactorization {
     }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> swapSecondVar(final FactorDecomposition<Poly> factors, final int fixSecondVar) {
+    PolynomialFactorDecomposition<Poly> swapSecondVar(final PolynomialFactorDecomposition<Poly> factors, final int fixSecondVar) {
         if (fixSecondVar == -1)
             return factors;
         else
@@ -2065,7 +2065,7 @@ public final class MultivariateFactorization {
     private static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
-    void toCanonicalSort(FactorDecomposition<Poly> biFactors,
+    void toCanonicalSort(PolynomialFactorDecomposition<Poly> biFactors,
                          HenselLifting.IEvaluation<Term, Poly> evaluation) {
         // assertion removed since monomials may occur in factorization e.g/ (b)^2 * (a+b) * ...
         //assert biFactors.exponents.sum() == biFactors.size();
@@ -2170,9 +2170,9 @@ public final class MultivariateFactorization {
     }
 
     static <Poly extends IPolynomial<Poly>>
-    void GCDFreeBasis(FactorDecomposition<Poly>[] decompositions) {
+    void GCDFreeBasis(PolynomialFactorDecomposition<Poly>[] decompositions) {
         ArrayList<FactorRef<Poly>> allFactors = new ArrayList<>();
-        for (FactorDecomposition<Poly> decomposition : decompositions)
+        for (PolynomialFactorDecomposition<Poly> decomposition : decompositions)
             for (int j = 0; j < decomposition.size(); j++)
                 allFactors.add(new FactorRef<>(decomposition, j));
 
@@ -2212,7 +2212,7 @@ public final class MultivariateFactorization {
     }
 
     private static <Poly extends IPolynomial<Poly>>
-    void normalizeGCDFreeDecomposition(FactorDecomposition<Poly> decomposition) {
+    void normalizeGCDFreeDecomposition(PolynomialFactorDecomposition<Poly> decomposition) {
         main:
         for (int i = decomposition.factors.size() - 1; i >= 0; --i) {
             Poly factor = decomposition.get(i).clone();
@@ -2242,7 +2242,7 @@ public final class MultivariateFactorization {
     }
 
     private static final class FactorRef<Poly extends IPolynomial<Poly>> {
-        final List<FactorDecomposition<Poly>> decompositions;
+        final List<PolynomialFactorDecomposition<Poly>> decompositions;
         final TIntArrayList indexes;
 
         FactorRef() {
@@ -2250,7 +2250,7 @@ public final class MultivariateFactorization {
             this.indexes = new TIntArrayList();
         }
 
-        FactorRef(FactorDecomposition<Poly> decomposition, int index) {
+        FactorRef(PolynomialFactorDecomposition<Poly> decomposition, int index) {
             this.decompositions = new ArrayList<>();
             this.indexes = new TIntArrayList();
             decompositions.add(decomposition);
@@ -2263,7 +2263,7 @@ public final class MultivariateFactorization {
             TIntArrayList gcdIndexes = new TIntArrayList(indexes.size());
             // add gcd to all required decompositions
             for (int i = 0; i < decompositions.size(); i++) {
-                FactorDecomposition<Poly> decomposition = decompositions.get(i);
+                PolynomialFactorDecomposition<Poly> decomposition = decompositions.get(i);
                 decomposition.factors.set(indexes.get(i), reduced); // <- just in case
                 gcdIndexes.add(decomposition.size());
                 decomposition.addFactor(gcd, decomposition.getExponent(indexes.get(i)));
@@ -2314,7 +2314,7 @@ public final class MultivariateFactorization {
      * @return factor decomposition
      */
     @SuppressWarnings("unchecked")
-    static FactorDecomposition<MultivariatePolynomial<BigInteger>> factorPrimitiveInZ(
+    static PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> factorPrimitiveInZ(
             MultivariatePolynomial<BigInteger> polynomial) {
 
         if (polynomial.isEffectiveUnivariate())
@@ -2322,7 +2322,7 @@ public final class MultivariateFactorization {
 
         // order the polynomial by degrees
         OrderByDegrees<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> input = orderByDegrees(polynomial, true, -1);
-        FactorDecomposition<MultivariatePolynomial<BigInteger>> decomposition = factorPrimitiveInZ0(input.ordered);
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> decomposition = factorPrimitiveInZ0(input.ordered);
         if (decomposition == null)
             return null;
         return decomposition.map(input::restoreOrder);
@@ -2332,7 +2332,7 @@ public final class MultivariateFactorization {
      * The main factorization algorithm in Z
      */
     @SuppressWarnings("unchecked")
-    static FactorDecomposition<MultivariatePolynomial<BigInteger>> factorPrimitiveInZ0(
+    static PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> factorPrimitiveInZ0(
             final MultivariatePolynomial<BigInteger> poly) {
 
         // assert that poly is at least bivariate
@@ -2401,11 +2401,11 @@ public final class MultivariateFactorization {
                 continue;
 
             // factor bivariate image
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> biFactorsMain =
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> biFactorsMain =
                     bivariateDenseFactorSquareFreeInZ(bivariateImage);
 
             if (biFactorsMain.size() == 1)
-                return FactorDecomposition.of(poly);
+                return PolynomialFactorDecomposition.of(poly);
 
             if (biFactorsMain.size() > nBivariateFactors)
                 // bad evaluation
@@ -2479,7 +2479,7 @@ public final class MultivariateFactorization {
                     }
 
                     // bivariate factors in F[x1, x_i]
-                    FactorDecomposition<MultivariatePolynomial<BigInteger>> biFactors;
+                    PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> biFactors;
                     if (freeVariable == 1)
                         biFactors = biFactorsMain;
                     else {
@@ -2512,20 +2512,20 @@ public final class MultivariateFactorization {
                             .equals(biFactorsMain.map(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).primitive().canonical());
 
                     // square-free decomposition of the leading coefficients of bivariate factors
-                    FactorDecomposition[] ulcFactors = (FactorDecomposition[])
+                    PolynomialFactorDecomposition[] ulcFactors = (PolynomialFactorDecomposition[])
                             biFactors.factors.stream()
                                     .map(f -> UnivariateSquareFreeFactorization.SquareFreeFactorization(f.lc(0).asUnivariate()))
-                                    .toArray(FactorDecomposition[]::new);
+                                    .toArray(PolynomialFactorDecomposition[]::new);
 
                     // move to GCD-free basis of sq.-f. decomposition (univariate, because fast)
                     GCDFreeBasis(ulcFactors);
 
                     // map to multivariate factors for further Hensel lifting
-                    FactorDecomposition<MultivariatePolynomial<BigInteger>>[]
+                    PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>>[]
                             ilcFactors = Arrays.stream(ulcFactors)
                             .map(decomposition -> decomposition.map(p ->
                                     AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables - 1, 0, poly.ordering)))
-                            .toArray(FactorDecomposition[]::new);
+                            .toArray(PolynomialFactorDecomposition[]::new);
 
 
                     // <- set same polys in ulcFactors with the same single reference!
@@ -2547,7 +2547,7 @@ public final class MultivariateFactorization {
 
                     // pick unique factors from lc decompositions (complete square-free)
                     Set<MultivariatePolynomial<BigInteger>> ilcFactorsSet = Arrays.stream(ilcFactors)
-                            .flatMap(FactorDecomposition::streamWithoutUnit)
+                            .flatMap(PolynomialFactorDecomposition::streamWithoutUnit)
                             .collect(Collectors.toSet());
                     MultivariatePolynomial<BigInteger>[] ilcFactorsSqFree = ilcFactorsSet
                             .toArray(poly.createArray(ilcFactorsSet.size()));
@@ -2661,8 +2661,8 @@ public final class MultivariateFactorization {
                         biFactorsMain.factors.toArray(base.createArray(biFactorsMain.size())), null);
             }
 
-            FactorDecomposition<MultivariatePolynomial<BigInteger>> factorization
-                    = FactorDecomposition.of(Arrays.asList(biFactorsArrayMainZ))
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> factorization
+                    = PolynomialFactorDecomposition.of(Arrays.asList(biFactorsArrayMainZ))
                     .primitive();
 
             if (factorization.signum() != poly.signumOfLC())

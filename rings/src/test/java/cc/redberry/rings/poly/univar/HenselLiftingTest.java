@@ -2,7 +2,7 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.AbstractTest;
@@ -153,7 +153,7 @@ public class HenselLiftingTest extends AUnivariateTest {
         if (!UnivariateSquareFreeFactorization.isSquareFree(baseMod))
             return;
 
-        FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(baseMod);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(baseMod);
         FactorDecompositionTest.assertFactorization(baseMod, modularFactors);
 
         HenselLifting.LiftFactory<UnivariatePolynomialZp64> factory = quadratic ? HenselLifting::createQuadraticLift : HenselLifting::createLinearLift;
@@ -337,7 +337,7 @@ public class HenselLiftingTest extends AUnivariateTest {
             while (!UnivariateSquareFreeFactorization.isSquareFree(poly.setRing(domain)) || polyMod.degree() != poly.degree());
 
             BigInteger desiredBound = UnivariatePolynomial.mignotteBound(poly).shiftLeft(1).multiply(poly.lc());
-            FactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(UnivariatePolynomial.asOverZp64(polyMod));
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors = UnivariateFactorization.FactorInGF(UnivariatePolynomial.asOverZp64(polyMod));
             BigInteger bModulus = BigInteger.valueOf(modulus);
 
             long start;

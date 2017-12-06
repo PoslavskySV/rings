@@ -2,7 +2,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
@@ -27,10 +27,10 @@ public final class MultivariateSquareFreeFactorization {
      * @return square-free decomposition
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
+    PolynomialFactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
         if (poly instanceof MultivariatePolynomial
                 && ((MultivariatePolynomial) poly).ring.getZero() instanceof IPolynomial) {
-            FactorDecomposition<Poly> factors = MultivariateFactorization.tryNested(poly,
+            PolynomialFactorDecomposition<Poly> factors = MultivariateFactorization.tryNested(poly,
                     MultivariateSquareFreeFactorization::SquareFreeFactorization);
             if (factors != null)
                 return factors;
@@ -64,7 +64,7 @@ public final class MultivariateSquareFreeFactorization {
     }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void addMonomial(FactorDecomposition<Poly> decomposition, Poly poly) {
+    void addMonomial(PolynomialFactorDecomposition<Poly> decomposition, Poly poly) {
         assert poly.isMonomial();
         decomposition.addUnit(poly.lcAsPoly());
         poly = poly.monic();
@@ -79,7 +79,7 @@ public final class MultivariateSquareFreeFactorization {
 
     @SuppressWarnings("unchecked")
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> factorUnivariate(Poly poly) {
+    PolynomialFactorDecomposition<Poly> factorUnivariate(Poly poly) {
         int var = poly.univariateVariable();
         return UnivariateSquareFreeFactorization
                 .SquareFreeFactorization(poly.asUnivariate())
@@ -107,7 +107,7 @@ public final class MultivariateSquareFreeFactorization {
      * @return square-free decomposition
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> SquareFreeFactorizationYunZeroCharacteristics(Poly poly) {
+    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationYunZeroCharacteristics(Poly poly) {
         if (!poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Characteristics 0 expected");
 
@@ -116,14 +116,14 @@ public final class MultivariateSquareFreeFactorization {
 
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
-        FactorDecomposition<Poly> decomposition = FactorDecomposition.unit(content[0]);
+        PolynomialFactorDecomposition<Poly> decomposition = PolynomialFactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationYun0(poly, decomposition);
         return decomposition;
     }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void SquareFreeFactorizationYun0(Poly poly, FactorDecomposition<Poly> factorization) {
+    void SquareFreeFactorizationYun0(Poly poly, PolynomialFactorDecomposition<Poly> factorization) {
         Poly[] derivative = poly.derivative();
         Poly gcd = MultivariateGCD.PolynomialGCD(poly, derivative);
         if (gcd.isConstant()) {
@@ -160,7 +160,7 @@ public final class MultivariateSquareFreeFactorization {
      * @return square-free decomposition
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> SquareFreeFactorizationMusserZeroCharacteristics(Poly poly) {
+    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusserZeroCharacteristics(Poly poly) {
         if (!poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Characteristics 0 expected");
 
@@ -169,14 +169,14 @@ public final class MultivariateSquareFreeFactorization {
 
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
-        FactorDecomposition<Poly> decomposition = FactorDecomposition.unit(content[0]);
+        PolynomialFactorDecomposition<Poly> decomposition = PolynomialFactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationMusserZeroCharacteristics0(poly, decomposition);
         return decomposition;
     }
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void SquareFreeFactorizationMusserZeroCharacteristics0(Poly poly, FactorDecomposition<Poly> factorization) {
+    void SquareFreeFactorizationMusserZeroCharacteristics0(Poly poly, PolynomialFactorDecomposition<Poly> factorization) {
         Poly[] derivative = poly.derivative();
         Poly gcd = MultivariateGCD.PolynomialGCD(poly, derivative);
         if (gcd.isConstant()) {
@@ -208,7 +208,7 @@ public final class MultivariateSquareFreeFactorization {
      * @return square-free decomposition
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
+    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         if (poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Positive characteristic expected");
 
@@ -221,7 +221,7 @@ public final class MultivariateSquareFreeFactorization {
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         Poly lc = poly.lcAsPoly();
-        FactorDecomposition<Poly> fct = SquareFreeFactorizationMusser0(poly);
+        PolynomialFactorDecomposition<Poly> fct = SquareFreeFactorizationMusser0(poly);
         addMonomial(fct, content[1]);
         return fct.addFactor(content[0], 1).addFactor(lc, 1);
     }
@@ -229,22 +229,22 @@ public final class MultivariateSquareFreeFactorization {
     /** {@code poly} will be destroyed */
     @SuppressWarnings("ConstantConditions")
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
+    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
         poly.monic();
         if (poly.isConstant())
-            return FactorDecomposition.unit(poly);
+            return PolynomialFactorDecomposition.unit(poly);
 
         if (poly.degree() <= 1)
-            return FactorDecomposition.of(poly);
+            return PolynomialFactorDecomposition.of(poly);
 
         Poly[] derivative = poly.derivative();
         if (!Arrays.stream(derivative).allMatch(IPolynomial::isZero)) {
             Poly gcd = MultivariateGCD.PolynomialGCD(poly, derivative);
             if (gcd.isConstant())
-                return FactorDecomposition.of(poly);
+                return PolynomialFactorDecomposition.of(poly);
             Poly quot = divideExact(poly, gcd); // can safely destroy poly (not used further)
 
-            FactorDecomposition<Poly> result = FactorDecomposition.unit(poly.createOne());
+            PolynomialFactorDecomposition<Poly> result = PolynomialFactorDecomposition.unit(poly.createOne());
             int i = 0;
             //if (!quot.isConstant())
             while (true) {
@@ -261,7 +261,7 @@ public final class MultivariateSquareFreeFactorization {
             }
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd);
-                FactorDecomposition<Poly> gcdFactorization = SquareFreeFactorizationMusser0(gcd);
+                PolynomialFactorDecomposition<Poly> gcdFactorization = SquareFreeFactorizationMusser0(gcd);
                 gcdFactorization.raiseExponents(poly.coefficientRingCharacteristic().intValueExact());
                 result.addAll(gcdFactorization);
                 return result;
@@ -269,7 +269,7 @@ public final class MultivariateSquareFreeFactorization {
                 return result;
         } else {
             Poly pRoot = pRoot(poly);
-            FactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
+            PolynomialFactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
             fd.raiseExponents(poly.coefficientRingCharacteristic().intValueExact());
             return fd.setUnit(poly.createOne());
         }

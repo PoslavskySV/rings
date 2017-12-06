@@ -4,7 +4,7 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.primes.SmallPrimes;
@@ -38,7 +38,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                 BigInteger.valueOf(Long.MAX_VALUE - 2));
         for (int i = 0; i < 5; i++)
             poly = poly.square().add(poly.derivative()).increment();
-        FactorDecomposition<UnivariatePolynomial<BigInteger>> fct = UnivariateFactorization.FactorInGF(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> fct = UnivariateFactorization.FactorInGF(poly);
         Assert.assertEquals(7, fct.size());
         FactorDecompositionTest.assertFactorization(poly, fct);
     }
@@ -76,13 +76,13 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
             }
 
             try {
-                FactorDecomposition<UnivariatePolynomialZp64> lFactors = UnivariateFactorization.FactorInGF(poly);
+                PolynomialFactorDecomposition<UnivariatePolynomialZp64> lFactors = UnivariateFactorization.FactorInGF(poly);
                 assertTrue(lFactors.sumExponents() >= expectedNFactors);
                 FactorDecompositionTest.assertFactorization(poly, lFactors);
 
                 if (n % 100 == 0) {
-                    FactorDecomposition<UnivariatePolynomial<BigInteger>> bFactors = UnivariateFactorization.FactorInGF(poly.toBigPoly());
-                    FactorDecomposition<UnivariatePolynomial<BigInteger>> converted = UnivariateFactorization.convertFactorizationToBigIntegers(lFactors);
+                    PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> bFactors = UnivariateFactorization.FactorInGF(poly.toBigPoly());
+                    PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> converted = UnivariateFactorization.convertFactorizationToBigIntegers(lFactors);
                     converted.canonical();
                     bFactors.canonical();
                     Assert.assertEquals(converted, bFactors);
@@ -100,7 +100,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
     public void test4a() throws Exception {
         long modulus = 59;
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(46, 16, 1, 54, 16, 57, 22, 15, 31, 21).modulus(modulus);
-        FactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, fct);
         assertEquals(5, fct.size());
         assertEquals(6, fct.sumExponents());
@@ -112,7 +112,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
             PrivateRandom.getRandom().setSeed(i);
             long modulus = 3;
             UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.parse("2*x^2+2*x^3+2*x^5+x^7+2*x^9+2*x^10+x^11+2*x^12+x^13+2*x^14+x^16+x^18+x^19+2*x^20+2*x^21").modulus(modulus);
-            FactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
             FactorDecompositionTest.assertFactorization(poly, fct);
             assertEquals(6, fct.size());
             assertEquals(15, fct.sumExponents());
@@ -124,7 +124,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         PrivateRandom.getRandom().setSeed(76);
         long modulus = 3;
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.parse("2*x^2+2*x^3+2*x^5+x^7+2*x^9+2*x^10+x^11+2*x^12+x^13+2*x^14+x^16+x^18+x^19+2*x^20+2*x^21").modulus(modulus);
-        FactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, fct);
         assertEquals(6, fct.size());
         assertEquals(15, fct.sumExponents());
@@ -135,7 +135,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         PrivateRandom.getRandom().setSeed(4178);
         long modulus = 29;
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.parse("10+25*x+23*x^2+7*x^3+21*x^4+9*x^5+9*x^6+16*x^7+10*x^8+24*x^9+3*x^10+24*x^11+8*x^12").modulus(modulus);
-        FactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> fct = UnivariateFactorization.FactorInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, fct);
         assertEquals(8, fct.size());
         assertEquals(9, fct.sumExponents());
@@ -160,7 +160,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                     break;
             }
 
-            FactorDecomposition<UnivariatePolynomial<BigInteger>> lFactors = UnivariateFactorization.FactorInZ(poly);
+            PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> lFactors = UnivariateFactorization.FactorInZ(poly);
             assertTrue(lFactors.size() >= expectedNFactors);
             FactorDecompositionTest.assertFactorization(poly, lFactors);
         }
@@ -186,7 +186,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
 
             long start;
             start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomialZp64> factorsZp = UnivariateFactorization.FactorInGF(polyMod);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> factorsZp = UnivariateFactorization.FactorInGF(polyMod);
             long timeZp = System.nanoTime() - start;
             timingZp.addValue(timeZp);
             FactorDecompositionTest.assertFactorization(polyMod, factorsZp);
@@ -194,7 +194,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
             assertEquals(5, factorsZp.size());
 
             start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomialZ64> factorsZ = UnivariateFactorization.FactorInZ(poly);
+            PolynomialFactorDecomposition<UnivariatePolynomialZ64> factorsZ = UnivariateFactorization.FactorInZ(poly);
             long timeZ = System.nanoTime() - start;
             timingZ.addValue(timeZ);
             FactorDecompositionTest.assertFactorization(poly, factorsZ);
@@ -251,7 +251,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
             if (i == 1000)
                 timing.clear();
             long start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomial<BigInteger>> factors = UnivariateFactorization.FactorInZ(poly);
+            PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> factors = UnivariateFactorization.FactorInZ(poly);
             long time = System.nanoTime() - start;
             timing.addValue(time);
             assertEquals(9, factors.size());
@@ -297,7 +297,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                 poly2 = UnivariatePolynomial.create(domain, c5, c4, c3, c2, c1, c0),
                 poly = poly1.clone().multiply(poly2).multiply(poly1.clone().add(poly2));
 
-        FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.FactorInGF(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.FactorInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, factors);
     }
 
@@ -345,7 +345,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                 poly = poly.multiply(m);
             }
 
-            FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> lFactors = null;
+            PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> lFactors = null;
             try {
                 long start = System.nanoTime();
                 lFactors = UnivariateFactorization.FactorInGF(poly);
@@ -383,7 +383,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                         UnivariatePolynomialZ64.create(1, 0, 1).modulus(2),
                         UnivariatePolynomialZ64.create(0, 0, 1).modulus(2));
 
-        FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.FactorInGF(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.FactorInGF(poly);
         FactorDecompositionTest.assertFactorization(poly, factors);
     }
 
@@ -393,7 +393,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
         UnivariatePolynomial<UnivariatePolynomialZp64> input = UnivariatePolynomial.parse("(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6", domain);
         PrivateRandom.getRandom().setSeed(1);
-        FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.Factor(input);
+        PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.Factor(input);
         assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(input, factors);
     }
@@ -404,7 +404,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
         UnivariatePolynomial<UnivariatePolynomialZp64> input = UnivariatePolynomial.parse("(1+x+x^2)+(1+x+x^2)*x+(1+x+x^3)*x^4+x^6", domain);
         PrivateRandom.getRandom().setSeed(43);
-        FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.Factor(input);
+        PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.Factor(input);
         assertEquals(2, factors.size());
         FactorDecompositionTest.assertFactorization(input, factors);
     }
@@ -417,7 +417,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         for (int i = 0; i < its(10, 10); i++) {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
-            FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.Factor(input);
+            PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = UnivariateFactorization.Factor(input);
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             assertEquals(2, factors.size());
             FactorDecompositionTest.assertFactorization(input, factors);
@@ -432,7 +432,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                 f3 = UnivariatePolynomial.parse("1 - x^2 + x^3", Rings.Q),
                 poly = f1.createOne().multiply(f1, f2, f3);
 
-        FactorDecomposition<UnivariatePolynomial<Rational<BigInteger>>> fct = UnivariateFactorization.Factor(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomial<Rational<BigInteger>>> fct = UnivariateFactorization.Factor(poly);
         Assert.assertEquals(3, fct.size());
         Assert.assertEquals(poly, fct.multiply());
     }

@@ -425,14 +425,14 @@ public interface Ring<E> extends
     /**
      * Square-free factorization of specified element
      */
-    default Factors<E> factorSquareFree(E element) {
+    default FactorDecomposition<E> factorSquareFree(E element) {
         throw new UnsupportedOperationException();
     }
 
     /**
      * Factor specified element
      */
-    default Factors<E> factor(E element) {
+    default FactorDecomposition<E> factor(E element) {
         throw new UnsupportedOperationException();
     }
 

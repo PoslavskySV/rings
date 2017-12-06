@@ -1,6 +1,6 @@
 package cc.redberry.rings.poly;
 
-import cc.redberry.rings.Factors;
+import cc.redberry.rings.FactorDecomposition;
 import cc.redberry.rings.ToStringSupport;
 import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.util.ArraysUtil;
@@ -21,17 +21,18 @@ import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
  * {@inheritDoc}
  *
  * @since 1.0
+ * @since 2.2 FactorDecomposition renamed to PolynomialFactorDecomposition
  */
-public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
-        extends Factors<Poly>
+public final class PolynomialFactorDecomposition<Poly extends IPolynomial<Poly>>
+        extends FactorDecomposition<Poly>
         implements WithVariables, java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
-    private FactorDecomposition(Poly unit, List<Poly> factors, TIntArrayList exponents) {
+    private PolynomialFactorDecomposition(Poly unit, List<Poly> factors, TIntArrayList exponents) {
         super(PolynomialRing(unit), unit, factors, exponents);
     }
 
-    private FactorDecomposition(Factors<Poly> factors) {
+    private PolynomialFactorDecomposition(FactorDecomposition<Poly> factors) {
         super(factors.ring, factors.unit, factors.factors, factors.exponents);
     }
 
@@ -41,31 +42,31 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
     }
 
     @Override
-    public FactorDecomposition<Poly> setUnit(Poly unit) {
+    public PolynomialFactorDecomposition<Poly> setUnit(Poly unit) {
         super.setUnit(unit);
         return this;
     }
 
     @Override
-    public FactorDecomposition<Poly> addUnit(Poly unit) {
+    public PolynomialFactorDecomposition<Poly> addUnit(Poly unit) {
         super.addUnit(unit);
         return this;
     }
 
     @Override
-    public FactorDecomposition<Poly> addFactor(Poly factor, int exponent) {
+    public PolynomialFactorDecomposition<Poly> addFactor(Poly factor, int exponent) {
         super.addFactor(factor, exponent);
         return this;
     }
 
     @Override
-    public FactorDecomposition<Poly> addAll(Factors<Poly> other) {
+    public PolynomialFactorDecomposition<Poly> addAll(FactorDecomposition<Poly> other) {
         super.addAll(other);
         return this;
     }
 
     @Override
-    public FactorDecomposition<Poly> canonical() {
+    public PolynomialFactorDecomposition<Poly> canonical() {
         if (factors.size() == 0)
             return this;
         reduceUnitContent();
@@ -107,7 +108,7 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
     /**
      * Makes each factor monic (moving leading coefficients to the {@link #unit})
      */
-    public FactorDecomposition<Poly> monic() {
+    public PolynomialFactorDecomposition<Poly> monic() {
         for (int i = 0; i < factors.size(); i++) {
             Poly factor = factors.get(i);
             addUnit(polyPow(factor.lcAsPoly(), exponents.get(i), false));
@@ -120,7 +121,7 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
     /**
      * Makes each factor primitive (moving contents to the {@link #unit})
      */
-    public FactorDecomposition<Poly> primitive() {
+    public PolynomialFactorDecomposition<Poly> primitive() {
         for (int i = 0; i < factors.size(); i++) {
             Poly factor = factors.get(i);
             Poly content = factor.contentAsPoly();
@@ -136,14 +137,14 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
         return this;
     }
 
-    public <OthPoly extends IPolynomial<OthPoly>> FactorDecomposition<OthPoly> map(Function<Poly, OthPoly> mapper) {
+    public <OthPoly extends IPolynomial<OthPoly>> PolynomialFactorDecomposition<OthPoly> map(Function<Poly, OthPoly> mapper) {
         return of(mapper.apply(unit), factors.stream().map(mapper).collect(Collectors.toList()), exponents);
     }
 
     /**
      * Calls {@link #monic()} if the coefficient ring is field and {@link #primitive()} otherwise
      */
-    public FactorDecomposition<Poly> reduceUnitContent() {
+    public PolynomialFactorDecomposition<Poly> reduceUnitContent() {
         return unit.isOverField() ? monic() : primitive();
     }
 
@@ -153,20 +154,20 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
     }
 
     @Override
-    public FactorDecomposition<Poly> clone() {
-        return new FactorDecomposition<>(unit.clone(), factors.stream().map(Poly::clone).collect(Collectors.toList()), new TIntArrayList(exponents));
+    public PolynomialFactorDecomposition<Poly> clone() {
+        return new PolynomialFactorDecomposition<>(unit.clone(), factors.stream().map(Poly::clone).collect(Collectors.toList()), new TIntArrayList(exponents));
     }
 
     /** Unit factorization */
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> unit(Poly unit) {
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly> unit(Poly unit) {
         if (!unit.isConstant())
             throw new IllegalArgumentException();
         return empty(unit).addUnit(unit);
     }
 
     /** Empty factorization */
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> empty(Poly factory) {
-        return new FactorDecomposition<>(factory.createOne(), new ArrayList<>(), new TIntArrayList());
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly> empty(Poly factory) {
+        return new PolynomialFactorDecomposition<>(factory.createOne(), new ArrayList<>(), new TIntArrayList());
     }
 
     /**
@@ -176,11 +177,11 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
      * @param factors   the factors
      * @param exponents the exponents
      */
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly>
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly>
     of(Poly unit, List<Poly> factors, TIntArrayList exponents) {
         if (factors.size() != exponents.size())
             throw new IllegalArgumentException();
-        FactorDecomposition<Poly> r = empty(unit).addUnit(unit);
+        PolynomialFactorDecomposition<Poly> r = empty(unit).addUnit(unit);
         for (int i = 0; i < factors.size(); i++)
             r.addFactor(factors.get(i), exponents.get(i));
         return r;
@@ -191,26 +192,26 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
      *
      * @param factors factors
      */
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly>
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly>
     of(Poly... factors) {
         if (factors.length == 0)
             throw new IllegalArgumentException();
         return of(Arrays.asList(factors));
     }
 
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly>
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly>
     of(Poly a) {
         Poly[] array = a.createArray(1);
         array[0] = a;
         return of(array);
     }
 
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly>
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly>
     of(Poly a, Poly b) {
         return of(a.createArray(a, b));
     }
 
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly>
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly>
     of(Poly a, Poly b, Poly c) {
         return of(a.createArray(a, b, c));
     }
@@ -220,7 +221,7 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
      *
      * @param factors factors
      */
-    public static <Poly extends IPolynomial<Poly>> FactorDecomposition<Poly> of(Collection<Poly> factors) {
+    public static <Poly extends IPolynomial<Poly>> PolynomialFactorDecomposition<Poly> of(Collection<Poly> factors) {
         TObjectIntHashMap<Poly> map = new TObjectIntHashMap<>();
         for (Poly e : factors)
             map.adjustOrPutValue(e, 1, 1);

@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  * @author Stanislav Poslavsky
  * @since 2.2
  */
-public class Factors<E> implements Iterable<E> {
+public class FactorDecomposition<E> implements Iterable<E> {
     /** The ring */
     public final Ring<E> ring;
     /** unit coefficient */
@@ -29,7 +29,7 @@ public class Factors<E> implements Iterable<E> {
     /** exponents */
     public final TIntArrayList exponents;
 
-    protected Factors(Ring<E> ring, E unit, List<E> factors, TIntArrayList exponents) {
+    protected FactorDecomposition(Ring<E> ring, E unit, List<E> factors, TIntArrayList exponents) {
         this.ring = ring;
         this.unit = unit;
         this.factors = factors;
@@ -82,7 +82,7 @@ public class Factors<E> implements Iterable<E> {
     }
 
     /** Sets the unit factor */
-    public Factors<E> setUnit(E unit) {
+    public FactorDecomposition<E> setUnit(E unit) {
         if (!isUnit(unit))
             throw new IllegalArgumentException("not a unit: " + unit);
         this.unit = unit;
@@ -90,7 +90,7 @@ public class Factors<E> implements Iterable<E> {
     }
 
     /** add another unit factor */
-    public Factors<E> addUnit(E unit) {
+    public FactorDecomposition<E> addUnit(E unit) {
         if (!isUnit(unit))
             throw new IllegalArgumentException("not a unit: " + unit);
         this.unit = ring.multiply(this.unit, unit);
@@ -98,7 +98,7 @@ public class Factors<E> implements Iterable<E> {
     }
 
     /** add another unit factor */
-    public Factors<E> addUnit(E unit, int exponent) {
+    public FactorDecomposition<E> addUnit(E unit, int exponent) {
         if (!isUnit(unit))
             throw new IllegalArgumentException("not a unit: " + unit);
         this.unit = ring.multiply(this.unit, ring.pow(unit, exponent));
@@ -106,7 +106,7 @@ public class Factors<E> implements Iterable<E> {
     }
 
     /** add another factor */
-    public Factors<E> addFactor(E factor, int exponent) {
+    public FactorDecomposition<E> addFactor(E factor, int exponent) {
         if (isUnit(factor))
             return addUnit(factor, exponent);
         factors.add(factor);
@@ -115,7 +115,7 @@ public class Factors<E> implements Iterable<E> {
     }
 
     /** add all factors from other */
-    public Factors<E> addAll(Factors<E> other) {
+    public FactorDecomposition<E> addAll(FactorDecomposition<E> other) {
         addUnit(other.unit);
         factors.addAll(other.factors);
         exponents.addAll(other.exponents);
@@ -125,17 +125,17 @@ public class Factors<E> implements Iterable<E> {
     /**
      * Raise all factors to its corresponding exponents
      */
-    public Factors<E> applyExponents(Ring<E> ring) {
+    public FactorDecomposition<E> applyExponents(Ring<E> ring) {
         List<E> newFactors = new ArrayList<>();
         for (int i = 0; i < size(); i++)
             newFactors.add(ring.pow(factors.get(i), exponents.get(i)));
-        return new Factors<>(ring, unit, newFactors, new TIntArrayList(ArraysUtil.arrayOf(1, size())));
+        return new FactorDecomposition<>(ring, unit, newFactors, new TIntArrayList(ArraysUtil.arrayOf(1, size())));
     }
 
     /**
      * Drops constant factor from this (new instance returned)
      */
-    public Factors<E> dropUnit() {
+    public FactorDecomposition<E> dropUnit() {
         this.unit = ring.getOne();
         return this;
     }
@@ -190,7 +190,7 @@ public class Factors<E> implements Iterable<E> {
     /**
      * Sort factors.
      */
-    public Factors<E> canonical() {
+    public FactorDecomposition<E> canonical() {
         @SuppressWarnings("unchecked")
         wrapper<E>[] wr = factors.stream().map(e -> new wrapper<>(ring, e)).toArray(wrapper[]::new);
         int[] ex = exponents.toArray();
@@ -253,7 +253,7 @@ public class Factors<E> implements Iterable<E> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Factors<?> factors1 = (Factors<?>) o;
+        FactorDecomposition<?> factors1 = (FactorDecomposition<?>) o;
 
         if (!unit.equals(factors1.unit)) return false;
         if (!factors.equals(factors1.factors)) return false;
@@ -270,8 +270,8 @@ public class Factors<E> implements Iterable<E> {
     }
 
     @Override
-    public Factors<E> clone() {
-        return new Factors<>(
+    public FactorDecomposition<E> clone() {
+        return new FactorDecomposition<>(
                 ring,
                 ring.copy(unit),
                 factors.stream().map(ring::copy).collect(Collectors.toList()),
@@ -279,14 +279,14 @@ public class Factors<E> implements Iterable<E> {
     }
 
     /** Unit factorization */
-    public static <E> Factors<E> unit(Ring<E> ring, E unit) {
+    public static <E> FactorDecomposition<E> unit(Ring<E> ring, E unit) {
         if (!ring.isUnitOrZero(unit))
             throw new IllegalArgumentException("not a unit");
-        return new Factors<>(ring, unit, new ArrayList<>(), new TIntArrayList());
+        return new FactorDecomposition<>(ring, unit, new ArrayList<>(), new TIntArrayList());
     }
 
     /** Empty factorization */
-    public static <E> Factors<E> empty(Ring<E> ring) {
+    public static <E> FactorDecomposition<E> empty(Ring<E> ring) {
         return unit(ring, ring.getOne());
     }
 
@@ -298,10 +298,10 @@ public class Factors<E> implements Iterable<E> {
      * @param factors   the factors
      * @param exponents the exponents
      */
-    public static <E> Factors<E> of(Ring<E> ring, E unit, List<E> factors, TIntArrayList exponents) {
+    public static <E> FactorDecomposition<E> of(Ring<E> ring, E unit, List<E> factors, TIntArrayList exponents) {
         if (factors.size() != exponents.size())
             throw new IllegalArgumentException();
-        Factors<E> r = empty(ring).addUnit(unit);
+        FactorDecomposition<E> r = empty(ring).addUnit(unit);
         for (int i = 0; i < factors.size(); i++)
             r.addFactor(factors.get(i), exponents.get(i));
         return r;
@@ -313,7 +313,7 @@ public class Factors<E> implements Iterable<E> {
      * @param ring    the ring
      * @param factors factors
      */
-    public static <E> Factors<E> of(Ring<E> ring, E... factors) {
+    public static <E> FactorDecomposition<E> of(Ring<E> ring, E... factors) {
         return of(ring, Arrays.asList(factors));
     }
 
@@ -323,7 +323,7 @@ public class Factors<E> implements Iterable<E> {
      * @param ring    the ring
      * @param factors factors
      */
-    public static <E> Factors<E> of(Ring<E> ring, Collection<E> factors) {
+    public static <E> FactorDecomposition<E> of(Ring<E> ring, Collection<E> factors) {
         TObjectIntHashMap<E> map = new TObjectIntHashMap<>();
         for (E e : factors)
             map.adjustOrPutValue(e, 1, 1);

@@ -3,7 +3,7 @@ package cc.redberry.rings.benchmark;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
@@ -133,7 +133,7 @@ public class Rings_vs_Singular_vs_Mathematica_Factor {
                     System.out.println("Sparsity: " + poly.sparsity());
 
                 long start = System.nanoTime();
-                FactorDecomposition<MultivariatePolynomial<BigInteger>> ringsResult
+                PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> ringsResult
                         = timeConstrained(RINGS_TIMEOUT, () -> PolynomialMethods.Factor(poly));
                 long ringsTime = System.nanoTime() - start;
                 if (!silent)

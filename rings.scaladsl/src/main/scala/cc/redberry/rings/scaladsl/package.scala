@@ -1,5 +1,7 @@
 package cc.redberry.rings
 
+import cc.redberry.rings.poly.PolynomialFactorDecomposition
+
 
 /**
   * @since 1.0
@@ -29,7 +31,7 @@ package object scaladsl extends Predef {
   type MultivariatePolynomial[E] = poly.multivar.MultivariatePolynomial[E]
   type MultivariatePolynomialZp64 = poly.multivar.MultivariatePolynomialZp64
 
-  type FactorDecomposition[P <: IPolynomial[P]] = poly.FactorDecomposition[P]
+  type FactorDecomposition[P <: IPolynomial[P]] = PolynomialFactorDecomposition[P]
 
   private[scaladsl] trait LowPrioritySyntax
     extends PolynomialSetSyntax

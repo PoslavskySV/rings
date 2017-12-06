@@ -37,7 +37,7 @@ public final class UnivariateFactorization {
      * @return factor decomposition
      */
     @SuppressWarnings("unchecked")
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> Factor(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> Factor(Poly poly) {
         if (poly.isOverFiniteField())
             return FactorInGF(poly);
         else if (poly.isOverZ())
@@ -45,9 +45,9 @@ public final class UnivariateFactorization {
         else if (Util.isOverRationals(poly))
             return FactorInQ((UnivariatePolynomial) poly);
         else if (isOverMultivariate(poly))
-            return (FactorDecomposition<Poly>) FactorOverMultivariate((UnivariatePolynomial) poly, MultivariateFactorization::Factor);
+            return (PolynomialFactorDecomposition<Poly>) FactorOverMultivariate((UnivariatePolynomial) poly, MultivariateFactorization::Factor);
         else if (isOverUnivariate(poly))
-            return (FactorDecomposition<Poly>) FactorOverUnivariate((UnivariatePolynomial) poly, MultivariateFactorization::Factor);
+            return (PolynomialFactorDecomposition<Poly>) FactorOverUnivariate((UnivariatePolynomial) poly, MultivariateFactorization::Factor);
         else
             throw new RuntimeException("ring is not supported: " + poly.coefficientRingToString());
     }
@@ -64,17 +64,17 @@ public final class UnivariateFactorization {
 
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    FactorDecomposition<UnivariatePolynomial<Poly>>
+    PolynomialFactorDecomposition<UnivariatePolynomial<Poly>>
     FactorOverMultivariate(UnivariatePolynomial<Poly> poly,
-                           Function<Poly, FactorDecomposition<Poly>> factorFunction) {
+                           Function<Poly, PolynomialFactorDecomposition<Poly>> factorFunction) {
         return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 0, true))
                 .map(p -> p.asUnivariateEliminate(0));
     }
 
     static <uPoly extends IUnivariatePolynomial<uPoly>>
-    FactorDecomposition<UnivariatePolynomial<uPoly>>
+    PolynomialFactorDecomposition<UnivariatePolynomial<uPoly>>
     FactorOverUnivariate(UnivariatePolynomial<uPoly> poly,
-                         Function<MultivariatePolynomial<uPoly>, FactorDecomposition<MultivariatePolynomial<uPoly>>> factorFunction) {
+                         Function<MultivariatePolynomial<uPoly>, PolynomialFactorDecomposition<MultivariatePolynomial<uPoly>>> factorFunction) {
         return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 1, 0, MonomialOrder.LEX))
                 .map(MultivariatePolynomial::asUnivariate);
     }
@@ -85,7 +85,7 @@ public final class UnivariateFactorization {
      * @param poly the polynomial over finite field
      * @return irreducible factor decomposition
      */
-    public static <E> FactorDecomposition<UnivariatePolynomial<Rational<E>>> FactorInQ(UnivariatePolynomial<Rational<E>> poly) {
+    public static <E> PolynomialFactorDecomposition<UnivariatePolynomial<Rational<E>>> FactorInQ(UnivariatePolynomial<Rational<E>> poly) {
         Tuple2<UnivariatePolynomial<E>, E> cmd = Util.toCommonDenominator(poly);
         UnivariatePolynomial<E> integral = cmd._1;
         E denominator = cmd._2;
@@ -114,9 +114,9 @@ public final class UnivariateFactorization {
     }
 
     /** early check for trivial cases */
-    private static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> earlyFactorizationChecks(Poly poly) {
+    private static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> earlyFactorizationChecks(Poly poly) {
         if (poly.degree() <= 1 || poly.isMonomial())
-            return FactorDecomposition.of(poly.lcAsPoly(), poly.isMonic() ? poly : poly.clone().monic());
+            return PolynomialFactorDecomposition.of(poly.lcAsPoly(), poly.isMonic() ? poly : poly.clone().monic());
 
         return null;
     }
@@ -132,15 +132,15 @@ public final class UnivariateFactorization {
      * @see DistinctDegreeFactorization
      * @see EqualDegreeFactorization
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> FactorInGF(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> FactorInGF(Poly poly) {
         Util.ensureOverFiniteField(poly);
         if (canConvertToZp64(poly))
             return FactorInGF(asOverZp64(poly)).map(Conversions64bit::convert);
 
-        FactorDecomposition<Poly> result = earlyFactorizationChecks(poly);
+        PolynomialFactorDecomposition<Poly> result = earlyFactorizationChecks(poly);
         if (result != null)
             return result;
-        result = FactorDecomposition.empty(poly);
+        result = PolynomialFactorDecomposition.empty(poly);
         FactorInGF(poly, result);
         return result.setUnit(poly.lcAsPoly());
     }
@@ -153,20 +153,20 @@ public final class UnivariateFactorization {
      * @see DistinctDegreeFactorization
      * @see EqualDegreeFactorization
      */
-    public static <T extends IUnivariatePolynomial<T>> FactorDecomposition<T> FactorSquareFreeInGF(T poly) {
+    public static <T extends IUnivariatePolynomial<T>> PolynomialFactorDecomposition<T> FactorSquareFreeInGF(T poly) {
         Util.ensureOverFiniteField(poly);
         if (canConvertToZp64(poly))
             return FactorInGF(asOverZp64(poly)).map(Conversions64bit::convert);
 
-        FactorDecomposition<T> result = FactorDecomposition.empty(poly);
+        PolynomialFactorDecomposition<T> result = PolynomialFactorDecomposition.empty(poly);
         FactorSquareFreeInGF(poly, 1, result);
         return result;
     }
 
     private static <T extends IUnivariatePolynomial<T>>
-    void FactorSquareFreeInGF(T poly, int exponent, FactorDecomposition<T> result) {
+    void FactorSquareFreeInGF(T poly, int exponent, PolynomialFactorDecomposition<T> result) {
         //do distinct-degree factorization
-        FactorDecomposition<T> ddf = DistinctDegreeFactorization(poly);
+        PolynomialFactorDecomposition<T> ddf = DistinctDegreeFactorization(poly);
         //assertDistinctDegreeFactorization(sqfFactor, ddf);
         for (int j = 0; j < ddf.size(); ++j) {
             //for each distinct-degree factor
@@ -174,20 +174,20 @@ public final class UnivariateFactorization {
             int ddfExponent = ddf.getExponent(j);
 
             //do equal-degree factorization
-            FactorDecomposition<T> edf = CantorZassenhaus(ddfFactor, ddfExponent);
+            PolynomialFactorDecomposition<T> edf = CantorZassenhaus(ddfFactor, ddfExponent);
             for (T irreducibleFactor : edf.factors)
                 //put final irreducible factor into the result
                 result.addFactor(irreducibleFactor.monic(), exponent);
         }
     }
 
-    private static <T extends IUnivariatePolynomial<T>> void FactorInGF(T poly, FactorDecomposition<T> result) {
+    private static <T extends IUnivariatePolynomial<T>> void FactorInGF(T poly, PolynomialFactorDecomposition<T> result) {
         FactorMonomial<T> base = factorOutMonomial(poly);
         if (!base.monomial.isConstant())
             result.addFactor(poly.createMonomial(1), base.monomial.degree());
 
         //do square-free factorization
-        FactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
+        PolynomialFactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
         //assert sqf.toPolynomial().equals(base.theRest) : base.toString();
         for (int i = 0; i < sqf.size(); ++i) {
             //for each square-free factor
@@ -198,7 +198,7 @@ public final class UnivariateFactorization {
     }
 
     private static <T extends IUnivariatePolynomial<T>>
-    void assertDistinctDegreeFactorization(T poly, FactorDecomposition<T> factorization) {
+    void assertDistinctDegreeFactorization(T poly, PolynomialFactorDecomposition<T> factorization) {
         for (int i = 0; i < factorization.factors.size(); i++)
             assert 0 == factorization.factors.get(i).degree() % factorization.exponents.get(i) : "Factor's degree is not divisible by d.d.f. exponent";
         assert poly.equals(factorization.multiplyIgnoreExponents());
@@ -243,17 +243,17 @@ public final class UnivariateFactorization {
     }
 
     /** reconstruct true factors by enumerating all combinations */
-    static FactorDecomposition<UnivariatePolynomialZ64> reconstructFactorsZ(
+    static PolynomialFactorDecomposition<UnivariatePolynomialZ64> reconstructFactorsZ(
             UnivariatePolynomialZ64 poly,
-            FactorDecomposition<UnivariatePolynomialZp64> modularFactors) {
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors) {
 
         if (modularFactors.isTrivial())
-            return FactorDecomposition.of(poly);
+            return PolynomialFactorDecomposition.of(poly);
 
         UnivariatePolynomialZp64 factory = modularFactors.get(0);
 
         int[] modIndexes = naturalSequenceRef(modularFactors.size());
-        FactorDecomposition<UnivariatePolynomialZ64> trueFactors = FactorDecomposition.empty(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomialZ64> trueFactors = PolynomialFactorDecomposition.empty(poly);
         UnivariatePolynomialZ64 fRest = poly;
         int s = 1;
 
@@ -297,17 +297,17 @@ public final class UnivariateFactorization {
 
 
     /** reconstruct true factors by enumerating all combinations */
-    static FactorDecomposition<UnivariatePolynomial<BigInteger>> reconstructFactorsZ(
+    static PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> reconstructFactorsZ(
             UnivariatePolynomial<BigInteger> poly,
-            FactorDecomposition<UnivariatePolynomial<BigInteger>> modularFactors) {
+            PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> modularFactors) {
 
         if (modularFactors.isTrivial())
-            return FactorDecomposition.of(poly);
+            return PolynomialFactorDecomposition.of(poly);
 
         UnivariatePolynomial<BigInteger> factory = modularFactors.get(0);
 
         int[] modIndexes = naturalSequenceRef(modularFactors.size());
-        FactorDecomposition<UnivariatePolynomial<BigInteger>> trueFactors = FactorDecomposition.empty(poly);
+        PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> trueFactors = PolynomialFactorDecomposition.empty(poly);
         UnivariatePolynomial<BigInteger> fRest = poly;
         int s = 1;
 
@@ -378,13 +378,13 @@ public final class UnivariateFactorization {
      *
      * @param poly Z[x] primitive square-free polynomial
      */
-    static FactorDecomposition<UnivariatePolynomial<BigInteger>> FactorSquareFreeInZ0(UnivariatePolynomial<BigInteger> poly) {
+    static PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> FactorSquareFreeInZ0(UnivariatePolynomial<BigInteger> poly) {
         assert poly.content().isOne();
         assert poly.lc().signum() > 0;
 
         BigInteger bound2 = BigInteger.TWO.multiply(UnivariatePolynomial.mignotteBound(poly)).multiply(poly.lc().abs());
         if (bound2.compareTo(MachineArithmetic.b_MAX_SUPPORTED_MODULUS) < 0) {
-            FactorDecomposition<UnivariatePolynomialZ64> tryLong = FactorSquareFreeInZ0(UnivariatePolynomial.asOverZ64(poly));
+            PolynomialFactorDecomposition<UnivariatePolynomialZ64> tryLong = FactorSquareFreeInZ0(UnivariatePolynomial.asOverZ64(poly));
             if (tryLong != null)
                 return convertFactorizationToBigIntegers(tryLong);
         }
@@ -392,7 +392,7 @@ public final class UnivariateFactorization {
         // choose prime at random
         long modulus = -1;
         UnivariatePolynomialZp64 moduloImage;
-        FactorDecomposition<UnivariatePolynomialZp64> lModularFactors = null;
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> lModularFactors = null;
 
         for (int attempt = 0; attempt < N_MODULAR_FACTORIZATION_TRIALS; attempt++) {
             long tmpModulus;
@@ -403,9 +403,9 @@ public final class UnivariateFactorization {
             while (moduloImage.cc() == 0 || moduloImage.degree() != poly.degree() || !UnivariateSquareFreeFactorization.isSquareFree(moduloImage));
 
             // do modular factorization
-            FactorDecomposition<UnivariatePolynomialZp64> tmpFactors = FactorInGF(moduloImage.monic());
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> tmpFactors = FactorInGF(moduloImage.monic());
             if (tmpFactors.size() == 1)
-                return FactorDecomposition.of(poly);
+                return PolynomialFactorDecomposition.of(poly);
 
             if (lModularFactors == null || lModularFactors.size() > tmpFactors.size()) {
                 lModularFactors = tmpFactors;
@@ -418,12 +418,12 @@ public final class UnivariateFactorization {
 
         List<UnivariatePolynomial<BigInteger>> modularFactors = HenselLifting.liftFactorization(BigInteger.valueOf(modulus), bound2, poly, lModularFactors.factors);
         assert modularFactors.get(0).ring.cardinality().compareTo(bound2) >= 0;
-        return reconstructFactorsZ(poly, FactorDecomposition.of(modularFactors));
+        return reconstructFactorsZ(poly, PolynomialFactorDecomposition.of(modularFactors));
     }
 
     /** machine integers -> BigIntegers */
-    static <T extends AUnivariatePolynomial64<T>> FactorDecomposition<UnivariatePolynomial<BigInteger>>
-    convertFactorizationToBigIntegers(FactorDecomposition<T> decomposition) {
+    static <T extends AUnivariatePolynomial64<T>> PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>>
+    convertFactorizationToBigIntegers(PolynomialFactorDecomposition<T> decomposition) {
         return decomposition.map(AUnivariatePolynomial64::toBigPoly);
     }
 
@@ -458,7 +458,7 @@ public final class UnivariateFactorization {
      *
      * @param poly Z[x] square-free polynomial
      */
-    static FactorDecomposition<UnivariatePolynomialZ64> FactorSquareFreeInZ0(UnivariatePolynomialZ64 poly) {
+    static PolynomialFactorDecomposition<UnivariatePolynomialZ64> FactorSquareFreeInZ0(UnivariatePolynomialZ64 poly) {
         assert poly.content() == 1;
         assert poly.lc() > 0;
 
@@ -486,11 +486,11 @@ public final class UnivariateFactorization {
         }
 
         // do modular factorization
-        FactorDecomposition<UnivariatePolynomialZp64> modularFactors = FactorInGF(moduloImage.monic());
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors = FactorInGF(moduloImage.monic());
 
         // actual lift
         if (henselIterations > 0)
-            modularFactors = FactorDecomposition.of(HenselLifting.liftFactorization(
+            modularFactors = PolynomialFactorDecomposition.of(HenselLifting.liftFactorization(
                     modulus, liftedModulus, henselIterations, poly, modularFactors.factors, true))
                     .addUnit(modularFactors.unit.setModulus(liftedModulus));
 
@@ -498,10 +498,10 @@ public final class UnivariateFactorization {
         return reconstructFactorsZ(poly, modularFactors);
     }
 
-    public static <PolyZ extends IUnivariatePolynomial<PolyZ>> FactorDecomposition<PolyZ> FactorSquareFreeInZ(PolyZ poly) {
+    public static <PolyZ extends IUnivariatePolynomial<PolyZ>> PolynomialFactorDecomposition<PolyZ> FactorSquareFreeInZ(PolyZ poly) {
         ensureIntegersDomain(poly);
         if (poly.degree() <= 1 || poly.isMonomial())
-            return FactorDecomposition.of(
+            return PolynomialFactorDecomposition.of(
                     poly.isMonic() ? poly.createOne() : poly.contentAsPoly(),
                     poly.isMonic() ? poly : poly.clone().primitivePart());
 
@@ -512,11 +512,11 @@ public final class UnivariateFactorization {
     }
 
     @SuppressWarnings("unchecked")
-    private static <PolyZ extends IUnivariatePolynomial<PolyZ>> FactorDecomposition<PolyZ> FactorSquareFreeInZ0(PolyZ poly) {
+    private static <PolyZ extends IUnivariatePolynomial<PolyZ>> PolynomialFactorDecomposition<PolyZ> FactorSquareFreeInZ0(PolyZ poly) {
         if (poly instanceof UnivariatePolynomialZ64)
-            return (FactorDecomposition<PolyZ>) FactorSquareFreeInZ0((UnivariatePolynomialZ64) poly);
+            return (PolynomialFactorDecomposition<PolyZ>) FactorSquareFreeInZ0((UnivariatePolynomialZ64) poly);
         else
-            return (FactorDecomposition<PolyZ>) FactorSquareFreeInZ0((UnivariatePolynomial) poly);
+            return (PolynomialFactorDecomposition<PolyZ>) FactorSquareFreeInZ0((UnivariatePolynomial) poly);
     }
 
     private static void ensureIntegersDomain(IUnivariatePolynomial poly) {
@@ -534,14 +534,14 @@ public final class UnivariateFactorization {
      * @see #FactorInGF(IUnivariatePolynomial)
      * @see HenselLifting
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> FactorInZ(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> FactorInZ(Poly poly) {
         ensureIntegersDomain(poly);
         if (poly.degree() <= 1 || poly.isMonomial())
-            return FactorDecomposition.of(
+            return PolynomialFactorDecomposition.of(
                     poly.isMonic() ? poly.createOne() : poly.contentAsPoly(),
                     poly.isMonic() ? poly : poly.clone().primitivePart());
 
-        FactorDecomposition<Poly> result = FactorDecomposition.empty(poly);
+        PolynomialFactorDecomposition<Poly> result = PolynomialFactorDecomposition.empty(poly);
         Poly content = poly.contentAsPoly();
         if (poly.signumOfLC() < 0)
             content = content.negate();
@@ -549,20 +549,20 @@ public final class UnivariateFactorization {
         return result.setUnit(content);
     }
 
-    private static <T extends IUnivariatePolynomial<T>> void FactorInZ(T poly, FactorDecomposition<T> result) {
+    private static <T extends IUnivariatePolynomial<T>> void FactorInZ(T poly, PolynomialFactorDecomposition<T> result) {
         FactorMonomial<T> base = factorOutMonomial(poly);
         if (!base.monomial.isConstant())
             result.addFactor(poly.createMonomial(1), base.monomial.degree());
 
         //do square-free factorization
-        FactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
+        PolynomialFactorDecomposition<T> sqf = SquareFreeFactorization(base.theRest);
         for (int i = 0; i < sqf.size(); ++i) {
             //for each square-free factor
             T sqfFactor = sqf.get(i);
             int sqfExponent = sqf.getExponent(i);
 
             //do distinct-degree factorization
-            FactorDecomposition<T> cz = FactorSquareFreeInZ0(sqfFactor);
+            PolynomialFactorDecomposition<T> cz = FactorSquareFreeInZ0(sqfFactor);
             //do equal-degree factorization
             for (T irreducibleFactor : cz.factors)
                 //put final irreducible factor into the result

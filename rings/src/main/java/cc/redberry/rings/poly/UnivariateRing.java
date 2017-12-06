@@ -1,6 +1,5 @@
 package cc.redberry.rings.poly;
 
-import cc.redberry.rings.Factors;
 import cc.redberry.rings.poly.univar.*;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -39,12 +38,12 @@ public final class UnivariateRing<Poly extends IUnivariatePolynomial<Poly>> exte
     }
 
     @Override
-    public FactorDecomposition<Poly> factorSquareFree(Poly element) {
+    public PolynomialFactorDecomposition<Poly> factorSquareFree(Poly element) {
         return UnivariateSquareFreeFactorization.SquareFreeFactorization(element);
     }
 
     @Override
-    public FactorDecomposition<Poly> factor(Poly element) {
+    public PolynomialFactorDecomposition<Poly> factor(Poly element) {
         return UnivariateFactorization.Factor(element);
     }
 

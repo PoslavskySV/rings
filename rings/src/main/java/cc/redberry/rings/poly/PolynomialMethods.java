@@ -23,11 +23,11 @@ public final class PolynomialMethods {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends IPolynomial<Poly>>
-    FactorDecomposition<Poly> Factor(Poly poly) {
+    PolynomialFactorDecomposition<Poly> Factor(Poly poly) {
         if (poly instanceof IUnivariatePolynomial)
-            return (FactorDecomposition<Poly>) UnivariateFactorization.Factor((IUnivariatePolynomial) poly);
+            return (PolynomialFactorDecomposition<Poly>) UnivariateFactorization.Factor((IUnivariatePolynomial) poly);
         else if (poly instanceof AMultivariatePolynomial)
-            return (FactorDecomposition<Poly>) MultivariateFactorization.Factor((AMultivariatePolynomial) poly);
+            return (PolynomialFactorDecomposition<Poly>) MultivariateFactorization.Factor((AMultivariatePolynomial) poly);
         else
             throw new RuntimeException();
     }
@@ -40,11 +40,11 @@ public final class PolynomialMethods {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends IPolynomial<Poly>>
-    FactorDecomposition<Poly> FactorSquareFree(Poly poly) {
+    PolynomialFactorDecomposition<Poly> FactorSquareFree(Poly poly) {
         if (poly instanceof IUnivariatePolynomial)
-            return (FactorDecomposition<Poly>) UnivariateSquareFreeFactorization.SquareFreeFactorization((IUnivariatePolynomial) poly);
+            return (PolynomialFactorDecomposition<Poly>) UnivariateSquareFreeFactorization.SquareFreeFactorization((IUnivariatePolynomial) poly);
         else if (poly instanceof AMultivariatePolynomial)
-            return (FactorDecomposition<Poly>) MultivariateSquareFreeFactorization.SquareFreeFactorization((AMultivariatePolynomial) poly);
+            return (PolynomialFactorDecomposition<Poly>) MultivariateSquareFreeFactorization.SquareFreeFactorization((AMultivariatePolynomial) poly);
         else
             throw new RuntimeException();
     }
