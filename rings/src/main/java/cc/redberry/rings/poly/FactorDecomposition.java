@@ -154,7 +154,7 @@ public final class FactorDecomposition<Poly extends IPolynomial<Poly>>
 
     @Override
     public FactorDecomposition<Poly> clone() {
-        return new FactorDecomposition<>(super.clone());
+        return new FactorDecomposition<>(unit.clone(), factors.stream().map(Poly::clone).collect(Collectors.toList()), new TIntArrayList(exponents));
     }
 
     /** Unit factorization */
