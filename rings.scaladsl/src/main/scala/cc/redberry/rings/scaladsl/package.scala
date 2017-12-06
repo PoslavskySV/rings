@@ -31,7 +31,7 @@ package object scaladsl extends Predef {
   type MultivariatePolynomial[E] = poly.multivar.MultivariatePolynomial[E]
   type MultivariatePolynomialZp64 = poly.multivar.MultivariatePolynomialZp64
 
-  type FactorDecomposition[P <: IPolynomial[P]] = PolynomialFactorDecomposition[P]
+  type PolynomialFactorDecomposition[P <: IPolynomial[P]] = poly.PolynomialFactorDecomposition[P]
 
   private[scaladsl] trait LowPrioritySyntax
     extends PolynomialSetSyntax
