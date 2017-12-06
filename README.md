@@ -1,8 +1,9 @@
 [![image](https://img.shields.io/circleci/project/github/PoslavskySV/rings.svg?style=flat)](https://circleci.com/gh/PoslavskySV/rings)
+[![image](https://readthedocs.org/projects/rings/badge/?version=latest)](https://rings.readthedocs.io)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.svg)](http://www.javadoc.io/doc/cc.redberry/rings)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?label=scaladoc)](http://www.javadoc.io/doc/cc.redberry/rings.scaladsl_2.12)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.0%7Cjar)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.0%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.2%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.2%7Cjar)
 [![image](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat)](https://opensource.org/licenses/Apache-2.0)
 
 Rings: efficient Java/Scala library for polynomial rings
@@ -45,7 +46,7 @@ Now run Rings<i>.repl</i>:
 ``` scala
 $ rings.repl
 Loading...
-Rings 2.1: efficient Java/Scala library for polynomial rings
+Rings 2.2: efficient Java/Scala library for polynomial rings
 
 @ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -68,7 +69,7 @@ res13: FactorDecomposition[MultivariatePolynomial[IntZ]] =
 Rings are currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your `build.sbt` file:
 
 ``` scala
-libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.1"
+libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.2"
 ```
 
 For using Rings solely in Java there is Maven artifact:
@@ -77,12 +78,12 @@ For using Rings solely in Java there is Maven artifact:
 <dependency>
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.1</version>
+    <version>2.2</version>
 </dependency>
 ```
 
-Examples: algebra, GCDs, factorization
---------------------------------------
+Examples: algebra, GCDs, factorization, programming
+---------------------------------------------------
 
 Below examples can be evaluated directly in the Rings<i>.repl</i>. If using Rings in Scala, the following preambula will import all required things from Rings library:
 
@@ -335,6 +336,97 @@ implicit val ring = MultivariateRing(cfRing, Array("a", "b", "c"))
 val poly = ring("1 - (1 - z^3) * a^6*b + (1 - 2*z) * c^33 + a^66")
 ```
 
+
+------------------------------------------------------------------------
+
+Implement generic function for solving linear Diophantine equations:
+
+```scala
+/**
+  * Solves equation \sum f_i s_i  = gcd(f_1, \dots, f_N) for given f_i and unknown s_i
+  * @return a tuple (gcd, solution)
+  */
+def solveDiophantine[E](fi: Seq[E])(implicit ring: Ring[E]) =
+  fi.foldLeft((ring(0), Seq.empty[E])) { case ((gcd, seq), f) =>
+    val xgcd = ring.extendedGCD(gcd, f)
+    (xgcd(0), seq.map(_ * xgcd(1)) :+ xgcd(2))
+  }
+```
+
+Implement generic function for computing partial fraction decomposition:
+
+```scala
+/** Computes partial fraction decomposition of given rational */
+def apart[E](frac: Rational[E]) = {
+  implicit val ring: Ring[E] = frac.ring
+  val factors = ring.factor(frac.denominator).map {case (f, exp) => f.pow(exp)}
+  val (gcd,  nums) = solveDiophantine(factors.map(frac.denominator / _))
+  val (ints, rats) = (nums zip factors)
+    .map { case (num, den) => Rational(frac.numerator * num, den * gcd) }
+    .flatMap(_.normal)       // extract integral parts from fractions
+    .partition(_.isIntegral) // separate integrals and fractions
+  rats :+ ints.foldLeft(Rational(ring(0)))(_ + _)
+}
+```
+
+
+Apply that function to elements of different rings:
+
+```scala
+// partial fraction decomposition for rationals
+// gives List(184/479, (-10)/13, 1/8, (-10)/47, 1)
+val qFracs = apart( Q("1234213 / 2341352"))
+
+// partial fraction decomposition for rational functions
+val ufRing = Frac(UnivariateRingZp64(17, "x"))
+// gives List(4/(16+x), 1/(10+x), 15/(1+x), (14*x)/(15+7*x+x^2))
+val pFracs = apart( ufRing("1 / (3 - 3*x^2 - x^3 + x^5)") )
+```
+
+
+------------------------------------------------------------------------
+
+Implement Lagrange method for univariate interpolation:
+
+```latex
+    p(x) = \sum_i p(x_i) \Pi_{j \ne i} \frac{x_{\phantom{i}} - x_j}{x_i -x_j}
+```
+
+```scala
+/** Lagrange polynomial interpolation formula */
+def interpolate[Poly <: IUnivariatePolynomial[Poly], Coef]
+    (points: Seq[(Coef, Coef)])
+    (implicit ring: IUnivariateRing[Poly, Coef]) = {
+      // implicit coefficient ring (setups algebraic operators on type Coef)
+      implicit val cfRing: Ring[Coef] = ring.cfRing
+      if (!cfRing.isField) throw new IllegalArgumentException
+      points.indices
+        .foldLeft(ring(0)) { case (sum, i) =>
+          sum + points.indices
+            .filter(_ != i)
+            .foldLeft(ring(points(i)._2)) { case (product, j) =>
+              product * (ring.`x` - points(j)._1) / (points(i)._1 - points(j)._1)
+            }
+        }
+    }
+```
+
+
+Interpolate polynomial from `Frac(Z_{13}[a,b,c])[x]`:
+
+
+```scala
+// coefficient ring Frac(Z/13[a,b,c])
+val cfRing = Frac(MultivariateRingZp64(2, Array("a", "b", "c")))
+val (a, b, c) = cfRing("a", "b", "c")
+
+implicit val ring = UnivariateRing(cfRing, "x")
+// interpolate with Lagrange formula
+val data = Seq(a -> b, b -> c, c -> a)
+val poly = interpolate(data)
+assert(data.forall { case (p, v) => poly.eval(p) == v })
+```
+
 Highlighted benchmarks
 ----------------------
 
@@ -494,51 +586,61 @@ Index of algorithms implemented in Rings
 
     (the same interpolation techniques as in ZippelGCD is used):
 
-    > -  [MultivariateGCD.ModularGCD](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+    > -  [MultivariateGCD.ZippelGCDInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
-25. *Kaltofen's & Monagan's generic modular GCD* (\[KalM99\])
+25. *Modular GCD over Z (small primes version)*:
+
+    > - [MultivariateGCD.ModularGCDInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>)
+
+26. *Kaltofen's & Monagan's generic modular GCD with sparse interpolation* (\[KalM99\])
 
     used for computing multivariate GCD over finite fields of very small cardinality:
 
-    > -  [MultivariateGCD.ModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
+    > - [MultivariateGCD.KaltofenMonaganSparseModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>)
 
-26. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* (\[LeeM13\]):
+27. *Kaltofen's & Monagan's generic modular GCD with EEZ-GCD for modular images* (\[KalM99\])
+
+    used for computing multivariate GCD over finite fields of very small cardinality:
+
+    > - [MultivariateGCD.KaltofenMonaganEEZModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>)
+
+28. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* (\[LeeM13\]):
 
     > -  [MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
 
-27. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* (\[Muss71\], Sec. 8.3 in \[GeCL92\]):
+29. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* (\[Muss71\], Sec. 8.3 in \[GeCL92\]):
 
     > -  [MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
     > -  [MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java)
 
-28. *Bernardin's fast dense multivariate Hensel lifting* (\[Bern99\], \[LeeM13\])
+30. *Bernardin's fast dense multivariate Hensel lifting* (\[Bern99\], \[LeeM13\])
 
     both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
 
     > -  [multivar.HenselLifting](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java)
 
-29. *Sparse Hensel lifting* (\[Kalt85\], \[LeeM13\])
+31. *Sparse Hensel lifting* (\[Kalt85\], \[LeeM13\])
 
     > - [multivar.HenselLifting](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java)
 
-30. *Fast dense bivariate factorization with recombination* (\[Bern99\], \[LeeM13\]):
+32. *Fast dense bivariate factorization with recombination* (\[Bern99\], \[LeeM13\]):
 
     > -  [MultivariateFactorization.bivariateDenseFactorSquareFreeInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
     > -  [MultivariateFactorization.bivariateDenseFactorSquareFreeInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
 
-31. *Kaltofen's multivariate factorization in finite fields* (\[Kalt85\], \[LeeM13\])
+33. *Kaltofen's multivariate factorization in finite fields* (\[Kalt85\], \[LeeM13\])
 
     modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to \[LeeM13\], but at the same time has many differences in details:
 
     > -  [MultivariateFactorization.factorInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
 
-32. *Kaltofen's multivariate factorization Z* (\[Kalt85\], \[LeeM13\])
+34. *Kaltofen's multivariate factorization Z* (\[Kalt85\], \[LeeM13\])
 
     (with the same modifications as for algorithm for finite fields):
 
     > -  [MultivariateFactorization.factorInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java)
 
-33. *Multivariate polynomial interpolation with Newton method*:
+35. *Multivariate polynomial interpolation with Newton method*:
 
     > -  [MultivariateInterpolation](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateInterpolation.java)
 

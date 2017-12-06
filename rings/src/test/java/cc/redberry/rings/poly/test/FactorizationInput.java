@@ -1,6 +1,6 @@
 package cc.redberry.rings.poly.test;
 
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -26,8 +26,8 @@ public final class FactorizationInput {
             assert Arrays.stream(factors).noneMatch(IPolynomial::isMonomial);
         }
 
-        public void assertFactorization(FactorDecomposition<Poly> factorization) {
-            Assert.assertEquals(poly, factorization.toPolynomial());
+        public void assertFactorization(PolynomialFactorDecomposition<Poly> factorization) {
+            Assert.assertEquals(poly, factorization.multiply());
             Assert.assertTrue(factors.length <= factorization.sumExponents());
         }
     }
@@ -74,10 +74,10 @@ public final class FactorizationInput {
     }
 
     public static class FactorizationAlgorithm<Poly extends IPolynomial<Poly>> {
-        public final Function<Poly, FactorDecomposition<Poly>> algorithm;
+        public final Function<Poly, PolynomialFactorDecomposition<Poly>> algorithm;
         public final String name;
 
-        public FactorizationAlgorithm(Function<Poly, FactorDecomposition<Poly>> algorithm, String name) {
+        public FactorizationAlgorithm(Function<Poly, PolynomialFactorDecomposition<Poly>> algorithm, String name) {
             this.algorithm = algorithm;
             this.name = name;
         }
@@ -88,7 +88,7 @@ public final class FactorizationInput {
         }
 
         public static <Poly extends IPolynomial<Poly>>
-        FactorizationAlgorithm<Poly> named(Function<Poly, FactorDecomposition<Poly>> algorithm, String name) {
+        FactorizationAlgorithm<Poly> named(Function<Poly, PolynomialFactorDecomposition<Poly>> algorithm, String name) {
             return new FactorizationAlgorithm<>(algorithm, name);
         }
     }
@@ -122,7 +122,7 @@ public final class FactorizationInput {
             }
             SampleDecomposition<Poly> sample = source.next();
             for (int i = 0; i < algorithms.length; i++) {
-                FactorDecomposition<Poly> decomposition = null;
+                PolynomialFactorDecomposition<Poly> decomposition = null;
                 try {
                     long start = System.nanoTime();
                     decomposition = algorithms[i].algorithm.apply(sample.poly);

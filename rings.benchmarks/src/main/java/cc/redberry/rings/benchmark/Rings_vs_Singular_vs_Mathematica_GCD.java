@@ -17,27 +17,27 @@ public class Rings_vs_Singular_vs_Mathematica_GCD {
 
     public static void main(String[] args) throws Exception {
         // warm up
-        run(3, 5, 3, 100, Rings.Z, false);
+//        run(3, 5, 3, 100, Rings.Z, false);
         System.out.println("warmed");
         silent = false;
         long[][] timings;
-        for (int nVariables = 3; nVariables <= 7; ++nVariables) {
+        for (int nVariables = 5; nVariables <= 7; ++nVariables) {
             MATHEMATICA_TIMEOUT_SECONDS = 300;
 
             int nIterations = 100;
 
-            doFactorMathematica = true;
-            doRunSingular = false;
+            doFactorMathematica = false;
+            doRunSingular = true;
             timings = run(nVariables, 20, 40, nIterations, Rings.Z, false);
             writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z_%s.tsv", nVariables)), timings);
-            timings = run(nVariables, 20, 40, nIterations, Rings.Z, true);
-            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z_coprime_%s.tsv", nVariables)), timings);
+//            timings = run(nVariables, 20, 40, nIterations, Rings.Z, true);
+//            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z_coprime_%s.tsv", nVariables)), timings);
 
-            doFactorMathematica = false;
-            timings = run(nVariables, 20, 40, nIterations, Rings.Zp(2), false);
-            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z2_%s.tsv", nVariables)), timings);
-            timings = run(nVariables, 20, 40, nIterations, Rings.Zp(2), true);
-            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z2_coprime_%s.tsv", nVariables)), timings);
+//            doFactorMathematica = false;
+//            timings = run(nVariables, 20, 40, nIterations, Rings.Zp(2), false);
+//            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z2_%s.tsv", nVariables)), timings);
+//            timings = run(nVariables, 20, 40, nIterations, Rings.Zp(2), true);
+//            writeTimingsTSV(Paths.get(System.getProperty("user.dir"), "rings.benchmarks", "results", String.format("gcd_in_z2_coprime_%s.tsv", nVariables)), timings);
         }
     }
 
@@ -68,6 +68,10 @@ public class Rings_vs_Singular_vs_Mathematica_GCD {
                     a = ring.randomElement(degree, size),
                     b = ring.randomElement(degree, size),
                     gcd = ring.randomElement(degree, size);
+
+            System.out.println(a);
+            System.out.println(b);
+            System.out.println(gcd);
 
             a = a.multiply(gcd);
             b = b.multiply(gcd);

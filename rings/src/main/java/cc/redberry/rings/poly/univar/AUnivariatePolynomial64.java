@@ -297,11 +297,6 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
     }
 
     @Override
-    public final lPoly setCoefficientRingFrom(lPoly poly) {
-        return clone();
-    }
-
-    @Override
     public final lPoly shiftLeft(int offset) {
         if (offset == 0)
             return self;

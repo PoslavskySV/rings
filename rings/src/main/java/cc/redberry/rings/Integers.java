@@ -1,6 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.primes.BigPrimes;
 
 import java.util.Iterator;
 
@@ -55,6 +56,21 @@ public final class Integers extends AIntegers {
         if (isOne(element) || isMinusOne(element))
             return element;
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final BigInteger gcd(BigInteger a, BigInteger b) {
+        return a.gcd(b);
+    }
+
+    @Override
+    public FactorDecomposition<BigInteger> factorSquareFree(BigInteger element) {
+        return factor(element);
+    }
+
+    @Override
+    public FactorDecomposition<BigInteger> factor(BigInteger element) {
+        return FactorDecomposition.of(this, BigPrimes.primeFactors(element));
     }
 
     @Override

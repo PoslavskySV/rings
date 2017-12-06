@@ -1,6 +1,6 @@
-package cc.redberry.rings.bigint;
+package cc.redberry.rings;
 
-import cc.redberry.rings.Ring;
+import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 
 import static cc.redberry.rings.bigint.BigInteger.*;
-import static cc.redberry.rings.bigint.ChineseRemainders.ChineseRemainders;
+import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
 import static java.lang.Math.floorMod;
 
 /**

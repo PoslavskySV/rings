@@ -2,7 +2,6 @@ package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.apache.commons.math3.random.Well44497b;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -307,7 +306,80 @@ public interface Ring<E> extends
      * @param b the second element
      * @return gcd
      */
-    E gcd(E a, E b);
+    default E gcd(E a, E b) {
+        if (isField())
+            return a;
+        if (!isEuclideanRing())
+            throw new UnsupportedOperationException("GCD is not supported in this ring");
+        if (isZero(a)) return b;
+        if (isZero(b)) return a;
+
+        // run Euclidean algorithm by default
+        E x = a, y = b, r;
+        while (true) {
+            r = remainder(x, y);
+            if (r == null)
+                throw new ArithmeticException("Not divisible with remainder: (" + x + ") / (" + y + ")");
+
+            if (isZero(r))
+                break;
+            x = y;
+            y = r;
+        }
+        return y;
+    }
+
+    /**
+     * Returns array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}
+     *
+     * @throws UnsupportedOperationException if this is not the Euclidean ring and there is no special implementation
+     *                                       provided by particular subtype
+     */
+    default E[] extendedGCD(E a, E b) {
+        if (!isEuclideanRing())
+            throw new UnsupportedOperationException("Extended GCD is not supported in this ring");
+
+        if (isZero(a)) return createArray(b, getOne(), getOne());
+        if (isZero(b)) return createArray(a, getOne(), getOne());
+
+        if (isField()) {
+            E[] r = createArray(3);
+            r[0] = getOne();
+            r[1] = divideExact(reciprocal(a), valueOf(2));
+            r[2] = divideExact(reciprocal(b), valueOf(2));
+            return r;
+        }
+
+        E s = getZero(), old_s = getOne();
+        E t = getOne(), old_t = getZero();
+        E r = b, old_r = a;
+
+        E q;
+        E tmp;
+        while (!isZero(r)) {
+            q = quotient(old_r, r);
+            if (q == null)
+                throw new ArithmeticException("Not divisible with remainder: (" + old_r + ") / (" + r + ")");
+
+            tmp = old_r;
+            old_r = r;
+            r = subtract(tmp, multiply(q, r));
+
+            tmp = old_s;
+            old_s = s;
+            s = subtract(tmp, multiply(q, s));
+
+            tmp = old_t;
+            old_t = t;
+            t = subtract(tmp, multiply(q, t));
+        }
+
+        E[] result = createArray(3);
+        result[0] = old_r;
+        result[1] = old_s;
+        result[2] = old_t;
+        return result;
+    }
 
     /**
      * Returns the least common multiple of two elements
@@ -348,6 +420,20 @@ public interface Ring<E> extends
                 gcd = gcd(gcd, e);
         }
         return gcd;
+    }
+
+    /**
+     * Square-free factorization of specified element
+     */
+    default FactorDecomposition<E> factorSquareFree(E element) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Factor specified element
+     */
+    default FactorDecomposition<E> factor(E element) {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -398,6 +484,16 @@ public interface Ring<E> extends
      * @see #isOne(Object)
      */
     boolean isUnit(E element);
+
+    /**
+     * Tests whether specified element is a ring unit or zero
+     *
+     * @param element the ring element
+     * @return whether specified element is a ring unit or zero
+     */
+    default boolean isUnitOrZero(E element) {
+        return isUnit(element) || isZero(element);
+    }
 
     /**
      * Tests whether specified element is minus one
@@ -528,6 +624,18 @@ public interface Ring<E> extends
         E[] array = createArray(2);
         array[0] = a;
         array[1] = b;
+        return array;
+    }
+
+    /**
+     * Creates generic array of {@code {a, b, c}}
+     */
+    @SuppressWarnings("unchecked")
+    default E[] createArray(E a, E b, E c) {
+        E[] array = createArray(3);
+        array[0] = a;
+        array[1] = b;
+        array[2] = c;
         return array;
     }
 

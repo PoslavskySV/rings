@@ -792,7 +792,7 @@ Methods added to `Ring[E]`_ interface:
 Polynomial ring methods
 """""""""""""""""""""""
 
-Methods added to `PolynomialRing[Poly, E]`_  class (``Poly`` is polynomial type, ``E`` is a type of coefficients):
+Methods added to `IPolynomialRing[Poly, E]`_  interface (``Poly`` is polynomial type, ``E`` is a type of coefficients):
 
 +------------------------------+--------------------------------------------------------------------------------------------------+
 | Scala DSL                    | Description                                                                                      |
@@ -808,14 +808,14 @@ Methods added to `PolynomialRing[Poly, E]`_  class (``Poly`` is polynomial type,
 +------------------------------+--------------------------------------------------------------------------------------------------+
 
 
-For more details see `PolynomialRing[Poly, E]`_.
+For more details see `IPolynomialRing[Poly, E]`_.
 
 
 .. _Ring<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Ring.java
 
 .. _Ring[E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
 
-.. _PolynomialRing[Poly, E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
+.. _IPolynomialRing[Poly, E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
 
 .. _Z: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Rings.java#L30
 
@@ -1031,7 +1031,7 @@ Note that there is no any specific polynomial ring used in the ``genericFunc`` a
 		  * @tparam E    type of polynomial coefficients
 		  */
 		def genericFuncWithRing[Poly <: IPolynomial[Poly], E](poly: Poly)
-		    (implicit ring: PolynomialRing[Poly, E]): Poly = {
+		    (implicit ring: IPolynomialRing[Poly, E]): Poly = {
 		  poly.pow(2) * 3 + poly * 2 + 1
 		}
 
@@ -1049,7 +1049,7 @@ Note that there is no any specific polynomial ring used in the ``genericFunc`` a
 		/**
 		 * @param <Poly> polynomial type
 		 */
-		static <Poly extends IPolynomial<Poly>> Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) {
+		static <Poly extends IPolynomial<Poly>> Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) {
 		    return ring.add(
 		            ring.getOne(),
 		            ring.multiply(poly, ring.valueOf(2)),
@@ -1165,7 +1165,7 @@ Internally both implementations use dense data structure (array of coefficients)
 		 * @param <Poly> univariate polynomial type
 		 */
 		static <Poly extends IUnivariatePolynomial<Poly>>
-		Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) { return null; }
+		Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
 
 .. _ref-univariate-divison:
@@ -1334,7 +1334,7 @@ Implementation of univariate factorization in |Rings| is distributed over severa
  - ``EqualDegreeFactorization`` |br| Equal-degree factorization using Cantor-Zassenhaus algorithm in both odd and even characteristic (Sec. 14.3 in [GaGe03]_).
  - ``UnivariateFactorization`` |br| Defines upper-level methods and implements factorization over :math:`Z`. In the latter case Hensel lifting (combined linear/quadratic) is used to lift factorization modulo some 32-bit prime number to actual factorization over :math:`Z` and naive recombination to reconstruct correct factors. Examples:
    
-Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field or :math:`Z` or :math:`Q`. Examples:
+Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field, :math:`Z`,  :math:`Q` or other polynomial ring. Examples:
 
 .. tabs::
 
@@ -1628,7 +1628,7 @@ The generic parent class for multivariate polynomials is `AMultivariatePolynomia
 		 */
 		static <Monomial extends DegreeVector<Monomial>,
 		        Poly extends AMultivariatePolynomial<Monomial, Poly>>
-		Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) { return null; }
+		Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
 		// call generic funcs
 		genericFunc(MultivariatePolynomial.parse("a + b"));
@@ -1796,12 +1796,14 @@ Multivariate GCD
 
  - ``BrownGCD`` |br| Brown's GCD for multivariate polynomials over finite fields (see [Brow71]_, Sec 7.4 in [GeCL92]_, [Yang09]_).
  - ``ZippelGCD`` |br| Zippel's sparse algorithm for multivariate GCD over fields. Works both in case of monic polynomials with fast Vandermonde linear systems (see [Zipp79]_, [Zipp93]_) and in case of non-monic input (LINZIP, see [dKMW05]_, [Yang09]_).
- - ``ModularGCD`` |br| Modular GCD for multivariate polynomials over Z with sparse interpolation (see [Zipp79]_, [Zipp93]_, [dKMW05]_) (the same interpolation techniques as in ZippelGCD is used).
- - ``ModularGCDInGF`` |br| Kaltofen's & Monagan's generic modular GCD (see [KalM99]_) for multivariate polynomials over finite fields with very small cardinality.
+ - ``ZippelGCDInZ`` |br| Zippel's sparse algorithm for multivariate GCD over Z (see [Zipp79]_, [Zipp93]_, [dKMW05]_) (the same interpolation techniques as in ZippelGCD is used)..
+ - ``ModularGCDInZ`` |br| Standard modular algorithm (small primes) for GCD over Z.
+ - ``KaltofenMonaganSparseModularGCDInGF`` |br| Kaltofen's & Monagan's generic modular GCD (see [KalM99]_) for multivariate polynomials over finite fields with very small cardinality with sparse Zippel's techniques similar to ZippelGCDInZ
+ - ``KaltofenMonaganEEZModularGCDInGF`` |br| Kaltofen's & Monagan's generic modular GCD (see [KalM99]_) for multivariate polynomials over finite fields with very small cardinality with EEZ-GCD used for modular images
  - ``EZGCD`` |br| Extended Zassenhaus GCD (EZ-GCD) for multivariate polynomials over finite fields (see Sec. 7.6 in [GeCL92]_ and [MosY73]_).
  - ``EEZGCD`` |br| Enhanced Extended Zassenhaus GCD (EEZ-GCD) for multivariate polynomials over finite fields (see [Wang80]_).
 
-The upper-level method ``MultivariateGCD.PolynomialGCD`` uses ``ZippelGCD`` for polynomials over finite fields (it shows the best performance in practice). In case of finite fields of very small cardinality ``ModularGCDInGF`` is used. ``ModularGCD`` is used for polynomials in :math:`Z[x]` and :math:`Q[x]`. Algorithms ``BrownGCD`` and ``ZippelGCD`` automatically switch to ``ModularGCDInGF`` in case if the coefficient domain has insufficiently large cardinality. Examples:
+The upper-level method ``MultivariateGCD.PolynomialGCD`` switches between Zippel-like algorithms and EEZ-GCD based algorithms. The latter are used only on a very dense problems (which occur rarely), while the former are actually used in most cases. In case of finite fields of very small cardinality Kaltofen's & Monagan's algorithm is used. Examples:
 
 .. tabs::
 
@@ -1950,14 +1952,14 @@ Details of implementation can be found in `MultivariateGCD`_.
 .. _ref-multivariate-factorization:
 
 Multivariate factorization
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^ 
 
 Implementation of multivariate factorization in |Rings| is distributed over two classes:
 
  - ``MultivariateSquareFreeFactorization`` |br| Square-free factorization of multivariate polynomials. In the case of zero characteristic Yun's algorithm is used (Sec. 14.6 in [GaGe03]_), otherwise Musser's algorithm is used (Sec. 8.3 in [GeCL92]_, [Muss71]_).
- - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z` and :math:`Q`. In the case of bivariate polynomials |Rings| use fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Still for multivariate Hensel lifting the fast quasi-dense algorithm due to Bernardin is used (see [Bern99]_ and [LeeM13]_). 
+ - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z` and :math:`Q`. In the case of bivariate polynomials |Rings| use fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Both sparse lifting and fast quasi-dense algorithm due to Bernardin (see [Bern99]_ and [LeeM13]_) are used. 
    
-Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]` where :math:`F` is either finite field or :math:`Z` or :math:`Q`. Examples:
+Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]` where :math:`F` is either finite field, :math:`Z`, :math:`Q` or other polynomial ring. Examples:
 
 .. tabs::
 

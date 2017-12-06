@@ -7,7 +7,7 @@ trait RingSyntax {
 }
 
 trait PolynomialCfSyntax {
-  implicit def polynomialOps[Poly <: IPolynomial[Poly], E](lhs: Poly)(implicit pRing: PolynomialRing[Poly, E]): PolynomialCfOps[Poly, E] = new PolynomialCfOps[Poly, E](lhs)(pRing)
+  implicit def polynomialOps[Poly <: IPolynomial[Poly], E](lhs: Poly)(implicit pRing: IPolynomialRing[Poly, E]): PolynomialCfOps[Poly, E] = new PolynomialCfOps[Poly, E](lhs)(pRing)
 }
 
 trait UnivariateSyntax {
@@ -56,7 +56,7 @@ trait MultivariateCfSyntax {
 }
 
 trait CfSyntax {
-  implicit def cfOps[E, Poly <: IPolynomial[Poly]](self: E)(implicit pRing: PolynomialRing[Poly, E])
+  implicit def cfOps[E, Poly <: IPolynomial[Poly]](self: E)(implicit pRing: IPolynomialRing[Poly, E])
   = new CfOps[E, Poly](self)(pRing)
 }
 

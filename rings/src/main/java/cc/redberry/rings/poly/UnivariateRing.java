@@ -1,9 +1,6 @@
 package cc.redberry.rings.poly;
 
-import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
-import cc.redberry.rings.poly.univar.RandomUnivariatePolynomials;
-import cc.redberry.rings.poly.univar.UnivariateDivision;
-import cc.redberry.rings.poly.univar.UnivariateGCD;
+import cc.redberry.rings.poly.univar.*;
 import org.apache.commons.math3.random.RandomGenerator;
 
 /**
@@ -34,6 +31,21 @@ public final class UnivariateRing<Poly extends IUnivariatePolynomial<Poly>> exte
 
     @Override
     public Poly gcd(Poly a, Poly b) {return UnivariateGCD.PolynomialGCD(a, b);}
+
+    @Override
+    public Poly[] extendedGCD(Poly a, Poly b) {
+        return UnivariateGCD.PolynomialExtendedGCD(a, b);
+    }
+
+    @Override
+    public PolynomialFactorDecomposition<Poly> factorSquareFree(Poly element) {
+        return UnivariateSquareFreeFactorization.SquareFreeFactorization(element);
+    }
+
+    @Override
+    public PolynomialFactorDecomposition<Poly> factor(Poly element) {
+        return UnivariateFactorization.Factor(element);
+    }
 
     @Override
     public Poly variable(int variable) {

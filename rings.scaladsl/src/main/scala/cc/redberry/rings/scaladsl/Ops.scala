@@ -123,7 +123,7 @@ trait PolynomialSetSyntax {
   implicit def polynomialSetOps[Poly <: IPolynomial[Poly]](poly: Poly): PolynomialSetOps[Poly] = new PolynomialSetOps[Poly](poly)
 }
 
-class PolynomialCfOps[Poly <: IPolynomial[Poly], E](self: Poly)(pRing: PolynomialRing[Poly, E]) {
+class PolynomialCfOps[Poly <: IPolynomial[Poly], E](self: Poly)(pRing: IPolynomialRing[Poly, E]) {
   def lc: E = pRing.lc(self)
 
   def cc: E = pRing.cc(self)
@@ -246,7 +246,7 @@ class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynom
   def swapVariables(i: String, j: String): Poly = rings.poly.multivar.AMultivariatePolynomial.swapVariables[Term, Poly](self, pRing.index(i), pRing.index(j))
 }
 
-class CfOps[E, Poly <: IPolynomial[Poly]](self: E)(ring: PolynomialRing[Poly, E]) {
+class CfOps[E, Poly <: IPolynomial[Poly]](self: E)(ring: IPolynomialRing[Poly, E]) {
   def +(poly: Poly): Poly = ring.addConstant(poly, self)
 
   def -(poly: Poly): Poly = ring.negate(ring.subtractConstant(poly, self))

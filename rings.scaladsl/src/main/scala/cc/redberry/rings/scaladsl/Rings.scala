@@ -3,13 +3,13 @@ package cc.redberry.rings.scaladsl
 import java.util.Objects
 
 import cc.redberry.rings
+import cc.redberry.rings._
 import cc.redberry.rings.poly.multivar.MonomialOrder
-import cc.redberry.rings.{poly, _}
 
 import scala.language.{existentials, implicitConversions, postfixOps}
 
 /**
-  * Simple wrapper around [[Ring]] used to unify PolynomialRing and Ring
+  * Simple wrapper around [[Ring]] used to unify IPolynomialRing and Ring
   *
   * @param theRing the [[Ring]]
   **/
@@ -40,6 +40,8 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
   final def apply(int: BigInt): E = theRing.valueOfBigInteger(int)
 
   final def apply(int: IntZ): E = theRing.valueOfBigInteger(int)
+
+  final def apply(e: ElementType): E = theRing.valueOf(e)
 
   final def apply(a: String, b: String): (E, E) = (parse(a), parse(b))
 
@@ -106,17 +108,27 @@ final case class Frac[E](ring: Ring[E]) extends Ring[Rational[E]](rings.Rings.Fr
       rat.toString(ring)
     case element => ring.show(element)
   }
+
+  def apply(a: E): Rational[E] = new Rational[E](rationalsDomain.ring, a)
+
+  def apply(a: E, b: E): (Rational[E], Rational[E]) = (apply(a), apply(b))
+
+  def apply(a: E, b: E, c: E): (Rational[E], Rational[E], Rational[E]) = (apply(a), apply(b), apply(c))
+
+  def apply(a: E, b: E, c: E, d: E): (Rational[E], Rational[E], Rational[E], Rational[E]) = (apply(a), apply(b), apply(c), apply(d))
+
+  def apply(a: E, b: E, c: E, d: E, e: E): (Rational[E], Rational[E], Rational[E], Rational[E], Rational[E]) = (apply(a), apply(b), apply(c), apply(d), apply(e))
 }
 
 /**
   * Base class for polynomial rings
   *
-  * @param theRing   the [[PolynomialRing]]
+  * @param theRing   the [[IPolynomialRing]]
   * @param variables polynomial variables
   * @tparam E coefficient type
   */
-abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
-(override val theRing: poly.PolynomialRing[Poly],
+abstract class IPolynomialRing[Poly <: IPolynomial[Poly], E]
+(override val theRing: rings.poly.IPolynomialRing[Poly],
  val variables: Array[String]) extends Ring[Poly](theRing) {
 
   /**
@@ -214,9 +226,19 @@ abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
   protected[scaladsl] final def divRem(a: Poly, b: Poly): (Poly, Poly) = {
     val qd = theRing.divideAndRemainder(a, b)
     if (qd == null)
-      throw new ArithmeticException(s"not divisible with remainder: ${this show a} / ${this show b}")
+      throw new ArithmeticException(s"not divisible with remainder: ${this show a } / ${this show b }")
     (qd(0), qd(1))
   }
+
+  final def apply(value: E): Poly = getConstant(value)
+
+  final def apply(a: E, b: E): (Poly, Poly) = (apply(a), apply(b))
+
+  final def apply(a: E, b: E, c: E): (Poly, Poly, Poly) = (apply(a), apply(b), apply(c))
+
+  final def apply(a: E, b: E, c: E, d: E): (Poly, Poly, Poly, Poly) = (apply(a), apply(b), apply(c), apply(d))
+
+  final def apply(a: E, b: E, c: E, d: E, e: E): (Poly, Poly, Poly, Poly, Poly) = (apply(a), apply(b), apply(c), apply(d), apply(e))
 
   /**
     * Constant polynomial with specified value
@@ -264,12 +286,12 @@ abstract class PolynomialRing[Poly <: IPolynomial[Poly], E]
   def lc(poly: Poly): E
 }
 
-object PolynomialRing {
-  def apply[Poly <: IPolynomial[Poly], E](factory: Poly): PolynomialRing[Poly, E] = factory match {
-    case p: UnivariatePolynomialZp64 => UnivariateRingZp64(p.ring, WithVariables.defaultVars(1)(0)).asInstanceOf[PolynomialRing[Poly, E]]
-    case p: UnivariatePolynomial[E forSome {type E}] => UnivariateRing(p.ring, WithVariables.defaultVars(1)(0)).asInstanceOf[PolynomialRing[Poly, E]]
-    case p: MultivariatePolynomialZp64 => MultivariateRingZp64(p.ring, WithVariables.defaultVars(p.nVariables), p.ordering).asInstanceOf[PolynomialRing[Poly, E]]
-    case p: MultivariatePolynomial[E forSome {type E}] => MultivariateRing(p.ring, WithVariables.defaultVars(p.nVariables), p.ordering).asInstanceOf[PolynomialRing[Poly, E]]
+object IPolynomialRing {
+  def apply[Poly <: IPolynomial[Poly], E](factory: Poly): IPolynomialRing[Poly, E] = factory match {
+    case p: UnivariatePolynomialZp64 => UnivariateRingZp64(p.ring, WithVariables.defaultVars(1)(0)).asInstanceOf[IPolynomialRing[Poly, E]]
+    case p: UnivariatePolynomial[E forSome {type E}] => UnivariateRing(p.ring, WithVariables.defaultVars(1)(0)).asInstanceOf[IPolynomialRing[Poly, E]]
+    case p: MultivariatePolynomialZp64 => MultivariateRingZp64(p.ring, WithVariables.defaultVars(p.nVariables), p.ordering).asInstanceOf[IPolynomialRing[Poly, E]]
+    case p: MultivariatePolynomial[E forSome {type E}] => MultivariateRing(p.ring, WithVariables.defaultVars(p.nVariables), p.ordering).asInstanceOf[IPolynomialRing[Poly, E]]
     case _ => ???
   }
 }
@@ -277,12 +299,12 @@ object PolynomialRing {
 /**
   * Ring of univariate polynomials
   *
-  * @param theRing  the [[PolynomialRing]]
+  * @param theRing  the [[IPolynomialRing]]
   * @param variable the variable
   */
 sealed abstract class IUnivariateRing[Poly <: IUnivariatePolynomial[Poly], E]
-(override val theRing: poly.PolynomialRing[Poly],
- val variable: String) extends PolynomialRing[Poly, E](theRing, Array(variable)) {
+(override val theRing: rings.poly.IPolynomialRing[Poly],
+ val variable: String) extends IPolynomialRing[Poly, E](theRing, Array(variable)) {
   /**
     * Evaluate poly at a given point
     */
@@ -292,6 +314,11 @@ sealed abstract class IUnivariateRing[Poly <: IUnivariatePolynomial[Poly], E]
     * i-th coefficient
     */
   def at(poly: Poly, index: Int): E = cc(poly.getAsPoly(index))
+
+  /**
+    * Create univariate polynomial from the array of coefficients
+    */
+  def create(coefficients: E*): Poly
 }
 
 /**
@@ -363,6 +390,11 @@ final case class GaloisField64
     * Leading coefficient
     */
   override def lc(poly: UnivariatePolynomialZp64): Long = poly.lc()
+
+  /**
+    * Create univariate polynomial from the array of coefficients
+    */
+  override def create(coefficients: Long*) = theRing.valueOf(theRing.factory().createFromArray(coefficients.toArray))
 }
 
 /**
@@ -464,6 +496,11 @@ final case class GaloisField[E]
     * Leading coefficient
     */
   override def lc(poly: UnivariatePolynomial[E]): E = poly.lc()
+
+  /**
+    * Create univariate polynomial from the array of coefficients
+    */
+  override def create(coefficients: E*) = theRing.valueOf(UnivariatePolynomial.apply[E, E](coefficients: _*)(cfRing))
 }
 
 object GF {
@@ -506,17 +543,17 @@ object GF {
 /**
   * Ring of Zp[x] polynomials
   *
-  * @param coefficientDomain coefficient ring
-  * @param variable          variable
+  * @param coefficientRing coefficient ring
+  * @param variable        variable
   */
-final case class UnivariateRingZp64 private(override val variable: String, coefficientDomain: IntegersZp64)
-  extends IUnivariateRing[UnivariatePolynomialZp64, Long](rings.Rings.UnivariateRingZp64(coefficientDomain), variable) {
-  val modulus: Long = coefficientDomain.modulus
+final case class UnivariateRingZp64 private(override val variable: String, coefficientRing: IntegersZp64)
+  extends IUnivariateRing[UnivariatePolynomialZp64, Long](rings.Rings.UnivariateRingZp64(coefficientRing), variable) {
+  val modulus: Long = coefficientRing.modulus
 
   /**
     * The coefficient ring
     */
-  override val cfRing: Ring[Long] = coefficientDomain
+  override val cfRing: Ring[Long] = coefficientRing
 
   /**
     * Constant polynomial with specified value
@@ -572,6 +609,11 @@ final case class UnivariateRingZp64 private(override val variable: String, coeff
     * Leading coefficient
     */
   override def lc(poly: UnivariatePolynomialZp64): Long = poly.lc()
+
+  /**
+    * Create univariate polynomial from the array of coefficients
+    */
+  override def create(coefficients: Long*) = UnivariatePolynomialZp64.apply(coefficients: _*)(coefficientRing)
 }
 
 object UnivariateRingZp64 {
@@ -673,18 +715,23 @@ final case class UnivariateRing[E](coefficientDomain: Ring[E], override val vari
     * Leading coefficient
     */
   override def lc(poly: UnivariatePolynomial[E]): E = poly.lc()
+
+  /**
+    * Create univariate polynomial from the array of coefficients
+    */
+  override def create(coefficients: E*) = UnivariatePolynomial.apply[E, E](coefficients: _*)(cfRing)
 }
 
 /**
   * Ring of multivariate polynomials
   *
-  * @param theRing   the [[PolynomialRing]]
+  * @param theRing   the [[IPolynomialRing]]
   * @param variables the variables
   */
 sealed abstract class IMultivariateRing[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
-(override val theRing: poly.PolynomialRing[Poly],
+(override val theRing: rings.poly.IPolynomialRing[Poly],
  variables: Array[String],
- ordering: Ordering) extends PolynomialRing[Poly, E](theRing, variables) {
+ ordering: Ordering) extends IPolynomialRing[Poly, E](theRing, variables) {
   /**
     * The type of monomials
     */

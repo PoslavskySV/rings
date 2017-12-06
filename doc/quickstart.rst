@@ -36,7 +36,7 @@ Now run |Rings|\ *.repl*:
 
 	$ rings.repl
 	Loading...
-	Rings 2.1: efficient Java/Scala library for polynomial rings
+	Rings 2.2: efficient Java/Scala library for polynomial rings
 
 	@ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 	ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -59,7 +59,7 @@ Java/Scala library
 
 .. code-block:: scala
 
-	libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.1"
+	libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.2"
 
 For using |Rings| solely in Java there is Maven artifact:
 
@@ -68,11 +68,11 @@ For using |Rings| solely in Java there is Maven artifact:
 	<dependency>
 	    <groupId>cc.redberry</groupId>
 	    <artifactId>rings</artifactId>
-	    <version>2.1</version>
+	    <version>2.2</version>
 	</dependency>
 
-Examples: algebra, GCDs, factorization
-======================================
+Examples: algebra, GCDs, factorization, programming
+===================================================
 
 Below examples can be evaluated directly in the |Rings|\ *.repl*. For Scala/Java the following preambula will import all required things from |Rings| library:
 
@@ -616,6 +616,110 @@ Ring of multivariate polynomials over elements of Galois field :math:`GF(7^{3})[
 		MultivariatePolynomial<UnivariatePolynomialZp64>
 		        poly = ring.parse("1 - (1 - z^3) * a^6*b + (1 - 2*z) * c^33 + a^66");
 
+
+----
+
+Implement generic function for solving linear Diophantine equations:
+
+
+.. tabs::
+
+   .. code-tab:: scala
+
+	/**
+	  * Solves equation \sum f_i s_i  = gcd(f_1, \dots, f_N) for given f_i and unknown s_i
+	  * @return a tuple (gcd, solution)
+	  */
+	def solveDiophantine[E](fi: Seq[E])(implicit ring: Ring[E]) =
+	  fi.foldLeft((ring(0), Seq.empty[E])) { case ((gcd, seq), f) =>
+	    val xgcd = ring.extendedGCD(gcd, f)
+	    (xgcd(0), seq.map(_ * xgcd(1)) :+ xgcd(2))
+	  }
+
+
+Implement generic function for computing partial fraction decomposition:
+
+.. tabs::
+
+   .. code-tab:: scala
+
+	/** Computes partial fraction decomposition of given rational */
+	def apart[E](frac: Rational[E]) = {
+	  implicit val ring: Ring[E] = frac.ring
+	  val factors = ring.factor(frac.denominator).map {case (f, exp) => f.pow(exp)}
+	  val (gcd,  nums) = solveDiophantine(factors.map(frac.denominator / _))
+	  val (ints, rats) = (nums zip factors)
+	    .map { case (num, den) => Rational(frac.numerator * num, den * gcd) }
+	    .flatMap(_.normal)       // extract integral parts from fractions
+	    .partition(_.isIntegral) // separate integrals and fractions
+	  rats :+ ints.foldLeft(Rational(ring(0)))(_ + _)
+	}
+
+
+Apply that function to elements of different rings:
+
+
+.. tabs::
+
+   .. code-tab:: scala
+
+	// partial fraction decomposition for rationals
+	// gives List(184/479, (-10)/13, 1/8, (-10)/47, 1)
+	val qFracs = apart( Q("1234213 / 2341352"))
+
+	// partial fraction decomposition for rational functions
+	val ufRing = Frac(UnivariateRingZp64(17, "x"))
+	// gives List(4/(16+x), 1/(10+x), 15/(1+x), (14*x)/(15+7*x+x^2))
+	val pFracs = apart( ufRing("1 / (3 - 3*x^2 - x^3 + x^5)") )
+
+
+----
+
+Implement Lagrange method for univariate interpolation:
+
+.. math::
+	
+	p(x) = \sum_i p(x_i) \Pi_{j \ne i} \frac{x_{\phantom{i}} - x_j}{x_i -x_j}
+
+
+.. tabs::
+
+   .. code-tab:: scala
+
+	/** Lagrange polynomial interpolation formula */
+	def interpolate[Poly <: IUnivariatePolynomial[Poly], Coef]
+	    (points: Seq[(Coef, Coef)])
+	    (implicit ring: IUnivariateRing[Poly, Coef]) = {
+	      // implicit coefficient ring (setups algebraic operators on type Coef)
+	      implicit val cfRing: Ring[Coef] = ring.cfRing
+	      if (!cfRing.isField) throw new IllegalArgumentException
+	      points.indices
+	        .foldLeft(ring(0)) { case (sum, i) =>
+	          sum + points.indices
+	            .filter(_ != i)
+	            .foldLeft(ring(points(i)._2)) { case (product, j) =>
+	              product * (ring.`x` - points(j)._1) / (points(i)._1 - points(j)._1)
+	            }
+	        }
+	    }
+
+
+Interpolate polynomial from :math:`Frac(Z_{13}[a,b,c])[x]`:
+
+
+.. tabs::
+
+   .. code-tab:: scala
+
+	// coefficient ring Frac(Z/13[a,b,c])
+    val cfRing = Frac(MultivariateRingZp64(2, Array("a", "b", "c")))
+    val (a, b, c) = cfRing("a", "b", "c")
+
+    implicit val ring = UnivariateRing(cfRing, "x")
+    // interpolate with Lagrange formula
+    val data = Seq(a -> b, b -> c, c -> a)
+    val poly = interpolate(data)
+    assert(data.forall { case (p, v) => poly.eval(p) == v })
 
 
 .. _ref-some-benchamrks:

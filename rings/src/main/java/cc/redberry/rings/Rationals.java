@@ -142,7 +142,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     public Rational<E> valueOf(Rational<E> val) {
         if (val.ring.equals(ring))
             return val;
-        else return new Rational<E>(ring, ring.valueOf(val.numerator), ring.valueOf(val.denominator));
+        else return new Rational<>(ring, ring.valueOf(val.numerator), ring.valueOf(val.denominator));
     }
 
     @Override
@@ -181,6 +181,12 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return new Rational<>(ring, ring.valueOf(rnd.nextInt()), eden);
     }
 
+    public Rational<E> randomNonTrivialElement(RandomGenerator rnd) {
+        E den;
+        do {den = ring.randomElement(rnd);} while (ring.isZero(den));
+        return new Rational<>(ring, ring.randomElement(rnd), den);
+    }
+
     public Rational<E> parse(ElementParser<E> parser, String string) {
         int level = 0;
         int indexOfDiv = -1;
@@ -198,8 +204,8 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         if (indexOfDiv == -1)
             return new Rational<>(ring, parser.parse(removeParenthesis(string)));
         return new Rational<>(ring,
-                parser.parse(removeParenthesis(string.substring(0, indexOfDiv))),
-                parser.parse(removeParenthesis(string.substring(indexOfDiv + 1))));
+                parser.parse(removeParenthesis(string.substring(0, indexOfDiv)).trim()),
+                parser.parse(removeParenthesis(string.substring(indexOfDiv + 1)).trim()));
     }
 
     @Override
@@ -208,6 +214,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     private static String removeParenthesis(String string) {
+        string = string.trim();
         if (!string.startsWith("(") || !string.endsWith(")"))
             return string;
 

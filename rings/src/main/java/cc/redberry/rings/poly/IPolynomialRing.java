@@ -8,7 +8,7 @@ import cc.redberry.rings.WithVariables;
  *
  * @since 1.0
  */
-public interface PolynomialRing<Poly extends IPolynomial<Poly>> extends Ring<Poly>, WithVariables {
+public interface IPolynomialRing<Poly extends IPolynomial<Poly>> extends Ring<Poly>, WithVariables {
     /**
      * Number of polynomial variables
      */

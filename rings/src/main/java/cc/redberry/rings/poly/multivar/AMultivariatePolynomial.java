@@ -1,12 +1,14 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.WithVariables;
+import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.ArraysUtil;
+import gnu.trove.iterator.TIntIterator;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -312,6 +314,25 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
                 sparsity /= (d + 1);
         }
         return sparsity;
+    }
+
+    /**
+     * Sparsity level: {@code size / nDenseTerms} where nDenseTerms is a total number of possible distinct terms with
+     * total degree not larger than distinct total degrees presented in this.
+     */
+    public double sparsity2() {
+        TIntHashSet distinctTotalDegrees = new TIntHashSet();
+        terms.keySet().stream().mapToInt(dv -> dv.totalDegree).forEach(distinctTotalDegrees::add);
+        TIntIterator it = distinctTotalDegrees.iterator();
+        double nDenseTerms = 0.0;
+        while (it.hasNext()) {
+            int deg = it.next();
+            double d = BigIntegerUtil.binomial(deg + nVariables - 1, deg).doubleValue();
+            nDenseTerms += d;
+            if (d == Double.MAX_VALUE)
+                return size() / d;
+        }
+        return size() / nDenseTerms;
     }
 
     /**
@@ -1189,4 +1210,28 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final String toString() {
         return toString(WithVariables.defaultVars(nVariables));
     }
+
+    static long[] KroneckerMap(int[] degrees) {
+        long[] result = new long[degrees.length];
+        result[0] = 1L;
+        for (int i = 1; i < degrees.length; i++) {
+            result[i] = 1L;
+            double check = 1;
+            for (int j = 0; j < i; j++) {
+                long b = 2L * degrees[j] + 1;
+                result[i] *= b;
+                check *= b;
+            }
+
+            if (check > Long.MAX_VALUE) {
+                // long overflow -> can't use Kronecker's trick
+                return null;
+            }
+        }
+        return result;
+    }
+
+    /* shared constant */
+    /** when to switch to Kronecker's method */
+    static int KRONECKER_THRESHOLD = 256;
 }

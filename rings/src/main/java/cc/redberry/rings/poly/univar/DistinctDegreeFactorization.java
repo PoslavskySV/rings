@@ -1,6 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.Util;
 
 import java.util.ArrayList;
@@ -27,23 +27,23 @@ public final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static FactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorizationPlain(UnivariatePolynomialZp64 poly) {
+    public static PolynomialFactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorizationPlain(UnivariatePolynomialZp64 poly) {
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(poly);
+            return PolynomialFactorDecomposition.unit(poly);
 
         long factor = poly.lc();
         UnivariatePolynomialZp64 base = poly.clone().monic();
         UnivariatePolynomialZp64 polyModulus = base.clone();
 
         if (base.degree <= 1)
-            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
+            return PolynomialFactorDecomposition.of(base.createConstant(factor), base);
 
         if (base.isMonomial())
-            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
+            return PolynomialFactorDecomposition.of(base.createConstant(factor), base);
 
         UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod = UnivariateDivision.fastDivisionPreConditioning(polyModulus);
         UnivariatePolynomialZp64 exponent = poly.createMonomial(1);
-        FactorDecomposition<UnivariatePolynomialZp64> result = FactorDecomposition.constantFactor(poly.createOne());
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> result = PolynomialFactorDecomposition.unit(poly.createOne());
         int i = 0;
         while (!base.isConstant()) {
             ++i;
@@ -64,7 +64,7 @@ public final class DistinctDegreeFactorization {
                 break;
             }
         }
-        return result.setConstantFactor(poly.createConstant(factor));
+        return result.setUnit(poly.createConstant(factor));
     }
 
     /**
@@ -76,23 +76,23 @@ public final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static FactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorizationPrecomputedExponents(UnivariatePolynomialZp64 poly) {
+    public static PolynomialFactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorizationPrecomputedExponents(UnivariatePolynomialZp64 poly) {
         if (poly.isConstant())
-            return FactorDecomposition.constantFactor(poly);
+            return PolynomialFactorDecomposition.unit(poly);
 
         long factor = poly.lc();
         UnivariatePolynomialZp64 base = poly.clone().monic();
         UnivariatePolynomialZp64 polyModulus = base.clone();
 
         if (base.degree <= 1)
-            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
+            return PolynomialFactorDecomposition.of(base.createConstant(factor), base);
 
         if (base.isMonomial())
-            return FactorDecomposition.singleFactor(base.createConstant(factor), base);
+            return PolynomialFactorDecomposition.of(base.createConstant(factor), base);
 
         UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod = UnivariateDivision.fastDivisionPreConditioning(polyModulus);
         UnivariatePolynomialZp64 exponent = poly.createMonomial(1);
-        FactorDecomposition<UnivariatePolynomialZp64> result = FactorDecomposition.constantFactor(poly.createOne());
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> result = PolynomialFactorDecomposition.unit(poly.createOne());
 
         ArrayList<UnivariatePolynomialZp64> xPowers = xPowers(polyModulus, invMod);
         int i = 0;
@@ -114,7 +114,7 @@ public final class DistinctDegreeFactorization {
                 break;
             }
         }
-        return result.setConstantFactor(poly.createConstant(factor));
+        return result.setUnit(poly.createConstant(factor));
     }
 
     /** Shoup's parameter */
@@ -123,7 +123,7 @@ public final class DistinctDegreeFactorization {
     /** Shoup's main gcd loop */
     private static <T extends IUnivariatePolynomial<T>> void DistinctDegreeFactorizationShoup(T poly,
                                                                                               BabyGiantSteps<T> steps,
-                                                                                              FactorDecomposition<T> result) {
+                                                                                              PolynomialFactorDecomposition<T> result) {
         //generate each I_j
         T current = poly.clone();
         for (int j = 1; j <= steps.m; ++j) {
@@ -160,11 +160,11 @@ public final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> DistinctDegreeFactorizationShoup(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> DistinctDegreeFactorizationShoup(Poly poly) {
         Util.ensureOverFiniteField(poly);
         Poly factor = poly.lcAsPoly();
         poly = poly.clone().monic();
-        FactorDecomposition<Poly> result = FactorDecomposition.constantFactor(factor);
+        PolynomialFactorDecomposition<Poly> result = PolynomialFactorDecomposition.unit(factor);
         DistinctDegreeFactorizationShoup(poly, new BabyGiantSteps<>(poly), result);
         return result;
     }
@@ -233,7 +233,7 @@ public final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return distinct-degree decomposition of {@code poly}
      */
-    public static FactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorization(UnivariatePolynomialZp64 poly) {
+    public static PolynomialFactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorization(UnivariatePolynomialZp64 poly) {
         if (poly.degree < DEGREE_SWITCH_TO_SHOUP)
             return DistinctDegreeFactorizationPrecomputedExponents(poly);
         else
@@ -249,10 +249,10 @@ public final class DistinctDegreeFactorization {
      * @return distinct-degree decomposition of {@code poly}
      */
     @SuppressWarnings("unchecked")
-    public static <Poly extends IUnivariatePolynomial<Poly>> FactorDecomposition<Poly> DistinctDegreeFactorization(Poly poly) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> DistinctDegreeFactorization(Poly poly) {
         Util.ensureOverFiniteField(poly);
         if (poly instanceof UnivariatePolynomialZp64)
-            return (FactorDecomposition<Poly>) DistinctDegreeFactorization((UnivariatePolynomialZp64) poly);
+            return (PolynomialFactorDecomposition<Poly>) DistinctDegreeFactorization((UnivariatePolynomialZp64) poly);
         else
             return DistinctDegreeFactorizationShoup(poly);
     }
@@ -264,19 +264,19 @@ public final class DistinctDegreeFactorization {
      * @param poly the polynomial
      * @return square-free and distinct-degree decomposition of {@code poly} modulo {@code modulus}
      */
-    static FactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorizationComplete(UnivariatePolynomialZp64 poly) {
-        FactorDecomposition<UnivariatePolynomialZp64> squareFree = UnivariateSquareFreeFactorization.SquareFreeFactorization(poly);
-        long overallFactor = squareFree.constantFactor.lc();
+    static PolynomialFactorDecomposition<UnivariatePolynomialZp64> DistinctDegreeFactorizationComplete(UnivariatePolynomialZp64 poly) {
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> squareFree = UnivariateSquareFreeFactorization.SquareFreeFactorization(poly);
+        long overallFactor = squareFree.unit.lc();
 
-        FactorDecomposition<UnivariatePolynomialZp64> result = FactorDecomposition.constantFactor(poly.createOne());
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> result = PolynomialFactorDecomposition.unit(poly.createOne());
         for (int i = squareFree.size() - 1; i >= 0; --i) {
-            FactorDecomposition<UnivariatePolynomialZp64> dd = DistinctDegreeFactorization(squareFree.get(i));
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> dd = DistinctDegreeFactorization(squareFree.get(i));
             int nFactors = dd.size();
             for (int j = nFactors - 1; j >= 0; --j)
                 result.addFactor(dd.get(j), squareFree.getExponent(i));
-            overallFactor = poly.multiply(overallFactor, dd.constantFactor.lc());
+            overallFactor = poly.multiply(overallFactor, dd.unit.lc());
         }
 
-        return result.setConstantFactor(poly.createConstant(overallFactor));
+        return result.setUnit(poly.createConstant(overallFactor));
     }
 }

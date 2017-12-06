@@ -50,6 +50,17 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
 
     @Override
     @SuppressWarnings("unchecked")
+    public PolynomialFactorDecomposition<Poly> factorSquareFree(Poly element) {
+        return (PolynomialFactorDecomposition<Poly>) MultivariateSquareFreeFactorization.SquareFreeFactorization((AMultivariatePolynomial) element);
+    }
+
+    @Override
+    public PolynomialFactorDecomposition<Poly> factor(Poly element) {
+        return MultivariateFactorization.Factor(element);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
     public Poly variable(int variable) {
         return factory.createMonomial(variable, 1);
     }

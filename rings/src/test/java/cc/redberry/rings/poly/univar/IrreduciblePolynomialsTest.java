@@ -2,7 +2,7 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.util.RandomDataGenerator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -24,7 +24,7 @@ public class IrreduciblePolynomialsTest extends AUnivariateTest {
         for (int i = 0; i < nIterations; i++) {
             long modulus = getModulusRandom(rndd.nextInt(5, 15));
             UnivariatePolynomialZp64 poly = RandomUnivariatePolynomials.randomMonicPoly(rndd.nextInt(5, 15), modulus, rnd);
-            FactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.Factor(poly);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.Factor(poly);
             try {
                 Assert.assertEquals(factors.size() == 1, IrreduciblePolynomials.irreducibleQ(poly));
             } catch (Throwable e) {

@@ -113,7 +113,7 @@ public final class Rings {
      *
      * @param factory factory
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialRing<Poly> UnivariateRing(Poly factory) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> IPolynomialRing<Poly> UnivariateRing(Poly factory) {
         return new UnivariateRing<>(factory);
     }
 
@@ -191,7 +191,7 @@ public final class Rings {
      * @param factory factory
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    PolynomialRing<Poly> MultivariateRing(Poly factory) {
+    MultivariateRing<Poly> MultivariateRing(Poly factory) {
         return new MultivariateRing<>(factory);
     }
 
@@ -289,10 +289,10 @@ public final class Rings {
      * Generic factory for polynomial ring
      */
     @SuppressWarnings("unchecked")
-    public static <Poly extends IPolynomial<Poly>> PolynomialRing<Poly> PolynomialRing(Poly factory) {
+    public static <Poly extends IPolynomial<Poly>> IPolynomialRing<Poly> PolynomialRing(Poly factory) {
         if (factory instanceof IUnivariatePolynomial)
-            return (PolynomialRing<Poly>) UnivariateRing((IUnivariatePolynomial) factory);
+            return (IPolynomialRing<Poly>) UnivariateRing((IUnivariatePolynomial) factory);
         else
-            return (PolynomialRing<Poly>) MultivariateRing((AMultivariatePolynomial) factory);
+            return (IPolynomialRing<Poly>) MultivariateRing((AMultivariatePolynomial) factory);
     }
 }

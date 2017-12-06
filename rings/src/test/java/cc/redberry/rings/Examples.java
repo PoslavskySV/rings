@@ -3,7 +3,7 @@ package cc.redberry.rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.PolynomialRing;
+import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.PolynomialMethods.*;
 import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
-import static cc.redberry.rings.poly.multivar.MultivariateGCD.ModularGCD;
+import static cc.redberry.rings.poly.multivar.MultivariateGCD.ZippelGCDInZ;
 import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.ModularGCD;
@@ -280,7 +280,7 @@ public class Examples {
      */
     static <Monomial extends DegreeVector<Monomial>,
             Poly extends AMultivariatePolynomial<Monomial, Poly>>
-    Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) { return null; }
+    Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
     @Test
     public void test12() throws Exception {
@@ -390,7 +390,7 @@ public class Examples {
                 z2Poly2 = b.setRing(z2).multiply(z2GCD);
 
         // Kaltofen’s & Monagan’s generic modular GCD
-        MultivariatePolynomialZp64 modGF = ModularGCDInGF(z2Poly1, z2Poly2);
+        MultivariatePolynomialZp64 modGF = MultivariateGCD.KaltofenMonaganSparseModularGCDInGF(z2Poly1, z2Poly2);
         assert modGF.equals(z2GCD);
 
         // Z
@@ -400,7 +400,7 @@ public class Examples {
                 zPoly2 = b.setRing(Z).multiply(zGCD);
 
         // Modular GCD in Z with sparse interpolation
-        MultivariatePolynomial<BigInteger> mod = ModularGCD(zPoly1, zPoly2);
+        MultivariatePolynomial<BigInteger> mod = ZippelGCDInZ(zPoly1, zPoly2);
         assert mod.equals(zGCD);
     }
 

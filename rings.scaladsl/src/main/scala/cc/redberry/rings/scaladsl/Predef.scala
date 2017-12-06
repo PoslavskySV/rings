@@ -3,9 +3,10 @@ package cc.redberry.rings.scaladsl
 import cc.redberry.rings
 import cc.redberry.rings.bigint.BigInteger
 import cc.redberry.rings.poly.FiniteField
-import cc.redberry.rings.{IntegersZp64, Rational, poly}
+import cc.redberry.rings.{FactorDecomposition, IntegersZp64, poly}
 import org.apache.commons.math3.random.{AbstractRandomGenerator, RandomGenerator}
 
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -35,30 +36,30 @@ private[scaladsl] trait Predef {
     override def setSeed(seed: Long): Unit = random.setSeed(seed)
   }
   /**
-    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    * Delegate [[IPolynomialRing]] methods for [[IPolynomialRing]]
     */
-  implicit def ringMethods[Poly <: IPolynomial[Poly], E](ring: PolynomialRing[Poly, E]): poly.PolynomialRing[Poly] = ring.theRing
+  implicit def ringMethods[Poly <: IPolynomial[Poly], E](ring: IPolynomialRing[Poly, E]): rings.poly.IPolynomialRing[Poly] = ring.theRing
 
   /**
-    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    * Delegate [[IPolynomialRing]] methods for [[IPolynomialRing]]
     */
   implicit def ringMethods[E](ring: UnivariateRing[E]): poly.UnivariateRing[UnivariatePolynomial[E]]
   = ring.theRing.asInstanceOf[poly.UnivariateRing[UnivariatePolynomial[E]]]
 
   /**
-    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    * Delegate [[IPolynomialRing]] methods for [[IPolynomialRing]]
     */
   implicit def ringMethods(ring: UnivariateRingZp64): poly.UnivariateRing[UnivariatePolynomialZp64]
   = ring.theRing.asInstanceOf[poly.UnivariateRing[UnivariatePolynomialZp64]]
 
   /**
-    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    * Delegate [[IPolynomialRing]] methods for [[IPolynomialRing]]
     */
   implicit def ringMethods[E](ring: MultivariateRing[E]): poly.MultivariateRing[MultivariatePolynomial[E]]
   = ring.theRing.asInstanceOf[poly.MultivariateRing[MultivariatePolynomial[E]]]
 
   /**
-    * Delegate [[PolynomialRing]] methods for [[PolynomialRing]]
+    * Delegate [[IPolynomialRing]] methods for [[IPolynomialRing]]
     */
   implicit def ringMethods(ring: MultivariateRingZp64): poly.MultivariateRing[MultivariatePolynomialZp64]
   = ring.theRing.asInstanceOf[poly.MultivariateRing[MultivariatePolynomialZp64]]
@@ -96,7 +97,7 @@ private[scaladsl] trait Predef {
   /**
     * Field of rationals (Q)
     */
-  val Q: Ring[Rational[BigInteger]] = rings.Rings.Q
+  val Q: Ring[rings.Rational[BigInteger]] = rings.Rings.Q
 
   /**
     * Field of integers modulo `modulus`
@@ -151,7 +152,7 @@ private[scaladsl] trait Predef {
     def apply(cf: Int, exponents: Int*) = new MonomialZp64(exponents.toArray, cf.toLong)
 
     def apply(cf: Int, exponents: (String, Int)*)
-             (implicit ring: PolynomialRing[MultivariatePolynomialZp64, Long]) = {
+             (implicit ring: IPolynomialRing[MultivariatePolynomialZp64, Long]) = {
       val exps: Array[Int] = new Array[Int](exponents.length)
       exponents.foreach(e => exps(ring.index(e._1)) = e._2)
       new MonomialZp64(exps, ring.cfValue(cf))
@@ -162,11 +163,29 @@ private[scaladsl] trait Predef {
     def apply[E](cf: E, exponents: Int*) = new Monomial[E](exponents.toArray, cf)
 
     def apply[E](cf: E, exponents: (String, Int)*)
-                (implicit ring: PolynomialRing[MultivariatePolynomial[E], E]) = {
+                (implicit ring: IPolynomialRing[MultivariatePolynomial[E], E]) = {
       val exps: Array[Int] = new Array[Int](exponents.length)
       exponents.foreach(e => exps(ring.index(e._1)) = e._2)
       new Monomial[E](exps, cf)
     }
+  }
+
+  object Rational {
+    def apply[E](num: E, den: E)(implicit ring: Ring[E]): rings.Rational[E] = new rings.Rational[E](ring, num, den)
+
+    def apply[E](num: E)(implicit ring: Ring[E]): rings.Rational[E] = new rings.Rational[E](ring, num)
+
+    @inline
+    def apply[E](num: Int, den: E)(implicit ring: Ring[E]): rings.Rational[E] = apply(ring(num), den)(ring)
+
+    @inline
+    def apply[E](num: E, den: Int)(implicit ring: Ring[E]): rings.Rational[E] = apply(num, ring(den))(ring)
+
+    @inline
+    def apply[E](num: Int, den: Int)(implicit ring: Ring[E]): rings.Rational[E] = apply(ring(num), ring(den))(ring)
+
+    @inline
+    def apply[E](num: Int)(implicit ring: Ring[E]): rings.Rational[E] = apply(ring(num))(ring)
   }
 
   final class RichArrayTuple[Poly](arr: Array[Poly]) {
@@ -178,4 +197,7 @@ private[scaladsl] trait Predef {
   }
 
   implicit def arrayToTuple[Poly](arr: Array[Poly]): RichArrayTuple[Poly] = new RichArrayTuple(arr)
+
+  implicit def factors2Seq[E](factors: FactorDecomposition[E]): Seq[(E, Int)] =
+    (factors.factors.asScala zip factors.exponents.toArray().toSeq).toSeq
 }

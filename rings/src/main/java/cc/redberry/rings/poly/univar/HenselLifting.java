@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
  * very cheap, but the convergence is worse. The actual lifting used in factorization switches between linear and
  * quadratic lift in order to obtain the best trade-off.
  *
+ * NOTE: Quadratic lifts may fail in Z/2
+ *
  * @since 1.0
  */
 public final class HenselLifting {

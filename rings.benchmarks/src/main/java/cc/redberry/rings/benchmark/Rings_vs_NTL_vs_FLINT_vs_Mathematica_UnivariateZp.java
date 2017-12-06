@@ -1,7 +1,7 @@
 package cc.redberry.rings.benchmark;
 
 import cc.redberry.rings.benchmark.Bench.ExternalResult;
-import cc.redberry.rings.poly.FactorDecomposition;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.TimeUnits;
@@ -10,10 +10,8 @@ import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static cc.redberry.rings.benchmark.Bench.mathematicaFactor;
-import static cc.redberry.rings.benchmark.Bench.writeTimingsTSV;
 
 public class Rings_vs_NTL_vs_FLINT_vs_Mathematica_UnivariateZp {
     //NTL and FLINT data are generated from C++ binaries!
@@ -47,7 +45,7 @@ public class Rings_vs_NTL_vs_FLINT_vs_Mathematica_UnivariateZp {
 
                     long start = System.nanoTime();
                     for (int i = 0; i < nIterations; i++) {
-                        FactorDecomposition<UnivariatePolynomialZp64> rFactors = PolynomialMethods.Factor(poly);
+                        PolynomialFactorDecomposition<UnivariatePolynomialZp64> rFactors = PolynomialMethods.Factor(poly);
                         dummy += rFactors.signum();
                     }
                     long ringsTime = (System.nanoTime() - start);

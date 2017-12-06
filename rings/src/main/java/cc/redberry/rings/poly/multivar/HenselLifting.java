@@ -587,7 +587,7 @@ public final class HenselLifting {
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     UnivariatePolynomial<uPoly>[] bivariateLiftDense(
             UnivariatePolynomial<uPoly> baseSeries, uPoly[] factors, int degreeBound) {
-        AllProductsCache<uPoly> uFactors = new AllProductsCache(factors);
+        AllProductsCache<uPoly> uFactors = new AllProductsCache<>(factors);
         // univariate multifactor diophantine solver
         UMultiDiophantineSolver<uPoly> uSolver = new UMultiDiophantineSolver<>(uFactors);
 
@@ -1153,9 +1153,8 @@ public final class HenselLifting {
         // The main equations to solve
         List<Equation<Term, Poly>> equations = new ArrayList<>();
         for (Monomial<Poly> rhs : biBase) {
-            Equation<Term, Poly> eq = new Equation<>(
-                    lhsBase.coefficientOf(new int[]{0, 1}, Arrays.copyOf(rhs.exponents, 2))
-                    , rhs.coefficient);
+            Poly cf = lhsBase.coefficientOf(new int[]{0, 1}, Arrays.copyOf(rhs.exponents, 2));
+            Equation<Term, Poly> eq = new Equation<>(cf, rhs.coefficient);
 
             if (!eq.isConsistent())
                 // inconsistent equation -> bad lifting
@@ -1163,6 +1162,14 @@ public final class HenselLifting {
 
             if (!eq.isIdentity())
                 // don't add identities
+                equations.add(eq.canonical());
+
+            lhsBase.subtract(cf);
+        }
+
+        if (!lhsBase.isZero()) {
+            Equation<Term, Poly> eq = new Equation<>(lhsBase, biBase.ring.getZero());
+            if (!eq.isIdentity())
                 equations.add(eq.canonical());
         }
 
@@ -1255,7 +1262,7 @@ public final class HenselLifting {
 
         Poly factory = baseEq.rhs;
         // polynomial ring
-        PolynomialRing<Poly> polyRing = PolynomialRing(factory);
+        IPolynomialRing<Poly> polyRing = PolynomialRing(factory);
         // field of rational functions
         Ring<Rational<Poly>> fracRing = Frac(polyRing);
 
@@ -1321,7 +1328,7 @@ public final class HenselLifting {
     @SuppressWarnings("unchecked")
     static <Term extends DegreeVector<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
-    void addRow(PolynomialRing<Poly> polyRing, Equation<Term, Poly> eq,
+    void addRow(IPolynomialRing<Poly> polyRing, Equation<Term, Poly> eq,
                 List<Rational<Poly>[]> lhs, List<Rational<Poly>> rhs, int[] unknowns) {
         Rational<Poly>[] row = new Rational[unknowns.length];
         for (int j = 0; j < row.length; j++) {

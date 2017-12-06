@@ -1,7 +1,8 @@
-package cc.redberry.rings.bigint;
+package cc.redberry.rings;
 
 import cc.redberry.libdivide4j.FastDivision;
 import cc.redberry.rings.Ring;
+import cc.redberry.rings.bigint.BigInteger;
 
 import static java.lang.Math.*;
 
@@ -9,6 +10,7 @@ import static java.lang.Math.*;
  * @since 1.0
  */
 public final class ChineseRemainders {
+    private ChineseRemainders() {}
 
     /**
      * Runs Chinese Remainders algorithm
@@ -70,7 +72,8 @@ public final class ChineseRemainders {
      * @param remainder2 #2 remainder
      * @return the result
      */
-    public static <E> E ChineseRemainders(Ring<E> ring, E prime1, E prime2,
+    public static <E> E ChineseRemainders(Ring<E> ring,
+                                          E prime1, E prime2,
                                           E remainder1, E remainder2) {
 
         E modulus = ring.multiply(prime1, prime2);
@@ -197,18 +200,46 @@ public final class ChineseRemainders {
     public static BigInteger ChineseRemainders(final BigInteger[] primes, final BigInteger[] remainders) {
         if (primes.length != remainders.length)
             throw new IllegalArgumentException();
-        BigInteger m = primes[0];
+        BigInteger modulus = primes[0];
         for (int i = 1; i < primes.length; i++) {
             if (primes[i].signum() <= 0)
                 throw new RuntimeException("Negative CRT input: " + primes[i]);
-            m = primes[i].multiply(m);
+            modulus = primes[i].multiply(modulus);
         }
 
         BigInteger result = BigInteger.ZERO;
         for (int i = 0; i < primes.length; i++) {
-            BigInteger mi = m.divide(primes[i]);
-            BigInteger eea = bezout0(mi, primes[i]);
-            result = result.add(mi.multiply(eea.multiply(remainders[i]).mod(primes[i]))).mod(m);
+            BigInteger iModulus = modulus.divide(primes[i]);
+            BigInteger bezout = bezout0(iModulus, primes[i]);
+            result = result.add(iModulus.multiply(bezout.multiply(remainders[i]).mod(primes[i]))).mod(modulus);
+        }
+        return result;
+    }
+
+    /**
+     * Runs Chinese Remainders algorithm
+     *
+     * @param ring       the ring
+     * @param primes     primes
+     * @param remainders remainders
+     * @return the result
+     */
+    public static <E> E ChineseRemainders(Ring<E> ring,
+                                          E[] primes,
+                                          E[] remainders) {
+
+        if (primes.length != remainders.length)
+            throw new IllegalArgumentException();
+        E modulus = primes[0];
+        for (int i = 1; i < primes.length; i++)
+            modulus = ring.multiply(primes[i], modulus);
+
+        E result = ring.getZero();
+        for (int i = 0; i < primes.length; i++) {
+            E iModulus = ring.divideExact(modulus, primes[i]);
+            E bezout = bezout0(ring, iModulus, primes[i]);
+            result = ring.remainder(ring.add(result,
+                    ring.remainder(ring.multiply(iModulus, ring.remainder(ring.multiply(bezout, remainders[i]), primes[i])), modulus)), modulus);
         }
         return result;
     }

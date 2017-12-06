@@ -120,6 +120,16 @@ public final class IntegersZp extends AIntegers {
     }
 
     @Override
+    public FactorDecomposition<BigInteger> factorSquareFree(BigInteger element) {
+        return factor(element);
+    }
+
+    @Override
+    public FactorDecomposition<BigInteger> factor(BigInteger element) {
+        return FactorDecomposition.of(this, element);
+    }
+
+    @Override
     public BigInteger valueOf(BigInteger val) {return modulus(val);}
 
     @Override
