@@ -792,7 +792,7 @@ Methods added to `Ring[E]`_ interface:
 Polynomial ring methods
 """""""""""""""""""""""
 
-Methods added to `PolynomialRing[Poly, E]`_  class (``Poly`` is polynomial type, ``E`` is a type of coefficients):
+Methods added to `IPolynomialRing[Poly, E]`_  interface (``Poly`` is polynomial type, ``E`` is a type of coefficients):
 
 +------------------------------+--------------------------------------------------------------------------------------------------+
 | Scala DSL                    | Description                                                                                      |
@@ -808,14 +808,14 @@ Methods added to `PolynomialRing[Poly, E]`_  class (``Poly`` is polynomial type,
 +------------------------------+--------------------------------------------------------------------------------------------------+
 
 
-For more details see `PolynomialRing[Poly, E]`_.
+For more details see `IPolynomialRing[Poly, E]`_.
 
 
 .. _Ring<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Ring.java
 
 .. _Ring[E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
 
-.. _PolynomialRing[Poly, E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
+.. _IPolynomialRing[Poly, E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
 
 .. _Z: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Rings.java#L30
 
@@ -1031,7 +1031,7 @@ Note that there is no any specific polynomial ring used in the ``genericFunc`` a
 		  * @tparam E    type of polynomial coefficients
 		  */
 		def genericFuncWithRing[Poly <: IPolynomial[Poly], E](poly: Poly)
-		    (implicit ring: PolynomialRing[Poly, E]): Poly = {
+		    (implicit ring: IPolynomialRing[Poly, E]): Poly = {
 		  poly.pow(2) * 3 + poly * 2 + 1
 		}
 
@@ -1049,7 +1049,7 @@ Note that there is no any specific polynomial ring used in the ``genericFunc`` a
 		/**
 		 * @param <Poly> polynomial type
 		 */
-		static <Poly extends IPolynomial<Poly>> Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) {
+		static <Poly extends IPolynomial<Poly>> Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) {
 		    return ring.add(
 		            ring.getOne(),
 		            ring.multiply(poly, ring.valueOf(2)),
@@ -1165,7 +1165,7 @@ Internally both implementations use dense data structure (array of coefficients)
 		 * @param <Poly> univariate polynomial type
 		 */
 		static <Poly extends IUnivariatePolynomial<Poly>>
-		Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) { return null; }
+		Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
 
 .. _ref-univariate-divison:
@@ -1628,7 +1628,7 @@ The generic parent class for multivariate polynomials is `AMultivariatePolynomia
 		 */
 		static <Monomial extends DegreeVector<Monomial>,
 		        Poly extends AMultivariatePolynomial<Monomial, Poly>>
-		Poly genericFuncWithRing(Poly poly, PolynomialRing<Poly> ring) { return null; }
+		Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
 		// call generic funcs
 		genericFunc(MultivariatePolynomial.parse("a + b"));
