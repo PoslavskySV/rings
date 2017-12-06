@@ -41,6 +41,8 @@ sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with
 
   final def apply(int: IntZ): E = theRing.valueOfBigInteger(int)
 
+  final def apply(e: ElementType): E = theRing.valueOf(e)
+
   final def apply(a: String, b: String): (E, E) = (parse(a), parse(b))
 
   final def apply(a: String, b: String, c: String): (E, E, E)

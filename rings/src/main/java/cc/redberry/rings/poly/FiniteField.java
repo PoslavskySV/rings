@@ -205,7 +205,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
 
     @Override
     public Poly valueOf(Poly val) {
-        return UnivariatePolynomialArithmetic.polyMod(val, irreducible, inverseMod, true);
+        return UnivariatePolynomialArithmetic.polyMod(val.setCoefficientRingFrom(factory), irreducible, inverseMod, false);
     }
 
     @Override

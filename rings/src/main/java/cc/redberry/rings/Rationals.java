@@ -204,8 +204,8 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         if (indexOfDiv == -1)
             return new Rational<>(ring, parser.parse(removeParenthesis(string)));
         return new Rational<>(ring,
-                parser.parse(removeParenthesis(string.substring(0, indexOfDiv))),
-                parser.parse(removeParenthesis(string.substring(indexOfDiv + 1))));
+                parser.parse(removeParenthesis(string.substring(0, indexOfDiv)).trim()),
+                parser.parse(removeParenthesis(string.substring(indexOfDiv + 1)).trim()));
     }
 
     @Override
@@ -214,6 +214,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     private static String removeParenthesis(String string) {
+        string = string.trim();
         if (!string.startsWith("(") || !string.endsWith(")"))
             return string;
 

@@ -1,19 +1,16 @@
 package cc.redberry.rings.scaladsl
 
-import java.util
-
 import cc.redberry.rings
 import cc.redberry.rings.Rational
 import cc.redberry.rings.linear.LinearSolver
 import cc.redberry.rings.poly.PolynomialMethods
 import cc.redberry.rings.poly.multivar.MonomialOrder.LEX
 import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariateInterpolation, MultivariatePolynomial}
-import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariateGCD, UnivariatePolynomialArithmetic}
+import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariatePolynomialArithmetic}
 import cc.redberry.rings.primes.SmallPrimes
 import org.apache.commons.math3.random.Well1024a
 import org.junit.{Ignore, Test}
 
-import scala.collection.mutable
 import scala.language.{existentials, postfixOps}
 import scala.util.Random
 
@@ -957,170 +954,126 @@ class Examples {
     import rings.ChineseRemainders._
 
     val crt = ChineseRemainders[ring.ElementType](ring, primes, remainders)
-    assert(crt.degree() == primes.map(_.degree()).sum - 1)
+    //assert(crt.degree() == primes.map(_.degree()).sum - 1)
     assert((primes zip remainders).forall { case (prime, rem) => crt % prime == rem })
   }
 
   @Test
   def test36: Unit = {
+    import PolynomialMethods._
     import syntax._
 
     // Galois field %$\color{commcolor}\GF(17, 3)$%
     implicit val gf = GF(17, 3, "t")
-    // parse ring elements from their string representation
-    val (t, t1): (UnivariatePolynomialZp64, UnivariatePolynomialZp64) = gf("t", "1 + t^2")
-    // do some basic math (+-*/)
-    val gfOps = 1 + t1 - t.pow(22) / (1 + t + t1.pow(999))
+    // parse ring element from its string representation
+    val t  = gf("t")
+    // or create element programmatically
+    val t1 = 1 + t.pow(2)
+    // do some basic math (+-*/) with elements of gf
+    val t2 = 3 + t1 - t.pow(22) / (1 + t + t1.pow(999))
+
+    // from string
+    val elem = gf("1 + t^2")
+    // from Int
+    val unit = gf(1L)
+    // from elements of other GF fields
+    val elementFromOtherField: UnivariatePolynomialZp64 = GF(19, 5).randomElement()
+    val cast = gf(elementFromOtherField)
+    // synthetic sugar for multiple assignment
+    // val el1 = gf("t + 1"); val el2 = gf("t + 2")
+    val (el1, el2) = gf("t + 1", "t + 2")
 
     // multivariate ring %$\color{commcolor}\GF(17, 3)[x, y, z]$%
     implicit val ring = MultivariateRing(gf, Array("x", "y", "z"), LEX)
-    // parse some polynomial from string
-    val p1 = ring("(1 + t + t^2)*x*y^2*z + (1 + t)*x^5*z*y^6 + 1")
     val (x, y, z) = ring("x", "y", "z")
-
-    // do some basic math (+-*/) with elements of ring
+    // construct multivariate polynomials
+    val p1 = (t.pow(2) + 1) * x * y.pow(2)*z + (t + 1) * x.pow(5) *z * y.pow(6) + 1
     val p2 = p1.pow(2) + (t + 1) * x.pow(2) * y.pow(2) + (t.pow(9) + 1) * z.pow(7)
 
-
+    // standard division with remainder
     val (div, rem) = p2 /% p1
+    // define a simple ideal (just a tuple of polynomials)
+    val (i1, i2, i3) = (x + y + z, x - y - z, y.pow(2) - z.pow(2))
+    // do complete multivariate division with remainder (polynomial reduction)
+    val (div1, div2, div3, rem1) = p2 /%/% (i1, i2, i3)
+    assert ( p2 == div1 * i1 + div2 * i2 + div3 * i3 + rem1 )
+    // or just reduce poly modulo ideal
+    val p3 = p2 %% (i1, i2, i3)
+    assert ( p3 == rem1 )
 
-    val ideal = (x + y + z, x - y - z, y.pow(2) - z.pow(2))
+    ring.isEuclideanRing // whether ring is Euclidean ring
+    ring.isField         // whether ring is a field
+    ring.isFinite        // whether ring is finite
+    ring.cardinality     // ring cardinality (BigInteger)
+    ring.characteristic  // ring characteristic (BigInteger)
 
-    val (div1, div2, div3, rem1) = p2 /%/% ideal
-    assert(div1 * ideal._1 + div2 * ideal._2 + div3 * ideal._3 + rem1 == p2)
+    // GCD of polynomials from %$\color{commcolor}\GF(17, 3)[x, y, z]$%
+    val gcd1 = PolynomialGCD(p1 * p3, p2 * p3)
+    assert ( gcd1 % p3 === 0 )
+    val gcd2 = PolynomialGCD(p1 * p3, p2 * p3 + 1)
+    assert ( gcd2.isConstant )
 
-    val p3 = p2 %% ideal
-    assert(p3 == rem1)
+    // a really huge polynomial from %$\color{commcolor}\GF(17, 3)[x, y, z]$%
+    // with more than %$\color{commcolor}4 \times 10^3$% terms and total degree of 145
+    val hugePoly = p1 * p2.pow(2) * p3.pow(3)
+    // factorize it
+    val factors = Factor(hugePoly)
 
-    val gcd = PolynomialMethods.PolynomialGCD(p1 * p3, p2 * p3)
-    assert(gcd % p3 === 0)
-
-    val gcd2 = PolynomialMethods.PolynomialGCD(p1 * p3, p2 * p3 + 1)
-    assert(gcd2.isConstant)
-
-    val poly = p1 * p2.pow(2) * p3.pow(3)
-    println(poly.size())
-
-    println(poly.degrees().mkString(","))
-    //    val factors = PolynomialMethods.Factor(poly)
-
-
-    implicit val ratFuncs = Frac(ring)
-    // x, y, z and t as elements of Frac[GF(17, 3)[x,y,z]]
-    val (rx, ry, rz, rt) = ratFuncs(x, y, z, ring(t))
-
-
+    // field of rational functions %$\color{commcolor}Frac(\GF(17, 3)[x, y, z])$%
+    implicit val ratRing = Frac(ring)
+    // convert x, y, z and t to elements of %$\color{commcolor}Frac(\GF(17, 3)[x, y, z])$%
+    // that is rationals with unit denominators
+    val (rx, ry, rz, rt) = ratRing(x, y, z, ring(t))
+    // lhs matrix
     val lhs =
       Array(
         Array(rt + rx + rz, ry * rz, rz - rx * ry),
         Array(rx - ry - rt, rx / ry, rz + rx / ry),
         Array(rx * ry / rt, rx + ry, rz / rx + ry)
       )
+    // rhs column
     val rhs = Array(rx, ry, rz)
-    val solution = LinearSolver.solve[ratFuncs.ElementType](ratFuncs, lhs, rhs)
+    // solve the system with Gaussian elimination
+    val solution = LinearSolver.solve[ratRing.ElementType](ratRing, lhs, rhs)
+
+    val rxxx = Rational(x, 1) // x is numerator and 1 is denominator
 
 
+    /**
+      * Solves equation %$\color{commcolor} \sum f_i s_i  = gcd(f_1, \dots, f_N)$% for given %\color{commcolor}$f_i$% and unknown %\color{commcolor}$s_i$%
+      * @return a tuple (gcd, solution)
+      */
     def solveDiophantine[E](fi: Seq[E])(implicit ring: Ring[E]) =
       fi.foldLeft((ring(0), Seq.empty[E])) { case ((gcd, seq), f) =>
         val xgcd = ring.extendedGCD(gcd, f)
         (xgcd(0), seq.map(_ * xgcd(1)) :+ xgcd(2))
       }
 
+    /** Computes partial fraction decomposition of given rational */
     def apart[E](frac: Rational[E]) = {
       implicit val ring: Ring[E] = frac.ring
-      val factors = ring.factor(frac.denominator).map { case (f, exp) => f.pow(exp) }
-      val (gcd, nums) = solveDiophantine(factors.map(frac.denominator / _))
+      val factors = ring.factor(frac.denominator).map {case (f, exp) => f.pow(exp)}
+      val (gcd,  nums) = solveDiophantine(factors.map(frac.denominator / _))
       val (ints, rats) = (nums zip factors)
         .map { case (num, den) => Rational(frac.numerator * num, den * gcd) }
-        .flatMap(_.normal) // reduce Rational to normal form ( /% )
-        .partition(_.isIntegral) // select fractions and integers
+        .flatMap(_.normal)       // extract integral parts from fractions
+        .partition(_.isIntegral) // separate integrals and fractions
       rats :+ ints.foldLeft(Rational(ring(0)))(_ + _)
     }
 
+    // partial fraction decomposition for rationals
+    // gives List(184/479, (-10)/13, 1/8, (-10)/47, 1)
+    val qFracs = apart( Q("1234213 / 2341352"))
 
-    implicit val uRing = UnivariateRing(ratFuncs, "W")
-    assert(uRing.isEuclideanRing)
+    // partial fraction decomposition for rational functions
+    val ufRing = Frac(UnivariateRingZp64(17, "x"))
+    // gives List(4/(16+x), 1/(10+x), 15/(1+x), (14*x)/(15+7*x+x^2))
+    val pFracs = apart( ufRing("1 / (3 - 3*x^2 - x^3 + x^5)") )
+
+    // partial fraction decomposition of rational functions
+    // in the ring %$\color{commcolor} Frac(\GF(17, 3)[x, y, z])[W]$%
+    implicit val uRing = UnivariateRing(ratRing, "W")
     val W = uRing("W")
-
-
-    val wpoly = W.pow(2) + 1
-    val fracs = apart(Rational(W + 1, wpoly))
-    println(fracs)
-
-    // univariate polynomial rx/ry
-    val prime1 = rx / ry + (rt / rx) * W + W.pow(2) + (rz + 1) * W.pow(3)
-    val prime2 = prime1 * W.pow(3) + 1
-
-    println(apart(Rational(W, prime1 * prime2)))
-
-
-    import IrreduciblePolynomials._
-    assert(irreducibleQ(prime1) && irreducibleQ(prime2))
-
-    val urem1 = rx + ry + rt * W.pow(2)
-    val urem2 = rx + rz + W
-
-    val primes = Array(prime1, prime2)
-    val rems = Array(urem1, urem2)
-
-    import rings.ChineseRemainders._
-
-    val crt = ChineseRemainders(uRing, primes, rems)
-    println(uRing show crt)
-
-    assert(crt.degree() == primes.map(_.degree()).sum - 1)
-    assert((primes zip rems).forall { case (prime, re) => crt % prime == re })
-
-    import MultivariateInterpolation._
-
-    val interpolation = new Interpolation(0, ring)
-    interpolation.update(t, y)
-    interpolation.update(t + 1, y + z)
-    interpolation.update(t + 2, y.pow(2) + z.pow(2))
-    val result = interpolation.getInterpolatingPolynomial
-    assert(result("x" -> t) == y)
-    assert(result("x" -> (t + 1)) == y + z)
-
-    ring.isEuclideanRing // whether ring is Euclidean ring
-    ring.isField // whether ring is a field
-    ring.isFinite // whether ring is finite
-    ring.cardinality // ring cardinality
-    ring.characteristic // ring characteristic
-
-  }
-
-
-  @Test
-  def test37: Unit = {
-    import syntax._
-    import PolynomialMethods._
-    import scala.collection.JavaConverters._
-
-    def solveDiophantine[E](fi: Seq[E])(implicit ring: Ring[E]) =
-      fi.foldLeft((ring(0), Seq.empty[E])) { case ((gcd, seq), f) =>
-        val xgcd = ring.extendedGCD(gcd, f)
-        (xgcd(0), seq.map(_ * xgcd(1)) :+ xgcd(2))
-      }
-
-
-    def apart[E](frac: Rational[E]) = {
-      implicit val ring: Ring[E] = frac.ring
-      val factors = ring.factor(frac.denominator).map { case (f, exp) => f.pow(exp) }
-      val (gcd, nums) = solveDiophantine(factors.map(frac.denominator / _))
-      val (ints, rats) = (nums zip factors)
-        .map { case (num, den) => Rational(frac.numerator * num, den * gcd) }
-        .flatMap(_.normal) // reduce Rational to normal form ( /% )
-        .partition(_.isIntegral) // select fractions and integers
-      rats :+ ints.foldLeft(Rational(ring(0)))(_ + _)
-    }
-
-    val qFracs = apart(Q("1234213/2341352"))
-
-    val ring = Frac(UnivariateRingZp64(17, "x"))
-    val pFracs = apart(ring("1/(3 - 3*x^2 - x^3 + x^5)"))
-
-
-    println(qFracs)
-    println(pFracs)
+    val fracs = apart( Rational(W + 1, (rx/ry + W.pow(2)) * (rz/rx + W.pow(3))) )
   }
 }

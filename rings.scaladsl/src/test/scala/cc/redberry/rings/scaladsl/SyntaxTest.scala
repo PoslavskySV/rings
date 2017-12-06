@@ -720,9 +720,9 @@ class SyntaxTest {
     println(poly /%/% (p1, p2, p2, p1))
   }
 
+  @Ignore //issue #23
   @Test
   def testParse1: Unit = {
-    import syntax._
 
     implicit val gf = GF(17, 3, "t")
     implicit val ring = MultivariateRing(gf, Array("x", "y", "z"))
