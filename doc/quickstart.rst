@@ -36,7 +36,7 @@ Now run |Rings|\ *.repl*:
 
 	$ rings.repl
 	Loading...
-	Rings 2.1: efficient Java/Scala library for polynomial rings
+	Rings 2.2: efficient Java/Scala library for polynomial rings
 
 	@ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 	ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -59,7 +59,7 @@ Java/Scala library
 
 .. code-block:: scala
 
-	libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.1"
+	libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.2"
 
 For using |Rings| solely in Java there is Maven artifact:
 
@@ -68,7 +68,7 @@ For using |Rings| solely in Java there is Maven artifact:
 	<dependency>
 	    <groupId>cc.redberry</groupId>
 	    <artifactId>rings</artifactId>
-	    <version>2.1</version>
+	    <version>2.2</version>
 	</dependency>
 
 Examples: algebra, GCDs, factorization, programming
