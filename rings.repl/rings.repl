@@ -7,6 +7,7 @@ ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial 
 java="java"
 jsedstring="s/.*1\.\(.*\)\..*/\1/"
 jVersion=$($java -version 2>&1 | grep version | awk '{ print $3 }' | sed $jsedstring)
+jVersion=$(echo "${jVersion%%.*}" | sed 's/\"//')
 if [[ $jVersion -lt 8 ]];
 then
     echo "Wrong version of java. Please use Java 8 or higher."
