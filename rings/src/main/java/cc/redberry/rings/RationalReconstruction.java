@@ -48,8 +48,6 @@ public final class RationalReconstruction {
     public static BigInteger[] reconstruct(BigInteger n, BigInteger modulus,
                                            BigInteger numeratorBound,
                                            BigInteger denominatorBound) {
-        long start = System.nanoTime();
-
         BigInteger[] v = {modulus, BigInteger.ZERO};
         BigInteger[] w = {n, BigInteger.ONE};
 
