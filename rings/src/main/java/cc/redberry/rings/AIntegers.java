@@ -34,11 +34,6 @@ abstract class AIntegers extends ARing<BigInteger> {
     }
 
     @Override
-    public final int signum(BigInteger element) {
-        return element.signum();
-    }
-
-    @Override
     public final int compare(BigInteger o1, BigInteger o2) {return o1.compareTo(o2);}
 
     @Override

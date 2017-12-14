@@ -17,7 +17,6 @@ import java.util.stream.StreamSupport;
 import static cc.redberry.rings.bigint.BigInteger.ONE;
 import static cc.redberry.rings.bigint.BigInteger.ZERO;
 import static cc.redberry.rings.bigint.BigIntegerUtil.abs;
-import static cc.redberry.rings.bigint.BigIntegerUtil.max;
 
 /**
  * Univariate polynomial over generic ring.
@@ -518,20 +517,19 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
-     * Returns max coefficient (by BigInteger's absolute value) of the poly
+     * Returns max abs coefficient of the poly
      */
-    public static BigInteger normMax(UnivariatePolynomial<BigInteger> poly) {
-        return maxAbsCoefficient(poly);
+    public E maxAbsCoefficient() {
+        E el = ring.abs(data[0]);
+        for (int i = 1; i <= degree; i++)
+            el = ring.max(el, ring.abs(data[i]));
+        return el;
     }
 
     /**
-     * Returns max coefficient (by BigInteger's absolute value) of the poly
      */
-    public static BigInteger maxAbsCoefficient(UnivariatePolynomial<BigInteger> poly) {
-        BigInteger max = abs(poly.data[0]);
-        for (int i = poly.degree; i >= 0; --i)
-            max = max(abs(poly.data[i]), max);
-        return max;
+    public E normMax() {
+        return maxAbsCoefficient();
     }
 
     private void fillZeroes(E[] data, int from, int to) {

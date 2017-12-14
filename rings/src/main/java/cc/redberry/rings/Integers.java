@@ -59,6 +59,25 @@ public final class Integers extends AIntegers {
     }
 
     @Override
+    public BigInteger pow(BigInteger base, int exponent) {
+        return base.pow(exponent);
+    }
+
+    @Override
+    public BigInteger pow(BigInteger base, long exponent) {
+        if (exponent < Integer.MAX_VALUE)
+            return pow(base, (int) exponent);
+        return super.pow(base, exponent);
+    }
+
+    @Override
+    public BigInteger pow(BigInteger base, BigInteger exponent) {
+        if (exponent.isLong())
+            return pow(base, exponent.longValueExact());
+        return super.pow(base, exponent);
+    }
+
+    @Override
     public final BigInteger gcd(BigInteger a, BigInteger b) {
         return a.gcd(b);
     }
@@ -84,6 +103,16 @@ public final class Integers extends AIntegers {
 
     @Override
     public boolean isMinusOne(BigInteger bigInteger) {return bigInteger.isMinusOne();}
+
+    @Override
+    public final int signum(BigInteger element) {
+        return element.signum();
+    }
+
+    @Override
+    public BigInteger abs(BigInteger el) {
+        return el.abs();
+    }
 
     @Override
     public String toString() {return "Z";}
