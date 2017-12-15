@@ -484,7 +484,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
     public void test22() throws Exception {
         UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(1, 2, 3, 4, 3, 2, 1).modulus(25);
         UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(1, 2, 3, 1, 3, 2, 1).modulus(25);
-        assertExtendedGCD(a, b);
+        assertExtendedEuclidGCD(a, b);
     }
 
     @Test
@@ -513,7 +513,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
         UnivariatePolynomial<BigInteger> gcdModular = ModularGCD(a, b);
         assertEquals(gcdActual.degree, gcdModular.degree);
 
-        System.out.println(UnivariatePolynomial.normMax(gcdActual).bitLength());
+        System.out.println(gcdActual.normMax().bitLength());
     }
 
     @Test
@@ -733,6 +733,106 @@ public class UnivariateGCDTest extends AUnivariateTest {
         testExtendedHalfGCDRandom(minimalDegree, maximalDegree, nIterations);
     }
 
+    @Test
+    public void test33() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>> a = UnivariatePolynomial.parse("1 + 23123*x^7 + 2344*x^15", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>> b = UnivariatePolynomial.parse("1 + 23*x - 23454*x^4", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>>[] xgcd = ModularExtendedGCD(a, b);
+        assertExtendedGCD(xgcd, a, b);
+    }
+
+    @Test
+    public void test33a() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>> a = UnivariatePolynomial.parse("1 + 23123*x^7 + 2344*x^15", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>> b = UnivariatePolynomial.parse("1 + 23*x - 23454*x^4", Rings.Q);
+
+        a.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(32)));
+        b.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(12332)));
+
+        assertExtendedGCD(ModularExtendedGCD(a, b), a, b);
+        assertExtendedGCD(ModularExtendedGCD(b, a), b, a);
+    }
+
+    @Test
+    public void test34() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>> a = UnivariatePolynomial.parse("1 + 23123*x^7 + 2344*x^15", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>> b = UnivariatePolynomial.parse("1 + 23*x - 23454*x^4", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>> g = UnivariatePolynomial.parse("1 + (23/2)*x - 23454*x^3", Rings.Q);
+
+        a.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(32)));
+        b.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(12332)));
+
+        a.multiply(g);
+        b.multiply(g);
+
+        assertExtendedGCD(ModularExtendedGCD(a, b), a, b);
+        assertExtendedGCD(ModularExtendedGCD(b, a), b, a);
+    }
+
+    @Test
+    @Benchmark
+    public void test35_performance() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>> a = UnivariatePolynomial.parse("1 + 23123*x^7 + 2344*x^15", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>> b = UnivariatePolynomial.parse("1 + 23*x + 23454*x^4", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>> g = UnivariatePolynomial.parse("1 + (23/2)*x + 23454*x^3", Rings.Q);
+
+        a.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(32)));
+        b.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(12332)));
+
+        a.multiply(g);
+        b.multiply(g);
+
+        System.out.println(a);
+        System.out.println(b);
+        for (int i = 0; i < 1000; i++) {
+            long start = System.nanoTime();
+            assertExtendedGCD(ModularExtendedGCD(a, b), a, b);
+            assertExtendedGCD(ModularExtendedGCD(b, a), b, a);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    @Benchmark
+    public void test36_performance() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>> a = UnivariatePolynomial.parse("(296/15) + (874/9)*x + (2083/20)*x^2 + ((-11819)/90)*x^3 + ((-147)/8)*  x^4 + (152461/360)*x^5 + (223567/1440)*x^6 + (22223/432)*  x^7 + ((-583021)/2880)*x^8 + (45407/240)*x^9 + (235373/1260)*  x^10 + ((-58349)/378)*x^11 + (269417/2520)*x^12 + (2402/45)*  x^13 + (206113/420)*x^14 + ((-218167)/1890)*x^15 + ((-62221)/5040)*  x^16 + ((-59279)/2520)*x^17 + (164803/630)*x^18 + (1027/54)*  x^19 + ((-539)/30)*x^20 + ((-97)/3)*x^21 + (64/3)*x^22", Rings.Q);
+        UnivariatePolynomial<Rational<BigInteger>> b = UnivariatePolynomial.parse("(388/15) + 221*x + (76253/120)*x^2 + (73661/120)*x^3 + ((-21007)/240)* x^4 + (58939/720)*x^5 + (3215/8)*x^6 + (2599/6)*x^7 + (29683/105)* x^8 + ((-7141)/105)*x^9 + (16021/84)*x^10 + (8807/240)* x^11 + (20747/168)*x^12 + ((-1597627)/10080)*x^13 + (1846219/3360)* x^14 + (334471/6720)*x^15 + ((-644489)/6720)*x^16 + ((-551)/20)* x^17 + (17611/120)*x^18 + (3127/30)*x^19 + ((-4591)/120)* x^20 + (229/30)*x^21 + ((-34)/3)*x^22 + (26/3)*x^23", Rings.Q);
+
+        for (int i = 0; i < 1000; i++) {
+            long start = System.nanoTime();
+            UnivariatePolynomial<Rational<BigInteger>>[] r = ModularExtendedGCD(a, b);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertExtendedGCD(r, a, b);
+        }
+    }
+
+    @Test
+    public void test36_modularExtendedGCDRandom() throws Exception {
+        int nIterations = its(100, 300);
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        BigInteger bound = BigInteger.valueOf(100);
+        for (int i = 0; i < nIterations; i++) {
+            if (i % 50 == 0)
+                System.out.println("=> " + i);
+            UnivariatePolynomial<BigInteger>
+                    a = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(5, 15), bound, rnd),
+                    b = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(5, 15), bound, rnd),
+                    g = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 15), bound, rnd);
+
+            UnivariatePolynomial<Rational<BigInteger>> ar = a.mapCoefficients(Rings.Q, c -> new Rational<>(Rings.Z, c, BigInteger.valueOf(rndd.nextInt(2, 10))));
+            UnivariatePolynomial<Rational<BigInteger>> br = b.mapCoefficients(Rings.Q, c -> new Rational<>(Rings.Z, c, BigInteger.valueOf(rndd.nextInt(2, 10))));
+            UnivariatePolynomial<Rational<BigInteger>> gr = g.mapCoefficients(Rings.Q, c -> new Rational<>(Rings.Z, c, BigInteger.valueOf(rndd.nextInt(2, 10))));
+
+            ar.multiply(gr);
+            br.multiply(gr);
+
+            UnivariatePolynomial<Rational<BigInteger>>[] xgcd = assertExtendedGCD(ar, br);
+            assertTrue(g.degree <= xgcd[0].degree);
+            assertExtendedGCD(ar.increment(), br);
+        }
+    }
+
     private static void testExtendedHalfGCDRandom(int minimalDegree, int maximalDegree, int nIterations) throws Exception {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
@@ -777,8 +877,14 @@ public class UnivariateGCDTest extends AUnivariateTest {
         System.out.println("HalfGCD: " + TimeUnits.statisticsNanotime(half));
     }
 
-    static <T extends IUnivariatePolynomial<T>> void assertExtendedGCD(T a, T b) {
+    static <T extends IUnivariatePolynomial<T>> void assertExtendedEuclidGCD(T a, T b) {
         assertExtendedGCD(ExtendedEuclidGCD(a, b), a, b);
+    }
+
+    static <T extends IUnivariatePolynomial<T>> T[] assertExtendedGCD(T a, T b) {
+        T[] eea = PolynomialExtendedGCD(a, b);
+        assertExtendedGCD(eea, a, b);
+        return eea;
     }
 
     static <T extends IUnivariatePolynomial<T>> void assertExtendedGCD(T[] eea, T a, T b) {

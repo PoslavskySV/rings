@@ -3,6 +3,7 @@ package cc.redberry.rings.poly;
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Ring;
+import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 
@@ -49,9 +50,27 @@ public final class Util {
     public static <T extends IPolynomial<T>> boolean isOverRationals(T poly) {
         if (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring.getOne() instanceof Rational)
             return true;
-        if (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring.getOne() instanceof Rational)
+        else if (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring.getOne() instanceof Rational)
             return true;
-        return false;
+        else
+            return false;
+    }
+
+    /** Whether coefficient domain is Q */
+    public static <T extends IPolynomial<T>> boolean isOverQ(T poly) {
+        Object rep;
+
+        if (poly instanceof UnivariatePolynomial)
+            rep = ((UnivariatePolynomial) poly).ring.getOne();
+        else if (poly instanceof MultivariatePolynomial)
+            rep = ((MultivariatePolynomial) poly).ring.getOne();
+        else
+            return false;
+
+        if (!(rep instanceof Rational))
+            return false;
+
+        return ((Rational) rep).numerator instanceof BigInteger;
     }
 
     public static final class Tuple2<A, B> {
