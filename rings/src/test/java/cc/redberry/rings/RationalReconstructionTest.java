@@ -39,7 +39,7 @@ public class RationalReconstructionTest extends AbstractTest {
         RandomDataGenerator rndd = getRandomData();
         for (int i = 0; i < 1000; i++) {
             long num = rndd.nextLong(10, 1000);
-            long den = rndd.nextLong(num + 1, 1000);
+            long den = rndd.nextLong(num + 1, 1100);
             long gcd = MachineArithmetic.gcd(num, den);
             num = num / gcd;
             den = den / gcd;
