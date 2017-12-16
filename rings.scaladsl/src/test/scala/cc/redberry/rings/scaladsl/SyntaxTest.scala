@@ -389,7 +389,7 @@ class SyntaxTest {
 
       Assert.assertEquals(
         interpolate(points.toSeq, values.toSeq)(ring),
-        UnivariateInterpolation.interpolateLagrange[IntZ](ring.coefficientDomain, points, values)
+        UnivariateInterpolation.interpolateLagrange[IntZ](ring.cfRing, points, values)
       )
     }
 
@@ -410,7 +410,7 @@ class SyntaxTest {
 
       assertEquals(
         interpolate(points.toSeq, values.toSeq),
-        UnivariateInterpolation.interpolateNewton(ring.coefficientRing, points, values)
+        UnivariateInterpolation.interpolateNewton(ring._cfRing, points, values)
       )
     }
   }

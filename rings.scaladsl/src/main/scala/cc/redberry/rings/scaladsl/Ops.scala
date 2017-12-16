@@ -171,6 +171,17 @@ class UnivariateCfOps[Poly <: IUnivariatePolynomial[Poly], E](self: Poly)(pRing:
   def eval(point: E): E = pRing.eval(self, point)
 
   def eval(point: Int): E = pRing.eval(self, pRing.cfValue(point))
+
+  def map[T](ring: Ring[T], f: E => T) = {
+    self match {
+      case machine: UnivariatePolynomialZp64 =>
+        val lf = f.asInstanceOf[Long => T]
+        machine.mapCoefficients(ring, new java.util.function.LongFunction[T] {override def apply(value: Long) = lf(value)})
+      case generic: UnivariatePolynomial[E] =>
+        generic.mapCoefficients[T](ring, new java.util.function.Function[E, T] {override def apply(value: E) = f(value)})
+      case _ => throw new RuntimeException
+    }
+  }
 }
 
 class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly]](self: Poly)(ring: Ring[Poly]) {
@@ -244,6 +255,17 @@ class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynom
   def degree(variable: String): Int = self.degree(pRing.index(variable))
 
   def swapVariables(i: String, j: String): Poly = rings.poly.multivar.AMultivariatePolynomial.swapVariables[Term, Poly](self, pRing.index(i), pRing.index(j))
+
+  def map[T](ring: Ring[T], f: E => T) = {
+    self match {
+      case machine: MultivariatePolynomialZp64 =>
+        val lf = f.asInstanceOf[Long => T]
+        machine.mapCoefficients(ring, new java.util.function.LongFunction[T] {override def apply(value: Long) = lf(value)})
+      case generic: MultivariatePolynomial[E] =>
+        generic.mapCoefficients[T](ring, new java.util.function.Function[E, T] {override def apply(value: E) = f(value)})
+      case _ => throw new RuntimeException
+    }
+  }
 }
 
 class CfOps[E, Poly <: IPolynomial[Poly]](self: E)(ring: IPolynomialRing[Poly, E]) {
