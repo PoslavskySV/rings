@@ -704,7 +704,7 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
      * @param <T>    result elements type
      * @return a new polynomial with the coefficients obtained from this by applying {@code mapper}
      */
-    public final <T> UnivariatePolynomial<T> mapElements(Ring<T> ring, LongFunction<T> mapper) {
+    public final <T> UnivariatePolynomial<T> mapCoefficients(Ring<T> ring, LongFunction<T> mapper) {
         return stream()
                 .mapToObj(mapper)
                 .collect(new UnivariatePolynomial.PolynomialCollector<T>(ring));

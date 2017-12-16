@@ -113,7 +113,7 @@ public final class Rings {
      *
      * @param factory factory
      */
-    public static <Poly extends IUnivariatePolynomial<Poly>> IPolynomialRing<Poly> UnivariateRing(Poly factory) {
+    public static <Poly extends IUnivariatePolynomial<Poly>> UnivariateRing<Poly> UnivariateRing(Poly factory) {
         return new UnivariateRing<>(factory);
     }
 
