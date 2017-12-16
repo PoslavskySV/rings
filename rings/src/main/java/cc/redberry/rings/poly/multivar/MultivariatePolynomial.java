@@ -53,16 +53,14 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     static <E> void subtract(MonomialSet<Monomial<E>> polynomial, Monomial<E> term, Ring<E> ring) {
         if (ring.isZero(term.coefficient))
             return;
-        Monomial<E> pTerm = polynomial.get(term);
-        if (pTerm == null)
-            polynomial.add(term.negate(ring));
-        else {
-            E r = ring.subtract(pTerm.coefficient, term.coefficient);
+        polynomial.merge(term, term, (o, n) -> {
+            E r = ring.subtract(o.coefficient, n.coefficient);
             if (ring.isZero(r))
-                polynomial.remove(pTerm);
-            else
-                polynomial.add(pTerm.setCoefficient(r));
-        }
+                return null;
+            else {
+                return o.setCoefficient(r);
+            }
+        });
     }
 
     /**

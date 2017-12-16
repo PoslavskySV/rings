@@ -1,12 +1,9 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.util.ArraysUtil;
-import gnu.trove.set.hash.TLongHashSet;
+import gnu.trove.map.hash.TLongObjectHashMap;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Basic Groebner basis.
@@ -26,7 +23,7 @@ public final class GroebnerBasis {
         Comparator<Poly> ltOrder = (a, b) -> ordering.compare(a.lt(), b.lt()); // <- this gives 2x speed up
 
         List<Poly> groebner = new ArrayList<>(ideal);
-        removeRedundand(groebner);
+        removeRedundant(groebner);
         groebner.sort(ltOrder);
         List<Poly> temporary = new ArrayList<>();
         while (true) {
@@ -37,7 +34,7 @@ public final class GroebnerBasis {
                     Poly
                             fi = groebner.get(i),
                             fj = groebner.get(j);
-                    if (!shareVariables(fi.lt(), fj.lt()))
+                    if (!shareVariablesQ(fi.lt(), fj.lt()))
                         continue;
                     Poly syzygy = MultivariateDivision.remainder(syzygy(fi, fj), groebnerArray);
                     if (syzygy.isZero())
@@ -47,81 +44,92 @@ public final class GroebnerBasis {
             }
             if (temporary.isEmpty()) {
                 minimizeGroebnerBases(groebner);
-                removeRedundand(groebner);
+                removeRedundant(groebner);
                 return groebner;
             }
             groebner.addAll(temporary);
             groebner.sort(ltOrder);
-            removeRedundand(groebner);
+            removeRedundant(groebner);
             // groebner.sort(ltOrder); <- this make things slower...
         }
     }
 
     /**
-     * Computes minimized and reduced Groebner basis of a given ideal via Buchberger algorithm
+     * Computes minimized and reduced Groebner basis of a given ideal via Buchberger algorithm.
+     *
+     * NOTE: this algorithm is optimized to perform fast with GREVLEX order
      */
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> BuchbergerGB2(List<Poly> ideal) {
+    List<Poly> BuchbergerGB3(List<Poly> ideal) {
         Poly factory = ideal.get(0);
-        Comparator<DegreeVector> ordering = factory.ordering;
 
+        // stack of GB candidates
         List<Poly> groebner = new ArrayList<>(ideal);
-        removeRedundand(groebner);
+        // remove redundant elements from the basis
+        removeRedundant(groebner);
 
-        groebner.sort((a, b) -> ordering.compare(a.lt(), b.lt())); // <- this gives 2x speed up
+        // sort polynomials in basis in the ascending order, to achieve faster divisions
+        // this gives 2x performance boost for GREVLEX
+        Comparator<Poly> polyOrder = (a, b) -> factory.ordering.compare(a.lt(), b.lt());
+        groebner.sort(polyOrder);
 
-        // fill all initial pairs
-        TLongHashSet pairs = new TLongHashSet(ideal.size() * ideal.size());
+        // pairs are ordered like (0, 1), (0, 2), ... (0, N), (1, 2), (1, 3), ...
+        TreeSet<SyzygyPair<Term, Poly>> sPairs = new TreeSet<>((a, b) -> factory.ordering.compare(a.syzygyGamma, b.syzygyGamma));
+        TLongObjectHashMap<SyzygyPair<Term, Poly>> ijPairs = new TLongObjectHashMap<>();
         for (int i = 0; i < groebner.size() - 1; i++)
-            for (int j = i + 1; j < groebner.size(); ++j)
-                pairs.add(pack(i, j));
+            for (int j = i + 1; j < groebner.size(); ++j) {
+                SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(i, j, groebner);
+                sPairs.add(sPair);
+                ijPairs.put(pack(i, j), sPair);
+            }
 
+        // cache array used in divisions (little performance improvement actually)
         Poly[] groebnerArray = groebner.toArray(factory.createArray(groebner.size()));
-        int its = 0;
-        int nontriv = 0;
-        main:
-        while (!pairs.isEmpty()) {
-            ++its;
-            long el = pairs.iterator().next();
-            pairs.remove(el);
 
-            int i = (int) (0xFFFFFFFF & el);
-            int j = (int) (el >> 32);
+        main:
+        while (!sPairs.isEmpty()) {
+            // pick up the pair with "smallest" syzygy
+            SyzygyPair<Term, Poly> pair = sPairs.pollFirst();
+            ijPairs.remove(pair.index());
+            int
+                    i = pair.i,
+                    j = pair.j;
 
             Poly
-                    fi = groebner.get(i),
-                    fj = groebner.get(j);
+                    fi = pair.fi,
+                    fj = pair.fj;
 
-            if (!shareVariables(fi.lt(), fj.lt()))
+            if (!shareVariablesQ(fi.lt(), fj.lt()))
                 continue;
 
-            // criterion
-            int[] ltlcm = ArraysUtil.max(fi.lt().exponents, fj.lt().exponents);
+            // test criterion
+            // l.c.m. of lts
+            int[] lcm = ArraysUtil.max(fi.lt().exponents, fj.lt().exponents);
             for (int k = 0; k < groebner.size(); ++k) {
                 if (groebner.get(k) == null)
                     continue;
                 if (k == i || k == j)
                     continue;
-                if (pairs.contains(packOrdered(i, k)) || pairs.contains(packOrdered(j, k)))
+                if (ijPairs.contains(pack(i, k)) || ijPairs.contains(pack(j, k)))
                     continue;
-                if (dividesQ(ltlcm, groebner.get(k).lt().exponents))
+                if (dividesQ(lcm, groebner.get(k).lt().exponents))
                     continue main;
             }
 
-            Poly syzygy = MultivariateDivision.remainder(syzygy(fi, fj), groebnerArray);
+            Poly syzygy = MultivariateDivision.remainder(pair.computeSyzygy(), groebnerArray);
             if (syzygy.isZero())
                 continue;
 
-            ++nontriv;
             groebner.add(syzygy);
             // recompute array
             groebnerArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
 
-            pairs.ensureCapacity(groebner.size());
             for (int k = 0; k < groebner.size() - 1; k++)
-                if (groebner.get(k) != null)
-                    pairs.add(pack(k, groebner.size() - 1));
-
+                if (groebner.get(k) != null) {
+                    SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(k, groebner.size() - 1, groebner);
+                    sPairs.add(sPair);
+                    ijPairs.put(sPair.index(), sPair);
+                }
             // remove redundant elements from GB
             for (int k = 0; k < groebner.size() - 1; ++k) {
                 Poly fk = groebner.get(k);
@@ -142,26 +150,58 @@ public final class GroebnerBasis {
                     if (rem == null) {
                         // remove all pairs with k
                         for (int l = 0; l < groebner.size(); l++)
-                            if (l != k && groebner.get(l) != null)
-                                pairs.remove(packOrdered(l, k));
+                            if (l != k && groebner.get(l) != null) {
+                                SyzygyPair<Term, Poly> sPair = ijPairs.remove(pack(l, k));
+                                if (sPair != null)
+                                    sPairs.remove(sPair);
+                            }
                     } else
                         // update all pairs with k
                         for (int l = 0; l < groebner.size(); l++)
-                            if (l != k && groebner.get(l) != null)
-                                pairs.add(packOrdered(l, k));
+                            if (l != k && groebner.get(l) != null) {
+                                SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(l, k, groebner);
+                                sPairs.add(sPair);
+                                ijPairs.put(sPair.index(), sPair);
+                            }
                 }
             }
         }
 
-        System.out.println("nitss = " + its);
-        System.out.println("nontr = " + nontriv);
-
         // remove null entries
-        while (groebner.remove(null)) ;
+        groebner.removeAll(Collections.<Poly>singleton(null)); // batch remove all nulls
 
+        // minimize Groebner basis & canonicalize it
         minimizeGroebnerBases(groebner);
-        removeRedundand(groebner);
+        removeRedundant(groebner);
         return groebner;
+    }
+
+    private static final class SyzygyPair<
+            Term extends DegreeVector<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        final int i, j;
+        final Poly fi, fj;
+        final Term syzygyGamma;
+
+        SyzygyPair(int i, int j, List<Poly> basis) {
+            this(i, j, basis.get(i), basis.get(j));
+        }
+
+        SyzygyPair(int i, int j, Poly fi, Poly fj) {
+            if (i > j) {
+                int s = i; i = j; j = s;
+                Poly fs = fi; fi = fj; fj = fs;
+            }
+            this.i = i; this.fi = fi;
+            this.j = j; this.fj = fj;
+            this.syzygyGamma = fi.createTermWithUnitCoefficient(ArraysUtil.max(fi.multidegree(), fj.multidegree()));
+        }
+
+        long index() { return pack(i, j);}
+
+        Poly computeSyzygy() {
+            return syzygy(syzygyGamma, fi, fj);
+        }
     }
 
     private static boolean dividesQ(int[] dividend, int[] divider) {
@@ -172,13 +212,12 @@ public final class GroebnerBasis {
     }
 
     private static long pack(int i, int j) {
-        assert i < j;
+        if (i > j)
+            return pack(j, i);
         return ((long) j) << 32 | (long) i;
     }
 
-    private static long packOrdered(int i, int j) { return i < j ? pack(i, j) : pack(j, i); }
-
-    private static boolean shareVariables(DegreeVector a, DegreeVector b) {
+    private static boolean shareVariablesQ(DegreeVector a, DegreeVector b) {
         for (int i = 0; i < a.exponents.length; i++)
             if (a.exponents[i] != 0 && b.exponents[i] != 0)
                 return true;
@@ -213,7 +252,7 @@ public final class GroebnerBasis {
      * Computes reduced Groebner basis
      */
     static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void removeRedundand(List<Poly> basis) {
+    void removeRedundant(List<Poly> basis) {
         for (int i = 0, size = basis.size(); i < size; ++i) {
             Poly el = basis.remove(i);
             Poly r = MultivariateDivision.remainder(el, basis);
@@ -227,8 +266,11 @@ public final class GroebnerBasis {
 
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly syzygy(Poly a, Poly b) {
-        int[] gamma = ArraysUtil.max(a.multidegree(), b.multidegree());
-        Term xGamma = a.createTermWithUnitCoefficient(gamma);
+        return syzygy(a.createTermWithUnitCoefficient(ArraysUtil.max(a.multidegree(), b.multidegree())), a, b);
+    }
+
+    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly syzygy(Term xGamma, Poly a, Poly b) {
         Poly
                 aReduced = a.clone().multiply(a.divideOrNull(xGamma, a.lt())),
                 bReduced = b.clone().multiply(b.divideOrNull(xGamma, b.lt())),

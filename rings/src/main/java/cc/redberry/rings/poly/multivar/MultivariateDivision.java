@@ -71,6 +71,56 @@ public final class MultivariateDivision {
     }
 
     /**
+     * Performs multivariate division with remainder and returns the remainder.
+     *
+     * @param dividend the dividend
+     * @param dividers the dividers
+     * @return the remainder
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly remainder(Poly dividend, Poly... dividers) {
+        int i = 0;
+        int constDivider = -1;
+        for (; i < dividers.length; i++) {
+            if (dividers[i].isZero())
+                throw new ArithmeticException("divide by zero");
+            if (dividers[i].isConstant())
+                constDivider = i;
+        }
+
+        if (constDivider != -1) {
+            if (dividers[constDivider].isOne())
+                return dividend.createZero();
+
+            Poly dd = dividend.clone().divideByLC(dividers[constDivider]);
+            if (dd != null)
+                return dividend.createZero();
+        }
+
+        // cache leading terms
+        Term[] dividersLTs = Arrays.stream(dividers).map(Poly::lt).toArray(dividend::createTermsArray);
+        dividend = dividend.clone();
+        Poly remainder = dividend.createZero();
+        while (!dividend.isZero()) {
+            Term ltDiv = null;
+            Term lt = dividend.lt();
+            for (i = 0; i < dividers.length; i++) {
+                ltDiv = dividend.divideOrNull(lt, dividersLTs[i]);
+                if (ltDiv != null)
+                    break;
+            }
+            if (ltDiv != null)
+                dividend = dividend.subtract(dividend.create(ltDiv).multiply(dividers[i]));
+            else {
+                remainder = remainder.add(lt);
+                dividend = dividend.subtractLt();
+            }
+        }
+        return remainder;
+    }
+
+    /**
      * Performs multivariate division with remainder.
      *
      * @param dividend the dividend
@@ -86,20 +136,6 @@ public final class MultivariateDivision {
     }
 
     /**
-     * Performs multivariate division with remainder and returns the remainder.
-     *
-     * @param dividend the dividend
-     * @param dividers the dividers
-     * @return array of quotients and remainder at the last position
-     */
-    @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly remainder(Poly dividend, Poly... dividers) {
-        Poly[] r = divideAndRemainder(dividend, dividers);
-        return r[r.length - 1];
-    }
-
-    /**
      * Performs multivariate division with remainder and rerurns the remainder.
      *
      * @param dividend the dividend
@@ -109,8 +145,7 @@ public final class MultivariateDivision {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Collection<Poly> dividers) {
-        Poly[] r = divideAndRemainder(dividend, dividers.toArray(dividend.createArray(dividers.size())));
-        return r[r.length - 1];
+        return remainder(dividend, dividers.toArray(dividend.createArray(dividers.size())));
     }
 
     /**
@@ -123,8 +158,9 @@ public final class MultivariateDivision {
     @SuppressWarnings("unchecked")
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Poly divider) {
-        Poly[] r = divideAndRemainder(dividend, divider);
-        return r[r.length - 1];
+        Poly[] array = divider.createArray(1);
+        array[0] = divider;
+        return remainder(dividend, array);
     }
 
     /**
