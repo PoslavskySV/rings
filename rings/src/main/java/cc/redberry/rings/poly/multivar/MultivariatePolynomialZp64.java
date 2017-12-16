@@ -57,16 +57,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     private static void subtract(MonomialSet<MonomialZp64> polynomial, MonomialZp64 term, IntegersZp64 ring) {
-        if (term.coefficient == 0)
-            return;
-        polynomial.merge(term, term, (o, n) -> {
-            long r = ring.subtract(o.coefficient, n.coefficient);
-            if (r == 0)
-                return null;
-            else {
-                return o.setCoefficient(r);
-            }
-        });
+        add(polynomial, term.setCoefficient(ring.negate(term.coefficient)), ring);
     }
 
     /**
