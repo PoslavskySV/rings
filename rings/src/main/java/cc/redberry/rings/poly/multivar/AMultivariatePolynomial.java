@@ -820,6 +820,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     /** creates term with specified exponents and unit coefficient */
     public abstract Term createTermWithUnitCoefficient(int[] exponents);
 
+    public abstract Term[] createTermsArray(int length);
+
     /** creates a unit term */
     public abstract Term createUnitTerm();
 

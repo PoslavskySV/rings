@@ -103,12 +103,17 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector<MonomialTer
     }
 
     /** Tests whether this can be divided by {@code oth} degree vector */
-    public final boolean dividesQ(DegreeVector oth) {
+    public final boolean divisibleBy(int[] oth) {
         for (int i = 0; i < exponents.length; i++) {
-            if (exponents[i] < oth.exponents[i])
+            if (exponents[i] < oth[i])
                 return false;
         }
         return true;
+    }
+
+    /** Tests whether this can be divided by {@code oth} degree vector */
+    public final boolean divisibleBy(DegreeVector oth) {
+        return divisibleBy(oth.exponents);
     }
 
     /** Returns whether all exponents are zero */

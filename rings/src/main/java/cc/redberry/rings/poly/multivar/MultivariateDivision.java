@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -46,12 +47,15 @@ public final class MultivariateDivision {
             }
         }
 
+        // cache leading terms
+        Term[] dividersLTs = Arrays.stream(dividers).map(Poly::lt).toArray(dividend::createTermsArray);
         dividend = dividend.clone();
         Poly remainder = quotients[quotients.length - 1];
         while (!dividend.isZero()) {
             Term ltDiv = null;
+            Term lt = dividend.lt();
             for (i = 0; i < dividers.length; i++) {
-                ltDiv = dividend.divideOrNull(dividend.lt(), dividers[i].lt());
+                ltDiv = dividend.divideOrNull(lt, dividersLTs[i]);
                 if (ltDiv != null)
                     break;
             }
@@ -59,7 +63,7 @@ public final class MultivariateDivision {
                 quotients[i] = quotients[i].add(ltDiv);
                 dividend = dividend.subtract(dividend.create(ltDiv).multiply(dividers[i]));
             } else {
-                remainder = remainder.add(dividend.lt());
+                remainder = remainder.add(lt);
                 dividend = dividend.subtractLt();
             }
         }
@@ -185,5 +189,21 @@ public final class MultivariateDivision {
             dividend = dividend.subtract(divider.clone().multiply(ltDiv));
         }
         return true;
+    }
+
+    /**
+     * Tests whether there is nontrivial quotient {@code dividend / divider}
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return whether {@code divisor} is a divisor of {@code poly}
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    boolean nontrivialQuotientQ(Poly dividend, Poly divider) {
+        Term lt = divider.lt();
+        for (Term term : dividend)
+            if (term.divisibleBy(lt))
+                return true;
+        return false;
     }
 }

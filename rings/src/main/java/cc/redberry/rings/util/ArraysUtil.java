@@ -424,6 +424,13 @@ public final class ArraysUtil {
         return a;
     }
 
+    public static long max(long[] array) {
+        long a = Long.MIN_VALUE;
+        for (long i : array)
+            a = Math.max(a, i);
+        return a;
+    }
+
     public static int max(int[] array, int from, int to) {
         int a = Integer.MIN_VALUE; ;
         for (int i = from; i < to; i++)
@@ -441,6 +448,13 @@ public final class ArraysUtil {
     public static int min(int[] array) {
         int a = Integer.MAX_VALUE;
         for (int i : array)
+            a = Math.min(a, i);
+        return a;
+    }
+
+    public static long min(long[] array) {
+        long a = Long.MAX_VALUE;
+        for (long i : array)
             a = Math.min(a, i);
         return a;
     }

@@ -447,6 +447,12 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public Monomial<E>[] createTermsArray(int length) {
+        return new Monomial[length];
+    }
+
+    @Override
     public Monomial<E> createUnitTerm() {
         return Monomial.withZeroExponents(nVariables, ring.getOne());
     }

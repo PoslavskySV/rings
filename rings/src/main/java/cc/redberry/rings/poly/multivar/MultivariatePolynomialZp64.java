@@ -416,6 +416,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
+    public MonomialZp64[] createTermsArray(int length) {
+        return new MonomialZp64[length];
+    }
+
+    @Override
     public MonomialZp64 createUnitTerm() {
         return MonomialZp64.withZeroExponents(nVariables, 1L);
     }
