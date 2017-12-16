@@ -37,7 +37,7 @@ public final class RationalReconstruction {
             w[0] = -w[0];
             w[1] = -w[1];
         }
-        if (w[1] < denominatorBound && MachineArithmetic.gcd(w[0], w[1]) == 1)
+        if (w[1] <= denominatorBound && MachineArithmetic.gcd(w[0], w[1]) == 1)
             return w;
         return null;
     }
@@ -61,7 +61,7 @@ public final class RationalReconstruction {
             w[0] = w[0].negate();
             w[1] = w[1].negate();
         }
-        if (w[1].compareTo(denominatorBound) < 0 && BigIntegerUtil.gcd(w[0], w[1]).isOne())
+        if (w[1].compareTo(denominatorBound) <= 0 && BigIntegerUtil.gcd(w[0], w[1]).isOne())
             return w;
         return null;
     }
@@ -92,7 +92,7 @@ public final class RationalReconstruction {
             w[0].negate();
             w[1].negate();
         }
-        if (w[1].degree() < denominatorBound && UnivariateGCD.PolynomialGCD(w[0], w[1]).isConstant())
+        if (w[1].degree() <= denominatorBound && UnivariateGCD.PolynomialGCD(w[0], w[1]).isConstant())
             return w;
         return null;
     }
