@@ -5,6 +5,9 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.multivar.GroebnerBasis.MinimizationStrategy;
+import cc.redberry.rings.poly.multivar.GroebnerBasis.SyzygyPair;
+import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
@@ -14,6 +17,12 @@ import org.junit.Test;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static cc.redberry.rings.Rings.Zp64;
+import static cc.redberry.rings.poly.multivar.GroebnerBasis.BuchbergerGB3;
+import static cc.redberry.rings.poly.multivar.GroebnerBasis.canonicalize;
+import static cc.redberry.rings.poly.multivar.GroebnerBasisData.*;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.remainder;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.parse;
@@ -41,7 +50,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 f2 = parse("x*y^4 - y^2 - 5*z^3*x^2", Rings.Q, MonomialOrder.LEX, vars);
 
 
-        List<MultivariatePolynomial<Rational<BigInteger>>> r = GroebnerBasis.BuchbergerGB3(Arrays.asList(f1, f2));
+        List<MultivariatePolynomial<Rational<BigInteger>>> r = BuchbergerGB3(Arrays.asList(f1, f2), GREVLEX);
         for (MultivariatePolynomial<Rational<BigInteger>> t : r)
             System.out.println(t.toString(vars));
     }
@@ -66,12 +75,12 @@ public class GroebnerBasisTest extends AMultivariateTest {
         String[] vars = {"x", "y", "z"};
         IntegersZp domain = new IntegersZp(17);
         MultivariatePolynomialZp64
-                f1 = asOverZp64(parse("11*x^3+3*x^4*y*z^2+12*x^3*y^4+7*x^2*y^6*z+16*x^3*y*z^6+13*x^4*y*z^5+7*x^5*y*z^5+9*x^4*y^3*z^5+7*x^6*y^4*z^2+10*x^4*y^4*z^5", domain, MonomialOrder.GREVLEX, vars)),
-                f2 = asOverZp64(parse("5*y+14*x*y*z^6+5*x^2*y^2*z^4+16*x*y^4*z^3+9*x^5*y^3*z+7*x^2*y^5*z^3+15*x^5*y^6+16*x^5*y*z^6+9*x^2*y^5*z^6+10*x^5*y^5*z^3", domain, MonomialOrder.GREVLEX, vars)),
-                f3 = asOverZp64(parse("8*y^5+14*y^3*z^3+2*x*y^2*z^4+13*x*y^3*z^3+2*x^2*y^4*z^2+16*x^3*y^3*z^4+8*x^3*y^3*z^5+11*x^6*y^4*z^2+8*x^5*y^5*z^3", domain, MonomialOrder.GREVLEX, vars));
+                f1 = asOverZp64(parse("11*x^3+3*x^4*y*z^2+12*x^3*y^4+7*x^2*y^6*z+16*x^3*y*z^6+13*x^4*y*z^5+7*x^5*y*z^5+9*x^4*y^3*z^5+7*x^6*y^4*z^2+10*x^4*y^4*z^5", domain, GREVLEX, vars)),
+                f2 = asOverZp64(parse("5*y+14*x*y*z^6+5*x^2*y^2*z^4+16*x*y^4*z^3+9*x^5*y^3*z+7*x^2*y^5*z^3+15*x^5*y^6+16*x^5*y*z^6+9*x^2*y^5*z^6+10*x^5*y^5*z^3", domain, GREVLEX, vars)),
+                f3 = asOverZp64(parse("8*y^5+14*y^3*z^3+2*x*y^2*z^4+13*x*y^3*z^3+2*x^2*y^4*z^2+16*x^3*y^3*z^4+8*x^3*y^3*z^5+11*x^6*y^4*z^2+8*x^5*y^5*z^3", domain, GREVLEX, vars));
 
 
-        List<MultivariatePolynomialZp64> r = GroebnerBasis.BuchbergerGB(Arrays.asList(f1, f2, f3));
+        List<MultivariatePolynomialZp64> r = BuchbergerGB3(Arrays.asList(f1, f2, f3), GREVLEX);
         System.out.println(r);
 //        for (MultivariatePolynomialZp64 t : r)
 //            System.out.println(t.toString(vars));
@@ -88,8 +97,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
         for (int i = 0; i < nIterations; i++) {
             List<MultivariatePolynomialZp64> ideal = new ArrayList<>();
             for (int j = 0; j < nEls; j++)
-                ideal.add(RandomMultivariatePolynomials.randomPolynomial(3, 4, 10, domain, MonomialOrder.GREVLEX, rnd));
-            List<MultivariatePolynomialZp64> gb = GroebnerBasis.BuchbergerGB3(ideal);
+                ideal.add(RandomMultivariatePolynomials.randomPolynomial(3, 4, 10, domain, GREVLEX, rnd));
+            List<MultivariatePolynomialZp64> gb = BuchbergerGB3(ideal, GREVLEX);
 
             System.out.println(gb);
             System.out.println(gb.size());
@@ -100,7 +109,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
 
             for (int j = 0; j < 10; j++) {
-                MultivariatePolynomialZp64 rndPoly = RandomMultivariatePolynomials.randomPolynomial(3, 10, 15, domain, MonomialOrder.GREVLEX, rnd);
+                MultivariatePolynomialZp64 rndPoly = RandomMultivariatePolynomials.randomPolynomial(3, 10, 15, domain, GREVLEX, rnd);
                 MultivariatePolynomialZp64 rem = remainder(rndPoly, gb).monic();
                 for (int k = 0; k < 5; k++) {
                     Collections.shuffle(gb, new Random(rnd.nextLong()));
@@ -114,9 +123,9 @@ public class GroebnerBasisTest extends AMultivariateTest {
     public void test4() throws Exception {
         String[] vars = {"x", "y", "z"};
         MultivariatePolynomial<BigInteger>
-                f1 = parse("x^2*y^2 + x*y - z", Rings.Zp(17), MonomialOrder.GREVLEX, vars),
-                f2 = parse("x^17*y^4 - y^2 + x*z*y - 1", Rings.Zp(17), MonomialOrder.GREVLEX, vars),
-                f3 = parse("x^5*y^4*z - x*y^2 + x*z + 1", Rings.Zp(17), MonomialOrder.GREVLEX, vars);
+                f1 = parse("x^2*y^2 + x*y - z", Rings.Zp(17), GREVLEX, vars),
+                f2 = parse("x^17*y^4 - y^2 + x*z*y - 1", Rings.Zp(17), GREVLEX, vars),
+                f3 = parse("x^5*y^4*z - x*y^2 + x*z + 1", Rings.Zp(17), GREVLEX, vars);
 
         for (int i = 0; i < 1000; i++) {
             List<MultivariatePolynomialZp64> ideal = Arrays.asList(asOverZp64(f1), asOverZp64(f2), asOverZp64(f3));
@@ -127,7 +136,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
 
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> gb3 = GroebnerBasis.BuchbergerGB3(ideal);
+            List<MultivariatePolynomialZp64> gb3 = BuchbergerGB3(ideal, GREVLEX);
             System.out.println("GB3: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
 
             for (List<MultivariatePolynomialZp64> gb : Arrays.asList(gb1, gb3)) {
@@ -145,7 +154,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         }
 
         List<MultivariatePolynomial<BigInteger>> gb = Arrays.asList(f1, f2, f3);
-        System.out.println(GroebnerBasis.BuchbergerGB3(gb)
+        System.out.println(BuchbergerGB3(gb, GREVLEX)
                 .stream()
                 .map(p -> p.toString(vars))
                 .collect(Collectors.joining(", ")));
@@ -155,17 +164,32 @@ public class GroebnerBasisTest extends AMultivariateTest {
     public void test5() throws Exception {
         String[] vars = {"x", "y", "z"};
         MultivariatePolynomial<BigInteger>
-                f1 = parse("x^2*y^2 + x*y - z", Rings.Zp(17), MonomialOrder.GREVLEX, vars),
-                f2 = parse("x^37*y^4 - y^2 + x*z*y - 1", Rings.Zp(17), MonomialOrder.GREVLEX, vars),
-                f3 = parse("x^15*y^4*z - x*y^2 + x*z + 1", Rings.Zp(17), MonomialOrder.GREVLEX, vars);
+                f1 = parse("x^2*y^2 + x*y*z - z", Rings.Zp(17), GREVLEX, vars),
+                f2 = parse("x^37*y^4 - y^2 + x*z*y - 1", Rings.Zp(17), GREVLEX, vars),
+                f3 = parse("x^15*y^4*z - x*y^2 + x*z + 1", Rings.Zp(17), GREVLEX, vars);
 
         for (int i = 0; i < 1000; i++) {
             List<MultivariatePolynomialZp64> ideal = Arrays.asList(asOverZp64(f1), asOverZp64(f2), asOverZp64(f3));
             long start;
+            Comparator<SyzygyPair> strategy = GroebnerBasis.normalSelectionStrategy(GREVLEX);
 
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> gb3 = GroebnerBasis.BuchbergerGB3(ideal);
-            System.out.println("GB3: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            List<MultivariatePolynomialZp64> gb3 = BuchbergerGB3(
+                    ideal,
+                    GREVLEX,
+                    strategy,
+                    (prev, cur) -> (cur > prev + 50));
+            System.out.println("Normal strategy: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            strategy = GroebnerBasis.withSugar(strategy);
+            start = System.nanoTime();
+            List<MultivariatePolynomialZp64> gb3a = BuchbergerGB3(
+                    ideal,
+                    GREVLEX,
+                    strategy,
+                    (prev, cur) -> (cur > prev + 50));
+            System.out.println("Sugar strategy:  " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
 
             System.out.println();
 
@@ -178,9 +202,80 @@ public class GroebnerBasisTest extends AMultivariateTest {
         }
 
         List<MultivariatePolynomial<BigInteger>> gb = Arrays.asList(f1, f2, f3);
-        System.out.println(GroebnerBasis.BuchbergerGB3(gb)
+        System.out.println(BuchbergerGB3(gb, GREVLEX)
                 .stream()
                 .map(p -> p.toString(vars))
                 .collect(Collectors.joining(", ")));
+    }
+
+    @Test
+    public void test5a() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                f1 = parse("x^2*y^2 + x*y - z", Rings.Zp(17), GREVLEX, vars),
+                f2 = parse("x^37*y^4 - y^2 + x*z*y - 1", Rings.Zp(17), GREVLEX, vars),
+                f3 = parse("x^15*y^4*z - x*y^2 + x*z + 1", Rings.Zp(17), GREVLEX, vars);
+
+        for (int i = 0; i < 1000; i++) {
+            List<MultivariatePolynomial<Rational<BigInteger>>> ideal = GroebnerBasisData.katsura2();
+            long start;
+
+            start = System.nanoTime();
+            List<MultivariatePolynomial<Rational<BigInteger>>> gb3 = BuchbergerGB3(
+                    ideal,
+                    GREVLEX,
+                    GroebnerBasis.normalSelectionStrategy(GREVLEX),
+                    (prev, cur) -> (cur - prev) > 10);
+
+            System.out.println("GB3: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            System.out.println();
+
+            for (List<MultivariatePolynomial<Rational<BigInteger>>> gb : Arrays.asList(gb3)) {
+                gb.forEach(MultivariatePolynomial<Rational<BigInteger>>::monic);
+                gb.sort(MultivariatePolynomial<Rational<BigInteger>>::compareTo);
+            }
+
+            if (i == 0)
+                System.out.println(gb3);
+
+//            assert gb2.equals(gb3);
+        }
+
+    }
+
+//    @Benchmark
+    @Test
+    public void testKatsura_GREVLEX() throws Exception {
+        for (int i = MIN_KATSURA; i < MAX_KATSURA; i++) {
+            IntegersZp64 ring = Zp64(524287);
+            List<MultivariatePolynomialZp64> katsura = katsura(i)
+                    .stream()
+                    .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator.longValueExact())))
+                    .collect(Collectors.toList());
+
+            Comparator<DegreeVector> order = LEX;
+            Comparator<SyzygyPair> normalStrategy = GroebnerBasis.normalSelectionStrategy(order);
+            Comparator<SyzygyPair> sugarStrategy = GroebnerBasis.withSugar(normalStrategy);
+            MinimizationStrategy minimizationStrategy = (prev, cur) -> false;
+
+            long start, elapsed;
+
+            start = System.nanoTime();
+            List<MultivariatePolynomialZp64> sugar = BuchbergerGB3(katsura, order, sugarStrategy, minimizationStrategy);
+            elapsed = System.nanoTime() - start;
+            System.out.println(String.format("Katsura%s, sugar: %s", i, TimeUnits.nanosecondsToString(elapsed)));
+
+            start = System.nanoTime();
+            List<MultivariatePolynomialZp64> norm = BuchbergerGB3(katsura, order, normalStrategy, minimizationStrategy);
+            elapsed = System.nanoTime() - start;
+            System.out.println(String.format("Katsura%s, normal: %s", i, TimeUnits.nanosecondsToString(elapsed)));
+
+            canonicalize(norm);
+            canonicalize(sugar);
+
+            Assert.assertEquals(norm, sugar);
+            System.out.println();
+        }
     }
 }
