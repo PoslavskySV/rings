@@ -170,6 +170,19 @@ public abstract class DegreeVector<MonomialTerm extends DegreeVector<MonomialTer
     }
 
     /**
+     * Selects range from this
+     *
+     * @param from from inclusive
+     * @param to   to exclusive
+     */
+    @SuppressWarnings("unchecked")
+    public final MonomialTerm range(int from, int to) {
+        if (from == 0 && to == exponents.length)
+            return (MonomialTerm) this;
+        return setDegreeVector(Arrays.copyOfRange(exponents, from, to));
+    }
+
+    /**
      * Set exponent of specified {@code var} to zero
      *
      * @param var the variable

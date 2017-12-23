@@ -51,4 +51,47 @@ public final class MonomialOrder {
                 }
                 return 0;
             };
+
+    /**
+     * Block product of orderings
+     */
+    public static Comparator<DegreeVector> product(Comparator<DegreeVector> orderings[], int[] nVariables) {
+        return new ProductOrdering(orderings, nVariables);
+    }
+
+    /**
+     * Block product of orderings
+     */
+    @SuppressWarnings("unchecked")
+    public static Comparator<DegreeVector> product(Comparator<DegreeVector> a, int anVariables, Comparator<DegreeVector> b, int bnVariable) {
+        return new ProductOrdering(new Comparator[]{a, b}, new int[]{anVariables, bnVariable});
+    }
+
+    static final class ProductOrdering implements Comparator<DegreeVector>, Serializable {
+        final Comparator<DegreeVector> orderings[];
+        final int[] nVariables;
+
+        ProductOrdering(Comparator<DegreeVector>[] orderings, int[] nVariables) {
+            this.orderings = orderings;
+            this.nVariables = nVariables;
+        }
+
+        @Override
+        public int compare(DegreeVector a, DegreeVector b) {
+            int prev = 0;
+            for (int i = 0; i < nVariables.length; i++) {
+                // for each block
+                DegreeVector
+                        aBlock = a.range(prev, prev + nVariables[i]),
+                        bBlock = b.range(prev, prev + nVariables[i]);
+
+                int c = orderings[i].compare(aBlock, bBlock);
+                if (c != 0)
+                    return c;
+
+                prev += nVariables[i];
+            }
+            return 0;
+        }
+    }
 }
