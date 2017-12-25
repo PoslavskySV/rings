@@ -1,6 +1,7 @@
 package cc.redberry.rings.poly.multivar;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Comparator;
 
 /**
@@ -92,6 +93,25 @@ public final class MonomialOrder {
                 prev += nVariables[i];
             }
             return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ProductOrdering that = (ProductOrdering) o;
+
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(orderings, that.orderings)) return false;
+            return Arrays.equals(nVariables, that.nVariables);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(orderings);
+            result = 31 * result + Arrays.hashCode(nVariables);
+            return result;
         }
     }
 }

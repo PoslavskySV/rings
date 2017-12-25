@@ -256,6 +256,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return a copy of this with the new ordering
      */
     public final Poly setOrdering(Comparator<DegreeVector> newOrdering) {
+        if (ordering.equals(newOrdering))
+            return clone();
         MonomialSet<Term> newData = new MonomialSet<>(newOrdering);
         newData.putAll(terms);
         return create(nVariables, newOrdering, newData);
@@ -433,6 +435,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      */
     @Override
     public int degree() {
+        // fix me replace with degreeSum ?
         int max = 0;
         for (Term db : terms)
             max = Math.max(max, db.totalDegree);
@@ -504,6 +507,13 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      */
     public final int degreeSum() {
         return ArraysUtil.sum(degrees());
+    }
+
+    /**
+     * Returns degreeSum - lt().totalDegree
+     */
+    public final int ecart() {
+        return degreeSum() - lt().totalDegree;
     }
 
     /**
@@ -783,6 +793,15 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return the leading term in this polynomial according to ordering
      */
     public abstract Term lt();
+
+    /**
+     * Returns the leading term in this polynomial according to ordering
+     *
+     * @return the leading term in this polynomial according to ordering
+     */
+    public final Poly ltAsPoly(){
+        return create(lt());
+    }
 
     /**
      * Returns the monomial content of this polynomial

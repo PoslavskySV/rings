@@ -534,6 +534,13 @@ public final class ArraysUtil {
         return c;
     }
 
+    public static int[] subtract(final int[] a, final int[] b) {
+        int[] c = new int[a.length];
+        for (int i = 0; i < c.length; i++)
+            c[i] = a[i] - b[i];
+        return c;
+    }
+
     public static int sum(final int[] array, int from) {
         return sum(array, from, array.length);
     }

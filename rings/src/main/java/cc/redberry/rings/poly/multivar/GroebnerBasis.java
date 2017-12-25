@@ -86,6 +86,7 @@ public final class GroebnerBasis {
     public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerGB(List<Poly> ideal, Comparator<DegreeVector> monomialOrder) {
         Comparator<SyzygyPair> selectionStrategy = normalSelectionStrategy(ideal.get(0).ordering);
+        // fixme use sugar always?
         if (!isGradedOrder(monomialOrder))
             // add sugar for non-graded orders
             selectionStrategy = withSugar(selectionStrategy);
@@ -125,9 +126,10 @@ public final class GroebnerBasis {
         if (groebner.size() == 1)
             return groebner;
 
-        // sort polynomials in basis in the ascending order, to achieve faster divisions
-        // this gives 2x performance boost for GREVLEX (and have no impact for LEX)
-        Comparator<Poly> polyOrder = (a, b) -> monomialOrder.compare(a.lt(), b.lt());
+        // sort polynomials in basis to achieve faster divisions
+        Comparator<Poly> polyOrder = isGradedOrder(monomialOrder)
+                ? (a, b) -> monomialOrder.compare(a.lt(), b.lt())
+                : new EcartComparator<>();
         groebner.sort(polyOrder);
 
         // pairs are ordered like (0, 1), (0, 2), ... (0, N), (1, 2), (1, 3), ...
@@ -177,6 +179,8 @@ public final class GroebnerBasis {
             }
 
             Poly syzygy = MultivariateDivision.remainder(pair.computeSyzygy(), groebnerArray);
+            // don't tail reduce
+            // syzygy = syzygy.ltAsPoly().add(MultivariateDivision.remainder(syzygy.subtractLt(), groebnerArray));
             if (syzygy.isZero())
                 continue;
 
@@ -187,6 +191,8 @@ public final class GroebnerBasis {
             groebner.add(syzygy);
             // recompute array
             groebnerArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
+            // don't sort here, not practical actually
+            // Arrays.sort(groebnerArray, polyOrder);
 
             for (int k = 0; k < groebner.size() - 1; k++)
                 if (groebner.get(k) != null) {
@@ -206,6 +212,8 @@ public final class GroebnerBasis {
 
         // minimize Groebner basis
         minimizeGroebnerBases(groebner);
+        // speed up final reduction
+        groebner.sort(polyOrder);
         // reduce Groebner basis
         removeRedundant(groebner);
         // canonicalize Groebner basis
@@ -298,6 +306,17 @@ public final class GroebnerBasis {
                 return c;
             return initial.compare(sa, sb);
         };
+    }
+
+    private static final class EcartComparator<Poly extends AMultivariatePolynomial<?, Poly>>
+            implements Comparator<Poly> {
+        @Override
+        public int compare(Poly a, Poly b) {
+            int c = Integer.compare(a.ecart(), b.ecart());
+            if (c != 0)
+                return c;
+            return a.ordering.compare(a.lt(), b.lt());
+        }
     }
 
     /** Syzygy pair */

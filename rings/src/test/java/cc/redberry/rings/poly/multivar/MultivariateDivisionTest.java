@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 /**
  * @since 1.0
  */
-public class MultivariateDivisionTest extends AMultivariateTest  {
+public class MultivariateDivisionTest extends AMultivariateTest {
     @Test
     public void test1() throws Exception {
         String[] vars = {"a", "b"};

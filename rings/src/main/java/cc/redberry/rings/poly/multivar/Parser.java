@@ -78,7 +78,7 @@ final class Parser {
         Monomial<E> toMonomialTerm(String[] map) {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
-                degrees[ArraysUtil.firstIndexOf(variables[i], map)] = exponents[i];
+                degrees[ArraysUtil.firstIndexOf(variables[i], map)] += exponents[i];
             return new Monomial<>(degrees, coefficient);
         }
 
