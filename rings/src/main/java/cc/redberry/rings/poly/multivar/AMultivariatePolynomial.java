@@ -510,10 +510,46 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     }
 
     /**
+     * Returns the total degree, that is sum of {@link #degrees()}
+     */
+    public final int totalDegree() {
+        return degreeSum();
+    }
+
+    /**
      * Returns degreeSum - lt().totalDegree
      */
     public final int ecart() {
         return degreeSum() - lt().totalDegree;
+    }
+
+    /**
+     * Returns whether all terms have the same total degree
+     */
+    public final boolean isHomogeneous() {
+        int deg = -1;
+        for (Term term : this)
+            if (deg == -1)
+                deg = term.totalDegree;
+            else if (term.totalDegree != deg)
+                return false;
+        return true;
+    }
+
+    /**
+     * Homogenize poly by adding new (homogenizing) variable
+     *
+     * @param variable variable that will be inserted (homogenization variable)
+     */
+    public final Poly homogenize(int variable) {
+        int deg = totalDegree();
+        MonomialSet<Term> result = new MonomialSet<>(ordering);
+        for (Term term : terms) {
+            Term t = term.insert(variable);
+            t.exponents[variable] = deg - term.totalDegree;
+            result.add(t.setDegreeVector(t.exponents, deg));
+        }
+        return create(nVariables + 1, result);
     }
 
     /**
@@ -799,7 +835,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      *
      * @return the leading term in this polynomial according to ordering
      */
-    public final Poly ltAsPoly(){
+    public final Poly ltAsPoly() {
         return create(lt());
     }
 
@@ -969,6 +1005,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      *
      * @return this - this.lt()
      */
+    // todo rename to tail
+    // todo move to IPolynomial
     public final Poly subtractLt() {
         terms.pollLastEntry();
         release();

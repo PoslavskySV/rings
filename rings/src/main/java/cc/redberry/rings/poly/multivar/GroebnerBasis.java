@@ -222,6 +222,129 @@ public final class GroebnerBasis {
         return groebner;
     }
 
+    /**
+     * Computes minimized and reduced Groebner basis of a given homogenious ideal via Buchberger algorithm.
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
+                                       Comparator<DegreeVector> monomialOrder) {
+        Comparator<SyzygyPair> selectionStrategy = normalSelectionStrategy(generators.get(0).ordering);
+        // fixme use sugar always?
+        if (!isGradedOrder(monomialOrder))
+            // add sugar for non-graded orders
+            selectionStrategy = withSugar(selectionStrategy);
+        return BuchbergerHomogeneousGB(generators, monomialOrder, selectionStrategy);
+    }
+
+    /**
+     * Computes minimized and reduced Groebner basis of a given ideal via Buchberger algorithm.
+     *
+     * @param generators        generators of the ideal
+     * @param monomialOrder     monomial order to use
+     * @param selectionStrategy critical pair selection strategy
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
+                                       Comparator<DegreeVector> monomialOrder,
+                                       Comparator<SyzygyPair> selectionStrategy) {
+        assert generators.stream().allMatch(Poly::isHomogeneous);
+
+        Poly factory = generators.get(0);
+        // stack of GB candidates
+        List<Poly> groebner = prepareGenerators(generators, monomialOrder);
+        if (groebner.size() == 1)
+            return groebner;
+
+        // sort polynomials in basis to achieve faster divisions
+        Comparator<Poly> polyOrder = isGradedOrder(monomialOrder)
+                ? (a, b) -> monomialOrder.compare(a.lt(), b.lt())
+                : new EcartComparator<>();
+        groebner.sort(polyOrder);
+
+        // degree -> pairs
+        TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs = new TreeMap<>();
+        TLongObjectHashMap<SyzygyPair<Term, Poly>> ijPairs = new TLongObjectHashMap<>();
+
+        for (int i = 0; i < groebner.size() - 1; i++)
+            for (int j = i + 1; j < groebner.size(); ++j) {
+                SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(i, j, groebner);
+                sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
+                ijPairs.put(pack(i, j), sPair);
+            }
+
+        // cache array used in divisions (little performance improvement actually)
+        Poly[] groebnerArray = groebner.toArray(factory.createArray(groebner.size()));
+
+        while (!sPairs.isEmpty()) {
+            // pick up (and remove) all pairs with the smallest degree
+            main:
+            for (SyzygyPair<Term, Poly> pair : sPairs.pollFirstEntry().getValue()) {
+                ijPairs.remove(pair.hash());
+                int
+                        i = pair.i,
+                        j = pair.j;
+
+                Poly
+                        fi = pair.fi,
+                        fj = pair.fj;
+
+                if (!shareVariablesQ(fi.lt(), fj.lt()))
+                    // don't test for relatively prime lts
+                    continue;
+
+                // test criterion (Gebauer-Moller)
+                // l.c.m. of lts
+                int[] lcm = ArraysUtil.max(fi.lt().exponents, fj.lt().exponents);
+                for (int k = 0; k < groebner.size(); ++k) {
+                    if (groebner.get(k) == null)
+                        continue;
+                    if (k == i || k == j)
+                        continue;
+                    if (ijPairs.contains(pack(i, k)) || ijPairs.contains(pack(j, k)))
+                        continue;
+                    if (dividesQ(lcm, groebner.get(k).lt().exponents))
+                        continue main;
+                }
+
+                Poly syzygy = MultivariateDivision.remainder(pair.computeSyzygy(), groebnerArray);
+                // don't tail reduce
+                // syzygy = syzygy.ltAsPoly().add(MultivariateDivision.remainder(syzygy.subtractLt(), groebnerArray));
+                if (syzygy.isZero())
+                    continue;
+
+                if (syzygy.isConstant())
+                    // ideal = ring
+                    return Collections.singletonList(factory.createOne());
+
+                groebner.add(syzygy);
+                // recompute array
+                groebnerArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
+                // don't sort here, not practical actually
+                // Arrays.sort(groebnerArray, polyOrder);
+
+                for (int k = 0; k < groebner.size() - 1; k++)
+                    if (groebner.get(k) != null) {
+                        SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(k, groebner.size() - 1, groebner);
+                        sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
+                        ijPairs.put(sPair.hash(), sPair);
+                    }
+            }
+        }
+
+        // batch remove all nulls
+        groebner.removeAll(Collections.<Poly>singleton(null));
+        // minimize Groebner basis
+        minimizeGroebnerBases(groebner);
+        // speed up final reduction
+        groebner.sort(polyOrder);
+        // reduce Groebner basis
+        removeRedundant(groebner);
+        // canonicalize Groebner basis
+        canonicalize(groebner);
+
+        return groebner;
+    }
+
     private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void reduceAndMinimizeGroebnerBases(List<Poly> generators,
                                         TreeSet<SyzygyPair<Term, Poly>> sPairs,
@@ -351,6 +474,8 @@ public final class GroebnerBasis {
                     fj.degreeSum() - fj.lt().totalDegree) + syzygyGamma.totalDegree;
         }
 
+        int degree() { return syzygyGamma.totalDegree;}
+
         long hash() { return pack(i, j);}
 
         Poly computeSyzygy() {
@@ -432,4 +557,164 @@ public final class GroebnerBasis {
                 syzygy = aReduced.subtract(bReduced);
         return syzygy;
     }
+
+    /* ************************************************** F4 ******************************************************* */
+
+
+    /**
+     * Computes minimized and reduced Groebner basis of a given ideal via F4 algorithm.
+     *
+     * @param generators        generators of the ideal
+     * @param monomialOrder     monomial order to use
+     * @param selectionStrategy critical pair selection strategy
+     */
+    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> F4GB(List<Poly> generators,
+                    Comparator<DegreeVector> monomialOrder,
+                    Comparator<SyzygyPair> selectionStrategy) {
+        Poly factory = generators.get(0);
+        // stack of GB candidates
+        List<Poly> groebner = prepareGenerators(generators, monomialOrder);
+        if (groebner.size() == 1)
+            return groebner;
+
+        // sort polynomials in basis to achieve faster divisions
+        Comparator<Poly> polyOrder = isGradedOrder(monomialOrder)
+                ? (a, b) -> monomialOrder.compare(a.lt(), b.lt())
+                : new EcartComparator<>();
+        groebner.sort(polyOrder);
+
+        // degree -> pairs (not actually computed)
+        TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs = new TreeMap<>();
+        TLongObjectHashMap<SyzygyPair<Term, Poly>> ijPairs = new TLongObjectHashMap<>();
+
+        for (int i = 0; i < groebner.size() - 1; i++)
+            for (int j = i + 1; j < groebner.size(); ++j) {
+                SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(i, j, groebner);
+                sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
+                ijPairs.put(pack(i, j), sPair);
+            }
+
+        // cache array used in divisions (little performance improvement actually)
+        Poly[] groebnerArray = groebner.toArray(factory.createArray(groebner.size()));
+
+        while (!sPairs.isEmpty()) {
+            // pick up (and remove) all pairs with the smallest degree (normal selection strategy)
+            TreeSet<SyzygyPair<Term, Poly>> subset = sPairs.pollFirstEntry().getValue();
+            subset.forEach(s -> ijPairs.remove(s.hash()));
+
+            // H: the list of polynomials to reduce
+            List<Poly> hPolynomials = new ArrayList<>();
+            // all possible monomials in H
+            TreeSet<DegreeVector> hMonomials = new TreeSet<>(monomialOrder);
+            // monomials that were annihilated
+            TreeSet<DegreeVector> hAnnihilated = new TreeSet<>(monomialOrder);
+
+            // populate L with initial values
+            for (SyzygyPair<Term, Poly> syzygy : subset) {
+                Poly
+                        fij = syzygy.fi.clone().multiply(syzygy.syzygyGamma.divideOrNull(syzygy.fi.lt())),
+                        fji = syzygy.fj.clone().multiply(syzygy.syzygyGamma.divideOrNull(syzygy.fj.lt()));
+
+                // add to set H
+                hPolynomials.add(fij);
+                hPolynomials.add(fji);
+
+                // store all monomials that we have in H
+                // fixme: drop coefficients !!!
+                hMonomials.addAll(fij.terms.keySet());
+                hMonomials.addAll(fji.terms.keySet());
+
+                // store all monomials that we have in H
+                hAnnihilated.add(fij.lt());
+                hAnnihilated.add(fji.lt());
+            }
+
+            // the diff = Mon(H) / ANNIHILATED
+            TreeSet<DegreeVector> diff = new TreeSet<>(hMonomials);
+            diff.removeAll(hAnnihilated);
+
+            while (!diff.isEmpty()) {
+                // pick the "highest" term from diff
+                DegreeVector term = diff.pollLast();
+                // we'll annihilate it
+                hAnnihilated.add(term);
+
+                Optional<Poly> divisorOpt = groebner.stream().filter(g -> term.divisibleBy(g.lt())).findAny();
+                if (divisorOpt.isPresent()) {
+                    Poly divisor = divisorOpt.get();
+//                    divisor.multiply()
+                }
+            }
+
+
+            main:
+            for (SyzygyPair<Term, Poly> pair : sPairs.pollFirstEntry().getValue()) {
+                ijPairs.remove(pair.hash());
+                int
+                        i = pair.i,
+                        j = pair.j;
+
+                Poly
+                        fi = pair.fi,
+                        fj = pair.fj;
+
+                if (!shareVariablesQ(fi.lt(), fj.lt()))
+                    // don't test for relatively prime lts
+                    continue;
+
+                // test criterion (Gebauer-Moller)
+                // l.c.m. of lts
+                int[] lcm = ArraysUtil.max(fi.lt().exponents, fj.lt().exponents);
+                for (int k = 0; k < groebner.size(); ++k) {
+                    if (groebner.get(k) == null)
+                        continue;
+                    if (k == i || k == j)
+                        continue;
+                    if (ijPairs.contains(pack(i, k)) || ijPairs.contains(pack(j, k)))
+                        continue;
+                    if (dividesQ(lcm, groebner.get(k).lt().exponents))
+                        continue main;
+                }
+
+                Poly syzygy = MultivariateDivision.remainder(pair.computeSyzygy(), groebnerArray);
+                // don't tail reduce
+                // syzygy = syzygy.ltAsPoly().add(MultivariateDivision.remainder(syzygy.subtractLt(), groebnerArray));
+                if (syzygy.isZero())
+                    continue;
+
+                if (syzygy.isConstant())
+                    // ideal = ring
+                    return Collections.singletonList(factory.createOne());
+
+                groebner.add(syzygy);
+                // recompute array
+                groebnerArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
+                // don't sort here, not practical actually
+                // Arrays.sort(groebnerArray, polyOrder);
+
+                for (int k = 0; k < groebner.size() - 1; k++)
+                    if (groebner.get(k) != null) {
+                        SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(k, groebner.size() - 1, groebner);
+                        sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
+                        ijPairs.put(sPair.hash(), sPair);
+                    }
+            }
+        }
+
+        // batch remove all nulls
+        groebner.removeAll(Collections.<Poly>singleton(null));
+        // minimize Groebner basis
+        minimizeGroebnerBases(groebner);
+        // speed up final reduction
+        groebner.sort(polyOrder);
+        // reduce Groebner basis
+        removeRedundant(groebner);
+        // canonicalize Groebner basis
+        canonicalize(groebner);
+
+        return groebner;
+    }
+
+
 }

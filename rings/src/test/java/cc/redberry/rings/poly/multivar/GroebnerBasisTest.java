@@ -14,6 +14,8 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static cc.redberry.rings.Rings.Q;
 import static cc.redberry.rings.Rings.Zp64;
@@ -41,20 +43,42 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 parse("u1^2 - u2 + 2*u0*u2 + 2*u1*u3", Q, GREVLEX, vars),
                 parse("-u0 + u0^2 + 2*u2 - 4*u0*u2 + 2*u2^2 - 4*u1*u3 + 2*u3^2", Q, GREVLEX, vars)
         ));
-        System.out.println(a.toString(vars));
-        System.out.println(b.toString(vars));
-        if (true)
-            return;
-        a.assertSameCoefficientRingWith(b);
-        expected = GroebnerBasis(expected, GREVLEX);
-        GroebnerBasis.canonicalize(expected);
 
+        GroebnerBasis.canonicalize(expected);
         List<MultivariatePolynomial<Rational<BigInteger>>> actual = GroebnerBasis(Arrays.asList(a, b), GREVLEX);
-        System.out.println(MultivariateDivision.remainder(syzygy(actual.get(0), actual.get(1)), actual));
-        System.out.println(MultivariateDivision.remainder(a, actual));
-        System.out.println(MultivariateDivision.remainder(b, actual));
         Assert.assertEquals(expected, actual);
     }
+
+    @Test
+    public void test2() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4", "x5"};
+        MultivariatePolynomial<Rational<BigInteger>>
+                a = parse("x1^2*x2^2*x3 + x5^4 - 1 + x2^3*x4 + x3^5 + x4", Q, GREVLEX, vars),
+                b = parse("x1*x2*x3^2 + x2*x4*x1^2*x5 + x3*x2^3", Q, GREVLEX, vars),
+                c = parse("x1^3*x2^3*x3^3*x4 - x2*x4^2*x1^4*x5 + x3^3*x2 - x4 - 1", Q, GREVLEX, vars);
+        List<MultivariatePolynomial<Rational<BigInteger>>> gens = Stream.of(a, b, c)
+                .map(p -> p.homogenize(vars.length)).collect(Collectors.toList());
+
+        System.out.println(Arrays.toString(IntStream.range(0, vars.length + 1).map(i -> gens.stream().mapToInt(p -> p.degree(i)).sum()).toArray()));
+
+        for (int i = 0; i < 10000; i++) {
+            long start;
+            start = System.nanoTime();
+            List<MultivariatePolynomial<Rational<BigInteger>>> hm = BuchbergerHomogeneousGB(gens, GREVLEX);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertTrue(hm.stream().allMatch(MultivariatePolynomial::isHomogeneous));
+
+            start = System.nanoTime();
+            List<MultivariatePolynomial<Rational<BigInteger>>> nhm = BuchbergerGB(gens, GREVLEX);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertTrue(nhm.stream().allMatch(MultivariatePolynomial::isHomogeneous));
+
+            Assert.assertEquals(hm, nhm);
+            System.out.println();
+        }
+
+    }
+
 
     @Test
     public void test2a() throws Exception {
@@ -192,7 +216,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
                     ideal,
                     GREVLEX,
                     strategy,//System.out.printf("%s\n", cur) != null &&
-                    (prev, cur) ->  (cur > prev + 11128));
+                    (prev, cur) -> (cur > prev + 11128));
             System.out.println(gb3.size());
             System.out.println("Normal strategy: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
 
