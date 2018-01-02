@@ -91,8 +91,30 @@ public class DegreeVector implements java.io.Serializable {
         return new DegreeVector(res, deg);
     }
 
+    /**
+     * Gives quotient {@code this / oth } or throws {@code ArithmeticException} if exact division is not possible (e.g.
+     * a^2*b^3 / a^3*b^5)
+     */
+    public final DegreeVector dvDivideExact(DegreeVector divider) {
+        DegreeVector quot = dvDivideOrNull(divider);
+        if (quot == null)
+            throw new ArithmeticException("not divisible");
+        return quot;
+    }
+
+    /**
+     * Gives quotient {@code this / oth } or throws {@code ArithmeticException} if exact division is not possible (e.g.
+     * a^2*b^3 / a^3*b^5)
+     */
+    public final DegreeVector dvDivideExact(int[] divider) {
+        DegreeVector quot = dvDivideOrNull(divider);
+        if (quot == null)
+            throw new ArithmeticException("not divisible");
+        return quot;
+    }
+
     /** Tests whether this can be divided by {@code oth} degree vector */
-    public final boolean divisibleBy(int[] oth) {
+    public final boolean dvDivisibleBy(int[] oth) {
         for (int i = 0; i < exponents.length; i++)
             if (exponents[i] < oth[i])
                 return false;
@@ -100,8 +122,8 @@ public class DegreeVector implements java.io.Serializable {
     }
 
     /** Tests whether this can be divided by {@code oth} degree vector */
-    public final boolean divisibleBy(DegreeVector oth) {
-        return divisibleBy(oth.exponents);
+    public final boolean dvDivisibleBy(DegreeVector oth) {
+        return dvDivisibleBy(oth.exponents);
     }
 
     /** Joins new variable (with zero exponent) to degree vector */

@@ -241,7 +241,7 @@ public final class MultivariateDivision {
     boolean nontrivialQuotientQ(Poly dividend, Poly divider) {
         Term lt = divider.lt();
         for (Term term : dividend)
-            if (term.divisibleBy(lt))
+            if (term.dvDivisibleBy(lt))
                 return true;
         return false;
     }

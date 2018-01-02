@@ -1,5 +1,7 @@
 package cc.redberry.rings.poly.multivar;
 
+import cc.redberry.rings.Ring;
+import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.map.hash.TLongObjectHashMap;
 
@@ -512,11 +514,11 @@ public final class GroebnerBasis {
         for (int i = basis.size() - 1; i >= 1; --i) {
             for (int j = i - 1; j >= 0; --j) {
                 Poly pi = basis.get(i), pj = basis.get(j);
-                if (pi.lt().divisibleBy(pj.lt())) {
+                if (pi.lt().dvDivisibleBy(pj.lt())) {
                     basis.remove(i);
                     continue outer;
                 }
-                if (pj.lt().divisibleBy(pi.lt())) {
+                if (pj.lt().dvDivisibleBy(pi.lt())) {
                     basis.remove(j);
                     --i;
                     continue;
@@ -551,15 +553,29 @@ public final class GroebnerBasis {
 
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly syzygy(Term xGamma, Poly a, Poly b) {
+        IMonomialAlgebra<Term> mAlgebra = a.monomialAlgebra;
         Poly
-                aReduced = a.clone().multiply(a.monomialAlgebra.divideOrNull(xGamma, a.lt())),
-                bReduced = b.clone().multiply(b.monomialAlgebra.divideOrNull(xGamma, b.lt())),
+                aReduced = a.clone().multiply(mAlgebra.divideExact(xGamma, a.lt())),
+                bReduced = b.clone().multiply(mAlgebra.divideExact(xGamma, b.lt())),
                 syzygy = aReduced.subtract(bReduced);
         return syzygy;
     }
 
     /* ************************************************** F4 ******************************************************* */
 
+    /**
+     * Computes minimized and reduced Groebner basis of a given ideal via F4 algorithm.
+     *
+     * @param generators    generators of the ideal
+     * @param monomialOrder monomial order to use
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> F4GB(List<Poly> generators,
+                    Comparator<DegreeVector> monomialOrder) {
+        return F4GB(generators, monomialOrder, normalSelectionStrategy(monomialOrder));
+    }
+
+    private static final int F4_MIN_SELECTION_SIZE = 16;
 
     /**
      * Computes minimized and reduced Groebner basis of a given ideal via F4 algorithm.
@@ -573,6 +589,8 @@ public final class GroebnerBasis {
                     Comparator<DegreeVector> monomialOrder,
                     Comparator<SyzygyPair> selectionStrategy) {
         Poly factory = generators.get(0);
+        IMonomialAlgebra<Term> mAlgebra = factory.monomialAlgebra;
+
         // stack of GB candidates
         List<Poly> groebner = prepareGenerators(generators, monomialOrder);
         if (groebner.size() == 1)
@@ -595,13 +613,20 @@ public final class GroebnerBasis {
                 ijPairs.put(pack(i, j), sPair);
             }
 
-        // cache array used in divisions (little performance improvement actually)
-        Poly[] groebnerArray = groebner.toArray(factory.createArray(groebner.size()));
-
         while (!sPairs.isEmpty()) {
             // pick up (and remove) all pairs with the smallest degree (normal selection strategy)
             TreeSet<SyzygyPair<Term, Poly>> subset = sPairs.pollFirstEntry().getValue();
+
+            // ! todo if subset.size == 1 ! ? mb just Buchberger ?
+
+            while (!sPairs.isEmpty() && subset.size() < F4_MIN_SELECTION_SIZE)
+                subset.addAll(sPairs.pollFirstEntry().getValue());
+
+
             subset.forEach(s -> ijPairs.remove(s.hash()));
+
+            System.out.println(subset.size());
+
 
             // H: the list of polynomials to reduce
             List<Poly> hPolynomials = new ArrayList<>();
@@ -613,92 +638,67 @@ public final class GroebnerBasis {
             // populate L with initial values
             for (SyzygyPair<Term, Poly> syzygy : subset) {
                 Poly
-                        fij = syzygy.fi.clone().multiply(syzygy.syzygyGamma.divideOrNull(syzygy.fi.lt())),
-                        fji = syzygy.fj.clone().multiply(syzygy.syzygyGamma.divideOrNull(syzygy.fj.lt()));
+                        fij = syzygy.fi.clone().multiply(mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fi.lt())),
+                        fji = syzygy.fj.clone().multiply(mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fj.lt()));
+
+                assert fij.lt().equals(fji.lt());
 
                 // add to set H
                 hPolynomials.add(fij);
                 hPolynomials.add(fji);
 
                 // store all monomials that we have in H
-                // fixme: drop coefficients !!!
                 hMonomials.addAll(fij.terms.keySet());
                 hMonomials.addAll(fji.terms.keySet());
 
-                // store all monomials that we have in H
+                // lts will be annihilated
                 hAnnihilated.add(fij.lt());
-                hAnnihilated.add(fji.lt());
             }
 
-            // the diff = Mon(H) / ANNIHILATED
-            TreeSet<DegreeVector> diff = new TreeSet<>(hMonomials);
+            // the diff = Mon(H) / annihilated
+            TreeSet<DegreeVector> diff = new TreeSet<>(monomialOrder);
+            diff.addAll(hMonomials);
             diff.removeAll(hAnnihilated);
 
             while (!diff.isEmpty()) {
                 // pick the "highest" term from diff
-                DegreeVector term = diff.pollLast();
-                // we'll annihilate it
-                hAnnihilated.add(term);
+                DegreeVector dv = diff.pollLast();
+                hAnnihilated.add(dv);
 
-                Optional<Poly> divisorOpt = groebner.stream().filter(g -> term.divisibleBy(g.lt())).findAny();
+                // todo <- selection possible
+                Optional<Poly> divisorOpt = groebner.stream().filter(g -> dv.dvDivisibleBy(g.lt())).findAny();
                 if (divisorOpt.isPresent()) {
                     Poly divisor = divisorOpt.get();
-//                    divisor.multiply()
+                    Poly newH = divisor.clone().multiplyByDegreeVector(dv.dvDivideExact(divisor.lt()));
+
+                    // append newH to H-polynomials
+                    hPolynomials.add(newH);
+
+                    // update monomials set
+                    TreeSet<DegreeVector> newMonomials = new TreeSet<>(monomialOrder);
+                    newMonomials.addAll(newH.terms.keySet());
+                    hMonomials.addAll(newMonomials);
+
+                    // update diff
+                    newMonomials.removeAll(hAnnihilated);
+                    diff.addAll(newMonomials);
                 }
             }
 
+            // all monomials occurring in H
+            // columns in decreasing order
+            DegreeVector[] hMonomialsArray = hMonomials.descendingSet().toArray(new DegreeVector[hMonomials.size()]);
 
-            main:
-            for (SyzygyPair<Term, Poly> pair : sPairs.pollFirstEntry().getValue()) {
-                ijPairs.remove(pair.hash());
-                int
-                        i = pair.i,
-                        j = pair.j;
-
-                Poly
-                        fi = pair.fi,
-                        fj = pair.fj;
-
-                if (!shareVariablesQ(fi.lt(), fj.lt()))
-                    // don't test for relatively prime lts
-                    continue;
-
-                // test criterion (Gebauer-Moller)
-                // l.c.m. of lts
-                int[] lcm = ArraysUtil.max(fi.lt().exponents, fj.lt().exponents);
-                for (int k = 0; k < groebner.size(); ++k) {
-                    if (groebner.get(k) == null)
-                        continue;
-                    if (k == i || k == j)
-                        continue;
-                    if (ijPairs.contains(pack(i, k)) || ijPairs.contains(pack(j, k)))
-                        continue;
-                    if (dividesQ(lcm, groebner.get(k).lt().exponents))
-                        continue main;
+            // reduce all polys with linear algebra
+            List<Poly> nPlus = nPlus(hPolynomials, hMonomialsArray);
+            for (Poly g : nPlus) {
+                int gSize = groebner.size();
+                groebner.add(g);
+                for (int i = 0; i < gSize; i++) {
+                    SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(i, gSize, groebner);
+                    sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
+                    ijPairs.put(pack(i, gSize), sPair);
                 }
-
-                Poly syzygy = MultivariateDivision.remainder(pair.computeSyzygy(), groebnerArray);
-                // don't tail reduce
-                // syzygy = syzygy.ltAsPoly().add(MultivariateDivision.remainder(syzygy.subtractLt(), groebnerArray));
-                if (syzygy.isZero())
-                    continue;
-
-                if (syzygy.isConstant())
-                    // ideal = ring
-                    return Collections.singletonList(factory.createOne());
-
-                groebner.add(syzygy);
-                // recompute array
-                groebnerArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
-                // don't sort here, not practical actually
-                // Arrays.sort(groebnerArray, polyOrder);
-
-                for (int k = 0; k < groebner.size() - 1; k++)
-                    if (groebner.get(k) != null) {
-                        SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(k, groebner.size() - 1, groebner);
-                        sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
-                        ijPairs.put(sPair.hash(), sPair);
-                    }
             }
         }
 
@@ -716,5 +716,204 @@ public final class GroebnerBasis {
         return groebner;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> nPlus(List<Poly> hPolynomials,
+                     DegreeVector[] hMonomials) {
+        if (hPolynomials.get(0) instanceof MultivariatePolynomialZp64)
+            return (List<Poly>) nPlusZp64((List) hPolynomials, hMonomials);
+        else
+            return (List<Poly>) nPlusE((List) hPolynomials, hMonomials);
+    }
 
+    /** compute N+ polynomials */
+    private static List<MultivariatePolynomialZp64> nPlusZp64(List<MultivariatePolynomialZp64> hPolynomials,
+                                                              DegreeVector[] hMonomials) {
+        MultivariatePolynomialZp64 factory = hPolynomials.get(0);
+
+        // leading monomials of H-polynomials
+        TreeSet<DegreeVector> hLeadMonomials = new TreeSet<>(factory.ordering);
+        hPolynomials.forEach(p -> hLeadMonomials.add(p.lt()));
+
+        int nRows = hPolynomials.size();
+        int nColumns = hMonomials.length;
+        long[][] matrix = new long[nRows][nColumns];
+        for (int iCol = 0; iCol < nColumns; ++iCol) {
+            DegreeVector dv = hMonomials[iCol];
+            for (int iRow = 0; iRow < nRows; ++iRow) {
+                MultivariatePolynomialZp64 poly = hPolynomials.get(iRow);
+                MonomialZp64 term = poly.terms.get(dv);
+                long value = 0;
+                if (term != null)
+                    value = term.coefficient;
+                matrix[iRow][iCol] = value;
+            }
+        }
+
+        // row reduced echelon form
+        LinearSolver.rowEchelonForm(factory.ring, matrix, true);
+
+        // form N+
+        List<MultivariatePolynomialZp64> nPlus = new ArrayList<>();
+        for (int iRow = 0; iRow < nRows; ++iRow) {
+            // todo don't calculate candidate first
+            MultivariatePolynomialZp64 candidate = factory.createZero();
+            // find lt
+            for (int iCol = iRow; iCol < nColumns; ++iCol) {
+                long v = matrix[iRow][iCol];
+                if (v != 0)
+                    candidate.add(new MonomialZp64(hMonomials[iCol], v));
+            }
+
+            if (candidate.isZero())
+                continue;
+
+            // check whether lt is not reducible by initial lts
+            MonomialZp64 lt = candidate.lt();
+            if (hLeadMonomials.stream().anyMatch(lt::dvDivisibleBy))
+                continue;
+
+            nPlus.add(candidate);
+        }
+
+        return nPlus;
+    }
+
+    private static void assertRREF(long[][] m) {
+        int nRows = m.length;
+        int nCols = m[0].length;
+        for (int col = 0; col < Math.min(nRows, nCols); col++) {
+            if (m[col][col] == 0)
+                continue;
+            for (int row = 0; row < nRows; row++) {
+                if (col != row)
+                    assert m[row][col] == 0 : row + " " + col + "\n" + prettyMatrix(m);
+            }
+            assert m[col][col] == 0 || m[col][col] == 1 : prettyMatrix(m);
+        }
+    }
+
+    /** compute N+ polynomials */
+    private static <E> List<MultivariatePolynomial<E>> nPlusE(List<MultivariatePolynomial<E>> hPolynomials,
+                                                              DegreeVector[] hMonomials) {
+        DegreeVector[] hLeadMonomials = null;
+
+        MultivariatePolynomial<E> factory = hPolynomials.get(0);
+        Ring<E> ring = factory.ring;
+
+        int nRows = hPolynomials.size();
+        int nColumns = hMonomials.length;
+        E[][] matrix = ring.createArray2d(nRows, nColumns);
+        for (int iCol = 0; iCol < nColumns; ++iCol) {
+            DegreeVector dv = hMonomials[iCol];
+            for (int iRow = 0; iRow < nRows; ++iRow) {
+                MultivariatePolynomial<E> poly = hPolynomials.get(iRow);
+                Monomial<E> term = poly.terms.get(dv);
+                E value;
+                if (term != null)
+                    value = term.coefficient;
+                else
+                    value = ring.getZero();
+                matrix[iRow][iCol] = value;
+            }
+        }
+
+        //System.out.println(prettyMatrix( matrix));
+        // row reduced echelon form
+        LinearSolver.rowEchelonForm(ring, matrix, true);
+
+        //System.out.println(prettyMatrix( matrix));
+
+        // form N+
+        List<MultivariatePolynomial<E>> nPlus = new ArrayList<>();
+        for (int iRow = 0; iRow < nRows; ++iRow) {
+            // todo don't calculate candidate first
+            MultivariatePolynomial<E> candidate = factory.createZero();
+            // find lt
+            for (int iCol = iRow; iCol < nColumns; ++iCol) {
+                E v = matrix[iRow][iCol];
+                if (!ring.isZero(v))
+                    candidate.add(new Monomial<>(hMonomials[iCol], v));
+            }
+
+            if (candidate.isZero())
+                continue;
+
+            // check whether lt is not reducible by initial lts
+            Monomial<E> lt = candidate.lt();
+            if (Arrays.stream(hLeadMonomials).anyMatch(lt::dvDivisibleBy))
+                continue;
+
+            nPlus.add(candidate);
+        }
+
+        return nPlus;
+    }
+
+    public static String prettyMatrix(long[][] matrix) {
+        int maxLength = 0;
+
+        String[][] strings = new String[matrix.length][];
+        for (int i = 0; i < matrix.length; i++) {
+            strings[i] = new String[matrix[i].length];
+            for (int j = 0; j < matrix[i].length; j++) {
+                strings[i][j] = Long.toString(matrix[i][j]);
+                maxLength = Math.max(maxLength, strings[i][j].length());
+            }
+        }
+        ++maxLength;
+        for (int i = 0; i < matrix.length; i++)
+            for (int j = 0; j < matrix[i].length; j++)
+                strings[i][j] = padd(strings[i][j], maxLength);
+
+
+        StringBuilder sb = new StringBuilder().append("{").append("\n");
+        String sep = "    ";
+        for (int i = 0; i < strings.length; i++) {
+            sb.append(sep)
+                    .append("{").append(Arrays.stream(strings[i]).collect(Collectors.joining(","))).append("}")
+                    .append(",\n");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.append("\n}").toString();
+    }
+
+
+    private static String padding(char c, int len) {
+        return new String(ArraysUtil.arrayOf(c, len));
+    }
+
+    private static String padd(String str, int newLen) {
+        return padding(' ', newLen - str.length()) + str;
+    }
+
+    public static String prettyMatrix(Object[][] matrix) {
+        int maxLength = 0;
+
+        String[][] strings = new String[matrix.length][];
+        for (int i = 0; i < matrix.length; i++) {
+            strings[i] = new String[matrix[i].length];
+            for (int j = 0; j < matrix[i].length; j++) {
+                strings[i][j] = matrix[i][j].toString();
+                maxLength = Math.max(maxLength, strings[i][j].length());
+            }
+        }
+        ++maxLength;
+        for (int i = 0; i < matrix.length; i++)
+            for (int j = 0; j < matrix[i].length; j++)
+                strings[i][j] = padd(strings[i][j], maxLength);
+
+
+        StringBuilder sb = new StringBuilder().append("{").append("\n");
+        String sep = "    ";
+        for (int i = 0; i < strings.length; i++) {
+            sb.append(sep)
+                    .append("{").append(Arrays.stream(strings[i]).collect(Collectors.joining(","))).append("}")
+                    .append(",\n");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.append("\n}").toString();
+    }
 }

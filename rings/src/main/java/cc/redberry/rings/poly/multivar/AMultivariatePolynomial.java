@@ -1030,7 +1030,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return {@code} this multiplied by the degree vector
      */
     public final Poly multiplyByDegreeVector(DegreeVector dv) {
-        return multiply(monomialAlgebra.getUnitTerm(nVariables).setDegreeVector(dv));
+        return multiply(monomialAlgebra.createTermWithUnitCoefficient(dv));
     }
 
     /**

@@ -34,6 +34,13 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
         this(degreeVector.exponents, degreeVector.totalDegree);
     }
 
+    /**
+     * Drop the coefficient
+     */
+    public final DegreeVector dv() {
+        return new DegreeVector(exponents, totalDegree);
+    }
+
     /** Sets coefficient of this with coefficient of oth */
     public abstract Term setCoefficientFrom(Term oth);
 

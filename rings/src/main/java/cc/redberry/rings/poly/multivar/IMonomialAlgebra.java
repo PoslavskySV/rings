@@ -2,7 +2,6 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Ring;
-import cc.redberry.rings.util.ArraysUtil;
 
 import java.io.Serializable;
 
@@ -18,9 +17,20 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
     Term multiply(Term a, Term b);
 
     /**
-     * Gives quotient {@code dividend / divider } or null is exact division is not possible
+     * Gives quotient {@code dividend / divider } or null if exact division is not possible
      */
     Term divideOrNull(Term dividend, Term divider);
+
+    /**
+     * Gives quotient {@code dividend / divider } or throws {@code ArithmeticException} if exact division is not
+     * possible
+     */
+    default Term divideExact(Term dividend, Term divider) {
+        Term r = divideOrNull(dividend, divider);
+        if (r == null)
+            throw new ArithmeticException("not divisible");
+        return r;
+    }
 
     /**
      * Negates term
@@ -51,6 +61,9 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
 
     /** creates term with specified exponents and unit coefficient */
     Term createTermWithUnitCoefficient(int[] exponents);
+
+    /** creates term with specified exponents and unit coefficient */
+    Term createTermWithUnitCoefficient(DegreeVector degreeVector);
 
     /** creates generic array of specified length */
     Term[] createArray(int length);
@@ -107,7 +120,12 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
 
         @Override
         public MonomialZp64 createTermWithUnitCoefficient(int[] exponents) {
-            return new MonomialZp64(exponents, ArraysUtil.sum(exponents), 1L);
+            return new MonomialZp64(exponents, 1L);
+        }
+
+        @Override
+        public MonomialZp64 createTermWithUnitCoefficient(DegreeVector degreeVector) {
+            return new MonomialZp64(degreeVector, 1L);
         }
 
         @Override
@@ -175,7 +193,12 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
 
         @Override
         public Monomial<E> createTermWithUnitCoefficient(int[] exponents) {
-            return new Monomial<>(exponents, ArraysUtil.sum(exponents), ring.getOne());
+            return new Monomial<>(exponents, ring.getOne());
+        }
+
+        @Override
+        public Monomial<E> createTermWithUnitCoefficient(DegreeVector degreeVector) {
+            return new Monomial<>(degreeVector, ring.getOne());
         }
 
         @Override
