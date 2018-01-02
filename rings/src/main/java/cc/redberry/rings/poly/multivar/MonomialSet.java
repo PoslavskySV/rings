@@ -10,9 +10,9 @@ import java.util.TreeMap;
  *
  * @since 1.0
  */
-public final class MonomialSet<Monomial extends DegreeVector>
-        extends TreeMap<DegreeVector, Monomial>
-        implements Iterable<Monomial>, Cloneable {
+public final class MonomialSet<Term extends AMonomial<Term>>
+        extends TreeMap<DegreeVector, Term>
+        implements Iterable<Term>, Cloneable {
     private static final long serialVersionUID = 1L;
 
     public MonomialSet(Comparator<? super DegreeVector> comparator) {
@@ -26,12 +26,12 @@ public final class MonomialSet<Monomial extends DegreeVector>
      * @param m the sorted map whose mappings are to be placed in this monomial set, and whose comparator is to be used
      *          to sort this map
      */
-    public MonomialSet(SortedMap<DegreeVector, ? extends Monomial> m) {
+    public MonomialSet(SortedMap<DegreeVector, ? extends Term> m) {
         super(m);
     }
 
     @Override
-    public Iterator<Monomial> iterator() {
+    public Iterator<Term> iterator() {
         return values().iterator();
     }
 
@@ -41,15 +41,15 @@ public final class MonomialSet<Monomial extends DegreeVector>
      * @param term monomial
      * @return this
      */
-    public Monomial add(Monomial term) {return put(term, term);}
+    public Term add(Term term) {return put(term, term);}
 
     /** First monomial in this set */
-    public Monomial first() {return firstEntry().getValue();}
+    public Term first() {return firstEntry().getValue();}
 
     /** Last monomial in this set */
-    public Monomial last() {return lastEntry().getValue();}
+    public Term last() {return lastEntry().getValue();}
 
     @Override
     @SuppressWarnings("unchecked")
-    public MonomialSet<Monomial> clone() {return (MonomialSet<Monomial>) super.clone();}
+    public MonomialSet<Term> clone() {return (MonomialSet<Term>) super.clone();}
 }

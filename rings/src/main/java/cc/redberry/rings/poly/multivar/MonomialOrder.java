@@ -83,8 +83,8 @@ public final class MonomialOrder {
             for (int i = 0; i < nVariables.length; i++) {
                 // for each block
                 DegreeVector
-                        aBlock = a.range(prev, prev + nVariables[i]),
-                        bBlock = b.range(prev, prev + nVariables[i]);
+                        aBlock = a.dvRange(prev, prev + nVariables[i]),
+                        bBlock = b.dvRange(prev, prev + nVariables[i]);
 
                 int c = orderings[i].compare(aBlock, bBlock);
                 if (c != 0)

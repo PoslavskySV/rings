@@ -728,7 +728,7 @@ final case class UnivariateRing[E](coefficientDomain: Ring[E], override val vari
   * @param theRing   the [[IPolynomialRing]]
   * @param variables the variables
   */
-sealed abstract class IMultivariateRing[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+sealed abstract class IMultivariateRing[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
 (override val theRing: rings.poly.IPolynomialRing[Poly],
  variables: Array[String],
  ordering: Ordering) extends IPolynomialRing[Poly, E](theRing, variables) {

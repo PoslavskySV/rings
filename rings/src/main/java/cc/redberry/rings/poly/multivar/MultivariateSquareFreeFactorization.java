@@ -2,9 +2,9 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization;
 
@@ -26,7 +26,7 @@ public final class MultivariateSquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
         if (poly instanceof MultivariatePolynomial
                 && ((MultivariatePolynomial) poly).ring.getZero() instanceof IPolynomial) {
@@ -47,7 +47,7 @@ public final class MultivariateSquareFreeFactorization {
      * @param poly the polynomial
      * @return whether the given {@code poly} is square free
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     boolean isSquareFree(Poly poly) {
         return MultivariateGCD.PolynomialGCD(poly, poly.derivative()).isConstant();
     }
@@ -58,27 +58,26 @@ public final class MultivariateSquareFreeFactorization {
      * @param poly the polynomial
      * @return square free part
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly SquareFreePart(Poly poly) {
         return SquareFreeFactorization(poly).factors.stream().filter(x -> !x.isMonomial()).reduce(poly.createOne(), Poly::multiply);
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void addMonomial(PolynomialFactorDecomposition<Poly> decomposition, Poly poly) {
         assert poly.isMonomial();
         decomposition.addUnit(poly.lcAsPoly());
         poly = poly.monic();
 
         Term term = poly.lt();
-        for (int i = 0; i < poly.nVariables; i++) {
+        IMonomialAlgebra<Term> mAlgebra = poly.monomialAlgebra;
+        for (int i = 0; i < poly.nVariables; i++)
             if (term.exponents[i] > 0)
-                decomposition.addFactor(poly.create(term.singleVar(i)), term.exponents[i]);
-
-        }
+                decomposition.addFactor(poly.create(mAlgebra.getUnitTerm(poly.nVariables).set(i, 1)), term.exponents[i]);
     }
 
     @SuppressWarnings("unchecked")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> factorUnivariate(Poly poly) {
         int var = poly.univariateVariable();
         return UnivariateSquareFreeFactorization
@@ -86,7 +85,7 @@ public final class MultivariateSquareFreeFactorization {
                 .map(p -> AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables, var, poly.ordering));
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] reduceContent(Poly poly) {
         Term monomialContent = poly.monomialContent();
         poly = poly.divideOrNull(monomialContent);
@@ -106,7 +105,7 @@ public final class MultivariateSquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorizationYunZeroCharacteristics(Poly poly) {
         if (!poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Characteristics 0 expected");
@@ -122,7 +121,7 @@ public final class MultivariateSquareFreeFactorization {
         return decomposition;
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void SquareFreeFactorizationYun0(Poly poly, PolynomialFactorDecomposition<Poly> factorization) {
         Poly[] derivative = poly.derivative();
         Poly gcd = MultivariateGCD.PolynomialGCD(poly, derivative);
@@ -159,7 +158,7 @@ public final class MultivariateSquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusserZeroCharacteristics(Poly poly) {
         if (!poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Characteristics 0 expected");
@@ -175,7 +174,7 @@ public final class MultivariateSquareFreeFactorization {
         return decomposition;
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void SquareFreeFactorizationMusserZeroCharacteristics0(Poly poly, PolynomialFactorDecomposition<Poly> factorization) {
         Poly[] derivative = poly.derivative();
         Poly gcd = MultivariateGCD.PolynomialGCD(poly, derivative);
@@ -207,7 +206,7 @@ public final class MultivariateSquareFreeFactorization {
      * @param poly the polynomial
      * @return square-free decomposition
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         if (poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Positive characteristic expected");
@@ -228,7 +227,7 @@ public final class MultivariateSquareFreeFactorization {
 
     /** {@code poly} will be destroyed */
     @SuppressWarnings("ConstantConditions")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
         poly.monic();
         if (poly.isConstant())
@@ -277,7 +276,7 @@ public final class MultivariateSquareFreeFactorization {
 
     /** p-th root of poly */
     @SuppressWarnings("unchecked")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly pRoot(Poly poly) {
         if (poly instanceof MultivariatePolynomial)
             return (Poly) pRoot((MultivariatePolynomial) poly);

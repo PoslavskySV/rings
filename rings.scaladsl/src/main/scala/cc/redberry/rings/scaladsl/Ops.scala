@@ -173,7 +173,7 @@ class UnivariateCfOps[Poly <: IUnivariatePolynomial[Poly], E](self: Poly)(pRing:
   def eval(point: Int): E = pRing.eval(self, pRing.cfValue(point))
 }
 
-class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly]](self: Poly)(ring: Ring[Poly]) {
+class MultivariateOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly]](self: Poly)(ring: Ring[Poly]) {
   def +(other: Term): Poly = ring valueOf self.copy().add(other)
 
   def -(other: Term): Poly = ring valueOf self.copy().subtract(other)
@@ -229,7 +229,7 @@ class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomia
     MultivariateDivision.remainder[Term, Poly](self, other: _*)
 }
 
-class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)(pRing: IMultivariateRing[Term, Poly, E]) {
+class MultivariateCfOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)(pRing: IMultivariateRing[Term, Poly, E]) {
   def toTraversable: TraversableOnce[Term] = {
     import scala.collection.JavaConverters._
     self.asScala

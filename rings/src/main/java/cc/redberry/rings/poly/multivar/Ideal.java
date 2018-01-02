@@ -17,7 +17,7 @@ import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
  *
  * @since 2.3
  */
-public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
         implements Iterable<Poly>, WithVariables, Serializable {
     /** list of original generators */
     private final List<Poly> originalGenerators;
@@ -336,7 +336,7 @@ public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivar
     /**
      * Creates ideal given by a list of generators. Groebner basis with respect to GREVLEX order will be used.
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Ideal<Term, Poly> Ideal(List<Poly> generators) {
         return Ideal(generators, GREVLEX);
     }
@@ -344,7 +344,7 @@ public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivar
     /**
      * Creates ideal given by a list of generators. Groebner basis with respect to GREVLEX order will be used.
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Ideal<Term, Poly> Ideal(Poly... generators) {
         return Ideal(Arrays.asList(generators));
     }
@@ -355,7 +355,7 @@ public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivar
      *
      * @param monomialOrder monomial order for unique Groebner basis of the ideal
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Ideal<Term, Poly> Ideal(List<Poly> generators, Comparator<DegreeVector> monomialOrder) {
         return new Ideal<>(generators, GroebnerBasis.GroebnerBasis(generators, monomialOrder));
     }
@@ -363,7 +363,7 @@ public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivar
     /**
      * Creates trivial ideal (ideal = ring)
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Ideal<Term, Poly> trivial(Poly factory) {
         return trivial(factory, GREVLEX);
     }
@@ -371,7 +371,7 @@ public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivar
     /**
      * Creates trivial ideal (ideal = ring)
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Ideal<Term, Poly> trivial(Poly factory, Comparator<DegreeVector> monomialOrder) {
         return new Ideal<>(Collections.singletonList(factory.createOne().setOrdering(monomialOrder)));
     }
@@ -379,7 +379,7 @@ public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivar
     /**
      * Creates empty ideal
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Ideal<Term, Poly> empty(Poly factory) {
         return empty(factory, GREVLEX);
     }
@@ -387,7 +387,7 @@ public final class Ideal<Term extends DegreeVector<Term>, Poly extends AMultivar
     /**
      * Creates empty ideal
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Ideal<Term, Poly> empty(Poly factory, Comparator<DegreeVector> monomialOrder) {
         return new Ideal<>(Collections.singletonList(factory.createZero().setOrdering(monomialOrder)));
     }

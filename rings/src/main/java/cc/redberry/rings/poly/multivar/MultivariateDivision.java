@@ -21,7 +21,7 @@ public final class MultivariateDivision {
      * @return array of quotients and remainder in the last position
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] divideAndRemainder(Poly dividend, Poly... dividers) {
         Poly[] quotients = dividend.createArray(dividers.length + 1);
         int i = 0;
@@ -47,15 +47,16 @@ public final class MultivariateDivision {
             }
         }
 
+        IMonomialAlgebra<Term> mAlgebra = dividend.monomialAlgebra;
         // cache leading terms
-        Term[] dividersLTs = Arrays.stream(dividers).map(Poly::lt).toArray(dividend::createTermsArray);
+        Term[] dividersLTs = Arrays.stream(dividers).map(Poly::lt).toArray(mAlgebra::createArray);
         dividend = dividend.clone();
         Poly remainder = quotients[quotients.length - 1];
         while (!dividend.isZero()) {
             Term ltDiv = null;
             Term lt = dividend.lt();
             for (i = 0; i < dividers.length; i++) {
-                ltDiv = dividend.divideOrNull(lt, dividersLTs[i]);
+                ltDiv = mAlgebra.divideOrNull(lt, dividersLTs[i]);
                 if (ltDiv != null)
                     break;
             }
@@ -78,7 +79,7 @@ public final class MultivariateDivision {
      * @return the remainder
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Poly... dividers) {
         int i = 0;
         int constDivider = -1;
@@ -98,15 +99,16 @@ public final class MultivariateDivision {
                 return dividend.createZero();
         }
 
+        IMonomialAlgebra<Term> mAlgebra = dividend.monomialAlgebra;
         // cache leading terms
-        Term[] dividersLTs = Arrays.stream(dividers).map(Poly::lt).toArray(dividend::createTermsArray);
+        Term[] dividersLTs = Arrays.stream(dividers).map(Poly::lt).toArray(mAlgebra::createArray);
         dividend = dividend.clone();
         Poly remainder = dividend.createZero();
         while (!dividend.isZero()) {
             Term ltDiv = null;
             Term lt = dividend.lt();
             for (i = 0; i < dividers.length; i++) {
-                ltDiv = dividend.divideOrNull(lt, dividersLTs[i]);
+                ltDiv = mAlgebra.divideOrNull(lt, dividersLTs[i]);
                 if (ltDiv != null)
                     break;
             }
@@ -128,7 +130,7 @@ public final class MultivariateDivision {
      * @return array of quotient and remainder
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] divideAndRemainder(Poly dividend, Poly divider) {
         Poly[] array = divider.createArray(1);
         array[0] = divider;
@@ -143,7 +145,7 @@ public final class MultivariateDivision {
      * @return array of quotients and remainder at the last position
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Collection<Poly> dividers) {
         return remainder(dividend, dividers.toArray(dividend.createArray(dividers.size())));
     }
@@ -156,7 +158,7 @@ public final class MultivariateDivision {
      * @return array of quotients and remainder at the last position
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder(Poly dividend, Poly divider) {
         Poly[] array = divider.createArray(1);
         array[0] = divider;
@@ -172,7 +174,7 @@ public final class MultivariateDivision {
      * @throws ArithmeticException if exact division is not possible
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly divideExact(Poly dividend, Poly divider) {
         Poly[] qd = divideAndRemainder(dividend, divider);
         if (qd == null || !qd[1].isZero())
@@ -188,7 +190,7 @@ public final class MultivariateDivision {
      * @return {@code dividend / divider} or null if exact division is not possible
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly divideOrNull(Poly dividend, Poly divider) {
         Poly[] qd = divideAndRemainder(dividend, divider);
         if (qd == null || !qd[1].isZero())
@@ -204,7 +206,7 @@ public final class MultivariateDivision {
      * @return whether {@code divisor} is a divisor of {@code poly}
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     boolean dividesQ(Poly dividend, Poly divider) {
         if (divider.isOne())
             return true;
@@ -218,8 +220,9 @@ public final class MultivariateDivision {
             if (dividendDegrees[i] < dividerDegrees[i])
                 return false;
 
+        IMonomialAlgebra<Term> mAlgebra = dividend.monomialAlgebra;
         while (!dividend.isZero()) {
-            Term ltDiv = dividend.divideOrNull(dividend.lt(), divider.lt());
+            Term ltDiv = mAlgebra.divideOrNull(dividend.lt(), divider.lt());
             if (ltDiv == null)
                 return false;
             dividend = dividend.subtract(divider.clone().multiply(ltDiv));
@@ -234,7 +237,7 @@ public final class MultivariateDivision {
      * @param divider  the divider
      * @return whether {@code divisor} is a divisor of {@code poly}
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     boolean nontrivialQuotientQ(Poly dividend, Poly divider) {
         Term lt = divider.lt();
         for (Term term : dividend)

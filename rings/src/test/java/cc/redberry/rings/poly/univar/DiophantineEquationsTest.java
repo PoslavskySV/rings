@@ -15,7 +15,7 @@ import java.util.Arrays;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class DiophantineEquationsTest extends APolynomialTest {
+public class DiophantineEquationsTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         RandomGenerator rnd = getRandom();

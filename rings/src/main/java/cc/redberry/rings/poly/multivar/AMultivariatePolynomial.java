@@ -71,21 +71,24 @@ import java.util.stream.Collectors;
  * @see MultivariatePolynomial
  * @since 1.0
  */
-public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
         implements IPolynomial<Poly>, Iterable<Term> {
     private static final long serialVersionUID = 1L;
     /** The number of variables */
     public final int nVariables;
     /** The ordering */
     public final Comparator<DegreeVector> ordering;
+    /** Monomial algebra */
+    public final IMonomialAlgebra<Term> monomialAlgebra;
     /** the actual data */
     final MonomialSet<Term> terms;
     @SuppressWarnings("unchecked")
     private final Poly self = (Poly) this;
 
-    AMultivariatePolynomial(int nVariables, Comparator<DegreeVector> ordering, MonomialSet<Term> terms) {
+    AMultivariatePolynomial(int nVariables, Comparator<DegreeVector> ordering, IMonomialAlgebra<Term> monomialAlgebra, MonomialSet<Term> terms) {
         this.nVariables = nVariables;
         this.ordering = ordering;
+        this.monomialAlgebra = monomialAlgebra;
         this.terms = terms;
     }
 
@@ -97,7 +100,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param j    the second variable
      * @return polynomial with variable {@code i} renamed to {@code j} and {@code j} renamed to {@code i}
      */
-    public static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>> P
+    public static <T extends AMonomial<T>, P extends AMultivariatePolynomial<T, P>> P
     swapVariables(P poly, int i, int j) {
         if (i == j)
             return poly.clone();
@@ -115,7 +118,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param newVariables the new variables
      * @return renamed polynomial
      */
-    public static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>>
+    public static <T extends AMonomial<T>, P extends AMultivariatePolynomial<T, P>>
     P renameVariables(P poly, int[] newVariables) {
         return renameVariables(poly, newVariables, poly.ordering);
     }
@@ -129,7 +132,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param newOrdering  the new ordering
      * @return renamed polynomial
      */
-    public static <T extends DegreeVector<T>, P extends AMultivariatePolynomial<T, P>>
+    public static <T extends AMonomial<T>, P extends AMultivariatePolynomial<T, P>>
     P renameVariables(P poly, int[] newVariables, Comparator<DegreeVector> newOrdering) {
         // NOTE: always return a copy of poly, even if order of variables is unchanged
         MonomialSet<T> data = new MonomialSet<>(newOrdering);
@@ -163,7 +166,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      */
     @SuppressWarnings("unchecked")
     public static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly asMultivariate(IUnivariatePolynomial poly, int nVariables, int variable, Comparator<DegreeVector> ordering) {
         if (poly instanceof UnivariatePolynomial)
@@ -246,7 +249,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
     public final Poly createMonomial(int variable, int degree) {
         int[] degreeVector = new int[nVariables];
         degreeVector[variable] = degree;
-        return create(createTermWithUnitCoefficient(degreeVector));
+        return create(monomialAlgebra.createTermWithUnitCoefficient(degreeVector));
     }
 
     /**
@@ -379,7 +382,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
             return self;
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
-            newData.add(term.setDegreeVector(Arrays.copyOf(term.exponents, newNVariables)));
+            newData.add(term.setNVariables(newNVariables));
         return create(newNVariables, newData);
     }
 
@@ -435,7 +438,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      */
     @Override
     public int degree() {
-        // fix me replace with degreeSum ?
+        // fixme replace with degreeSum ?
         int max = 0;
         for (Term db : terms)
             max = Math.max(max, db.totalDegree);
@@ -528,7 +531,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      */
     public final boolean isHomogeneous() {
         int deg = -1;
-        for (Term term : this)
+        for (Term term : terms)
             if (deg == -1)
                 deg = term.totalDegree;
             else if (term.totalDegree != deg)
@@ -545,9 +548,9 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         int deg = totalDegree();
         MonomialSet<Term> result = new MonomialSet<>(ordering);
         for (Term term : terms) {
-            Term t = term.insert(variable);
-            t.exponents[variable] = deg - term.totalDegree;
-            result.add(t.setDegreeVector(t.exponents, deg));
+            DegreeVector dv = term.dvInsert(variable);
+            dv.exponents[variable] = deg - dv.totalDegree;
+            result.add(term.setDegreeVector(dv));
         }
         return create(nVariables + 1, result);
     }
@@ -657,7 +660,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
 
     /**
      * */
-    public static <Term extends DegreeVector<Term>,
+    public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly asMultivariate(UnivariatePolynomial<Poly> univariate, int uVariable, boolean join) {
         Poly factory = univariate.get(0);
@@ -718,7 +721,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @param variable the univariate variable
      * @return multivariate poly
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly asMultivariate(UnivariatePolynomial<Poly> uPoly, int variable) {
         Poly result = uPoly.ring.getZero();
         for (int i = uPoly.degree(); i >= 0; --i) {
@@ -862,8 +865,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
             else
                 setMin(degreeVector.exponents, exponents);
         if (exponents == null)
-            return createUnitTerm();
-        return createTermWithUnitCoefficient(exponents);
+            return monomialAlgebra.getUnitTerm(nVariables);
+        return monomialAlgebra.createTermWithUnitCoefficient(exponents);
     }
 
     static void setMin(int[] dv, int[] exponents) {
@@ -871,17 +874,6 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
             if (dv[i] < exponents[i])
                 exponents[i] = dv[i];
     }
-
-    /** creates term with specified exponents and unit coefficient */
-    public abstract Term createTermWithUnitCoefficient(int[] exponents);
-
-    public abstract Term[] createTermsArray(int length);
-
-    /** creates a unit term */
-    public abstract Term createUnitTerm();
-
-    /** creates a zero term */
-    public abstract Term createZeroTerm();
 
     /**
      * Divides this polynomial by a {@code monomial} or returns {@code null} (causing loss of internal data) if some of
@@ -978,6 +970,16 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
         return self;
     }
 
+    @Override
+    public final Poly negate() {
+        for (Map.Entry<DegreeVector, Term> entry : terms.entrySet()) {
+            Term term = entry.getValue();
+            entry.setValue(monomialAlgebra.negate(term));
+        }
+        release();
+        return self;
+    }
+
     /**
      * Adds monomials to this polynomial
      *
@@ -1028,17 +1030,8 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return {@code} this multiplied by the degree vector
      */
     public final Poly multiplyByDegreeVector(DegreeVector dv) {
-        return multiply(createUnitTerm().setDegreeVector(dv));
+        return multiply(monomialAlgebra.getUnitTerm(nVariables).setDegreeVector(dv));
     }
-
-    /** Whether monomial is zero */
-    abstract boolean isZeroMonomial(Term a);
-
-    /** Multiply two terms */
-    abstract Term multiply(Term a, Term b);
-
-    /** Divide a/b or return null if exact division is not possible */
-    abstract Term divideOrNull(Term a, Term b);
 
     /**
      * Returns skeleton of this poly
@@ -1053,7 +1046,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * Set all coefficients to units
      */
     public final Poly setAllCoefficientsToUnit() {
-        Term unit = createUnitTerm();
+        Term unit = monomialAlgebra.getUnitTerm(nVariables);
         for (Map.Entry<DegreeVector, Term> entry : terms.entrySet())
             entry.setValue(unit.setDegreeVector(entry.getKey()));
         return self;
@@ -1066,7 +1059,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return skeleton of this poly with respect to specified {@code variables}
      */
     public final Set<DegreeVector> getSkeleton(int... variables) {
-        return terms.keySet().stream().map(dv -> dv.select(variables)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
+        return terms.keySet().stream().map(dv -> dv.dvSelect(variables)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
     }
 
     /**
@@ -1076,7 +1069,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * @return skeleton of this poly with respect to all except specified {@code variables}
      */
     public final Set<DegreeVector> getSkeletonExcept(int... variables) {
-        return terms.keySet().stream().map(dv -> dv.setZero(variables)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
+        return terms.keySet().stream().map(dv -> dv.dvSetZero(variables)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
     }
 
     /**
@@ -1225,7 +1218,7 @@ public abstract class AMultivariatePolynomial<Term extends DegreeVector<Term>, P
      * Collector which collects stream of element to a UnivariatePolynomial
      */
     public static final class PolynomialCollector
-            <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+            <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
             implements Collector<Term, Poly, Poly> {
         final Supplier<Poly> supplier;
         final BiConsumer<Poly, Term> accumulator = Poly::add;

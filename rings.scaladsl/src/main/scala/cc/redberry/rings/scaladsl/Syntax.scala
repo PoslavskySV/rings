@@ -20,7 +20,7 @@ trait UnivariateCfSyntax {
 }
 
 trait MultivariateSyntax {
-  implicit def multivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly]]
+  implicit def multivariateOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly]]
   (lhs: Poly)(implicit ringSupport: RingSupport[Poly]): MultivariateOps[Term, Poly]
   = new MultivariateOps[Term, Poly](lhs)(ringSupport.ringEv(lhs))
 
@@ -36,7 +36,7 @@ trait MultivariateSyntax {
 }
 
 trait MultivariateCfSyntax {
-  implicit def multivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+  implicit def multivariateCfOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
   (lhs: Poly)(implicit ring: IMultivariateRing[Term, Poly, E]): MultivariateCfOps[Term, Poly, E]
   = new MultivariateCfOps[Term, Poly, E](lhs)(ring)
 
@@ -50,7 +50,7 @@ trait MultivariateCfSyntax {
   : MultivariateCfOps[Monomial[E], MultivariatePolynomial[E], E]
   = new MultivariateCfOps[Monomial[E], MultivariatePolynomial[E], E](lhs)(ring)
 
-  def multivariateImplicits[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+  def multivariateImplicits[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
   (implicit ring: IMultivariateRing[Term, Poly, E])
   : Poly => MultivariateCfOps[Term, Poly, E] = p => new MultivariateCfOps[ring.MonomialType, ring.ElementType, ring.CoefficientType](p)(ring)
 }

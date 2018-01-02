@@ -1,13 +1,9 @@
 package cc.redberry.rings.poly.multivar;
 
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Ring;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
-import cc.redberry.rings.ChineseRemainders;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.Util.Tuple2;
@@ -99,7 +95,7 @@ public final class MultivariateGCD {
             if (p.isConstant())
                 return (Poly) arr[0].createOne();
             if (p.isMonomial()) {
-                DegreeVector monomial = p.lt();
+                AMonomial monomial = p.lt();
                 for (Poly el : arr)
                     monomial = el.commonContent(monomial);
                 return (Poly) arr[0].create(monomial);
@@ -410,7 +406,7 @@ public final class MultivariateGCD {
     }
 
     /** structure with required input for GCD algorithms */
-    static final class GCDInput<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
+    static final class GCDInput<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
         /** input polynomials (with variables renamed) and earlyGCD if possible (in trivial cases) */
         final Poly aReduced, bReduced, earlyGCD;
         /** gcd degree bounds, mapping used to rename variables so that degreeBounds are in descending order */
@@ -457,7 +453,7 @@ public final class MultivariateGCD {
         }
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly trivialGCD(Poly a, Poly b) {
         if (a == b)
             return a.clone();
@@ -477,7 +473,7 @@ public final class MultivariateGCD {
     }
 
     /** prepare input for modular GCD algorithms (Brown, Zippel, LinZip) */
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDInput<Term, Poly> preparedGCDInput(Poly a, Poly b, BiFunction<Poly, Poly, Poly> gcdAlgorithm) {
         Poly trivialGCD = trivialGCD(a, b);
         if (trivialGCD != null)
@@ -544,7 +540,7 @@ public final class MultivariateGCD {
         return new GCDInput<>(a, b, monomialGCD, evaluationStackLimit, degreeBounds, variables, lastGCDVariable, finiteExtensionDegree);
     }
 
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDInput<Term, Poly> getRidOfUnusedVariables(Poly a, Poly b, BiFunction<Poly, Poly, Poly> gcdAlgorithm,
                                                  Term monomialGCD, int[] degreeBounds) {
         int
@@ -604,7 +600,7 @@ public final class MultivariateGCD {
     }
 
     @SuppressWarnings("unchecked")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void adjustDegreeBounds(Poly a, Poly b, int[] gcdDegreeBounds) {
         if (a instanceof MultivariatePolynomialZp64)
             adjustDegreeBounds((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b, gcdDegreeBounds);
@@ -708,7 +704,7 @@ public final class MultivariateGCD {
 
     /** gcd with monomial */
     @SuppressWarnings("unchecked")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly gcdWithMonomial(Term monomial, Poly poly) {
         return poly.create(poly.commonContent(monomial));
     }
@@ -716,13 +712,13 @@ public final class MultivariateGCD {
     /**
      * Removes monomial content from a and b and returns monomial gcd
      */
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Term reduceMonomialContent(Poly a, Poly b) {
 
         Term aMonomialContent = a.monomialContent();
         int[] exponentsGCD = b.monomialContent().exponents;
         AMultivariatePolynomial.setMin(aMonomialContent.exponents, exponentsGCD);
-        Term monomialGCD = a.createTermWithUnitCoefficient(exponentsGCD);
+        Term monomialGCD = a.monomialAlgebra.createTermWithUnitCoefficient(exponentsGCD);
 
         a = a.divideDegreeVectorOrNull(monomialGCD);
         b = b.divideDegreeVectorOrNull(monomialGCD);
@@ -740,7 +736,7 @@ public final class MultivariateGCD {
      * Primitive part and content of multivariate polynomial considered as polynomial over Zp[x_i][x_1, ..., x_N]
      */
     private static final class UnivariateContent<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>> {
         final MultivariatePolynomial<uPoly> poly;
@@ -756,7 +752,7 @@ public final class MultivariateGCD {
 
     @SuppressWarnings("unchecked")
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     MultivariatePolynomial<uPoly> asOverUnivariate(Poly poly, int variable) {
@@ -777,7 +773,7 @@ public final class MultivariateGCD {
      */
     @SuppressWarnings("unchecked")
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     UnivariateContent<Term, Poly, uPoly> univariateContent(
@@ -794,7 +790,7 @@ public final class MultivariateGCD {
 
     /** holds primitive parts of a and b viewed as polynomials in Zp[x_k][x_1 ... x_{k-1}] */
     private static final class PrimitiveInput<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>> {
         /** primitive parts of a and b viewed as polynomials in Zp[x_k][x_1 ... x_{k-1}] */
@@ -817,7 +813,7 @@ public final class MultivariateGCD {
      */
     @SuppressWarnings("unchecked")
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     PrimitiveInput<Term, Poly, uPoly> makePrimitive(Poly a, Poly b, int variable) {
@@ -837,13 +833,13 @@ public final class MultivariateGCD {
     }
 
     /** coefficients specified variable as multivariate polynomials */
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] multivariateCoefficients(Poly poly, int variable) {
         return Arrays.stream(poly.degrees(variable)).mapToObj(d -> poly.coefficientOf(variable, d)).toArray(poly::createArray);
     }
 
     /** gcd of content of a and b with respect to specified variable */
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly contentGCD(Poly a, Poly b, int variable, BiFunction<Poly, Poly, Poly> algorithm) {
         Poly[] aCfs = multivariateCoefficients(a, variable);
         Poly[] bCfs = multivariateCoefficients(b, variable);
@@ -1163,7 +1159,7 @@ public final class MultivariateGCD {
         return gcd;//.multiply(content);
     }
 
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> Poly divideSkeletonExact(Poly dividend, Poly divider) {
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> Poly divideSkeletonExact(Poly dividend, Poly divider) {
         if (divider.isConstant())
             return dividend;
         if (divider.isMonomial())
@@ -1185,7 +1181,7 @@ public final class MultivariateGCD {
         return quotient;
     }
 
-    static final class PairIterator<Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
+    static final class PairIterator<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
         final Poly factory;
         final Term zeroTerm;
         final Comparator<DegreeVector> ordering;
@@ -1193,7 +1189,7 @@ public final class MultivariateGCD {
 
         PairIterator(Poly a, Poly b) {
             this.factory = a;
-            this.zeroTerm = factory.createZeroTerm();
+            this.zeroTerm = factory.monomialAlgebra.getZeroTerm(factory.nVariables);
             this.ordering = a.ordering;
             this.aIterator = a.iterator();
             this.bIterator = b.iterator();
@@ -1526,7 +1522,7 @@ public final class MultivariateGCD {
         MonomialSet<Monomial<UnivariatePolynomialZp64>> newData = new MonomialSet<>(poly.ordering);
         for (Monomial<BigInteger> e : poly) {
             MultivariatePolynomial.add(newData, new Monomial<>(
-                            e.without(variable).exponents,
+                            e.without(variable),
                             factory.createMonomial(e.coefficient.longValueExact(), e.exponents[variable])),
                     pDomain);
         }
@@ -1539,13 +1535,11 @@ public final class MultivariateGCD {
         MultivariatePolynomial<BigInteger> result = MultivariatePolynomial.zero(nVariables, ring, poly.ordering);
         for (Monomial<UnivariatePolynomialZp64> entry : poly.terms) {
             UnivariatePolynomialZp64 uPoly = entry.coefficient;
-            int[] dv = ArraysUtil.insert(entry.exponents, variable, 0);
+            DegreeVector dv = entry.dvInsert(variable);
             for (int i = 0; i <= uPoly.degree(); ++i) {
                 if (uPoly.isZeroAt(i))
                     continue;
-                int[] cdv = dv.clone();
-                cdv[variable] = i;
-                result.add(new Monomial<>(cdv, BigInteger.valueOf(uPoly.get(i))));
+                result.add(new Monomial<>(dv.dvSet(variable, i), BigInteger.valueOf(uPoly.get(i))));
             }
         }
         return result;
@@ -3971,7 +3965,7 @@ public final class MultivariateGCD {
     }
 
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void liftPair(Poly base, Poly a, Poly b, Poly aLC, Poly bLC, HenselLifting.IEvaluation<Term, Poly> evaluation) {
         HenselLifting.multivariateLift0(base,
@@ -3982,7 +3976,7 @@ public final class MultivariateGCD {
     }
 
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void liftPairAutomaticLC(Poly base, Poly a, Poly b, HenselLifting.IEvaluation<Term, Poly> evaluation) {
         HenselLifting.multivariateLiftAutomaticLC(base,
@@ -4313,7 +4307,7 @@ public final class MultivariateGCD {
      * @return greatest common divisor of {@code a} and {@code b}
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly EEZGCD(Poly a, Poly b) {
         return EEZGCD(a, b, false);
     }
@@ -4327,7 +4321,7 @@ public final class MultivariateGCD {
      * @return greatest common divisor of {@code a} and {@code b}
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly EEZGCD(Poly a, Poly b, boolean switchToSparse) {
         a.assertSameCoefficientRingWith(b);
         if (canConvertToZp64(a))
@@ -4370,7 +4364,7 @@ public final class MultivariateGCD {
     }
 
     @SuppressWarnings("unchecked")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly KaltofenMonaganEEZModularGCDInGF(Poly a, Poly b) {
         if (a instanceof MultivariatePolynomialZp64)
             return (Poly) KaltofenMonaganEEZModularGCDInGF((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b);
@@ -4379,7 +4373,7 @@ public final class MultivariateGCD {
     }
 
     @SuppressWarnings("unchecked")
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly EEZGCD0(Poly a, Poly b) {
 
         // degree of univariate gcd

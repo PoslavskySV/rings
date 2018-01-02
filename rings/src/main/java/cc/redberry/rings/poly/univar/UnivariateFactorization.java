@@ -62,7 +62,7 @@ public final class UnivariateFactorization {
         return (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring instanceof UnivariateRing);
     }
 
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<UnivariatePolynomial<Poly>>
     FactorOverMultivariate(UnivariatePolynomial<Poly> poly,

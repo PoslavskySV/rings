@@ -19,19 +19,19 @@ class Conversions64bit {
     }
 
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     MultivariatePolynomialZp64 asOverZp64(Poly poly) {
         return MultivariatePolynomial.asOverZp64((MultivariatePolynomial<BigInteger>) poly);
     }
 
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly convert(MultivariatePolynomialZp64 p) {
         return (Poly) p.toBigPoly();
     }
 
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] convert(Poly factory, MultivariatePolynomialZp64[] p) {
         Poly[] r = factory.createArray(p.length);
         for (int i = 0; i < p.length; i++)

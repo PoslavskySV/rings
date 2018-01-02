@@ -190,7 +190,7 @@ public final class Rings {
      *
      * @param factory factory
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     MultivariateRing<Poly> MultivariateRing(Poly factory) {
         return new MultivariateRing<>(factory);
     }

@@ -4,9 +4,9 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
 import cc.redberry.rings.poly.FiniteField;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.univar.IrreduciblePolynomials;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
@@ -16,6 +16,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+
+import static cc.redberry.rings.poly.multivar.MultivariateGCDTest.createMonomial;
 
 /**
  * @since 1.0
@@ -55,7 +57,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
         MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
-        for (int i = 0; i < AbstractTest.its(1, 5); i++) {
+        for (int i = 0; i < its(1, 5); i++) {
             long start = System.nanoTime();
             FactorDecompositionTest.assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
@@ -120,18 +122,18 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
         FiniteField<UnivariatePolynomialZp64> field = new FiniteField<>(IrreduciblePolynomials.randomIrreduciblePolynomial(modulus, 4, AbstractTest.getRandom()));
         MultivariatePolynomial<UnivariatePolynomialZp64>
                 a = MultivariatePolynomial.zero(3, field, MonomialOrder.LEX)
-                .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 2, 3, 4, 5).modulus(modulus)), 1, 1, 3))
-                .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 3, 2, 13).modulus(modulus)), 3, 2, 1))
-                .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 13, 12, 13).modulus(modulus)), 0, 2, 1)),
+                .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 2, 3, 4, 5).modulus(modulus)), 1, 1, 3))
+                .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 3, 2, 13).modulus(modulus)), 3, 2, 1))
+                .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 13, 12, 13).modulus(modulus)), 0, 2, 1)),
                 b = MultivariatePolynomial.zero(3, field, MonomialOrder.LEX)
-                        .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5).modulus(modulus)), 1, 1, 13))
-                        .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 1, 2, 13).modulus(modulus)), 2, 2, 1))
-                        .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 113, 112, 13).modulus(modulus)), 10, 2, 1)),
+                        .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5).modulus(modulus)), 1, 1, 13))
+                        .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 1, 2, 13).modulus(modulus)), 2, 2, 1))
+                        .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 113, 112, 13).modulus(modulus)), 10, 2, 1)),
                 c = MultivariatePolynomial.one(3, field, MonomialOrder.LEX)
-                        .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5, 12).modulus(modulus)), 11, 1, 13))
-                        .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(11, 2, 1, 1, 2, 13).modulus(modulus)), 21, 2, 1))
-                        .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(modulus)), 10, 12, 1))
-                        .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(modulus)), 0, 0, 1)),
+                        .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5, 12).modulus(modulus)), 11, 1, 13))
+                        .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(11, 2, 1, 1, 2, 13).modulus(modulus)), 21, 2, 1))
+                        .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(modulus)), 10, 12, 1))
+                        .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(modulus)), 0, 0, 1)),
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
 

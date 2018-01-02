@@ -51,7 +51,7 @@ public final class GroebnerBasis {
      * @param monomialOrder monomial order
      * @return Groebner basis
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> GroebnerBasis(List<Poly> generators,
                              Comparator<DegreeVector> monomialOrder) {
         return BuchbergerGB(generators, monomialOrder);
@@ -62,7 +62,7 @@ public final class GroebnerBasis {
         return generators.stream().anyMatch(p -> p.isConstant() && !p.isZero());
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> prepareGenerators(List<Poly> generators, Comparator<DegreeVector> monomialOrder) {
         generators = new ArrayList<>(generators);
         setMonomialOrder(generators, monomialOrder);
@@ -83,7 +83,7 @@ public final class GroebnerBasis {
      * Computes minimized and reduced Groebner basis of a given ideal via Buchberger algorithm. It uses normal strategy
      * for graded orders and sugar strategy for lexicographic.
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerGB(List<Poly> ideal, Comparator<DegreeVector> monomialOrder) {
         Comparator<SyzygyPair> selectionStrategy = normalSelectionStrategy(ideal.get(0).ordering);
         // fixme use sugar always?
@@ -115,7 +115,7 @@ public final class GroebnerBasis {
      * @param selectionStrategy    critical pair selection strategy
      * @param minimizationStrategy how to minimize Groebner basis at intermediate steps
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerGB(List<Poly> generators,
                             Comparator<DegreeVector> monomialOrder,
                             Comparator<SyzygyPair> selectionStrategy,
@@ -225,7 +225,7 @@ public final class GroebnerBasis {
     /**
      * Computes minimized and reduced Groebner basis of a given homogenious ideal via Buchberger algorithm.
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
                                        Comparator<DegreeVector> monomialOrder) {
         Comparator<SyzygyPair> selectionStrategy = normalSelectionStrategy(generators.get(0).ordering);
@@ -243,7 +243,7 @@ public final class GroebnerBasis {
      * @param monomialOrder     monomial order to use
      * @param selectionStrategy critical pair selection strategy
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
                                        Comparator<DegreeVector> monomialOrder,
                                        Comparator<SyzygyPair> selectionStrategy) {
@@ -345,7 +345,7 @@ public final class GroebnerBasis {
         return groebner;
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void reduceAndMinimizeGroebnerBases(List<Poly> generators,
                                         TreeSet<SyzygyPair<Term, Poly>> sPairs,
                                         TLongObjectHashMap<SyzygyPair<Term, Poly>> ijPairs,
@@ -397,7 +397,7 @@ public final class GroebnerBasis {
         }
     }
 
-    private static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly remainder0(Poly dividend, List<Poly> dividers) {
         Poly[] dividersArr = dividers.stream().filter(Objects::nonNull).toArray(dividend::createArray);
         //Arrays.sort(dividersArr, (a, b) -> a.ordering.compare(a.lt(), b.lt()));
@@ -444,7 +444,7 @@ public final class GroebnerBasis {
 
     /** Syzygy pair */
     public static final class SyzygyPair<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
         /** Positions of polynomials {@code fi} and {@code fj} in the list of generators */
         final int i, j;
@@ -468,7 +468,7 @@ public final class GroebnerBasis {
             assert fi != fj;
             this.i = i; this.fi = fi;
             this.j = j; this.fj = fj;
-            this.syzygyGamma = fi.createTermWithUnitCoefficient(ArraysUtil.max(fi.multidegree(), fj.multidegree()));
+            this.syzygyGamma = fi.monomialAlgebra.createTermWithUnitCoefficient(ArraysUtil.max(fi.multidegree(), fj.multidegree()));
             this.sugar = Math.max(
                     fi.degreeSum() - fi.lt().totalDegree,
                     fj.degreeSum() - fj.lt().totalDegree) + syzygyGamma.totalDegree;
@@ -506,7 +506,7 @@ public final class GroebnerBasis {
     /**
      * Minimizes Groebner basis
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void minimizeGroebnerBases(List<Poly> basis) {
         outer:
         for (int i = basis.size() - 1; i >= 1; --i) {
@@ -530,7 +530,7 @@ public final class GroebnerBasis {
     /**
      * Computes reduced Groebner basis
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void removeRedundant(List<Poly> basis) {
         for (int i = 0, size = basis.size(); i < size; ++i) {
             Poly el = basis.remove(i);
@@ -544,16 +544,16 @@ public final class GroebnerBasis {
     }
 
     /** Computes syzygy of given polynomials */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly syzygy(Poly a, Poly b) {
-        return syzygy(a.createTermWithUnitCoefficient(ArraysUtil.max(a.multidegree(), b.multidegree())), a, b);
+        return syzygy(a.monomialAlgebra.createTermWithUnitCoefficient(ArraysUtil.max(a.multidegree(), b.multidegree())), a, b);
     }
 
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly syzygy(Term xGamma, Poly a, Poly b) {
         Poly
-                aReduced = a.clone().multiply(a.divideOrNull(xGamma, a.lt())),
-                bReduced = b.clone().multiply(b.divideOrNull(xGamma, b.lt())),
+                aReduced = a.clone().multiply(a.monomialAlgebra.divideOrNull(xGamma, a.lt())),
+                bReduced = b.clone().multiply(b.monomialAlgebra.divideOrNull(xGamma, b.lt())),
                 syzygy = aReduced.subtract(bReduced);
         return syzygy;
     }
@@ -568,7 +568,7 @@ public final class GroebnerBasis {
      * @param monomialOrder     monomial order to use
      * @param selectionStrategy critical pair selection strategy
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> F4GB(List<Poly> generators,
                     Comparator<DegreeVector> monomialOrder,
                     Comparator<SyzygyPair> selectionStrategy) {

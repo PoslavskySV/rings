@@ -3,7 +3,6 @@ package cc.redberry.rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
@@ -24,10 +23,9 @@ import java.util.stream.IntStream;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.PolynomialMethods.*;
 import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
-import static cc.redberry.rings.poly.multivar.MultivariateGCD.ZippelGCDInZ;
+import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.irreducibleQ;
 import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.*;
-import static cc.redberry.rings.poly.univar.UnivariateGCD.ModularGCD;
 import static cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization.SquareFreeFactorization;
 
 /**
@@ -270,7 +268,7 @@ public class Examples {
      * @param <Monomial> type of monomials
      * @param <Poly>     type of multivariate polynomials
      */
-    static <Monomial extends DegreeVector<Monomial>,
+    static <Monomial extends AMonomial<Monomial>,
             Poly extends AMultivariatePolynomial<Monomial, Poly>>
     Poly genericFunc(Poly poly) { return null; }
 
@@ -278,7 +276,7 @@ public class Examples {
      * @param <Monomial> type of monomials
      * @param <Poly>     type of multivariate polynomials
      */
-    static <Monomial extends DegreeVector<Monomial>,
+    static <Monomial extends AMonomial<Monomial>,
             Poly extends AMultivariatePolynomial<Monomial, Poly>>
     Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 

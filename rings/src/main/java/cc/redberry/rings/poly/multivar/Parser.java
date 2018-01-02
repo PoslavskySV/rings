@@ -79,7 +79,7 @@ final class Parser {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
                 degrees[ArraysUtil.firstIndexOf(variables[i], map)] += exponents[i];
-            return new Monomial<>(degrees, coefficient);
+            return new Monomial<>(degrees, ArraysUtil.sum(degrees), coefficient);
         }
 
         @Override

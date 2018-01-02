@@ -10,6 +10,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.Benchmark;
+import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.RandomDataGenerator;
 import cc.redberry.rings.util.RandomUtil;
 import cc.redberry.rings.util.TimeUnits;
@@ -1176,18 +1177,18 @@ public class MultivariateGCDTest extends AMultivariateTest {
             FiniteField<UnivariatePolynomialZp64> field = FiniteField.GF17p5;
             MultivariatePolynomial<UnivariatePolynomialZp64>
                     a = MultivariatePolynomial.zero(3, field, LEX)
-                    .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 2, 3, 4, 5).modulus(17)), 1, 1, 3))
-                    .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 3, 2, 13).modulus(17)), 3, 2, 1))
-                    .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 13, 12, 13).modulus(17)), 0, 2, 1)),
+                    .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 2, 3, 4, 5).modulus(17)), 1, 1, 3))
+                    .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 3, 2, 13).modulus(17)), 3, 2, 1))
+                    .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 13, 12, 13).modulus(17)), 0, 2, 1)),
                     b = MultivariatePolynomial.zero(3, field, LEX)
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5).modulus(17)), 1, 1, 13))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 1, 2, 13).modulus(17)), 2, 2, 1))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 113, 112, 13).modulus(17)), 10, 2, 1)),
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5).modulus(17)), 1, 1, 13))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 1, 2, 13).modulus(17)), 2, 2, 1))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 113, 112, 13).modulus(17)), 10, 2, 1)),
                     gcd = MultivariatePolynomial.one(3, field, LEX)
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5, 12).modulus(17)), 11, 1, 13))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(11, 2, 1, 1, 2, 13).modulus(17)), 21, 2, 1))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 10, 12, 1))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 0, 0, 1));
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5, 12).modulus(17)), 11, 1, 13))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(11, 2, 1, 1, 2, 13).modulus(17)), 21, 2, 1))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 10, 12, 1))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 0, 0, 1));
 
             a = a.clone().add(b).multiply(gcd);
             b = b.clone().subtract(gcd).multiply(gcd);
@@ -2164,7 +2165,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     /** sample data for test of GCD */
     public static final class GCDSample<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
         /** sample polynomials */
         public final Poly a, b;
@@ -2228,7 +2229,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** substitute random values for some variables */
-    public static <Term extends DegreeVector<Term>,
+    public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDSampleData<Term, Poly> filterZeros(final GCDSampleData<Term, Poly> data) {
         return new GCDSampleData<Term, Poly>() {
@@ -2248,7 +2249,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** substitute random values for some variables */
-    public static <Term extends DegreeVector<Term>,
+    public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDSampleData<Term, Poly> fixVariables(final GCDSampleData<Term, Poly> data, int nActuallyUsedVariables) {
         return new GCDSampleData<Term, Poly>() {
@@ -2286,7 +2287,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** probable coprime polynomials */
-    public static <Term extends DegreeVector<Term>,
+    public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDSampleData<Term, Poly> coprimeData(final GCDSampleData<Term, Poly> data) {
         return new GCDSampleData<Term, Poly>() {
@@ -2305,7 +2306,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     /** provides random data for GCD tests */
     public static abstract class GCDSampleData<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
 
         final DescriptiveStatistics
@@ -2378,7 +2379,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     /** provides random data for GCD tests */
     public static abstract class AGCDSampleData<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
             extends GCDSampleData<Term, Poly> {
         public final int nVarsMin, nVarsMax,
@@ -2528,7 +2529,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** run specified gcd algorithms on sample input */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void testGCDAlgorithms(GCDSampleData<Term, Poly> sampleData, int nIterations,
                            GCDAlgorithm<Poly>... algorithms) {
         System.out.println("\nRunning gcd tests for " + Arrays.toString(algorithms));
@@ -2689,5 +2690,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
             assertFalse(value == 0);
             assertTrue(value == domain.modulus(value));
         }
+    }
+
+    static <E> Monomial<E> createMonomial(E cf, int... exps){
+        return new Monomial<>(exps, ArraysUtil.sum(exps), cf);
     }
 }

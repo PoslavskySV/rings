@@ -251,7 +251,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
         for (int v = 0; v < poly.nVariables; v++) {
             final int var = v;
             MultivariatePolynomialZp64 r = IntStream.rangeClosed(0, poly.degree(var))
-                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new MonomialZp64(poly.nVariables, var, i, 1)))
+                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new MonomialZp64(poly.nVariables, 1).set(var, i)))
                     .reduce(poly.createZero(), AMultivariatePolynomial::add);
             assertEquals(poly, r);
         }
