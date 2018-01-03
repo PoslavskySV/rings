@@ -549,7 +549,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         MonomialSet<Term> result = new MonomialSet<>(ordering);
         for (Term term : terms) {
             DegreeVector dv = term.dvInsert(variable);
-            dv.exponents[variable] = deg - dv.totalDegree;
+            dv.dvSet(variable, deg - dv.totalDegree);
             result.add(term.setDegreeVector(dv));
         }
         return create(nVariables + 1, result);

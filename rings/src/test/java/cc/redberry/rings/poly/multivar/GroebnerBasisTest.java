@@ -8,10 +8,17 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -27,12 +34,28 @@ import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.remainder;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.parse;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @since 1.0
  */
 @Ignore
 public class GroebnerBasisTest extends AMultivariateTest {
+    @Before
+    public void beforeMethod() throws Exception {
+        if (getClass().getMethod(name.getMethodName()).isAnnotationPresent(RequiresSingular.class))
+            Assume.assumeTrue(isSingularAvailable());
+        super.beforeMethod();
+    }
+
+    private static String getSingularPath() {
+        return System.getProperty("singularPath", "/Applications/Singular.app/Contents/bin/Singular");
+    }
+
+    private static boolean isSingularAvailable() {
+        return new File(getSingularPath()).exists();
+    }
+
     @Test
     public void test1() throws Exception {
         String[] vars = {"u0", "u1", "u2", "u3"};
@@ -44,9 +67,9 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 parse("-u0 + u0^2 + 2*u2 - 4*u0*u2 + 2*u2^2 - 4*u1*u3 + 2*u3^2", Q, GREVLEX, vars)
         ));
 
-        GroebnerBasis.canonicalize(expected);
+        canonicalize(expected);
         List<MultivariatePolynomial<Rational<BigInteger>>> actual = GroebnerBasis(Arrays.asList(a, b), GREVLEX);
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -59,9 +82,28 @@ public class GroebnerBasisTest extends AMultivariateTest {
         List<MultivariatePolynomial<Rational<BigInteger>>> gens = Stream.of(a, b, c)
                 .map(p -> p.homogenize(vars.length)).collect(Collectors.toList());
 
+        List<MultivariatePolynomial<Rational<BigInteger>>> bHom = BuchbergerHomogeneousGB(gens, GREVLEX);
+        Assert.assertTrue(bHom.stream().allMatch(MultivariatePolynomial::isHomogeneous));
+
+        List<MultivariatePolynomial<Rational<BigInteger>>> bNonHom = BuchbergerGB(gens, GREVLEX);
+        Assert.assertTrue(bNonHom.stream().allMatch(MultivariatePolynomial::isHomogeneous));
+
+        assertEquals(bNonHom, bHom);
+    }
+
+    @Test
+    public void test2a() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4", "x5"};
+        MultivariatePolynomial<Rational<BigInteger>>
+                a = parse("x1^2*x2^2*x3 + x5^4 - 1 + x2^3*x4 + x3^5 + x4", Q, GREVLEX, vars),
+                b = parse("x1*x2*x3^2 + x2*x4*x1^2*x5 + x3*x2^3", Q, GREVLEX, vars),
+                c = parse("x1^3*x2^3*x3^3*x4 - x2*x4^2*x1^4*x5 + x3^3*x2 - x4 - 1", Q, GREVLEX, vars);
+        List<MultivariatePolynomial<Rational<BigInteger>>> gens = Stream.of(a, b, c)
+                .map(p -> p.homogenize(vars.length)).collect(Collectors.toList());
+
         System.out.println(Arrays.toString(IntStream.range(0, vars.length + 1).map(i -> gens.stream().mapToInt(p -> p.degree(i)).sum()).toArray()));
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 111; i++) {
             long start;
             start = System.nanoTime();
             List<MultivariatePolynomial<Rational<BigInteger>>> hm = BuchbergerHomogeneousGB(gens, GREVLEX);
@@ -73,8 +115,12 @@ public class GroebnerBasisTest extends AMultivariateTest {
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertTrue(nhm.stream().allMatch(MultivariatePolynomial::isHomogeneous));
 
-            Assert.assertEquals(hm, nhm);
+            List<MultivariatePolynomial<Rational<BigInteger>>> ref = SingularGB(gens, GREVLEX).std;
+            System.out.println(ref.equals(hm));
+            System.out.println(ref.equals(nhm));
+//            Assert.assertEquals(hm, nhm);
             System.out.println();
+
         }
     }
 
@@ -87,8 +133,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 f2 = MultivariatePolynomialZp64.parse("x*y^4 - y^2 - 5*z^3*x^2", ring, GREVLEX, vars);
 
         List<MultivariatePolynomialZp64> ideal = Arrays.asList(f1, f2);
-
-        Assert.assertEquals(BuchbergerGB(ideal, GREVLEX), F4GB(ideal, GREVLEX));
+        assertEquals(BuchbergerGB(ideal, GREVLEX), F4GB(ideal, GREVLEX));
     }
 
     @Test
@@ -101,8 +146,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 f3 = parse("x*y + 1", Q, GREVLEX, vars);
 
         List<MultivariatePolynomial<Rational<BigInteger>>> ideal = Arrays.asList(f1, f2, f3);
-
-        Assert.assertEquals(BuchbergerGB(ideal, GREVLEX), F4GB(ideal, GREVLEX));
+        assertEquals(BuchbergerGB(ideal, GREVLEX), F4GB(ideal, GREVLEX));
     }
 
 
@@ -115,16 +159,58 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 f2 = MultivariatePolynomialZp64.parse("x*y^24 - y^2*z^6 - 5*z^3*x^2 - 1", ring, GREVLEX, vars);
 
         List<MultivariatePolynomialZp64> ideal = Arrays.asList(f1, f2);
-
-        List<MultivariatePolynomialZp64> fgb = F4GB(ideal, GREVLEX);
-//        MultivariatePolynomialZp64 p = fgb.remove(3);
-//        System.out.println(Arrays.toString(MultivariateDivision.divideAndRemainder(p, fgb.toArray(new MultivariatePolynomialZp64[0]))));
-
-        Assert.assertEquals(BuchbergerGB(ideal, GREVLEX), F4GB(ideal, GREVLEX));
+        assertEquals(BuchbergerGB(ideal, GREVLEX), F4GB(ideal, GREVLEX));
     }
 
     @Test
-    public void test2a() throws Exception {
+    @RequiresSingular
+    public void test6_katsura() throws Exception {
+        IntegersZp64 ring = new IntegersZp64(17);
+        for (int i = 3; i <= 9; i++) {
+            List<MultivariatePolynomialZp64> ideal =
+                    GroebnerBasisData.katsura(i)
+                            .stream()
+                            .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator)))
+                            .map(p -> p.setOrdering(GREVLEX))
+                            .collect(Collectors.toList());
+
+            long start;
+
+            start = System.nanoTime();
+            List<MultivariatePolynomialZp64> actual = BuchbergerHomogeneousGB(ideal, GREVLEX);
+            long buchberger = System.nanoTime() - start;
+
+            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
+            List<MultivariatePolynomialZp64> expected = singular.std;
+            assertEquals(expected, actual);
+            System.out.println(String.format("=> Katsura%s:", i));
+            System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
+            System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
+            System.out.println();
+        }
+    }
+
+    @Test
+    @RequiresSingular
+    public void test7() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        IntegersZp domain = new IntegersZp(17);
+        MultivariatePolynomialZp64
+                f1 = asOverZp64(parse("11*x^3+3*x^4*y*z^2+12*x^3*y^4+7*x^2*y^6*z+16*x^3*y*z^6+13*x^4*y*z^5+7*x^5*y*z^5+9*x^4*y^3*z^5+7*x^6*y^4*z^2+10*x^4*y^4*z^5", domain, GREVLEX, vars)),
+                f2 = asOverZp64(parse("5*y+14*x*y*z^6+5*x^2*y^2*z^4+16*x*y^4*z^3+9*x^5*y^3*z+7*x^2*y^5*z^3+15*x^5*y^6+16*x^5*y*z^6+9*x^2*y^5*z^6+10*x^5*y^5*z^3", domain, GREVLEX, vars)),
+                f3 = asOverZp64(parse("8*y^5+14*y^3*z^3+2*x*y^2*z^4+13*x*y^3*z^3+2*x^2*y^4*z^2+16*x^3*y^3*z^4+8*x^3*y^3*z^5+11*x^6*y^4*z^2+8*x^5*y^5*z^3", domain, GREVLEX, vars));
+
+
+        List<MultivariatePolynomialZp64> ideal = Arrays.asList(f1, f2, f3);
+        setMonomialOrder(ideal, GREVLEX);
+
+        List<MultivariatePolynomialZp64> buchberger = GroebnerBasis.BuchbergerGB(ideal, GREVLEX);
+        SingularResult<MonomialZp64, MultivariatePolynomialZp64> expected = SingularGB(ideal, GREVLEX);
+        assertEquals(expected.std, buchberger);
+    }
+
+    @Test
+    public void test2aaaa() throws Exception {
         String[] vars = {"x", "y", "z"};
         MultivariatePolynomial<Rational<BigInteger>>
                 f1 = parse("x^2*y^2 + x*y + 5*z^3*y^2", Q, LEX, vars),
@@ -162,11 +248,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
 
         List<MultivariatePolynomialZp64> r;
-//        List<MultivariatePolynomialZp64> r = GroebnerBasis.F4GB(Arrays.asList(f1, f2, f3), GREVLEX);
+//        r = GroebnerBasis.F4GB(Arrays.asList(f1, f2, f3), GREVLEX);
 //        System.out.println(r);
 
-        r = GroebnerBasis.BuchbergerGB(Arrays.asList(f1, f2, f3), GREVLEX);
+        List<MultivariatePolynomialZp64> ideal = Arrays.asList(f1, f2, f3);
+        r = GroebnerBasis.BuchbergerGB(ideal, GREVLEX);
         System.out.println(r);
+        System.out.println(SingularGB(ideal, GREVLEX));
 //        for (MultivariatePolynomialZp64 t : r)
 //            System.out.println(t.toString(vars));
     }
@@ -198,7 +286,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 MultivariatePolynomialZp64 rem = remainder(rndPoly, gb).monic();
                 for (int k = 0; k < 5; k++) {
                     Collections.shuffle(gb, new Random(rnd.nextLong()));
-                    Assert.assertEquals(rem, remainder(rndPoly, gb).monic());
+                    assertEquals(rem, remainder(rndPoly, gb).monic());
                 }
             }
         }
@@ -408,8 +496,135 @@ public class GroebnerBasisTest extends AMultivariateTest {
             canonicalize(norm);
             canonicalize(sugar);
 
-            Assert.assertEquals(norm, sugar);
+            assertEquals(norm, sugar);
             System.out.println();
         }
     }
+
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    SingularResult<Term, Poly> SingularGB(List<Poly> ideal, Comparator<DegreeVector> monomialOrder) throws IOException, InterruptedException {
+        if (!isSingularAvailable())
+            throw new RuntimeException("no Singular");
+        String order;
+        if (monomialOrder == LEX)
+            order = "lp";
+        else if (monomialOrder == GREVLEX)
+            order = "dp";
+        else
+            throw new IllegalArgumentException("bad order");
+
+
+        setMonomialOrder(ideal, monomialOrder);
+
+        Poly factory = ideal.get(0);
+        int nVars = factory.nVariables;
+        String[] vars = new String[nVars];
+        for (int i = 1; i <= nVars; i++)
+            vars[i - 1] = "x" + i;
+
+        // prepare tmp file
+        File tmpSource = File.createTempFile("singular_" + Integer.toHexString(ideal.hashCode()), null);
+        File tmpOutput = File.createTempFile("singular_" + Integer.toHexString(ideal.hashCode()), "output");
+        tmpSource.deleteOnExit();
+        tmpOutput.deleteOnExit();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(tmpSource::delete));
+        Runtime.getRuntime().addShutdownHook(new Thread(tmpOutput::delete));
+        try {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(tmpSource))) {
+
+                writer.write("system(\"--ticks-per-sec\",1000);");
+                writer.newLine();
+                writer.write("option(redSB);");
+                writer.newLine();
+
+
+                writer.write(String.format("ring r = %s, (%s), %s;",
+                        factory.coefficientRingCardinality() == null ? 0 : factory.coefficientRingCardinality(),
+                        Arrays.stream(vars).collect(Collectors.joining(",")),
+                        order));
+                writer.newLine();
+
+                for (int i = 0; i < ideal.size(); i++) {
+                    writer.write(String.format("poly p%s = ", i));
+                    writer.write(ideal.get(i).toString(vars));
+                    writer.write(";");
+                    writer.newLine();
+                }
+
+                // ideal
+                writer.write(String.format("ideal I = %s;",
+                        IntStream.range(0, ideal.size()).mapToObj(i -> "p" + i)
+                                .collect(Collectors.joining(","))));
+                writer.newLine();
+                writer.write("int t = timer;");
+                writer.newLine();
+                writer.write("ideal G = std(I);");
+                writer.newLine();
+                writer.write("int elapsed = timer-t;");
+                writer.newLine();
+                writer.write("print(\"OUTPUTSTARTSHERE\");");
+                writer.newLine();
+                writer.write("print(G);");
+                writer.newLine();
+                writer.write("print(\"TIMESEPARATOR\");");
+                writer.newLine();
+                writer.write("print(elapsed);");
+                writer.newLine();
+                writer.write("exit;");
+            }
+
+            //Files.readAllLines(tmpSource.toPath()).forEach(System.out::println);
+
+            Process process = new ProcessBuilder(getSingularPath(), "-q")
+                    .redirectOutput(tmpOutput)
+                    .redirectErrorStream(true)
+                    .start();
+
+            process.getOutputStream().write(String.format("< \"%s\";", tmpSource.getAbsolutePath()).getBytes());
+            process.getOutputStream().flush();
+            process.getOutputStream().close();
+
+            process.waitFor();
+            String singularOut = Files.readAllLines(tmpOutput.toPath()).stream().reduce((l, r) -> l + r).orElse("");
+            if (!singularOut.contains("TIMESEPARATOR"))
+                //<- there was a error in Singular
+                return null;
+
+            String[] split = singularOut.split("OUTPUTSTARTSHERE")[1].split("TIMESEPARATOR");
+            // parse polynomials
+            List<Poly> std = Arrays.stream(split[0].split(",")).map(str -> factory.parsePoly(str, vars)).collect(Collectors.toList());
+//            // minimize Groebner basis
+//            minimizeGroebnerBases(std);
+//            // reduce Groebner basis
+//            removeRedundant(std);
+            // canonicalize
+            canonicalize(std);
+            long elapsedNanos = 1000L * 1000L * Long.parseLong(split[1].trim());
+            return new SingularResult<>(std, elapsedNanos);
+        } finally {
+            tmpSource.delete();
+            tmpOutput.delete();
+        }
+    }
+
+    static final class SingularResult<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
+        final List<Poly> std;
+        final long nanoseconds;
+
+        SingularResult(List<Poly> std, long nanoseconds) {
+            this.std = std;
+            this.nanoseconds = nanoseconds;
+        }
+
+        @Override
+        public String toString() {
+            return std.toString() + "\n" + "Time: " + TimeUnits.nanosecondsToString(nanoseconds);
+        }
+    }
+
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface RequiresSingular {}
 }
