@@ -176,7 +176,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
     @RequiresSingular
     public void test6_katsura() throws Exception {
         IntegersZp64 ring = new IntegersZp64(17);
-        for (int i = 5; i <= 16; i++) {
+        for (int i = 5; i < 16; i++) {
             List<MultivariatePolynomialZp64> ideal =
                     GroebnerBasisData.katsura(i)
                             .stream()
@@ -186,23 +186,26 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
             long start;
 
-            start = System.nanoTime();
-            List<MultivariatePolynomialZp64> actualBuchberger = BuchbergerGB(ideal, GREVLEX);
-            long buchberger = System.nanoTime() - start;
+//            start = System.nanoTime();
+//            List<MultivariatePolynomialZp64> actualBuchberger = BuchbergerGB(ideal, GREVLEX);
+//            long buchberger = System.nanoTime() - start;
 
             start = System.nanoTime();
+            //REDUCTION = 0;
             List<MultivariatePolynomialZp64> actualF4 = F4GB(ideal, GREVLEX);
             long f4 = System.nanoTime() - start;
 
             SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
             List<MultivariatePolynomialZp64> expected = singular.std;
-            assertEquals(expected, actualBuchberger);
+//            assertEquals(expected, actualBuchberger);
 //            System.out.println(expected);
 //            System.out.println(actualF4);
             assertEquals(expected, actualF4);
+
             System.out.println(String.format("=> Katsura%s:", i));
-            System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
+//            System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
             System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
+            //System.out.println("   F4 rrr    : " + TimeUnits.nanosecondsToString(REDUCTION));
             System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
             System.out.println();
         }
@@ -337,7 +340,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
             List<MultivariatePolynomialZp64> ideal = new ArrayList<>();
             for (int j = 0; j < nEls; j++)
                 ideal.add(RandomMultivariatePolynomials.randomPolynomial(3, 4, 3, domain, GREVLEX, rnd));
-            List<MultivariatePolynomialZp64> actual = BuchbergerGB(ideal, GREVLEX);
+            List<MultivariatePolynomialZp64> actual = F4GB(ideal, GREVLEX);
             List<MultivariatePolynomialZp64> expected = SingularGB(ideal, GREVLEX).std;
             if (!actual.equals(expected)) {
                 System.out.println(ideal);
