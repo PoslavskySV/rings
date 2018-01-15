@@ -718,7 +718,7 @@ public final class MultivariateGCD {
         Term aMonomialContent = a.monomialContent();
         int[] exponentsGCD = b.monomialContent().exponents;
         AMultivariatePolynomial.setMin(aMonomialContent.exponents, exponentsGCD);
-        Term monomialGCD = a.monomialAlgebra.createTermWithUnitCoefficient(exponentsGCD);
+        Term monomialGCD = a.monomialAlgebra.create(exponentsGCD);
 
         a = a.divideDegreeVectorOrNull(monomialGCD);
         b = b.divideDegreeVectorOrNull(monomialGCD);

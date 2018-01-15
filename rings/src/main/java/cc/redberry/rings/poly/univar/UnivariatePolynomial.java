@@ -931,6 +931,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public UnivariatePolynomial<E> monicWithLC(UnivariatePolynomial<E> other) {
+        if (lc().equals(other.lc()))
+            return this;
         return monic(other.lc());
     }
 

@@ -26,7 +26,7 @@ package object scaladsl extends Predef {
   type Monomial[E] = poly.multivar.Monomial[E]
 
   type AMultivariatePolynomial[
-  T <: poly.multivar.DegreeVector[T],
+  T <: poly.multivar.AMonomial[T],
   P <: poly.multivar.AMultivariatePolynomial[T, P]]
   = poly.multivar.AMultivariatePolynomial[T, P]
   type MultivariatePolynomial[E] = poly.multivar.MultivariatePolynomial[E]

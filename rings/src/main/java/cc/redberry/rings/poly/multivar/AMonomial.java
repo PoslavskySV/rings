@@ -94,6 +94,14 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
     /** Set exponent of specified {@code var} to zero */
     public final Term setZero(int var) {return setDegreeVector(dvSetZero(var));}
 
+    /** Set all exponents to zero */
+    @SuppressWarnings("unchecked")
+    public final Term toZero() {
+        if (isZeroVector())
+            return (Term) this;
+        return setDegreeVector(new DegreeVector(new int[nVariables()], 0));
+    }
+
     /** Set exponents of specified variables to zero */
     public final Term setZero(int[] variables) {return setDegreeVector(dvSetZero(variables));}
 

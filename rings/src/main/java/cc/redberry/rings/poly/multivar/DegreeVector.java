@@ -50,6 +50,8 @@ public class DegreeVector implements java.io.Serializable {
 
     /** Multiplies this by oth */
     public final DegreeVector dvMultiply(DegreeVector oth) {
+        if (oth.isZeroVector())
+            return this;
         int[] res = new int[exponents.length];
         for (int i = 0; i < exponents.length; i++)
             res[i] = exponents[i] + oth.exponents[i];
@@ -64,11 +66,15 @@ public class DegreeVector implements java.io.Serializable {
             res[i] = exponents[i] + oth[i];
             deg += oth[i];
         }
+        if (deg == 0)
+            return this; // avoid copying
         return new DegreeVector(res, deg);
     }
 
     /** Gives quotient {@code this / oth } or null if exact division is not possible (e.g. a^2*b^3 / a^3*b^5) */
     public final DegreeVector dvDivideOrNull(DegreeVector divider) {
+        if (divider.isZeroVector())
+            return this;
         int[] res = new int[exponents.length];
         for (int i = 0; i < exponents.length; i++) {
             res[i] = exponents[i] - divider.exponents[i];
@@ -88,6 +94,8 @@ public class DegreeVector implements java.io.Serializable {
                 return null;
             deg -= divider[i];
         }
+        if (deg == 0)
+            return this; // avoid copying
         return new DegreeVector(res, deg);
     }
 
@@ -259,15 +267,17 @@ public class DegreeVector implements java.io.Serializable {
         return Arrays.toString(exponents);
     }
 
+    public final boolean dvEquals(DegreeVector dVector) {
+        return totalDegree == dVector.totalDegree && Arrays.equals(exponents, dVector.exponents);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         DegreeVector dVector = (DegreeVector) o;
-
-        if (totalDegree != dVector.totalDegree) return false;
-        return Arrays.equals(exponents, dVector.exponents);
+        return dvEquals(dVector);
     }
 
     @Override

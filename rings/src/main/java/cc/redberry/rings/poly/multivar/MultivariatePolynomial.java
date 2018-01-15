@@ -586,11 +586,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return size() == 0 || (size() == 1 && terms.first().isZeroVector());
     }
 
-    @Override
-    public Monomial<E> lt() {
-        return size() == 0 ? new Monomial<>(nVariables, ring.getZero()) : terms.last();
-    }
-
     /**
      * Returns the leading coefficient of this polynomial that is coefficient of the largest term according to the
      * ordering.
@@ -788,6 +783,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> monicWithLC(MultivariatePolynomial<E> other) {
+        if (lc().equals(other.lc()))
+            return this;
         return monic(other.lc());
     }
 

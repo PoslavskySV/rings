@@ -1,14 +1,13 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.Ring;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TLongObjectHashMap;
 
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Groebner basis computation.
@@ -18,8 +17,20 @@ import java.util.stream.Collectors;
 public final class GroebnerBasis {
     private GroebnerBasis() {}
 
+    /**
+     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     *
+     * @param generators    generators of the ideal
+     * @param monomialOrder monomial order
+     * @return Groebner basis
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> GroebnerBasis(List<Poly> generators,
+                             Comparator<DegreeVector> monomialOrder) {
+        return BuchbergerGB(generators, monomialOrder);
+    }
 
-    /* **************************************** Util methods ************************************************ */
+    /* **************************************** Common methods ************************************************ */
 
     /** Set monomial order inplace */
     @SuppressWarnings("unchecked")
@@ -42,42 +53,399 @@ public final class GroebnerBasis {
         return list;
     }
 
+    /** set monomial order, monicize, sort etc. */
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> prepareGenerators(List<Poly> generators, Comparator<DegreeVector> monomialOrder) {
+        // todo monicize
+
+        // clone generators
+        generators = generators.stream().map(Poly::clone).collect(Collectors.toList());
+        // set monomial order
+        setMonomialOrder(generators, monomialOrder);
+
+        Poly factory = generators.get(0);
+        if (factory.nVariables == 1)
+            // univariate case
+            return canonicalize(Collections.singletonList(MultivariateGCD.PolynomialGCD(generators)));
+
+        // remove zeroes
+        generators.removeIf(Poly::isZero);
+        if (generators.isEmpty()) {
+            // empty ideal
+            generators.add(factory.createZero());
+            return generators;
+        }
+
+        // remove redundant elements from the basis
+        removeRedundant(generators);
+
+        // remove zeroes (may occur after reduction)
+        generators.removeIf(Poly::isZero);
+        if (generators.isEmpty()) {
+            // empty ideal
+            generators.add(factory.createZero());
+            return generators;
+        }
+
+        if (generators.stream().anyMatch(Poly::isConstant))
+            // contains non zero constant => ideal == whole ring
+            return Collections.singletonList(factory.createOne());
+
+        return generators;
+    }
+
+
+    /** Minimizes Groebner basis. The input should be a Groebner basis */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void minimizeGroebnerBases(List<Poly> basis) {
+        outer:
+        for (int i = basis.size() - 1; i >= 1; --i) {
+            for (int j = i - 1; j >= 0; --j) {
+                Poly pi = basis.get(i), pj = basis.get(j);
+                if (pi.lt().dvDivisibleBy(pj.lt())) {
+                    basis.remove(i);
+                    continue outer;
+                }
+                if (pj.lt().dvDivisibleBy(pi.lt())) {
+                    basis.remove(j);
+                    --i;
+                    continue;
+                }
+            }
+        }
+        for (Poly el : basis)
+            el.monic();
+    }
+
+    /** Computes reduced Groebner basis */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void removeRedundant(List<Poly> basis) {
+        for (int i = 0, size = basis.size(); i < size; ++i) {
+            Poly el = basis.remove(i);
+            Poly r = MultivariateDivision.remainder(el, basis);
+            if (r.isZero()) {
+                --i;
+                --size;
+            } else
+                basis.add(i, r);
+        }
+    }
+
+    /** Abstract critical pair: used with different Poly type for Buchberger and F4 algorithms */
+    public static class SyzygyPair<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>> {
+        /** Positions of polynomials {@code fi} and {@code fj} in the list of generators */
+        final int i, j;
+        /** Polynomials to form a syzygy */
+        final Poly fi, fj;
+        /** {@code lcm(fi.lt(), fj.lt())} */
+        final DegreeVector syzygyGamma;
+        /** The sugar */
+        final int sugar;
+
+        SyzygyPair(int i, int j, Poly fi, Poly fj) {
+            if (i > j) {
+                int s = i; i = j; j = s;
+                Poly fs = fi; fi = fj; fj = fs;
+            }
+            assert i != j && fi != fj;
+            this.i = i; this.j = j;
+            this.fi = fi; this.fj = fj;
+            this.syzygyGamma = lcm(fi.lt(), fj.lt());
+            this.sugar = Math.max(
+                    fi.degreeSum() - fi.lt().totalDegree,
+                    fj.degreeSum() - fj.lt().totalDegree) + syzygyGamma.totalDegree;
+        }
+
+        SyzygyPair(int i, int j, List<Poly> generators) {
+            this(i, j, generators.get(i), generators.get(j));
+        }
+
+        /** syzygy degree */
+        final int degree() { return syzygyGamma.totalDegree;}
+    }
+
+    /** Computes syzygy of given polynomials */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly syzygy(Poly a, Poly b) {
+        return syzygy(a.monomialAlgebra.create(lcm(a.multidegree(), b.multidegree())), a, b);
+    }
+
+    /** Computes syzygy of given polynomials */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly syzygy(SyzygyPair<Term, Poly> sPair) {
+        return syzygy(sPair.fi.monomialAlgebra.create(sPair.syzygyGamma), sPair.fi, sPair.fj);
+    }
+
+    /** Computes syzygy of given polynomials */
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly syzygy(Term lcm, Poly a, Poly b) {
+        IMonomialAlgebra<Term> mAlgebra = a.monomialAlgebra;
+        Poly
+                aReduced = a.clone().multiply(mAlgebra.divideExact(lcm, a.lt())),
+                bReduced = b.clone().multiply(mAlgebra.divideExact(lcm, b.lt())),
+                syzygy = aReduced.subtract(bReduced);
+        return syzygy;
+    }
+
+    /**
+     * Data structure which holds current set of critical pairs. This set may be just a Set&lt;SyzygyPair&gt; (TreeSet
+     * actually), or some more complicated structure (map of sets, e.g. TreeMap&lt;Integer,
+     * TreeSet&lt;SyzygyPair&lt;Term, Poly&gt;&gt;&gt; of degree -&gt; set of pairs with this degree) for graded
+     * algorithms (F4, homogeneous Buchberger etc).
+     */
+    private interface SyzygySet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>> {
+        /** add new syzygy to set */
+        void add(SyzygyPair<Term, Poly> sPair);
+
+        /** remove syzygy from set */
+        void remove(SyzygyPair<Term, Poly> sPair);
+
+        /** is empty */
+        boolean isEmpty();
+
+        /** remove a bunch of syzygies to process */
+        Collection<SyzygyPair<Term, Poly>> getAndRemoveNextBunch();
+
+        /** a view of all sets of syzygies */
+        Collection<TreeSet<SyzygyPair<Term, Poly>>> allSets();
+    }
+
+    /**
+     * A plain set of critical pairs --- wrapper around TreeSet&lt;SyzygyPair&lt;Term, Poly&gt;&gt;. Elements are
+     * ordered according to the comparator of TreeSet instance.
+     */
+    private static final class SyzygyTreeSet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
+            implements SyzygySet<Term, Poly> {
+        final TreeSet<SyzygyPair<Term, Poly>> sPairs;
+
+        SyzygyTreeSet(TreeSet<SyzygyPair<Term, Poly>> sPairs) { this.sPairs = sPairs; }
+
+        @Override
+        public void add(SyzygyPair<Term, Poly> sPair) { sPairs.add(sPair); }
+
+        @Override
+        public void remove(SyzygyPair<Term, Poly> sPair) { sPairs.remove(sPair); }
+
+        @Override
+        public boolean isEmpty() { return sPairs.isEmpty(); }
+
+        /**
+         * Returns the single element from the top of TreeSet
+         */
+        @Override
+        public Collection<SyzygyPair<Term, Poly>> getAndRemoveNextBunch() {return Collections.singleton(sPairs.pollFirst());}
+
+        /**
+         * Returns the single TreeSet (this)
+         */
+        @Override
+        public Collection<TreeSet<SyzygyPair<Term, Poly>>> allSets() { return Collections.singleton(sPairs);}
+    }
+
+    /**
+     * Graded set of syzygies: critical pairs are collected in the sets each one containing critical pairs with the same
+     * degree. Wrapper around TreeMap&lt;Integer, TreeSet&lt;SyzygyPair&lt;Term, Poly&gt;&gt;&gt;
+     */
+    private static final class GradedSyzygyTreeSet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
+            implements SyzygySet<Term, Poly> {
+        final TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs;
+        final Comparator<SyzygyPair> selectionStrategy;
+
+        GradedSyzygyTreeSet(TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs,
+                            Comparator<SyzygyPair> selectionStrategy) {
+            this.sPairs = sPairs;
+            this.selectionStrategy = selectionStrategy;
+        }
+
+        @Override
+        public void add(SyzygyPair<Term, Poly> sPair) {
+            sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
+        }
+
+        @Override
+        public void remove(SyzygyPair<Term, Poly> sPair) {
+            TreeSet<SyzygyPair<Term, Poly>> set = sPairs.get(sPair.degree());
+            if (set != null)
+                set.remove(sPair);
+        }
+
+        @Override
+        public boolean isEmpty() { return sPairs.isEmpty(); }
+
+        /**
+         * Returns all syzygies with the minimal degree
+         */
+        @Override
+        public Collection<SyzygyPair<Term, Poly>> getAndRemoveNextBunch() {return sPairs.pollFirstEntry().getValue();}
+
+        /**
+         * Returns sets of syzygies each one with fixed degree
+         */
+        @Override
+        public Collection<TreeSet<SyzygyPair<Term, Poly>>> allSets() { return sPairs.values();}
+    }
+
+    /**
+     * Generic Buchberger criteria via Gebauer-Moller installation. Algorithm from page 230 of Becker & Weispfenning,
+     * 1993. Note: redundant generators in the {@code basis} are marked as null.
+     */
+    private static <Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
+    void updateBasis(List<Poly> basis,
+                     SyzygySet<Term, Poly> sPairs,
+                     Poly newElement) {
+        // array of lcm( lt(fi), lt(newElement) ) <- cache once for performance
+        int[][] lcm = new int[basis.size()][];
+
+        Term newLeadTerm = newElement.lt();
+        for (int i = 0; i < basis.size(); i++) {
+            Poly fi = basis.get(i);
+            if (fi == null)
+                continue;
+            lcm[i] = lcm(fi.lt().exponents, newLeadTerm.exponents);
+        }
+
+        // first indices of new critical pairs to add
+        TIntArrayList pairsToAdd = new TIntArrayList();
+        // find new critical pairs that should be definitely added
+        filter:
+        for (int iIndex = 0; iIndex < basis.size(); iIndex++) {
+            Poly fi = basis.get(iIndex);
+            if (fi == null)
+                continue;
+            if (!shareVariablesQ(fi.lt(), newLeadTerm)) {
+                pairsToAdd.add(iIndex); // add disjoint elements (will be removed in the next step)
+                continue;
+            }
+
+            // ruling out redundant Buchberger triplets: 1st pass
+            for (int i = 0; i < pairsToAdd.size(); i++) {
+                int jIndex = pairsToAdd.get(i);
+                Poly fj = basis.get(jIndex);
+                assert fj != null;
+                if (dividesQ(lcm[jIndex], lcm[iIndex]))
+                    continue filter;
+            }
+
+            // ruling out redundant Buchberger triplets: 2st pass
+            for (int jIndex = iIndex + 1; jIndex < basis.size(); ++jIndex) {
+                Poly fj = basis.get(jIndex);
+                if (fj == null)
+                    continue;
+                if (dividesQ(lcm[jIndex], lcm[iIndex]))
+                    continue filter;
+            }
+
+            // no any redundant Buchberger triplets found -> add new critical pair
+            pairsToAdd.add(iIndex);
+        }
+
+        // now rule out disjoint elements
+        for (int i = pairsToAdd.size() - 1; i >= 0; --i)
+            if (!shareVariablesQ(basis.get(pairsToAdd.get(i)).lt(), newLeadTerm))
+                pairsToAdd.removeAt(i);
+
+        // ruling out redundant Buchberger triplets from the old set of critical pairs
+        for (TreeSet<SyzygyPair<Term, Poly>> c : sPairs.allSets())
+            // remove redundant critical pairs
+            c.removeIf(sPair -> dividesQ(newLeadTerm, sPair.syzygyGamma)
+                    && !Arrays.equals(lcm[sPair.i] != null ? lcm[sPair.i] : lcm(sPair.fi.lt().exponents, newLeadTerm.exponents), sPair.syzygyGamma.exponents)
+                    && !Arrays.equals(lcm[sPair.j] != null ? lcm[sPair.j] : lcm(sPair.fj.lt().exponents, newLeadTerm.exponents), sPair.syzygyGamma.exponents));
+
+        // now add new element to the basis
+        basis.add(newElement);
+
+        // update set of critical pairs with pairsToAdd
+        int oldSize = basis.size() - 1;
+        for (int i = 0; i < pairsToAdd.size(); i++) {
+            int iIndex = pairsToAdd.get(i);
+            assert basis.get(iIndex) != null;
+            sPairs.add(new SyzygyPair<>(iIndex, oldSize, basis));
+        }
+
+        // remove old basis elements that are now redundant
+        // note: do that only after update of critical pair set
+        for (int iIndex = 0; iIndex < oldSize; ++iIndex) {
+            Poly fi = basis.get(iIndex);
+            if (fi == null)
+                continue;
+            if (dividesQ(newLeadTerm, fi.lt()))
+                basis.set(iIndex, null);
+        }
+    }
+
+    /**
+     * Normal selection strategy: chose syzygy with the less lcm(fi.lt(), fj.lt()) with respect to monomialOrder
+     */
+    public static Comparator<SyzygyPair> normalSelectionStrategy(Comparator<DegreeVector> monomialOrder) {
+        return (a, b) -> {
+            int c = monomialOrder.compare(a.syzygyGamma, b.syzygyGamma);
+            if (c != 0)
+                return c;
+            c = Integer.compare(a.j, b.j);
+            if (c != 0)
+                return c;
+            return Integer.compare(a.i, b.i);
+        };
+    }
+
+    /**
+     * Add sugar to selection strategy: pick syzygy with less sugar first, break tie with the initial strategy
+     */
+    public static Comparator<SyzygyPair> withSugar(Comparator<SyzygyPair> initial) {
+        return (sa, sb) -> {
+            int c = Integer.compare(sa.sugar, sb.sugar);
+            if (c != 0)
+                return c;
+            return initial.compare(sa, sb);
+        };
+    }
+
+    /** Ecart comparator */
+    private static final class EcartComparator<Poly extends AMultivariatePolynomial<?, Poly>>
+            implements Comparator<Poly> {
+        @Override
+        public int compare(Poly a, Poly b) {
+            int c = Integer.compare(a.ecart(), b.ecart());
+            if (c != 0)
+                return c;
+            return a.ordering.compare(a.lt(), b.lt());
+        }
+    }
+
     /** whether monomial order is graded */
     static boolean isGradedOrder(Comparator<DegreeVector> monomialOrder) {
         return monomialOrder == MonomialOrder.GREVLEX || monomialOrder == MonomialOrder.GRLEX;
     }
 
-    /**
-     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
-     *
-     * @param generators    generators of the ideal
-     * @param monomialOrder monomial order
-     * @return Groebner basis
-     */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> GroebnerBasis(List<Poly> generators,
-                             Comparator<DegreeVector> monomialOrder) {
-        return BuchbergerGB(generators, monomialOrder);
+    /** l.c.m. of degree vectors */
+    static DegreeVector lcm(DegreeVector a, DegreeVector b) {
+        return new DegreeVector(lcm(a.exponents, b.exponents));
     }
 
-    private static <Poly extends AMultivariatePolynomial<?, Poly>>
-    boolean containsNonZeroConstant(List<Poly> generators) {
-        return generators.stream().anyMatch(p -> p.isConstant() && !p.isZero());
+    /** l.c.m. of degree vectors */
+    static int[] lcm(int[] a, int[] b) {
+        return ArraysUtil.max(a, b);
     }
 
-    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> prepareGenerators(List<Poly> generators, Comparator<DegreeVector> monomialOrder) {
-        generators = new ArrayList<>(generators);
-        setMonomialOrder(generators, monomialOrder);
-        // remove redundant elements from the basis
-        removeRedundant(generators);
-        generators = generators.stream().filter(p -> !p.isZero()).collect(Collectors.toList());
-        if (containsNonZeroConstant(generators))
-            return Collections.singletonList(generators.get(0).createOne());
-        if (generators.get(0).nVariables == 1)
-            // univariate case
-            return canonicalize(Collections.singletonList(MultivariateGCD.PolynomialGCD(generators)));
-        return generators;
+    /** whether dividend degree vector can be divided by divider degree vector */
+    private static boolean dividesQ(int[] divider, int[] dividend) {
+        for (int i = 0; i < dividend.length; i++)
+            if (dividend[i] < divider[i])
+                return false;
+        return true;
+    }
+
+    /** whether dividend monomial can be divided by divider monomial */
+    private static boolean dividesQ(DegreeVector divider, DegreeVector dividend) {
+        return dividend.dvDivisibleBy(divider);
+    }
+
+    /** have variables in common */
+    static boolean shareVariablesQ(DegreeVector a, DegreeVector b) {
+        for (int i = 0; i < a.exponents.length; i++)
+            if (a.exponents[i] != 0 && b.exponents[i] != 0)
+                return true;
+        return false;
     }
 
     /* ************************************** Buchberger algorithm ********************************************** */
@@ -114,7 +482,7 @@ public final class GroebnerBasis {
     }
 
     /**
-     * Computes minimized and reduced Groebner basis of a given homogenious ideal via Buchberger algorithm.
+     * Computes minimized and reduced Groebner basis of a given homogeneous ideal via Buchberger algorithm.
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
@@ -128,7 +496,7 @@ public final class GroebnerBasis {
     }
 
     /**
-     * Computes minimized and reduced Groebner basis of a given ideal via Buchberger algorithm.
+     * Computes minimized and reduced Groebner basis of a given homogeneous ideal via Buchberger algorithm.
      *
      * @param generators        generators of the ideal
      * @param monomialOrder     monomial order to use
@@ -144,11 +512,12 @@ public final class GroebnerBasis {
     }
 
     /**
-     * Computes minimized and reduced Groebner basis of a given ideal via Buchberger algorithm.
+     * Generic implementation of Buchberger algorithm.
      *
-     * @param generators        generators of the ideal
-     * @param monomialOrder     monomial order to use
-     * @param syzygySetSupplier supplies data structure for managing syzygies
+     * @param generators           generators of the ideal
+     * @param monomialOrder        monomial order to use
+     * @param minimizationStrategy minimization strategy
+     * @param syzygySetSupplier    supplies data structure for managing syzygies
      */
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerGB(List<Poly> generators,
@@ -156,12 +525,12 @@ public final class GroebnerBasis {
                             MinimizationStrategy minimizationStrategy,
                             Supplier<SyzygySet<Term, Poly>> syzygySetSupplier) {
         Poly factory = generators.get(0);
-        // stack of GB candidates
+        // simplify generators as much as possible
         generators = prepareGenerators(generators, monomialOrder);
         if (generators.size() == 1)
-            return generators;
+            return canonicalize(generators);
 
-        // sort polynomials in basis to achieve faster divisions
+        // sort polynomials in the basis to achieve faster divisions
         Comparator<Poly> polyOrder = isGradedOrder(monomialOrder)
                 ? (a, b) -> monomialOrder.compare(a.lt(), b.lt())
                 : new EcartComparator<>();
@@ -170,7 +539,9 @@ public final class GroebnerBasis {
         // set of syzygies
         SyzygySet<Term, Poly> sPairs = syzygySetSupplier.get();
 
+        // Groebner basis that will be computed
         List<Poly> groebner = new ArrayList<>();
+        // update Groebner basis with initial generators
         generators.forEach(g -> updateBasis(groebner, sPairs, g));
 
         // cache array used in divisions (little performance improvement actually)
@@ -179,11 +550,10 @@ public final class GroebnerBasis {
         // cache size of basis after each minimization
         int sizeAfterMinimization = groebner.size();
         while (!sPairs.isEmpty())
-            // pick up (and remove) all pairs with the smallest degree
-            for (SyzygyPair<Term, Poly> pair : sPairs.pollFirst()) {
-                Poly syzygy = MultivariateDivision.remainder(pair.computeSyzygy(), groebnerArray);
-                // don't tail reduce
-                // syzygy = syzygy.ltAsPoly().add(MultivariateDivision.remainder(syzygy.subtractLt(), groebnerArray));
+            // pick up (and remove) a bunch of critical pairs
+            for (SyzygyPair<Term, Poly> pair : sPairs.getAndRemoveNextBunch()) {
+                // compute actual syzygy
+                Poly syzygy = MultivariateDivision.remainder(syzygy(pair), groebnerArray);
                 if (syzygy.isZero())
                     continue;
 
@@ -191,6 +561,7 @@ public final class GroebnerBasis {
                     // ideal = ring
                     return Collections.singletonList(factory.createOne());
 
+                // add syzygy to basis
                 updateBasis(groebner, sPairs, syzygy);
                 // recompute array
                 groebnerArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
@@ -215,166 +586,6 @@ public final class GroebnerBasis {
         canonicalize(groebner);
 
         return groebner;
-    }
-
-    /**
-     * A wrapper to have general abstraction for TreeSet<SyzygyPair<Term, Poly>> and for TreeMap<Integer,
-     * TreeSet<SyzygyPair<Term, Poly>>> sPairs
-     */
-    private interface SyzygySet<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
-        /** add new syzygy */
-        void add(SyzygyPair<Term, Poly> sPair);
-
-        /** remove syzygy */
-        void remove(SyzygyPair<Term, Poly> sPair);
-
-        /** has more syzygies */
-        boolean isEmpty();
-
-        /** remove a bunch of syzygies to process */
-        Collection<SyzygyPair<Term, Poly>> pollFirst();
-
-        /** all syzygies */
-        Iterator<TreeSet<SyzygyPair<Term, Poly>>> allSets();
-    }
-
-    /**
-     * UPDATE algorithm from page 230 of Becker & Weispfenning, 1993
-     */
-    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void updateBasis(List<Poly> basis,
-                     SyzygySet<Term, Poly> sPairs,
-                     Poly newElement) {
-        // array of lcm( lt(fi), lt(newElement) ) <- cache once for performance
-        int[][] lcm = new int[basis.size()][];
-
-        Term newLt = newElement.lt();
-        for (int i = 0; i < basis.size(); i++) {
-            Poly fi = basis.get(i);
-            if (fi == null)
-                continue;
-            lcm[i] = lcm(newLt, fi.lt());
-        }
-
-        // first indices of new critical pairs to add
-        TIntArrayList iIndices = new TIntArrayList();
-        // find new critical pairs that should be definitely added
-        filter:
-        for (int i = 0; i < basis.size(); i++) {
-            Poly fi = basis.get(i);
-            if (fi == null)
-                continue;
-            Term fiLt = fi.lt();
-            if (!shareVariablesQ(fiLt, newLt)) {
-                iIndices.add(i);
-                continue;
-            }
-
-            for (int j = 0; j < iIndices.size(); j++) {
-                Poly fj = basis.get(iIndices.get(j));
-                assert fj != null;
-                if (dividesQ(lcm[iIndices.get(j)], lcm[i]))
-                    continue filter;
-            }
-
-            for (int j = i + 1; j < basis.size(); j++) {
-                Poly fj = basis.get(j);
-                if (fj == null)
-                    continue;
-                if (dividesQ(lcm[j], lcm[i]))
-                    continue filter;
-            }
-
-            iIndices.add(i);
-        }
-
-        // remove disjoint elements
-        for (int i = iIndices.size() - 1; i >= 0; --i)
-            if (!shareVariablesQ(basis.get(iIndices.get(i)).lt(), newLt))
-                iIndices.removeAt(i);
-
-        Iterator<TreeSet<SyzygyPair<Term, Poly>>> it = sPairs.allSets();
-        while (it.hasNext())
-            // remove redundant critical pairs
-            it.next().removeIf(sPair -> dividesQ(newLt, sPair.syzygyGamma)
-                    && !Arrays.equals(lcm[sPair.i], sPair.syzygyGamma.exponents)
-                    && !Arrays.equals(lcm[sPair.j], sPair.syzygyGamma.exponents));
-
-        // update basis
-        for (int i = 0; i < basis.size(); i++) {
-            Poly fi = basis.get(i);
-            if (fi == null)
-                continue;
-            if (dividesQ(newLt, fi.lt()))
-                basis.set(i, null);
-        }
-        basis.add(newElement);
-
-        // update critical pairs
-        int gSize = basis.size() - 1;
-        for (int l = 0; l < iIndices.size(); l++) {
-            int i = iIndices.get(l);
-            if (basis.get(i) == null)
-                continue;
-            sPairs.add(new SyzygyPair<>(i, gSize, basis));
-        }
-    }
-
-    /** Wrapper around TreeSet<SyzygyPair<Term, Poly>> */
-    private static final class SyzygyTreeSet<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-            implements SyzygySet<Term, Poly> {
-        final TreeSet<SyzygyPair<Term, Poly>> sPairs;
-
-        SyzygyTreeSet(TreeSet<SyzygyPair<Term, Poly>> sPairs) { this.sPairs = sPairs; }
-
-        @Override
-        public void add(SyzygyPair<Term, Poly> sPair) { sPairs.add(sPair); }
-
-        @Override
-        public void remove(SyzygyPair<Term, Poly> sPair) { sPairs.remove(sPair); }
-
-        @Override
-        public boolean isEmpty() { return sPairs.isEmpty(); }
-
-        @Override
-        public Collection<SyzygyPair<Term, Poly>> pollFirst() {return Collections.singleton(sPairs.pollFirst());}
-
-        @Override
-        public Iterator<TreeSet<SyzygyPair<Term, Poly>>> allSets() { return Collections.singletonList(sPairs).iterator();}
-    }
-
-    /** Wrapper around TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> */
-    private static final class GradedSyzygyTreeSet<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-            implements SyzygySet<Term, Poly> {
-        final TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs;
-        final Comparator<SyzygyPair> selectionStrategy;
-
-        GradedSyzygyTreeSet(TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs,
-                            Comparator<SyzygyPair> selectionStrategy) {
-            this.sPairs = sPairs;
-            this.selectionStrategy = selectionStrategy;
-        }
-
-        @Override
-        public void add(SyzygyPair<Term, Poly> sPair) {
-            sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
-        }
-
-        @Override
-        public void remove(SyzygyPair<Term, Poly> sPair) {
-            TreeSet<SyzygyPair<Term, Poly>> set = sPairs.get(sPair.degree());
-            if (set != null)
-                set.remove(sPair);
-        }
-
-        @Override
-        public boolean isEmpty() { return sPairs.isEmpty(); }
-
-        @Override
-        public Collection<SyzygyPair<Term, Poly>> pollFirst() {return sPairs.pollFirstEntry().getValue();}
-
-        @Override
-        public Iterator<TreeSet<SyzygyPair<Term, Poly>>> allSets() { return sPairs.values().iterator();}
     }
 
     /** Strategy used to reduce and minimize basis in the intermediate steps of Buchberger algorithm */
@@ -444,173 +655,6 @@ public final class GroebnerBasis {
         return MultivariateDivision.remainder(dividend, dividersArr);
     }
 
-    /**
-     * Normal selection strategy: chose syzygy with the less lcm(fi.lt(), fj.lt()) with respect to monomialOrder
-     */
-    public static Comparator<SyzygyPair> normalSelectionStrategy(Comparator<DegreeVector> monomialOrder) {
-        return (a, b) -> {
-            int c = monomialOrder.compare(a.syzygyGamma, b.syzygyGamma);
-            if (c != 0)
-                return c;
-            c = Integer.compare(a.j, b.j);
-            if (c != 0)
-                return c;
-            return Integer.compare(a.i, b.i);
-        };
-    }
-
-    /**
-     * Add sugar to selection strategy: pick syzygy with less sugar first, break tie with initial strategy
-     */
-    public static Comparator<SyzygyPair> withSugar(Comparator<SyzygyPair> initial) {
-        return (sa, sb) -> {
-            int c = Integer.compare(sa.sugar, sb.sugar);
-            if (c != 0)
-                return c;
-            return initial.compare(sa, sb);
-        };
-    }
-
-    private static final class EcartComparator<Poly extends AMultivariatePolynomial<?, Poly>>
-            implements Comparator<Poly> {
-        @Override
-        public int compare(Poly a, Poly b) {
-            int c = Integer.compare(a.ecart(), b.ecart());
-            if (c != 0)
-                return c;
-            return a.ordering.compare(a.lt(), b.lt());
-        }
-    }
-
-    /** Syzygy pair */
-    public static final class SyzygyPair<
-            Term extends AMonomial<Term>,
-            Poly extends AMultivariatePolynomial<Term, Poly>> {
-        /** Positions of polynomials {@code fi} and {@code fj} in the list of generators */
-        final int i, j;
-        /** Polynomials to form a syzygy */
-        final Poly fi, fj;
-        /** {@code lcm(fi.lt(), fj.lt())} */
-        final Term syzygyGamma;
-        /** The sugar */
-        final int sugar;
-
-        public SyzygyPair(int i, int j, List<Poly> generators) {
-            this(i, j, generators.get(i), generators.get(j));
-        }
-
-        public SyzygyPair(int i, int j, Poly fi, Poly fj) {
-            if (i > j) {
-                int s = i; i = j; j = s;
-                Poly fs = fi; fi = fj; fj = fs;
-            }
-            assert i != j;
-            assert fi != fj;
-            this.i = i; this.fi = fi;
-            this.j = j; this.fj = fj;
-            this.syzygyGamma = fi.monomialAlgebra.createTermWithUnitCoefficient(lcm(fi.multidegree(), fj.multidegree()));
-            this.sugar = Math.max(
-                    fi.degreeSum() - fi.lt().totalDegree,
-                    fj.degreeSum() - fj.lt().totalDegree) + syzygyGamma.totalDegree;
-        }
-
-        int degree() { return syzygyGamma.totalDegree;}
-
-        long hash() { return pack(i, j);}
-
-        Poly computeSyzygy() {
-            return syzygy(syzygyGamma, fi, fj);
-        }
-    }
-
-    private static boolean dividesQ(int[] divider, int[] dividend) {
-        for (int i = 0; i < dividend.length; i++)
-            if (dividend[i] < divider[i])
-                return false;
-        return true;
-    }
-
-    private static boolean dividesQ(DegreeVector divider, DegreeVector dividend) {
-        return dividend.dvDivisibleBy(divider);
-    }
-
-    private static long pack(int i, int j) {
-        if (i > j)
-            return pack(j, i);
-        return ((long) j) << 32 | (long) i;
-    }
-
-    static boolean shareVariablesQ(DegreeVector a, DegreeVector b) {
-        for (int i = 0; i < a.exponents.length; i++)
-            if (a.exponents[i] != 0 && b.exponents[i] != 0)
-                return true;
-        return false;
-    }
-
-    static int[] lcm(DegreeVector a, DegreeVector b) {
-        return lcm(a.exponents, b.exponents);
-    }
-
-    static int[] lcm(int[] a, int[] b) {
-        return ArraysUtil.max(a, b);
-    }
-
-    /**
-     * Minimizes Groebner basis
-     */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void minimizeGroebnerBases(List<Poly> basis) {
-        outer:
-        for (int i = basis.size() - 1; i >= 1; --i) {
-            for (int j = i - 1; j >= 0; --j) {
-                Poly pi = basis.get(i), pj = basis.get(j);
-                if (pi.lt().dvDivisibleBy(pj.lt())) {
-                    basis.remove(i);
-                    continue outer;
-                }
-                if (pj.lt().dvDivisibleBy(pi.lt())) {
-                    basis.remove(j);
-                    --i;
-                    continue;
-                }
-            }
-        }
-        for (Poly el : basis)
-            el.monic();
-    }
-
-    /**
-     * Computes reduced Groebner basis
-     */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    void removeRedundant(List<Poly> basis) {
-        for (int i = 0, size = basis.size(); i < size; ++i) {
-            Poly el = basis.remove(i);
-            Poly r = MultivariateDivision.remainder(el, basis);
-            if (r.isZero()) {
-                --i;
-                --size;
-            } else
-                basis.add(i, r);
-        }
-    }
-
-    /** Computes syzygy of given polynomials */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly syzygy(Poly a, Poly b) {
-        return syzygy(a.monomialAlgebra.createTermWithUnitCoefficient(lcm(a.multidegree(), b.multidegree())), a, b);
-    }
-
-    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly syzygy(Term xGamma, Poly a, Poly b) {
-        IMonomialAlgebra<Term> mAlgebra = a.monomialAlgebra;
-        Poly
-                aReduced = a.clone().multiply(mAlgebra.divideExact(xGamma, a.lt())),
-                bReduced = b.clone().multiply(mAlgebra.divideExact(xGamma, b.lt())),
-                syzygy = aReduced.subtract(bReduced);
-        return syzygy;
-    }
-
     /* ************************************************** F4 ******************************************************* */
 
     /**
@@ -622,290 +666,426 @@ public final class GroebnerBasis {
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> F4GB(List<Poly> generators,
                     Comparator<DegreeVector> monomialOrder) {
-        return F4GB(generators, monomialOrder, normalSelectionStrategy(monomialOrder));
+        return F4GB(generators, monomialOrder, () -> new GradedSyzygyTreeSet<>(new TreeMap<>(), normalSelectionStrategy(monomialOrder)));
     }
 
+    /*
+     * In F4 algorithm we don't need tree-based structure for multivariate polynomials, since no any additions/divisions
+     * performed (all operations are reduced to matrix operations). The only arithmetic operation used under the hood
+     * of F4 is multiplication by monomial, which still preserves the order of terms. So, we switch here to array-based
+     * (with sorted array) representation of polynomials which is much faster than tree-based.
+     */
+
+    /**
+     * Array-based polynomial representation. The data array is sorted in descending order, so the first element is the
+     * leading term.
+     */
+    private static final class ArrayBasedPoly<Term extends AMonomial<Term>> implements MonomialSetView<Term> {
+        /** sorted (in reverse order, so lt is the first) array of terms */
+        final Term[] data;
+        final int[] degrees;
+
+        ArrayBasedPoly(AMultivariatePolynomial<Term, ?> poly) {
+            // retrieve data array from poly in descending order
+            this.data = poly.terms.descendingMap().values().toArray(poly.monomialAlgebra.createArray(poly.size()));
+            this.degrees = poly.degrees();
+        }
+
+        ArrayBasedPoly(Term[] data, int[] degrees) {
+            this.data = data;
+            this.degrees = degrees;
+        }
+
+        ArrayBasedPoly(Term[] data, int nVariables) {
+            this.data = data;
+            this.degrees = new int[nVariables];
+            for (Term db : data)
+                for (int i = 0; i < nVariables; i++)
+                    if (db.exponents[i] > degrees[i])
+                        degrees[i] = db.exponents[i];
+        }
+
+        @Override
+        public Iterator<Term> ascendingIterator() { throw new UnsupportedOperationException(); }
+
+        @Override
+        public Iterator<Term> descendingIterator() { return Arrays.asList(data).iterator(); }
+
+        @Override
+        public Iterator<Term> iterator() { return descendingIterator(); }
+
+        @Override
+        public int[] degrees() { return degrees; }
+
+        @Override
+        public Term first() { return data[data.length - 1]; }
+
+        @Override
+        public Term last() { return data[0]; }
+
+        int size() { return data.length; }
+
+        Term get(int i) { return data[i]; }
+
+        Term find(Term dv, Comparator<DegreeVector> ordering) {
+            int i = Arrays.binarySearch(data, dv, (a, b) -> ordering.compare(b, a));
+            if (i < 0)
+                return null;
+            return data[i];
+        }
+
+        @Override
+        public Collection<Term> collection() { return Arrays.asList(data); }
+
+        @Override
+        public ArrayBasedPoly<Term> clone() { return new ArrayBasedPoly<>(data.clone(), degrees.clone()); }
+    }
+
+    /** Multiply array-based poly by a monomial */
+    static <Term extends AMonomial<Term>>
+    void multiply(ArrayBasedPoly<Term> poly, Term term, IMonomialAlgebra<Term> mAlgebra) {
+        Term[] data = poly.data;
+        for (int i = data.length - 1; i >= 0; --i)
+            data[i] = mAlgebra.multiply(data[i], term);
+        int[] degrees = poly.degrees;
+        for (int i = 0; i < degrees.length; ++i)
+            degrees[i] += term.exponents[i];
+    }
+
+    /** Minimal size of selected set of critical pairs */
     private static final int F4_MIN_SELECTION_SIZE = 16;
 
     /**
-     * Computes minimized and reduced Groebner basis of a given ideal via F4 algorithm.
+     * Computes minimized and reduced Groebner basis of a given ideal via Faugère's F4 algorithm.
      *
-     * @param generators        generators of the ideal
-     * @param monomialOrder     monomial order to use
-     * @param selectionStrategy critical pair selection strategy
+     * Simplification routine used is due to Joux & Vitse, "A variant of F4 algorithm",
+     * https://eprint.iacr.org/2010/158.pdf, 2011
+     *
+     * @param generators    generators of the ideal
+     * @param monomialOrder monomial order to use
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> F4GB(List<Poly> generators,
                     Comparator<DegreeVector> monomialOrder,
-                    Comparator<SyzygyPair> selectionStrategy) {
+                    Supplier<SyzygySet<Term, ArrayBasedPoly<Term>>> syzygySetSupplier) {
         Poly factory = generators.get(0);
         IMonomialAlgebra<Term> mAlgebra = factory.monomialAlgebra;
 
-        // stack of GB candidates
-        List<Poly> groebner = prepareGenerators(generators, monomialOrder);
-        if (groebner.size() == 1)
-            return groebner;
+        // simplify generators as much as possible
+        generators = prepareGenerators(generators, monomialOrder);
+        if (generators.size() == 1)
+            return generators;
 
-        // sort polynomials in basis to achieve faster divisions
+        // sort polynomials in the basis to achieve in general faster inital reductions
         Comparator<Poly> polyOrder = isGradedOrder(monomialOrder)
                 ? (a, b) -> monomialOrder.compare(a.lt(), b.lt())
                 : new EcartComparator<>();
-        groebner.sort(polyOrder);
+        generators.sort(polyOrder);
 
-        // degree -> pairs (not actually computed)
-        TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs = new TreeMap<>();
-        TLongObjectHashMap<SyzygyPair<Term, Poly>> ijPairs = new TLongObjectHashMap<>();
+        // set of all syzygies
+        SyzygySet<Term, ArrayBasedPoly<Term>> sPairs = syzygySetSupplier.get();
+        // Groebner basis that will be computed
+        List<ArrayBasedPoly<Term>> groebner = new ArrayList<>();
 
-        for (int i = 0; i < groebner.size() - 1; i++)
-            for (int j = i + 1; j < groebner.size(); ++j) {
-                if (!shareVariablesQ(groebner.get(i).lt(), groebner.get(j).lt()))
-                    continue;
-                SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(i, j, groebner);
-                sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
-                ijPairs.put(pack(i, j), sPair);
-            }
+        // a history of performed reductions: index of generator -> list of available reductions
+        // this is extensively used in simplify routine; the data is updated each time when a new row-echelon
+        // form is calculated; for details see Joux & Vitse, "A variant of F4 algorithm" (TabSimplify structure)
+        List<List<ArrayBasedPoly<Term>>> f4reductions = new ArrayList<>();
+
+        // update Groebner basis with initial generators
+        for (Poly generator : generators) {
+            ArrayBasedPoly<Term> g = new ArrayBasedPoly<>(generator);
+            updateBasis(groebner, sPairs, g);
+            f4reductions.add(new ArrayList<>(Collections.singletonList(g)));
+        }
 
         while (!sPairs.isEmpty()) {
-            // pick up (and remove) all pairs with the smallest degree (normal selection strategy)
-            TreeSet<SyzygyPair<Term, Poly>> subset = sPairs.pollFirstEntry().getValue();
-
-            // ! todo if subset.size == 1 ! ? mb just Buchberger ?
-
+            // pick up and remove a bunch of pairs (select at least F4_MIN_SELECTION_SIZE pairs)
+            Collection<SyzygyPair<Term, ArrayBasedPoly<Term>>> subset = sPairs.getAndRemoveNextBunch();
             while (!sPairs.isEmpty() && subset.size() < F4_MIN_SELECTION_SIZE)
-                subset.addAll(sPairs.pollFirstEntry().getValue());
+                subset.addAll(sPairs.getAndRemoveNextBunch());
 
 
-            subset.forEach(s -> ijPairs.remove(s.hash()));
-
-            System.out.println(subset.size());
-
-
-            // H: the list of polynomials to reduce
-            List<Poly> hPolynomials = new ArrayList<>();
-            // all possible monomials in H
+            // the list of polynomials to reduce (H-polynomials)
+            List<HPolynomial<Term>> hPolynomials = new ArrayList<>();
+            // all monomials that occur in H-polynomials
             TreeSet<DegreeVector> hMonomials = new TreeSet<>(monomialOrder);
             // monomials that were annihilated
             TreeSet<DegreeVector> hAnnihilated = new TreeSet<>(monomialOrder);
 
-            // populate L with initial values
-            for (SyzygyPair<Term, Poly> syzygy : subset) {
-                Poly
-                        fij = syzygy.fi.clone().multiply(mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fi.lt())),
-                        fji = syzygy.fj.clone().multiply(mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fj.lt()));
+            // form initial set of H-polynomials from the current set of critical pairs
+            for (SyzygyPair<Term, ArrayBasedPoly<Term>> syzygy : subset) {
+                // correction factors
+                Term
+                        fiQuot = mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fi.lt()),
+                        fjQuot = mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fj.lt());
 
-                assert fij.lt().equals(fji.lt());
+                // a pair of H-polynomials
+                ArrayBasedPoly<Term>
+                        fiHPoly = simplify(syzygy.fi, fiQuot, f4reductions.get(syzygy.i), mAlgebra),
+                        fjHPoly = simplify(syzygy.fj, fjQuot, f4reductions.get(syzygy.j), mAlgebra);
 
-                // add to set H
-                hPolynomials.add(fij);
-                hPolynomials.add(fji);
+                assert fiHPoly.lt().equals(fjHPoly.lt()) : fiHPoly.lt() + " " + fjHPoly.lt();
+
+                // add to set of H-polynomials
+                hPolynomials.add(new HPolynomial<>(fiHPoly, syzygy.i));
+                hPolynomials.add(new HPolynomial<>(fjHPoly, syzygy.j));
 
                 // store all monomials that we have in H
-                hMonomials.addAll(fij.terms.keySet());
-                hMonomials.addAll(fji.terms.keySet());
+                hMonomials.addAll(fiHPoly.collection());
+                hMonomials.addAll(fjHPoly.collection());
 
                 // lts will be annihilated
-                hAnnihilated.add(fij.lt());
+                hAnnihilated.add(fiHPoly.lt());
             }
 
-            // the diff = Mon(H) / annihilated
+            // the diff = Mon(H-polynomials) / annihilated
             TreeSet<DegreeVector> diff = new TreeSet<>(monomialOrder);
             diff.addAll(hMonomials);
             diff.removeAll(hAnnihilated);
 
+            // compute a whole set of required H-polynomials for reductions
+            // ("Symbolic Preprocessing" routine from Faugère's original paper)
             while (!diff.isEmpty()) {
                 // pick the "highest" term from diff
                 DegreeVector dv = diff.pollLast();
                 hAnnihilated.add(dv);
 
-                // todo <- selection possible
-                Optional<Poly> divisorOpt = groebner.stream().filter(g -> dv.dvDivisibleBy(g.lt())).findAny();
+                // select some polynomial from basis which can reduce the "highest" term (lt-divisor)
+                // todo selection possible
+                OptionalInt divisorOpt = IntStream.range(0, groebner.size())
+                        .filter(i -> groebner.get(i) != null)
+                        .filter(i -> dv.dvDivisibleBy(groebner.get(i).lt()))
+                        .findAny();
                 if (divisorOpt.isPresent()) {
-                    Poly divisor = divisorOpt.get();
-                    Poly newH = divisor.clone().multiplyByDegreeVector(dv.dvDivideExact(divisor.lt()));
+                    // index in the basis
+                    int iIndex = divisorOpt.getAsInt();
+                    // correction factor
+                    DegreeVector quot = dv.dvDivideExact(groebner.get(iIndex).lt());
+                    // new H-polynomial to add
+                    ArrayBasedPoly<Term> newH = simplify(groebner.get(iIndex), mAlgebra.create(quot), f4reductions.get(iIndex), mAlgebra);
 
                     // append newH to H-polynomials
-                    hPolynomials.add(newH);
-
+                    hPolynomials.add(new HPolynomial<>(newH, iIndex));
                     // update monomials set
                     TreeSet<DegreeVector> newMonomials = new TreeSet<>(monomialOrder);
-                    newMonomials.addAll(newH.terms.keySet());
+                    newMonomials.addAll(newH.collection());
                     hMonomials.addAll(newMonomials);
 
-                    // update diff
+                    // update the diff
                     newMonomials.removeAll(hAnnihilated);
                     diff.addAll(newMonomials);
                 }
             }
 
-            // all monomials occurring in H
-            // columns in decreasing order
+            // all monomials occurring in H sorted in descending order, i.e. lead term first
             DegreeVector[] hMonomialsArray = hMonomials.descendingSet().toArray(new DegreeVector[hMonomials.size()]);
+            // sort rows to make the initial matrix upper-right-triangular as max as possible
+            hPolynomials.sort((a, b) -> monomialOrder.compare(b.hPoly.lt(), a.hPoly.lt()));
+            // reduce all H-polynomials with linear algebra and compute new basis elements (N+)
+            List<ArrayBasedPoly<Term>> nPlus = nPlus(factory, groebner, hPolynomials, hMonomialsArray, f4reductions);
+            // enlarge the basis
+            nPlus.forEach(g -> updateBasis(groebner, sPairs, g));
+        }
+        // batch remove all nulls
+        groebner.removeAll(Collections.<ArrayBasedPoly<Term>>singleton(null));
 
-            // reduce all polys with linear algebra
-            List<Poly> nPlus = nPlus(hPolynomials, hMonomialsArray);
-            for (Poly g : nPlus) {
-                int gSize = groebner.size();
-                groebner.add(g);
-                for (int i = 0; i < gSize; i++) {
-                    if (!shareVariablesQ(groebner.get(i).lt(), groebner.get(gSize).lt()))
-                        continue;
-                    SyzygyPair<Term, Poly> sPair = new SyzygyPair<>(i, gSize, groebner);
-                    sPairs.computeIfAbsent(sPair.degree(), __ -> new TreeSet<>(selectionStrategy)).add(sPair);
-                    ijPairs.put(pack(i, gSize), sPair);
-                }
+        // convert from array-based polynomials to normal
+        List<Poly> result = groebner.stream().map(factory::create).collect(Collectors.toList());
+        // minimize Groebner basis
+        minimizeGroebnerBases(result);
+        // speed up final reduction
+        result.sort(polyOrder);
+        // reduce Groebner basis
+        removeRedundant(result);
+        // canonicalize Groebner basis
+        canonicalize(result);
+
+        return result;
+    }
+
+    /**
+     * A simple container for polynomial and the index of this polynomial (or initial basis polynomial which was reduced
+     * in F4 to this polynomial) in the list of generators
+     */
+    static final class HPolynomial<Term extends AMonomial<Term>> {
+        /** polynomial */
+        final ArrayBasedPoly<Term> hPoly;
+        /** index in generators list of the original polynomial */
+        final int indexOfOrigin;
+
+        HPolynomial(ArrayBasedPoly<Term> hPoly, int indexOfOrigin) {
+            this.hPoly = hPoly;
+            this.indexOfOrigin = indexOfOrigin;
+        }
+    }
+
+    /**
+     * Simplifies h-polynomial by replacing it with its previously computed reduction. For details see Joux & Vitse, "A
+     * variant of F4 algorithm", https://eprint.iacr.org/2010/158.pdf, 2011
+     *
+     * @param generator  the generator (H-polynomial to add is a product of factor * generator)
+     * @param factor     correction factor for generator (H-polynomial to add is a product of factor * generator)
+     * @param reductions a list of previously obtained reductions of the generator
+     * @param mAlgebra   monomial algebra
+     */
+    static <Term extends AMonomial<Term>>
+    ArrayBasedPoly<Term> simplify(ArrayBasedPoly<Term> generator,
+                                  Term factor,
+                                  List<ArrayBasedPoly<Term>> reductions,
+                                  IMonomialAlgebra<Term> mAlgebra) {
+        // the desired leading term of H-polynomial
+        Term desiredLeadTerm = mAlgebra.multiply(generator.lt(), factor);
+
+        // iterate from the last (most recently added, thus most simplified) to the first (the initial generator) reductions
+        for (int i = reductions.size() - 1; i >= 0; --i) {
+            ArrayBasedPoly<Term> reduction = reductions.get(i);
+            // leading term of previously computed reduction
+            Term rLeadTerm = reduction.lt();
+
+            if (rLeadTerm.dvEquals(desiredLeadTerm))
+                // we just have the same calculation in the map (no any appropriate reductions were calculated)
+                return setLeadCoeffFrom(reduction, desiredLeadTerm, mAlgebra);
+
+            if (desiredLeadTerm.dvDivisibleBy(rLeadTerm)) {
+                // <- nontrivial appropriate reduction
+
+                DegreeVector quot = desiredLeadTerm.dvDivideExact(rLeadTerm);
+                ArrayBasedPoly<Term> g = reduction.clone();
+                multiply(g, mAlgebra.create(quot), mAlgebra);
+                g = setLeadCoeffFrom(g, desiredLeadTerm, mAlgebra);
+
+                // cache this reduction too
+                reductions.add(g);
+                return g;
             }
         }
 
-        // batch remove all nulls
-        groebner.removeAll(Collections.<Poly>singleton(null));
-        // minimize Groebner basis
-        minimizeGroebnerBases(groebner);
-        // speed up final reduction
-        groebner.sort(polyOrder);
-        // reduce Groebner basis
-        removeRedundant(groebner);
-        // canonicalize Groebner basis
-        canonicalize(groebner);
-
-        return groebner;
+        // <- this point is unreachable since the initial generator is already added to the list (in the begining)
+        throw new RuntimeException();
     }
 
+    /** Sets the leading coefficient of poly from the coefficient of term (poly is copied only if necessary) */
+    static <Term extends AMonomial<Term>>
+    ArrayBasedPoly<Term> setLeadCoeffFrom(ArrayBasedPoly<Term> poly, Term term, IMonomialAlgebra<Term> mAlgebra) {
+        if (mAlgebra.haveSameCoefficients(poly.lt(), term))
+            return poly;
+        poly = poly.clone();
+        multiply(poly, mAlgebra.divideExact(term.toZero(), poly.lt().toZero()), mAlgebra);
+        return poly;
+    }
+
+    /**
+     * Computes row echelon form of the matrix and returns new elements to add to the basis
+     *
+     * @param factory      factory polynomials
+     * @param basis        the basis computed so far
+     * @param hPolynomials list of prepared H-polynomials
+     * @param hMonomials   all the monomials occurring in the H-polynomials list (sorted in descending order)
+     * @param f4reductions reductions computed previously for all basis elements
+     */
     @SuppressWarnings("unchecked")
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> nPlus(List<Poly> hPolynomials,
-                     DegreeVector[] hMonomials) {
-        if (hPolynomials.get(0) instanceof MultivariatePolynomialZp64)
-            return (List<Poly>) nPlusZp64((List) hPolynomials, hMonomials);
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<ArrayBasedPoly<Term>> nPlus(Poly factory,
+                                     List<ArrayBasedPoly<Term>> basis,
+                                     List<HPolynomial<Term>> hPolynomials,
+                                     DegreeVector[] hMonomials,
+                                     List<List<ArrayBasedPoly<Term>>> f4reductions) {
+        if (hPolynomials.isEmpty())
+            return new ArrayList<>();
+
+        if (factory instanceof MultivariatePolynomialZp64)
+            return (List<ArrayBasedPoly<Term>>) nPlusZp64(
+                    (MultivariatePolynomialZp64) factory,
+                    (List) basis,
+                    (List) hPolynomials,
+                    hMonomials,
+                    (List) f4reductions);
         else
-            return (List<Poly>) nPlusE((List) hPolynomials, hMonomials);
+            throw new RuntimeException();
     }
 
-    /** compute N+ polynomials */
-    private static List<MultivariatePolynomialZp64> nPlusZp64(List<MultivariatePolynomialZp64> hPolynomials,
-                                                              DegreeVector[] hMonomials) {
-        MultivariatePolynomialZp64 factory = hPolynomials.get(0);
+    // for Zp64
+    private static List<ArrayBasedPoly<MonomialZp64>> nPlusZp64(
+            MultivariatePolynomialZp64 factory,
+            List<ArrayBasedPoly<MonomialZp64>> basis,
+            List<HPolynomial<MonomialZp64>> hPolynomials,
+            DegreeVector[] hMonomials,
+            List<List<ArrayBasedPoly<MonomialZp64>>> f4reductions) {
 
-        // leading monomials of H-polynomials
-        TreeSet<DegreeVector> hLeadMonomials = new TreeSet<>(factory.ordering);
-        hPolynomials.forEach(p -> hLeadMonomials.add(p.lt()));
-
-        int fillin = hPolynomials.stream().mapToInt(AMultivariatePolynomial::size).reduce(0, (a, b) -> a + b);
-
-        int nRows = hPolynomials.size();
-        int nColumns = hMonomials.length;
+        // reverse order for binary searching
+        Comparator<DegreeVector> reverseOrder = (a, b) -> factory.ordering.compare(b, a);
+        int
+                nRows = hPolynomials.size(),
+                nColumns = hMonomials.length;
+        // fill (dense) matrix
         long[][] matrix = new long[nRows][nColumns];
-        System.out.println(String.format("fillin: %s", 1.0 * fillin / (1.0 * nRows * nColumns)));
-        for (int iCol = 0; iCol < nColumns; ++iCol) {
-            DegreeVector dv = hMonomials[iCol];
-            for (int iRow = 0; iRow < nRows; ++iRow) {
-                MultivariatePolynomialZp64 poly = hPolynomials.get(iRow);
-                MonomialZp64 term = poly.terms.get(dv);
-                long value = 0;
-                if (term != null)
-                    value = term.coefficient;
-                matrix[iRow][iCol] = value;
+        for (int iRow = 0; iRow < nRows; ++iRow) {
+            ArrayBasedPoly<MonomialZp64> hPoly = hPolynomials.get(iRow).hPoly;
+            for (int i = 0; i < hPoly.size(); ++i) {
+                MonomialZp64 term = hPoly.get(i);
+                // todo speed up binary search (from, to)
+                int iColumn = Arrays.binarySearch(hMonomials, term, reverseOrder);
+                assert iColumn >= 0;
+                matrix[iRow][iColumn] = term.coefficient;
             }
         }
 
         // row reduced echelon form
         LinearSolver.rowEchelonForm(factory.ring, matrix, true);
 
-        // form N+
-        List<MultivariatePolynomialZp64> nPlus = new ArrayList<>();
+        // leading monomials of H-polynomials
+        TreeSet<DegreeVector> hLeadMonomials = hPolynomials.stream().map(p -> p.hPoly.lt())
+                .collect(Collectors.toCollection(() -> new TreeSet<>(factory.ordering)));
+
+        // resulting N+ set
+        List<ArrayBasedPoly<MonomialZp64>> nPlus = new ArrayList<>();
         for (int iRow = 0; iRow < nRows; ++iRow) {
-            // todo don't calculate candidate first
-            MultivariatePolynomialZp64 candidate = factory.createZero();
+            ArrayList<MonomialZp64> candidateList = new ArrayList<>();
             // find lt
             for (int iCol = iRow; iCol < nColumns; ++iCol) {
                 long v = matrix[iRow][iCol];
                 if (v != 0)
-                    candidate.add(new MonomialZp64(hMonomials[iCol], v));
+                    candidateList.add(new MonomialZp64(hMonomials[iCol], v));
             }
 
-            if (candidate.isZero())
+            if (candidateList.isEmpty())
                 continue;
 
-            // check whether lt is not reducible by initial lts
-            MonomialZp64 lt = candidate.lt();
-            if (hLeadMonomials.stream().anyMatch(lt::dvDivisibleBy))
-                continue;
+            ArrayBasedPoly<MonomialZp64> candidate = new ArrayBasedPoly<>(
+                    candidateList.toArray(factory.monomialAlgebra.createArray(candidateList.size())),
+                    factory.nVariables);
 
-            nPlus.add(candidate);
+            if (!hLeadMonomials.contains(candidate.lt())) {
+                // lt is new -> just add
+                nPlus.add(candidate);
+                f4reductions.add(new ArrayList<>(Collections.singletonList(candidate)));
+            } else
+                // update f4reductions
+                for (int iIndex = 0; iIndex < basis.size(); ++iIndex) {
+                    ArrayBasedPoly<MonomialZp64> g = basis.get(iIndex);
+                    if (g == null)
+                        continue;
+                    if (candidate.lt().dvDivisibleBy(g.lt())) {
+                        List<ArrayBasedPoly<MonomialZp64>> reductions = f4reductions.get(iIndex);
+                        boolean reduced = false;
+                        for (int i = 0; i < reductions.size(); ++i) {
+                            ArrayBasedPoly<MonomialZp64> red = reductions.get(i);
+                            if (red.lt().dvEquals(candidate.lt())) {
+                                reductions.set(i, candidate);
+                                reduced = true;
+                                break;
+                            }
+                        }
+                        if (!reduced)
+                            reductions.add(candidate);
+                    }
+                }
         }
 
         return nPlus;
     }
 
-    private static void assertRREF(long[][] m) {
-        int nRows = m.length;
-        int nCols = m[0].length;
-        for (int col = 0; col < Math.min(nRows, nCols); col++) {
-            if (m[col][col] == 0)
-                continue;
-            for (int row = 0; row < nRows; row++) {
-                if (col != row)
-                    assert m[row][col] == 0 : row + " " + col + "\n" + prettyMatrix(m);
-            }
-            assert m[col][col] == 0 || m[col][col] == 1 : prettyMatrix(m);
-        }
-    }
-
-    /** compute N+ polynomials */
-    private static <E> List<MultivariatePolynomial<E>> nPlusE(List<MultivariatePolynomial<E>> hPolynomials,
-                                                              DegreeVector[] hMonomials) {
-        DegreeVector[] hLeadMonomials = null;
-
-        MultivariatePolynomial<E> factory = hPolynomials.get(0);
-        Ring<E> ring = factory.ring;
-
-        int nRows = hPolynomials.size();
-        int nColumns = hMonomials.length;
-        E[][] matrix = ring.createArray2d(nRows, nColumns);
-        for (int iCol = 0; iCol < nColumns; ++iCol) {
-            DegreeVector dv = hMonomials[iCol];
-            for (int iRow = 0; iRow < nRows; ++iRow) {
-                MultivariatePolynomial<E> poly = hPolynomials.get(iRow);
-                Monomial<E> term = poly.terms.get(dv);
-                E value;
-                if (term != null)
-                    value = term.coefficient;
-                else
-                    value = ring.getZero();
-                matrix[iRow][iCol] = value;
-            }
-        }
-
-        //System.out.println(prettyMatrix( matrix));
-        // row reduced echelon form
-        LinearSolver.rowEchelonForm(ring, matrix, true);
-
-        //System.out.println(prettyMatrix( matrix));
-
-        // form N+
-        List<MultivariatePolynomial<E>> nPlus = new ArrayList<>();
-        for (int iRow = 0; iRow < nRows; ++iRow) {
-            // todo don't calculate candidate first
-            MultivariatePolynomial<E> candidate = factory.createZero();
-            // find lt
-            for (int iCol = iRow; iCol < nColumns; ++iCol) {
-                E v = matrix[iRow][iCol];
-                if (!ring.isZero(v))
-                    candidate.add(new Monomial<>(hMonomials[iCol], v));
-            }
-
-            if (candidate.isZero())
-                continue;
-
-            // check whether lt is not reducible by initial lts
-            Monomial<E> lt = candidate.lt();
-            if (Arrays.stream(hLeadMonomials).anyMatch(lt::dvDivisibleBy))
-                continue;
-
-            nPlus.add(candidate);
-        }
-
-        return nPlus;
-    }
 
     public static String prettyMatrix(long[][] matrix) {
         int maxLength = 0;

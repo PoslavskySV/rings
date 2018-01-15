@@ -433,7 +433,7 @@ class Examples {
       * @tparam E        type of polynomial coefficients
       */
     def genericFunc[
-    Monomial <: DegreeVector[Monomial],
+    Monomial <: AMonomial[Monomial],
     Poly <: AMultivariatePolynomial[Monomial, Poly],
     E
     ](poly: Poly) = poly
@@ -443,7 +443,7 @@ class Examples {
       * @tparam Poly     type of multivariate polynomials
       * @tparam E        type of polynomial coefficients
       */
-    def genericFuncWithRing[Monomial <: DegreeVector[Monomial], Poly <: AMultivariatePolynomial[Monomial, Poly], E](poly: Poly)
+    def genericFuncWithRing[Monomial <: AMonomial[Monomial], Poly <: AMultivariatePolynomial[Monomial, Poly], E](poly: Poly)
                                                                                                                    (implicit ring: IMultivariateRing[Monomial, Poly, E]) = poly
 
 

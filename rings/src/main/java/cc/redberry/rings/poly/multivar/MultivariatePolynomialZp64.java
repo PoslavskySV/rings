@@ -581,12 +581,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return size() == 0 || (size() == 1 && terms.first().isZeroVector());
     }
 
-
-    @Override
-    public MonomialZp64 lt() {
-        return size() == 0 ? new MonomialZp64(nVariables, 0L) : terms.last();
-    }
-
     /**
      * Returns the leading coefficient of this polynomial that is coefficient of the largest term according to the
      * ordering.
@@ -726,6 +720,8 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
 
     @Override
     public MultivariatePolynomialZp64 monicWithLC(MultivariatePolynomialZp64 other) {
+        if (lc() == other.lc())
+            return this;
         return monic(other.lc());
     }
 

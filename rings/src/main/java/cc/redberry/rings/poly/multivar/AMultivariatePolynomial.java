@@ -72,7 +72,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-        implements IPolynomial<Poly>, Iterable<Term> {
+        implements IPolynomial<Poly>, MonomialSetView<Term>, Iterable<Term> {
     private static final long serialVersionUID = 1L;
     /** The number of variables */
     public final int nVariables;
@@ -220,7 +220,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         for (Term term : terms) {
             if (term.exponents.length != nVariables)
                 throw new IllegalArgumentException();
-            add(this.terms, term);
+            add(monomials, term);
         }
         return create(monomials);
     }
@@ -249,7 +249,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     public final Poly createMonomial(int variable, int degree) {
         int[] degreeVector = new int[nVariables];
         degreeVector[variable] = degree;
-        return create(monomialAlgebra.createTermWithUnitCoefficient(degreeVector));
+        return create(monomialAlgebra.create(degreeVector));
     }
 
     /**
@@ -280,6 +280,31 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     @Override
     public final Iterator<Term> iterator() {
         return terms.iterator();
+    }
+
+    @Override
+    public Iterator<Term> ascendingIterator() {
+        return terms.values().iterator();
+    }
+
+    @Override
+    public Iterator<Term> descendingIterator() {
+        return terms.descendingMap().values().iterator();
+    }
+
+    @Override
+    public Term first() {
+        return terms.first();
+    }
+
+    @Override
+    public Term last() {
+        return terms.last();
+    }
+
+    @Override
+    public Collection<Term> collection() {
+        return terms.values();
     }
 
     @Override
@@ -473,6 +498,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @return array of degrees
      */
+    @Override
     public final int[] degrees() {
         int[] degrees = new int[nVariables];
         for (Term db : terms)
@@ -508,6 +534,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @return sum of {@link #degrees()}
      */
+    @Override
     public final int degreeSum() {
         return ArraysUtil.sum(degrees());
     }
@@ -549,7 +576,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         MonomialSet<Term> result = new MonomialSet<>(ordering);
         for (Term term : terms) {
             DegreeVector dv = term.dvInsert(variable);
-            dv.dvSet(variable, deg - dv.totalDegree);
+            dv = dv.dvSet(variable, deg - dv.totalDegree);
             result.add(term.setDegreeVector(dv));
         }
         return create(nVariables + 1, result);
@@ -831,7 +858,9 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @return the leading term in this polynomial according to ordering
      */
-    public abstract Term lt();
+    public final Term lt() {
+        return size() == 0 ? monomialAlgebra.getZeroTerm(nVariables) : terms.last();
+    }
 
     /**
      * Returns the leading term in this polynomial according to ordering
@@ -858,6 +887,8 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return common monomial factor of {@code this} and {@code monomial}
      */
     final Term commonContent(Term monomial) {
+        if (!ccAsPoly().isZero())
+            return monomialAlgebra.getUnitTerm(nVariables);
         int[] exponents = monomial == null ? null : monomial.exponents.clone();
         for (Term degreeVector : terms)
             if (exponents == null)
@@ -866,7 +897,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
                 setMin(degreeVector.exponents, exponents);
         if (exponents == null)
             return monomialAlgebra.getUnitTerm(nVariables);
-        return monomialAlgebra.createTermWithUnitCoefficient(exponents);
+        return monomialAlgebra.create(exponents);
     }
 
     static void setMin(int[] dv, int[] exponents) {
@@ -1030,7 +1061,9 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return {@code} this multiplied by the degree vector
      */
     public final Poly multiplyByDegreeVector(DegreeVector dv) {
-        return multiply(monomialAlgebra.createTermWithUnitCoefficient(dv));
+        if (dv.isZeroVector())
+            return self;
+        return multiply(monomialAlgebra.create(dv));
     }
 
     /**

@@ -57,6 +57,8 @@ public final class MonomialZp64 extends AMonomial<MonomialZp64> {
             return this;
         if (oth == null)
             return null;
+        if (oth.exponents == exponents)
+            return this;
         return new MonomialZp64(oth, coefficient);
     }
 
@@ -68,6 +70,8 @@ public final class MonomialZp64 extends AMonomial<MonomialZp64> {
     }
 
     public MonomialZp64 setCoefficient(long c) {
+        if (coefficient == c)
+            return this;
         return new MonomialZp64(exponents, totalDegree, c);
     }
 

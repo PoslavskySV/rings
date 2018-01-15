@@ -1,9 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Sorted set of monomials -- basic underlying data structure of multivariate polynomials.
@@ -12,7 +9,7 @@ import java.util.TreeMap;
  */
 public final class MonomialSet<Term extends AMonomial<Term>>
         extends TreeMap<DegreeVector, Term>
-        implements Iterable<Term>, Cloneable {
+        implements MonomialSetView<Term>, Iterable<Term>, Cloneable {
     private static final long serialVersionUID = 1L;
 
     public MonomialSet(Comparator<? super DegreeVector> comparator) {
@@ -44,10 +41,32 @@ public final class MonomialSet<Term extends AMonomial<Term>>
     public Term add(Term term) {return put(term, term);}
 
     /** First monomial in this set */
+    @Override
     public Term first() {return firstEntry().getValue();}
 
     /** Last monomial in this set */
+    @Override
     public Term last() {return lastEntry().getValue();}
+
+    @Override
+    public Iterator<Term> ascendingIterator() {
+        return values().iterator();
+    }
+
+    @Override
+    public Iterator<Term> descendingIterator() {
+        return descendingMap().values().iterator();
+    }
+
+    @Override
+    public Collection<Term> collection() {
+        return values();
+    }
+
+    @Override
+    public int[] degrees() {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     @SuppressWarnings("unchecked")

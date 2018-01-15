@@ -33,6 +33,14 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
     }
 
     /**
+     * Gives quotient {@code dividend / divider } or throws {@code ArithmeticException} if exact division is not
+     * possible
+     */
+    default Term divideExact(DegreeVector dividend, Term divider) {
+        return divideExact(create(dividend), divider);
+    }
+
+    /**
      * Negates term
      */
     Term negate(Term term);
@@ -59,11 +67,16 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
         return term.isZeroVector();
     }
 
-    /** creates term with specified exponents and unit coefficient */
-    Term createTermWithUnitCoefficient(int[] exponents);
+    /**
+     * Whether term has unit coefficient
+     */
+    boolean isPureDegreeVector(Term term);
 
     /** creates term with specified exponents and unit coefficient */
-    Term createTermWithUnitCoefficient(DegreeVector degreeVector);
+    Term create(int[] exponents);
+
+    /** creates term with specified exponents and unit coefficient */
+    Term create(DegreeVector degreeVector);
 
     /** creates generic array of specified length */
     Term[] createArray(int length);
@@ -73,6 +86,9 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
 
     /** creates a zero term */
     Term getZeroTerm(int nVariables);
+
+    /** whether two terms have the same coefficients */
+    boolean haveSameCoefficients(Term a, Term b);
 
     /**
      * Term algebra for terms over Zp
@@ -119,12 +135,17 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
         }
 
         @Override
-        public MonomialZp64 createTermWithUnitCoefficient(int[] exponents) {
+        public boolean isPureDegreeVector(MonomialZp64 term) {
+            return term.coefficient == 1;
+        }
+
+        @Override
+        public MonomialZp64 create(int[] exponents) {
             return new MonomialZp64(exponents, 1L);
         }
 
         @Override
-        public MonomialZp64 createTermWithUnitCoefficient(DegreeVector degreeVector) {
+        public MonomialZp64 create(DegreeVector degreeVector) {
             return new MonomialZp64(degreeVector, 1L);
         }
 
@@ -141,6 +162,12 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
         @Override
         public MonomialZp64 getZeroTerm(int nVariables) {
             return new MonomialZp64(nVariables, 0L);
+        }
+
+
+        @Override
+        public boolean haveSameCoefficients(MonomialZp64 a, MonomialZp64 b) {
+            return a.coefficient == b.coefficient;
         }
     }
 
@@ -192,12 +219,17 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
         }
 
         @Override
-        public Monomial<E> createTermWithUnitCoefficient(int[] exponents) {
+        public boolean isPureDegreeVector(Monomial<E> term) {
+            return ring.isOne(term.coefficient);
+        }
+
+        @Override
+        public Monomial<E> create(int[] exponents) {
             return new Monomial<>(exponents, ring.getOne());
         }
 
         @Override
-        public Monomial<E> createTermWithUnitCoefficient(DegreeVector degreeVector) {
+        public Monomial<E> create(DegreeVector degreeVector) {
             return new Monomial<>(degreeVector, ring.getOne());
         }
 
@@ -215,6 +247,12 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
         @Override
         public Monomial<E> getZeroTerm(int nVariables) {
             return new Monomial<>(nVariables, ring.getZero());
+        }
+
+
+        @Override
+        public boolean haveSameCoefficients(Monomial<E> a, Monomial<E> b) {
+            return a.equals(b);
         }
     }
 }

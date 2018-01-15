@@ -53,6 +53,8 @@ public class Monomial<E> extends AMonomial<Monomial<E>> {
             return this;
         if (oth == null)
             return null;
+        if (oth.exponents == exponents)
+            return this;
         return new Monomial<>(oth, coefficient);
     }
 
@@ -60,7 +62,7 @@ public class Monomial<E> extends AMonomial<Monomial<E>> {
     public Monomial<E> setDegreeVector(int[] exponents, int totalDegree) {
         if (this.exponents == exponents)
             return this;
-        return new Monomial<E>(exponents, totalDegree, coefficient);
+        return new Monomial<>(exponents, totalDegree, coefficient);
     }
 
     public Monomial<E> setCoefficient(E c) {
