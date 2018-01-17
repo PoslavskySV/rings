@@ -3,6 +3,7 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.bigint.BigInteger;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -198,6 +199,33 @@ public final class GroebnerBasisData {
                 MultivariatePolynomial.parse("u14*0 + u13*0 + u12*0 + u11*0 + u10*0 + u9*0 + u8*0 + u7*0 + u6*0 + u5*0 + u4*0 + u3*0 + u2*0 + u1*u14 + u0*u13 + u1*u12 + u2*u11 + u3*u10 + u4*u9 + u5*u8 + u6*u7 + u7*u6 + u8*u5 + u9*u4 + u10*u3 + u11*u2 + u12*u1 + u13*u0 + u14*u1 - u13", Q, vars),
                 MultivariatePolynomial.parse("u14 + u13 + u12 + u11 + u10 + u9 + u8 + u7 + u6 + u5 + u4 + u3 + u2 + u1 + u0 + u1 + u2 + u3 + u4 + u5 + u6 + u7 + u8 + u9 + u10 + u11 + u12 + u13 + u14 - 1", Q, vars));
     }
+
+
+    public static List<MultivariatePolynomial<Rational<BigInteger>>> cyclic(int n) {
+        MultivariatePolynomial<Rational<BigInteger>> factory = MultivariatePolynomial.zero(n, Q, MonomialOrder.DEFAULT);
+
+        MultivariatePolynomial<Rational<BigInteger>>[] vars = new MultivariatePolynomial[n];
+        for (int i = 0; i < n; ++i)
+            vars[i] = factory.createLinear(i, Q.getZero(), Q.getOne());
+
+        List<MultivariatePolynomial<Rational<BigInteger>>> polynomials = new ArrayList<>();
+        // x1 + x2 + ... + xN
+        polynomials.add(factory.createZero().add(vars));
+        for (int nProd = 2; nProd < n; ++nProd) {
+            MultivariatePolynomial<Rational<BigInteger>> poly = factory.createZero();
+            for (int cycle = 0; cycle < n; ++cycle) {
+                MultivariatePolynomial<Rational<BigInteger>> prod = factory.createOne();
+                for (int j = 0; j < nProd; ++j)
+                    prod.multiply(vars[cycle + j >= n ? (cycle + j - n) : cycle + j]);
+                poly.add(prod);
+            }
+            polynomials.add(poly);
+        }
+
+        polynomials.add(factory.createOne().multiply(vars).decrement());
+        return polynomials;
+    }
+
 
     public static int MIN_KATSURA = 2, MAX_KATSURA = 14;
 

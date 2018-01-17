@@ -114,4 +114,6 @@ public final class MonomialOrder {
             return result;
         }
     }
+
+    public static final Comparator<DegreeVector> DEFAULT = GREVLEX;
 }

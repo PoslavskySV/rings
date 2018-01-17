@@ -541,7 +541,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param lc       the leading coefficient
      * @return linear polynomial {@code cc + lc * variable}
      */
-    public MultivariatePolynomial<E> createLinear(int variable, E cc, E lc) {
+    public final MultivariatePolynomial<E> createLinear(int variable, E cc, E lc) {
         MonomialSet<Monomial<E>> data = new MonomialSet<>(ordering);
         if (!ring.isZero(cc))
             data.add(new Monomial<>(nVariables, cc));

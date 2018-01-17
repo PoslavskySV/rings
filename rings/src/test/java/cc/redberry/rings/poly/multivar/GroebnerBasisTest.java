@@ -213,6 +213,45 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
     @Test
     @RequiresSingular
+    public void test6_cyclic() throws Exception {
+        IntegersZp64 ring = new IntegersZp64(17);
+        for (int i = 5; i < 16; i++) {
+            List<MultivariatePolynomialZp64> ideal =
+                    GroebnerBasisData.cyclic(i)
+                            .stream()
+                            .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator)))
+                            .map(p -> p.setOrdering(GREVLEX))
+                            .collect(Collectors.toList());
+
+            long start;
+
+//            start = System.nanoTime();
+//            List<MultivariatePolynomialZp64> actualBuchberger = BuchbergerGB(ideal, GREVLEX);
+//            long buchberger = System.nanoTime() - start;
+
+            start = System.nanoTime();
+            //REDUCTION = 0;
+            List<MultivariatePolynomialZp64> actualF4 = F4GB(ideal, GREVLEX);
+            long f4 = System.nanoTime() - start;
+
+            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
+            List<MultivariatePolynomialZp64> expected = singular.std;
+//            assertEquals(expected, actualBuchberger);
+//            System.out.println(expected);
+//            System.out.println(actualF4);
+            assertEquals(expected, actualF4);
+
+            System.out.println(String.format("=> Cyclic%s:", i));
+//            System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
+            System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
+            //System.out.println("   F4 rrr    : " + TimeUnits.nanosecondsToString(REDUCTION));
+            System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
+            System.out.println();
+        }
+    }
+
+    @Test
+    @RequiresSingular
     public void test7() throws Exception {
         String[] vars = {"x", "y", "z"};
         IntegersZp domain = new IntegersZp(17);
