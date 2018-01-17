@@ -28,7 +28,7 @@ public class MultivariateConversionsTest {
         for (int i = 1; i < poly.nVariables; i++)
             for (int[] c : Combinatorics.combinationsWithPermutations(poly.nVariables, i)) {
                 MultivariatePolynomial<MultivariatePolynomial<BigInteger>> split = split(poly, c);
-                assertEquals(poly, mergeSplit(split, c));
+                assertEquals(poly, merge(split, c));
             }
     }
 
@@ -41,12 +41,12 @@ public class MultivariateConversionsTest {
         MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(a);
 
         int var = 3;
-        IPolynomialRing<UnivariatePolynomial<MultivariatePolynomial<BigInteger>>> uRing = splitUnivariate(ring, var);
+        IPolynomialRing<UnivariatePolynomial<MultivariatePolynomial<BigInteger>>> uRing = MultivariateConversions.asUnivariate(ring, var);
 
         Rationals<MultivariatePolynomial<BigInteger>> frac = Rings.Frac(uRing.factory().ring);
         UnivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>
-                ra = splitUnivariate(a, var).mapCoefficients(frac, p -> new Rational<>(frac.ring, p)),
-                rb = splitUnivariate(b, var).mapCoefficients(frac, p -> new Rational<>(frac.ring, p));
+                ra = asUnivariate(a, var).mapCoefficients(frac, p -> new Rational<>(frac.ring, p)),
+                rb = asUnivariate(b, var).mapCoefficients(frac, p -> new Rational<>(frac.ring, p));
 
         System.out.println(Arrays.toString(PolynomialMethods.divideAndRemainder(rb, ra)));
     }

@@ -1,13 +1,9 @@
 package cc.redberry.rings.poly.univar;
 
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
-import cc.redberry.rings.ChineseRemainders;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.Util;
@@ -22,6 +18,7 @@ import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
@@ -104,6 +101,8 @@ public final class UnivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> T[] PolynomialExtendedGCD(T a, T b) {
+        if (Util.isOverQ(a))
+            return (T[]) ModularExtendedGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
         if (a.isOverField())
             return ExtendedHalfGCD(a, b);
         else
@@ -895,7 +894,7 @@ public final class UnivariateGCD {
                 continue;
 
             UnivariatePolynomialZp64 aMod = a.modulus(prime), bMod = b.modulus(prime);
-            UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
+            UnivariatePolynomialZp64 modularGCD = HalfGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -990,8 +989,8 @@ public final class UnivariateGCD {
         BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
         BigInteger bound2 = BigIntegerUtil.max(UnivariatePolynomial.mignotteBound(a), UnivariatePolynomial.mignotteBound(b)).multiply(lcGCD).shiftLeft(1);
         if (bound2.isLong()
-                && UnivariatePolynomial.maxAbsCoefficient(a).isLong()
-                && UnivariatePolynomial.maxAbsCoefficient(b).isLong())
+                && a.maxAbsCoefficient().isLong()
+                && b.maxAbsCoefficient().isLong())
             try {
                 // long overflow may occur here in very very rare cases
                 return ModularGCD(UnivariatePolynomial.asOverZ64(a), UnivariatePolynomial.asOverZ64(b)).toBigPoly();
@@ -1012,7 +1011,7 @@ public final class UnivariateGCD {
 
             IntegersZp bPrimeDomain = new IntegersZp(bPrime);
             UnivariatePolynomialZp64 aMod = UnivariatePolynomial.asOverZp64(a.setRing(bPrimeDomain)), bMod = UnivariatePolynomial.asOverZp64(b.setRing(bPrimeDomain));
-            UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
+            UnivariatePolynomialZp64 modularGCD = HalfGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -1088,7 +1087,7 @@ public final class UnivariateGCD {
 
             IntegersZp bPrimeDomain = new IntegersZp(bPrime);
             UnivariatePolynomialZp64 aMod = UnivariatePolynomial.asOverZp64(a.setRing(bPrimeDomain)), bMod = UnivariatePolynomial.asOverZp64(b.setRing(bPrimeDomain));
-            UnivariatePolynomialZp64 modularGCD = EuclidGCD(aMod, bMod);
+            UnivariatePolynomialZp64 modularGCD = HalfGCD(aMod, bMod);
             //clone if necessary
             if (modularGCD == aMod || modularGCD == bMod)
                 modularGCD = modularGCD.clone();
@@ -1144,5 +1143,234 @@ public final class UnivariateGCD {
             }
             bPreviousBase = candidate;
         }
+    }
+
+    /**
+     * Modular GCD algorithm for polynomials over Z.
+     *
+     * @param a the first polynomial
+     * @param b the second polynomial
+     * @return GCD of two polynomials
+     */
+    @SuppressWarnings({"ConstantConditions", "unchecked"})
+    public static UnivariatePolynomial<Rational<BigInteger>>[] ModularExtendedGCD(UnivariatePolynomial<Rational<BigInteger>> a,
+                                                                                  UnivariatePolynomial<Rational<BigInteger>> b) {
+        if (a == b || a.equals(b))
+            return new UnivariatePolynomial[]{a.createOne(), a.createZero(), a.clone()};
+
+        if (a.degree() < b.degree()) {
+            UnivariatePolynomial<Rational<BigInteger>>[] r = ModularExtendedGCD(b, a);
+            ArraysUtil.swap(r, 1, 2);
+            return r;
+        }
+
+        if (b.isZero()) {
+            UnivariatePolynomial<Rational<BigInteger>>[] result = a.createArray(3);
+            result[0] = a.clone();
+            result[1] = a.createOne();
+            result[2] = a.createZero();
+            return normalizeExtendedGCD(result);
+        }
+
+        Tuple2<UnivariatePolynomial<BigInteger>, BigInteger>
+                ac = Util.toCommonDenominator(a),
+                bc = Util.toCommonDenominator(b);
+
+        UnivariatePolynomial<BigInteger> az = ac._1, bz = bc._1;
+        BigInteger
+                aContent = az.content(),
+                bContent = bz.content();
+
+        UnivariatePolynomial<Rational<BigInteger>>[] xgcd = ModularExtendedGCD0(
+                az.clone().divideOrNull(aContent),
+                bz.clone().divideOrNull(bContent));
+        xgcd[1].multiply(new Rational<>(Rings.Z, ac._2, aContent));
+        xgcd[2].multiply(new Rational<>(Rings.Z, bc._2, bContent));
+        return xgcd;
+    }
+
+    /** modular extended GCD in Q[x] for primitive polynomials */
+    @SuppressWarnings({"ConstantConditions", "unchecked"})
+    static UnivariatePolynomial<Rational<BigInteger>>[] ModularExtendedGCD0(
+            UnivariatePolynomial<BigInteger> a,
+            UnivariatePolynomial<BigInteger> b) {
+        assert a.degree >= b.degree;
+        BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
+
+        UnivariatePolynomial<Rational<BigInteger>>
+                aRat = a.mapCoefficients(Rings.Q, c -> new Rational<>(Rings.Z, c)),
+                bRat = b.mapCoefficients(Rings.Q, c -> new Rational<>(Rings.Z, c));
+
+        int degreeMax = Math.max(a.degree, b.degree);
+        BigInteger bound2 = BigInteger.valueOf(degreeMax).increment().pow(degreeMax)
+                .multiply(BigIntegerUtil.max(a.normMax(), b.normMax()).pow(a.degree + b.degree))
+                .multiply(lcGCD);
+
+        PrimesIterator primesLoop = new PrimesIterator(1031);
+
+        List<BigInteger> primes = new ArrayList<>();
+        List<UnivariatePolynomial<BigInteger>>[] gst = new List[]{new ArrayList<>(), new ArrayList<>(), new ArrayList<>()};
+        BigInteger primesMul = BigInteger.ONE;
+        main:
+        while (true) {
+            while (primesMul.compareTo(bound2) < 0) {
+                long prime = primesLoop.take();
+                BigInteger bPrime = BigInteger.valueOf(prime);
+                if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
+                    continue;
+
+                IntegersZp bPrimeDomain = new IntegersZp(bPrime);
+                UnivariatePolynomialZp64
+                        aMod = UnivariatePolynomial.asOverZp64(a.setRing(bPrimeDomain)),
+                        bMod = UnivariatePolynomial.asOverZp64(b.setRing(bPrimeDomain));
+
+                UnivariatePolynomialZp64[] modularXGCD = ExtendedHalfGCD(aMod, bMod);
+                assert modularXGCD[0].isMonic();
+
+                //skip unlucky prime
+                if (!gst[0].isEmpty() && modularXGCD[0].degree > gst[0].get(0).degree)
+                    continue;
+
+                if (!gst[0].isEmpty() && modularXGCD[0].degree < gst[0].get(0).degree) {
+                    primes.clear();
+                    primesMul = BigInteger.ONE;
+                    Arrays.stream(gst).forEach(List::clear);
+                }
+
+                long lLcGCD = lcGCD.mod(bPrime).longValueExact();
+                long lc = modularXGCD[0].lc();
+                for (int i = 0; i < modularXGCD.length; i++)
+                    gst[i].add(modularXGCD[i].multiply(lLcGCD).divide(lc).toBigPoly());
+                primes.add(bPrime);
+                primesMul = primesMul.multiply(bPrime);
+            }
+
+
+            // CRT
+            UnivariatePolynomial<BigInteger>[] xgcdBase = new UnivariatePolynomial[3];
+            BigInteger[] primesArray = primes.toArray(new BigInteger[primes.size()]);
+            for (int i = 0; i < 3; ++i) {
+                xgcdBase[i] = UnivariatePolynomial.zero(Rings.Z);
+                int deg = gst[i].stream().mapToInt(UnivariatePolynomial::degree).max().getAsInt();
+                xgcdBase[i].ensureCapacity(deg);
+                for (int j = 0; j <= deg; ++j) {
+                    final int jf = j;
+                    BigInteger[] cfs = gst[i].stream().map(p -> p.get(jf)).toArray(BigInteger[]::new);
+                    xgcdBase[i].data[j] = ChineseRemainders(primesArray, cfs);
+                }
+            }
+
+            while (true) {
+                // do rational reconstruction
+                UnivariatePolynomial<Rational<BigInteger>>[] xgcd = reconstructXGCD(aRat, bRat, xgcdBase, primesMul, bound2);
+                if (xgcd != null)
+                    return xgcd;
+
+                // continue with CRT
+                long prime = primesLoop.take();
+                BigInteger bPrime = BigInteger.valueOf(prime);
+                if (a.lc().remainder(bPrime).isZero() || b.lc().remainder(bPrime).isZero())
+                    continue;
+
+                IntegersZp bPrimeDomain = new IntegersZp(bPrime);
+                UnivariatePolynomialZp64
+                        aMod = UnivariatePolynomial.asOverZp64(a.setRing(bPrimeDomain)),
+                        bMod = UnivariatePolynomial.asOverZp64(b.setRing(bPrimeDomain));
+
+                UnivariatePolynomialZp64[] modularXGCD = ExtendedHalfGCD(aMod, bMod);
+                assert modularXGCD[0].isMonic();
+
+                //skip unlucky prime
+                if (modularXGCD[0].degree > xgcdBase[0].degree)
+                    continue;
+
+                if (modularXGCD[0].degree < xgcdBase[0].degree) {
+                    primes.clear();
+                    Arrays.stream(gst).forEach(List::clear);
+
+                    long lLcGCD = lcGCD.mod(bPrime).longValueExact();
+                    long lc = modularXGCD[0].lc();
+                    for (int i = 0; i < modularXGCD.length; i++)
+                        gst[i].add(modularXGCD[i].multiply(lLcGCD).divide(lc).toBigPoly());
+                    primes.add(bPrime);
+                    primesMul = bPrime;
+
+                    continue main; // <- extremely rare
+                }
+
+                long lLcGCD = lcGCD.mod(bPrime).longValueExact();
+                long lc = modularXGCD[0].lc();
+                for (UnivariatePolynomialZp64 m : modularXGCD)
+                    m.multiply(lLcGCD).divide(lc);
+
+                for (int i = 0; i < 3; i++) {
+                    modularXGCD[i].ensureCapacity(xgcdBase[i].degree);
+                    assert modularXGCD[i].degree <= xgcdBase[i].degree;
+                    for (int j = 0; j <= xgcdBase[i].degree; ++j)
+                        xgcdBase[i].data[j] = ChineseRemainders(primesMul, bPrime, xgcdBase[i].data[j], BigInteger.valueOf(modularXGCD[i].data[j]));
+                }
+                primes.add(bPrime);
+                primesMul = primesMul.multiply(bPrime);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static UnivariatePolynomial<Rational<BigInteger>>[] reconstructXGCD(
+            UnivariatePolynomial<Rational<BigInteger>> aRat, UnivariatePolynomial<Rational<BigInteger>> bRat,
+            UnivariatePolynomial<BigInteger>[] xgcdBase, BigInteger prime, BigInteger bound2) {
+        UnivariatePolynomial<Rational<BigInteger>>[] candidate = new UnivariatePolynomial[3];
+        for (int i = 0; i < 3; i++) {
+            candidate[i] = UnivariatePolynomial.zero(Rings.Q);
+            candidate[i].ensureCapacity(xgcdBase[i].degree);
+            for (int j = 0; j <= xgcdBase[i].degree; ++j) {
+                BigInteger[] numDen = RationalReconstruction.reconstruct(xgcdBase[i].data[j], prime, bound2, bound2);
+                if (numDen == null)
+                    return null;
+                candidate[i].data[j] = new Rational<>(Rings.Z, numDen[0], numDen[1]);
+            }
+        }
+
+        BigInteger content = candidate[0].mapCoefficients(Rings.Z, c -> c.numerator).content();
+        Rational<BigInteger> corr = new Rational<>(Rings.Z, Rings.Z.getOne(), content);
+
+        UnivariatePolynomial<Rational<BigInteger>>
+                sCandidate = candidate[1].multiply(corr),
+                tCandidate = candidate[2].multiply(corr),
+                gCandidate = candidate[0].multiply(corr);
+
+        //first check b since b is less degree
+        UnivariatePolynomial<Rational<BigInteger>>[] bDiv;
+        bDiv = UnivariateDivision.divideAndRemainder(bRat, gCandidate, true);
+        if (!bDiv[1].isZero())
+            return null;
+        UnivariatePolynomial<Rational<BigInteger>>[] aDiv;
+        aDiv = UnivariateDivision.divideAndRemainder(aRat, gCandidate, true);
+        if (!aDiv[1].isZero())
+            return null;
+
+        if (!satisfiesXGCD(aDiv[0], sCandidate, bDiv[0], tCandidate))
+            return null;
+        return candidate;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean satisfiesXGCD(
+            UnivariatePolynomial<Rational<BigInteger>> a, UnivariatePolynomial<Rational<BigInteger>> s,
+            UnivariatePolynomial<Rational<BigInteger>> b, UnivariatePolynomial<Rational<BigInteger>> t) {
+        Rational<BigInteger>
+                zero = Rational.zero(Rings.Z),
+                one = Rational.one(Rings.Z);
+        for (Rational<BigInteger> subs : new Rational[]{zero, one}) {
+            Rational<BigInteger>
+                    ea = a.evaluate(subs),
+                    es = s.evaluate(subs),
+                    eb = b.evaluate(subs),
+                    et = t.evaluate(subs);
+
+            if (!ea.multiply(es).add(eb.multiply(et)).isOne())
+                return false;
+        }
+        return a.multiply(s).add(b.multiply(t)).isOne();
     }
 }

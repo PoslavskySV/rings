@@ -227,6 +227,27 @@ public interface Ring<E> extends
     }
 
     /**
+     * Returns the abs value of element (no copy)
+     */
+    default E abs(E el) {
+        return signum(el) < 0 ? negate(el) : el;
+    }
+
+    /**
+     * Returns the max value (no copy)
+     */
+    default E max(E a, E b) {
+        return compare(a, b) < 0 ? b : a;
+    }
+
+    /**
+     * Returns the min value (no copy)
+     */
+    default E min(E a, E b) {
+        return compare(a, b) > 0 ? b : a;
+    }
+
+    /**
      * Returns quotient and remainder of {@code dividend / divider}
      *
      * @param dividend the dividend

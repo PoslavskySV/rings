@@ -3,6 +3,8 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.poly.IPolynomialRing;
+import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 
@@ -29,7 +31,7 @@ public final class MultivariateConversions {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    Poly mergeSplit(MultivariatePolynomial<Poly> poly, int... variables) {
+    Poly merge(MultivariatePolynomial<Poly> poly, int... variables) {
         variables = variables.clone();
         Arrays.sort(variables);
         int[] mainVariables = ArraysUtil.intSetDifference(
@@ -45,7 +47,7 @@ public final class MultivariateConversions {
      * Given poly in R[x1,x2,...,xN] converts to poly in R[variables][other_variables]
      */
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    IPolynomialRing<MultivariatePolynomial<Poly>> split(IPolynomialRing<Poly> ring, int... variables) {
+    MultivariateRing<MultivariatePolynomial<Poly>> split(IPolynomialRing<Poly> ring, int... variables) {
         return Rings.MultivariateRing(split(ring.factory(), variables));
     }
 
@@ -54,8 +56,8 @@ public final class MultivariateConversions {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    IPolynomialRing<Poly> mergeSplit(IPolynomialRing<MultivariatePolynomial<Poly>> ring, int... variables) {
-        return (IPolynomialRing<Poly>) Rings.MultivariateRing((AMultivariatePolynomial) mergeSplit(ring.factory(), variables));
+    MultivariateRing<Poly> merge(IPolynomialRing<MultivariatePolynomial<Poly>> ring, int... variables) {
+        return (MultivariateRing<Poly>) Rings.MultivariateRing((AMultivariatePolynomial) merge(ring.factory(), variables));
     }
 
     /**
@@ -63,7 +65,7 @@ public final class MultivariateConversions {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    UnivariatePolynomial<Poly> splitUnivariate(Poly poly, int variable) {
+    UnivariatePolynomial<Poly> asUnivariate(Poly poly, int variable) {
         return poly.asUnivariateEliminate(variable);
     }
 
@@ -72,7 +74,7 @@ public final class MultivariateConversions {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    Poly mergeUnivariateSplit(UnivariatePolynomial<Poly> poly, int variable) {
+    Poly fromUnivariate(UnivariatePolynomial<Poly> poly, int variable) {
         if (poly.cc() instanceof MultivariatePolynomial)
             return (Poly) MultivariatePolynomial.asMultivariate((UnivariatePolynomial) poly, variable, true);
         else
@@ -83,8 +85,8 @@ public final class MultivariateConversions {
      * Given poly in R[x1,x2,...,xN] converts to poly in R[other_variables][variable]
      */
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    IPolynomialRing<UnivariatePolynomial<Poly>> splitUnivariate(IPolynomialRing<Poly> ring, int variable) {
-        return Rings.UnivariateRing(splitUnivariate(ring.factory(), variable));
+    UnivariateRing<UnivariatePolynomial<Poly>> asUnivariate(IPolynomialRing<Poly> ring, int variable) {
+        return Rings.UnivariateRing(asUnivariate(ring.factory(), variable));
     }
 
     /**
@@ -92,7 +94,7 @@ public final class MultivariateConversions {
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial<?, Poly>>
-    IPolynomialRing<Poly> mergeUnivariateSplit(IPolynomialRing<UnivariatePolynomial<Poly>> ring, int variable) {
-        return (IPolynomialRing<Poly>) Rings.MultivariateRing((AMultivariatePolynomial) mergeUnivariateSplit(ring.factory(), variable));
+    IPolynomialRing<Poly> fromUnivariate(IPolynomialRing<UnivariatePolynomial<Poly>> ring, int variable) {
+        return (IPolynomialRing<Poly>) Rings.MultivariateRing((AMultivariatePolynomial) fromUnivariate(ring.factory(), variable));
     }
 }
