@@ -760,7 +760,7 @@ public final class GroebnerBasis {
     }
 
     /** Minimal size of selected set of critical pairs */
-    private static final int F4_MIN_SELECTION_SIZE = 16;
+    private static final int F4_MIN_SELECTION_SIZE = 0;
 
     /**
      * Computes minimized and reduced Groebner basis of a given ideal via Faugère's F4 algorithm.
@@ -932,6 +932,51 @@ public final class GroebnerBasis {
         }
     }
 
+//    /**
+//     * Simplifies h-polynomial by replacing it with its previously computed reduction. For details see Joux & Vitse, "A
+//     * variant of F4 algorithm", https://eprint.iacr.org/2010/158.pdf, 2011
+//     *
+//     * @param generator  the generator (H-polynomial to add is a product of factor * generator)
+//     * @param factor     correction factor for generator (H-polynomial to add is a product of factor * generator)
+//     * @param reductions a list of previously obtained reductions of the generator
+//     * @param mAlgebra   monomial algebra
+//     */
+//    static <Term extends AMonomial<Term>>
+//    ArrayBasedPoly<Term> simplify(ArrayBasedPoly<Term> generator,
+//                                  Term factor,
+//                                  List<ArrayBasedPoly<Term>> reductions,
+//                                  IMonomialAlgebra<Term> mAlgebra) {
+//        // the desired leading term of H-polynomial
+//        Term desiredLeadTerm = mAlgebra.multiply(generator.lt(), factor);
+//
+//        // iterate from the last (most recently added, thus most simplified) to the first (the initial generator) reductions
+//        for (int i = reductions.size() - 1; i >= 0; --i) {
+//            ArrayBasedPoly<Term> reduction = reductions.get(i);
+//            // leading term of previously computed reduction
+//            Term rLeadTerm = reduction.lt();
+//
+//            if (rLeadTerm.dvEquals(desiredLeadTerm))
+//                // we just have the same calculation in the map (no any appropriate reductions were calculated)
+//                return setLeadCoeffFrom(reduction, desiredLeadTerm, mAlgebra);
+//
+//            if (desiredLeadTerm.dvDivisibleBy(rLeadTerm)) {
+//                // <- nontrivial appropriate reduction
+//
+//                DegreeVector quot = desiredLeadTerm.dvDivideExact(rLeadTerm);
+//                ArrayBasedPoly<Term> g = reduction.clone();
+//                multiply(g, mAlgebra.create(quot), mAlgebra);
+//                g = setLeadCoeffFrom(g, desiredLeadTerm, mAlgebra);
+//
+//                // cache this reduction too
+//                reductions.add(g);
+//                return g;
+//            }
+//        }
+//
+//        // <- this point is unreachable since the initial generator is already added to the list (in the begining)
+//        throw new RuntimeException();
+//    }
+
     /**
      * Simplifies h-polynomial by replacing it with its previously computed reduction. For details see Joux & Vitse, "A
      * variant of F4 algorithm", https://eprint.iacr.org/2010/158.pdf, 2011
@@ -949,33 +994,46 @@ public final class GroebnerBasis {
         // the desired leading term of H-polynomial
         Term desiredLeadTerm = mAlgebra.multiply(generator.lt(), factor);
 
+        ArrayBasedPoly<Term> bestReduction = null;
         // iterate from the last (most recently added, thus most simplified) to the first (the initial generator) reductions
         for (int i = reductions.size() - 1; i >= 0; --i) {
             ArrayBasedPoly<Term> reduction = reductions.get(i);
             // leading term of previously computed reduction
             Term rLeadTerm = reduction.lt();
 
-            if (rLeadTerm.dvEquals(desiredLeadTerm))
-                // we just have the same calculation in the map (no any appropriate reductions were calculated)
-                return setLeadCoeffFrom(reduction, desiredLeadTerm, mAlgebra);
-
-            if (desiredLeadTerm.dvDivisibleBy(rLeadTerm)) {
-                // <- nontrivial appropriate reduction
-
-                DegreeVector quot = desiredLeadTerm.dvDivideExact(rLeadTerm);
-                ArrayBasedPoly<Term> g = reduction.clone();
-                multiply(g, mAlgebra.create(quot), mAlgebra);
-                g = setLeadCoeffFrom(g, desiredLeadTerm, mAlgebra);
-
-                // cache this reduction too
-                reductions.add(g);
-                return g;
+            if (rLeadTerm.dvEquals(desiredLeadTerm) || desiredLeadTerm.dvDivisibleBy(rLeadTerm)) {
+                if (bestReduction == null
+                        || reduction.size() < bestReduction.size()
+//                        || MonomialOrder.GREVLEX.compare(reduction.lt(), bestReduction.lt()) > 0
+                        )
+                    bestReduction = reduction;
             }
+        }
+
+        ArrayBasedPoly<Term> reduction = bestReduction;
+        // leading term of previously computed reduction
+        Term rLeadTerm = reduction.lt();
+        if (rLeadTerm.dvEquals(desiredLeadTerm)) {
+            // we just have the same calculation in the map (no any appropriate reductions were calculated)
+            return setLeadCoeffFrom(reduction, desiredLeadTerm, mAlgebra);
+        }
+
+        if (desiredLeadTerm.dvDivisibleBy(rLeadTerm)) {
+            // <- nontrivial appropriate reduction
+            DegreeVector quot = desiredLeadTerm.dvDivideExact(rLeadTerm);
+            ArrayBasedPoly<Term> g = reduction.clone();
+            multiply(g, mAlgebra.create(quot), mAlgebra);
+            g = setLeadCoeffFrom(g, desiredLeadTerm, mAlgebra);
+
+            // cache this reduction too
+            reductions.add(g);
+            return g;
         }
 
         // <- this point is unreachable since the initial generator is already added to the list (in the begining)
         throw new RuntimeException();
     }
+
 
     /** Sets the leading coefficient of poly from the coefficient of term (poly is copied only if necessary) */
     static <Term extends AMonomial<Term>>
@@ -1007,7 +1065,7 @@ public final class GroebnerBasis {
             return new ArrayList<>();
 
         if (factory instanceof MultivariatePolynomialZp64)
-            return (List<ArrayBasedPoly<Term>>) nPlusZp64_NEW(
+            return (List<ArrayBasedPoly<Term>>) nPlusZp64_NEW2(
                     (MultivariatePolynomialZp64) factory,
                     (List) basis,
                     (List) hPolynomials,
@@ -1019,13 +1077,18 @@ public final class GroebnerBasis {
 
     private static final double DENSE_FILLING_THRESHOLD = 0.1;
 
+
+    static long STEP0 = 0, STEP1 = 0, STEP2 = 0, STEP3 = 0, STEP4 = 0, STEP5 = 0, STEP6 = 0, NPLUS = 0;
+
     // for Zp64
+    @SuppressWarnings("unchecked")
     private static List<ArrayBasedPoly<MonomialZp64>> nPlusZp64_NEW2(
             MultivariatePolynomialZp64 factory,
             List<ArrayBasedPoly<MonomialZp64>> basis,
             List<HPolynomial<MonomialZp64>> hPolynomials,
             DegreeVector[] hMonomials,
             List<List<ArrayBasedPoly<MonomialZp64>>> f4reductions) {
+        IntegersZp64 ring = factory.ring;
 
         // We use the structured Gaussian elimination strategy as described in
         // J.-C. Faugere & S. Lachartre, PASCO'10 https://doi.org/10.1145/1837210.1837225
@@ -1059,102 +1122,391 @@ public final class GroebnerBasis {
         //
         // The algorithm to reduce the matrix is then very simple:
         //
-        // 1) row-reduce A (B is still partially sparse)
+        // 1) row reduce A (B is still partially sparse)
         // 2) annihilate C (D is now almost certainly dense)
-        // 3) row-echelon & row reduce D (dense)
-
-
+        // 3) row echelon & row reduce D
+        // 4) row reduce B
 
         // reverse order for binary searching
         Comparator<DegreeVector> reverseOrder = (a, b) -> factory.ordering.compare(b, a);
         int
                 nRows = hPolynomials.size(),
-                nColumns = hMonomials.length;
+                nColumns = hMonomials.length,
+                iRow, iColumn;
+
+//        assert nRows <= nColumns;
+
+
+        // <
+//        long[][] __dense_0_ = new long[nRows][nColumns];
+//        for (iRow = 0; iRow < nRows; ++iRow) {
+//            __dense_0_[iRow] = new long[nColumns];
+//            ArrayBasedPoly<MonomialZp64> hPoly = hPolynomials.get(iRow).hPoly;
+//            for (int j = 0; j < hPoly.size(); ++j) {
+//                iColumn = Arrays.binarySearch(hMonomials, hPoly.get(j), reverseOrder);
+//                __dense_0_[iRow][iColumn] = hPolynomials.get(iRow).hPoly.get(j).coefficient;
+//            }
+//        }
+
+//        System.out.println("    __dense_0_    ");
+//        System.out.println(prettyMatrix(__dense_0_));
+
+        long nPlusStart = System.nanoTime();
+        long start;
+        /* ======  STEP 0: bring matrix to F4-form  ====== */
+
+        start = System.nanoTime();
+        // number of lead-terms in each column (columns with no any lead
+        // terms are non-pivoting and can be rearranged)
+        int[] columnsLeadTermsFilling = new int[nColumns];
+        // detect non-pivoting columns
+        int iOldColumnPrev = 0;
+        for (HPolynomial<MonomialZp64> hPoly : hPolynomials) {
+            iColumn = Arrays.binarySearch(hMonomials, iOldColumnPrev, hMonomials.length, hPoly.hPoly.lt(), reverseOrder);
+            iOldColumnPrev = iColumn;
+            assert iColumn >= 0;
+            ++columnsLeadTermsFilling[iColumn];
+        }
+
+        // find non pivoting columns
+        TIntArrayList nonPivotColumns = new TIntArrayList();
+        for (iColumn = 0; iColumn < nRows + nonPivotColumns.size() && iColumn < nColumns; ++iColumn)
+            if (columnsLeadTermsFilling[iColumn] == 0)
+                nonPivotColumns.add(iColumn);
+        // now we move non-pivoting columns to the right
+        // mapping between old and new columns numeration
+        int[] nonPivotColumnsArr = nonPivotColumns.toArray();
+        int[] columnsRearrangement = ArraysUtil.addAll(
+                ArraysUtil.intSetDifference(ArraysUtil.sequence(0, nColumns), nonPivotColumnsArr),
+                nonPivotColumnsArr);
+
+        // back mapping between new and old columns numeration
+        int[] columnsBackRearrangement = new int[nColumns];
+        for (int i = 0; i < nColumns; ++i)
+            columnsBackRearrangement[columnsRearrangement[i]] = i;
+//
+//        System.out.println("non-pivoting columns " + nonPivotColumns);
+//        System.out.println(Arrays.toString(columnsRearrangement));
+//        System.out.println(Arrays.toString(columnsBackRearrangement));
+//        assert new TIntHashSet(columnsRearrangement).equals(new TIntHashSet(ArraysUtil.sequence(0, nColumns)));
+//        assert new TIntHashSet(columnsBackRearrangement).equals(new TIntHashSet(ArraysUtil.sequence(0, nColumns)));
+
 
         // number of non-zero entries in each column
         int[] columnsFilling = new int[nColumns];
         // index of each term in hPolynomials in the hMonomials array
         int[][] mapping = new int[nRows][];
-
+        // estimated row filling of B matrix (number of nonzero elements in each row)
+        int[] bRowsFilling = new int[nRows];
         // first iteration: gather info about matrix pattern
-        for (int iRow = 0; iRow < nRows; ++iRow) {
+        for (iRow = 0; iRow < nRows; ++iRow) {
             ArrayBasedPoly<MonomialZp64> hPoly = hPolynomials.get(iRow).hPoly;
             mapping[iRow] = new int[hPoly.size()];
-            int iColumnPrev = 0;
+            iOldColumnPrev = 0;
             for (int i = 0; i < hPoly.size(); ++i) {
                 MonomialZp64 term = hPoly.get(i);
-                int iColumn = Arrays.binarySearch(hMonomials, iColumnPrev, hMonomials.length, term, reverseOrder);
-                iColumnPrev = iColumn;
-                assert iColumn >= 0;
+                // column in old numeration
+                int iOldColumn = Arrays.binarySearch(hMonomials, iOldColumnPrev, hMonomials.length, term, reverseOrder);
+                iOldColumnPrev = iOldColumn;
+                assert iOldColumn >= 0;
+                // column in new numeration
+                iColumn = columnsBackRearrangement[iOldColumn];
                 mapping[iRow][i] = iColumn;
+
                 ++columnsFilling[iColumn];
+                if (iColumn >= nRows)
+                    ++bRowsFilling[iRow];
             }
         }
 
+        // <
+//        long[][] __dense_1_ = new long[nRows][nColumns];
+//        for (iRow = 0; iRow < nRows; ++iRow) {
+//            __dense_1_[iRow] = new long[nColumns];
+//            for (int j = 0; j < mapping[iRow].length; ++j) {
+//                __dense_1_[iRow][mapping[iRow][j]] = hPolynomials.get(iRow).hPoly.get(j).coefficient;
+//            }
+//        }
+//
+//        System.out.println("    __dense_1_    ");
+//        System.out.println(prettyMatrix(__dense_1_));
 
-        int[] denseColumns = IntStream.range(0, nColumns)
+        // choose pivoting rows, so that B matrix is maximally sparse (rows with minimal bFillIns)
+        TIntArrayList pivots = new TIntArrayList();
+        for (iColumn = 0; iColumn < nRows; ++iColumn) {
+            int minFillIn = Integer.MAX_VALUE;
+            int pivot = -1;
+            for (iRow = iColumn; iRow < nRows; ++iRow)
+                if (mapping[iRow][0] == iColumn && bRowsFilling[iRow] < minFillIn) {
+                    minFillIn = bRowsFilling[iRow];
+                    pivot = iRow;
+                } else if (pivot != -1 && mapping[iRow][0] != iColumn)
+                    break;
+            if (pivot == -1)
+                break;
+            pivots.add(pivot);
+        }
+        bRowsFilling = null; // prevent further use
+
+//        System.out.println("pivots: " + pivots);
+        // rearrange rows: move pivots up and non-pivots down
+        int nPivotRows = pivots.size();
+        for (int i = 0; i < nPivotRows; ++i) {
+            int pivot = pivots.get(i);
+            Collections.swap(hPolynomials, i, pivot);
+            ArraysUtil.swap(mapping, i, pivot);
+        }
+        // <- the matrix is now is in the desired F4-form
+
+        // <
+//        long[][] __dense_2_ = new long[nRows][nColumns];
+//        for (iRow = 0; iRow < nRows; ++iRow) {
+//            __dense_2_[iRow] = new long[nColumns];
+//            for (int j = 0; j < mapping[iRow].length; ++j) {
+//                __dense_2_[iRow][mapping[iRow][j]] = hPolynomials.get(iRow).hPoly.get(j).coefficient;
+//            }
+//        }
+//        System.out.println("    __dense_2_     ");
+//        System.out.println(prettyMatrix(__dense_2_));
+//        //System.exit(0);
+
+        STEP0 += System.nanoTime() - start;
+
+        /* ======  STEP 1: prepare data structures  ====== */
+
+        start = System.nanoTime();
+        // dense columns in matrices B & D
+        int[] bDenseColumns = IntStream.range(nPivotRows, nColumns)
                 .filter(i -> 1.0 * columnsFilling[i] / nRows > DENSE_FILLING_THRESHOLD)
+                .map(i -> i - nPivotRows)
                 .toArray(); // <- it is sorted (for below binary searching)
 
-//        System.out.println((nColumns - denseColumns.length) + " / " + nColumns);
 
-        // instantiate sparse matrix
-        SparseRowReducerZp64 sparseMatrix = new SparseRowReducerZp64(factory.ring, denseColumns, nRows, nColumns);
-        for (int iRow = 0; iRow < nRows; ++iRow) {
-            ArrayBasedPoly<MonomialZp64> hPoly = hPolynomials.get(iRow).hPoly;
-            TIntArrayList columns = new TIntArrayList();
-            TLongArrayList sparse = new TLongArrayList();
-            long[] dense = new long[denseColumns.length];
-            for (int i = 0; i < hPoly.size(); i++) {
-                int iColumn = mapping[iRow][i];
-                long coefficient = hPoly.get(i).coefficient;
-                int iDense;
-                if ((iDense = Arrays.binarySearch(denseColumns, iColumn)) >= 0)
-                    // this is dense column
-                    dense[iDense] = coefficient;
-                else {
-                    columns.add(iColumn);
-                    sparse.add(coefficient);
-                }
-            }
-            sparseMatrix.matrix[iRow] = sparseMatrix.new SparseRow(columns.toArray(), sparse.toArray(), dense);
+//        System.out.println("dense cols " + Arrays.toString(bDenseColumns));
+
+        // we represent A & C as a list of columns
+        final class pair {
+            final int iRow;
+            final long value;
+
+            pair(int iRow, long value) { this.iRow = iRow; this.value = value; }
+
+            @Override
+            public String toString() { return "(" + iRow + " -> " + value + ")"; }
         }
 
-        sparseMatrix.rowReduce();
+        // column lists for A & C
+        List<pair>[]
+                aColumns = new List[nPivotRows],
+                cColumns = new List[nPivotRows];
+        for (int i = 0; i < nPivotRows; ++i) {
+            aColumns[i] = new ArrayList<>();
+            cColumns[i] = new ArrayList<>();
+        }
 
+        // sparse matrices B & D
+        SparseMatrixZp64
+                bMatrix = new SparseMatrixZp64(ring, bDenseColumns, nPivotRows, nColumns - nPivotRows),
+                dMatrix = new SparseMatrixZp64(ring, bDenseColumns, nRows - nPivotRows, nColumns - nPivotRows);
+
+        for (iRow = 0; iRow < nRows; ++iRow) {
+            ArrayBasedPoly<MonomialZp64> hPoly = hPolynomials.get(iRow).hPoly;
+
+            TIntArrayList sparseCols = new TIntArrayList();
+            TLongArrayList sparseVals = new TLongArrayList();
+            long[] denseVals = new long[bDenseColumns.length];
+            for (int i = 0; i < hPoly.size(); i++) {
+                iColumn = mapping[iRow][i];
+                long coefficient = hPoly.get(i).coefficient;
+                if (iColumn < nPivotRows) {
+                    // element of matrix A or C
+                    if (iRow < nPivotRows)
+                        aColumns[iColumn].add(new pair(iRow, coefficient));
+                    else
+                        cColumns[iColumn].add(new pair(iRow - nPivotRows, coefficient));
+                } else {
+                    // element of matrix B or D
+                    iColumn -= nPivotRows;
+                    int iDense;
+                    if ((iDense = Arrays.binarySearch(bDenseColumns, iColumn)) >= 0)
+                        // this is dense column (in B or D)
+                        denseVals[iDense] = coefficient;
+                    else {
+                        sparseCols.add(iColumn);
+                        sparseVals.add(coefficient);
+                    }
+                }
+            }
+
+            int[] sparseColumns = sparseCols.toArray();
+            long[] sparseValues = sparseVals.toArray();
+            ArraysUtil.quickSort(sparseColumns, sparseValues);
+            if (iRow < nPivotRows)
+                bMatrix.matrix[iRow] = bMatrix.new SparseRow(sparseColumns, sparseValues, denseVals);
+            else
+                dMatrix.matrix[iRow - nPivotRows] = dMatrix.new SparseRow(sparseColumns, sparseValues, denseVals);
+        }
+
+//        System.out.println("aCols: " + Arrays.deepToString(aColumns));
+//        System.out.println("cCols: " + Arrays.deepToString(cColumns));
+
+        System.out.println(bDenseColumns.length + " / " + (nColumns - nPivotRows));
+        if (1.0 * bDenseColumns.length / (nColumns - nPivotRows) > 10.8) {
+            System.out.println(Arrays.toString(Arrays.copyOfRange(columnsFilling, nPivotRows, nColumns)));
+            System.out.println(nRows);
+            System.out.println(Arrays.toString(IntStream.range(nPivotRows, nColumns).mapToDouble(i -> 1.0 * columnsFilling[i] / nRows).toArray()));
+            System.out.println("bDense 0 : ");
+            System.out.println(prettyMatrix(bMatrix.denseMatrix()));
+            System.out.println();
+            System.out.println("dDense 0 : ");
+            System.out.println(prettyMatrix(dMatrix.denseMatrix()));
+            System.exit(0);
+        }
+        STEP1 += System.nanoTime() - start;
+        /* ======  STEP 2: row reduce matrix A  ====== */
+
+        start = System.nanoTime();
+        // we start from the last column in matrix A
+        for (iColumn = nPivotRows - 1; iColumn >= 0; --iColumn) {
+            List<pair> column = aColumns[iColumn];
+            // monicize diagonal
+            pair diagonal = column.get(column.size() - 1);
+            assert diagonal.iRow == iColumn;
+            bMatrix.matrix[diagonal.iRow].multiply(ring.reciprocal(diagonal.value));
+
+            // annihilate non-diagonal each element
+            for (int i = column.size() - 2; i >= 0; --i) {
+                pair nonDiagonal = column.get(i);
+                bMatrix.matrix[nonDiagonal.iRow] = bMatrix.subtract(
+                        bMatrix.matrix[nonDiagonal.iRow],
+                        bMatrix.matrix[diagonal.iRow], nonDiagonal.value);
+            }
+        }
+
+//        System.out.println("bDense 1 : ");
+//        System.out.println(prettyMatrix(bMatrix.denseMatrix()));
+
+
+        STEP2 += System.nanoTime() - start;
+        /* ======  STEP 3: annihilate matrix C  ====== */
+        start = System.nanoTime();
+        for (iColumn = 0; iColumn < nPivotRows; ++iColumn) {
+            List<pair> column = cColumns[iColumn];
+            // annihilate each element in the column
+            for (int i = column.size() - 1; i >= 0; --i) {
+                pair cElement = column.get(i);
+                dMatrix.matrix[cElement.iRow] = dMatrix.subtract(
+                        dMatrix.matrix[cElement.iRow],
+                        bMatrix.matrix[iColumn], cElement.value);
+            }
+        }
+
+//        System.out.println("bDense 2 : ");
+//        System.out.println(prettyMatrix(bMatrix.denseMatrix()));
+//        System.out.println("dDense 2 : ");
+//        System.out.println(prettyMatrix(dMatrix.denseMatrix()));
+//        System.exit(0);
+
+
+        STEP3 += System.nanoTime() - start;
+        /* ======  STEP 4: compute row reduced echelon form of matrix D  ====== */
+
+        start = System.nanoTime();
+        // fixme reindex, make dence
+
+        // make D maximally triangular
+        Arrays.sort(dMatrix.matrix, Comparator.comparingInt(SparseMatrixZp64.SparseRow::firstColumn));
+
+        // at this point both D & B may be quite dense,
+
+
+//        System.out.println("dDense 3 : ");
+//        System.out.println(prettyMatrix(dMatrix.denseMatrix()));
+
+        dMatrix.rowReduce();
+//        System.out.println("dDense 4 : ");
+//        System.out.println(prettyMatrix(dMatrix.denseMatrix()));
+
+
+        STEP4 += System.nanoTime() - start;
+        /* ======  STEP 5: row reduce B  ====== */
+
+        start = System.nanoTime();
+
+        int dShift = 0;
+        for (iRow = 0; iRow < dMatrix.nRows; iRow++) {
+            SparseMatrixZp64.SparseRow dRow = dMatrix.matrix[iRow];
+            iColumn = iRow + dShift;
+            if (iColumn >= nColumns)
+                break;
+            if (dRow.coefficient(iColumn) == 0) {
+                --iRow;
+                ++dShift;
+                continue;
+            }
+            for (int i = 0; i < bMatrix.nRows; ++i)
+                if (bMatrix.matrix[i].coefficient(iColumn) != 0)
+                    bMatrix.matrix[i] = bMatrix.subtract(bMatrix.matrix[i], dRow, bMatrix.matrix[i].coefficient(iColumn));
+        }
+
+//        System.out.println("bDense 5 : ");
+//        System.out.println(prettyMatrix(bMatrix.denseMatrix()));
+//        System.exit(0);
+
+//        dMatrix.nRows - dRank
+//        System.exit(0);
+
+        STEP5 += System.nanoTime() - start;
+
+        /* ======  STEP 6: finally form N+ polynomials ====== */
+
+        start = System.nanoTime();
         // leading monomials of H-polynomials
         TreeSet<DegreeVector> hLeadMonomials = hPolynomials.stream().map(p -> p.hPoly.lt())
                 .collect(Collectors.toCollection(() -> new TreeSet<>(factory.ordering)));
 
-        // resulting N+ set
-        List<ArrayBasedPoly<MonomialZp64>> nPlus = new ArrayList<>();
-        for (int iRow = 0; iRow < nRows; ++iRow) {
+        List<ArrayBasedPoly<MonomialZp64>> nPolynomials = new ArrayList<>();
+        // collect from A and B
+        for (iRow = 0; iRow < nRows; ++iRow) {
             ArrayList<MonomialZp64> candidateList = new ArrayList<>();
 
-            SparseRowReducerZp64.SparseRow row = sparseMatrix.matrix[iRow];
+            if (iRow < nPivotRows)
+                candidateList.add(new MonomialZp64(hMonomials[columnsRearrangement[iRow]], 1L));
+
+            SparseMatrixZp64.SparseRow row = iRow < nPivotRows ? bMatrix.matrix[iRow] : dMatrix.matrix[iRow - nPivotRows];
             for (int i = 0; i < row.sparseColumns.length; i++) {
                 long val = row.sparse[i];
                 if (val != 0)
-                    candidateList.add(new MonomialZp64(hMonomials[row.sparseColumns[i]], val));
+                    candidateList.add(new MonomialZp64(hMonomials[columnsRearrangement[nPivotRows + row.sparseColumns[i]]], val));
             }
 
-            for (int i = 0; i < sparseMatrix.denseColumns.length; i++) {
+            for (int i = 0; i < bDenseColumns.length; i++) {
                 long val = row.dense[i];
                 if (val != 0)
-                    candidateList.add(new MonomialZp64(hMonomials[sparseMatrix.denseColumns[i]], val));
+                    candidateList.add(new MonomialZp64(hMonomials[columnsRearrangement[nPivotRows + bDenseColumns[i]]], val));
             }
 
-            if (candidateList.isEmpty())
-                continue;
-
-            candidateList.sort((a, b) -> factory.ordering.compare(b, a));
-            ArrayBasedPoly<MonomialZp64> candidate = new ArrayBasedPoly<>(
-                    candidateList.toArray(factory.monomialAlgebra.createArray(candidateList.size())),
-                    factory.nVariables);
-
+            candidateList.sort(reverseOrder);
+            if (!candidateList.isEmpty()) {
+                ArrayBasedPoly<MonomialZp64> poly = new ArrayBasedPoly<>(
+                        candidateList.toArray(factory.monomialAlgebra.createArray(candidateList.size())),
+                        factory.nVariables);
+                if (poly.lt().coefficient != 1) {
+                    long factor = ring.reciprocal(poly.lt().coefficient);
+                    for (int i = 0; i < poly.data.length; i++)
+                        poly.data[i] = poly.data[i].setCoefficient(ring.multiply(factor, poly.data[i].coefficient));
+                }
+                assert poly.lt().coefficient == 1;
+                nPolynomials.add(poly);
+            }
+        }
+        nPolynomials.sort((a, b) -> reverseOrder.compare(a.lt(), b.lt()));
+        // resulting N+ set
+        List<ArrayBasedPoly<MonomialZp64>> nPlusPolynomials = new ArrayList<>();
+        for (ArrayBasedPoly<MonomialZp64> candidate : nPolynomials) {
             if (!hLeadMonomials.contains(candidate.lt())) {
                 // lt is new -> just add
-                nPlus.add(candidate);
+                nPlusPolynomials.add(candidate);
                 f4reductions.add(new ArrayList<>(Collections.singletonList(candidate)));
             } else
                 // update f4reductions
@@ -1179,7 +1531,20 @@ public final class GroebnerBasis {
                 }
         }
 
-        return nPlus;
+        STEP6 += System.nanoTime() - start;
+//        List<List<ArrayBasedPoly<MonomialZp64>>> collect = IntStream.range(0, f4reductions.size()).mapToObj(i -> new ArrayList<ArrayBasedPoly<MonomialZp64>>()).collect(Collectors.toList());
+//        List<ArrayBasedPoly<MonomialZp64>> expected = nPlusZp64_NEW(factory, basis, hPolynomials, hMonomials, collect);
+//
+//        expected.sort((a, b) -> reverseOrder.compare(a.lt(), b.lt()));
+
+//        if(!nPlusPolynomials.equals(expected)){
+//            System.out.println(nPlusPolynomials);
+//            System.out.println(expected);
+//            assert false;
+//        }
+
+        NPLUS += System.nanoTime() - nPlusStart;
+        return nPlusPolynomials;
     }
 
     // for Zp64
@@ -1223,7 +1588,7 @@ public final class GroebnerBasis {
 //        System.out.println((nColumns - denseColumns.length) + " / " + nColumns);
 
         // instantiate sparse matrix
-        SparseRowReducerZp64 sparseMatrix = new SparseRowReducerZp64(factory.ring, denseColumns, nRows, nColumns);
+        SparseMatrixZp64 sparseMatrix = new SparseMatrixZp64(factory.ring, denseColumns, nRows, nColumns);
         for (int iRow = 0; iRow < nRows; ++iRow) {
             ArrayBasedPoly<MonomialZp64> hPoly = hPolynomials.get(iRow).hPoly;
             TIntArrayList columns = new TIntArrayList();
@@ -1255,7 +1620,7 @@ public final class GroebnerBasis {
         for (int iRow = 0; iRow < nRows; ++iRow) {
             ArrayList<MonomialZp64> candidateList = new ArrayList<>();
 
-            SparseRowReducerZp64.SparseRow row = sparseMatrix.matrix[iRow];
+            SparseMatrixZp64.SparseRow row = sparseMatrix.matrix[iRow];
             for (int i = 0; i < row.sparseColumns.length; i++) {
                 long val = row.sparse[i];
                 if (val != 0)
@@ -1313,33 +1678,33 @@ public final class GroebnerBasis {
         return true;
     }
 
-    static final class SparseRowReducerZp64 {
+    static final class SparseMatrixZp64 {
         final IntegersZp64 ring;
         // indexes of dense columns
         final int[] denseColumns;
         // the rows (initially nulls)
         final SparseRow[] matrix;
-        // number of non-zero entries in each column
-        final int nColumns;
+        final int nRows, nColumns;
 
-        SparseRowReducerZp64(IntegersZp64 ring, int[] denseColumns, int nRows, int nColumns) {
+        SparseMatrixZp64(IntegersZp64 ring, int[] denseColumns, int nRows, int nColumns) {
             this.ring = ring;
             this.denseColumns = denseColumns;
             this.matrix = new SparseRow[nRows];
+            this.nRows = nRows;
             this.nColumns = nColumns;
         }
 
-//        long[][] denseMatrix() {
-//            long[][] result = new long[matrix.length][nColumns];
-//            for (int iRow = 0; iRow < matrix.length; ++iRow) {
-//                SparseRow row = this.matrix[iRow];
-//                for (int i = 0; i < row.sparseColumns.length; i++)
-//                    result[iRow][row.sparseColumns[i]] = row.sparse[i];
-//                for (int i = 0; i < denseColumns.length; i++)
-//                    result[iRow][denseColumns[i]] = row.dense[i];
-//            }
-//            return result;
-//        }
+        long[][] denseMatrix() {
+            long[][] result = new long[matrix.length][nColumns];
+            for (int iRow = 0; iRow < matrix.length; ++iRow) {
+                SparseRow row = this.matrix[iRow];
+                for (int i = 0; i < row.sparseColumns.length; i++)
+                    result[iRow][row.sparseColumns[i]] = row.sparse[i];
+                for (int i = 0; i < denseColumns.length; i++)
+                    result[iRow][denseColumns[i]] = row.dense[i];
+            }
+            return result;
+        }
 
         final class SparseRow {
             // non-zero columns
@@ -1351,7 +1716,7 @@ public final class GroebnerBasis {
 
             SparseRow(int[] sparseColumns, long[] sparse, long[] dense) {
                 assert isSorted(sparseColumns);
-                assert LongStream.of(sparse).noneMatch(s -> s == 0);
+                assert sparse.length == 0 || LongStream.of(sparse).noneMatch(s -> s == 0);
                 this.sparseColumns = sparseColumns;
                 this.sparse = sparse;
                 this.dense = dense;
@@ -1375,9 +1740,19 @@ public final class GroebnerBasis {
                     return dense[index];
                 return 0;
             }
+
+            int firstColumn() {
+                if (sparseColumns.length != 0)
+                    return sparseColumns[0];
+                for (int i = 0; i < dense.length; ++i)
+                    if (dense[i] != 0)
+                        return denseColumns[i];
+                return Integer.MAX_VALUE;
+            }
         }
 
-        void rowReduce() {
+        // return rank
+        int rowReduce() {
             // Gaussian elimination
             int nZeroRows = 0;
             for (int iCol = 0, to = matrix.length; iCol < to; ++iCol) {
@@ -1420,6 +1795,7 @@ public final class GroebnerBasis {
                     matrix[row] = subtract(matrix[row], pivot, value, iCol, firstDense);
                 }
             }
+            return Math.min(nRows, nColumns) - nZeroRows;
         }
 
         /** self - factor * amount */
@@ -1493,6 +1869,74 @@ public final class GroebnerBasis {
 
             return new SparseRow(resCols.toArray(), resVals.toArray(), selDense);
         }
+
+        /** self - factor * amount */
+        SparseRow subtract(SparseRow self, SparseRow pivot, long factor) {
+            long negFactor = ring.negate(factor);
+
+            // adding dense parts
+            long[]
+                    selDense = self.dense,
+                    pivDense = pivot.dense;
+
+            for (int i = 0; i < selDense.length; i++)
+                selDense[i] = ring.subtract(selDense[i], ring.multiply(factor, pivDense[i]));
+
+            // subtracting sparse parts
+            int[]
+                    selCols = self.sparseColumns,
+                    pivCols = pivot.sparseColumns;
+            long[]
+                    selVals = self.sparse,
+                    pivVals = pivot.sparse;
+
+            // resulting non-zero columns
+            TIntArrayList resCols = new TIntArrayList(selCols.length + pivCols.length);
+            TLongArrayList resVals = new TLongArrayList(selCols.length + pivCols.length);
+
+            int iSel = 0, iPiv = 0;
+            while (iSel < selCols.length && iPiv < pivCols.length) {
+                int
+                        selCol = selCols[iSel],
+                        othCol = pivCols[iPiv];
+
+                if (selCol == othCol) {
+                    long subtract = ring.subtract(selVals[iSel], ring.multiply(factor, pivVals[iPiv]));
+                    if (subtract != 0) {
+                        resCols.add(selCol);
+                        resVals.add(subtract);
+                    }
+
+                    ++iSel;
+                    ++iPiv;
+                } else if (selCol < othCol) {
+                    resCols.add(selCol);
+                    resVals.add(selVals[iSel]);
+
+                    ++iSel;
+                } else if (selCol > othCol) {
+                    resCols.add(othCol);
+                    resVals.add(ring.multiply(negFactor, pivVals[iPiv]));
+
+                    ++iPiv;
+                }
+            }
+
+            if (iSel < selCols.length)
+                for (; iSel < selCols.length; ++iSel) {
+                    resCols.add(selCols[iSel]);
+                    resVals.add(selVals[iSel]);
+                }
+
+            if (iPiv < pivCols.length)
+                for (; iPiv < pivCols.length; ++iPiv) {
+                    resCols.add(pivCols[iPiv]);
+                    resVals.add(ring.multiply(negFactor, pivVals[iPiv]));
+                }
+
+            return new SparseRow(resCols.toArray(), resVals.toArray(), selDense);
+        }
+
     }
 
     public static String prettyMatrix(long[][] matrix) {

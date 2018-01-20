@@ -173,40 +173,82 @@ public class GroebnerBasisTest extends AMultivariateTest {
     }
 
     @Test
+    public void name() throws Exception {
+        IntegersZp64 ring = new IntegersZp64(17);
+        List<MultivariatePolynomialZp64> ideal = GroebnerBasisData.katsura(11)
+                .stream()
+                .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator)))
+                .map(p -> p.setOrdering(GREVLEX))
+                .collect(Collectors.toList());
+
+        for (int i = 0; i < 100; ++i) {
+            long start = System.nanoTime();
+            List<MultivariatePolynomialZp64> gb = F4GB(ideal, GREVLEX);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+
+//        for (MultivariatePolynomial<Rational<BigInteger>> p : GroebnerBasisData.katsura(11)) {
+//            System.out.println("polynomialArray.emplace_back(\"" + p + "\");");
+//        }
+    }
+
+    @Test
     @RequiresSingular
     public void test6_katsura() throws Exception {
-        IntegersZp64 ring = new IntegersZp64(17);
-        for (int i = 5; i < 16; i++) {
+        IntegersZp64 ring = new IntegersZp64(65521);
+        for (int i = 9; i < 11; i++) {
+            System.out.println(String.format("=> Katsura%s:", i));
+            int nVars = i;
             List<MultivariatePolynomialZp64> ideal =
                     GroebnerBasisData.katsura(i)
                             .stream()
                             .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator)))
                             .map(p -> p.setOrdering(GREVLEX))
+//                            .map(p -> p.homogenize(nVars))
                             .collect(Collectors.toList());
 
             long start;
 
 //            start = System.nanoTime();
 //            List<MultivariatePolynomialZp64> actualBuchberger = BuchbergerGB(ideal, GREVLEX);
-//            long buchberger = System.nanoTime() - start;
+////            long buchberger = System.nanoTime() - start;
+//            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
+//            List<MultivariatePolynomialZp64> expected = singular.std;
+//            System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
+
+
+            STEP0 = 0;
+            STEP1 = 0;
+            STEP2 = 0;
+            STEP3 = 0;
+            STEP4 = 0;
+            STEP5 = 0;
+            STEP6 = 0;
+            NPLUS = 0;
 
             start = System.nanoTime();
-            //REDUCTION = 0;
             List<MultivariatePolynomialZp64> actualF4 = F4GB(ideal, GREVLEX);
             long f4 = System.nanoTime() - start;
+            System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
+            System.out.println("   STEP0     : " + TimeUnits.nanosecondsToString(STEP0));
+            System.out.println("   STEP1     : " + TimeUnits.nanosecondsToString(STEP1));
+            System.out.println("   STEP2     : " + TimeUnits.nanosecondsToString(STEP2));
+            System.out.println("   STEP3     : " + TimeUnits.nanosecondsToString(STEP3));
+            System.out.println("   STEP4     : " + TimeUnits.nanosecondsToString(STEP4));
+            System.out.println("   STEP5     : " + TimeUnits.nanosecondsToString(STEP5));
+            System.out.println("   STEP6     : " + TimeUnits.nanosecondsToString(STEP6));
+            System.out.println("   NPLUS     : " + TimeUnits.nanosecondsToString(NPLUS));
 
-            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
-            List<MultivariatePolynomialZp64> expected = singular.std;
+
+
 //            assertEquals(expected, actualBuchberger);
 //            System.out.println(expected);
 //            System.out.println(actualF4);
-            assertEquals(expected, actualF4);
-
-            System.out.println(String.format("=> Katsura%s:", i));
+//            System.out.println(ideal);
+//            assertEquals(expected, actualF4);
+//
 //            System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
-            System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
             //System.out.println("   F4 rrr    : " + TimeUnits.nanosecondsToString(REDUCTION));
-            System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
             System.out.println();
         }
     }
@@ -216,7 +258,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
     public void test6_cyclic() throws Exception {
         IntegersZp64 ring = new IntegersZp64(17);
         for (int i = 5; i < 16; i++) {
-            List<MultivariatePolynomialZp64> ideal =
+            System.out.println(String.format("=> Cyclic%s:", i));
+          List<MultivariatePolynomialZp64> ideal =
                     GroebnerBasisData.cyclic(i)
                             .stream()
                             .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator)))
@@ -229,23 +272,24 @@ public class GroebnerBasisTest extends AMultivariateTest {
 //            List<MultivariatePolynomialZp64> actualBuchberger = BuchbergerGB(ideal, GREVLEX);
 //            long buchberger = System.nanoTime() - start;
 
+            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
+            List<MultivariatePolynomialZp64> expected = singular.std;
+            System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
+
             start = System.nanoTime();
             //REDUCTION = 0;
             List<MultivariatePolynomialZp64> actualF4 = F4GB(ideal, GREVLEX);
             long f4 = System.nanoTime() - start;
+            System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
 
-            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
-            List<MultivariatePolynomialZp64> expected = singular.std;
+
 //            assertEquals(expected, actualBuchberger);
 //            System.out.println(expected);
 //            System.out.println(actualF4);
             assertEquals(expected, actualF4);
 
-            System.out.println(String.format("=> Cyclic%s:", i));
-//            System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
-            System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
+//              System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
             //System.out.println("   F4 rrr    : " + TimeUnits.nanosecondsToString(REDUCTION));
-            System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
             System.out.println();
         }
     }
