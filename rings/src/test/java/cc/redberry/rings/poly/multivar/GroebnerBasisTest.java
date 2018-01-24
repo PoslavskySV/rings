@@ -175,17 +175,20 @@ public class GroebnerBasisTest extends AMultivariateTest {
     @Test
     public void name() throws Exception {
         IntegersZp64 ring = new IntegersZp64(17);
-        List<MultivariatePolynomialZp64> ideal = GroebnerBasisData.katsura(11)
-                .stream()
-                .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator)))
-                .map(p -> p.setOrdering(GREVLEX))
-                .collect(Collectors.toList());
-
-        for (int i = 0; i < 100; ++i) {
-            long start = System.nanoTime();
-            List<MultivariatePolynomialZp64> gb = F4GB(ideal, GREVLEX);
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        for (MultivariatePolynomial<Rational<BigInteger>> p : GroebnerBasisData.katsura(10)) {
+            System.out.println("factory.parse(\"" + p + "\"),");
         }
+//        List<MultivariatePolynomialZp64> ideal = GroebnerBasisData.katsura(11)
+//                .stream()
+//                .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator)))
+//                .map(p -> p.setOrdering(GREVLEX))
+//                .collect(Collectors.toList());
+//
+//        for (int i = 0; i < 100; ++i) {
+//            long start = System.nanoTime();
+//            List<MultivariatePolynomialZp64> gb = F4GB(ideal, GREVLEX);
+//            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+//        }
 
 //        for (MultivariatePolynomial<Rational<BigInteger>> p : GroebnerBasisData.katsura(11)) {
 //            System.out.println("polynomialArray.emplace_back(\"" + p + "\");");
@@ -195,8 +198,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
     @Test
     @RequiresSingular
     public void test6_katsura() throws Exception {
-        IntegersZp64 ring = new IntegersZp64(65521);
-        for (int i = 9; i < 11; i++) {
+        IntegersZp64 ring = new IntegersZp64(17);
+        for (int i = 7; i < 11; i++) {
             System.out.println(String.format("=> Katsura%s:", i));
             int nVars = i;
             List<MultivariatePolynomialZp64> ideal =
@@ -212,11 +215,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
 //            start = System.nanoTime();
 //            List<MultivariatePolynomialZp64> actualBuchberger = BuchbergerGB(ideal, GREVLEX);
 ////            long buchberger = System.nanoTime() - start;
+
+
 //            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
 //            List<MultivariatePolynomialZp64> expected = singular.std;
 //            System.out.println("   Singular  : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
-
-
+//
+//
             STEP0 = 0;
             STEP1 = 0;
             STEP2 = 0;
@@ -224,7 +229,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
             STEP4 = 0;
             STEP5 = 0;
             STEP6 = 0;
-            NPLUS = 0;
+//            NPLUS = 0;
 
             start = System.nanoTime();
             List<MultivariatePolynomialZp64> actualF4 = F4GB(ideal, GREVLEX);
@@ -237,7 +242,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
             System.out.println("   STEP4     : " + TimeUnits.nanosecondsToString(STEP4));
             System.out.println("   STEP5     : " + TimeUnits.nanosecondsToString(STEP5));
             System.out.println("   STEP6     : " + TimeUnits.nanosecondsToString(STEP6));
-            System.out.println("   NPLUS     : " + TimeUnits.nanosecondsToString(NPLUS));
+//
+//      System.out.println("   NPLUS     : " + TimeUnits.nanosecondsToString(NPLUS));
 
 
 
@@ -245,6 +251,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
 //            System.out.println(expected);
 //            System.out.println(actualF4);
 //            System.out.println(ideal);
+//            System.out.println(expected);
+//            System.out.println(actualF4);
 //            assertEquals(expected, actualF4);
 //
 //            System.out.println("   Buchberger: " + TimeUnits.nanosecondsToString(buchberger));
