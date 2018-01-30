@@ -634,6 +634,22 @@ public interface Ring<E> extends
     }
 
     /**
+     * Creates 2d array of ring elements of specified shape filled with zero elements
+     *
+     * @param m result length
+     * @param n length of each array in the result
+     * @return 2d array E[m][n] filled with zero elements
+     */
+    @SuppressWarnings("unchecked")
+    default E[][] createZeroesArray2d(int m, int n) {
+        E[][] arr = createArray2d(m, n);
+        for (E[] a : arr)
+            for (int i = 0; i < a.length; ++i)
+                a[i] = getZero();
+        return arr;
+    }
+
+    /**
      * Creates generic array of {@code {a, b}}
      *
      * @param a the first element of array

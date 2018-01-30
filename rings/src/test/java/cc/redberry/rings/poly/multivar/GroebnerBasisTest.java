@@ -8,6 +8,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.*;
 
 import java.io.BufferedWriter;
@@ -137,6 +138,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         List<MultivariatePolynomialZp64> ideal = Arrays.asList(f1, f2);
         assertEquals(BuchbergerGB(ideal, GREVLEX), F4GB(ideal, GREVLEX));
+        List<MultivariatePolynomial<BigInteger>> idealE = ideal.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+        assertEquals(BuchbergerGB(idealE, GREVLEX), F4GB(idealE, GREVLEX));
     }
 
     @Test
@@ -188,6 +191,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
             long f4 = System.nanoTime() - start;
             System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
             assertEquals(expected, actualF4);
+
+            if (i <= 8) {
+                List<MultivariatePolynomialZp64> actualE =
+                        F4GB(ideal.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList()), GREVLEX)
+                                .stream().map(MultivariatePolynomial::asOverZp64).collect(Collectors.toList());
+                assertEquals(expected, actualE);
+            }
         }
     }
 
@@ -215,6 +225,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
             long f4 = System.nanoTime() - start;
             System.out.println("   F4        : " + TimeUnits.nanosecondsToString(f4));
             assertEquals(expected, actualF4);
+
+            if (i <= 7) {
+                List<MultivariatePolynomialZp64> actualE =
+                        F4GB(ideal.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList()), GREVLEX)
+                                .stream().map(MultivariatePolynomial::asOverZp64).collect(Collectors.toList());
+                assertEquals(expected, actualE);
+            }
         }
     }
 
@@ -253,7 +270,6 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         //1520ms
         //731ms
-
     }
 
     @Test
@@ -388,6 +404,106 @@ public class GroebnerBasisTest extends AMultivariateTest {
         }
     }
 
+    @Test
+    @RequiresSingular
+    public void test14_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+        IntegersZp64 domain = new IntegersZp64(17);
+        int nIterations = its(1, 5);
+        int nEls = 4;
+        DescriptiveStatistics
+                tF4 = new DescriptiveStatistics(),
+                tSingular = new DescriptiveStatistics();
+        for (int i = 0; i < nIterations; i++) {
+            System.out.println();
+            List<MultivariatePolynomialZp64> ideal = new ArrayList<>();
+            for (int j = 0; j < nEls; j++)
+                ideal.add(RandomMultivariatePolynomials.randomPolynomial(4, 4, 4, domain, GREVLEX, rnd));
+
+            long start = System.nanoTime();
+            List<MultivariatePolynomialZp64> actual = F4GB(ideal, GREVLEX);
+            long time = System.nanoTime() - start;
+            tF4.addValue(time);
+            System.out.println("F4       : " + TimeUnits.nanosecondsToString(time));
+
+            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
+            tSingular.addValue(singular.nanoseconds);
+            System.out.println("Singular : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
+
+            List<MultivariatePolynomialZp64> expected = singular.std;
+            if (!actual.equals(expected)) {
+                System.out.println(ideal);
+                System.out.println(actual.size());
+            }
+            assertEquals(expected, actual);
+        }
+
+        System.out.println("F4       : " + TimeUnits.statisticsNanotime(tF4));
+        System.out.println("Singular : " + TimeUnits.statisticsNanotime(tSingular));
+    }
+
+    @Test
+    @RequiresSingular
+    public void test15_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+        IntegersZp64 domain = new IntegersZp64(17);
+        int nIterations = its(50, 100);
+        int nEls = 3;
+        DescriptiveStatistics
+                tF4 = new DescriptiveStatistics(),
+                tBuch = new DescriptiveStatistics(),
+                tSingular = new DescriptiveStatistics();
+        for (int i = 0; i < nIterations; i++) {
+            List<MultivariatePolynomialZp64> ideal = new ArrayList<>();
+            for (int j = 0; j < nEls; j++)
+                ideal.add(RandomMultivariatePolynomials.randomPolynomial(4, 3, 4, domain, GREVLEX, rnd));
+
+            //System.out.println();
+            //System.out.println(ideal);
+            long start = System.nanoTime();
+            List<MultivariatePolynomialZp64> actual = F4GB(ideal, GREVLEX);
+            long time = System.nanoTime() - start;
+            tF4.addValue(time);
+            //System.out.println("F4       : " + TimeUnits.nanosecondsToString(time));
+
+            start = System.nanoTime();
+            List<MultivariatePolynomialZp64> buch = BuchbergerGB(ideal, GREVLEX);
+            time = System.nanoTime() - start;
+            tBuch.addValue(time);
+            //System.out.println("Buch     : " + TimeUnits.nanosecondsToString(time));
+
+            SingularResult<MonomialZp64, MultivariatePolynomialZp64> singular = SingularGB(ideal, GREVLEX);
+            tSingular.addValue(singular.nanoseconds);
+            //System.out.println("Singular : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
+
+            List<MultivariatePolynomialZp64> expected = singular.std;
+            if (!actual.equals(expected)) {
+                System.out.println("===>> ERROR");
+                System.out.println(ideal);
+                System.out.println(actual.size());
+            }
+            assertEquals(expected, actual);
+        }
+
+        System.out.println("F4         : " + TimeUnits.statisticsNanotime(tF4));
+        System.out.println("Buchberger : " + TimeUnits.statisticsNanotime(tBuch));
+        System.out.println("Singular   : " + TimeUnits.statisticsNanotime(tSingular));
+    }
+
+    @Test
+    public void test16() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4", "x5"};
+        MultivariatePolynomial<Rational<BigInteger>>
+                a = parse("x1^2*x2^2*x3 + x5^4 - (1/2) + x2^3*x4 + x3^5 + x4", Q, GREVLEX, vars),
+                b = parse("(1/123)*x1*x2*x3^2 + x2*x4*x1^2*x5 + x3*x2^3", Q, GREVLEX, vars),
+                c = parse("x1^3*x2^3*x3^3*x4 - (1/17)*x2*x4^2*x1^4*x5 + x3^3*x2 - x4 - 1", Q, GREVLEX, vars);
+        List<MultivariatePolynomial<Rational<BigInteger>>> gens = Arrays.asList(a, b, c);
+
+        List<MultivariatePolynomial<Rational<BigInteger>>> buch = BuchbergerGB(gens, GREVLEX);
+
+        System.out.println(buch);
+    }
+
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     SingularResult<Term, Poly> SingularGB(List<Poly> ideal, Comparator<DegreeVector> monomialOrder) throws IOException, InterruptedException {
         if (!isSingularAvailable())
@@ -399,7 +515,6 @@ public class GroebnerBasisTest extends AMultivariateTest {
             order = "dp";
         else
             throw new IllegalArgumentException("bad order");
-
 
         setMonomialOrder(ideal, monomialOrder);
 
