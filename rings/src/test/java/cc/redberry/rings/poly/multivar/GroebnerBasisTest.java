@@ -39,7 +39,6 @@ import static org.junit.Assert.assertEquals;
 /**
  * @since 1.0
  */
-@Ignore
 public class GroebnerBasisTest extends AMultivariateTest {
     @Before
     public void beforeMethod() throws Exception {
@@ -101,6 +100,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
     }
 
     @Test
+    @RequiresSingular
     public void test2a() throws Exception {
         String[] vars = {"x1", "x2", "x3", "x4", "x5"};
         MultivariatePolynomial<Rational<BigInteger>>
@@ -273,6 +273,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
     }
 
     @Test
+    @RequiresSingular
     public void test8() throws Exception {
         String[] vars = {"x", "y", "z"};
         IntegersZp domain = new IntegersZp(17);
@@ -290,6 +291,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
     }
 
     @Test
+    @RequiresSingular
     public void test9() throws Exception {
         String[] vars = {"x", "y", "z"};
         IntegersZp domain = new IntegersZp(17);
@@ -501,7 +503,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         List<MultivariatePolynomial<Rational<BigInteger>>> buch = BuchbergerGB(gens, GREVLEX);
 
-        System.out.println(buch);
+//        System.out.println(buch);
     }
 
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
