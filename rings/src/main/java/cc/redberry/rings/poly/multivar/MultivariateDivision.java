@@ -107,7 +107,7 @@ public final class MultivariateDivision {
         while (!dividend.isZero()) {
             Term ltDiv = null;
             Term lt = dividend.lt();
-            for (i = 0; i < dividers.length; i++) {
+            for (i = 0; i < dividersLTs.length; ++i) {
                 ltDiv = mAlgebra.divideOrNull(lt, dividersLTs[i]);
                 if (ltDiv != null)
                     break;
