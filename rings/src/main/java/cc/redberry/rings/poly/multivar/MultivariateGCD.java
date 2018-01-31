@@ -93,15 +93,14 @@ public final class MultivariateGCD {
         // quick checks
         for (Poly p : arr) {
             if (p.isConstant())
-                return (Poly) arr[0].createOne();
+                return contentGCD(arr);
             if (p.isMonomial()) {
                 AMonomial monomial = p.lt();
                 for (Poly el : arr)
                     monomial = el.commonContent(monomial);
-                return (Poly) arr[0].create(monomial);
+                return (Poly) arr[0].create(monomial).multiply((IPolynomial) contentGCD(arr));
             }
         }
-
 
         // <- choosing strategy of gcd
 
@@ -205,6 +204,20 @@ public final class MultivariateGCD {
 
         ArraysUtil.swap(arr, 0, iMin); // <-restore
         return gcd;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Poly extends AMultivariatePolynomial> Poly contentGCD(Poly[] arr) {
+        if (arr[0] instanceof MultivariatePolynomial)
+            return (Poly) contentGCD0((MultivariatePolynomial[]) arr);
+        return (Poly) arr[0].createOne();
+    }
+
+    private static <E> MultivariatePolynomial<E> contentGCD0(MultivariatePolynomial<E>[] arr) {
+        MultivariatePolynomial<E> factory = arr[0];
+        return factory.createConstant(factory.ring.gcd(
+                Arrays.stream(arr).map(MultivariatePolynomial::content)
+                        .collect(Collectors.toList())));
     }
 
     /**
@@ -905,7 +918,7 @@ public final class MultivariateGCD {
         BigInteger lcGCD = BigIntegerUtil.gcd(a.lc(), b.lc());
 
         RandomGenerator random = PrivateRandom.getRandom();
-        PrimesIterator primesLoop = new PrimesIterator(1031);
+        PrimesIterator primesLoop = new PrimesIterator((1 << 16) - (1 << 12));
         main_loop:
         while (true) {
             // prepare the skeleton
@@ -977,6 +990,7 @@ public final class MultivariateGCD {
                     // scale to correct l.c.
                     base = modularGCD.monic(lLcGCD);
                     basePrime = prime;
+                    previousBase = null;
                     continue;
                 }
 
@@ -1075,9 +1089,11 @@ public final class MultivariateGCD {
                 // better degree bound found -> start over
                 if (modularGCD.degree(0) < bBase.degree(0)) {
                     lLcGCD = lcGCD.mod(bPrime).longValueExact();
+                    base = modularGCD.monic(lLcGCD);
                     // scale to correct l.c.
-                    bBase = modularGCD.monic(lLcGCD).toBigPoly();
+                    bBase = base.toBigPoly();
                     bBasePrime = bPrime;
+                    previousBase = null;
                     continue;
                 }
 
@@ -1196,7 +1212,7 @@ public final class MultivariateGCD {
         }
 
         boolean hasNext() {
-            return aIterator.hasNext() || bIterator.hasNext();
+            return aIterator.hasNext() || bIterator.hasNext() || aTermCached != null || bTermCached != null;
         }
 
         Term aTerm = null, bTerm = null;
@@ -1215,15 +1231,12 @@ public final class MultivariateGCD {
                 bTerm = bIterator.hasNext() ? bIterator.next() : zeroTerm;
 
             int c = ordering.compare(aTerm, bTerm);
-            if (c < 0) {
-                aTermCached = aTerm;
-                aTerm = zeroTerm;
-            } else if (c > 0) {
+            if (c < 0 && aTerm != zeroTerm) {
                 bTermCached = bTerm;
                 bTerm = zeroTerm;
-            } else {
-                aTermCached = null;
-                bTermCached = null;
+            } else if (c > 0 && bTerm != zeroTerm) {
+                aTermCached = aTerm;
+                aTerm = zeroTerm;
             }
         }
     }
@@ -1294,7 +1307,7 @@ public final class MultivariateGCD {
 
         // the base polynomial
         MultivariatePolynomial<BigInteger> base = null;
-        PrimesIterator primesLoop = new PrimesIterator(1031);
+        PrimesIterator primesLoop = new PrimesIterator((1 << 16) - (1 << 12));
         BigInteger bBasePrime = null;
 
         main_loop:

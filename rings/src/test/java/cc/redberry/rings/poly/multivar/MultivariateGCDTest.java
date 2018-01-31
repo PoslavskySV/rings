@@ -21,6 +21,8 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
@@ -630,9 +632,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD));
     }
 
-
     @Test
-    public void testPairedIterator() throws Exception {
+    public void testPairedIterator1() throws Exception {
         RandomGenerator rnd = getRandom();
         int nIterations = its(1000, 1000);
         for (int n = 0; n < nIterations; n++) {
@@ -650,8 +651,27 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 acc.add(it.bTerm);
                 assertTrue(it.aTerm.coefficient.isZero() || it.bTerm.coefficient.isZero() || 0 == a.ordering.compare(it.aTerm, it.bTerm));
             }
-            assertEquals(acc, a.clone().add(b));
+            assertEquals(a.clone().add(b), acc);
         }
+    }
+
+    @Test
+    public void testPairedIterator2() throws Exception {
+        MultivariatePolynomial<BigInteger>
+                a = parse(" y  +   0  +  x*y   + x*y^2 + x*y^3 + x*y^4  +   0    "),
+                b = parse(" 0  +   x  +   0    +   0   +  0    +   0    + x^2*y^2");
+
+        PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                it = new PairIterator<>(a, b);
+
+        MultivariatePolynomial<BigInteger> acc = a.createZero();
+        while (it.hasNext()) {
+            it.advance();
+            acc.add(it.aTerm);
+            acc.add(it.bTerm);
+            assertTrue(it.aTerm.coefficient.isZero() || it.bTerm.coefficient.isZero() || 0 == a.ordering.compare(it.aTerm, it.bTerm));
+        }
+        assertEquals(a.clone().add(b), acc);
     }
 
     @Test
@@ -1387,7 +1407,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 MultivariatePolynomial.parse("((1+y^2)*x^0)+((y)*x^0)*b+b^3+((1+y)*x^0)*b^4", domain),
         };
         for (int i = 0; i < 100; i++)
-            assertTrue(MultivariateGCD.PolynomialGCD(arr).isOne());
+            assertTrue(MultivariateGCD.PolynomialGCD(arr).isConstant());
     }
 
     @Test
@@ -1414,7 +1434,34 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 MultivariatePolynomial.parse("(x^2)+b+(x)*b^3+(x+x^2)*b^4+(1+x)*b^6+(1+x^2)*b^7", domain),
                 MultivariatePolynomial.parse("(1+x^2)+(x)*b+b^3+(1+x)*b^4", domain),
         };
-        assertTrue(MultivariateGCD.PolynomialGCD(arr).isOne());
+        assertTrue(MultivariateGCD.PolynomialGCD(arr).isConstant());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testArrayGCD4() throws Exception {
+        // very tricky example with recursive finite fields modulo 2
+        MultivariatePolynomial<MultivariatePolynomial<BigInteger>>[] pp = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("2").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("4").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("6").setNVariables(4).asOverMultivariateEliminate(2, 3)};
+
+        assertEquals(pp[0].parsePoly("2"), MultivariateGCD.PolynomialGCD(pp));
+
+
+        pp = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("2*x*y*z*t").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("4 - 2").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("6*x*y*z*t - 2").setNVariables(4).asOverMultivariateEliminate(2, 3)};
+
+        assertEquals(pp[0].parsePoly("2"), MultivariateGCD.PolynomialGCD(pp));
+
+        pp = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("2*x*y*z*t - 16").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("4*x - 2").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("6*x*y*z*t - 2").setNVariables(4).asOverMultivariateEliminate(2, 3)};
+
+        assertEquals(pp[0].parsePoly("2"), MultivariateGCD.PolynomialGCD(pp));
     }
 
     @Test
@@ -2692,7 +2739,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    static <E> Monomial<E> createMonomial(E cf, int... exps){
+    static <E> Monomial<E> createMonomial(E cf, int... exps) {
         return new Monomial<>(exps, ArraysUtil.sum(exps), cf);
     }
 }
