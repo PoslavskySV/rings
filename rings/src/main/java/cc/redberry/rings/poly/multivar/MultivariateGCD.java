@@ -98,7 +98,7 @@ public final class MultivariateGCD {
                 AMonomial monomial = p.lt();
                 for (Poly el : arr)
                     monomial = el.commonContent(monomial);
-                return (Poly) arr[0].create(monomial).multiply((IPolynomial) contentGCD(arr));
+                return (Poly) arr[0].create(monomial).monicWithLC(contentGCD(arr));
             }
         }
 
@@ -208,9 +208,9 @@ public final class MultivariateGCD {
 
     @SuppressWarnings("unchecked")
     private static <Poly extends AMultivariatePolynomial> Poly contentGCD(Poly[] arr) {
-        if (arr[0] instanceof MultivariatePolynomial)
-            return (Poly) contentGCD0((MultivariatePolynomial[]) arr);
-        return (Poly) arr[0].createOne();
+        if (arr[0].isOverField() || !(arr[0] instanceof MultivariatePolynomial))
+            return (Poly) arr[0].createOne();
+        return (Poly) contentGCD0((MultivariatePolynomial[]) arr);
     }
 
     private static <E> MultivariatePolynomial<E> contentGCD0(MultivariatePolynomial<E>[] arr) {
