@@ -1,5 +1,7 @@
 package cc.redberry.rings.poly.multivar;
 
+import cc.redberry.rings.Ring;
+
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -123,6 +125,84 @@ public final class MultivariateDivision {
     }
 
     /**
+     * Performs multivariate pseudo division with remainder and returns the remainder.
+     *
+     * @param dividend the dividend
+     * @param dividers the dividers
+     * @return the "pseudo" remainder
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly pseudoRemainder(Poly dividend, Poly... dividers) {
+        if (dividend.isOverField())
+            return remainder(dividend, dividers);
+        return (Poly) pseudoRemainder0((MultivariatePolynomial) dividend, (MultivariatePolynomial[]) dividers);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> MultivariatePolynomial<E>
+    pseudoRemainder0(MultivariatePolynomial<E> dividend, MultivariatePolynomial<E>... dividers) {
+        int i = 0;
+        int constDivider = -1;
+        for (; i < dividers.length; i++) {
+            if (dividers[i].isZero())
+                throw new ArithmeticException("divide by zero");
+            if (dividers[i].isConstant())
+                constDivider = i;
+        }
+
+        if (constDivider != -1)
+            return dividend.createZero();
+
+        Ring<E> ring = dividend.ring;
+
+        // cache leading terms
+        Monomial<E>[] dividersLTs = Arrays.stream(dividers).map(MultivariatePolynomial<E>::lt).toArray(Monomial[]::new);
+        dividend = dividend.clone();
+        MultivariatePolynomial<E> remainder = dividend.createZero();
+        while (!dividend.isZero()) {
+            Monomial<E> ltDiv = null;
+            Monomial<E> lt = dividend.lt();
+
+            int iPseudoDiv = -1;
+            DegreeVector dvPseudoDiv = null;
+            for (i = 0; i < dividersLTs.length; ++i) {
+                DegreeVector dvDiv = lt.dvDivideOrNull(dividersLTs[i]);
+                if (dvDiv == null)
+                    continue;
+
+                E cfDiv = ring.divideOrNull(lt.coefficient, dividersLTs[i].coefficient);
+                if (cfDiv != null) {
+                    ltDiv = new Monomial<>(dvDiv, cfDiv);
+                    break;
+                } else if (iPseudoDiv == -1 || ring.compare(dividersLTs[i].coefficient, dividersLTs[iPseudoDiv].coefficient) < 0) {
+                    iPseudoDiv = i;
+                    dvPseudoDiv = dvDiv;
+                }
+            }
+
+            if (ltDiv != null) {
+                dividend = dividend.subtract(dividend.create(ltDiv).multiply(dividers[i]));
+                continue;
+            }
+
+            if (iPseudoDiv == -1) {
+                remainder = remainder.add(lt);
+                dividend = dividend.subtractLt();
+                continue;
+            }
+
+            E gcd = ring.gcd(lt.coefficient, dividersLTs[iPseudoDiv].coefficient);
+            E factor = ring.divideExact(dividersLTs[iPseudoDiv].coefficient, gcd);
+            dividend.multiply(factor);
+            remainder.multiply(factor);
+
+            dividend = dividend.subtract(dividend.create(new Monomial<>(dvPseudoDiv, ring.divideExact(lt.coefficient, gcd))).multiply(dividers[iPseudoDiv]));
+        }
+        return remainder.primitivePart();
+    }
+
+    /**
      * Performs multivariate division with remainder.
      *
      * @param dividend the dividend
@@ -163,6 +243,34 @@ public final class MultivariateDivision {
         Poly[] array = divider.createArray(1);
         array[0] = divider;
         return remainder(dividend, array);
+    }
+
+    /**
+     * Performs multivariate division with remainder and rerurns the remainder.
+     *
+     * @param dividend the dividend
+     * @param dividers the dividers
+     * @return array of quotients and remainder at the last position
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly pseudoRemainder(Poly dividend, Collection<Poly> dividers) {
+        return pseudoRemainder(dividend, dividers.toArray(dividend.createArray(dividers.size())));
+    }
+
+    /**
+     * Performs multivariate division with remainder and rerurns the remainder.
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return array of quotients and remainder at the last position
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly pseudoRemainder(Poly dividend, Poly divider) {
+        Poly[] array = divider.createArray(1);
+        array[0] = divider;
+        return pseudoRemainder(dividend, array);
     }
 
     /**

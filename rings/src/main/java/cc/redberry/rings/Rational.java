@@ -350,6 +350,8 @@ public final class Rational<E>
     }
 
     public String toString(ToStringSupport<E> toString) {
+        if (signum() < 0)
+            return "-" + negate().toString(toString);
         String str;
         if (ring.isOne(denominator))
             str = toString(numerator, toString, false);

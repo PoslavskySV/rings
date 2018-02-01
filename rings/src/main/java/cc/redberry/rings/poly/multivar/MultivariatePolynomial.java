@@ -683,6 +683,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> primitivePart() {
+        if (isZero())
+            return this;
         MultivariatePolynomial<E> r = divideOrNull(content());
         assert r != null;
         return r;

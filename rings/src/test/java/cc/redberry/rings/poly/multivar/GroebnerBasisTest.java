@@ -9,7 +9,10 @@ import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -20,21 +23,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static cc.redberry.rings.Rings.Q;
+import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.parse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @since 1.0
@@ -485,6 +486,57 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 System.out.println(actual.size());
             }
             assertEquals(expected, actual);
+            assertEquals(expected, buch);
+        }
+
+        System.out.println("F4         : " + TimeUnits.statisticsNanotime(tF4));
+        System.out.println("Buchberger : " + TimeUnits.statisticsNanotime(tBuch));
+        System.out.println("Singular   : " + TimeUnits.statisticsNanotime(tSingular));
+    }
+
+    @Test
+    @RequiresSingular
+    public void test15a_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+        int nIterations = its(10, 20);
+        int nEls = 3;
+        DescriptiveStatistics
+                tF4 = new DescriptiveStatistics(),
+                tBuch = new DescriptiveStatistics(),
+                tSingular = new DescriptiveStatistics();
+        for (int i = 0; i < nIterations; i++) {
+            List<MultivariatePolynomial<Rational<BigInteger>>> ideal = new ArrayList<>();
+            for (int j = 0; j < nEls; j++)
+                ideal.add(RandomMultivariatePolynomials.randomPolynomial(3, 3, 3, Q, GREVLEX, rnd));
+
+            //System.out.println();
+            //System.out.println(ideal);
+            long start, time;
+//            start = System.nanoTime();
+//            List<MultivariatePolynomial<Rational<BigInteger>>> actual = F4GB(ideal, GREVLEX);
+//            long time = System.nanoTime() - start;
+//            tF4.addValue(time);
+//            System.out.println("F4       : " + TimeUnits.nanosecondsToString(time));
+
+            start = System.nanoTime();
+            List<MultivariatePolynomial<Rational<BigInteger>>> buch = BuchbergerGB(ideal, GREVLEX);
+            time = System.nanoTime() - start;
+            tBuch.addValue(time);
+            System.out.println("Buch     : " + TimeUnits.nanosecondsToString(time));
+
+            SingularResult<?, MultivariatePolynomial<Rational<BigInteger>>> singular = SingularGB(ideal, GREVLEX);
+            tSingular.addValue(singular.nanoseconds);
+            System.out.println("Singular : " + TimeUnits.nanosecondsToString(singular.nanoseconds));
+
+            List<MultivariatePolynomial<Rational<BigInteger>>> expected = singular.std;
+//            if (!actual.equals(expected)) {
+//                System.out.println("===>> ERROR");
+//                System.out.println(ideal);
+//                System.out.println(actual.size());
+//            }
+//            assertEquals(expected, actual);
+            canonicalize(buch);
+            assertEquals(expected, buch);
         }
 
         System.out.println("F4         : " + TimeUnits.statisticsNanotime(tF4));
@@ -501,9 +553,58 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 c = parse("x1^3*x2^3*x3^3*x4 - (1/17)*x2*x4^2*x1^4*x5 + x3^3*x2 - x4 - 1", Q, GREVLEX, vars);
         List<MultivariatePolynomial<Rational<BigInteger>>> gens = Arrays.asList(a, b, c);
 
-        List<MultivariatePolynomial<Rational<BigInteger>>> buch = BuchbergerGB(gens, GREVLEX);
+        List<MultivariatePolynomial<Rational<BigInteger>>> actual = BuchbergerGB(gens, GREVLEX);
+        assertTrue(actual.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral)));
+        canonicalize(actual);
+        List<MultivariatePolynomial<Rational<BigInteger>>> expected = BuchbergerGB(gens, GREVLEX, NO_MINIMIZATION,
+                () -> new SyzygyTreeSet<>(new TreeSet<>(normalSelectionStrategy(GREVLEX))));
+        assertEquals(expected, actual);
+    }
 
-//        System.out.println(buch);
+    @Test
+    public void test17() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+                b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+                c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+
+        List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> id = gens.stream()
+                .map(p -> MultivariateConversions.split(p, 2, 3))
+                .map(p -> p.mapCoefficients(Frac(p.ring), cf -> new Rational<>(p.ring, cf)))
+                .collect(Collectors.toList());
+        id = BuchbergerGB(id, GREVLEX);
+        assertTrue(id.get(0).isConstant());
+    }
+
+    @Test
+    @RequiresSingular
+    public void test18() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<Rational<BigInteger>>
+                f1 = parse("x^2*y^2 + x*y - z", Q, GREVLEX, vars),
+                f2 = parse("x^17*y - y^2 + x*z*y - 1", Q, GREVLEX, vars);
+
+        List<MultivariatePolynomial<Rational<BigInteger>>> ideal = Arrays.asList(f1, f2);
+        List<MultivariatePolynomial<Rational<BigInteger>>> sing = SingularGB(ideal, GREVLEX).std;
+        List<MultivariatePolynomial<Rational<BigInteger>>> buch = canonicalize(GroebnerBasis.BuchbergerGB(ideal, GREVLEX));
+        Assert.assertEquals(sing, buch);
+    }
+
+    @Test
+    @RequiresSingular
+    public void test19() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<Rational<BigInteger>>
+                f1 = parse("x^4*y^2 + x*y - z^2", Q, GREVLEX, vars),
+                f2 = parse("x^17*y - x*y^2 + x*z*y - 1", Q, GREVLEX, vars),
+                f3 = parse("x*y^17 - x*y^2 + x*z*y - 1", Q, GREVLEX, vars);
+
+        List<MultivariatePolynomial<Rational<BigInteger>>> ideal = Arrays.asList(f1, f2, f3);
+        List<MultivariatePolynomial<Rational<BigInteger>>> sing = SingularGB(ideal, GREVLEX).std;
+        List<MultivariatePolynomial<Rational<BigInteger>>> buch = canonicalize(GroebnerBasis.BuchbergerGB(ideal, GREVLEX));
+        Assert.assertEquals(sing, buch);
     }
 
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
@@ -544,7 +645,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
 
                 writer.write(String.format("ring r = %s, (%s), %s;",
-                        factory.coefficientRingCardinality() == null ? 0 : factory.coefficientRingCardinality(),
+                        factory.coefficientRingCardinality() == null ? "QQ" : factory.coefficientRingCardinality(),
                         Arrays.stream(vars).collect(Collectors.joining(",")),
                         order));
                 writer.newLine();

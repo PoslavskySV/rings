@@ -1,7 +1,9 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
 import cc.redberry.rings.Ring;
+import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -49,9 +51,7 @@ public final class GroebnerBasis {
     /** Make each poly monic and sort list */
     static <Poly extends AMultivariatePolynomial<?, Poly>>
     List<Poly> canonicalize(List<Poly> list) {
-        // todo replace monic with `to common denominator` for Q[X]
-        list.forEach(Poly::monic);
-        // fixme sort with respect to minimal total degree first
+        list.forEach(Poly::canonical);
         list.sort(Comparable::compareTo);
         return list;
     }
@@ -59,10 +59,11 @@ public final class GroebnerBasis {
     /** set monomial order, monicize, sort etc. */
     private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> prepareGenerators(List<Poly> generators, Comparator<DegreeVector> monomialOrder) {
-        // todo monicize
-
         // clone generators & set monomial order
-        generators = generators.stream().map(p -> p.setOrdering(monomialOrder)).collect(Collectors.toList());
+        generators = generators.stream()
+                .map(p -> p.setOrdering(monomialOrder))
+                .map(Poly::canonical) // <- make poly monic or primitive
+                .collect(Collectors.toList());
 
         Poly factory = generators.get(0);
         if (factory.nVariables == 1)
@@ -114,8 +115,6 @@ public final class GroebnerBasis {
                 }
             }
         }
-        for (Poly el : basis)
-            el.monic();
     }
 
     /** Computes reduced Groebner basis */
@@ -123,7 +122,7 @@ public final class GroebnerBasis {
     void removeRedundant(List<Poly> basis) {
         for (int i = 0, size = basis.size(); i < size; ++i) {
             Poly el = basis.remove(i);
-            Poly r = MultivariateDivision.remainder(el, basis);
+            Poly r = MultivariateDivision.pseudoRemainder(el, basis);
             if (r.isZero()) {
                 --i;
                 --size;
@@ -171,19 +170,28 @@ public final class GroebnerBasis {
     /** Computes syzygy of given polynomials */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly syzygy(Poly a, Poly b) {
-        return syzygy(a.monomialAlgebra.create(lcm(a.multidegree(), b.multidegree())), a, b);
+        return syzygy(new DegreeVector(lcm(a.multidegree(), b.multidegree())), a, b);
     }
 
     /** Computes syzygy of given polynomials */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly syzygy(SyzygyPair<Term, Poly> sPair) {
-        return syzygy(sPair.fi.monomialAlgebra.create(sPair.syzygyGamma), sPair.fi, sPair.fj);
+        return syzygy(sPair.syzygyGamma, sPair.fi, sPair.fj);
     }
 
     /** Computes syzygy of given polynomials */
+    @SuppressWarnings("unchecked")
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly syzygy(Term lcm, Poly a, Poly b) {
+    Poly syzygy(DegreeVector dvlcm, Poly a, Poly b) {
         IMonomialAlgebra<Term> mAlgebra = a.monomialAlgebra;
+        Term lcm;
+        if (a.isOverField())
+            lcm = mAlgebra.create(dvlcm);
+        else
+            lcm = (Term) new Monomial<>(dvlcm,
+                    ((MultivariatePolynomial) a).ring.lcm(
+                            ((MultivariatePolynomial) a).lc(),
+                            ((MultivariatePolynomial) b).lc()));
         Poly
                 aReduced = a.clone().multiply(mAlgebra.divideExact(lcm, a.lt())),
                 bReduced = b.clone().multiply(mAlgebra.divideExact(lcm, b.lt())),
@@ -197,7 +205,7 @@ public final class GroebnerBasis {
      * TreeSet&lt;SyzygyPair&lt;Term, Poly&gt;&gt;&gt; of degree -&gt; set of pairs with this degree) for graded
      * algorithms (F4, homogeneous Buchberger etc).
      */
-    private interface SyzygySet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>> {
+    interface SyzygySet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>> {
         /** add new syzygy to set */
         void add(SyzygyPair<Term, Poly> sPair);
 
@@ -218,7 +226,7 @@ public final class GroebnerBasis {
      * A plain set of critical pairs --- wrapper around TreeSet&lt;SyzygyPair&lt;Term, Poly&gt;&gt;. Elements are
      * ordered according to the comparator of TreeSet instance.
      */
-    private static final class SyzygyTreeSet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
+    static final class SyzygyTreeSet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
             implements SyzygySet<Term, Poly> {
         final TreeSet<SyzygyPair<Term, Poly>> sPairs;
 
@@ -250,7 +258,7 @@ public final class GroebnerBasis {
      * Graded set of syzygies: critical pairs are collected in the sets each one containing critical pairs with the same
      * degree. Wrapper around TreeMap&lt;Integer, TreeSet&lt;SyzygyPair&lt;Term, Poly&gt;&gt;&gt;
      */
-    private static final class GradedSyzygyTreeSet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
+    static final class GradedSyzygyTreeSet<Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
             implements SyzygySet<Term, Poly> {
         final TreeMap<Integer, TreeSet<SyzygyPair<Term, Poly>>> sPairs;
         final Comparator<SyzygyPair> selectionStrategy;
@@ -491,6 +499,27 @@ public final class GroebnerBasis {
         return ideal.stream().map(p -> p.dropVariable(p.nVariables - 1)).collect(Collectors.toList());
     }
 
+    /** Groebner basis over fraction fields */
+    static <E> List<MultivariatePolynomial<Rational<E>>>
+    FracGB(List<MultivariatePolynomial<Rational<E>>> ideal,
+           Comparator<DegreeVector> monomialOrder,
+           GroebnerAlgorithm<Monomial<E>, MultivariatePolynomial<E>> algorithm) {
+        Ring<Rational<E>> ring = ideal.get(0).ring;
+        return algorithm.GroebnerBasis(ideal.stream()
+                        .map(p -> Util.toCommonDenominator(p)._1)
+                        .collect(Collectors.toList()),
+                monomialOrder)
+                .stream()
+                .map(p -> p.mapCoefficients(ring, c -> new Rational<>(p.ring, c)))
+                .collect(Collectors.toList());
+    }
+
+    interface GroebnerAlgorithm<
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        List<Poly> GroebnerBasis(List<Poly> ideal, Comparator<DegreeVector> monomialOrder);
+    }
+
     /* ************************************** Buchberger algorithm ********************************************** */
 
     /**
@@ -510,11 +539,15 @@ public final class GroebnerBasis {
      * @param selectionStrategy    critical pair selection strategy
      * @param minimizationStrategy how to minimize Groebner basis at intermediate steps
      */
+    @SuppressWarnings("unchecked")
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerGB(List<Poly> generators,
                             Comparator<DegreeVector> monomialOrder,
                             Comparator<SyzygyPair> selectionStrategy,
                             MinimizationStrategy minimizationStrategy) {
+        if (Util.isOverRationals(generators.get(0)))
+            return (List<Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::BuchbergerGB);
+
         return BuchbergerGB(generators, monomialOrder, minimizationStrategy,
                 () -> new SyzygyTreeSet<>(new TreeSet<>(selectionStrategy)));
     }
@@ -522,9 +555,13 @@ public final class GroebnerBasis {
     /**
      * Computes minimized and reduced Groebner basis of a given homogeneous ideal via Buchberger algorithm.
      */
+    @SuppressWarnings("unchecked")
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
                                        Comparator<DegreeVector> monomialOrder) {
+        if (Util.isOverRationals(generators.get(0)))
+            return (List<Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::BuchbergerHomogeneousGB);
+
         Comparator<SyzygyPair> selectionStrategy = normalSelectionStrategy(generators.get(0).ordering);
         // fixme use sugar always?
         if (!isGradedOrder(monomialOrder))
@@ -594,7 +631,7 @@ public final class GroebnerBasis {
             // pick up (and remove) a bunch of critical pairs
             for (SyzygyPair<Term, Poly> pair : sPairs.getAndRemoveNextBunch()) {
                 // compute actual syzygy
-                Poly syzygy = MultivariateDivision.remainder(syzygy(pair), reducersArray);
+                Poly syzygy = MultivariateDivision.pseudoRemainder(syzygy(pair), reducersArray);
                 if (syzygy.isZero())
                     continue;
 
@@ -695,7 +732,7 @@ public final class GroebnerBasis {
     Poly remainder0(Poly dividend, List<Poly> dividers) {
         Poly[] dividersArr = dividers.stream().filter(Objects::nonNull).toArray(dividend::createArray);
         //Arrays.sort(dividersArr, (a, b) -> a.ordering.compare(a.lt(), b.lt()));
-        return MultivariateDivision.remainder(dividend, dividersArr);
+        return MultivariateDivision.pseudoRemainder(dividend, dividersArr);
     }
 
     /* ************************************************** F4 ******************************************************* */
@@ -886,12 +923,11 @@ public final class GroebnerBasis {
             while (!sPairs.isEmpty() && subset.size() < F4_MIN_SELECTION_SIZE)
                 subset.addAll(sPairs.getAndRemoveNextBunch());
 
-//            System.out.println(subset.size());
             if (subset.size() <= F4_LINALG_THRESHOLD) {
                 // normal Buchberger case, don't use linear algebra, just reduce
                 for (SyzygyPair<Term, ArrayBasedPoly<Term>> sPair : subset) {
                     // compute actual syzygy
-                    Poly syzygy = syzygy(mAlgebra.create(sPair.syzygyGamma), factory.create(sPair.fi), factory.create(sPair.fj));
+                    Poly syzygy = syzygy(sPair.syzygyGamma, factory.create(sPair.fi), factory.create(sPair.fj));
                     syzygy = MultivariateDivision.remainder(syzygy, reducersArray);
                     if (syzygy.isZero())
                         continue;

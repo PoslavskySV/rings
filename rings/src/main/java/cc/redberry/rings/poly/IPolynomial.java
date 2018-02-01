@@ -183,6 +183,16 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     }
 
     /**
+     * Makes this poly monic if coefficient ring is field, otherwise makes this primitive
+     */
+    default Poly canonical() {
+        if (isOverField())
+            return monic();
+        else
+            return primitivePart();
+    }
+
+    /**
      * Gives signum of the leading coefficient
      *
      * @return signum of the leading coefficient
