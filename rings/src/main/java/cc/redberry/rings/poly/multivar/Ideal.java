@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static cc.redberry.rings.poly.multivar.GroebnerBasis.canonicalize;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 
 /**
@@ -217,7 +218,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         if (oth.isOne() || this.isEmpty())
             return this;
 
-        return new Ideal<>(GroebnerBasis.canonicalize(
+        return new Ideal<>(canonicalize(
                 Arrays.stream(groebnerBasis)
                         .map(p -> p.clone().multiply(oth))
                         .collect(Collectors.toList())));
@@ -258,7 +259,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
                 .map(p -> p.dropVariable(0))
                 .map(p -> p.setOrdering(monomialOrder)) // <- restore order!
                 .collect(Collectors.toList());
-        GroebnerBasis.canonicalize(result);
+        canonicalize(result);
         return new Ideal<>(result);
     }
 

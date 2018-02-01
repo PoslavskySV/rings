@@ -51,9 +51,18 @@ public final class GroebnerBasis {
     /** Make each poly monic and sort list */
     static <Poly extends AMultivariatePolynomial<?, Poly>>
     List<Poly> canonicalize(List<Poly> list) {
-        list.forEach(Poly::canonical);
+        if (Util.isOverRationals(list.get(0)))
+            canonicalizeFrac((List) list);
+        else
+            list.forEach(Poly::canonical);
         list.sort(Comparable::compareTo);
         return list;
+    }
+
+    @SuppressWarnings("unchecked")
+    static <E> void canonicalizeFrac(List<MultivariatePolynomial<Rational<E>>> list) {
+        Ring<E> fRing = list.get(0).ring.getOne().ring;
+        list.replaceAll(p -> Util.toCommonDenominator(p)._1.canonical().mapCoefficients(p.ring, c -> new Rational<>(fRing, c)));
     }
 
     /** set monomial order, monicize, sort etc. */
@@ -602,7 +611,7 @@ public final class GroebnerBasis {
         // simplify generators as much as possible
         generators = prepareGenerators(generators, monomialOrder);
         if (generators.size() == 1)
-            return canonicalize(generators);
+            return generators;
 
         Poly factory = generators.get(0);
 
