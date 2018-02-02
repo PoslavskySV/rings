@@ -412,7 +412,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
     public void test14_random() throws Exception {
         RandomGenerator rnd = getRandom();
         IntegersZp64 domain = new IntegersZp64(17);
-        int nIterations = its(1, 5);
+        int nIterations = its(1, 1);
         int nEls = 4;
         DescriptiveStatistics
                 tF4 = new DescriptiveStatistics(),
