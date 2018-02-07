@@ -96,4 +96,15 @@ public final class MonomialZp64 extends AMonomial<MonomialZp64> {
         result = 31 * result + (int) (coefficient ^ (coefficient >>> 32));
         return result;
     }
+
+    @Override
+    public String toString() {
+        String dvString = super.toString();
+        String cfString = Long.toString(coefficient);
+        if (dvString.isEmpty())
+            return cfString;
+        if (coefficient == 1)
+            return dvString;
+        return coefficient + "*" + dvString;
+    }
 }

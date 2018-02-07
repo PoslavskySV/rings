@@ -1636,7 +1636,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             E coeff = term.coefficient;
             if (ring.isZero(coeff))
                 continue;
-            String monomialString = term.toString(vars);
+            String monomialString = term.dvToString(vars);
             if (first) {
                 if (!ring.isOne(coeff) || monomialString.isEmpty()) {
                     sb.append(coeffToString(cfxToString, coeff));

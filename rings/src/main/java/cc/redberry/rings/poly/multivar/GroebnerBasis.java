@@ -397,18 +397,22 @@ public final class GroebnerBasis {
             sPairs.add(new SyzygyPair<>(iIndex, oldSize, basis));
         }
 
-        // remove old basis elements that are now redundant
-        // note: do that only after update of critical pair set
-        // note: this is compatible only with LeadReduce function,
-        // in other cases one should keep track of all reducers
-        // so this will only help to eliminate Buchberger triplets faster
-        for (int iIndex = 0; iIndex < oldSize; ++iIndex) {
-            Poly fi = basis.get(iIndex);
-            if (fi == null)
-                continue;
-            if (dividesQ(newLeadTerm, fi.lt()))
-                basis.set(iIndex, null);
-        }
+
+//        The following simplification is removed, since it is valid only when lead reduction is used
+//        (we use full reduction everywhere)
+//
+//        // remove old basis elements that are now redundant
+//        // note: do that only after update of critical pair set
+//        // note: this is compatible only with LeadReduce function,
+//        // in other cases one should keep track of all reducers
+//        // so this will only help to eliminate Buchberger triplets faster
+//        for (int iIndex = 0; iIndex < oldSize; ++iIndex) {
+//            Poly fi = basis.get(iIndex);
+//            if (fi == null)
+//                continue;
+//            if (dividesQ(newLeadTerm, fi.lt()))
+//                basis.set(iIndex, null);
+//        }
     }
 
     /**
@@ -628,11 +632,8 @@ public final class GroebnerBasis {
         List<Poly> groebner = new ArrayList<>();
         // update Groebner basis with initial generators
         generators.forEach(g -> updateBasis(groebner, sPairs, g));
-
-        // a list of reducers that will be used for a full reduction of syzygies
-        List<Poly> reducers = new ArrayList<>(generators);
         // cache array used in divisions (little performance improvement actually)
-        Poly[] reducersArray = reducers.toArray(factory.createArray(reducers.size()));
+        Poly[] reducersArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
 
         // cache size of basis after each minimization
         int sizeAfterMinimization = groebner.size();
@@ -650,10 +651,8 @@ public final class GroebnerBasis {
 
                 // add syzygy to basis
                 updateBasis(groebner, sPairs, syzygy);
-                // add syzygy to a list of reducers
-                reducers.add(syzygy);
                 // recompute array
-                reducersArray = reducers.toArray(factory.createArray(reducers.size()));
+                reducersArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
                 // don't sort here, not practical actually
                 // Arrays.sort(groebnerArray, polyOrder);
 
@@ -752,11 +751,15 @@ public final class GroebnerBasis {
      * @param generators    generators of the ideal
      * @param monomialOrder monomial order to use
      */
+    @SuppressWarnings("unchecked")
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> F4GB(List<Poly> generators,
                     Comparator<DegreeVector> monomialOrder) {
         if (!isGradedOrder(monomialOrder))
             throw new UnsupportedOperationException("F4 works only with graded orders");
+        if (Util.isOverRationals(generators.get(0)))
+            return (List<Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::F4GB);
+
         return F4GB(generators, monomialOrder,
                 () -> new GradedSyzygyTreeSet<>(new TreeMap<>(), defaultSelectionStrategy(monomialOrder), SyzygyPair::degree));
     }
@@ -848,10 +851,41 @@ public final class GroebnerBasis {
                 degrees[i] += term.exponents[i];
         }
 
+        void multiply(DegreeVector term) {
+            for (int i = data.length - 1; i >= 0; --i)
+                data[i] = data[i].multiply(term);
+            for (int i = 0; i < degrees.length; ++i)
+                degrees[i] += term.exponents[i];
+        }
+
+        void divideExact(Term term) {
+            for (int i = data.length - 1; i >= 0; --i)
+                data[i] = mAlgebra.divideExact(data[i], term);
+            for (int i = 0; i < degrees.length; ++i)
+                degrees[i] -= term.exponents[i];
+        }
+
         /** Multiply array-based poly by a monomial */
         void monic() {
             Term unit = mAlgebra.getUnitTerm(lt().exponents.length);
             multiply(mAlgebra.divideExact(unit, lt().setDegreeVector(unit)));
+        }
+
+        @SuppressWarnings("unchecked")
+        void primitivePart() {
+            if (mAlgebra instanceof IMonomialAlgebra.MonomialAlgebra) {
+                Ring ring = ((IMonomialAlgebra.MonomialAlgebra) mAlgebra).ring;
+                Object gcd = ring.gcd(Arrays.stream(data).map(t -> ((Monomial) t).coefficient).collect(Collectors.toList()));
+                this.divideExact((Term) new Monomial(data[0].exponents.length, gcd));
+            }
+        }
+
+        void canonical() {
+            if (mAlgebra instanceof IMonomialAlgebra.MonomialAlgebra
+                    && !((IMonomialAlgebra.MonomialAlgebra) mAlgebra).ring.isField())
+                primitivePart();
+            else
+                monic();
         }
 
         /** Sets the leading coefficient of poly from the coefficient of term (poly is copied only if necessary) */
@@ -868,7 +902,9 @@ public final class GroebnerBasis {
     private static final int F4_MIN_SELECTION_SIZE = 0; // not used actually
 
     /** The boundary size of S-pairs set when still normal Buchberger algorithm should be applied */
-    private static final int F4_LINALG_THRESHOLD = 16;
+    private static final int
+            F4_OVER_FIELD_LINALG_THRESHOLD = 16,
+            F4_OVER_EUCLID_LINALG_THRESHOLD = 0; // always use linear algebra for polynomials over Euclidean rings
 
     /**
      * Computes minimized and reduced Groebner basis of a given ideal via Faugère's F4 algorithm.
@@ -889,7 +925,6 @@ public final class GroebnerBasis {
             return canonicalize(generators);
 
         Poly factory = generators.get(0);
-        IMonomialAlgebra<Term> mAlgebra = factory.monomialAlgebra;
 
         // sort polynomials in the basis to achieve in general faster inital reductions
         Comparator<Poly> polyOrder = isGradedOrder(monomialOrder)
@@ -914,12 +949,8 @@ public final class GroebnerBasis {
             f4reductions.add(new ArrayList<>(Collections.singletonList(g)));
         }
 
-        // a list of reducers that will be used for a full reduction of syzygies
+        // a list of reducers that will be used for a full  direct (without linear algebra) reduction of syzygies
         List<Poly> reducers = new ArrayList<>(generators);
-        for (int i = 0; i < groebner.size(); ++i)
-            if (groebner.get(i) == null)
-                reducers.set(i, null);
-
         // cache array used in divisions (little performance improvement actually)
         Poly[] reducersArray = reducers.stream().filter(Objects::nonNull).toArray(factory::createArray);
 
@@ -932,12 +963,13 @@ public final class GroebnerBasis {
             while (!sPairs.isEmpty() && subset.size() < F4_MIN_SELECTION_SIZE)
                 subset.addAll(sPairs.getAndRemoveNextBunch());
 
-            if (subset.size() <= F4_LINALG_THRESHOLD) {
+            if ((factory.isOverField() && subset.size() <= F4_OVER_FIELD_LINALG_THRESHOLD)
+                    || (!factory.isOverField() && subset.size() <= F4_OVER_EUCLID_LINALG_THRESHOLD)) {
                 // normal Buchberger case, don't use linear algebra, just reduce
                 for (SyzygyPair<Term, ArrayBasedPoly<Term>> sPair : subset) {
                     // compute actual syzygy
                     Poly syzygy = syzygy(sPair.syzygyGamma, factory.create(sPair.fi), factory.create(sPair.fj));
-                    syzygy = MultivariateDivision.remainder(syzygy, reducersArray);
+                    syzygy = MultivariateDivision.pseudoRemainder(syzygy, reducersArray);
                     if (syzygy.isZero())
                         continue;
 
@@ -945,8 +977,6 @@ public final class GroebnerBasis {
                         // ideal = ring
                         return Collections.singletonList(factory.createOne());
 
-                    // monicize syzygy
-                    syzygy.monic();
                     // add syzygy to basis
                     ArrayBasedPoly<Term> _syzygy_ = new ArrayBasedPoly<>(syzygy);
                     updateBasis(groebner, sPairs, _syzygy_);
@@ -954,10 +984,6 @@ public final class GroebnerBasis {
                     f4reductions.add(new ArrayList<>(Collections.singletonList(_syzygy_)));
                     // add syzygy to a list of reducers
                     reducers.add(syzygy);
-                    for (int i = 0; i < groebner.size(); ++i)
-                        if (groebner.get(i) == null)
-                            reducers.set(i, null);
-
                     // recompute array
                     reducersArray = reducers.stream().filter(Objects::nonNull).toArray(factory::createArray);
                 }
@@ -974,16 +1000,16 @@ public final class GroebnerBasis {
             // form initial set of H-polynomials from the current set of critical pairs
             for (SyzygyPair<Term, ArrayBasedPoly<Term>> syzygy : subset) {
                 // correction factors
-                Term
-                        fiQuot = mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fi.lt()),
-                        fjQuot = mAlgebra.divideExact(syzygy.syzygyGamma, syzygy.fj.lt());
+                DegreeVector
+                        fiQuot = syzygy.syzygyGamma.dvDivideExact(syzygy.fi.lt()),
+                        fjQuot = syzygy.syzygyGamma.dvDivideExact(syzygy.fj.lt());
 
                 // a pair of H-polynomials
                 ArrayBasedPoly<Term>
                         fiHPoly = simplify(syzygy.fi, fiQuot, f4reductions.get(syzygy.i)),
                         fjHPoly = simplify(syzygy.fj, fjQuot, f4reductions.get(syzygy.j));
 
-                assert fiHPoly.lt().equals(fjHPoly.lt()) : fiHPoly.lt() + " " + fjHPoly.lt();
+                assert fiHPoly.lt().dvEquals(fjHPoly.lt()) : fiHPoly.lt() + " " + fjHPoly.lt();
 
                 // add to set of H-polynomials
                 hPolynomials.add(new HPolynomial<>(fiHPoly, syzygy.i));
@@ -1020,7 +1046,7 @@ public final class GroebnerBasis {
                     // correction factor
                     DegreeVector quot = dv.dvDivideExact(groebner.get(iIndex).lt());
                     // new H-polynomial to add
-                    ArrayBasedPoly<Term> newH = simplify(groebner.get(iIndex), mAlgebra.create(quot), f4reductions.get(iIndex));
+                    ArrayBasedPoly<Term> newH = simplify(groebner.get(iIndex), quot, f4reductions.get(iIndex));
 
                     // append newH to H-polynomials
                     hPolynomials.add(new HPolynomial<>(newH, iIndex));
@@ -1100,11 +1126,10 @@ public final class GroebnerBasis {
      */
     static <Term extends AMonomial<Term>>
     ArrayBasedPoly<Term> simplify(ArrayBasedPoly<Term> generator,
-                                  Term factor,
+                                  DegreeVector factor,
                                   List<ArrayBasedPoly<Term>> reductions) {
-        IMonomialAlgebra<Term> mAlgebra = generator.mAlgebra;
         // the desired leading term of H-polynomial
-        Term desiredLeadTerm = mAlgebra.multiply(generator.lt(), factor);
+        DegreeVector desiredLeadTerm = generator.lt().dvMultiply(factor);
 
         // iterate from the last (most recently added, thus most simplified) to the first (the initial generator) reductions
         for (int i = reductions.size() - 1; i >= 0; --i) {
@@ -1114,15 +1139,14 @@ public final class GroebnerBasis {
 
             if (rLeadTerm.dvEquals(desiredLeadTerm))
                 // we just have the same calculation in the map (no any appropriate reductions were calculated)
-                return reduction.setLeadCoeffFrom(desiredLeadTerm);
+                return reduction;
 
             if (desiredLeadTerm.dvDivisibleBy(rLeadTerm)) {
                 // <- nontrivial appropriate reduction
 
                 DegreeVector quot = desiredLeadTerm.dvDivideExact(rLeadTerm);
                 ArrayBasedPoly<Term> g = reduction.clone();
-                g.multiply(mAlgebra.create(quot));
-                g = g.setLeadCoeffFrom(desiredLeadTerm);
+                g.multiply(quot);
 
                 // cache this reduction too
                 reductions.add(g);
@@ -1165,7 +1189,7 @@ public final class GroebnerBasis {
 
     /* ******************************************* F4 Zp64 linear algebra ******************************************* */
 
-    // for Zp64
+
     @SuppressWarnings("unchecked")
     private static List<ArrayBasedPoly<MonomialZp64>> reduceMatrixZp64(
             MultivariatePolynomialZp64 factory,
@@ -1383,7 +1407,7 @@ public final class GroebnerBasis {
                 iColumn = aRow.sparsePositions[i];
                 if (iColumn == iRow) // diagonal
                     continue;
-                subtractSparseFromDense(ring, bRow, aRow.sparseValues[i], bMatrix.rows[iColumn]);
+                subtractSparseFromDense(ring, bRow, bMatrix.rows[iColumn], aRow.sparseValues[i]);
             }
             bMatrix.rows[iRow] = new SparseArrayZp64(ring, bMatrix.densePositions, bRow);
         }
@@ -1395,7 +1419,7 @@ public final class GroebnerBasis {
             long[] dRow = dMatrix.rows[iRow].toDense();
             for (int i = 0; i < cRow.sparsePositions.length; ++i) {
                 iColumn = cRow.sparsePositions[i];
-                subtractSparseFromDense(ring, dRow, cRow.sparseValues[i], bMatrix.rows[iColumn]);
+                subtractSparseFromDense(ring, dRow, bMatrix.rows[iColumn], cRow.sparseValues[i]);
             }
             dMatrix.rows[iRow] = new SparseArrayZp64(ring, dMatrix.densePositions, dRow);
         }
@@ -1415,7 +1439,7 @@ public final class GroebnerBasis {
         for (iRow = 0; iRow < dMatrix.nRows; iRow++) {
             SparseArrayZp64 dRow = dMatrix.rows[iRow];
             iColumn = iRow + dShift;
-            if (iColumn >= nColumns)
+            if (iColumn >= dMatrix.nColumns)
                 break;
             if (dRow.coefficient(iColumn) == 0) {
                 --iRow;
@@ -1434,7 +1458,6 @@ public final class GroebnerBasis {
                 .collect(Collectors.toCollection(() -> new TreeSet<>(factory.ordering)));
 
         List<ArrayBasedPoly<MonomialZp64>> nPolynomials = new ArrayList<>();
-        // collect from A and B
         for (iRow = 0; iRow < nRows; ++iRow) {
             ArrayList<MonomialZp64> candidateList = new ArrayList<>();
 
@@ -1692,7 +1715,7 @@ public final class GroebnerBasis {
     }
 
     // denseArray - factor * sparseArray
-    static void subtractSparseFromDense(IntegersZp64 ring, long[] denseArray, long factor, SparseArrayZp64 sparseArray) {
+    static void subtractSparseFromDense(IntegersZp64 ring, long[] denseArray, SparseArrayZp64 sparseArray, long factor) {
         for (int i = 0; i < sparseArray.densePositions.length; i++)
             denseArray[sparseArray.densePositions[i]] = ring.subtract(denseArray[sparseArray.densePositions[i]], ring.multiply(factor, sparseArray.denseValues[i]));
         for (int i = 0; i < sparseArray.sparsePositions.length; i++)
@@ -1846,7 +1869,6 @@ public final class GroebnerBasis {
 
     /* ******************************************* F4 generic linear algebra ******************************************* */
 
-    // for Zp64
     @SuppressWarnings("unchecked")
     private static <E> List<ArrayBasedPoly<Monomial<E>>> reduceMatrixE(
             MultivariatePolynomial<E> factory,
@@ -1902,6 +1924,9 @@ public final class GroebnerBasis {
                 iRow, iColumn;
 
         // <- STEP 0: bring matrix to F4-form
+
+        // bring each poly to canonical form (either monic or primitive)
+        hPolynomials.forEach(h -> h.hPoly.canonical());
 
         // number of lead-terms in each column (columns with no any lead
         // terms are non-pivoting and can be rearranged)
@@ -1960,14 +1985,25 @@ public final class GroebnerBasis {
         }
 
         // choose pivoting rows, so that B matrix is maximally sparse (rows with minimal bFillIns)
+        // and lead terms of pivoting polys are units (if possible)
         TIntArrayList pivots = new TIntArrayList();
         for (iColumn = 0; iColumn < nRows; ++iColumn) {
             int minFillIn = Integer.MAX_VALUE;
             int pivot = -1;
+            boolean unitLeadTerm = false;
             for (iRow = iColumn; iRow < nRows; ++iRow)
-                if (mapping[iRow][0] == iColumn && bRowsFilling[iRow] < minFillIn) {
-                    minFillIn = bRowsFilling[iRow];
-                    pivot = iRow;
+                if (mapping[iRow][0] == iColumn) {
+                    // try to find pivot with unit lead term
+                    boolean ult = ring.isUnit(hPolynomials.get(iRow).hPoly.lt().coefficient);
+                    if (!unitLeadTerm && ult) {
+                        minFillIn = bRowsFilling[iRow];
+                        pivot = iRow;
+                        unitLeadTerm = true;
+                    } else if ((unitLeadTerm == ult) && bRowsFilling[iRow] < minFillIn) {
+                        minFillIn = bRowsFilling[iRow];
+                        pivot = iRow;
+                    }
+                    assert pivot != -1;
                 } else if (pivot != -1 && mapping[iRow][0] != iColumn)
                     break;
             if (pivot == -1)
@@ -1984,9 +2020,7 @@ public final class GroebnerBasis {
             ArraysUtil.swap(mapping, i, pivot);
         }
 
-        for (int i = 0; i < nPivotRows; ++i)
-            hPolynomials.get(i).hPoly.monic();
-        // the matrix is now is in the desired F4-form
+        // the matrix is in the desired F4-form
 
         // <- STEP 1: prepare data structures
 
@@ -1999,7 +2033,7 @@ public final class GroebnerBasis {
         // A & C are very sparse
         SparseRowMatrix<E>
                 aMatrix = new SparseRowMatrix<>(ring, nPivotRows, nPivotRows, new int[0]),
-                cMatrix = new SparseRowMatrix<>(ring, nRows - nPivotRows, nPivotRows, new int[0]);
+                cMatrix = new SparseRowMatrix<>(ring, nRows - nPivotRows, nPivotRows, aMatrix.densePositions);
 
         // sparse matrices B & D
         SparseRowMatrix<E>
@@ -2041,14 +2075,14 @@ public final class GroebnerBasis {
             E[] bdSparseValues = bdSparseVals.toArray(ring.createArray(bdSparseVals.size()));
             ArraysUtil.quickSort(bdSparseColumns, bdSparseValues);
             int[] acSparseColumns = acSparseCols.toArray();
-            E[] acSparseValues = acSparseVals.toArray(ring.createArray(bdSparseVals.size()));
+            E[] acSparseValues = acSparseVals.toArray(ring.createArray(acSparseVals.size()));
             ArraysUtil.quickSort(acSparseColumns, acSparseValues);
 
             if (iRow < nPivotRows) {
-                aMatrix.rows[iRow] = new SparseArray<>(ring, nPivotRows, new int[0], acSparseColumns, ring.createArray(0), acSparseValues);
+                aMatrix.rows[iRow] = new SparseArray<>(ring, nPivotRows, aMatrix.densePositions, acSparseColumns, ring.createArray(0), acSparseValues);
                 bMatrix.rows[iRow] = new SparseArray<>(ring, nColumns - nPivotRows, bDenseColumns, bdSparseColumns, bdDenseVals, bdSparseValues);
             } else {
-                cMatrix.rows[iRow - nPivotRows] = new SparseArray<>(ring, nPivotRows, new int[0], acSparseColumns, ring.createArray(0), acSparseValues);
+                cMatrix.rows[iRow - nPivotRows] = new SparseArray<>(ring, nPivotRows, cMatrix.densePositions, acSparseColumns, ring.createArray(0), acSparseValues);
                 dMatrix.rows[iRow - nPivotRows] = new SparseArray<>(ring, nColumns - nPivotRows, bDenseColumns, bdSparseColumns, bdDenseVals, bdSparseValues);
             }
         }
@@ -2060,13 +2094,46 @@ public final class GroebnerBasis {
             SparseArray<E> aRow = aMatrix.rows[iRow];
             E[] bRow = bMatrix.rows[iRow].toDense();
 
-            for (int i = 0; i < aRow.sparsePositions.length; ++i) {
+            for (int i = aRow.sparsePositions.length - 1; i >= 0; --i) {
                 iColumn = aRow.sparsePositions[i];
-                if (iColumn == iRow) // diagonal
-                    continue;
-                subtractSparseFromDense(ring, bRow, aRow.sparseValues[i], bMatrix.rows[iColumn]);
+                if (iColumn == iRow)
+                    continue; // diagonal
+                assert iColumn > iRow;
+                SparseArray<E>
+                        // pivot row in A
+                        aPivotRow = aMatrix.rows[iColumn],
+                        // corresponding pivot row in B
+                        bPivotRow = bMatrix.rows[iColumn];
+
+                // non-diagonal value in A (iRow, iColumn)
+                E aNonDiagonal = aRow.sparseValues[i];
+                // corresponding pivoting value (iColumn, iColumn) in A
+                E aPivot = aPivotRow.coefficient(iColumn);
+                assert !ring.isZero(aPivot);
+
+                E // compute LCM and correction factors
+                        lcm = ring.lcm(aNonDiagonal, aPivot),
+                        // correction factor for currently reducing row
+                        rowFactor = ring.divideExact(lcm, aNonDiagonal),
+                        // correction factor for pivoting row
+                        pivotFactor = ring.divideExact(lcm, aPivot);
+
+                // bRow = rowFactor * bRow -  pivotFactor * bPivotRow
+                subtractSparseFromDense(ring, bRow, rowFactor, bPivotRow, pivotFactor);
+                // correct aRow
+                aRow.multiply(rowFactor);
             }
+            // set row in B
             bMatrix.rows[iRow] = new SparseArray(ring, bMatrix.densePositions, bRow);
+            // diagonal value in A row
+            E aRowDiagonalValue = aRow.coefficient(iRow);
+            assert !ring.isZero(aRowDiagonalValue);
+            // common content in the AB row
+            E abRowContent = bMatrix.rows[iRow].content(aRowDiagonalValue);
+            bMatrix.rows[iRow].divideExact(abRowContent);
+            // recreate row of A (with single diagonal element)
+            aRow.sparsePositions = new int[]{iRow};
+            aRow.sparseValues = ring.createArray(ring.divideExact(aRowDiagonalValue, abRowContent));
         }
 
         // <-  STEP 3: annihilate matrix C
@@ -2074,11 +2141,35 @@ public final class GroebnerBasis {
         for (iRow = 0; iRow < nRows - nPivotRows; ++iRow) {
             SparseArray<E> cRow = cMatrix.rows[iRow];
             E[] dRow = dMatrix.rows[iRow].toDense();
-            for (int i = 0; i < cRow.sparsePositions.length; ++i) {
+            for (int i = cRow.sparsePositions.length - 1; i >= 0; --i) {
                 iColumn = cRow.sparsePositions[i];
-                subtractSparseFromDense(ring, dRow, cRow.sparseValues[i], bMatrix.rows[iColumn]);
+
+                SparseArray<E>
+                        // pivot row in A
+                        aPivotRow = aMatrix.rows[iColumn],
+                        // corresponding pivot row in B
+                        bPivotRow = bMatrix.rows[iColumn];
+
+                // value in C (iRow, iColumn)
+                E cElement = cRow.sparseValues[i];
+                // corresponding pivoting value (iColumn, iColumn)
+                E aPivot = aPivotRow.coefficient(iColumn);
+                assert !ring.isZero(aPivot);
+
+                E // compute LCM and correction factors
+                        lcm = ring.lcm(cElement, aPivot),
+                        // correction factor for currently reducing row
+                        dFactor = ring.divideExact(lcm, cElement),
+                        // correction factor for pivoting row
+                        bFactor = ring.divideExact(lcm, aPivot);
+
+                // bRow = rowFactor * bRow -  pivotFactor * bPivotRow
+                subtractSparseFromDense(ring, dRow, dFactor, bPivotRow, bFactor);
+                // correct cRow
+                cRow.multiply(dFactor);
             }
             dMatrix.rows[iRow] = new SparseArray(ring, dMatrix.densePositions, dRow);
+            dMatrix.rows[iRow].primitivePart();
         }
 
         // <-  STEP 4: compute row reduced echelon form of matrix D
@@ -2094,18 +2185,45 @@ public final class GroebnerBasis {
 
         int dShift = 0;
         for (iRow = 0; iRow < dMatrix.nRows; iRow++) {
-            SparseArray<E> dRow = dMatrix.rows[iRow];
+            SparseArray<E> dPivotRow = dMatrix.rows[iRow];
             iColumn = iRow + dShift;
-            if (iColumn >= nColumns)
+            if (iColumn >= dMatrix.nColumns)
                 break;
-            if (ring.isZero(dRow.coefficient(iColumn))) {
+            if (ring.isZero(dPivotRow.coefficient(iColumn))) {
                 --iRow;
                 ++dShift;
                 continue;
             }
             for (int i = 0; i < bMatrix.nRows; ++i)
-                if (!ring.isZero(bMatrix.rows[i].coefficient(iColumn)))
-                    bMatrix.rows[i].subtract(dRow, bMatrix.rows[i].coefficient(iColumn));
+                if (!ring.isZero(bMatrix.rows[i].coefficient(iColumn))) {
+                    SparseArray<E>
+                            bRow = bMatrix.rows[i],
+                            aRow = aMatrix.rows[i];
+
+                    E       // pivot value (D matrix)
+                            dPivot = dPivotRow.coefficient(iColumn),
+                            // element to annihilate (in B matrix)
+                            bElement = bRow.coefficient(iColumn),
+                            // compute LCM and correction factors,
+                            lcm = ring.lcm(bElement, dPivot),
+                            // correction factor for currently reducing row
+                            bFactor = ring.divideExact(lcm, bElement),
+                            // correction factor for pivoting row
+                            dFactor = ring.divideExact(lcm, dPivot);
+
+                    // reduce B row
+                    bRow.multiply(bFactor);
+                    bRow.subtract(dPivotRow, dFactor);
+                    // correct corresponding A row
+                    aRow.multiply(bFactor);
+
+                    // make that AB row primitive (remove common content)
+                    E abContent = bRow.content(aMatrix.rows[i].coefficient(i));
+                    bRow.divideExact(abContent);
+                    aRow.divideExact(abContent);
+
+                    assert ring.isZero(bRow.coefficient(iColumn));
+                }
         }
 
         // <- STEP 6: finally form N+ polynomials
@@ -2115,12 +2233,14 @@ public final class GroebnerBasis {
                 .collect(Collectors.toCollection(() -> new TreeSet<>(factory.ordering)));
 
         List<ArrayBasedPoly<Monomial<E>>> nPolynomials = new ArrayList<>();
-        // collect from A and B
         for (iRow = 0; iRow < nRows; ++iRow) {
             ArrayList<Monomial<E>> candidateList = new ArrayList<>();
 
-            if (iRow < nPivotRows)
-                candidateList.add(new Monomial<>(hMonomials[columnsRearrangement[iRow]], ring.getOne()));
+            if (iRow < nPivotRows) {
+                E cf = aMatrix.rows[iRow].coefficient(iRow);
+                assert !ring.isZero(cf);
+                candidateList.add(new Monomial<>(hMonomials[columnsRearrangement[iRow]], cf));
+            }
 
             SparseArray<E> row = iRow < nPivotRows ? bMatrix.rows[iRow] : dMatrix.rows[iRow - nPivotRows];
             for (int i = 0; i < row.sparsePositions.length; i++) {
@@ -2140,12 +2260,7 @@ public final class GroebnerBasis {
                 ArrayBasedPoly<Monomial<E>> poly = new ArrayBasedPoly<>(mAlgebra,
                         candidateList.toArray(mAlgebra.createArray(candidateList.size())),
                         factory.nVariables);
-                if (!ring.isOne(poly.lt().coefficient)) {
-                    E factor = ring.reciprocal(poly.lt().coefficient);
-                    for (int i = 0; i < poly.data.length; i++)
-                        poly.data[i] = poly.data[i].setCoefficient(ring.multiply(factor, poly.data[i].coefficient));
-                }
-                assert ring.isOne(poly.lt().coefficient);
+                poly.canonical();
                 nPolynomials.add(poly);
             }
         }
@@ -2203,7 +2318,7 @@ public final class GroebnerBasis {
             this.sparsePositions = sparsePositions;
             this.denseValues = denseValues;
             this.sparseValues = sparseValues;
-            assert isSorted(sparsePositions);
+            assert isSorted(sparsePositions) : Arrays.toString(sparsePositions);
         }
 
         SparseArray(Ring<E> ring,
@@ -2228,6 +2343,7 @@ public final class GroebnerBasis {
             }
             this.sparsePositions = sparsePositions.toArray();
             this.sparseValues = sparseValues.toArray(ring.createArray(sparseValues.size()));
+            assert isSorted(this.sparsePositions) : Arrays.toString(this.sparsePositions);
         }
 
         E[] toDense() {
@@ -2303,7 +2419,9 @@ public final class GroebnerBasis {
                 }
 
             sparsePositions = resCols.toArray();
+            assert resCols.size() == new TIntArrayList(resCols).size();
             sparseValues = resVals.toArray(ring.createArray(resVals.size()));
+            assert isSorted(sparsePositions) : Arrays.toString(sparsePositions);
         }
 
         void subtract(SparseArray<E> pivot, E factor) {
@@ -2317,6 +2435,37 @@ public final class GroebnerBasis {
                 sparseValues[i] = ring.multiply(sparseValues[i], factor);
             for (int i = 0; i < denseValues.length; ++i)
                 denseValues[i] = ring.multiply(denseValues[i], factor);
+            assert isSorted(sparsePositions) : Arrays.toString(sparsePositions);
+        }
+
+        void divideExact(E factor) {
+            if (ring.isOne(factor))
+                return;
+            for (int i = 0; i < sparseValues.length; ++i)
+                sparseValues[i] = ring.divideExact(sparseValues[i], factor);
+            for (int i = 0; i < denseValues.length; ++i)
+                denseValues[i] = ring.divideExact(denseValues[i], factor);
+        }
+
+        E content(E el) {
+            if (ring.isField())
+                return ring.getOne();
+            ArrayList<E> els = new ArrayList<>();
+            els.add(el);
+            els.addAll(Arrays.asList(sparseValues));
+            els.addAll(Arrays.asList(denseValues));
+            E gcd = ring.gcd(els);
+            if (ring.isZero(gcd))
+                return ring.getOne();
+            return gcd;
+        }
+
+        E content() {
+            return content(ring.getZero());
+        }
+
+        void primitivePart() {
+            divideExact(content());
         }
 
         E coefficient(int iRow) {
@@ -2361,6 +2510,7 @@ public final class GroebnerBasis {
                     sparseValues = ArraysUtil.insert(sparseValues, index, ring.negate(value));
                 }
             }
+            assert isSorted(sparsePositions) : Arrays.toString(sparsePositions);
         }
 
         int firstNonZeroPosition() {
@@ -2373,11 +2523,27 @@ public final class GroebnerBasis {
     }
 
     // denseArray - factor * sparseArray
-    static <E> void subtractSparseFromDense(Ring<E> ring, E[] denseArray, E factor, SparseArray<E> sparseArray) {
+    static <E> void subtractSparseFromDense(Ring<E> ring, E[] denseArray, SparseArray<E> sparseArray, E factor) {
         for (int i = 0; i < sparseArray.densePositions.length; i++)
             denseArray[sparseArray.densePositions[i]] = ring.subtract(denseArray[sparseArray.densePositions[i]], ring.multiply(factor, sparseArray.denseValues[i]));
         for (int i = 0; i < sparseArray.sparsePositions.length; i++)
             denseArray[sparseArray.sparsePositions[i]] = ring.subtract(denseArray[sparseArray.sparsePositions[i]], ring.multiply(factor, sparseArray.sparseValues[i]));
+    }
+
+    // denseFactor * denseArray - sparseFactor * sparseArray
+    static <E> void subtractSparseFromDense(Ring<E> ring, E[] denseArray, E denseFactor, SparseArray<E> sparseArray, E sparseFactor) {
+        if (!ring.isOne(denseFactor))
+            for (int i = 0; i < denseArray.length; i++)
+                denseArray[i] = ring.multiply(denseArray[i], denseFactor);
+
+        for (int i = 0; i < sparseArray.densePositions.length; i++) {
+            int dPosition = sparseArray.densePositions[i];
+            denseArray[dPosition] = ring.subtract(denseArray[dPosition], ring.multiply(sparseFactor, sparseArray.denseValues[i]));
+        }
+        for (int i = 0; i < sparseArray.sparsePositions.length; i++) {
+            int sPosition = sparseArray.sparsePositions[i];
+            denseArray[sPosition] = ring.subtract(denseArray[sPosition], ring.multiply(sparseFactor, sparseArray.sparseValues[i]));
+        }
     }
 
     static final class SparseColumnMatrix<E> {
@@ -2484,15 +2650,19 @@ public final class GroebnerBasis {
             for (int iCol = 0, to = rows.length; iCol < to; ++iCol) {
                 int iRow = iCol - nZeroRows;
                 int pivotIndex = -1;
-
+                boolean isUnit = false;
                 for (int i = iRow; i < rows.length; ++i) {
                     if (ring.isZero(rows[i].coefficient(iCol)))
                         continue;
+                    boolean iu = ring.isUnit(rows[i].coefficient(iRow));
                     if (pivotIndex == -1) {
                         pivotIndex = i;
                         continue;
                     }
-                    if (rows[i].sparsePositions.length < rows[pivotIndex].sparsePositions.length)
+                    if (!isUnit && iu) {
+                        pivotIndex = i;
+                        isUnit = true;
+                    } else if ((isUnit == iu) && rows[i].sparsePositions.length < rows[pivotIndex].sparsePositions.length)
                         pivotIndex = i;
                 }
 
@@ -2507,7 +2677,10 @@ public final class GroebnerBasis {
                 E diagonalValue = pivot.coefficient(iCol);
 
                 // row-reduction
-                pivot.multiply(ring.reciprocal(diagonalValue));
+                if (ring.isField())
+                    pivot.multiply(ring.reciprocal(diagonalValue));
+                else
+                    pivot.primitivePart();
 
                 int firstDense = ArraysUtil.binarySearch1(densePositions, iCol);
                 for (int row = 0; row < rows.length; ++row) {
@@ -2518,7 +2691,15 @@ public final class GroebnerBasis {
                     if (ring.isZero(value))
                         continue;
 
-                    rows[row].subtract(pivot, value, iCol, firstDense);
+                    if (ring.isField())
+                        rows[row].subtract(pivot, value, iCol, firstDense);
+                    else {
+                        E lcm = ring.lcm(diagonalValue, value);
+                        rows[row].multiply(ring.divideExact(lcm, value));
+                        rows[row].subtract(pivot, ring.divideExact(lcm, diagonalValue), iCol, firstDense);
+                        rows[row].primitivePart();
+                    }
+                    assert ring.isZero(rows[row].coefficient(iCol));
                 }
             }
             return Math.min(nRows, nColumns) - nZeroRows;

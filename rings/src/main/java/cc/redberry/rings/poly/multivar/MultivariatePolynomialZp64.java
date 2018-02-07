@@ -1481,7 +1481,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             long coeff = term.coefficient;
             if (coeff == 0)
                 continue;
-            String monomialString = term.toString(vars);
+            String monomialString = term.dvToString(vars);
             if (first) {
                 if (coeff != 1 || monomialString.isEmpty()) {
                     sb.append(coeff);

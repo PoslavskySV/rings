@@ -86,4 +86,15 @@ public class Monomial<E> extends AMonomial<Monomial<E>> {
         result = 31 * result + coefficient.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        String dvString = super.toString();
+        String cfString = coefficient.toString();
+        if (dvString.isEmpty())
+            return cfString;
+        if (cfString.equals("1"))
+            return dvString;
+        return coefficient + "*" + dvString;
+    }
 }

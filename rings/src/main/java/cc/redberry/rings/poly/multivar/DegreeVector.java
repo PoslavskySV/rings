@@ -259,7 +259,7 @@ public class DegreeVector implements java.io.Serializable {
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
         return toString(WithVariables.defaultVars(exponents.length));
     }
 

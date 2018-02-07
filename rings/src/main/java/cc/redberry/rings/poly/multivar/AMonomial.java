@@ -121,4 +121,12 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
      * @param exponent new exponent
      */
     public final Term set(int variable, int exponent) {return setDegreeVector(dvSet(variable, exponent));}
+
+    public final String dvToString(String[] vars) {
+        return super.toString(vars);
+    }
+
+    public final String dvToString() {
+        return super.toString();
+    }
 }
