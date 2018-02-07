@@ -626,7 +626,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public UnivariatePolynomial<E> primitivePart() {
         E content = content();
-        if (signumOfLC() < 0)
+        if (signumOfLC() < 0 && ring.signum(content) > 0)
             content = ring.negate(content);
         if (ring.isMinusOne(content))
             return negate();

@@ -686,7 +686,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         if (isZero())
             return this;
         E content = content();
-        if (signumOfLC() < 0)
+        if (signumOfLC() < 0 && ring.signum(content) > 0)
             content = ring.negate(content);
         MultivariatePolynomial<E> r = divideOrNull(content);
         assert r != null;

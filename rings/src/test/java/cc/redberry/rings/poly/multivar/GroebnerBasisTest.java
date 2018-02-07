@@ -350,7 +350,6 @@ public class GroebnerBasisTest extends AMultivariateTest {
         }
     }
 
-
     @Test
     public void test12() throws Exception {
         String[] vars = {"t", "x", "y", "z"};
