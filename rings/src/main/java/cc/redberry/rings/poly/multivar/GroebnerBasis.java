@@ -3,7 +3,14 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Ring;
+import cc.redberry.rings.Rings;
+import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.bigint.BigIntegerUtil;
+import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.univar.UnivariateDivision;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -13,6 +20,9 @@ import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static cc.redberry.rings.Rings.Q;
+import static cc.redberry.rings.Rings.Z;
 
 /**
  * Groebner basis computation.
@@ -2711,5 +2721,157 @@ public final class GroebnerBasis {
             if (arr[i - 1] >= arr[i])
                 return false;
         return true;
+    }
+
+    /* **************************************** Hilbert series ************************************************ */
+
+    public static boolean isMonomialIdeal(List<? extends AMultivariatePolynomial> poly) {
+        return poly.stream().allMatch(AMultivariatePolynomial::isMonomial);
+    }
+
+    public static HilbertSeries HilbertSeriesMonomialIdeal(List<? extends AMultivariatePolynomial> ideal) {
+        if (!isMonomialIdeal(ideal))
+            throw new IllegalArgumentException("not a monomial ideal");
+        return HilbertSeries(ideal.stream().map(AMultivariatePolynomial::lt).collect(Collectors.toList()));
+    }
+
+    /** Minimizes Groebner basis of monomial ideal. The input should be a Groebner basis */
+    static void reduceMonomialIdeal(List<DegreeVector> basis) {
+        outer:
+        for (int i = basis.size() - 1; i >= 1; --i) {
+            for (int j = i - 1; j >= 0; --j) {
+                DegreeVector pi = basis.get(i), pj = basis.get(j);
+                if (pi.dvDivisibleBy(pj)) {
+                    basis.remove(i);
+                    continue outer;
+                }
+                if (pj.dvDivisibleBy(pi)) {
+                    basis.remove(j);
+                    --i;
+                    continue;
+                }
+            }
+        }
+    }
+
+    static HilbertSeries HilbertSeries(List<DegreeVector> ideal) {
+        ideal = new ArrayList<>(ideal);
+        reduceMonomialIdeal(ideal);
+        UnivariatePolynomial<Rational<BigInteger>> initialNumerator = HilbertSeriesNumerator(ideal).mapCoefficients(Q, c -> new Rational<>(Z, c));
+        return new HilbertSeries(initialNumerator, ideal.get(0).nVariables());
+    }
+
+    /** initial numerator of Hilbert series */
+    private static UnivariatePolynomial<BigInteger> HilbertSeriesNumerator(List<DegreeVector> ideal) {
+        UnivariateRing<UnivariatePolynomial<BigInteger>> uniRing = Rings.UnivariateRing(Z);
+        if (ideal.isEmpty())
+            // zero ideal
+            return uniRing.getOne();
+        if (ideal.size() == 1 && ideal.get(0).isZeroVector())
+            // ideal = ring
+            return uniRing.getZero();
+        if (ideal.stream().allMatch(m -> m.totalDegree == 1))
+            // plain variables
+            return uniRing.pow(uniRing.getOne().subtract(uniRing.variable(0)), ideal.size());
+
+        // pick monomial
+        DegreeVector pivotMonomial = ideal.stream().filter(m -> m.totalDegree > 1).findAny().get();
+        int nVariables = pivotMonomial.exponents.length, var;
+        for (var = 0; var < nVariables; ++var)
+            if (pivotMonomial.exponents[var] != 0)
+                break;
+        final int variable = var;
+
+        int[] varExponents = new int[nVariables];
+        varExponents[variable] = 1;
+        DegreeVector varMonomial = new DegreeVector(varExponents, 1);
+
+        // sum J + <x_i>
+        List<DegreeVector> sum = ideal.stream()
+                .filter(m -> m.exponents[variable] == 0)
+                .collect(Collectors.toList());
+        sum.add(varMonomial);
+
+        // quotient J : <x_i>
+        List<DegreeVector> quot = ideal.stream()
+                .map(m -> m.exponents[variable] > 0 ? m.dvDivideOrNull(variable, 1) : m)
+                .collect(Collectors.toList());
+        reduceMonomialIdeal(quot);
+
+        return HilbertSeriesNumerator(sum).add(HilbertSeriesNumerator(quot).shiftRight(1));
+    }
+
+    /** Hilbert-Poincare series HPS(t) = P(t) / (1 - t)^m */
+    public static final class HilbertSeries {
+        private static final UnivariatePolynomial<Rational<BigInteger>> DENOMINATOR =
+                UnivariatePolynomial.create(1, -1).mapCoefficients(Q, c -> new Rational<>(Z, c));
+        /** Initial numerator (numerator and denominator may have nontrivial GCD) */
+        public final UnivariatePolynomial<Rational<BigInteger>> initialNumerator;
+        /** Initial denominator exponent (numerator and denominator may have nontrivial GCD) */
+        public final int initialDenominatorDegree;
+        /** Reduced numerator (GCD is cancelled) */
+        public final UnivariatePolynomial<Rational<BigInteger>> numerator;
+        /** Denominator exponent of reduced HPS(t) */
+        public final int denominatorDegree;
+        /** Integral part I(t) of HPS(t): HPS(t) = I(t) + Q(t)/(1-t)^m */
+        public final UnivariatePolynomial<Rational<BigInteger>> integralPart;
+        /** Quotient part Q(t) of HPS(t): HPS(t) = I(t) + Q(t)/(1-t)^m */
+        public final UnivariatePolynomial<Rational<BigInteger>> quotientNumerator;
+        /** Hilbert polynomial */
+        public final UnivariatePolynomial<Rational<BigInteger>> hilbertPolynomial;
+        /** Degree of ideal */
+        private final int idealDegree;
+
+        private HilbertSeries(UnivariatePolynomial<Rational<BigInteger>> initialNumerator, int initialDenominatorDegree) {
+            this.initialNumerator = initialNumerator;
+            this.initialDenominatorDegree = initialDenominatorDegree;
+
+            UnivariatePolynomial<Rational<BigInteger>> reducedNumerator = initialNumerator;
+            int reducedDenominatorDegree = initialDenominatorDegree;
+            while (true) {
+                UnivariatePolynomial<Rational<BigInteger>> div = UnivariateDivision.divideOrNull(reducedNumerator, DENOMINATOR, true);
+                if (div == null)
+                    break;
+                reducedNumerator = div;
+                --reducedDenominatorDegree;
+            }
+            this.numerator = reducedNumerator;
+            this.denominatorDegree = reducedDenominatorDegree;
+
+            UnivariatePolynomial<Rational<BigInteger>>[] divRem = UnivariateDivision.divideAndRemainder(reducedNumerator,
+                    UnivariatePolynomialArithmetic.polyPow(DENOMINATOR, reducedDenominatorDegree, true), true);
+            this.integralPart = divRem[0];
+            this.quotientNumerator = divRem[1];
+
+            Rational<BigInteger> degree = reducedNumerator.evaluate(1);
+            assert degree.isIntegral();
+            this.idealDegree = degree.numerator.intValueExact();
+
+            this.hilbertPolynomial = UnivariatePolynomial.zero(Q);
+            Rational<BigInteger> facCf = new Rational<>(Z, BigIntegerUtil.factorial(denominatorDegree - 1));
+            UnivariatePolynomial<Rational<BigInteger>> var = UnivariatePolynomial.one(Q).shiftRight(1);
+            for (int i = 0; i <= numerator.degree(); ++i) {
+                UnivariatePolynomial<Rational<BigInteger>> term = UnivariatePolynomial.one(Q);
+                for (int j = 0; j < (denominatorDegree - 1); ++j)
+                    term.multiply(var.clone().add(Q.valueOf(-i + 1 + j)));
+                term.multiply(Q.divideExact(numerator.get(i), facCf));
+                hilbertPolynomial.add(term);
+            }
+        }
+
+        /** The dimension of ideal */
+        public int idealDimension() {
+            return denominatorDegree;
+        }
+
+        /** The degree of ideal */
+        public int idealDegree() {
+            return idealDegree;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("(%s) / (%s)^%s", numerator, DENOMINATOR, denominatorDegree);
+        }
     }
 }

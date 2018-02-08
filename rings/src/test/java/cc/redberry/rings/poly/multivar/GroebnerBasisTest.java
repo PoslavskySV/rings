@@ -6,6 +6,7 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -583,19 +584,25 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
     @Test
     public void test17() throws Exception {
-        String[] vars = {"x1", "x2", "x3", "x4"};
-        MultivariatePolynomial<BigInteger>
-                a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
-                b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
-                c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
-        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+        for (int i = 0; i < 1; ++i) {
+            System.out.println(i);
+//            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            String[] vars = {"x1", "x2", "x3", "x4"};
+            MultivariatePolynomial<BigInteger>
+                    a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+                    b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+                    c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+            List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
 
-        List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> id = gens.stream()
-                .map(p -> MultivariateConversions.split(p, 2, 3))
-                .map(p -> p.mapCoefficients(Frac(p.ring), cf -> new Rational<>(p.ring, cf)))
-                .collect(Collectors.toList());
-        id = BuchbergerGB(id, GREVLEX);
-        assertTrue(id.get(0).isConstant());
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> id = gens.stream()
+                    .map(p -> MultivariateConversions.split(p, 2, 3))
+                    .map(p -> p.mapCoefficients(Frac(p.ring), cf -> new Rational<>(p.ring, cf)))
+                    .collect(Collectors.toList());
+            id = BuchbergerGB(id, GREVLEX);
+            assertTrue(id.get(0).isConstant());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
     }
 
     @Test
@@ -647,6 +654,45 @@ public class GroebnerBasisTest extends AMultivariateTest {
         assertEquals(expected, actual);
         List<MultivariatePolynomial<Rational<BigInteger>>> f4 = F4GB(gens, GREVLEX);
         assertEquals(expected, f4);
+    }
+
+    @Test
+    public void test21() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial
+                a = parse("x^3*y^2*z^3", Q, GREVLEX, vars),
+                b = parse("x^4*y*z^3", Q, GREVLEX, vars),
+                c = parse("x^2*y^4*z^3", Q, GREVLEX, vars);
+        List<MultivariatePolynomial> ideal = new ArrayList<>(Arrays.asList(a, b, c));
+        HilbertSeries hps = HilbertSeriesMonomialIdeal(ideal);
+        assertEquals(2, hps.idealDimension());
+        assertEquals(UnivariatePolynomial.parse("-5 + 6*x", Q), hps.hilbertPolynomial);
+    }
+
+    @Test
+    public void test22() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial
+                a = parse("x*z", Q, GREVLEX, vars),
+                b = parse("y*z", Q, GREVLEX, vars);
+        List<MultivariatePolynomial> ideal = new ArrayList<>(Arrays.asList(a, b));
+        HilbertSeries hps = HilbertSeriesMonomialIdeal(ideal);
+        assertEquals(2, hps.idealDimension());
+        assertEquals(UnivariatePolynomial.parse("x + 2", Q), hps.hilbertPolynomial);
+    }
+
+    @Test
+    public void test23() throws Exception {
+        String[] vars = {"x", "y", "z", "w", "u"};
+        MultivariatePolynomial
+                a = parse("x^13*y^2*z^3*w^7", Q, GREVLEX, vars),
+                b = parse("x^4*y*z^3*w^6*u^8", Q, GREVLEX, vars),
+                c = parse("x^2*y^4*z^3", Q, GREVLEX, vars),
+                d = parse("x*y^14*z^3*u^6*w^6", Q, GREVLEX, vars);
+        List<MultivariatePolynomial> ideal = new ArrayList<>(Arrays.asList(a, b, c, d));
+        HilbertSeries hps = HilbertSeriesMonomialIdeal(ideal);
+        assertEquals(4, hps.idealDimension());
+        assertEquals(UnivariatePolynomial.parse("2134+(-1702/3)*x+(57/2)*x^2+(5/6)*x^3", Q), hps.hilbertPolynomial);
     }
 
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>

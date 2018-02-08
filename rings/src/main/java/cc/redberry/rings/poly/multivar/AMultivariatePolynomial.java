@@ -240,6 +240,16 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Creates multivariate polynomial over the same ring as this with the single monomial
+     *
+     * @param term the monomial
+     * @return multivariate polynomial
+     */
+    public final Poly create(DegreeVector term) {
+        return create(monomialAlgebra.create(term));
+    }
+
+    /**
      * Creates monomial over the same ring as this of the form {@code variable ^ degree}
      *
      * @param variable the variable

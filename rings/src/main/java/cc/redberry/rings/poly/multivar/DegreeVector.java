@@ -71,6 +71,20 @@ public class DegreeVector implements java.io.Serializable {
         return new DegreeVector(res, deg);
     }
 
+    /** Multiplies this by variable^exponent */
+    public final DegreeVector dvMultiply(int variable, int exponent) {
+        int[] res = exponents.clone();
+        res[variable] += exponent;
+        if (res[variable] < 0)
+            return null;
+        return new DegreeVector(res, totalDegree + exponent);
+    }
+
+    /** Divides this by variable^exponent */
+    public final DegreeVector dvDivideOrNull(int variable, int exponent) {
+        return dvMultiply(variable, -exponent);
+    }
+
     /** Gives quotient {@code this / oth } or null if exact division is not possible (e.g. a^2*b^3 / a^3*b^5) */
     public final DegreeVector dvDivideOrNull(DegreeVector divider) {
         if (divider.isZeroVector())
