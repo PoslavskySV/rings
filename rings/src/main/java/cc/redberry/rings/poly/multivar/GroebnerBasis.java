@@ -1,9 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.poly.UnivariateRing;
@@ -11,6 +8,7 @@ import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic;
+import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -21,8 +19,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static cc.redberry.rings.Rings.Q;
-import static cc.redberry.rings.Rings.Z;
+import static cc.redberry.rings.Rings.*;
 
 /**
  * Groebner basis computation.
@@ -426,6 +423,21 @@ public final class GroebnerBasis {
     }
 
     /**
+     * Check whether specified generators form Groebner basis of given ideal
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    boolean isGroebnerBasis(List<Poly> ideal, List<Poly> generators, Comparator<DegreeVector> monomialOrder) {
+        // form set of syzygies to check
+        SyzygySet<Term, Poly> sPairs = new SyzygyTreeSet<>(new TreeSet<>(defaultSelectionStrategy(monomialOrder)));
+        ideal.forEach(g -> updateBasis(new ArrayList<>(), sPairs, g));
+
+        Poly factory = ideal.get(0);
+        Poly[] gb = generators.toArray(factory.createArray(generators.size()));
+        return sPairs.allSets().stream().flatMap(Collection::stream)
+                .allMatch(p -> MultivariateDivision.pseudoRemainder(syzygy(p), gb).isZero());
+    }
+
+    /**
      * Normal selection strategy: chose syzygy with the less lcm(fi.lt(), fj.lt()) with respect to monomialOrder
      */
     public static Comparator<SyzygyPair> normalSelectionStrategy(Comparator<DegreeVector> monomialOrder) {
@@ -522,19 +534,25 @@ public final class GroebnerBasis {
         return ideal.stream().map(p -> p.dropVariable(p.nVariables - 1)).collect(Collectors.toList());
     }
 
+    static <E> List<MultivariatePolynomial<E>> toIntegral(List<MultivariatePolynomial<Rational<E>>> ideal) {
+        return ideal.stream()
+                .map(p -> Util.toCommonDenominator(p)._1)
+                .collect(Collectors.toList());
+    }
+
+    static <E> List<MultivariatePolynomial<Rational<E>>> toFractions(List<MultivariatePolynomial<E>> ideal) {
+        Ring<Rational<E>> ring = Frac(ideal.get(0).ring);
+        return ideal.stream()
+                .map(p -> p.mapCoefficients(ring, c -> new Rational<>(p.ring, c)))
+                .collect(Collectors.toList());
+    }
+
     /** Groebner basis over fraction fields */
     static <E> List<MultivariatePolynomial<Rational<E>>>
     FracGB(List<MultivariatePolynomial<Rational<E>>> ideal,
            Comparator<DegreeVector> monomialOrder,
            GroebnerAlgorithm<Monomial<E>, MultivariatePolynomial<E>> algorithm) {
-        Ring<Rational<E>> ring = ideal.get(0).ring;
-        return algorithm.GroebnerBasis(ideal.stream()
-                        .map(p -> Util.toCommonDenominator(p)._1)
-                        .collect(Collectors.toList()),
-                monomialOrder)
-                .stream()
-                .map(p -> p.mapCoefficients(ring, c -> new Rational<>(p.ring, c)))
-                .collect(Collectors.toList());
+        return toFractions(algorithm.GroebnerBasis(toIntegral(ideal), monomialOrder));
     }
 
     interface GroebnerAlgorithm<
@@ -2723,16 +2741,30 @@ public final class GroebnerBasis {
         return true;
     }
 
-    /* **************************************** Hilbert series ************************************************ */
+    /* ************************************** Hilbert-Poincare series ********************************************** */
 
-    public static boolean isMonomialIdeal(List<? extends AMultivariatePolynomial> poly) {
-        return poly.stream().allMatch(AMultivariatePolynomial::isMonomial);
+    /** Check whether all specified generators are monomials */
+    public static boolean isMonomialIdeal(List<? extends AMultivariatePolynomial> ideal) {
+        return ideal.stream().allMatch(AMultivariatePolynomial::isMonomial);
     }
 
-    public static HilbertSeries HilbertSeriesMonomialIdeal(List<? extends AMultivariatePolynomial> ideal) {
-        if (!isMonomialIdeal(ideal))
-            throw new IllegalArgumentException("not a monomial ideal");
-        return HilbertSeries(ideal.stream().map(AMultivariatePolynomial::lt).collect(Collectors.toList()));
+    /** Check whether ideal is homogeneous */
+    public static boolean isHomogeneousIdeal(List<? extends AMultivariatePolynomial> ideal) {
+        return ideal.stream().allMatch(AMultivariatePolynomial::isHomogeneous);
+    }
+
+    /** List of lead terms of generators */
+    public static List<DegreeVector> leadTermsIdeal(List<? extends AMultivariatePolynomial> ideal) {
+        return ideal.stream().map(AMultivariatePolynomial::lt).collect(Collectors.toList());
+    }
+
+    /**
+     * Computes Hilbert-Poincare series of specified homogeneous ideal
+     */
+    public static HilbertSeries HilbertSeriesOfHomogeneousIdeal(List<? extends AMultivariatePolynomial> ideal) {
+        if (!isHomogeneousIdeal(ideal))
+            throw new IllegalArgumentException("Not a monomial or homogeneous ideal");
+        return HilbertSeries(leadTermsIdeal(ideal));
     }
 
     /** Minimizes Groebner basis of monomial ideal. The input should be a Groebner basis */
@@ -2754,7 +2786,8 @@ public final class GroebnerBasis {
         }
     }
 
-    static HilbertSeries HilbertSeries(List<DegreeVector> ideal) {
+    /** Computes Hilbert-Poincare series of monomial ideal */
+    public static HilbertSeries HilbertSeries(List<DegreeVector> ideal) {
         ideal = new ArrayList<>(ideal);
         reduceMonomialIdeal(ideal);
         UnivariatePolynomial<Rational<BigInteger>> initialNumerator = HilbertSeriesNumerator(ideal).mapCoefficients(Q, c -> new Rational<>(Z, c));
@@ -2811,16 +2844,8 @@ public final class GroebnerBasis {
         public final int initialDenominatorDegree;
         /** Reduced numerator (GCD is cancelled) */
         public final UnivariatePolynomial<Rational<BigInteger>> numerator;
-        /** Denominator exponent of reduced HPS(t) */
-        public final int denominatorDegree;
-        /** Integral part I(t) of HPS(t): HPS(t) = I(t) + Q(t)/(1-t)^m */
-        public final UnivariatePolynomial<Rational<BigInteger>> integralPart;
-        /** Quotient part Q(t) of HPS(t): HPS(t) = I(t) + Q(t)/(1-t)^m */
-        public final UnivariatePolynomial<Rational<BigInteger>> quotientNumerator;
-        /** Hilbert polynomial */
-        public final UnivariatePolynomial<Rational<BigInteger>> hilbertPolynomial;
-        /** Degree of ideal */
-        private final int idealDegree;
+        /** Denominator exponent of reduced HPS(t) (that is ideal Krull dimension) */
+        public final int denominatorExponent;
 
         private HilbertSeries(UnivariatePolynomial<Rational<BigInteger>> initialNumerator, int initialDenominatorDegree) {
             this.initialNumerator = initialNumerator;
@@ -2836,42 +2861,391 @@ public final class GroebnerBasis {
                 --reducedDenominatorDegree;
             }
             this.numerator = reducedNumerator;
-            this.denominatorDegree = reducedDenominatorDegree;
-
-            UnivariatePolynomial<Rational<BigInteger>>[] divRem = UnivariateDivision.divideAndRemainder(reducedNumerator,
-                    UnivariatePolynomialArithmetic.polyPow(DENOMINATOR, reducedDenominatorDegree, true), true);
-            this.integralPart = divRem[0];
-            this.quotientNumerator = divRem[1];
-
-            Rational<BigInteger> degree = reducedNumerator.evaluate(1);
-            assert degree.isIntegral();
-            this.idealDegree = degree.numerator.intValueExact();
-
-            this.hilbertPolynomial = UnivariatePolynomial.zero(Q);
-            Rational<BigInteger> facCf = new Rational<>(Z, BigIntegerUtil.factorial(denominatorDegree - 1));
-            UnivariatePolynomial<Rational<BigInteger>> var = UnivariatePolynomial.one(Q).shiftRight(1);
-            for (int i = 0; i <= numerator.degree(); ++i) {
-                UnivariatePolynomial<Rational<BigInteger>> term = UnivariatePolynomial.one(Q);
-                for (int j = 0; j < (denominatorDegree - 1); ++j)
-                    term.multiply(var.clone().add(Q.valueOf(-i + 1 + j)));
-                term.multiply(Q.divideExact(numerator.get(i), facCf));
-                hilbertPolynomial.add(term);
-            }
+            this.denominatorExponent = reducedDenominatorDegree;
         }
 
         /** The dimension of ideal */
-        public int idealDimension() {
-            return denominatorDegree;
+        public int dimension() {
+            return denominatorExponent;
         }
 
+        /** Degree of ideal */
+        private int idealDegree = -1;
+
         /** The degree of ideal */
-        public int idealDegree() {
+        public synchronized int degree() {
+            if (idealDegree == -1) {
+                Rational<BigInteger> degree = numerator.evaluate(1);
+                assert degree.isIntegral();
+                idealDegree = degree.numerator.intValueExact();
+            }
             return idealDegree;
+        }
+
+        /** Integral part I(t) of HPS(t): HPS(t) = I(t) + R(t)/(1-t)^m */
+        private UnivariatePolynomial<Rational<BigInteger>> integralPart = null;
+        /** Remainder part R(t) of HPS(t): HPS(t) = I(t) + R(t)/(1-t)^m */
+        private UnivariatePolynomial<Rational<BigInteger>> remainderNumerator = null;
+
+        /** Integral part I(t) of HPS(t): HPS(t) = I(t) + Q(t)/(1-t)^m */
+        public UnivariatePolynomial<Rational<BigInteger>> integralPart() {
+            computeIntegralAndRemainder();
+            return integralPart;
+        }
+
+        /** Remainder part R(t) of HPS(t): HPS(t) = I(t) + R(t)/(1-t)^m */
+        public UnivariatePolynomial<Rational<BigInteger>> remainderNumerator() {
+            computeIntegralAndRemainder();
+            return remainderNumerator;
+        }
+
+        private synchronized void computeIntegralAndRemainder() {
+            if (integralPart == null) {
+                UnivariatePolynomial<Rational<BigInteger>>[] divRem = UnivariateDivision.divideAndRemainder(numerator,
+                        UnivariatePolynomialArithmetic.polyPow(DENOMINATOR, denominatorExponent, true), true);
+                this.integralPart = divRem[0];
+                this.remainderNumerator = divRem[1];
+            }
+        }
+
+        /** Integral Hilbert polynomial (i.e. Hilbert polynomial multiplied by (dimension - 1)!) */
+        private UnivariatePolynomial<Rational<BigInteger>> hilbertPolynomialZ = null;
+
+        /** Integral Hilbert polynomial (i.e. Hilbert polynomial multiplied by (dimension - 1)!) */
+        public synchronized UnivariatePolynomial<Rational<BigInteger>> hilbertPolynomialZ() {
+            if (hilbertPolynomialZ == null) {
+                hilbertPolynomialZ = UnivariatePolynomial.zero(Q);
+                UnivariatePolynomial<Rational<BigInteger>> var = UnivariatePolynomial.one(Q).shiftRight(1);
+                for (int i = 0; i <= numerator.degree(); ++i) {
+                    UnivariatePolynomial<Rational<BigInteger>> term = UnivariatePolynomial.one(Q);
+                    for (int j = 0; j < (denominatorExponent - 1); ++j)
+                        term.multiply(var.clone().add(Q.valueOf(-i + 1 + j)));
+                    term.multiply(numerator.get(i));
+                    hilbertPolynomialZ.add(term);
+                }
+            }
+            return hilbertPolynomialZ;
+        }
+
+        /** Hilbert polynomial */
+        private UnivariatePolynomial<Rational<BigInteger>> hilbertPolynomial = null;
+
+        /** Hilbert polynomial */
+        public synchronized UnivariatePolynomial<Rational<BigInteger>> hilbertPolynomial() {
+            if (hilbertPolynomial == null) {
+                Rational<BigInteger> facCf = new Rational<>(Z, BigIntegerUtil.factorial(denominatorExponent - 1));
+                hilbertPolynomial = hilbertPolynomialZ().clone().divideExact(facCf);
+            }
+            return hilbertPolynomial;
         }
 
         @Override
         public String toString() {
-            return String.format("(%s) / (%s)^%s", numerator, DENOMINATOR, denominatorDegree);
+            return String.format("(%s) / (%s)^%s", numerator, DENOMINATOR, denominatorExponent);
         }
     }
+
+    /* ************************************** Modular Groebner basis ********************************************** */
+
+
+    public static List<MultivariatePolynomial<BigInteger>>
+    ModularGB(List<MultivariatePolynomial<BigInteger>> ideal, Comparator<DegreeVector> monomialOrder) {
+        // simplify generators as much as possible
+        ideal = prepareGenerators(ideal, monomialOrder);
+        if (ideal.size() == 1)
+            return ideal;
+
+
+        BigInteger basePrime = null;
+        HilbertSeries baseSeries = null;
+        List<MultivariatePolynomial<BigInteger>> baseBasis = null;
+
+        PrimesIterator primes = new PrimesIterator(1L << 59);// start with a large enough prime
+        List<MultivariatePolynomial<BigInteger>> previousGBCandidate = null;
+        main:
+        while (true) {
+            // pick up next prime number
+            long prime = primes.take();
+            BigInteger bPrime = BigInteger.valueOf(prime);
+            IntegersZp64 ring = Zp64(prime);
+            IntegersZp bRing = ring.asGenericRing();
+
+            // generators mod prime
+            List<MultivariatePolynomialZp64> modGenerators =
+                    ideal.stream().map(p -> MultivariatePolynomial.asOverZp64(p.setRing(bRing))).collect(Collectors.toList());
+
+            // Groebner basis mod prime
+            List<MultivariatePolynomialZp64> modBasis = GroebnerBasis(modGenerators, monomialOrder);
+            // sort generators by increasing lead terms
+            modBasis.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
+
+            HilbertSeries modSeries = HilbertSeries(leadTermsIdeal(modBasis));
+
+            // first iteration
+            if (baseBasis == null) {
+                baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+                basePrime = bPrime;
+                baseSeries = modSeries;
+                continue;
+            }
+
+            // check for Hilbert luckiness
+            int c = ModHilbertSeriesComparator.compare(baseSeries, modSeries);
+            if (c < 0)
+                // current prime is unlucky
+                continue;
+            else if (c > 0) {
+                // base prime was unlucky
+                baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+                basePrime = bPrime;
+                baseSeries = modSeries;
+                continue;
+            }
+
+            // prime is Hilbert prime, so we compare monomial sets
+            for (int i = 0, size = Math.min(baseBasis.size(), modBasis.size()); i < size; ++i) {
+                c = monomialOrder.compare(baseBasis.get(i).lt(), modBasis.get(i).lt());
+                if (c > 0)
+                    // current prime is unlucky
+                    continue main;
+                else if (c < 0) {
+                    // base prime was unlucky
+                    baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+                    basePrime = bRing.modulus;
+                    baseSeries = modSeries;
+                    continue main;
+                }
+            }
+
+            if (baseBasis.size() < modBasis.size()) {
+                // base prime was unlucky
+                baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+                basePrime = bRing.modulus;
+                baseSeries = modSeries;
+                continue;
+            } else if (baseBasis.size() > modBasis.size())
+                // current prime is unlucky
+                continue;
+
+
+            List<MultivariatePolynomial<BigInteger>> bModBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+            // prime is probably lucky, we can do Chinese Remainders
+            for (int iGenerator = 0; iGenerator < baseBasis.size(); ++iGenerator) {
+                MultivariatePolynomial<BigInteger> baseGenerator = baseBasis.get(iGenerator);
+                PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator
+                        = new PairedIterator<>(baseGenerator, bModBasis.get(iGenerator));
+
+                baseGenerator = baseGenerator.createZero();
+                while (iterator.hasNext()) {
+                    iterator.advance();
+
+                    Monomial<BigInteger> baseTerm = iterator.aTerm;
+                    BigInteger crt = ChineseRemainders.ChineseRemainders(basePrime, bPrime, baseTerm.coefficient, iterator.bTerm.coefficient);
+                    baseGenerator.add(baseTerm.setCoefficient(crt));
+                }
+
+                baseBasis.set(iGenerator, baseGenerator);
+            }
+
+            basePrime = basePrime.multiply(bPrime);
+
+            List<MultivariatePolynomial<Rational<BigInteger>>> gbCandidateFrac = new ArrayList<>();
+            for (MultivariatePolynomial<BigInteger> gen : baseBasis) {
+                MultivariatePolynomial<Rational<BigInteger>> gbGen = reconstructPoly(gen, basePrime);
+                if (gbGen == null)
+                    continue main;
+                gbCandidateFrac.add(gbGen);
+            }
+
+            List<MultivariatePolynomial<BigInteger>> gbCandidate = toIntegral(gbCandidateFrac);
+            if (gbCandidate.equals(previousGBCandidate) && isGroebnerBasis(ideal, gbCandidate, monomialOrder))
+                return canonicalize(gbCandidate);
+            previousGBCandidate = gbCandidate;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static MultivariatePolynomial<Rational<BigInteger>> reconstructPoly(
+            MultivariatePolynomial<BigInteger> base, BigInteger prime) {
+        MultivariatePolynomial<Rational<BigInteger>> result = MultivariatePolynomial.zero(base.nVariables, Q, base.ordering);
+        for (Monomial<BigInteger> term : base) {
+            BigInteger[] numDen = RationalReconstruction.reconstructFareyErrorTolerant(term.coefficient, prime);
+            if (numDen == null)
+                return null;
+            result.add(new Monomial<>(term, new Rational<>(Rings.Z, numDen[0], numDen[1])));
+        }
+        return result;
+    }
+
+    private static Comparator<HilbertSeries> ModHilbertSeriesComparator = (a, b) -> {
+        UnivariatePolynomial<Rational<BigInteger>>
+                aHilbert = a.hilbertPolynomial(),
+                bHilbert = b.hilbertPolynomial();
+
+        if (aHilbert.equals(bHilbert))
+            return 0;
+
+        for (int n = Math.max(a.numerator.degree(), b.numerator.degree()) + 1; ; ++n) {
+            int c = aHilbert.evaluate(n).compareTo(bHilbert.evaluate(n));
+            if (c != 0)
+                return c;
+        }
+    };
+
+//    public static List<MultivariatePolynomial<BigInteger>>
+//    SparseGB(List<MultivariatePolynomial<BigInteger>> ideal, Comparator<DegreeVector> monomialOrder) {
+//        // simplify generators as much as possible
+//        ideal = prepareGenerators(ideal, monomialOrder);
+//        if (ideal.size() == 1)
+//            return ideal;
+//
+//
+//        BigInteger basePrime = null;
+//        HilbertSeries baseSeries = null;
+//        List<MultivariatePolynomial<BigInteger>> baseBasis = null;
+//
+//        PrimesIterator primes = new PrimesIterator(1L << 25);// start with a large enough prime
+//        main:
+//        while (true) {
+//            // pick up next prime number
+//            long prime = primes.take();
+//            BigInteger bPrime = BigInteger.valueOf(prime);
+//            IntegersZp64 ring = Zp64(prime);
+//            IntegersZp bRing = ring.asGenericRing();
+//
+//            // generators mod prime
+//            List<MultivariatePolynomialZp64> modGenerators =
+//                    ideal.stream().map(p -> MultivariatePolynomial.asOverZp64(p.setRing(bRing))).collect(Collectors.toList());
+//
+//            // Groebner basis mod prime
+//            List<MultivariatePolynomialZp64> modBasis = GroebnerBasis(modGenerators, monomialOrder);
+//            // sort generators by increasing lead terms
+//            modBasis.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
+//
+//            List<MultivariatePolynomial<BigInteger>> bModBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+//            // FIXME check same skeleton
+//
+//            HilbertSeries modSeries = HilbertSeries(leadTermsIdeal(modBasis));
+//
+//            // first iteration
+//            if (baseBasis == null) {
+//                baseBasis = bModBasis;
+//                basePrime = bPrime;
+//                baseSeries = modSeries;
+//            }
+//
+//            // check for Hilbert luckiness
+//            int c = ModHilbertSeriesComparator.compare(baseSeries, modSeries);
+//            if (c < 0)
+//                // current prime is unlucky
+//                continue;
+//            else if (c > 0) {
+//                // base prime was unlucky
+//                baseBasis = bModBasis;
+//                basePrime = bPrime;
+//                baseSeries = modSeries;
+//            }
+//
+//            // prime is Hilbert prime, so we compare monomial sets
+//            for (int i = 0, size = Math.min(baseBasis.size(), modBasis.size()); i < size; ++i) {
+//                c = monomialOrder.compare(baseBasis.get(i).lt(), modBasis.get(i).lt());
+//                if (c > 0)
+//                    // current prime is unlucky
+//                    continue main;
+//                else if (c < 0) {
+//                    // base prime was unlucky
+//                    baseBasis = bModBasis;
+//                    basePrime = bPrime;
+//                    baseSeries = modSeries;
+//                }
+//            }
+//
+//            if (baseBasis.size() < modBasis.size()) {
+//                // base prime was unlucky
+//                baseBasis = bModBasis;
+//                basePrime = bPrime;
+//                baseSeries = modSeries;
+//            } else if (baseBasis.size() > modBasis.size())
+//                // current prime is unlucky
+//                continue;
+//
+//
+//            if (bModBasis != baseBasis) {
+//                // prime is probably lucky, we can do Chinese Remainders
+//                // fixme no need in CRT!!!
+//                for (int iGenerator = 0; iGenerator < baseBasis.size(); ++iGenerator) {
+//                    MultivariatePolynomial<BigInteger> baseGenerator = baseBasis.get(iGenerator);
+//                    PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator
+//                            = new PairedIterator<>(baseGenerator, bModBasis.get(iGenerator));
+//
+//                    baseGenerator = baseGenerator.createZero();
+//                    while (iterator.hasNext()) {
+//                        iterator.advance();
+//
+//                        Monomial<BigInteger> baseTerm = iterator.aTerm;
+//                        BigInteger crt = ChineseRemainders.ChineseRemainders(basePrime, bPrime, baseTerm.coefficient, iterator.bTerm.coefficient);
+//                        baseGenerator.add(baseTerm.setCoefficient(crt));
+//                    }
+//
+//                    baseBasis.set(iGenerator, baseGenerator);
+//                }
+//
+//                basePrime = basePrime.multiply(bPrime);
+//            }
+//
+//            // total number of unknowns
+//
+//            int nUnknowns = baseBasis.stream().mapToInt(p -> p.size() - 1).sum();
+//            MultivariateRing<MultivariatePolynomial<BigInteger>> cfRing = Rings.MultivariateRing(nUnknowns, Z);
+//
+//            AtomicInteger varCounter = new AtomicInteger(0);
+//            @SuppressWarnings("unchecked")
+//            MultivariatePolynomial<MultivariatePolynomial<BigInteger>>[] gbCandidate = baseBasis.stream().map(p -> {
+//                MultivariatePolynomial<MultivariatePolynomial<BigInteger>> head = p.ltAsPoly()
+//                        .mapCoefficients(cfRing, cf -> cfRing.getOne());
+//                MultivariatePolynomial<MultivariatePolynomial<BigInteger>> tail = p.subtractLt()
+//                        .mapCoefficients(cfRing, cf -> cfRing.variable(varCounter.incrementAndGet()));
+//                return head.add(tail);
+//            }).toArray(MultivariatePolynomial[]::new);
+//
+//
+//            List<MultivariatePolynomial<MultivariatePolynomial<BigInteger>>>
+//                    initialIdeal = ideal.stream().map(p -> p.mapCoefficients(cfRing, cfRing::valueOfBigInteger))
+//                    .collect(Collectors.toList());
+//
+//
+//            // form set of syzygies to check
+//            SyzygySet<Monomial<MultivariatePolynomial<BigInteger>>, MultivariatePolynomial<MultivariatePolynomial<BigInteger>>>
+//                    sPairs = new SyzygyTreeSet<>(new TreeSet<>(defaultSelectionStrategy(monomialOrder)));
+//
+//            initialIdeal.forEach(g -> updateBasis(new ArrayList<>(), sPairs, g));
+//
+//            List<SyzygyPair<Monomial<MultivariatePolynomial<BigInteger>>, MultivariatePolynomial<MultivariatePolynomial<BigInteger>>>>
+//                    sPairsList = sPairs.allSets().stream().flatMap(Collection::stream).collect(Collectors.toList());
+//
+//            List<MultivariatePolynomial<BigInteger>> equations = new ArrayList<>();
+//            BitSet usedVariables = new BitSet();
+//            for (SyzygyPair<Monomial<MultivariatePolynomial<BigInteger>>, MultivariatePolynomial<MultivariatePolynomial<BigInteger>>> sPair : sPairsList) {
+//                MultivariatePolynomial<MultivariatePolynomial<BigInteger>> remainder = MultivariateDivision.pseudoRemainder(syzygy(sPair), gbCandidate);
+//                if (remainder.isZero())
+//                    continue;
+//
+//                for (MultivariatePolynomial<BigInteger> cf : remainder.coefficients()) {
+//                    if (cf.isConstant())
+//                        // equation is not solvable
+//                        continue main;
+//                    int[] cfDegrees = cf.degrees();
+//                    for (int i = 0; i < cfDegrees.length; i++)
+//                        if (cfDegrees[i] > 0)
+//                            usedVariables.set(i);
+//                    equations.add(cf);
+//                }
+//
+//                if (usedVariables.cardinality() < nUnknowns)
+//                    continue;
+//
+//
+//            }
+//        }
+//    }
 }

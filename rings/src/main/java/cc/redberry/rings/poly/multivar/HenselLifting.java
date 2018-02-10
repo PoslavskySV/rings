@@ -1128,7 +1128,7 @@ public final class HenselLifting {
             // too large problem for sparse lifting -> probably we will run out of memory
             return null;
 
-        // true factors represented as R[x1, x2, ..., xN, u1, ..., uK]
+        // true factors represented as R[x0, x1, x2, ..., xN, u1, ..., uK]
         List<Poly> trueFactors = new ArrayList<>();
         int unkCounter = base.nVariables;
         for (int i = 0; i < biFactors.length; i++) {
@@ -1143,11 +1143,11 @@ public final class HenselLifting {
             trueFactors.add(trueFactor);
         }
 
-        // multiply our trueFactors in R[x1, x2, ..., xN, u1, ..., uK]
+        // multiply our trueFactors in R[x0, x1, x2, ..., xN, u1, ..., uK]
         Poly lhsBase = trueFactors.stream().reduce(trueFactors.get(0).createOne(), (a, b) -> a.multiply(b));
 
         // <- matching lhsBase and base in (x0, x1)
-        // base as R[x0, x1][x0, x1, x3, ... xN]
+        // base as R[x0, x1][x0, x1, x2, ... xN]
         MultivariatePolynomial<Poly> biBase =
                 base.asOverMultivariate(ArraysUtil.sequence(2, base.nVariables));
         // The main equations to solve

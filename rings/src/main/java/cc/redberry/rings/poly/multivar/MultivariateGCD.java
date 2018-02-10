@@ -1008,7 +1008,7 @@ public final class MultivariateGCD {
                         lcGCD.mod(bPrime).longValueExact());
 
                 ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
-                PairIterator<MonomialZp64, MultivariatePolynomialZp64> iterator = new PairIterator<>(base, modularGCD);
+                PairedIterator<MonomialZp64, MultivariatePolynomialZp64> iterator = new PairedIterator<>(base, modularGCD);
                 while (iterator.hasNext()) {
                     iterator.advance();
 
@@ -1107,7 +1107,7 @@ public final class MultivariateGCD {
                         lDomain.reciprocal(modularGCD.lc()),
                         lcGCD.mod(bPrime).longValueExact());
 
-                PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator = new PairIterator<>(bBase, modularGCD.toBigPoly());
+                PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator = new PairedIterator<>(bBase, modularGCD.toBigPoly());
                 while (iterator.hasNext()) {
                     iterator.advance();
 
@@ -1195,50 +1195,6 @@ public final class MultivariateGCD {
             dividend = dividend.subtract(divider.clone().multiply(ltDiv));
         }
         return quotient;
-    }
-
-    static final class PairIterator<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
-        final Poly factory;
-        final Term zeroTerm;
-        final Comparator<DegreeVector> ordering;
-        final Iterator<Term> aIterator, bIterator;
-
-        PairIterator(Poly a, Poly b) {
-            this.factory = a;
-            this.zeroTerm = factory.monomialAlgebra.getZeroTerm(factory.nVariables);
-            this.ordering = a.ordering;
-            this.aIterator = a.iterator();
-            this.bIterator = b.iterator();
-        }
-
-        boolean hasNext() {
-            return aIterator.hasNext() || bIterator.hasNext() || aTermCached != null || bTermCached != null;
-        }
-
-        Term aTerm = null, bTerm = null;
-        Term aTermCached = null, bTermCached = null;
-
-        void advance() {
-            if (aTermCached != null) {
-                aTerm = aTermCached;
-                aTermCached = null;
-            } else
-                aTerm = aIterator.hasNext() ? aIterator.next() : zeroTerm;
-            if (bTermCached != null) {
-                bTerm = bTermCached;
-                bTermCached = null;
-            } else
-                bTerm = bIterator.hasNext() ? bIterator.next() : zeroTerm;
-
-            int c = ordering.compare(aTerm, bTerm);
-            if (c < 0 && aTerm != zeroTerm) {
-                bTermCached = bTerm;
-                bTerm = zeroTerm;
-            } else if (c > 0 && bTerm != zeroTerm) {
-                aTermCached = aTerm;
-                aTerm = zeroTerm;
-            }
-        }
     }
 
     /**
@@ -1350,8 +1306,8 @@ public final class MultivariateGCD {
                     pRing.reciprocal(modGCD.lc()),
                     lcGCD.mod(bPrime).longValueExact());
 
-            PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                    iterator = new PairIterator<>(base, modGCD.toBigPoly());
+            PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                    iterator = new PairedIterator<>(base, modGCD.toBigPoly());
             while (iterator.hasNext()) {
                 iterator.advance();
 
@@ -1754,7 +1710,7 @@ public final class MultivariateGCD {
                 uPoly newBasePrime = basePrime.clone().multiply(prime);
                 uPoly monicFactor = fField.divideExact(fField.valueOf(lcGCD), modularGCD.lc());
 
-                PairIterator<Monomial<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairIterator<>(base, modularGCD);
+                PairedIterator<Monomial<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairedIterator<>(base, modularGCD);
                 while (iterator.hasNext()) {
                     iterator.advance();
 
@@ -1863,7 +1819,7 @@ public final class MultivariateGCD {
             uPoly newBasePrime = basePrime.clone().multiply(prime);
             uPoly monicFactor = fField.divideExact(fField.valueOf(lcGCD), modGCD.lc());
 
-            PairIterator<Monomial<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairIterator<>(base, modGCD);
+            PairedIterator<Monomial<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairedIterator<>(base, modGCD);
             while (iterator.hasNext()) {
                 iterator.advance();
 

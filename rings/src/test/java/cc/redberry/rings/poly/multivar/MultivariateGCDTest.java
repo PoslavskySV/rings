@@ -21,8 +21,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
@@ -641,8 +639,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                     a = randomPolynomial(5, 50, 20, rnd),
                     b = randomPolynomial(5, 50, 20, rnd);
 
-            PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                    it = new PairIterator<>(a, b);
+            PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                    it = new PairedIterator<>(a, b);
 
             MultivariatePolynomial<BigInteger> acc = a.createZero();
             while (it.hasNext()) {
@@ -661,8 +659,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse(" y  +   0  +  x*y   + x*y^2 + x*y^3 + x*y^4  +   0    "),
                 b = parse(" 0  +   x  +   0    +   0   +  0    +   0    + x^2*y^2");
 
-        PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                it = new PairIterator<>(a, b);
+        PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                it = new PairedIterator<>(a, b);
 
         MultivariatePolynomial<BigInteger> acc = a.createZero();
         while (it.hasNext()) {

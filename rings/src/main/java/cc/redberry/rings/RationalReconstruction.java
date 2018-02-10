@@ -67,6 +67,59 @@ public final class RationalReconstruction {
     }
 
     /**
+     * Performs a rational number reconstruction via Farey images, that is reconstructuction with bound B = sqrt(N/2 -
+     * 1/2)
+     */
+    public static BigInteger[] reconstructFarey(BigInteger n, BigInteger modulus) {
+        BigInteger[] v = {modulus, BigInteger.ZERO};
+        BigInteger[] w = {n, BigInteger.ONE};
+
+        while (w[0].pow(2).multiply(BigInteger.TWO).increment().compareTo(modulus) > 0) {
+            BigInteger q = v[0].divide(w[0]);
+            BigInteger[] z = {v[0].subtract(q.multiply(w[0])), v[1].subtract(q.multiply(w[1]))};
+            v = w;
+            w = z;
+        }
+        if (w[1].signum() < 0) {
+            w[0] = w[0].negate();
+            w[1] = w[1].negate();
+        }
+        if (w[1].pow(2).multiply(BigInteger.TWO).compareTo(modulus) <= 0 && BigIntegerUtil.gcd(w[0], w[1]).isOne())
+            return w;
+        return null;
+    }
+
+    /**
+     * Performs a error tolerant rational number reconstruction as described in Algorithm 5 of Janko Boehm, Wolfram
+     * Decker, Claus Fieker, Gerhard Pfister, "The use of Bad Primes in Rational Reconstruction",
+     * https://arxiv.org/abs/1207.1651v2
+     */
+    public static BigInteger[] reconstructFareyErrorTolerant(BigInteger n, BigInteger modulus) {
+        BigInteger[] v = {modulus, BigInteger.ZERO};
+        BigInteger[] w = {n, BigInteger.ONE};
+
+        do {
+            BigInteger qNum = w[0].multiply(v[0]).add(w[1].multiply(v[1]));
+            BigInteger qDen = w[0].pow(2).add(w[1].pow(2));
+            BigInteger q = qNum.signum() == qDen.signum() ?
+                    qNum.abs().add(qDen.abs()).decrement().divide(qDen.abs())
+                    : qNum.divide(qDen);
+            BigInteger[] z = {v[0].subtract(q.multiply(w[0])), v[1].subtract(q.multiply(w[1]))};
+            v = w;
+            w = z;
+        } while (w[0].pow(2).add(w[1].pow(2)).compareTo(v[0].pow(2).add(v[1].pow(2))) < 0);
+
+        if (v[0].pow(2).add(v[1].pow(2)).compareTo(modulus) < 0) {
+            if (v[1].signum() < 0) {
+                v[0] = v[0].negate();
+                v[1] = v[1].negate();
+            }
+            return v;
+        }
+        return null;
+    }
+
+    /**
      * Performs a rational number reconstruction. If the answer is not unique, {@code null} is returned.
      *
      * @param n                num * den^(-1) mod modulus

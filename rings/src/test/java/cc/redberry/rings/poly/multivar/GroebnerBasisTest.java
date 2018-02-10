@@ -657,32 +657,32 @@ public class GroebnerBasisTest extends AMultivariateTest {
     }
 
     @Test
-    public void test21() throws Exception {
+    public void testHilbertSerie1() throws Exception {
         String[] vars = {"x", "y", "z"};
         MultivariatePolynomial
                 a = parse("x^3*y^2*z^3", Q, GREVLEX, vars),
                 b = parse("x^4*y*z^3", Q, GREVLEX, vars),
                 c = parse("x^2*y^4*z^3", Q, GREVLEX, vars);
         List<MultivariatePolynomial> ideal = new ArrayList<>(Arrays.asList(a, b, c));
-        HilbertSeries hps = HilbertSeriesMonomialIdeal(ideal);
-        assertEquals(2, hps.idealDimension());
-        assertEquals(UnivariatePolynomial.parse("-5 + 6*x", Q), hps.hilbertPolynomial);
+        HilbertSeries hps = HilbertSeriesOfHomogeneousIdeal(ideal);
+        assertEquals(2, hps.dimension());
+        assertEquals(UnivariatePolynomial.parse("-5 + 6*x", Q), hps.hilbertPolynomial());
     }
 
     @Test
-    public void test22() throws Exception {
+    public void testHilbertSerie2() throws Exception {
         String[] vars = {"x", "y", "z"};
         MultivariatePolynomial
                 a = parse("x*z", Q, GREVLEX, vars),
                 b = parse("y*z", Q, GREVLEX, vars);
         List<MultivariatePolynomial> ideal = new ArrayList<>(Arrays.asList(a, b));
-        HilbertSeries hps = HilbertSeriesMonomialIdeal(ideal);
-        assertEquals(2, hps.idealDimension());
-        assertEquals(UnivariatePolynomial.parse("x + 2", Q), hps.hilbertPolynomial);
+        HilbertSeries hps = HilbertSeriesOfHomogeneousIdeal(ideal);
+        assertEquals(2, hps.dimension());
+        assertEquals(UnivariatePolynomial.parse("x + 2", Q), hps.hilbertPolynomial());
     }
 
     @Test
-    public void test23() throws Exception {
+    public void testHilbertSerie3() throws Exception {
         String[] vars = {"x", "y", "z", "w", "u"};
         MultivariatePolynomial
                 a = parse("x^13*y^2*z^3*w^7", Q, GREVLEX, vars),
@@ -690,9 +690,89 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 c = parse("x^2*y^4*z^3", Q, GREVLEX, vars),
                 d = parse("x*y^14*z^3*u^6*w^6", Q, GREVLEX, vars);
         List<MultivariatePolynomial> ideal = new ArrayList<>(Arrays.asList(a, b, c, d));
-        HilbertSeries hps = HilbertSeriesMonomialIdeal(ideal);
-        assertEquals(4, hps.idealDimension());
-        assertEquals(UnivariatePolynomial.parse("2134+(-1702/3)*x+(57/2)*x^2+(5/6)*x^3", Q), hps.hilbertPolynomial);
+        HilbertSeries hps = HilbertSeriesOfHomogeneousIdeal(ideal);
+        assertEquals(4, hps.dimension());
+        assertEquals(UnivariatePolynomial.parse("2134+(-1702/3)*x+(57/2)*x^2+(5/6)*x^3", Q), hps.hilbertPolynomial());
+    }
+
+    @Test
+    public void testModularGB1() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4", "x5"};
+        MultivariatePolynomial<BigInteger>
+                b = parse("x1*x2*x3^2 + 123*x2*x4*x1^2*x5 + 123*x3*x2^3", Z, GREVLEX, vars),
+                c = parse("17*x1^3*x2^3*x3^3*x4 - x2*x4^2*x1^4*x5 + 17*x3^3*x2 - 17*x4 - 17", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(c, b);
+
+        for (int i = 0; i < 1; ++i) {
+            long start;
+            start = System.nanoTime();
+            List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX);
+            System.out.println("Modular: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            List<MultivariatePolynomial<BigInteger>> buch = BuchbergerGB(gens, GREVLEX);
+            System.out.println("Buchberger: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            assertEquals(buch, mod);
+        }
+    }
+
+    @Test
+    public void testModularGB2() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("8*x^2*y^2 + 5*x*y^3 + 3*x^3*z + x^2*y*z", Z, GREVLEX, vars),
+                b = parse("x^5 + 2*y^3*z^2 + 13*y^2*z^3 + 5*y*z^4", Z, GREVLEX, vars),
+                c = parse("8*x^3 + 12*y^3 + x*z^2 + 3", Z, GREVLEX, vars),
+                d = parse("7*x^2*y^4 + 18*x*y^3*z^2 + y^3*z^3", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c, d);
+
+
+        List<MultivariatePolynomial<BigInteger>> expected = Arrays.asList(
+                parse("x", Z, GREVLEX, vars),
+                parse("z^2", Z, GREVLEX, vars),
+                parse("1 + 4*y^3", Z, GREVLEX, vars)
+        );
+
+        for (int i = 0; i < 1; ++i) {
+            long start;
+            start = System.nanoTime();
+            List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX);
+            System.out.println("Modular: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertEquals(expected, mod);
+
+            // Buchberger is too long here
+
+//            start = System.nanoTime();
+//            List<MultivariatePolynomial<BigInteger>> buch = BuchbergerGB(gens, GREVLEX);
+//            System.out.println("Buchberger: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+//
+//            assertEquals(buch, mod);
+        }
+    }
+
+    @Ignore // fixme
+    @Test
+    public void testModularGB3() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+                b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+                c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+
+        for (int i = 0; i < 3; ++i) {
+            long start;
+            start = System.nanoTime();
+            List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX);
+            System.out.println("Modular: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            List<MultivariatePolynomial<BigInteger>> buch = BuchbergerGB(gens, GREVLEX);
+            System.out.println("Buchberger: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            assertEquals(buch, mod);
+        }
     }
 
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
