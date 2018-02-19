@@ -396,7 +396,20 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
             newData.add(term.without(variables));
+        assert nVariables >= variables.length;
         return create(nVariables - variables.length, newData);
+    }
+
+    /**
+     * Makes a copy of this with all variables except specified ones replaced with the units
+     *
+     * @param variables the variables
+     */
+    public final Poly dropSelectVariables(int[] variables) {
+        MonomialSet<Term> newData = new MonomialSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.dropSelect(variables));
+        return create(variables.length, newData);
     }
 
     /**
@@ -981,6 +994,23 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
             return self;
         for (Term term : oth.terms)
             subtract(terms, term);
+        release();
+        return self;
+    }
+
+    /**
+     * Subtracts {@code cf * oth} from this polynomial
+     */
+    public final Poly subtract(Term cf, Poly oth) {
+        if (monomialAlgebra.isZero(cf))
+            return self;
+        if (terms == oth.terms && monomialAlgebra.isOne(cf))
+            return toZero();
+        assertSameCoefficientRingWith(oth);
+        if (oth.isZero())
+            return self;
+        for (Term term : oth.terms)
+            subtract(terms, monomialAlgebra.multiply(cf, term));
         release();
         return self;
     }

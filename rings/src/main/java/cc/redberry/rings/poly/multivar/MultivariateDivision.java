@@ -64,7 +64,7 @@ public final class MultivariateDivision {
             }
             if (ltDiv != null) {
                 quotients[i] = quotients[i].add(ltDiv);
-                dividend = dividend.subtract(dividend.create(ltDiv).multiply(dividers[i]));
+                dividend = dividend.subtract(ltDiv, dividers[i]);
             } else {
                 remainder = remainder.add(lt);
                 dividend = dividend.subtractLt();
@@ -115,7 +115,7 @@ public final class MultivariateDivision {
                     break;
             }
             if (ltDiv != null)
-                dividend = dividend.subtract(dividend.create(ltDiv).multiply(dividers[i]));
+                dividend = dividend.subtract(ltDiv, dividers[i]);
             else {
                 remainder = remainder.add(lt);
                 dividend = dividend.subtractLt();
@@ -197,7 +197,7 @@ public final class MultivariateDivision {
             dividend.multiply(factor);
             remainder.multiply(factor);
 
-            dividend = dividend.subtract(dividend.create(new Monomial<>(dvPseudoDiv, ring.divideExact(lt.coefficient, gcd))).multiply(dividers[iPseudoDiv]));
+            dividend = dividend.subtract(new Monomial<>(dvPseudoDiv, ring.divideExact(lt.coefficient, gcd)), dividers[iPseudoDiv]);
         }
         return remainder.primitivePart();
     }

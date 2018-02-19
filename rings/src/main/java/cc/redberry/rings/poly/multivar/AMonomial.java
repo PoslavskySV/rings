@@ -83,6 +83,9 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
     /** Set's exponents of all variables except specified variables to zero */
     public final Term select(int[] variables) {return setDegreeVector(dvSelect(variables));}
 
+    /** Picks only specified exponents */
+    public final Term dropSelect(int[] variables) {return setDegreeVector(dvDropSelect(variables));}
+
     /**
      * Selects range from this
      *

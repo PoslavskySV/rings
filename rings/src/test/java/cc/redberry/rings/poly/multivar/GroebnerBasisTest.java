@@ -7,6 +7,7 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -21,6 +22,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -572,6 +574,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         List<MultivariatePolynomial<Rational<BigInteger>>> gens = Arrays.asList(c, b);
 
         List<MultivariatePolynomial<Rational<BigInteger>>> actual = BuchbergerGB(gens, GREVLEX);
+
         assertTrue(actual.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral)));
         canonicalize(actual);
         List<MultivariatePolynomial<Rational<BigInteger>>> expected = BuchbergerGB(gens, GREVLEX, NO_MINIMIZATION,
@@ -595,12 +598,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
                     c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
             List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
 
-            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> id = gens.stream()
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGens = gens.stream()
                     .map(p -> MultivariateConversions.split(p, 2, 3))
                     .map(p -> p.mapCoefficients(Frac(p.ring), cf -> new Rational<>(p.ring, cf)))
                     .collect(Collectors.toList());
-            id = BuchbergerGB(id, GREVLEX);
-            assertTrue(id.get(0).isConstant());
+
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGB = BuchbergerGB(funcGens, GREVLEX);
+            assertTrue(funcGB.get(0).isConstant());
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }
@@ -773,6 +777,269 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
             assertEquals(buch, mod);
         }
+    }
+
+    @Test
+    public void testSparseGB1() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("8*x^2*y^2 + 5*x*y^3 + 3*x^3*z + x^2*y*z", Z, GREVLEX, vars),
+                b = parse("x^5 + 2*y^3*z^2 + 13*y^2*z^3 + 5*y*z^4", Z, GREVLEX, vars),
+                c = parse("8*x^3 + 12*y^3 + x*z^2 + 3", Z, GREVLEX, vars),
+                d = parse("7*x^2*y^4 + 18*x*y^3*z^2 + y^3*z^3", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c, d);
+
+
+        List<MultivariatePolynomial<BigInteger>> expected = new ArrayList<>(Arrays.asList(
+                parse("x", Z, GREVLEX, vars),
+                parse("z^2", Z, GREVLEX, vars),
+                parse("1 + 4*y^3", Z, GREVLEX, vars)
+        ));
+
+        List<MultivariatePolynomial<BigInteger>> gb = solveGB(gens,
+                expected.stream().map(p -> ((SortedSet<DegreeVector>) p.terms.keySet())).collect(Collectors.toList()), GREVLEX);
+        assertEquals(expected, gb);
+    }
+
+    @Test
+    public void testSparseGB2() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+                b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+                c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+//                a = parse("112312423412343253451*x1*x3^3*x4 + 11232143245*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+//                b = parse("1111*x1^3 + 13*x3^2*x4^2 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+//                c = parse("12345435135345345413457*x1^2*x2*x4 + 121234431*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+
+//        System.out.println(modGB.stream().mapToInt(p -> p.size()).sum());
+        long start;
+        for (int i = 0; i < 1000; ++i) {
+
+//            start = System.nanoTime();
+//            List<MultivariatePolynomial<BigInteger>> buch = BuchbergerGB(gens, GREVLEX);
+//            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+//            System.out.println(buch);
+
+            List<MultivariatePolynomialZp64> modGens = gens.stream().map(p -> MultivariatePolynomial.asOverZp64(p.setRing(Zp(123419)))).collect(Collectors.toList());
+            start = System.nanoTime();
+            List<MultivariatePolynomialZp64> modGB = BuchbergerGB(modGens, GREVLEX);
+            List<MultivariatePolynomial<BigInteger>> gb = solveGB(gens,
+                    modGB.stream().map(p -> p.terms.keySet()).collect(Collectors.toList()), GREVLEX);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Files.write(new File("/Users/poslavskysv/Projects/redberry2/rings/rrrrrr").toPath(),
+                    gb.stream().map(AMultivariatePolynomial::toString).collect(Collectors.toList()),
+                    StandardOpenOption.CREATE);
+
+
+            assertTrue(isGroebnerBasis(gens, gb, GREVLEX));
+//            System.out.println(buch.size());
+//            System.out.println(gb.equals(buch));
+            System.out.println();
+        }
+    }
+
+    @Test
+    public void dsf() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+                b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+                c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+//                a = parse("112312423412343253451*x1*x3^3*x4 + 11232143245*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+//                b = parse("1111*x1^3 + 13*x3^2*x4^2 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+//                c = parse("12345435135345345413457*x1^2*x2*x4 + 121234431*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+
+        long start = System.nanoTime();
+        List<MultivariatePolynomial<BigInteger>> buch = BuchbergerGB(gens, GREVLEX);
+        System.out.println(TimeUnits.nanosecondsToString( System.nanoTime() - start));
+
+        List<MultivariatePolynomial<BigInteger>> gb = Files.readAllLines(new File("/Users/poslavskysv/Projects/redberry2/rings/rrrrrr").toPath())
+                .stream().map(a::parsePoly).collect(Collectors.toList());
+
+        System.out.println(gb.get(0));
+        System.out.println(isGroebnerBasis(gens, gb, GREVLEX));
+
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testSparseGB3() throws Exception {
+        String[] vars = {"x1", "x2", "x3", "x4", "x5"};
+        MultivariatePolynomial<BigInteger>
+                b = parse("x1*x2*x3^2 + 123*x2*x4*x1^2*x5 + 123*x3*x2^3", Z, GREVLEX, vars),
+                c = parse("17*x1^3*x2^3*x3^3*x4 - x2*x4^2*x1^4*x5 + 17*x3^3*x2 - 17*x4 - 17", Z, GREVLEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(c, b);
+
+
+        List<MultivariatePolynomial<BigInteger>> expected = BuchbergerGB(gens, GREVLEX);
+        List<MultivariatePolynomialZp64> modGens = gens.stream().map(p -> MultivariatePolynomial.asOverZp64(p.setRing(Zp(123419)))).collect(Collectors.toList());
+        List<MultivariatePolynomialZp64> modGB = BuchbergerGB(modGens, GREVLEX);
+
+        List<MultivariatePolynomial<BigInteger>> gb = solveGB(gens,
+                modGB.stream().map(p -> p.terms.keySet()).collect(Collectors.toList()), GREVLEX);
+
+
+        assertEquals(expected, gb);
+//        MultivariatePolynomial<BigInteger> cand[] = new MultivariatePolynomial[]{
+//                Util.toCommonDenominator(parse(" (1/123)*x1*x2*x3^2+x2^3*x3+x1^2*x2*x4*x5 ", Q, GREVLEX, vars))._1,
+//                Util.toCommonDenominator(parse(" (-1)+(-1)*x4+x2*x3^3+(1/2091)*x1^3*x2*x3^2*x4+(1/17)*x1^2*x2^3*x3*x4+x1^3*x2^3*x3^3*x4 ", Q, GREVLEX, vars))._1,
+//                Util.toCommonDenominator(parse(" x1*x3^2+x2^2*x3+x1^2*x4*x5+x1*x3^2*x4+x2^2*x3*x4+x1^2*x4^2*x5 ", Q, GREVLEX, vars))._1,
+//                Util.toCommonDenominator(parse(" x5+x4*x5+(-1)*x2*x3^3*x5+(1/257193)*x1^2*x2*x3^4+(2/2091)*x1*x2^3*x3^3+(1/17)*x2^5*x3^2+(1/123)*x1^2*x2^3*x3^5+x1*x2^5*x3^4 ", Q, GREVLEX, vars))._1,
+//                Util.toCommonDenominator(parse(" x3^2*x5+x1*x4*x5^2+x3^2*x4*x5+x1*x4^2*x5^2+x2*x3^5*x5+x1*x2*x3^3*x4*x5^2+x1^2*x2*x3^6+x1*x2^3*x3^5+x1*x2^5*x3^2*x4*x5+x1^2*x2^3*x3^7+x2^7*x3^5 ", Q, GREVLEX, vars))._1,
+//        };
+//
+//        List<MultivariatePolynomial<BigInteger>> gbCand = new ArrayList<>(Arrays.asList(cand));
+//        System.out.println(isGroebnerBasis(gens, gbCand, GREVLEX));
+//        removeRedundant(gbCand);
+//        canonicalize(gbCand);
+//        System.out.println(expected);
+//        System.out.println(BuchbergerGB(gbCand, GREVLEX));
+//        System.out.println(gb);
+    }
+
+
+    @Test
+    public void test11111() throws Exception {
+        for (int i = 0; i < 1; ++i) {
+            System.out.println(i);
+//            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            String[] vars = {"x1", "x2", "x3", "x4"};
+            MultivariatePolynomial<BigInteger>
+                    a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+                    b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+                    c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+            List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGens = gens.stream()
+                    .map(p -> MultivariateConversions.split(p, 2, 3))
+                    .map(p -> p.mapCoefficients(Frac(p.ring), cf -> new Rational<>(p.ring, cf)))
+                    .collect(Collectors.toList());
+
+            List<MultivariatePolynomial<BigInteger>> zGens = funcGens.stream()
+                    .map(p -> p.mapCoefficients(Z, cf -> {
+                        System.out.println(cf);
+                        System.out.println(cf.numerator.evaluate(0, 3).evaluate(1, 1));
+                        BigInteger cc = cf.numerator.evaluate(0, 3).evaluate(1, 1).cc();
+                        assert !cc.isZero();
+                        return cc;
+
+                    }))
+                    .collect(Collectors.toList());
+
+            System.out.println(BuchbergerGB(zGens, GREVLEX));
+
+
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGB = BuchbergerGB(funcGens, GREVLEX);
+            System.out.println(funcGB);
+
+            assertTrue(funcGB.get(0).isConstant());
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+    @Test
+    public void testaaa11111() throws Exception {
+        for (int i = 0; i < 1; ++i) {
+            System.out.println(i);
+//            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            String[] vars = {"x1", "x2", "x3", "x4"};
+            MultivariatePolynomial<BigInteger>
+                    a = parse("6*x2*x4^3 + 11*x1*x3^3*x4 + 15*x2^3*x3^2*x4 + 13*x1^3*x2^3*x4", Z, GREVLEX, vars),
+                    b = parse("11*x1^3 + 13*x3^2*x4^2 + x1^3*x2^3*x3 + 10*x1^3*x2^2*x3^2*x4", Z, GREVLEX, vars),
+                    c = parse("7*x1^2*x2*x4 + 4*x1^3*x3 + 12*x1^2*x2^2*x3^2*x4^2", Z, GREVLEX, vars);
+            List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGens = gens.stream()
+                    .map(p -> MultivariateConversions.split(p, 3))
+                    .map(p -> p.mapCoefficients(Frac(p.ring), cf -> new Rational<>(p.ring, cf)))
+                    .collect(Collectors.toList());
+
+            List<MultivariatePolynomial<BigInteger>> zGens = funcGens.stream()
+                    .map(p -> p.mapCoefficients(Z, cf -> {
+                        BigInteger cc = cf.numerator.evaluate(0, 3).cc();
+                        assert !cc.isZero();
+                        return cc;
+
+                    }))
+                    .collect(Collectors.toList());
+
+            zGens = BuchbergerGB(zGens, GREVLEX);
+            System.out.println(zGens.stream().mapToInt(s -> s.size() - 1).sum());
+
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> solve = solveGB(funcGens, zGens.stream().map(p -> p.terms.keySet()).collect(Collectors.toList()), GREVLEX);
+            System.out.println(solve);
+
+
+            List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGB = BuchbergerGB(funcGens, GREVLEX);
+            System.out.println(funcGB);
+
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+    }
+
+
+    @Test
+    public void testaaa1111111() throws Exception {
+        //        System.out.println(GroebnerBasisData.katsura(6).get(0).nVariables);
+        List<MultivariatePolynomialZp64> gens = GroebnerBasisData.cyclic(6).stream()
+                .map(p -> p.mapCoefficients(Zp64(123419), cf -> cf.numerator.longValueExact())).collect(Collectors.toList());
+        int[] vars = {0, 1, 2, 3};
+        long[] vals = ArraysUtil.arrayOf(1L, vars.length);
+        List<MultivariatePolynomialZp64> gensEvaled = gens.stream().map(p -> p.evaluate(vars, vals)).collect(Collectors.toList());
+        System.out.println(gensEvaled);
+        System.out.println(F4GB(gensEvaled, GREVLEX));
+        List<MultivariatePolynomialZp64> gb = F4GB(gens, GREVLEX);
+        List<MultivariatePolynomialZp64> gbEvaled = gb.stream().map(p -> p.evaluate(vars, vals)).collect(Collectors.toList());
+        System.out.println(gbEvaled);
+        System.out.println(F4GB(gbEvaled, GREVLEX));
+        System.exit(0);
+
+
+////        System.out.println(GroebnerBasisData.katsura(6).get(0).nVariables);
+//        List<MultivariatePolynomial<BigInteger>> gens = GroebnerBasisData.cyclic(6).stream()
+//                .map(p -> p.mapCoefficients(Z, cf -> cf.numerator)).collect(Collectors.toList());
+//        int[] vars = {0, 1, 2, 3};
+//        BigInteger[] vals = ArraysUtil.arrayOf(Z.getOne(), vars.length);
+//        List<MultivariatePolynomial<BigInteger>> gensEvaled = gens.stream().map(p -> p.evaluate(vars, vals)).collect(Collectors.toList());
+//        System.out.println(gensEvaled);
+//        System.out.println(F4GB(gensEvaled, GREVLEX));
+//        List<MultivariatePolynomial<BigInteger>> gb = F4GB(gens, GREVLEX);
+//        List<MultivariatePolynomial<BigInteger>> gbEvaled = gb.stream().map(p -> p.evaluate(vars, vals)).collect(Collectors.toList());
+//        System.out.println(gbEvaled);
+//        System.out.println(F4GB(gbEvaled, GREVLEX));
+//        System.exit(0);
+//
+//
+//        List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGens = gens.stream()
+//                .map(p -> MultivariateConversions.split(p, 0, 1, 2, 3, 4, 5))
+//                .map(p -> p.mapCoefficients(Frac(p.ring), cf -> new Rational<>(p.ring, cf)))
+//                .collect(Collectors.toList());
+//        System.out.println(F4GB(gens, GREVLEX));
+//        System.out.println(funcGens);
+//        System.out.println(F4GB(funcGens, GREVLEX));
+//
+//        RandomGenerator random = getRandom();
+//        List<MultivariatePolynomial<BigInteger>> zGens = funcGens.stream()
+//                .map(p -> p.mapCoefficients(Z, cf -> cf.numerator.evaluateToNonZeroAtRandom(random).cc()))
+//                .collect(Collectors.toList());
+//
+//        System.out.println(zGens);
+//        zGens = BuchbergerGB(zGens, GREVLEX);
+//        System.out.println(zGens.stream().mapToInt(s -> s.size() - 1).sum());
+//
+//        List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> solve = solveGB(funcGens, zGens.stream().map(p -> p.terms.keySet()).collect(Collectors.toList()), GREVLEX);
+//        System.out.println(solve);
+//
+//
+//        List<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> funcGB = BuchbergerGB(funcGens, GREVLEX);
+//        System.out.println(funcGB);
+
+//        System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
     }
 
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>

@@ -195,6 +195,18 @@ public class DegreeVector implements java.io.Serializable {
         return new DegreeVector(res, deg);
     }
 
+    /** Picks only specified exponents */
+    public final DegreeVector dvDropSelect(int[] variables) {
+        int[] res = new int[variables.length];
+        int deg = 0;
+        int c = 0;
+        for (int i : variables) {
+            res[c++] = exponents[i];
+            deg += exponents[i];
+        }
+        return new DegreeVector(res, deg);
+    }
+
     /**
      * Selects range from this
      *
@@ -254,6 +266,13 @@ public class DegreeVector implements java.io.Serializable {
         int[] res = exponents.clone();
         res[variable] = exponent;
         return new DegreeVector(res, deg);
+    }
+
+    final int firstNonZeroVariable() {
+        for (int i = 0; i < exponents.length; ++i)
+            if (exponents[i] != 0)
+                return i;
+        return -1;
     }
 
     private static String toString0(String var, int exp) {

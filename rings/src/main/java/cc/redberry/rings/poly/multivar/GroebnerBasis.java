@@ -3,6 +3,9 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
+import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.linear.LinearSolver.SystemInfo;
+import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
@@ -10,16 +13,22 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
+import cc.redberry.rings.util.TimeUnits;
+import gnu.trove.impl.Constants;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.map.hash.TIntIntHashMap;
+import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.linear.LinearSolver.SystemInfo.*;
 
 /**
  * Groebner basis computation.
@@ -236,6 +245,10 @@ public final class GroebnerBasis {
 
         /** a view of all sets of syzygies */
         Collection<TreeSet<SyzygyPair<Term, Poly>>> allSets();
+
+        default List<SyzygyPair<Term, Poly>> allPairs() {
+            return allSets().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        }
     }
 
     /**
@@ -429,7 +442,8 @@ public final class GroebnerBasis {
     boolean isGroebnerBasis(List<Poly> ideal, List<Poly> generators, Comparator<DegreeVector> monomialOrder) {
         // form set of syzygies to check
         SyzygySet<Term, Poly> sPairs = new SyzygyTreeSet<>(new TreeSet<>(defaultSelectionStrategy(monomialOrder)));
-        ideal.forEach(g -> updateBasis(new ArrayList<>(), sPairs, g));
+        List<Poly> tmp = new ArrayList<>();
+        ideal.forEach(g -> updateBasis(tmp, sPairs, g));
 
         Poly factory = ideal.get(0);
         Poly[] gb = generators.toArray(factory.createArray(generators.size()));
@@ -3092,160 +3106,710 @@ public final class GroebnerBasis {
         }
     };
 
-//    public static List<MultivariatePolynomial<BigInteger>>
-//    SparseGB(List<MultivariatePolynomial<BigInteger>> ideal, Comparator<DegreeVector> monomialOrder) {
-//        // simplify generators as much as possible
-//        ideal = prepareGenerators(ideal, monomialOrder);
-//        if (ideal.size() == 1)
-//            return ideal;
+    @SuppressWarnings("unchecked")
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> solveGB(List<Poly> generators,
+                       List<Collection<DegreeVector>> gbSkeleton,
+                       Comparator<DegreeVector> monomialOrder) {
+        return solveGB0(generators, gbSkeleton.stream().map(c -> {
+            TreeSet<DegreeVector> set = new TreeSet<>(monomialOrder);
+            set.addAll(c);
+            return set;
+        }).collect(Collectors.toList()), monomialOrder);
+    }
+
+    static long SIMPLIFY = 0;
+    static long SIMPLIFY_DEG_TAKE = 0;
+    static long SIMPLIFY_EVALUATE = 0;
+    static long PSIMPLIFY = 0;
+    static long SYZYGY = 0;
+    static long REDUCE = 0;
+    static long REDUCE_REDUNDANT = 0;
+    static long LINSOLVE = 0;
+    static long REDUCE_AND_SOLVE = 0;
+    static long SOLVE = 0;
+    static long ADDEQ = 0;
+
+    static void details() {
+        System.out.println("SIMPLIFY         : " + TimeUnits.nanosecondsToString(SIMPLIFY));
+        System.out.println("PSIMPLIFY        : " + TimeUnits.nanosecondsToString(PSIMPLIFY));
+        System.out.println("SYZYGY           : " + TimeUnits.nanosecondsToString(SYZYGY));
+        System.out.println("REDUCE AND SOLVE : " + TimeUnits.nanosecondsToString(REDUCE_AND_SOLVE));
+        System.out.println("REDUCE           : " + TimeUnits.nanosecondsToString(REDUCE));
+        System.out.println("REDUCE REDUNDANT : " + TimeUnits.nanosecondsToString(REDUCE_REDUNDANT));
+        System.out.println("SOLVE            : " + TimeUnits.nanosecondsToString(SOLVE));
+        System.out.println("LIN SOLVE        : " + TimeUnits.nanosecondsToString(LINSOLVE));
+        System.out.println("ADDEQ            : " + TimeUnits.nanosecondsToString(ADDEQ));
+    }
+
+
+    /** when to drop unused variables */
+    private static final int DROP_SOLVED_VARIABLES_THRESHOLD = 128;
+    /** when to drop unused variables */
+    private static final double DROP_SOLVED_VARIABLES_RELATIVE_THRESHOLD = 0.1;
+
+    static int redundant = 0;
+
+    @SuppressWarnings("unchecked")
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> solveGB0(List<Poly> generators,
+                        List<SortedSet<DegreeVector>> gbSkeleton,
+                        Comparator<DegreeVector> monomialOrder) {
+        Poly factory = generators.get(0).createZero();
+        if (!factory.isOverField()) {
+            List gb = solveGB0(toFractions((List) generators), gbSkeleton, monomialOrder);
+            if (gb == null)
+                return null;
+            return canonicalize((List<Poly>) toIntegral(gb));
+        }
+
+        // total number of unknowns
+        int nUnknowns = gbSkeleton.stream().mapToInt(p -> p.size() - 1).sum();
+        // we consider polynomials as R[u0, u1, ..., uM][x0, ..., xN], where u_i are unknowns
+        // ring R[u0, u1, ..., uM]
+        MultivariateRing<Poly> cfRing = Rings.MultivariateRing(factory.setNVariables(nUnknowns));
+        // ring R[u0, u1, ..., uM][x0, ..., xN]
+        MultivariateRing<MultivariatePolynomial<Poly>> pRing = Rings.MultivariateRing(factory.nVariables, cfRing, monomialOrder);
+
+        AtomicInteger varCounter = new AtomicInteger(0);
+        @SuppressWarnings("unchecked")
+        MultivariatePolynomial<Poly>[] gbCandidate = gbSkeleton.stream().map(p -> {
+            MultivariatePolynomial<Poly> head = pRing.create(p.last());
+            MultivariatePolynomial<Poly> tail = p.headSet(p.last())
+                    .stream()
+                    .map(t -> pRing.create(t).multiply(cfRing.variable(varCounter.getAndIncrement())))
+                    .reduce(pRing.getZero(), (a, b) -> a.add(b));
+            return head.add(tail);
+        }).toArray(MultivariatePolynomial[]::new);
+
+        Term uTerm = factory.monomialAlgebra.getUnitTerm(nUnknowns);
+        // initial ideal viewed as R[u0, u1, ..., uM][x0, ..., xN]
+        List<MultivariatePolynomial<Poly>> initialIdeal
+                = generators
+                .stream().map(p -> pRing.factory().create(p.terms.values()
+                        .stream().map(t -> new Monomial<>(t, cfRing.factory().create(uTerm.setCoefficientFrom(t))))
+                        .collect(Collectors.toList())))
+                .collect(Collectors.toList());
+
+        long start;
+        List<Equation<Term, Poly>> nonLinearEquations = new ArrayList<>();
+        EquationSolver<Term, Poly> solver = createSolver(factory);
+        TIntHashSet solvedVariables = new TIntHashSet();
+        // reduce initial ideal to zero first (most simple)
+        for (MultivariatePolynomial<Poly> idealElement : initialIdeal) {
+            if (solvedVariables.size() == nUnknowns)
+                // system is solved
+                return gbSolution(factory, gbCandidate);
+
+            start = System.nanoTime();
+            SystemInfo result = reduceAndSolve(idealElement, gbCandidate, solver, nonLinearEquations);
+            REDUCE_AND_SOLVE += System.nanoTime() - start;
+            if (result == Inconsistent)
+                return null;
+            solvedVariables.addAll(solver.solvedVariables);
+
+            start = System.nanoTime();
+            // simplify GB candidate
+            solver.simplifyGB(gbCandidate);
+            // clear solutions (this gives some speed up)
+            solver.clear();
+
+            SIMPLIFY += System.nanoTime() - start;
+        }
+
+        System.out.println("Solved #1:" + solver.nSolved());
+
+        // build set of all syzygies
+        List<MultivariatePolynomial<Poly>> _tmp_gb_ = new ArrayList<>(initialIdeal);
+        SyzygySet<Monomial<Poly>, MultivariatePolynomial<Poly>> sPairsSet = new SyzygyTreeSet<>(new TreeSet<>(defaultSelectionStrategy(monomialOrder)));
+        Arrays.stream(gbCandidate).forEach(gb -> updateBasis(_tmp_gb_, sPairsSet, gb));
+        // list of all non trivial S-pairs
+        List<SyzygyPair<Monomial<Poly>, MultivariatePolynomial<Poly>>> sPairs = sPairsSet.allPairs();
+        // start from the simplest ones
+        sPairs.sort(Comparator.comparingInt(s -> s.j));
+
+        int counter = 0;
+        int aaaaa = 0;
+
+        int[] nUnknownsGB = new int[gbCandidate.length];
+        for (int i = 0; i < gbCandidate.length; ++i) {
+            TIntHashSet unk = new TIntHashSet();
+            for (Poly cf : gbCandidate[i].coefficients())
+                unk.addAll(usedVars(cf));
+            nUnknownsGB[i] = unk.size();
+        }
+
+        redundant = 0;
+        for (SyzygyPair<Monomial<Poly>, MultivariatePolynomial<Poly>> sPair : sPairs) {
+            if (solvedVariables.size() == nUnknowns)
+                // system is solved
+                return gbSolution(factory, gbCandidate);
+
+            System.out.println("# sPairs           :   " + (++counter));
+            System.out.println("# redundant sPairs :   " + redundant);
+            System.out.println("# solved           :   " + (aaaaa + solvedVariables.size()));
+            System.out.println("# linear           :   " + solver.nEquations());
+            System.out.println("# non-linear       :   " + nonLinearEquations.size());
+            System.out.println();
+            details();
+            System.out.println();
+            System.out.println();
+
+            start = System.nanoTime();
+            MultivariatePolynomial<Poly> syzygy = syzygy(
+                    sPair.syzygyGamma,
+                    getFi(sPair.i, initialIdeal, gbCandidate),
+                    getFi(sPair.j, initialIdeal, gbCandidate));
+//            if (StreamSupport.stream(syzygy.coefficients().spliterator(), false).allMatch(IPolynomial::isConstant)
+//                    && (sPair.i > initialIdeal.size() && nUnknownsGB[sPair.i - initialIdeal.size()] == 0)
+//                    && (sPair.j > initialIdeal.size() && nUnknownsGB[sPair.j - initialIdeal.size()] == 0)) {
+//                //
 //
-//
-//        BigInteger basePrime = null;
-//        HilbertSeries baseSeries = null;
-//        List<MultivariatePolynomial<BigInteger>> baseBasis = null;
-//
-//        PrimesIterator primes = new PrimesIterator(1L << 25);// start with a large enough prime
-//        main:
-//        while (true) {
-//            // pick up next prime number
-//            long prime = primes.take();
-//            BigInteger bPrime = BigInteger.valueOf(prime);
-//            IntegersZp64 ring = Zp64(prime);
-//            IntegersZp bRing = ring.asGenericRing();
-//
-//            // generators mod prime
-//            List<MultivariatePolynomialZp64> modGenerators =
-//                    ideal.stream().map(p -> MultivariatePolynomial.asOverZp64(p.setRing(bRing))).collect(Collectors.toList());
-//
-//            // Groebner basis mod prime
-//            List<MultivariatePolynomialZp64> modBasis = GroebnerBasis(modGenerators, monomialOrder);
-//            // sort generators by increasing lead terms
-//            modBasis.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
-//
-//            List<MultivariatePolynomial<BigInteger>> bModBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
-//            // FIXME check same skeleton
-//
-//            HilbertSeries modSeries = HilbertSeries(leadTermsIdeal(modBasis));
-//
-//            // first iteration
-//            if (baseBasis == null) {
-//                baseBasis = bModBasis;
-//                basePrime = bPrime;
-//                baseSeries = modSeries;
-//            }
-//
-//            // check for Hilbert luckiness
-//            int c = ModHilbertSeriesComparator.compare(baseSeries, modSeries);
-//            if (c < 0)
-//                // current prime is unlucky
 //                continue;
-//            else if (c > 0) {
-//                // base prime was unlucky
-//                baseBasis = bModBasis;
-//                basePrime = bPrime;
-//                baseSeries = modSeries;
 //            }
-//
-//            // prime is Hilbert prime, so we compare monomial sets
-//            for (int i = 0, size = Math.min(baseBasis.size(), modBasis.size()); i < size; ++i) {
-//                c = monomialOrder.compare(baseBasis.get(i).lt(), modBasis.get(i).lt());
-//                if (c > 0)
-//                    // current prime is unlucky
-//                    continue main;
-//                else if (c < 0) {
-//                    // base prime was unlucky
-//                    baseBasis = bModBasis;
-//                    basePrime = bPrime;
-//                    baseSeries = modSeries;
-//                }
-//            }
-//
-//            if (baseBasis.size() < modBasis.size()) {
-//                // base prime was unlucky
-//                baseBasis = bModBasis;
-//                basePrime = bPrime;
-//                baseSeries = modSeries;
-//            } else if (baseBasis.size() > modBasis.size())
-//                // current prime is unlucky
-//                continue;
-//
-//
-//            if (bModBasis != baseBasis) {
-//                // prime is probably lucky, we can do Chinese Remainders
-//                // fixme no need in CRT!!!
-//                for (int iGenerator = 0; iGenerator < baseBasis.size(); ++iGenerator) {
-//                    MultivariatePolynomial<BigInteger> baseGenerator = baseBasis.get(iGenerator);
-//                    PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator
-//                            = new PairedIterator<>(baseGenerator, bModBasis.get(iGenerator));
-//
-//                    baseGenerator = baseGenerator.createZero();
-//                    while (iterator.hasNext()) {
-//                        iterator.advance();
-//
-//                        Monomial<BigInteger> baseTerm = iterator.aTerm;
-//                        BigInteger crt = ChineseRemainders.ChineseRemainders(basePrime, bPrime, baseTerm.coefficient, iterator.bTerm.coefficient);
-//                        baseGenerator.add(baseTerm.setCoefficient(crt));
-//                    }
-//
-//                    baseBasis.set(iGenerator, baseGenerator);
-//                }
-//
-//                basePrime = basePrime.multiply(bPrime);
-//            }
-//
-//            // total number of unknowns
-//
-//            int nUnknowns = baseBasis.stream().mapToInt(p -> p.size() - 1).sum();
-//            MultivariateRing<MultivariatePolynomial<BigInteger>> cfRing = Rings.MultivariateRing(nUnknowns, Z);
-//
-//            AtomicInteger varCounter = new AtomicInteger(0);
-//            @SuppressWarnings("unchecked")
-//            MultivariatePolynomial<MultivariatePolynomial<BigInteger>>[] gbCandidate = baseBasis.stream().map(p -> {
-//                MultivariatePolynomial<MultivariatePolynomial<BigInteger>> head = p.ltAsPoly()
-//                        .mapCoefficients(cfRing, cf -> cfRing.getOne());
-//                MultivariatePolynomial<MultivariatePolynomial<BigInteger>> tail = p.subtractLt()
-//                        .mapCoefficients(cfRing, cf -> cfRing.variable(varCounter.incrementAndGet()));
-//                return head.add(tail);
-//            }).toArray(MultivariatePolynomial[]::new);
-//
-//
-//            List<MultivariatePolynomial<MultivariatePolynomial<BigInteger>>>
-//                    initialIdeal = ideal.stream().map(p -> p.mapCoefficients(cfRing, cfRing::valueOfBigInteger))
-//                    .collect(Collectors.toList());
-//
-//
-//            // form set of syzygies to check
-//            SyzygySet<Monomial<MultivariatePolynomial<BigInteger>>, MultivariatePolynomial<MultivariatePolynomial<BigInteger>>>
-//                    sPairs = new SyzygyTreeSet<>(new TreeSet<>(defaultSelectionStrategy(monomialOrder)));
-//
-//            initialIdeal.forEach(g -> updateBasis(new ArrayList<>(), sPairs, g));
-//
-//            List<SyzygyPair<Monomial<MultivariatePolynomial<BigInteger>>, MultivariatePolynomial<MultivariatePolynomial<BigInteger>>>>
-//                    sPairsList = sPairs.allSets().stream().flatMap(Collection::stream).collect(Collectors.toList());
-//
-//            List<MultivariatePolynomial<BigInteger>> equations = new ArrayList<>();
-//            BitSet usedVariables = new BitSet();
-//            for (SyzygyPair<Monomial<MultivariatePolynomial<BigInteger>>, MultivariatePolynomial<MultivariatePolynomial<BigInteger>>> sPair : sPairsList) {
-//                MultivariatePolynomial<MultivariatePolynomial<BigInteger>> remainder = MultivariateDivision.pseudoRemainder(syzygy(sPair), gbCandidate);
-//                if (remainder.isZero())
-//                    continue;
-//
-//                for (MultivariatePolynomial<BigInteger> cf : remainder.coefficients()) {
-//                    if (cf.isConstant())
-//                        // equation is not solvable
-//                        continue main;
-//                    int[] cfDegrees = cf.degrees();
-//                    for (int i = 0; i < cfDegrees.length; i++)
-//                        if (cfDegrees[i] > 0)
-//                            usedVariables.set(i);
-//                    equations.add(cf);
-//                }
-//
-//                if (usedVariables.cardinality() < nUnknowns)
-//                    continue;
-//
-//
-//            }
-//        }
-//    }
+
+            SYZYGY += System.nanoTime() - start;
+
+            start = System.nanoTime();
+            SystemInfo result = reduceAndSolve(syzygy, gbCandidate, solver, nonLinearEquations);
+            REDUCE_AND_SOLVE += System.nanoTime() - start;
+
+            if (result == Inconsistent)
+                return null;
+            solvedVariables.addAll(solver.solvedVariables);
+
+            start = System.nanoTime();
+            if (solver.solvedVariables.size() > 0)
+                // simplify GB candidate
+                solver.simplifyGB(gbCandidate);
+            for (int i = 0; i < gbCandidate.length; ++i) {
+                TIntHashSet unk = new TIntHashSet();
+                for (Poly cf : gbCandidate[i].coefficients())
+                    unk.addAll(usedVars(cf));
+                nUnknownsGB[i] = unk.size();
+            }
+
+            // clear solutions (this gives some speed up)
+            solver.clear();
+            SIMPLIFY += System.nanoTime() - start;
+
+
+            if (solvedVariables.size() > DROP_SOLVED_VARIABLES_THRESHOLD
+                    && 1.0 * solvedVariables.size() / nUnknowns >= DROP_SOLVED_VARIABLES_RELATIVE_THRESHOLD) {
+                System.out.println("=== REDUCED === ------- === " + solvedVariables.size());
+                dropSolvedVariables(solvedVariables, initialIdeal, gbCandidate, nonLinearEquations, solver);
+                aaaaa += solvedVariables.size();
+                nUnknowns -= solvedVariables.size();
+                solvedVariables.clear(); ;
+            }
+        }
+
+        if (solver.nSolved() == nUnknowns)
+            // system is solved
+            return gbSolution(factory, gbCandidate);
+
+        return null;
+    }
+
+    static int[] usedVars(AMultivariatePolynomial equation) {
+        int[] degrees = equation.degrees();
+        TIntArrayList usedVars = new TIntArrayList();
+        for (int i = 0; i < degrees.length; ++i)
+            if (degrees[i] > 0)
+                usedVars.add(i);
+        return usedVars.toArray();
+    }
+
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    MultivariatePolynomial<Poly> getFi(int i,
+                                       List<MultivariatePolynomial<Poly>> initialIdeal,
+                                       MultivariatePolynomial<Poly>[] gbCandidate) {
+        return i < initialIdeal.size() ? initialIdeal.get(i) : gbCandidate[i - initialIdeal.size()];
+    }
+
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void dropSolvedVariables(
+            TIntHashSet solvedVariables,
+            List<MultivariatePolynomial<Poly>> initialIdeal,
+            MultivariatePolynomial<Poly>[] gbCandidate,
+            List<Equation<Term, Poly>> nonLinearEquations,
+            EquationSolver<Term, Poly> solver) {
+        if (solver.nSolved() != 0)
+            throw new IllegalArgumentException();
+
+        final int[] solved = solvedVariables.toArray();
+        Arrays.sort(solved);
+
+        MultivariateRing<Poly> oldPRing = ((MultivariateRing<Poly>) initialIdeal.get(0).ring);
+        // new coefficient ring
+        MultivariateRing<Poly> pRing = MultivariateRing(oldPRing.factory().dropVariables(solved));
+
+        // transform initial ideal
+        initialIdeal.replaceAll(p -> p.mapCoefficients(pRing, cf -> cf.dropVariables(solved)));
+        // transform groebner basis
+        Arrays.asList(gbCandidate).replaceAll(p -> p.mapCoefficients(pRing, cf -> cf.dropVariables(solved)));
+
+        int[] vMapping = new int[oldPRing.nVariables()];
+        int c = 0;
+        for (int i = 0; i < vMapping.length; ++i) {
+            if (Arrays.binarySearch(solved, i) >= 0)
+                vMapping[i] = -1;
+            else
+                vMapping[i] = c++;
+        }
+
+        // transform non-linear
+        nonLinearEquations.forEach(eq -> eq.dropVariables(vMapping));
+
+        // transform linear
+        solver.equations.forEach(eq -> eq.dropVariables(vMapping));
+    }
+
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> gbSolution(Poly factory, MultivariatePolynomial<Poly>[] gbCandidate) {
+        List<Poly> result = new ArrayList<>();
+        for (MultivariatePolynomial<Poly> gbElement : gbCandidate) {
+            if (!gbElement.stream().allMatch(Poly::isConstant))
+                return null;
+
+            result.add(factory.create(gbElement.terms.values()
+                    .stream()
+                    .map(t -> t.coefficient.lt().setDegreeVector(t)).collect(Collectors.toList())));
+        }
+        return canonicalize(result);
+    }
+
+    /**
+     * Builds & tries to solve system of equations obtained from a single reduction
+     *
+     * @param toReduce           generator (or S-pair) that should reduce to zero with GB candidate
+     * @param gbCandidate        GB candidate
+     * @param solver             solver
+     * @param nonLinearEquations set of non-linear equations
+     */
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    SystemInfo reduceAndSolve(MultivariatePolynomial<Poly> toReduce,
+                              MultivariatePolynomial<Poly>[] gbCandidate,
+                              EquationSolver<Term, Poly> solver,
+                              List<Equation<Term, Poly>> nonLinearEquations) {
+        long start;
+        start = System.nanoTime();
+        // reduce poly with GB candidate
+        MultivariatePolynomial<Poly> remainder = MultivariateDivision.remainder(toReduce, gbCandidate);
+        REDUCE += System.nanoTime() - start;
+
+        if (remainder.isZero()) {
+            REDUCE_REDUNDANT += System.nanoTime() - start;
+            ++redundant;
+            return Consistent;
+        }
+
+        // previous number of solved variables
+        int nSolved = solver.solvedVariables.size();
+        // whether some independent linear equations were generated
+        boolean newLinearEqsObtained = false;
+        for (Poly cf : remainder.coefficients()) {
+            if (cf.isConstant())
+                // equation is not solvable
+                return Inconsistent;
+
+            cf = solver.simplify(cf).monic();
+            Equation<Term, Poly> eq = new Equation<>(cf);
+            if (eq.isLinear) {
+                // add equation
+                boolean isNewEq = solver.addEquation(eq);
+                if (isNewEq)
+                    // equation is new (independent)
+                    newLinearEqsObtained = true;
+            } else if (!nonLinearEquations.contains(eq))
+                nonLinearEquations.add(eq);
+        }
+
+        if (!newLinearEqsObtained)
+            // nothing to do further
+            return Consistent;
+
+        if (solver.solvedVariables.size() > nSolved)
+            // if some new solutions were already obtained we
+            // can simplify non-linear equations so that
+            // new linear combinations will be found
+            updateNonLinear(solver, nonLinearEquations);
+
+        while (true) {
+            // try to find and solve some subset of linear equations
+            SystemInfo result = solver.solve();
+
+            if (result == Inconsistent)
+                return Inconsistent;
+            else if (result == UnderDetermined)
+                return Consistent;
+
+            // update non-linear equations with new solutions
+            updateNonLinear(solver, nonLinearEquations);
+            System.out.println("NEW BLOCK");
+        }
+    }
+
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void updateNonLinear(EquationSolver<Term, Poly> solver,
+                         List<Equation<Term, Poly>> nonLinearEquations) {
+        while (true) {
+            boolean nlReduced = false;
+            for (int i = nonLinearEquations.size() - 1; i >= 0; --i) {
+                Equation<Term, Poly> eq = solver.simplify(nonLinearEquations.get(i));
+                if (eq.reducedEquation.isZero())
+                    nonLinearEquations.remove(i);
+                else if (isLinear(eq.reducedEquation)) {
+                    nlReduced = true;
+                    solver.addEquation(eq);
+                    nonLinearEquations.remove(i);
+                } else
+                    nonLinearEquations.set(i, eq);
+            }
+            if (!nlReduced)
+                return;
+        }
+    }
+
+    /** whether poly is linear */
+    static boolean isLinear(AMultivariatePolynomial<? extends AMonomial, ?> poly) {
+        return poly.terms.values().stream().allMatch(t -> t.totalDegree <= 1);
+    }
+
+    /** A single equation */
+    private static class Equation<
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        /** variables that present in this equation */
+        final int[] usedVars;
+        /** variable -> variable_in_reduced_equation */
+        final TIntIntHashMap mapping;
+        /** compact form of equation (with unused variables dropped) */
+        final Poly reducedEquation;
+        /** whether this equation is linear */
+        final boolean isLinear;
+
+        Equation(Poly equation) {
+            int[] degrees = equation.degrees();
+            TIntArrayList usedVars = new TIntArrayList();
+            for (int i = 0; i < degrees.length; ++i)
+                if (degrees[i] > 0)
+                    usedVars.add(i);
+            this.usedVars = usedVars.toArray();
+            assert equation.isZero() || this.usedVars.length > 0;
+            assert Arrays.stream(this.usedVars).allMatch(i -> i >= 0);
+            assert isSorted(this.usedVars);
+            this.reducedEquation = equation.dropSelectVariables(this.usedVars);
+            this.mapping = new TIntIntHashMap(Constants.DEFAULT_CAPACITY, Constants.DEFAULT_LOAD_FACTOR, -1, -1);
+            for (int i = 0; i < this.usedVars.length; ++i)
+                mapping.put(this.usedVars[i], i);
+            this.isLinear = isLinear(equation);
+        }
+
+        Equation(int[] usedVars, TIntIntHashMap mapping, Poly reducedEquation) {
+            this.usedVars = usedVars;
+            assert reducedEquation.isZero() || this.usedVars.length > 0;
+            assert Arrays.stream(this.usedVars).allMatch(i -> i >= 0);
+            assert isSorted(this.usedVars);
+            this.mapping = mapping;
+            this.reducedEquation = reducedEquation;
+            this.isLinear = isLinear(reducedEquation);
+        }
+
+        void dropVariables(int[] vMapping) {
+            for (int i = 0; i < usedVars.length; ++i)
+                usedVars[i] = vMapping[usedVars[i]];
+            assert isSorted(this.usedVars);
+            assert Arrays.stream(this.usedVars).allMatch(i -> i >= 0);
+            mapping.clear();
+            for (int i = 0; i < this.usedVars.length; ++i)
+                mapping.put(this.usedVars[i], i);
+        }
+
+        /** whether variable present in equation */
+        boolean hasVariable(int variable) { return Arrays.binarySearch(usedVars, variable) >= 0;}
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Equation<?, ?> equation1 = (Equation<?, ?>) o;
+            return Arrays.equals(usedVars, equation1.usedVars) && reducedEquation.equals(equation1.reducedEquation);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(usedVars);
+            result = 31 * result + reducedEquation.hashCode();
+            return result;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    EquationSolver<Term, Poly> createSolver(Poly factory) {
+        if (factory instanceof MultivariatePolynomial)
+            return (EquationSolver<Term, Poly>) new EquationSolverE(((MultivariatePolynomial) factory).ring);
+        else
+            throw new RuntimeException();
+    }
+
+
+    /** solver */
+    private static abstract class EquationSolver<
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        /** list of linear equations */
+        final List<Equation<Term, Poly>> equations = new ArrayList<>();
+        /** variables solved so far */
+        final TIntArrayList solvedVariables = new TIntArrayList();
+
+        EquationSolver() {}
+
+        /** number of equations */
+        final int nEquations() {return equations.size();}
+
+        /** add equation and return whether it was a new equation (true) or it is redundant (false) */
+        abstract boolean addEquation(Equation<Term, Poly> eq);
+
+        /** searches for a solvable block of equations and tries to solve it */
+        abstract SystemInfo solve();
+
+        /** simplifies given equation with solutions obtained so far */
+        abstract Equation<Term, Poly> simplify(Equation<Term, Poly> eq);
+
+        /** simplifies given poly with solutions obtained so far */
+        abstract Poly simplify(Poly poly);
+
+        /** clear all solutions */
+        abstract void clear();
+
+        /** simplifies GB element with solutions obtained so far */
+        final MultivariatePolynomial<Poly> simplifyGB(MultivariatePolynomial<Poly> poly) {
+            return poly.mapCoefficients(poly.ring, this::simplify);
+        }
+
+        /** simplifies GB with solutions obtained so far */
+        final void simplifyGB(MultivariatePolynomial<Poly>[] gbCandidate) {
+            for (int i = 0; i < gbCandidate.length; i++)
+                gbCandidate[i] = simplifyGB(gbCandidate[i]);
+        }
+
+        final int nSolved() { return solvedVariables.size(); }
+    }
+
+    private static final class EquationSolverE<E>
+            extends EquationSolver<Monomial<E>, MultivariatePolynomial<E>> {
+        /** solutions obtained so far */
+        private final List<E> solutions = new ArrayList<>();
+        /** the ring */
+        private final Ring<E> ring;
+
+        EquationSolverE(Ring<E> ring) {
+            this.ring = ring;
+        }
+
+        @Override
+        void clear() {
+            solvedVariables.clear();
+            solutions.clear();
+        }
+
+        @Override
+        boolean addEquation(Equation<Monomial<E>, MultivariatePolynomial<E>> equation) {
+            long start = System.nanoTime();
+            equation = simplify(equation);
+
+            MultivariatePolynomial<E> eq = equation.reducedEquation;
+            eq.monic();
+
+            if (eq.isZero()) {
+                ADDEQ += System.nanoTime() - start;
+                // redundant equation
+                return false;
+            }
+            if (equations.contains(equation)) {
+                ADDEQ += System.nanoTime() - start;
+                // redundant equation
+                return false;
+            }
+            if (eq.nVariables == 1) {
+                // equation can be solved directly
+                Ring<E> ring = eq.ring;
+                // solved variable
+                int solvedVar = equation.usedVars[0];
+                assert solvedVar >= 0;
+                solvedVariables.add(solvedVar);
+                solutions.add(ring.divideExact(ring.negate(eq.cc()), eq.lc()));
+
+                // list of equations that can be updated
+                List<Equation<Monomial<E>, MultivariatePolynomial<E>>> needUpdate = new ArrayList<>();
+                for (int i = equations.size() - 1; i >= 0; --i) {
+                    Equation<Monomial<E>, MultivariatePolynomial<E>> oldEq = equations.get(i);
+                    if (!oldEq.hasVariable(solvedVar))
+                        continue;
+                    equations.remove(i);
+                    needUpdate.add(oldEq);
+                }
+                needUpdate.forEach(this::addEquation);
+                ADDEQ += System.nanoTime() - start;
+                return true;
+            }
+
+            equations.add(equation);
+            ADDEQ += System.nanoTime() - start;
+            return true;
+        }
+
+        /** updates self with new solutions */
+        private void selfUpdate() {
+            List<Equation<Monomial<E>, MultivariatePolynomial<E>>> needUpdate = new ArrayList<>();
+            for (int i = equations.size() - 1; i >= 0; --i) {
+                Equation<Monomial<E>, MultivariatePolynomial<E>> oldEq = equations.get(i);
+                Equation<Monomial<E>, MultivariatePolynomial<E>> newEq = simplify(oldEq);
+                if (oldEq.equals(newEq))
+                    continue;
+                equations.remove(i);
+                needUpdate.add(newEq);
+            }
+            needUpdate.forEach(this::addEquation);
+        }
+
+        @Override
+        Equation<Monomial<E>, MultivariatePolynomial<E>> simplify(Equation<Monomial<E>, MultivariatePolynomial<E>> eq) {
+            long start = System.nanoTime();
+            // eliminated variables
+            TIntArrayList eliminated = new TIntArrayList();
+            // eliminated variables in eq.reducedEquation
+            TIntHashSet rEliminated = new TIntHashSet();
+            // reduced equation
+            MultivariatePolynomial<E> rPoly = eq.reducedEquation;
+
+            for (int i = 0; i < solutions.size(); ++i) {
+                int var = solvedVariables.get(i);
+                if (!eq.hasVariable(var))
+                    continue;
+
+                int rVar = eq.mapping.get(var);
+                assert rVar >= 0;
+                eliminated.add(var);
+                rEliminated.add(rVar);
+                rPoly = rPoly.evaluate(rVar, solutions.get(i));
+            }
+            if (eliminated.isEmpty()) {
+                PSIMPLIFY += System.nanoTime() - start;
+                return eq;
+            }
+
+            eliminated.sort();
+            int[] eliminatedArray = eliminated.toArray();
+            int[] usedVars = ArraysUtil.intSetDifference(eq.usedVars, eliminatedArray);
+            TIntIntHashMap mapping = new TIntIntHashMap();
+            for (int i = 0; i < usedVars.length; ++i)
+                mapping.put(usedVars[i], i);
+
+            PSIMPLIFY += System.nanoTime() - start;
+            return new Equation<>(usedVars, mapping, rPoly.dropVariables(rEliminated.toArray()));
+        }
+
+        @Override
+        MultivariatePolynomial<E> simplify(MultivariatePolynomial<E> poly) {
+            int[] degs = poly.degrees();
+            TIntArrayList subsVariables = new TIntArrayList();
+            List<E> subsValues = new ArrayList<>();
+            for (int i = 0; i < solvedVariables.size(); ++i)
+                if (degs[solvedVariables.get(i)] > 0) {
+                    subsVariables.add(solvedVariables.get(i));
+                    subsValues.add(solutions.get(i));
+                }
+            if (subsVariables.isEmpty())
+                return poly;
+
+            return poly.evaluate(subsVariables.toArray(), subsValues.toArray(ring.createArray(subsValues.size())));
+        }
+
+        @Override
+        SystemInfo solve() {
+            long start = System.nanoTime();
+            // sort equations from "simplest" to "hardest"
+            equations.sort(Comparator.comparingInt(eq -> eq.usedVars.length));
+            for (int i = 0; i < equations.size(); ++i) {
+                // some base equation
+                Equation<Monomial<E>, MultivariatePolynomial<E>> baseEq = equations.get(i);
+                TIntHashSet baseVars = new TIntHashSet(baseEq.usedVars);
+
+                // search equations compatible with base equation
+                List<Equation<Monomial<E>, MultivariatePolynomial<E>>> block = new ArrayList<>(Collections.singletonList(baseEq));
+                for (int j = 0; j < equations.size(); ++j) {
+                    if (i == j)
+                        continue;
+                    Equation<Monomial<E>, MultivariatePolynomial<E>> jEq = equations.get(j);
+                    if (jEq.usedVars.length > baseVars.size())
+                        break;
+                    if (baseVars.containsAll(jEq.usedVars))
+                        block.add(jEq);
+                }
+
+                if (block.size() < baseVars.size())
+                    // block can't be solved
+                    continue;
+
+                SystemInfo solve = solve(block, baseVars.toArray());
+                if (solve == Inconsistent) {
+                    SOLVE += System.nanoTime() - start;
+                    return solve;
+                }
+                if (solve == UnderDetermined)
+                    continue;
+
+                equations.removeAll(block);
+                selfUpdate();
+                SOLVE += System.nanoTime() - start;
+                return Consistent;
+            }
+            SOLVE += System.nanoTime() - start;
+            return UnderDetermined;
+        }
+
+        /** solves a system of linear equations */
+        SystemInfo solve(List<Equation<Monomial<E>, MultivariatePolynomial<E>>> equations, int[] usedVariables) {
+            long start = System.nanoTime();
+
+            int nUsedVariables = usedVariables.length;
+
+            TIntIntHashMap mapping = new TIntIntHashMap();
+            int[] linalgVariables = new int[nUsedVariables];
+            int c = 0;
+            for (int i : usedVariables) {
+                mapping.put(i, c);
+                assert i >= 0;
+                linalgVariables[c] = i;
+                ++c;
+            }
+
+            E[]
+                    lhs[] = ring.createZeroesArray2d(equations.size(), nUsedVariables),
+                    rhs = ring.createArray(equations.size());
+
+            for (int i = 0; i < equations.size(); ++i) {
+                Equation<Monomial<E>, MultivariatePolynomial<E>> eq = equations.get(i);
+                rhs[i] = ring.negate(eq.reducedEquation.cc());
+                for (Monomial<E> term : eq.reducedEquation) {
+                    if (term.isZeroVector())
+                        continue;
+                    lhs[i][mapping.get(eq.usedVars[term.firstNonZeroVariable()])] = term.coefficient;
+                }
+            }
+
+            E[] linalgSolution = ring.createArray(nUsedVariables);
+            SystemInfo solve = LinearSolver.solve(ring, lhs, rhs, linalgSolution);
+            if (solve == SystemInfo.Consistent) {
+                this.solvedVariables.addAll(linalgVariables);
+                this.solutions.addAll(Arrays.asList(linalgSolution));
+            }
+            LINSOLVE += System.nanoTime() - start;
+            return solve;
+        }
+    }
 }

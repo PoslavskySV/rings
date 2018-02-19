@@ -6,6 +6,7 @@ import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -210,6 +211,10 @@ public class FactorDecomposition<E> implements Iterable<E> {
 
         @Override
         public int compareTo(wrapper<E> o) { return ring.compare(el, o.el); }
+    }
+
+    public <R> FactorDecomposition<R> map(Ring<R> othRing, Function<E, R> mapper) {
+        return of(othRing, mapper.apply(unit), factors.stream().map(mapper).collect(Collectors.toList()), exponents);
     }
 
     @Override
