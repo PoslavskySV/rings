@@ -879,7 +879,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 if (print) System.out.println("Initial F4            : " + nanosecondsToString(tF4Ini));
 
                 start = System.nanoTime();
-                List<MultivariatePolynomial<BigInteger>> modInitialGB = ModularGB(ideal, GREVLEX);
+                List<MultivariatePolynomial<BigInteger>> modInitialGB = timeConstrained(() -> ModularGB(ideal, GREVLEX), constraint);
                 long tModIni = System.nanoTime() - start;
                 tModInitialGB.addValue(tModIni);
                 if (print) System.out.println("Initial modular       : " + nanosecondsToString(tModIni));
@@ -999,7 +999,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         // NOTE: not working with trySparse = true
         mod = ModularGB(shuffled, GREVLEX, false);
-        assertEquals(SingularGB(shuffled, GREVLEX).std, mod );
+        assertEquals(SingularGB(shuffled, GREVLEX).std, mod);
 
         // fixme both F4 and Buchberger takes too long due to intermediate expression swell
 //        f4 = F4GB(shuffled, GREVLEX);
