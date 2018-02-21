@@ -98,18 +98,23 @@ public final class RationalReconstruction {
         BigInteger[] v = {modulus, BigInteger.ZERO};
         BigInteger[] w = {n, BigInteger.ONE};
 
+        BigInteger qNum, wqDen = w[0].pow(2).add(w[1].pow(2)), vqDen;
         do {
-            BigInteger qNum = w[0].multiply(v[0]).add(w[1].multiply(v[1]));
-            BigInteger qDen = w[0].pow(2).add(w[1].pow(2));
-            BigInteger q = qNum.signum() == qDen.signum() ?
-                    qNum.abs().add(qDen.abs()).decrement().divide(qDen.abs())
-                    : qNum.divide(qDen);
+            qNum = w[0].multiply(v[0]).add(w[1].multiply(v[1]));
+            BigInteger q
+                    = qNum.signum() == wqDen.signum()
+                    ? qNum.abs().add(wqDen.abs()).decrement().divide(wqDen.abs())
+                    : qNum.divide(wqDen);
             BigInteger[] z = {v[0].subtract(q.multiply(w[0])), v[1].subtract(q.multiply(w[1]))};
-            v = w;
-            w = z;
-        } while (w[0].pow(2).add(w[1].pow(2)).compareTo(v[0].pow(2).add(v[1].pow(2))) < 0);
 
-        if (v[0].pow(2).add(v[1].pow(2)).compareTo(modulus) < 0) {
+            v = w;
+            vqDen = wqDen;
+
+            w = z;
+            wqDen = z[0].pow(2).add(z[1].pow(2));
+        } while (wqDen.compareTo(vqDen) < 0);
+
+        if (vqDen.compareTo(modulus) < 0) {
             if (v[1].signum() < 0) {
                 v[0] = v[0].negate();
                 v[1] = v[1].negate();

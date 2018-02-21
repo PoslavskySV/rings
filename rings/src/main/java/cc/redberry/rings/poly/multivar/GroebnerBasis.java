@@ -13,7 +13,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
-import cc.redberry.rings.util.TimeUnits;
+import cc.redberry.rings.util.ListWrapper;
 import gnu.trove.impl.Constants;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
@@ -29,6 +29,7 @@ import java.util.stream.IntStream;
 
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.linear.LinearSolver.SystemInfo.*;
+import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
 
 /**
  * Groebner basis computation.
@@ -45,10 +46,70 @@ public final class GroebnerBasis {
      * @param monomialOrder monomial order
      * @return Groebner basis
      */
+    @SuppressWarnings("unchecked")
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> GroebnerBasis(List<Poly> generators,
                              Comparator<DegreeVector> monomialOrder) {
-        return BuchbergerGB(generators, monomialOrder);
+        Poly factory = generators.get(0);
+        if (factory.isOverFiniteField())
+            return GroebnerBasisInGF(generators, monomialOrder);
+        if (factory.isOverZ())
+            return (List<Poly>) GroebnerBasisInZ((List) generators, monomialOrder, true);
+        if (Util.isOverRationals(factory))
+            return (List<Poly>) GroebnerBasisInQ((List) generators, monomialOrder, true);
+        return F4GB(generators, monomialOrder);
+    }
+
+    /**
+     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     *
+     * @param generators    generators of the ideal
+     * @param monomialOrder monomial order
+     * @return Groebner basis
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    GBResult<Term, Poly> GroebnerBasisInGF(List<Poly> generators,
+                                           Comparator<DegreeVector> monomialOrder) {
+        Poly factory = generators.get(0);
+        if (!factory.isOverFiniteField())
+            throw new IllegalArgumentException();
+        if (canConvertToZp64(factory)) {
+            GBResult<MonomialZp64, MultivariatePolynomialZp64> r = F4GB(asOverZp64(generators), monomialOrder);
+            return new GBResult<>((List<Poly>) convert(r), r.nProcessedPolynomials, r.nZeroReductions);
+        } else
+            return F4GB(generators, monomialOrder);
+    }
+
+    /**
+     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     *
+     * @param generators    generators of the ideal
+     * @param monomialOrder monomial order
+     * @return Groebner basis
+     */
+    public static GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+    GroebnerBasisInZ(List<MultivariatePolynomial<BigInteger>> generators,
+                     Comparator<DegreeVector> monomialOrder, boolean tryModular) {
+        MultivariatePolynomial<BigInteger> factory = generators.get(0);
+        if (!factory.isOverZ())
+            throw new IllegalArgumentException();
+        if (tryModular && factory.nVariables <= 3)
+            return ModularGB(generators, monomialOrder);
+        return F4GB(generators, monomialOrder);
+    }
+
+    /**
+     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     *
+     * @param generators    generators of the ideal
+     * @param monomialOrder monomial order
+     * @return Groebner basis
+     */
+    public static List<MultivariatePolynomial<Rational<BigInteger>>>
+    GroebnerBasisInQ(List<MultivariatePolynomial<Rational<BigInteger>>> generators,
+                     Comparator<DegreeVector> monomialOrder, boolean tryModular) {
+        return FracGB(generators, monomialOrder, (p, o) -> GroebnerBasisInZ(p, o, tryModular));
     }
 
     /* **************************************** Common methods ************************************************ */
@@ -562,17 +623,45 @@ public final class GroebnerBasis {
     }
 
     /** Groebner basis over fraction fields */
-    static <E> List<MultivariatePolynomial<Rational<E>>>
+    static <E> GBResult<Monomial<Rational<E>>, MultivariatePolynomial<Rational<E>>>
     FracGB(List<MultivariatePolynomial<Rational<E>>> ideal,
            Comparator<DegreeVector> monomialOrder,
            GroebnerAlgorithm<Monomial<E>, MultivariatePolynomial<E>> algorithm) {
-        return toFractions(algorithm.GroebnerBasis(toIntegral(ideal), monomialOrder));
+        GBResult<Monomial<E>, MultivariatePolynomial<E>> r = algorithm.GroebnerBasis(toIntegral(ideal), monomialOrder);
+        return new GBResult<>(toFractions(r), r.nProcessedPolynomials, r.nZeroReductions);
     }
 
     interface GroebnerAlgorithm<
             Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
-        List<Poly> GroebnerBasis(List<Poly> ideal, Comparator<DegreeVector> monomialOrder);
+        GBResult<Term, Poly> GroebnerBasis(List<Poly> ideal, Comparator<DegreeVector> monomialOrder);
+    }
+
+    /** Auxiliary class used to control complexity of Groebner basis computation */
+    static final class GBResult<
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+            extends ListWrapper<Poly> {
+        /** Total number of reduced polynomials (twice number of computed syzygies in case of Buchberger algorithm) */
+        final int nProcessedPolynomials;
+        /**
+         * Number of zero reductions (twice number of computed zero syzygies in case of Buchberger algorithm)
+         */
+        final int nZeroReductions;
+
+        GBResult(List<Poly> list, int nProcessedPolynomials, int nZeroReductions) {
+            super(list);
+            this.nProcessedPolynomials = nProcessedPolynomials;
+            this.nZeroReductions = nZeroReductions;
+        }
+
+        GBResult(List<Poly> list) {
+            this(list, -1, -1);
+        }
+
+        boolean isBuchbergerType() {
+            return nProcessedPolynomials != -1;
+        }
     }
 
     /* ************************************** Buchberger algorithm ********************************************** */
@@ -582,7 +671,7 @@ public final class GroebnerBasis {
      * for graded orders and sugar strategy for lexicographic.
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> BuchbergerGB(List<Poly> ideal, Comparator<DegreeVector> monomialOrder) {
+    GBResult<Term, Poly> BuchbergerGB(List<Poly> ideal, Comparator<DegreeVector> monomialOrder) {
         return BuchbergerGB(ideal, monomialOrder, defaultSelectionStrategy(monomialOrder), NO_MINIMIZATION);
     }
 
@@ -596,12 +685,12 @@ public final class GroebnerBasis {
      */
     @SuppressWarnings("unchecked")
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> BuchbergerGB(List<Poly> generators,
-                            Comparator<DegreeVector> monomialOrder,
-                            Comparator<SyzygyPair> selectionStrategy,
-                            MinimizationStrategy minimizationStrategy) {
+    GBResult<Term, Poly> BuchbergerGB(List<Poly> generators,
+                                      Comparator<DegreeVector> monomialOrder,
+                                      Comparator<SyzygyPair> selectionStrategy,
+                                      MinimizationStrategy minimizationStrategy) {
         if (Util.isOverRationals(generators.get(0)))
-            return (List<Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::BuchbergerGB);
+            return (GBResult<Term, Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::BuchbergerGB);
 
         return BuchbergerGB(generators, monomialOrder, minimizationStrategy,
                 () -> new SyzygyTreeSet<>(new TreeSet<>(selectionStrategy)));
@@ -612,10 +701,10 @@ public final class GroebnerBasis {
      */
     @SuppressWarnings("unchecked")
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
-                                       Comparator<DegreeVector> monomialOrder) {
+    GBResult<Term, Poly> BuchbergerHomogeneousGB(List<Poly> generators,
+                                                 Comparator<DegreeVector> monomialOrder) {
         if (Util.isOverRationals(generators.get(0)))
-            return (List<Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::BuchbergerHomogeneousGB);
+            return (GBResult<Term, Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::BuchbergerHomogeneousGB);
 
         Comparator<SyzygyPair> selectionStrategy = normalSelectionStrategy(generators.get(0).ordering);
         // fixme use sugar always?
@@ -633,10 +722,10 @@ public final class GroebnerBasis {
      * @param selectionStrategy critical pair selection strategy
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> BuchbergerHomogeneousGB(List<Poly> generators,
-                                       Comparator<DegreeVector> monomialOrder,
-                                       Comparator<SyzygyPair> selectionStrategy,
-                                       MinimizationStrategy minimizationStrategy) {
+    GBResult<Term, Poly> BuchbergerHomogeneousGB(List<Poly> generators,
+                                                 Comparator<DegreeVector> monomialOrder,
+                                                 Comparator<SyzygyPair> selectionStrategy,
+                                                 MinimizationStrategy minimizationStrategy) {
         return BuchbergerGB(generators, monomialOrder, minimizationStrategy,
                 () -> new GradedSyzygyTreeSet<>(new TreeMap<>(), selectionStrategy, SyzygyPair::degree));
     }
@@ -650,14 +739,14 @@ public final class GroebnerBasis {
      * @param syzygySetSupplier    supplies data structure for managing syzygies
      */
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> BuchbergerGB(List<Poly> generators,
-                            Comparator<DegreeVector> monomialOrder,
-                            MinimizationStrategy minimizationStrategy,
-                            Supplier<SyzygySet<Term, Poly>> syzygySetSupplier) {
+    GBResult<Term, Poly> BuchbergerGB(List<Poly> generators,
+                                      Comparator<DegreeVector> monomialOrder,
+                                      MinimizationStrategy minimizationStrategy,
+                                      Supplier<SyzygySet<Term, Poly>> syzygySetSupplier) {
         // simplify generators as much as possible
         generators = prepareGenerators(generators, monomialOrder);
         if (generators.size() == 1)
-            return generators;
+            return new GBResult<>(generators, 0, 0);
 
         Poly factory = generators.get(0);
 
@@ -679,17 +768,26 @@ public final class GroebnerBasis {
 
         // cache size of basis after each minimization
         int sizeAfterMinimization = groebner.size();
+        // number of processed polynomials
+        int nProcessedSyzygies = 0;
+        // number of zero-reducible syzygies
+        int nRedundantSyzygies = 0;
         while (!sPairs.isEmpty())
             // pick up (and remove) a bunch of critical pairs
             for (SyzygyPair<Term, Poly> pair : sPairs.getAndRemoveNextBunch()) {
                 // compute actual syzygy
                 Poly syzygy = MultivariateDivision.pseudoRemainder(syzygy(pair), reducersArray);
-                if (syzygy.isZero())
+                ++nProcessedSyzygies;
+                if (syzygy.isZero()) {
+                    ++nRedundantSyzygies;
                     continue;
+                }
 
                 if (syzygy.isConstant())
                     // ideal = ring
-                    return Collections.singletonList(factory.createOne());
+                    return new GBResult<>(
+                            Collections.singletonList(factory.createOne()),
+                            2 * nProcessedSyzygies, 2 * nRedundantSyzygies);
 
                 // add syzygy to basis
                 updateBasis(groebner, sPairs, syzygy);
@@ -715,7 +813,7 @@ public final class GroebnerBasis {
         // canonicalize Groebner basis
         canonicalize(groebner);
 
-        return groebner;
+        return new GBResult<>(groebner, 2 * nProcessedSyzygies, 2 * nRedundantSyzygies);
     }
 
     /** Strategy used to reduce and minimize basis in the intermediate steps of Buchberger algorithm */
@@ -785,6 +883,10 @@ public final class GroebnerBasis {
         return MultivariateDivision.pseudoRemainder(dividend, dividersArr);
     }
 
+
+
+
+
     /* ************************************************** F4 ******************************************************* */
 
     /**
@@ -795,12 +897,12 @@ public final class GroebnerBasis {
      */
     @SuppressWarnings("unchecked")
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> F4GB(List<Poly> generators,
-                    Comparator<DegreeVector> monomialOrder) {
+    GBResult<Term, Poly> F4GB(List<Poly> generators,
+                              Comparator<DegreeVector> monomialOrder) {
         if (!isGradedOrder(monomialOrder))
             throw new UnsupportedOperationException("F4 works only with graded orders");
         if (Util.isOverRationals(generators.get(0)))
-            return (List<Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::F4GB);
+            return (GBResult<Term, Poly>) FracGB((List) generators, monomialOrder, GroebnerBasis::F4GB);
 
         return F4GB(generators, monomialOrder,
                 () -> new GradedSyzygyTreeSet<>(new TreeMap<>(), defaultSelectionStrategy(monomialOrder), SyzygyPair::degree));
@@ -946,7 +1048,7 @@ public final class GroebnerBasis {
     /** The boundary size of S-pairs set when still normal Buchberger algorithm should be applied */
     private static final int
             F4_OVER_FIELD_LINALG_THRESHOLD = 16,
-            F4_OVER_EUCLID_LINALG_THRESHOLD = 0; // always use linear algebra for polynomials over Euclidean rings
+            F4_OVER_EUCLID_LINALG_THRESHOLD = 6;
 
     /**
      * Computes minimized and reduced Groebner basis of a given ideal via Faugère's F4 algorithm.
@@ -958,13 +1060,13 @@ public final class GroebnerBasis {
      * @param monomialOrder monomial order to use
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> F4GB(List<Poly> generators,
-                    Comparator<DegreeVector> monomialOrder,
-                    Supplier<SyzygySet<Term, ArrayBasedPoly<Term>>> syzygySetSupplier) {
+    GBResult<Term, Poly> F4GB(List<Poly> generators,
+                              Comparator<DegreeVector> monomialOrder,
+                              Supplier<SyzygySet<Term, ArrayBasedPoly<Term>>> syzygySetSupplier) {
         // simplify generators as much as possible
         generators = prepareGenerators(generators, monomialOrder);
         if (generators.size() == 1)
-            return canonicalize(generators);
+            return new GBResult<>(canonicalize(generators), 0, 0);
 
         Poly factory = generators.get(0);
 
@@ -996,6 +1098,11 @@ public final class GroebnerBasis {
         // cache array used in divisions (little performance improvement actually)
         Poly[] reducersArray = reducers.stream().filter(Objects::nonNull).toArray(factory::createArray);
 
+        // number of processed polynomials
+        int nProcessedPolynomials = 0;
+        // number of zero-reducible syzygies
+        int nRedundantSyzygies = 0;
+
         main:
         while (!sPairs.isEmpty()) {
             // pick up and remove a bunch of pairs (select at least F4_MIN_SELECTION_SIZE pairs)
@@ -1005,6 +1112,8 @@ public final class GroebnerBasis {
             while (!sPairs.isEmpty() && subset.size() < F4_MIN_SELECTION_SIZE)
                 subset.addAll(sPairs.getAndRemoveNextBunch());
 
+            nProcessedPolynomials += subset.size();
+
             if ((factory.isOverField() && subset.size() <= F4_OVER_FIELD_LINALG_THRESHOLD)
                     || (!factory.isOverField() && subset.size() <= F4_OVER_EUCLID_LINALG_THRESHOLD)) {
                 // normal Buchberger case, don't use linear algebra, just reduce
@@ -1012,12 +1121,16 @@ public final class GroebnerBasis {
                     // compute actual syzygy
                     Poly syzygy = syzygy(sPair.syzygyGamma, factory.create(sPair.fi), factory.create(sPair.fj));
                     syzygy = MultivariateDivision.pseudoRemainder(syzygy, reducersArray);
-                    if (syzygy.isZero())
+                    if (syzygy.isZero()) {
+                        ++nRedundantSyzygies;
                         continue;
+                    }
 
                     if (syzygy.isConstant())
                         // ideal = ring
-                        return Collections.singletonList(factory.createOne());
+                        return new GBResult<>(
+                                Collections.singletonList(factory.createOne()),
+                                nProcessedPolynomials, nRedundantSyzygies);
 
                     // add syzygy to basis
                     ArrayBasedPoly<Term> _syzygy_ = new ArrayBasedPoly<>(syzygy);
@@ -1114,6 +1227,8 @@ public final class GroebnerBasis {
             });
             // reduce all H-polynomials with linear algebra and compute new basis elements (N+)
             List<ArrayBasedPoly<Term>> nPlus = reduceMatrix(factory, groebner, hPolynomials, hMonomialsArray, f4reductions);
+            assert subset.size() >= nPlus.size();
+            nRedundantSyzygies += subset.size() - nPlus.size();
             // enlarge the basis
             nPlus.forEach(g -> updateBasis(groebner, sPairs, g));
             // add reducers to a list of reducers
@@ -1139,7 +1254,7 @@ public final class GroebnerBasis {
         // canonicalize Groebner basis
         canonicalize(result);
 
-        return result;
+        return new GBResult<>(result, nProcessedPolynomials, nRedundantSyzygies);
     }
 
     /**
@@ -2397,6 +2512,21 @@ public final class GroebnerBasis {
             return result;
         }
 
+        E normMax() {
+            E el = null;
+            for (E v : denseValues) {
+                v = ring.abs(v);
+                if (el == null || ring.compare(v, el) > 0)
+                    el = v;
+            }
+            for (E v : sparseValues) {
+                v = ring.abs(v);
+                if (el == null || ring.compare(v, el) > 0)
+                    el = v;
+            }
+            return el;
+        }
+
         void subtract(SparseArray<E> pivot, E factor, int iColumn, int firstDense) {
             if (ring.isZero(factor))
                 return;
@@ -2867,7 +2997,7 @@ public final class GroebnerBasis {
 
             UnivariatePolynomial<Rational<BigInteger>> reducedNumerator = initialNumerator;
             int reducedDenominatorDegree = initialDenominatorDegree;
-            while (true) {
+            while (!initialNumerator.isZero()) {
                 UnivariatePolynomial<Rational<BigInteger>> div = UnivariateDivision.divideOrNull(reducedNumerator, DENOMINATOR, true);
                 if (div == null)
                     break;
@@ -2959,47 +3089,157 @@ public final class GroebnerBasis {
         }
     }
 
-    /* ************************************** Modular Groebner basis ********************************************** */
 
 
-    public static List<MultivariatePolynomial<BigInteger>>
-    ModularGB(List<MultivariatePolynomial<BigInteger>> ideal, Comparator<DegreeVector> monomialOrder) {
+    /* ********************************** Modular & Sparse Groebner basis ****************************************** */
+
+    /**
+     * Modular Groebner basis algorithm.
+     *
+     * The algorithm switches between modular Chinese remainder techniques as described in Elizabeth A. Arnold, "Modular
+     * algorithms for computing Groebner bases", Journal of Symbolic Computation 35 (2003) 403–419 and sparse Groebner
+     * basis reconstruction with linear algebra
+     */
+    public static GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+    ModularGB(List<MultivariatePolynomial<BigInteger>> ideal,
+              Comparator<DegreeVector> monomialOrder) {
+        return ModularGB(ideal, monomialOrder, false);
+    }
+
+    /**
+     * Modular Groebner basis algorithm.
+     *
+     * The algorithm switches between modular Chinese remainder techniques as described in Elizabeth A. Arnold, "Modular
+     * algorithms for computing Groebner bases", Journal of Symbolic Computation 35 (2003) 403–419 and sparse Groebner
+     * basis reconstruction with linear algebra
+     *
+     * @param ideal         ideal generators
+     * @param monomialOrder monomial order
+     * @param trySparse     whether to try sparse reconstruction in particularly small resulting bases via {@link
+     *                      #solveGB(List, List, Comparator)}
+     */
+    @SuppressWarnings("unchecked")
+    public static GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+    ModularGB(List<MultivariatePolynomial<BigInteger>> ideal,
+              Comparator<DegreeVector> monomialOrder,
+              boolean trySparse) {
+        return ModularGB(ideal, monomialOrder,
+                GroebnerBasis::GroebnerBasisInGF,
+                (p, o) -> GroebnerBasisInZ(p, o, false),
+                BigInteger.ONE.shiftLeft(59), trySparse);
+    }
+
+    /** thresholds to control sparse over modular reconstruction in ModularGB */
+    private static final int
+            N_UNKNOWNS_THRESHOLD = 32,
+            N_BUCHBERGER_STEPS_THRESHOLD = 2 * 32;
+
+    /** thresholds to control traditional GB over modular in ModularGB */
+    private static final int
+            N_MOD_STEPS_THRESHOLD = 4,
+            N_BUCHBERGER_STEPS_REDUNDANCY_DELTA = 9;
+
+    static List<MultivariatePolynomialZp64> mod(List<MultivariatePolynomial<BigInteger>> polys, long modulus) {
+        IntegersZp64 ring = Zp64(modulus);
+        IntegersZp gRing = ring.asGenericRing();
+        return polys.stream().map(p -> MultivariatePolynomial.asOverZp64(p.setRing(gRing))).collect(Collectors.toList());
+    }
+
+    /**
+     * Modular Groebner basis algorithm.
+     *
+     * The algorithm switches between modular Chinese remainder techniques as described in Elizabeth A. Arnold, "Modular
+     * algorithms for computing Groebner bases", Journal of Symbolic Computation 35 (2003) 403–419 and sparse Groebner
+     * basis reconstruction with linear algebra
+     *
+     * @param ideal            ideal generators
+     * @param monomialOrder    monomial order
+     * @param modularAlgorithm algorithm used to find Groebner basis mod prime
+     * @param firstPrime       prime number to start modulo iterations
+     * @param trySparse        whether to try sparse reconstruction in particularly small resulting bases via {@link
+     *                         #solveGB(List, List, Comparator)}
+     */
+    @SuppressWarnings("unchecked")
+    public static GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+    ModularGB(List<MultivariatePolynomial<BigInteger>> ideal,
+              Comparator<DegreeVector> monomialOrder,
+              GroebnerAlgorithm modularAlgorithm,
+              GroebnerAlgorithm defaultAlgorithm,
+              BigInteger firstPrime,
+              boolean trySparse) {
         // simplify generators as much as possible
         ideal = prepareGenerators(ideal, monomialOrder);
         if (ideal.size() == 1)
-            return ideal;
+            return new GBResult<>(ideal, 0, 0);
 
-
+        GBResult baseResult = null;
         BigInteger basePrime = null;
         HilbertSeries baseSeries = null;
         List<MultivariatePolynomial<BigInteger>> baseBasis = null;
 
-        PrimesIterator primes = new PrimesIterator(1L << 59);// start with a large enough prime
+        PrimesIterator0 primes = new PrimesIterator0(firstPrime);// start with a large enough prime
         List<MultivariatePolynomial<BigInteger>> previousGBCandidate = null;
+        // number of CRT liftings
+        int nModIterations = 0;
         main:
         while (true) {
+
+            // check whether we dont' take too long
+            if (baseResult != null
+                    && baseResult.isBuchbergerType()
+                    && nModIterations > N_MOD_STEPS_THRESHOLD
+                    && Math.abs(baseResult.nProcessedPolynomials - baseResult.nZeroReductions - baseBasis.size()) < N_BUCHBERGER_STEPS_REDUNDANCY_DELTA) {
+                // modular reconstruction is too hard in this case, switch to the non-modular algorithm
+                return defaultAlgorithm.GroebnerBasis(ideal, monomialOrder);
+            }
+
             // pick up next prime number
-            long prime = primes.take();
-            BigInteger bPrime = BigInteger.valueOf(prime);
-            IntegersZp64 ring = Zp64(prime);
-            IntegersZp bRing = ring.asGenericRing();
+            BigInteger prime = primes.next();
+            IntegersZp ring = Zp(prime);
 
-            // generators mod prime
-            List<MultivariatePolynomialZp64> modGenerators =
-                    ideal.stream().map(p -> MultivariatePolynomial.asOverZp64(p.setRing(bRing))).collect(Collectors.toList());
+            // number of traditional "Buchberger" steps
+            List<MultivariatePolynomial<BigInteger>> bModBasis;
+            GBResult modResult;
+            if (prime.isLong()) {
+                // generators mod prime
+                List<MultivariatePolynomialZp64> modGenerators = mod(ideal, prime.longValueExact());
+                // Groebner basis mod prime
+                GBResult<MonomialZp64, MultivariatePolynomialZp64> r = modularAlgorithm.GroebnerBasis((List) modGenerators, monomialOrder);
+                bModBasis = r.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+                modResult = r;
+            } else {
+                List<MultivariatePolynomial<BigInteger>> modGenerators = ideal.stream().map(p -> p.setRing(ring)).collect(Collectors.toList());
+                GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> r = modularAlgorithm.GroebnerBasis((List) modGenerators, monomialOrder);
+                bModBasis = r.list;
+                modResult = r;
+            }
 
-            // Groebner basis mod prime
-            List<MultivariatePolynomialZp64> modBasis = GroebnerBasis(modGenerators, monomialOrder);
             // sort generators by increasing lead terms
-            modBasis.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
-
-            HilbertSeries modSeries = HilbertSeries(leadTermsIdeal(modBasis));
+            bModBasis.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
+            HilbertSeries modSeries = HilbertSeries(leadTermsIdeal(bModBasis));
 
             // first iteration
             if (baseBasis == null) {
-                baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
-                basePrime = bPrime;
+                if (trySparse) {
+                    // try to solve sparse GB on the first iteration
+                    // number of unknowns
+                    int nSparseUnknowns = bModBasis.stream().mapToInt(p -> p.size() - 1).sum();
+                    // try to solve on in most simple cases
+                    if (nSparseUnknowns < N_UNKNOWNS_THRESHOLD && modResult.nProcessedPolynomials > N_BUCHBERGER_STEPS_THRESHOLD) {
+                        List<MultivariatePolynomial<BigInteger>> solvedGB =
+                                solveGB(ideal,
+                                        bModBasis.stream().map(AMultivariatePolynomial::getSkeleton).collect(Collectors.toList()),
+                                        monomialOrder);
+                        if (solvedGB != null && isGroebnerBasis(ideal, solvedGB, monomialOrder))
+                            return new GBResult<>(solvedGB);
+                    }
+                }
+
+                baseBasis = bModBasis;
+                basePrime = prime;
                 baseSeries = modSeries;
+                baseResult = modResult;
+                nModIterations = 0;
                 continue;
             }
 
@@ -3010,39 +3250,44 @@ public final class GroebnerBasis {
                 continue;
             else if (c > 0) {
                 // base prime was unlucky
-                baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
-                basePrime = bPrime;
+                baseBasis = bModBasis;
+                basePrime = prime;
                 baseSeries = modSeries;
+                baseResult = modResult;
+                nModIterations = 0;
                 continue;
             }
 
             // prime is Hilbert prime, so we compare monomial sets
-            for (int i = 0, size = Math.min(baseBasis.size(), modBasis.size()); i < size; ++i) {
-                c = monomialOrder.compare(baseBasis.get(i).lt(), modBasis.get(i).lt());
+            for (int i = 0, size = Math.min(baseBasis.size(), bModBasis.size()); i < size; ++i) {
+                c = monomialOrder.compare(baseBasis.get(i).lt(), bModBasis.get(i).lt());
                 if (c > 0)
                     // current prime is unlucky
                     continue main;
                 else if (c < 0) {
                     // base prime was unlucky
-                    baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
-                    basePrime = bRing.modulus;
+                    baseBasis = bModBasis;
+                    basePrime = ring.modulus;
                     baseSeries = modSeries;
+                    baseResult = modResult;
+                    nModIterations = 0;
                     continue main;
                 }
             }
 
-            if (baseBasis.size() < modBasis.size()) {
+            if (baseBasis.size() < bModBasis.size()) {
                 // base prime was unlucky
-                baseBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
-                basePrime = bRing.modulus;
+                baseBasis = bModBasis;
+                basePrime = ring.modulus;
                 baseSeries = modSeries;
+                baseResult = modResult;
+                nModIterations = 0;
                 continue;
-            } else if (baseBasis.size() > modBasis.size())
+            } else if (baseBasis.size() > bModBasis.size())
                 // current prime is unlucky
                 continue;
 
-
-            List<MultivariatePolynomial<BigInteger>> bModBasis = modBasis.stream().map(MultivariatePolynomialZp64::toBigPoly).collect(Collectors.toList());
+            ++nModIterations;
             // prime is probably lucky, we can do Chinese Remainders
             for (int iGenerator = 0; iGenerator < baseBasis.size(); ++iGenerator) {
                 MultivariatePolynomial<BigInteger> baseGenerator = baseBasis.get(iGenerator);
@@ -3054,14 +3299,14 @@ public final class GroebnerBasis {
                     iterator.advance();
 
                     Monomial<BigInteger> baseTerm = iterator.aTerm;
-                    BigInteger crt = ChineseRemainders.ChineseRemainders(basePrime, bPrime, baseTerm.coefficient, iterator.bTerm.coefficient);
+                    BigInteger crt = ChineseRemainders.ChineseRemainders(basePrime, prime, baseTerm.coefficient, iterator.bTerm.coefficient);
                     baseGenerator.add(baseTerm.setCoefficient(crt));
                 }
 
                 baseBasis.set(iGenerator, baseGenerator);
             }
 
-            basePrime = basePrime.multiply(bPrime);
+            basePrime = basePrime.multiply(prime);
 
             List<MultivariatePolynomial<Rational<BigInteger>>> gbCandidateFrac = new ArrayList<>();
             for (MultivariatePolynomial<BigInteger> gen : baseBasis) {
@@ -3073,12 +3318,34 @@ public final class GroebnerBasis {
 
             List<MultivariatePolynomial<BigInteger>> gbCandidate = toIntegral(gbCandidateFrac);
             if (gbCandidate.equals(previousGBCandidate) && isGroebnerBasis(ideal, gbCandidate, monomialOrder))
-                return canonicalize(gbCandidate);
+                return new GBResult<>(canonicalize(gbCandidate));
             previousGBCandidate = gbCandidate;
         }
     }
 
-    @SuppressWarnings("unchecked")
+    private static final class PrimesIterator0 {
+        private BigInteger from;
+        private PrimesIterator base;
+
+        PrimesIterator0(BigInteger from) {
+            this.from = from;
+            this.base = from.isLong() ? new PrimesIterator(from.longValueExact()) : null;
+        }
+
+        BigInteger next() {
+            if (base == null)
+                return (from = from.nextProbablePrime());
+
+            long l = base.take();
+            if (l == -1) {
+                base = null;
+                return next();
+            }
+            return BigInteger.valueOf(l);
+        }
+    }
+
+    /** reconstruct rational polynomial from its modulo image */
     private static MultivariatePolynomial<Rational<BigInteger>> reconstructPoly(
             MultivariatePolynomial<BigInteger> base, BigInteger prime) {
         MultivariatePolynomial<Rational<BigInteger>> result = MultivariatePolynomial.zero(base.nVariables, Q, base.ordering);
@@ -3106,8 +3373,14 @@ public final class GroebnerBasis {
         }
     };
 
-    @SuppressWarnings("unchecked")
-    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    /**
+     * Sparse Groebner basis
+     *
+     * @param generators    generators
+     * @param gbSkeleton    skeleton of true reduced Groebner basis
+     * @param monomialOrder monomial order
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> solveGB(List<Poly> generators,
                        List<Collection<DegreeVector>> gbSkeleton,
                        Comparator<DegreeVector> monomialOrder) {
@@ -3118,40 +3391,13 @@ public final class GroebnerBasis {
         }).collect(Collectors.toList()), monomialOrder);
     }
 
-    static long SIMPLIFY = 0;
-    static long SIMPLIFY_DEG_TAKE = 0;
-    static long SIMPLIFY_EVALUATE = 0;
-    static long PSIMPLIFY = 0;
-    static long SYZYGY = 0;
-    static long REDUCE = 0;
-    static long REDUCE_REDUNDANT = 0;
-    static long LINSOLVE = 0;
-    static long REDUCE_AND_SOLVE = 0;
-    static long SOLVE = 0;
-    static long ADDEQ = 0;
-
-    static void details() {
-        System.out.println("SIMPLIFY         : " + TimeUnits.nanosecondsToString(SIMPLIFY));
-        System.out.println("PSIMPLIFY        : " + TimeUnits.nanosecondsToString(PSIMPLIFY));
-        System.out.println("SYZYGY           : " + TimeUnits.nanosecondsToString(SYZYGY));
-        System.out.println("REDUCE AND SOLVE : " + TimeUnits.nanosecondsToString(REDUCE_AND_SOLVE));
-        System.out.println("REDUCE           : " + TimeUnits.nanosecondsToString(REDUCE));
-        System.out.println("REDUCE REDUNDANT : " + TimeUnits.nanosecondsToString(REDUCE_REDUNDANT));
-        System.out.println("SOLVE            : " + TimeUnits.nanosecondsToString(SOLVE));
-        System.out.println("LIN SOLVE        : " + TimeUnits.nanosecondsToString(LINSOLVE));
-        System.out.println("ADDEQ            : " + TimeUnits.nanosecondsToString(ADDEQ));
-    }
-
-
     /** when to drop unused variables */
     private static final int DROP_SOLVED_VARIABLES_THRESHOLD = 128;
     /** when to drop unused variables */
     private static final double DROP_SOLVED_VARIABLES_RELATIVE_THRESHOLD = 0.1;
 
-    static int redundant = 0;
-
     @SuppressWarnings("unchecked")
-    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> solveGB0(List<Poly> generators,
                         List<SortedSet<DegreeVector>> gbSkeleton,
                         Comparator<DegreeVector> monomialOrder) {
@@ -3191,116 +3437,50 @@ public final class GroebnerBasis {
                         .collect(Collectors.toList())))
                 .collect(Collectors.toList());
 
-        long start;
-        List<Equation<Term, Poly>> nonLinearEquations = new ArrayList<>();
-        EquationSolver<Term, Poly> solver = createSolver(factory);
-        TIntHashSet solvedVariables = new TIntHashSet();
-        // reduce initial ideal to zero first (most simple)
-        for (MultivariatePolynomial<Poly> idealElement : initialIdeal) {
-            if (solvedVariables.size() == nUnknowns)
-                // system is solved
-                return gbSolution(factory, gbCandidate);
-
-            start = System.nanoTime();
-            SystemInfo result = reduceAndSolve(idealElement, gbCandidate, solver, nonLinearEquations);
-            REDUCE_AND_SOLVE += System.nanoTime() - start;
-            if (result == Inconsistent)
-                return null;
-            solvedVariables.addAll(solver.solvedVariables);
-
-            start = System.nanoTime();
-            // simplify GB candidate
-            solver.simplifyGB(gbCandidate);
-            // clear solutions (this gives some speed up)
-            solver.clear();
-
-            SIMPLIFY += System.nanoTime() - start;
-        }
-
-        System.out.println("Solved #1:" + solver.nSolved());
 
         // build set of all syzygies
         List<MultivariatePolynomial<Poly>> _tmp_gb_ = new ArrayList<>(initialIdeal);
+        // list of all non trivial S-pairs
         SyzygySet<Monomial<Poly>, MultivariatePolynomial<Poly>> sPairsSet = new SyzygyTreeSet<>(new TreeSet<>(defaultSelectionStrategy(monomialOrder)));
         Arrays.stream(gbCandidate).forEach(gb -> updateBasis(_tmp_gb_, sPairsSet, gb));
-        // list of all non trivial S-pairs
-        List<SyzygyPair<Monomial<Poly>, MultivariatePolynomial<Poly>>> sPairs = sPairsSet.allPairs();
-        // start from the simplest ones
-        sPairs.sort(Comparator.comparingInt(s -> s.j));
 
-        int counter = 0;
-        int aaaaa = 0;
+        // source of equations
+        List<EqSupplier<Term, Poly>> source = new ArrayList<>();
+        // initial ideal must reduce to zero
+        initialIdeal.forEach(p -> source.add(new EqSupplierPoly<>(p)));
+        // S-pairs must reduce to zero
+        sPairsSet.allPairs().forEach(p -> source.add(new EqSupplierSyzygy<>(initialIdeal, gbCandidate, p)));
+        // iterate from "simplest" to "hardest" equations
+        source.sort((a, b) -> monomialOrder.compare(a.signature(), b.signature()));
 
-        int[] nUnknownsGB = new int[gbCandidate.length];
-        for (int i = 0; i < gbCandidate.length; ++i) {
-            TIntHashSet unk = new TIntHashSet();
-            for (Poly cf : gbCandidate[i].coefficients())
-                unk.addAll(usedVars(cf));
-            nUnknownsGB[i] = unk.size();
-        }
-
-        redundant = 0;
-        for (SyzygyPair<Monomial<Poly>, MultivariatePolynomial<Poly>> sPair : sPairs) {
+        List<Equation<Term, Poly>> nonLinearEquations = new ArrayList<>();
+        EquationSolver<Term, Poly> solver = createSolver(factory);
+        TIntHashSet solvedVariables = new TIntHashSet();
+        for (EqSupplier<Term, Poly> eqSupplier : source) {
             if (solvedVariables.size() == nUnknowns)
                 // system is solved
                 return gbSolution(factory, gbCandidate);
 
-            System.out.println("# sPairs           :   " + (++counter));
-            System.out.println("# redundant sPairs :   " + redundant);
-            System.out.println("# solved           :   " + (aaaaa + solvedVariables.size()));
-            System.out.println("# linear           :   " + solver.nEquations());
-            System.out.println("# non-linear       :   " + nonLinearEquations.size());
-            System.out.println();
-            details();
-            System.out.println();
-            System.out.println();
+            MultivariatePolynomial<Poly> next = eqSupplier.poly();
 
-            start = System.nanoTime();
-            MultivariatePolynomial<Poly> syzygy = syzygy(
-                    sPair.syzygyGamma,
-                    getFi(sPair.i, initialIdeal, gbCandidate),
-                    getFi(sPair.j, initialIdeal, gbCandidate));
-//            if (StreamSupport.stream(syzygy.coefficients().spliterator(), false).allMatch(IPolynomial::isConstant)
-//                    && (sPair.i > initialIdeal.size() && nUnknownsGB[sPair.i - initialIdeal.size()] == 0)
-//                    && (sPair.j > initialIdeal.size() && nUnknownsGB[sPair.j - initialIdeal.size()] == 0)) {
-//                //
-//
-//                continue;
-//            }
-
-            SYZYGY += System.nanoTime() - start;
-
-            start = System.nanoTime();
-            SystemInfo result = reduceAndSolve(syzygy, gbCandidate, solver, nonLinearEquations);
-            REDUCE_AND_SOLVE += System.nanoTime() - start;
+            SystemInfo result = reduceAndSolve(next, gbCandidate, solver, nonLinearEquations);
 
             if (result == Inconsistent)
                 return null;
             solvedVariables.addAll(solver.solvedVariables);
 
-            start = System.nanoTime();
             if (solver.solvedVariables.size() > 0)
                 // simplify GB candidate
                 solver.simplifyGB(gbCandidate);
-            for (int i = 0; i < gbCandidate.length; ++i) {
-                TIntHashSet unk = new TIntHashSet();
-                for (Poly cf : gbCandidate[i].coefficients())
-                    unk.addAll(usedVars(cf));
-                nUnknownsGB[i] = unk.size();
-            }
 
             // clear solutions (this gives some speed up)
             solver.clear();
-            SIMPLIFY += System.nanoTime() - start;
-
 
             if (solvedVariables.size() > DROP_SOLVED_VARIABLES_THRESHOLD
                     && 1.0 * solvedVariables.size() / nUnknowns >= DROP_SOLVED_VARIABLES_RELATIVE_THRESHOLD) {
-                System.out.println("=== REDUCED === ------- === " + solvedVariables.size());
                 dropSolvedVariables(solvedVariables, initialIdeal, gbCandidate, nonLinearEquations, solver);
-                aaaaa += solvedVariables.size();
                 nUnknowns -= solvedVariables.size();
-                solvedVariables.clear(); ;
+                solvedVariables.clear();
             }
         }
 
@@ -3309,6 +3489,56 @@ public final class GroebnerBasis {
             return gbSolution(factory, gbCandidate);
 
         return null;
+    }
+
+    interface EqSupplier<
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> {
+        MultivariatePolynomial<Poly> poly();
+
+        DegreeVector signature();
+    }
+
+    final static class EqSupplierPoly<
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+            implements EqSupplier<Term, Poly> {
+        final MultivariatePolynomial<Poly> poly;
+
+        EqSupplierPoly(MultivariatePolynomial<Poly> poly) { this.poly = poly; }
+
+        @Override
+        public MultivariatePolynomial<Poly> poly() { return poly; }
+
+        @Override
+        public DegreeVector signature() { return poly.lt(); }
+    }
+
+    final static class EqSupplierSyzygy<
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+            implements EqSupplier<Term, Poly> {
+        final List<MultivariatePolynomial<Poly>> initialIdeal;
+        final MultivariatePolynomial<Poly>[] gbCandidate;
+        final SyzygyPair<Monomial<Poly>, MultivariatePolynomial<Poly>> sPair;
+
+        EqSupplierSyzygy(List<MultivariatePolynomial<Poly>> initialIdeal,
+                         MultivariatePolynomial<Poly>[] gbCandidate,
+                         SyzygyPair<Monomial<Poly>, MultivariatePolynomial<Poly>> sPair) {
+            this.initialIdeal = initialIdeal;
+            this.gbCandidate = gbCandidate;
+            this.sPair = sPair;
+        }
+
+        @Override
+        public MultivariatePolynomial<Poly> poly() {
+            return syzygy(sPair.syzygyGamma,
+                    getFi(sPair.i, initialIdeal, gbCandidate),
+                    getFi(sPair.j, initialIdeal, gbCandidate));
+        }
+
+        @Override
+        public DegreeVector signature() { return sPair.syzygyGamma; }
     }
 
     static int[] usedVars(AMultivariatePolynomial equation) {
@@ -3327,6 +3557,7 @@ public final class GroebnerBasis {
         return i < initialIdeal.size() ? initialIdeal.get(i) : gbCandidate[i - initialIdeal.size()];
     }
 
+    /** get rid of auxiliary variables used for unknowns that were solved */
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void dropSolvedVariables(
             TIntHashSet solvedVariables,
@@ -3392,17 +3623,10 @@ public final class GroebnerBasis {
                               MultivariatePolynomial<Poly>[] gbCandidate,
                               EquationSolver<Term, Poly> solver,
                               List<Equation<Term, Poly>> nonLinearEquations) {
-        long start;
-        start = System.nanoTime();
         // reduce poly with GB candidate
         MultivariatePolynomial<Poly> remainder = MultivariateDivision.remainder(toReduce, gbCandidate);
-        REDUCE += System.nanoTime() - start;
-
-        if (remainder.isZero()) {
-            REDUCE_REDUNDANT += System.nanoTime() - start;
-            ++redundant;
+        if (remainder.isZero())
             return Consistent;
-        }
 
         // previous number of solved variables
         int nSolved = solver.solvedVariables.size();
@@ -3446,7 +3670,6 @@ public final class GroebnerBasis {
 
             // update non-linear equations with new solutions
             updateNonLinear(solver, nonLinearEquations);
-            System.out.println("NEW BLOCK");
         }
     }
 
@@ -3618,22 +3841,19 @@ public final class GroebnerBasis {
 
         @Override
         boolean addEquation(Equation<Monomial<E>, MultivariatePolynomial<E>> equation) {
-            long start = System.nanoTime();
             equation = simplify(equation);
 
             MultivariatePolynomial<E> eq = equation.reducedEquation;
             eq.monic();
 
-            if (eq.isZero()) {
-                ADDEQ += System.nanoTime() - start;
+            if (eq.isZero())
                 // redundant equation
                 return false;
-            }
-            if (equations.contains(equation)) {
-                ADDEQ += System.nanoTime() - start;
+
+            if (equations.contains(equation))
                 // redundant equation
                 return false;
-            }
+
             if (eq.nVariables == 1) {
                 // equation can be solved directly
                 Ring<E> ring = eq.ring;
@@ -3653,12 +3873,10 @@ public final class GroebnerBasis {
                     needUpdate.add(oldEq);
                 }
                 needUpdate.forEach(this::addEquation);
-                ADDEQ += System.nanoTime() - start;
                 return true;
             }
 
             equations.add(equation);
-            ADDEQ += System.nanoTime() - start;
             return true;
         }
 
@@ -3678,7 +3896,6 @@ public final class GroebnerBasis {
 
         @Override
         Equation<Monomial<E>, MultivariatePolynomial<E>> simplify(Equation<Monomial<E>, MultivariatePolynomial<E>> eq) {
-            long start = System.nanoTime();
             // eliminated variables
             TIntArrayList eliminated = new TIntArrayList();
             // eliminated variables in eq.reducedEquation
@@ -3697,10 +3914,8 @@ public final class GroebnerBasis {
                 rEliminated.add(rVar);
                 rPoly = rPoly.evaluate(rVar, solutions.get(i));
             }
-            if (eliminated.isEmpty()) {
-                PSIMPLIFY += System.nanoTime() - start;
+            if (eliminated.isEmpty())
                 return eq;
-            }
 
             eliminated.sort();
             int[] eliminatedArray = eliminated.toArray();
@@ -3709,7 +3924,6 @@ public final class GroebnerBasis {
             for (int i = 0; i < usedVars.length; ++i)
                 mapping.put(usedVars[i], i);
 
-            PSIMPLIFY += System.nanoTime() - start;
             return new Equation<>(usedVars, mapping, rPoly.dropVariables(rEliminated.toArray()));
         }
 
@@ -3731,7 +3945,6 @@ public final class GroebnerBasis {
 
         @Override
         SystemInfo solve() {
-            long start = System.nanoTime();
             // sort equations from "simplest" to "hardest"
             equations.sort(Comparator.comparingInt(eq -> eq.usedVars.length));
             for (int i = 0; i < equations.size(); ++i) {
@@ -3756,26 +3969,21 @@ public final class GroebnerBasis {
                     continue;
 
                 SystemInfo solve = solve(block, baseVars.toArray());
-                if (solve == Inconsistent) {
-                    SOLVE += System.nanoTime() - start;
+                if (solve == Inconsistent)
                     return solve;
-                }
+
                 if (solve == UnderDetermined)
                     continue;
 
                 equations.removeAll(block);
                 selfUpdate();
-                SOLVE += System.nanoTime() - start;
                 return Consistent;
             }
-            SOLVE += System.nanoTime() - start;
             return UnderDetermined;
         }
 
         /** solves a system of linear equations */
         SystemInfo solve(List<Equation<Monomial<E>, MultivariatePolynomial<E>>> equations, int[] usedVariables) {
-            long start = System.nanoTime();
-
             int nUsedVariables = usedVariables.length;
 
             TIntIntHashMap mapping = new TIntIntHashMap();
@@ -3808,7 +4016,6 @@ public final class GroebnerBasis {
                 this.solvedVariables.addAll(linalgVariables);
                 this.solutions.addAll(Arrays.asList(linalgSolution));
             }
-            LINSOLVE += System.nanoTime() - start;
             return solve;
         }
     }

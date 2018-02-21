@@ -165,6 +165,20 @@ public interface Ring<E> extends
     }
 
     /**
+     * Multiplies the array of elements
+     *
+     * @param elements the elements
+     * @return product of the array
+     */
+    @SuppressWarnings("unchecked")
+    default E multiply(Iterable<E> elements) {
+        E r = getOne();
+        for (E e : elements)
+            r = multiplyMutable(r, e);
+        return r;
+    }
+
+    /**
      * Negates the given element
      *
      * @param element the ring element
@@ -413,6 +427,26 @@ public interface Ring<E> extends
         if (isZero(a) || isZero(b))
             return getZero();
         return multiply(divideExact(a, gcd(a, b)), b);
+    }
+
+    /**
+     * Returns the least common multiple of two elements
+     *
+     * @param elements the elements
+     * @return lcm
+     */
+    default E lcm(E... elements) {
+        return divideExact(multiply(elements), gcd(elements));
+    }
+
+    /**
+     * Returns the least common multiple of two elements
+     *
+     * @param elements the elements
+     * @return lcm
+     */
+    default E lcm(Iterable<E> elements) {
+        return divideExact(multiply(elements), gcd(elements));
     }
 
     /**
