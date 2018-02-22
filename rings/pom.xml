@@ -98,7 +98,7 @@
                     <disableXmlReport>true</disableXmlReport>
                     <runOrder>random</runOrder>
                     <!--<forkCount>0</forkCount>-->
-                    <!--<reuseForks>true</reuseForks>-->
+                    <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
             <plugin>
