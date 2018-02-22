@@ -24,6 +24,8 @@ interface MonomialSetView<Term extends AMonomial<Term>> extends Iterable<Term> {
 
     default Term lt() { return descendingIterator().next(); }
 
+    int size();
+
     /**
      * Returns an array of degrees of all variables, so that is i-th element of the result is the polynomial degree
      * (univariate) with respect to i-th variable

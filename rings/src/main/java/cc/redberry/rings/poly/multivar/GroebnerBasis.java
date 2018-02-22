@@ -5,6 +5,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.linear.LinearSolver.SystemInfo;
+import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util;
@@ -568,6 +569,11 @@ public final class GroebnerBasis {
         return monomialOrder == MonomialOrder.GREVLEX || monomialOrder == MonomialOrder.GRLEX;
     }
 
+    /** whether monomial order is graded */
+    static boolean isEasyOrder(Comparator<DegreeVector> monomialOrder) {
+        return isGradedOrder(monomialOrder);
+    }
+
     /** l.c.m. of degree vectors */
     static DegreeVector lcm(DegreeVector a, DegreeVector b) {
         return new DegreeVector(lcm(a.exponents, b.exponents));
@@ -966,7 +972,8 @@ public final class GroebnerBasis {
         @Override
         public Term last() { return data[0]; }
 
-        int size() { return data.length; }
+        @Override
+        public int size() { return data.length; }
 
         Term get(int i) { return data[i]; }
 
@@ -2898,17 +2905,19 @@ public final class GroebnerBasis {
     }
 
     /** List of lead terms of generators */
-    public static List<DegreeVector> leadTermsIdeal(List<? extends AMultivariatePolynomial> ideal) {
+    public static List<DegreeVector> leadTermsSet(List<? extends AMultivariatePolynomial> ideal) {
         return ideal.stream().map(AMultivariatePolynomial::lt).collect(Collectors.toList());
     }
 
     /**
      * Computes Hilbert-Poincare series of specified homogeneous ideal
      */
-    public static HilbertSeries HilbertSeriesOfHomogeneousIdeal(List<? extends AMultivariatePolynomial> ideal) {
+    public static HilbertSeries HilbertSeriesOfLeadingTermsSet(List<? extends AMultivariatePolynomial> ideal) {
         if (!isHomogeneousIdeal(ideal))
             throw new IllegalArgumentException("Not a monomial or homogeneous ideal");
-        return HilbertSeries(leadTermsIdeal(ideal));
+        if (ideal.stream().anyMatch(IPolynomial::isZero))
+            return new HilbertSeries(UnivariatePolynomial.one(Q), ideal.get(0).nVariables);
+        return HilbertSeries(leadTermsSet(ideal));
     }
 
     /** Minimizes Groebner basis of monomial ideal. The input should be a Groebner basis */
@@ -3084,12 +3093,236 @@ public final class GroebnerBasis {
         }
 
         @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            HilbertSeries that = (HilbertSeries) o;
+
+            if (denominatorExponent != that.denominatorExponent) return false;
+            return numerator.equals(that.numerator);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = numerator.hashCode();
+            result = 31 * result + denominatorExponent;
+            return result;
+        }
+
+        @Override
         public String toString() {
             return String.format("(%s) / (%s)^%s", numerator, DENOMINATOR, denominatorExponent);
         }
     }
 
+    /**
+     * Hilbert-driven algorithm for Groebner basis computation of homogeneous ideal
+     *
+     * @param generators    generators of homogeneous ideal
+     * @param monomialOrder monomial order
+     * @param hilbertSeries Hilbert-Poincare series of ideal
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    GBResult<Term, Poly> HilbertHomogeneousGB(List<Poly> generators,
+                                              Comparator<DegreeVector> monomialOrder,
+                                              HilbertSeries hilbertSeries) {
+        if (!isHomogeneousIdeal(generators))
+            throw new IllegalArgumentException("not a homogeneous ideal");
 
+        // simplify generators as much as possible
+        generators = prepareGenerators(generators, monomialOrder);
+        if (generators.size() == 1)
+            return new GBResult<>(generators, 0, 0);
+
+        Poly factory = generators.get(0);
+        // sort polynomials in the basis to achieve faster divisions
+        generators.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
+        // graded set of syzygies
+        GradedSyzygyTreeSet<Term, Poly> sPairs = new GradedSyzygyTreeSet<>(
+                new TreeMap<>(),
+                defaultSelectionStrategy(monomialOrder),
+                SyzygyPair::degree);
+
+        // Groebner basis that will be computed
+        List<Poly> groebner = new ArrayList<>();
+        // update Groebner basis with initial generators
+        generators.forEach(g -> updateBasis(groebner, sPairs, g));
+        // cache array used in divisions (little performance improvement actually)
+        Poly[] reducersArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
+
+        int currentDegree = 0;
+        // number of linearly independent basis elements needed in fixed degree
+        int hilbertDelta = Integer.MAX_VALUE;
+        // number of processed polynomials
+        int nProcessedSyzygies = 0;
+        // number of zero-reducible syzygies
+        int nRedundantSyzygies = 0;
+        while (!sPairs.isEmpty()) {
+            // pick up (and remove) a bunch of critical pairs
+            TreeSet<SyzygyPair<Term, Poly>> subset = sPairs.sPairs.remove(currentDegree);
+            if (subset != null)
+                for (SyzygyPair<Term, Poly> pair : subset) {
+                    if (hilbertDelta == 0)
+                        break;
+                    // compute actual syzygy
+                    Poly syzygy = MultivariateDivision.pseudoRemainder(syzygy(pair), reducersArray);
+                    ++nProcessedSyzygies;
+                    if (syzygy.isZero()) {
+                        ++nRedundantSyzygies;
+                        continue;
+                    }
+
+                    if (syzygy.isConstant())
+                        // ideal = ring
+                        return new GBResult<>(
+                                Collections.singletonList(factory.createOne()),
+                                2 * nProcessedSyzygies, 2 * nRedundantSyzygies);
+
+                    // add syzygy to basis
+                    updateBasis(groebner, sPairs, syzygy);
+                    // decrement current delta
+                    --hilbertDelta;
+                    // recompute array
+                    reducersArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
+                    // don't sort here, not practical actually
+                    // Arrays.sort(groebnerArray, polyOrder);
+                }
+
+
+            //compute Hilbert series for LT(ideal) obtained so far
+            HilbertSeries currentHPS = HilbertSeriesOfLeadingTermsSet(groebner);
+            HilbertUpdate hilbertUpdate = updateWithHPS(hilbertSeries, currentHPS, sPairs);
+            if (hilbertUpdate.finished)
+                // we are done
+                break;
+
+            currentDegree = hilbertUpdate.currentDegree;
+            hilbertDelta = hilbertUpdate.hilbertDelta;
+//
+//            //compute Hilbert series for LT(ideal) obtained so far
+//            HilbertSeries currentHPS = HilbertSeriesOfLeadingTermsSet(groebner);
+//            if (currentHPS.equals(hilbertSeries))
+//                // we are done
+//                break;
+//
+//            // since Mon(current) ⊆ Mon(ideal) we can use only numerators of HPS
+//            currentDegree = 0;
+//            for (; ; ++currentDegree)
+//                if (!hilbertSeries.initialNumerator.get(currentDegree).equals(currentHPS.initialNumerator.get(currentDegree)))
+//                    break;
+//
+//            Rational<BigInteger> delta = currentHPS.initialNumerator.get(currentDegree).subtract(hilbertSeries.initialNumerator.get(currentDegree));
+//            assert delta.isIntegral() && delta.numerator.signum() > 0;
+//            hilbertDelta = delta.numerator.intValueExact();
+//
+//            // remove redundant S-pairs
+//            final int mDegree = currentDegree;
+//            sPairs.allSets().forEach(set -> set.removeIf(s -> s.degree() < mDegree));
+        }
+
+        // batch remove all nulls
+        groebner.removeAll(Collections.<Poly>singleton(null));
+        // minimize Groebner basis
+        minimizeGroebnerBases(groebner);
+        // speed up final reduction
+        groebner.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
+        // reduce Groebner basis
+        removeRedundant(groebner);
+        // canonicalize Groebner basis
+        canonicalize(groebner);
+
+        return new GBResult<>(groebner, 2 * nProcessedSyzygies, 2 * nRedundantSyzygies);
+    }
+
+    private static <Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
+    HilbertUpdate updateWithHPS(HilbertSeries hilbertSeries,
+                                HilbertSeries currentHPS,
+                                GradedSyzygyTreeSet<Term, Poly> sPairs) {
+        if (currentHPS.equals(hilbertSeries))
+            // we are done
+            return new HilbertUpdate();
+
+        // since Mon(current) ⊆ Mon(ideal) we can use only numerators of HPS
+        int currentDegree = 0;
+        for (; ; ++currentDegree)
+            if (!hilbertSeries.initialNumerator.get(currentDegree).equals(currentHPS.initialNumerator.get(currentDegree)))
+                break;
+
+        Rational<BigInteger> delta = currentHPS.initialNumerator.get(currentDegree).subtract(hilbertSeries.initialNumerator.get(currentDegree));
+        assert delta.isIntegral() && delta.numerator.signum() > 0;
+        int hilbertDelta = delta.numerator.intValueExact();
+
+        // remove redundant S-pairs
+        final int mDegree = currentDegree;
+        sPairs.allSets().forEach(set -> set.removeIf(s -> s.degree() < mDegree));
+        return new HilbertUpdate(currentDegree, hilbertDelta);
+    }
+
+    private static final class HilbertUpdate {
+        final int currentDegree;
+        final int hilbertDelta;
+        final boolean finished;
+
+        HilbertUpdate() {
+            this.finished = true;
+            this.currentDegree = -1;
+            this.hilbertDelta = -1;
+        }
+
+        HilbertUpdate(int currentDegree, int hilbertDelta) {
+            this.currentDegree = currentDegree;
+            this.hilbertDelta = hilbertDelta;
+            this.finished = false;
+        }
+    }
+
+    /**
+     * Converts Groebner basis to a given monomial order using Hilbert-driven algorithm
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    GBResult<Term, Poly> HilbertHomogeneousConvertBasis(List<Poly> groebnerBasis,
+                                                        Comparator<DegreeVector> desiredOrdering) {
+        return HilbertHomogeneousGB(groebnerBasis, desiredOrdering, HilbertSeries(leadTermsSet(groebnerBasis)));
+    }
+
+    /**
+     * Hilbert-driven algorithm for Groebner basis computation of homogeneous ideal
+     *
+     * @param generators    generators of homogeneous ideal
+     * @param monomialOrder monomial order
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    GBResult<Term, Poly> HilbertGB(List<Poly> generators,
+                                   Comparator<DegreeVector> monomialOrder) {
+        return HilbertGB(generators, monomialOrder, (p, o) -> new GBResult<>(GroebnerBasis(p, o)));
+    }
+
+    /**
+     * Hilbert-driven algorithm for Groebner basis computation of homogeneous ideal
+     *
+     * @param generators    generators of homogeneous ideal
+     * @param monomialOrder monomial order
+     * @param baseAlgorithm algorithm used to compute basis for some "simple" order
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    GBResult<Term, Poly> HilbertGB(List<Poly> generators,
+                                   Comparator<DegreeVector> monomialOrder,
+                                   GroebnerAlgorithm<Term, Poly> baseAlgorithm) {
+        if (isEasyOrder(monomialOrder))
+            return baseAlgorithm.GroebnerBasis(generators, monomialOrder);
+
+        if (isHomogeneousIdeal(generators)) {
+            // fixme use better order
+            Comparator<DegreeVector> baseOrder = MonomialOrder.GREVLEX;
+            return HilbertHomogeneousConvertBasis(baseAlgorithm.GroebnerBasis(generators, baseOrder), monomialOrder);
+        }
+        List<Poly> r = dehomogenize(HilbertGB(homogenize(generators), monomialOrder, baseAlgorithm));
+        removeRedundant(r);
+        canonicalize(r);
+        return new GBResult<>(r);
+
+    }
 
     /* ********************************** Modular & Sparse Groebner basis ****************************************** */
 
@@ -3216,7 +3449,7 @@ public final class GroebnerBasis {
 
             // sort generators by increasing lead terms
             bModBasis.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
-            HilbertSeries modSeries = HilbertSeries(leadTermsIdeal(bModBasis));
+            HilbertSeries modSeries = HilbertSeries(leadTermsSet(bModBasis));
 
             // first iteration
             if (baseBasis == null) {
