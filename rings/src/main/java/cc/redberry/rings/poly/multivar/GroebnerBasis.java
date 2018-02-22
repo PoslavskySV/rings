@@ -76,10 +76,12 @@ public final class GroebnerBasis {
         if (!factory.isOverFiniteField())
             throw new IllegalArgumentException();
         if (canConvertToZp64(factory)) {
-            GBResult<MonomialZp64, MultivariatePolynomialZp64> r = F4GB(asOverZp64(generators), monomialOrder);
+            GBResult<MonomialZp64, MultivariatePolynomialZp64> r = GroebnerBasisInGF(asOverZp64(generators), monomialOrder);
             return new GBResult<>((List<Poly>) convert(r), r.nProcessedPolynomials, r.nZeroReductions);
-        } else
+        } else if (isGradedOrder(monomialOrder))
             return F4GB(generators, monomialOrder);
+        else
+            return BuchbergerGB(generators, monomialOrder);
     }
 
     /**
@@ -97,7 +99,10 @@ public final class GroebnerBasis {
             throw new IllegalArgumentException();
         if (tryModular && factory.nVariables <= 3)
             return ModularGB(generators, monomialOrder);
-        return F4GB(generators, monomialOrder);
+        if (isGradedOrder(monomialOrder))
+            return F4GB(generators, monomialOrder);
+        else
+            return BuchbergerGB(generators, monomialOrder);
     }
 
     /**
