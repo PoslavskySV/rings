@@ -1401,7 +1401,7 @@ public final class MultivariateGCD {
         a.assertSameCoefficientRingWith(b);
 
         if (canConvertToZp64(a))
-            return convert(KaltofenMonaganModularGCDInGF(asOverZp64(a), asOverZp64(b), algorithm));
+            return convertFromZp64(KaltofenMonaganModularGCDInGF(asOverZp64(a), asOverZp64(b), algorithm));
 
         if (a == b)
             return a.clone();
@@ -1913,7 +1913,7 @@ public final class MultivariateGCD {
         a.assertSameCoefficientRingWith(b);
 
         if (canConvertToZp64(a))
-            return convert(BrownGCD(asOverZp64(a), asOverZp64(b)));
+            return convertFromZp64(BrownGCD(asOverZp64(a), asOverZp64(b)));
 
         // prepare input and test for early termination
         GCDInput<Monomial<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::BrownGCD);
@@ -2095,7 +2095,7 @@ public final class MultivariateGCD {
         a.assertSameCoefficientRingWith(b);
 
         if (canConvertToZp64(a))
-            return convert(ZippelGCD(asOverZp64(a), asOverZp64(b)));
+            return convertFromZp64(ZippelGCD(asOverZp64(a), asOverZp64(b)));
 
         // prepare input and test for early termination
         GCDInput<Monomial<E>, MultivariatePolynomial<E>> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
@@ -4294,7 +4294,7 @@ public final class MultivariateGCD {
     Poly EEZGCD(Poly a, Poly b, boolean switchToSparse) {
         a.assertSameCoefficientRingWith(b);
         if (canConvertToZp64(a))
-            return convert(EEZGCD(asOverZp64(a), asOverZp64(b)));
+            return convertFromZp64(EEZGCD(asOverZp64(a), asOverZp64(b)));
 
         // prepare input and test for early termination
         GCDInput<Term, Poly> gcdInput = preparedGCDInput(a, b, MultivariateGCD::EEZGCD);

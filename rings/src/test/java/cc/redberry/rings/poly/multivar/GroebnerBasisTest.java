@@ -90,7 +90,9 @@ public class GroebnerBasisTest extends AMultivariateTest {
                 .map(p -> p.homogenize(vars.length)).collect(Collectors.toList());
         Assert.assertTrue(gens.stream().allMatch(MultivariatePolynomial::isHomogeneous));
 
-        List<MultivariatePolynomial<Rational<BigInteger>>> bHom = BuchbergerHomogeneousGB(gens, GREVLEX);
+        List<MultivariatePolynomial<Rational<BigInteger>>> bHom = BuchbergerGB(gens, GREVLEX,
+                () -> new GradedSyzygyTreeSet<>(new TreeMap<>(), defaultSelectionStrategy(GREVLEX), SyzygyPair::degree),
+                null);
         Assert.assertTrue(bHom.stream().allMatch(MultivariatePolynomial::isHomogeneous));
 
         List<MultivariatePolynomial<Rational<BigInteger>>> bNonHom = BuchbergerGB(gens, GREVLEX);
@@ -118,7 +120,9 @@ public class GroebnerBasisTest extends AMultivariateTest {
         for (int i = 0; i < 2; i++) {
             long start;
             start = System.nanoTime();
-            List<MultivariatePolynomial<Rational<BigInteger>>> hm = BuchbergerHomogeneousGB(gens, GREVLEX);
+            List<MultivariatePolynomial<Rational<BigInteger>>> hm = BuchbergerGB(gens, GREVLEX,
+                    () -> new GradedSyzygyTreeSet<>(new TreeMap<>(), defaultSelectionStrategy(GREVLEX), SyzygyPair::degree),
+                    null);
             System.out.println(nanosecondsToString(System.nanoTime() - start));
             Assert.assertTrue(hm.stream().allMatch(MultivariatePolynomial::isHomogeneous));
 
@@ -381,12 +385,12 @@ public class GroebnerBasisTest extends AMultivariateTest {
             Comparator<SyzygyPair> strategy = GroebnerBasis.normalSelectionStrategy(GREVLEX);
 
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> norm = BuchbergerGB(ideal, GREVLEX, strategy, NO_MINIMIZATION);
+            List<MultivariatePolynomialZp64> norm = BuchbergerGB(ideal, GREVLEX, strategy);
             System.out.println("Normal strategy: " + nanosecondsToString(System.nanoTime() - start));
 
             strategy = GroebnerBasis.withSugar(strategy);
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> sugar = BuchbergerGB(ideal, GREVLEX, strategy, NO_MINIMIZATION);
+            List<MultivariatePolynomialZp64> sugar = BuchbergerGB(ideal, GREVLEX, strategy);
             System.out.println("Sugar strategy:  " + nanosecondsToString(System.nanoTime() - start));
 
             assertEquals(norm, sugar);
@@ -408,12 +412,12 @@ public class GroebnerBasisTest extends AMultivariateTest {
             Comparator<SyzygyPair> strategy = GroebnerBasis.normalSelectionStrategy(LEX);
 
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> norm = BuchbergerGB(ideal, LEX, strategy, NO_MINIMIZATION);
+            List<MultivariatePolynomialZp64> norm = BuchbergerGB(ideal, LEX, strategy);
             System.out.println("Normal strategy: " + nanosecondsToString(System.nanoTime() - start));
 
             strategy = GroebnerBasis.withSugar(strategy);
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> sugar = BuchbergerGB(ideal, LEX, strategy, NO_MINIMIZATION);
+            List<MultivariatePolynomialZp64> sugar = BuchbergerGB(ideal, LEX, strategy);
             System.out.println("Sugar strategy:  " + nanosecondsToString(System.nanoTime() - start));
 
             assertEquals(norm, sugar);
@@ -569,8 +573,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
         assertTrue(buch.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral)));
         canonicalize(buch);
 
-        List<MultivariatePolynomial<Rational<BigInteger>>> expected = BuchbergerGB(gens, GREVLEX, NO_MINIMIZATION,
-                () -> new SyzygyTreeSet<>(new TreeSet<>(normalSelectionStrategy(GREVLEX))));
+        List<MultivariatePolynomial<Rational<BigInteger>>> expected = BuchbergerGB(gens, GREVLEX,
+                () -> new SyzygyTreeSet<>(new TreeSet<>(normalSelectionStrategy(GREVLEX))), null);
 
         assertEquals(expected, buch);
 
@@ -591,8 +595,8 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         assertTrue(actual.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral)));
         canonicalize(actual);
-        List<MultivariatePolynomial<Rational<BigInteger>>> expected = BuchbergerGB(gens, GREVLEX, NO_MINIMIZATION,
-                () -> new SyzygyTreeSet<>(new TreeSet<>(normalSelectionStrategy(GREVLEX))));
+        List<MultivariatePolynomial<Rational<BigInteger>>> expected = BuchbergerGB(gens, GREVLEX,
+                () -> new SyzygyTreeSet<>(new TreeSet<>(normalSelectionStrategy(GREVLEX))), null);
 
         assertEquals(expected, actual);
         List<MultivariatePolynomial<Rational<BigInteger>>> f4 = F4GB(gens, GREVLEX);
@@ -741,7 +745,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
             start = System.nanoTime();
             GBResult<MonomialZp64, MultivariatePolynomialZp64> grevlex = F4GB(gens, GREVLEX);
             HilbertSeries hps = HilbertSeries(leadTermsSet(grevlex));
-            GBResult<MonomialZp64, MultivariatePolynomialZp64> actual = HilbertHomogeneousGB(gens, LEX, hps);
+            GBResult<MonomialZp64, MultivariatePolynomialZp64> actual = HilbertGB(gens, LEX, hps);
             System.out.println("Hilbert    : " + nanosecondsToString(System.nanoTime() - start));
 
             assertEquals(expected, actual);
@@ -871,11 +875,11 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
             long start;
             start = System.nanoTime();
-            List<MultivariatePolynomial<BigInteger>> mod = ModularGB(shuffled, GREVLEX, false);
+            List<MultivariatePolynomial<BigInteger>> mod = ModularGB(shuffled, GREVLEX, null, false);
             System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
-            List<MultivariatePolynomial<BigInteger>> sparse = ModularGB(shuffled, GREVLEX, true);
+            List<MultivariatePolynomial<BigInteger>> sparse = ModularGB(shuffled, GREVLEX, null, true);
             System.out.println("Sparse: " + nanosecondsToString(System.nanoTime() - start));
 
             assertEquals(mod, sparse);
@@ -1014,7 +1018,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
 
         List<MultivariatePolynomial<BigInteger>> buch = BuchbergerGB(gens, GREVLEX);
-        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, false);
+        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, null, false);
         assertEquals(buch, mod);
     }
 
@@ -1035,7 +1039,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         List<MultivariatePolynomial<BigInteger>> f4 = F4GB(gens, GREVLEX);
         // NOTE: not working with trySparse = true
-        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, false);
+        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, null, false);
         assertEquals(f4, mod);
     }
 
@@ -1050,7 +1054,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(g1, g2, g3);
 
         GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> f4 = F4GB(gens, GREVLEX);
-        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, false);
+        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, null, false);
         assertEquals(f4, mod);
 
         RandomGenerator rnd = getRandom();
@@ -1059,7 +1063,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         List<MultivariatePolynomial<BigInteger>> shuffled = shuffleGB(gens, rnd, 2, 3);
 
         // NOTE: not working with trySparse = true
-        mod = ModularGB(shuffled, GREVLEX, false);
+        mod = ModularGB(shuffled, GREVLEX, null, false);
         assertEquals(SingularGB(shuffled, GREVLEX), mod);
 
         // fixme both F4 and Buchberger takes too long due to intermediate expression swell
@@ -1077,7 +1081,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
 
         GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> f4 = F4GB(gens, GREVLEX);
-        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, false);
+        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, null, false);
         assertEquals(f4, mod);
     }
 
@@ -1092,7 +1096,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
 
         GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> f4 = F4GB(gens, GREVLEX);
-        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, false);
+        List<MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX, null, false);
         assertEquals(f4, mod);
     }
 

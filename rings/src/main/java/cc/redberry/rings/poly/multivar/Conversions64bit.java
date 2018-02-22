@@ -37,13 +37,13 @@ class Conversions64bit {
 
     @SuppressWarnings("unchecked")
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly convert(MultivariatePolynomialZp64 p) {
+    Poly convertFromZp64(MultivariatePolynomialZp64 p) {
         return (Poly) p.toBigPoly();
     }
 
     @SuppressWarnings("unchecked")
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> convert(List<MultivariatePolynomialZp64> list) {
+    List<Poly> convertFromZp64(List<MultivariatePolynomialZp64> list) {
         return (List<Poly>) list.stream()
                 .map(MultivariatePolynomialZp64::toBigPoly)
                 .collect(Collectors.toList());
@@ -51,10 +51,10 @@ class Conversions64bit {
 
     @SuppressWarnings("unchecked")
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Poly[] convert(Poly factory, MultivariatePolynomialZp64[] p) {
+    Poly[] convertFromZp64(Poly factory, MultivariatePolynomialZp64[] p) {
         Poly[] r = factory.createArray(p.length);
         for (int i = 0; i < p.length; i++)
-            r[i] = convert(p[i]);
+            r[i] = convertFromZp64(p[i]);
         return r;
     }
 }

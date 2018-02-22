@@ -213,8 +213,12 @@ public class FactorDecomposition<E> implements Iterable<E> {
         public int compareTo(wrapper<E> o) { return ring.compare(el, o.el); }
     }
 
-    public <R> FactorDecomposition<R> map(Ring<R> othRing, Function<E, R> mapper) {
+    public <R> FactorDecomposition<R> mapTo(Ring<R> othRing, Function<E, R> mapper) {
         return of(othRing, mapper.apply(unit), factors.stream().map(mapper).collect(Collectors.toList()), exponents);
+    }
+
+    public FactorDecomposition<E> apply(Function<E, E> mapper) {
+        return of(ring, mapper.apply(unit), factors.stream().map(mapper).collect(Collectors.toList()), exponents);
     }
 
     @Override

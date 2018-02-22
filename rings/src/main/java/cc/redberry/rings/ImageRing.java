@@ -227,12 +227,12 @@ public class ImageRing<F, I> implements Ring<I> {
 
     @Override
     public FactorDecomposition<I> factorSquareFree(I element) {
-        return ring.factorSquareFree(inverse(element)).map(this, this::image);
+        return ring.factorSquareFree(inverse(element)).mapTo(this, this::image);
     }
 
     @Override
     public FactorDecomposition<I> factor(I element) {
-        return ring.factor(inverse(element)).map(this, this::image);
+        return ring.factor(inverse(element)).mapTo(this, this::image);
     }
 
     @Override

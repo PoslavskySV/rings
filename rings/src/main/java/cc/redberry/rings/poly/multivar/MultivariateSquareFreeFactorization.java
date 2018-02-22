@@ -82,7 +82,7 @@ public final class MultivariateSquareFreeFactorization {
         int var = poly.univariateVariable();
         return UnivariateSquareFreeFactorization
                 .SquareFreeFactorization(poly.asUnivariate())
-                .map(p -> AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables, var, poly.ordering));
+                .mapTo(p -> AMultivariatePolynomial.asMultivariate((IUnivariatePolynomial) p, poly.nVariables, var, poly.ordering));
     }
 
     private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
@@ -212,7 +212,7 @@ public final class MultivariateSquareFreeFactorization {
             throw new IllegalArgumentException("Positive characteristic expected");
 
         if (canConvertToZp64(poly))
-            return SquareFreeFactorizationMusser(asOverZp64(poly)).map(Conversions64bit::convert);
+            return SquareFreeFactorizationMusser(asOverZp64(poly)).mapTo(Conversions64bit::convertFromZp64);
 
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
