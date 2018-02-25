@@ -2,9 +2,13 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import org.junit.Test;
 
 import static cc.redberry.rings.Rings.Q;
+import static cc.redberry.rings.Rings.Z;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -124,5 +128,53 @@ public class IdealTest {
         assertEquals(expectedJ, J);
         assertEquals(I0, I.quotient(K));
         assertEquals(J0, J.quotient(K));
+    }
+
+    @Test
+    public void test4() throws Exception {
+        String[] vars = {"x", "y", "z"};
+
+        Ideal<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> ideal = Ideal.parse(new String[]{
+                "x^2 - y*z*x^2 + 2",
+                "x^2*y*z^3 - y*z^2 + 2*x^5",
+                "x*y*z^3 - y*z^12 + 2*x*y*z^5"
+        }, Z, GREVLEX, vars);
+
+        System.out.println(ideal.dimension());
+        System.out.println(ideal.degree());
+
+        System.out.println(ideal);
+        System.out.println(ideal.setMonomialOrder(LEX));
+    }
+
+    @Test
+    public void test5() throws Exception {
+        String[] vars = {"x", "y", "z"};
+
+        Ideal<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> lex = Ideal.parse(new String[]{
+                "x^2 - y*z*x^2 + 2",
+                "x^2*y*z^3 - y*z^2 + 2*x^5",
+                "x*y*z^3 - y*z^12 + 2*x*y*z^5"
+        }, Z, LEX, vars);
+        assertEquals(lex, Ideal.create(lex.getOriginalGenerators(), GREVLEX).setMonomialOrder(LEX));
+
+        assertEquals(3, lex.nBasisGenerators());
+        assertEquals(0, lex.dimension());
+        assertEquals(62, lex.degree());
+        assertEquals(UnivariatePolynomial.parse("1+3*x+6*x^2+10*x^3+14*x^4+16*x^5+12*x^6", Q), lex.getHilbertSeries().numerator);
+
+
+        Ideal<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> graded = lex.setMonomialOrder(GREVLEX);
+        assertEquals(graded, Ideal.create(lex.getOriginalGenerators(), GREVLEX));
+
+        assertEquals(18, graded.nBasisGenerators());
+
+        Ideal<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> graded2 = graded.square();
+
+        assertEquals(graded2, graded2.intersection(graded));
+        assertEquals(graded, graded2.union(graded));
+
+        assertEquals(0, graded2.dimension());
+        assertEquals(248, graded2.degree());
     }
 }

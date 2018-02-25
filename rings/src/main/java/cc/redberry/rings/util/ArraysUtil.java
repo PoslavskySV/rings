@@ -24,6 +24,7 @@ package cc.redberry.rings.util;
 
 
 import cc.redberry.rings.bigint.BigInteger;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -193,6 +194,11 @@ public final class ArraysUtil {
                 return b.append(']').toString();
             b.append(", ");
         }
+    }
+
+    public static void shuffle(int[] array, RandomGenerator rnd) {
+        for (int i = 0; i < 2 * array.length; ++i)
+            swap(array, rnd.nextInt(array.length), rnd.nextInt(array.length));
     }
 
     /**
@@ -371,6 +377,11 @@ public final class ArraysUtil {
         return newArray;
     }
 
+    public static void reverse(int[] array, int from, int to) {
+        for (int i = 0; i < (to - from) / 2; ++i)
+            swap(array, from + i, to - 1 - i);
+    }
+
     public static void reverse(long[] array, int from, int to) {
         for (int i = 0; i < (to - from) / 2; ++i)
             swap(array, from + i, to - 1 - i);
@@ -382,6 +393,10 @@ public final class ArraysUtil {
     }
 
     public static <T> void reverse(T[] array) {
+        reverse(array, 0, array.length);
+    }
+
+    public static void reverse(int[] array) {
         reverse(array, 0, array.length);
     }
 

@@ -127,6 +127,19 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * Rename variables from [0,1,...N] to [newVariables[0], newVariables[1], ..., newVariables[N]] (new instance
      * created)
      *
+     * @param e  the term
+     * @param newVariables the new variables
+     * @return renamed term
+     */
+    public static <T extends AMonomial<T>, P extends AMultivariatePolynomial<T, P>>
+    T renameVariables(T e, int[] newVariables) {
+        return e.setDegreeVector(map(e.exponents, newVariables), e.totalDegree);
+    }
+
+    /**
+     * Rename variables from [0,1,...N] to [newVariables[0], newVariables[1], ..., newVariables[N]] (new instance
+     * created)
+     *
      * @param poly         the polynomial
      * @param newVariables the new variables
      * @param newOrdering  the new ordering
@@ -137,7 +150,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         // NOTE: always return a copy of poly, even if order of variables is unchanged
         MonomialSet<T> data = new MonomialSet<>(newOrdering);
         for (T e : poly.terms)
-            data.add(e.setDegreeVector(map(e.exponents, newVariables), e.totalDegree));
+            data.add(renameVariables(e, newVariables));
         return poly.create(data);
     }
 
@@ -313,8 +326,12 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     @Override
-    public Collection<Term> collection() {
+    public final Collection<Term> collection() {
         return terms.values();
+    }
+
+    public final Term[] toArray() {
+        return terms.values().toArray(monomialAlgebra.createArray(terms.size()));
     }
 
     @Override

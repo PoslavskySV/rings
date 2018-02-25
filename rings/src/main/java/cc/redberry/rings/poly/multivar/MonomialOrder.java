@@ -53,6 +53,9 @@ public final class MonomialOrder {
                 return 0;
             };
 
+    /** Default monomial order (GREVLEX) */
+    public static final Comparator<DegreeVector> DEFAULT = GREVLEX;
+
     /**
      * Block product of orderings
      */
@@ -115,5 +118,24 @@ public final class MonomialOrder {
         }
     }
 
-    public static final Comparator<DegreeVector> DEFAULT = GREVLEX;
+    public static final class GrevLexWithPermutation implements Comparator<DegreeVector>, Serializable {
+        final int[] permutation;
+
+        GrevLexWithPermutation(int[] permutation) {
+            this.permutation = permutation;
+        }
+
+        @Override
+        public int compare(DegreeVector a, DegreeVector b) {
+            int c = Integer.compare(a.totalDegree, b.totalDegree);
+            if (c != 0)
+                return c;
+            for (int i = a.exponents.length - 1; i >= 0; --i) {
+                c = Integer.compare(b.exponents[permutation[i]], a.exponents[permutation[i]]);
+                if (c != 0)
+                    return c;
+            }
+            return 0;
+        }
+    }
 }

@@ -8,6 +8,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.test.TimeConsuming;
+import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.ListWrapper;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import static cc.redberry.rings.poly.multivar.GroebnerBasis.GroebnerBasis;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
@@ -673,6 +675,31 @@ public class GroebnerBasisTest extends AMultivariateTest {
         GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> mod = ModularGB(gens, GREVLEX);
     }
 
+    @Test(timeout = 10_000)
+    public void test21() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("x^2 - y*z*x^2 + 2", Z, LEX, vars),
+                b = parse("x^2*y*z^3 - y*z^2 + 2*x^5", Z, LEX, vars),
+                c = parse("x*y*z^3 - y*z^12 + 2*x*y*z^5", Z, LEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+
+        List<MultivariatePolynomial<BigInteger>> gb = GroebnerBasis(gens, LEX);
+        assertEquals(3, gb.size());
+    }
+
+    @Test(timeout = 10_000)
+    public void test22() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("x^12 - y*z*x^2 + 2", Z, LEX, vars),
+                b = parse("x^2*y*z^3 - y*z^2 + 2*x^5", Z, LEX, vars),
+                c = parse("x*y*z^3 - y*z^12 + 2*x*y*z^5", Z, LEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c);
+        assertEquals(UnivariatePolynomial.parse("1+3*x+6*x^2+10*x^3+15*x^4+21*x^5+27*x^6+33*x^7+11*x^8", Q),
+                HilbertSeriesOfLeadingTermsSet(GroebnerBasisWithOptimizedGradedOrder(gens)).numerator);
+    }
+
     @Test
     public void testHilbertSeries1() throws Exception {
         String[] vars = {"x", "y", "z"};
@@ -774,6 +801,41 @@ public class GroebnerBasisTest extends AMultivariateTest {
             System.out.println("Hilbert    : " + nanosecondsToString(System.nanoTime() - start));
 
             assertEquals(expected, actual);
+            System.out.println();
+        }
+    }
+
+    @Test
+    public void testHilbertGB7() throws Exception {
+        List<MultivariatePolynomialZp64> ideal =
+                mod(GroebnerBasisData.katsura(8).stream().map(p -> p.mapCoefficients(Z, cf -> cf.numerator)).collect(Collectors.toList()), 17);
+
+        MultivariatePolynomialZp64 factory = ideal.get(0);
+
+        ideal.get(1).add(factory.parsePoly("x1^5"));
+//        ideal.get(2).add(factory.parsePoly("x2^5"));
+//        ideal.get(3).add(factory.parsePoly("x3^5"));
+
+        int[] degs = ideal.stream().map(AMultivariatePolynomial::degrees).reduce(new int[factory.nVariables], ArraysUtil::sum);
+        System.out.println(Arrays.toString(degs));
+        int[] perm = ArraysUtil.sequence(0, degs.length);
+        ArraysUtil.quickSort(degs, perm);
+//        ArraysUtil.reverse(perm);
+
+        List<MultivariatePolynomialZp64> renamed = ideal.stream().map(p -> AMultivariatePolynomial.renameVariables(p, perm)).collect(Collectors.toList());
+        System.out.println(Arrays.toString(renamed.stream().map(AMultivariatePolynomial::degrees).reduce(new int[factory.nVariables], ArraysUtil::sum)));
+
+        long start;
+        for (int i = 0; i < 20; ++i) {
+            start = System.nanoTime();
+            GBResult<MonomialZp64, MultivariatePolynomialZp64> g2 = F4GB(renamed, GREVLEX);
+            System.out.println("Renamed: " + nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            GBResult<MonomialZp64, MultivariatePolynomialZp64> g1 = F4GB(ideal, GREVLEX);
+            System.out.println("Default: " + nanosecondsToString(System.nanoTime() - start));
+
+
             System.out.println();
         }
     }

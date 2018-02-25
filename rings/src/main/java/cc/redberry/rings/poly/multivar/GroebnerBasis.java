@@ -9,6 +9,7 @@ import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.multivar.MonomialOrder.GrevLexWithPermutation;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic;
@@ -31,17 +32,22 @@ import java.util.stream.IntStream;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.linear.LinearSolver.SystemInfo.*;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.GRLEX;
 
 /**
- * Groebner basis computation.
+ * Groebner bases.
  *
- * @since 1.0
+ * @since 2.3
  */
 public final class GroebnerBasis {
     private GroebnerBasis() {}
 
     /**
-     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     * Computes Groebner basis (minimized and reduced) of a given ideal represented by a list of generators.
+     *
+     * <p>The implementation switches between F4 algorithm (for graded orders) and Hilbert-driven Buchberger algorithm
+     * for hard orders like LEX. For polynomials over Q modular methods are also used in some cases.
      *
      * @param generators    generators of the ideal
      * @param monomialOrder monomial order
@@ -58,14 +64,23 @@ public final class GroebnerBasis {
             return (List<Poly>) GroebnerBasisInZ((List) generators, monomialOrder, null, true);
         if (Util.isOverRationals(factory))
             return (List<Poly>) GroebnerBasisInQ((List) generators, monomialOrder, null, true);
-        return F4GB(generators, monomialOrder);
+        else
+            throw new RuntimeException("unsupported");//return HilbertGB(generators, monomialOrder);
     }
 
     /**
-     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     * Computes Groebner basis (minimized and reduced) of a given ideal over finite filed represented by a list of
+     * generators.
+     *
+     * <p>The implementation switches between F4 algorithm (for graded orders) and Hilbert-driven Buchberger algorithm
+     * for hard orders like LEX.
+     *
+     * <p>If a non null value for Hilbert-Poincare series {@code hilbertSeries} is passed, it will be used to speed up
+     * computations with some Hilbert-driven criteria.
      *
      * @param generators    generators of the ideal
      * @param monomialOrder monomial order
+     * @param hilbertSeries optional Hilbert-Poincare series (may be null)
      * @return Groebner basis
      */
     @SuppressWarnings("unchecked")
@@ -75,21 +90,38 @@ public final class GroebnerBasis {
                                            HilbertSeries hilbertSeries) {
         Poly factory = generators.get(0);
         if (!factory.isOverFiniteField())
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("not over finite field");
+
         if (canConvertToZp64(factory)) {
             GBResult<MonomialZp64, MultivariatePolynomialZp64> r = GroebnerBasisInGF(asOverZp64(generators), monomialOrder, hilbertSeries);
             return new GBResult<Term, Poly>(convertFromZp64(r), r);
         } else if (isGradedOrder(monomialOrder))
             return F4GB(generators, monomialOrder, hilbertSeries);
-        else
+        else if (hilbertSeries != null)
             return BuchbergerGB(generators, monomialOrder, hilbertSeries);
+        else if (isHomogeneousIdeal(generators) || isHomogenizationCompatibleOrder(monomialOrder))
+            return HilbertGB(generators, monomialOrder);
+        else
+            return BuchbergerGB(generators, monomialOrder);
     }
 
+    // flag that we may be will switch off in the future
+    private static final boolean USE_MODULAR_ALGORITHM = true;
+    // maximal number of variables for modular algorithm used by default
+    private static final int MODULAR_ALGORITHM_MAX_N_VARIABLES = 3;
+
     /**
-     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     * Computes Groebner basis (minimized and reduced) of a given ideal over Z represented by a list of generators.
+     *
+     * <p>The implementation switches between F4 algorithm (for graded orders) and Hilbert-driven Buchberger algorithm
+     * for hard orders like LEX. For polynomials in less or equals than three variables modular algorithm is used.
+     *
+     * <p>If a non null value for Hilbert-Poincare series {@code hilbertSeries} is passed, it will be used to speed up
+     * computations with some Hilbert-driven criteria.
      *
      * @param generators    generators of the ideal
      * @param monomialOrder monomial order
+     * @param hilbertSeries optional Hilbert-Poincare series (may be null)
      * @return Groebner basis
      */
     public static GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
@@ -100,25 +132,44 @@ public final class GroebnerBasis {
         MultivariatePolynomial<BigInteger> factory = generators.get(0);
         if (!factory.isOverZ())
             throw new IllegalArgumentException();
-        if (tryModular && factory.nVariables <= 3)
+        if (USE_MODULAR_ALGORITHM &&
+                (isGradedOrder(monomialOrder) || isHomogeneousIdeal(generators))
+                && (tryModular && factory.nVariables <= MODULAR_ALGORITHM_MAX_N_VARIABLES))
             return ModularGB(generators, monomialOrder, hilbertSeries);
         if (isGradedOrder(monomialOrder))
             return F4GB(generators, monomialOrder, hilbertSeries);
-        else
+        else if (hilbertSeries != null)
             return BuchbergerGB(generators, monomialOrder, hilbertSeries);
+        else if (isHomogeneousIdeal(generators) || isHomogenizationCompatibleOrder(monomialOrder))
+            return HilbertGB(generators, monomialOrder);
+        else
+            return BuchbergerGB(generators, monomialOrder);
     }
 
     /**
-     * Computes Groebner basis (minimized and reduced) of a given ideal represented as a list of generators.
+     * Computes Groebner basis (minimized and reduced) of a given ideal over Q represented by a list of generators.
+     *
+     * <p>The implementation switches between F4 algorithm (for graded orders) and Hilbert-driven Buchberger algorithm
+     * for hard orders like LEX. For polynomials in less or equals than three variables modular algorithm is used.
+     *
+     * <p>If a non null value for Hilbert-Poincare series {@code hilbertSeries} is passed, it will be used to speed up
+     * computations with some Hilbert-driven criteria.
      *
      * @param generators    generators of the ideal
      * @param monomialOrder monomial order
+     * @param hilbertSeries optional Hilbert-Poincare series (may be null)
      * @return Groebner basis
      */
     public static List<MultivariatePolynomial<Rational<BigInteger>>>
     GroebnerBasisInQ(List<MultivariatePolynomial<Rational<BigInteger>>> generators,
                      Comparator<DegreeVector> monomialOrder, HilbertSeries hilbertSeries, boolean tryModular) {
         return FracGB(generators, monomialOrder, hilbertSeries, (p, o, s) -> GroebnerBasisInZ(p, o, s, tryModular));
+    }
+
+    /** Converts basis into a basis for desired monomial order */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> ConvertBasis(List<Poly> generators, Comparator<DegreeVector> desiredOrder) {
+        return HilbertConvertBasis(generators, desiredOrder);
     }
 
     /* **************************************** Common methods ************************************************ */
@@ -410,9 +461,7 @@ public final class GroebnerBasis {
      * 1993. Note: redundant generators in the {@code basis} are marked as null.
      */
     private static <Term extends AMonomial<Term>, Poly extends MonomialSetView<Term>>
-    void updateBasis(List<Poly> basis,
-                     SyzygySet<Term, Poly> sPairs,
-                     Poly newElement) {
+    void updateBasis(List<Poly> basis, SyzygySet<Term, Poly> sPairs, Poly newElement) {
         assert !newElement.collection().isEmpty();
 
         // array of lcm( lt(fi), lt(newElement) ) <- cache once for performance
@@ -576,7 +625,14 @@ public final class GroebnerBasis {
 
     /** whether monomial order is graded */
     static boolean isGradedOrder(Comparator<DegreeVector> monomialOrder) {
-        return monomialOrder == MonomialOrder.GREVLEX || monomialOrder == MonomialOrder.GRLEX;
+        return monomialOrder == GREVLEX
+                || monomialOrder == GRLEX
+                || monomialOrder instanceof GrevLexWithPermutation;
+    }
+
+    /** whether this monomial order is OK for use with homogenization-dehomogenization algorithms */
+    static boolean isHomogenizationCompatibleOrder(Comparator<DegreeVector> monomialOrder) {
+        return isGradedOrder(monomialOrder) || monomialOrder == MonomialOrder.LEX;
     }
 
     /** whether monomial order is graded */
@@ -656,7 +712,6 @@ public final class GroebnerBasis {
         };
     }
 
-
     /** auxiliary interface for Groebner basis methods */
     interface GroebnerAlgorithm<
             Term extends AMonomial<Term>,
@@ -725,11 +780,10 @@ public final class GroebnerBasis {
     }
 
     /**
-     * Generic implementation of Buchberger algorithm with optional Hilbert-driven enhancements for graded orders or
-     * homogeneous ideals.
+     * Computes minimized and reduced Groebner basis of a given ideal via Buchberger algorithm.
      *
      * @param generators    generators of the ideal
-     * @param monomialOrder monomial order to use
+     * @param monomialOrder monomial order
      * @param strategy      selection strategy
      */
     @SuppressWarnings("unchecked")
@@ -1027,6 +1081,7 @@ public final class GroebnerBasis {
      *
      * @param generators    generators of homogeneous ideal
      * @param monomialOrder monomial order
+     * @param hilbertSeries Hilbert-Poincare series
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     GBResult<Term, Poly> HilbertGB(List<Poly> generators,
@@ -1044,13 +1099,19 @@ public final class GroebnerBasis {
     GBResult<Term, Poly> HilbertConvertBasis(List<Poly> groebnerBasis,
                                              Comparator<DegreeVector> desiredOrdering) {
         Comparator<DegreeVector> ordering = groebnerBasis.get(0).ordering;
-        if (!isHomogeneousIdeal(groebnerBasis) && !isGradedOrder(ordering))
-            throw new IllegalArgumentException("Groebner basis ");
-        return HilbertGB(groebnerBasis, desiredOrdering, HilbertSeries(leadTermsSet(groebnerBasis)));
+        if (ordering == desiredOrdering)
+            return GBResult.trivial(new ArrayList<>(groebnerBasis));
+        if (isHomogeneousIdeal(groebnerBasis) || (isGradedOrder(desiredOrdering) && isGradedOrder(ordering)))
+            return HilbertGB(groebnerBasis, desiredOrdering, HilbertSeriesOfLeadingTermsSet(groebnerBasis));
+        else if (isHomogenizationCompatibleOrder(desiredOrdering))
+            // nothing to do
+            return HilbertGB(groebnerBasis, desiredOrdering);
+        else
+            throw new RuntimeException("Hilbert conversion is not supported for specified ordering: " + desiredOrdering);
     }
 
     /**
-     * Hilbert-driven algorithm for Groebner basis computation of homogeneous ideal
+     * Hilbert-driven algorithm for Groebner basis computation
      *
      * @param generators    generators of homogeneous ideal
      * @param monomialOrder monomial order
@@ -1062,7 +1123,8 @@ public final class GroebnerBasis {
     }
 
     /**
-     * Hilbert-driven algorithm for Groebner basis computation of homogeneous ideal
+     * Hilbert-driven algorithm for Groebner basis computation. It computes first Groebner basis for some easy monomial
+     * order to find Hilbert-Poincare series of the ideal and then runs Hilbert-driven algorithm to obtain the result.
      *
      * @param generators    generators of homogeneous ideal
      * @param monomialOrder monomial order
@@ -1075,145 +1137,53 @@ public final class GroebnerBasis {
         if (isEasyOrder(monomialOrder))
             return baseAlgorithm.GroebnerBasis(generators, monomialOrder, null);
 
-        if (isHomogeneousIdeal(generators)) {
-            // fixme use better order
-            Comparator<DegreeVector> baseOrder = MonomialOrder.GREVLEX;
-            return HilbertConvertBasis(baseAlgorithm.GroebnerBasis(generators, baseOrder, null), monomialOrder);
-        }
-        List<Poly> r = dehomogenize(HilbertGB(homogenize(generators), monomialOrder, baseAlgorithm));
-        removeRedundant(r);
-        canonicalize(r);
-        return GBResult.notBuchberger(r);
+        if (isHomogeneousIdeal(generators))
+            return HilbertConvertBasis(GroebnerBasisWithOptimizedGradedOrder(generators, baseAlgorithm), monomialOrder);
+
+        // we don't check whether we are in homogenization-compatible order
+        GBResult<Term, Poly> r = HilbertGB(homogenize(generators), monomialOrder, baseAlgorithm);
+        List<Poly> l = dehomogenize(r);
+        removeRedundant(l);
+        canonicalize(l);
+        return new GBResult<>(l, r);
     }
 
+    /** computes Groebner basis in GREVLEX with shuffled variables */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> GroebnerBasisWithOptimizedGradedOrder(List<Poly> ideal) {
+        return GroebnerBasisWithOptimizedGradedOrder(ideal, (l, o, h) -> GBResult.notBuchberger(GroebnerBasis(l, o)));
+    }
 
-//    /**
-//     * Hilbert-driven algorithm for Groebner basis computation of homogeneous ideal
-//     *
-//     * @param generators    generators of homogeneous ideal
-//     * @param monomialOrder monomial order
-//     * @param hilbertSeries Hilbert-Poincare series of ideal
-//     */
-//    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-//    GBResult<Term, Poly> HilbertHomogeneousGB(List<Poly> generators,
-//                                              Comparator<DegreeVector> monomialOrder,
-//                                              HilbertSeries hilbertSeries) {
-//        if (!isHomogeneousIdeal(generators))
-//            throw new IllegalArgumentException("not a homogeneous ideal");
-//
-//        // simplify generators as much as possible
-//        generators = prepareGenerators(generators, monomialOrder);
-//        if (generators.size() == 1)
-//            return new GBResult<>(generators, 0, 0);
-//
-//        Poly factory = generators.get(0);
-//        // sort polynomials in the basis to achieve faster divisions
-//        generators.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
-//        // graded set of syzygies
-//        GradedSyzygyTreeSet<Term, Poly> sPairs = new GradedSyzygyTreeSet<>(
-//                new TreeMap<>(),
-//                defaultSelectionStrategy(monomialOrder),
-//                SyzygyPair::degree);
-//
-//        // Groebner basis that will be computed
-//        List<Poly> groebner = new ArrayList<>();
-//        // update Groebner basis with initial generators
-//        generators.forEach(g -> updateBasis(groebner, sPairs, g));
-//        // cache array used in divisions (little performance improvement actually)
-//        Poly[] reducersArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
-//
-//        int currentDegree = 0;
-//        // number of linearly independent basis elements needed in fixed degree
-//        int hilbertDelta = Integer.MAX_VALUE;
-//        // number of processed polynomials
-//        int nProcessedSyzygies = 0;
-//        // number of zero-reducible syzygies
-//        int nRedundantSyzygies = 0;
-//        while (!sPairs.isEmpty()) {
-//            // pick up (and remove) a bunch of critical pairs
-//            TreeSet<SyzygyPair<Term, Poly>> subset = sPairs.sPairs.remove(currentDegree);
-//            if (subset != null)
-//                for (SyzygyPair<Term, Poly> pair : subset) {
-//                    if (hilbertDelta == 0)
-//                        break;
-//                    // compute actual syzygy
-//                    Poly syzygy = MultivariateDivision.pseudoRemainder(syzygy(pair), reducersArray);
-//                    ++nProcessedSyzygies;
-//                    if (syzygy.isZero()) {
-//                        ++nRedundantSyzygies;
-//                        continue;
-//                    }
-//
-//                    if (syzygy.isConstant())
-//                        // ideal = ring
-//                        return new GBResult<>(
-//                                Collections.singletonList(factory.createOne()),
-//                                2 * nProcessedSyzygies, 2 * nRedundantSyzygies);
-//
-//                    // add syzygy to basis
-//                    updateBasis(groebner, sPairs, syzygy);
-//                    // decrement current delta
-//                    --hilbertDelta;
-//                    // recompute array
-//                    reducersArray = groebner.stream().filter(Objects::nonNull).toArray(factory::createArray);
-//                    // don't sort here, not practical actually
-//                    // Arrays.sort(groebnerArray, polyOrder);
-//                }
-//
-//
-//            //compute Hilbert series for LT(ideal) obtained so far
-//            HilbertSeries currentHPS = HilbertSeriesOfLeadingTermsSet(groebner);
-//            HilbertUpdate hilbertUpdate = updateWithHPS(hilbertSeries, currentHPS, sPairs);
-//            if (hilbertUpdate.finished)
-//                // we are done
-//                break;
-//
-//
-//            currentDegree = hilbertUpdate.currentDegree;
-//            hilbertDelta = hilbertUpdate.hilbertDelta;
-////
-////            //compute Hilbert series for LT(ideal) obtained so far
-////            HilbertSeries currentHPS = HilbertSeriesOfLeadingTermsSet(groebner);
-////            if (currentHPS.equals(hilbertSeries))
-////                // we are done
-////                break;
-////
-////            // since Mon(current) ⊆ Mon(ideal) we can use only numerators of HPS
-////            currentDegree = 0;
-////            for (; ; ++currentDegree)
-////                if (!hilbertSeries.initialNumerator.get(currentDegree).equals(currentHPS.initialNumerator.get(currentDegree)))
-////                    break;
-////
-////            Rational<BigInteger> delta = currentHPS.initialNumerator.get(currentDegree).subtract(hilbertSeries.initialNumerator.get(currentDegree));
-////            assert delta.isIntegral() && delta.numerator.signum() > 0;
-////            hilbertDelta = delta.numerator.intValueExact();
-////
-////            // remove redundant S-pairs
-////            final int mDegree = currentDegree;
-////            sPairs.allSets().forEach(set -> set.removeIf(s -> s.degree() < mDegree));
-//        }
-//
-//        // batch remove all nulls
-//        groebner.removeAll(Collections.<Poly>singleton(null));
-//        // minimize Groebner basis
-//        minimizeGroebnerBases(groebner);
-//        // speed up final reduction
-//        groebner.sort((a, b) -> monomialOrder.compare(a.lt(), b.lt()));
-//        // reduce Groebner basis
-//        removeRedundant(groebner);
-//        // canonicalize Groebner basis
-//        canonicalize(groebner);
-//
-//        return new GBResult<>(groebner, 2 * nProcessedSyzygies, 2 * nRedundantSyzygies);
-//    }
+    /** computes Groebner basis in GREVLEX with shuffled variables */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> GroebnerBasisWithOptimizedGradedOrder(List<Poly> ideal, GroebnerAlgorithm<Term, Poly> baseAlgorithm) {
+        Poly factory = ideal.get(0);
+        int[] degrees = ideal.stream().map(AMultivariatePolynomial::degrees).reduce(new int[factory.nVariables], ArraysUtil::sum);
+        if (Arrays.stream(degrees).allMatch(i -> i == degrees[0]))
+            // all variables have the same degree
+            return baseAlgorithm.GroebnerBasis(ideal, GREVLEX, null);
 
+        int[] permutation = ArraysUtil.sequence(0, factory.nVariables);
+        ArraysUtil.quickSort(degrees, permutation);
+        int[] inversePermutation = MultivariateGCD.inversePermutation(permutation);
 
-
+        // the ordering for which the Groebner basis will be obtained
+        GrevLexWithPermutation order = new GrevLexWithPermutation(permutation);
+        return baseAlgorithm.GroebnerBasis(ideal
+                        .stream()
+                        .map(p -> AMultivariatePolynomial.renameVariables(p, permutation))
+                        .collect(Collectors.toList()),
+                GREVLEX, null)
+                .stream()
+                .map(p -> AMultivariatePolynomial.renameVariables(p, inversePermutation))
+                .map(p -> p.setOrdering(order))
+                .collect(Collectors.toList());
+    }
 
     /* ************************************************** F4 ******************************************************* */
 
     /**
-     * Computes minimized and reduced Groebner basis of a given ideal via F4 algorithm.
+     * Computes minimized and reduced Groebner basis of a given ideal via Faugère's F4 F4 algorithm.
      *
      * @param generators    generators of the ideal
      * @param monomialOrder monomial order to use
@@ -1228,7 +1198,7 @@ public final class GroebnerBasis {
     /**
      * Computes minimized and reduced Groebner basis of a given ideal via Faugère's F4 algorithm.
      *
-     * Simplification routine used is due to Joux & Vitse, "A variant of F4 algorithm",
+     * <p>Simplification routine used is due to Joux & Vitse, "A variant of F4 algorithm",
      * https://eprint.iacr.org/2010/158.pdf, 2011
      *
      * @param generators    generators of the ideal
@@ -1397,7 +1367,7 @@ public final class GroebnerBasis {
     /**
      * Computes minimized and reduced Groebner basis of a given ideal via Faugère's F4 algorithm.
      *
-     * Simplification routine used is due to Joux & Vitse, "A variant of F4 algorithm",
+     * <p>Simplification routine used is due to Joux & Vitse, "A variant of F4 algorithm",
      * https://eprint.iacr.org/2010/158.pdf, 2011
      *
      * @param generators    generators of the ideal
@@ -1728,8 +1698,8 @@ public final class GroebnerBasis {
 
     private static final double DENSE_FILLING_THRESHOLD = 0.1;
 
-    /* ******************************************* F4 Zp64 linear algebra ******************************************* */
 
+    /* ******************************************* F4 Zp64 linear algebra ******************************************* */
 
     @SuppressWarnings("unchecked")
     private static List<ArrayBasedPoly<MonomialZp64>> reduceMatrixZp64(
@@ -3287,11 +3257,11 @@ public final class GroebnerBasis {
     }
 
     /**
-     * Computes Hilbert-Poincare series of specified homogeneous ideal
+     * Computes Hilbert-Poincare series of specified ideal given by its Groebner basis
      */
     public static HilbertSeries HilbertSeriesOfLeadingTermsSet(List<? extends AMultivariatePolynomial> ideal) {
-        if (!isHomogeneousIdeal(ideal))
-            throw new IllegalArgumentException("Not a monomial or homogeneous ideal");
+        if (!isHomogeneousIdeal(ideal) && !isGradedOrder(ideal.get(0).ordering))
+            throw new IllegalArgumentException("Basis should be homogeneous or use graded (degree compatible) monomial order");
         if (ideal.stream().anyMatch(IPolynomial::isZero))
             return new HilbertSeries(UnivariatePolynomial.one(Q), ideal.get(0).nVariables);
         return HilbertSeries(leadTermsSet(ideal));
@@ -3503,7 +3473,7 @@ public final class GroebnerBasis {
      *
      * The algorithm switches between modular Chinese remainder techniques as described in Elizabeth A. Arnold, "Modular
      * algorithms for computing Groebner bases", Journal of Symbolic Computation 35 (2003) 403–419 and sparse Groebner
-     * basis reconstruction with linear algebra
+     * basis reconstruction with linear algebra ({@link #solveGB(List, List, Comparator)}).
      */
     public static GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
     ModularGB(List<MultivariatePolynomial<BigInteger>> ideal,
@@ -3516,7 +3486,9 @@ public final class GroebnerBasis {
      *
      * The algorithm switches between modular Chinese remainder techniques as described in Elizabeth A. Arnold, "Modular
      * algorithms for computing Groebner bases", Journal of Symbolic Computation 35 (2003) 403–419 and sparse Groebner
-     * basis reconstruction with linear algebra
+     * basis reconstruction with linear algebra ({@link #solveGB(List, List, Comparator)}).
+     *
+     * @param hilbertSeries optional Hilbert-Poincare series of ideal
      */
     public static GBResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
     ModularGB(List<MultivariatePolynomial<BigInteger>> ideal,
@@ -3530,10 +3502,11 @@ public final class GroebnerBasis {
      *
      * The algorithm switches between modular Chinese remainder techniques as described in Elizabeth A. Arnold, "Modular
      * algorithms for computing Groebner bases", Journal of Symbolic Computation 35 (2003) 403–419 and sparse Groebner
-     * basis reconstruction with linear algebra
+     * basis reconstruction with linear algebra.
      *
      * @param ideal         ideal generators
      * @param monomialOrder monomial order
+     * @param hilbertSeries optional Hilbert-Poincare series of ideal
      * @param trySparse     whether to try sparse reconstruction in particularly small resulting bases via {@link
      *                      #solveGB(List, List, Comparator)}
      */
@@ -3571,12 +3544,14 @@ public final class GroebnerBasis {
      *
      * The algorithm switches between modular Chinese remainder techniques as described in Elizabeth A. Arnold, "Modular
      * algorithms for computing Groebner bases", Journal of Symbolic Computation 35 (2003) 403–419 and sparse Groebner
-     * basis reconstruction with linear algebra
+     * basis reconstruction with linear algebra.
      *
      * @param ideal            ideal generators
      * @param monomialOrder    monomial order
      * @param modularAlgorithm algorithm used to find Groebner basis mod prime
+     * @param defaultAlgorithm algorithm used to find Groebner basis if modular algorithm failed
      * @param firstPrime       prime number to start modulo iterations
+     * @param hilbertSeries    optional Hilbert-Poincare series of ideal
      * @param trySparse        whether to try sparse reconstruction in particularly small resulting bases via {@link
      *                         #solveGB(List, List, Comparator)}
      */
@@ -3589,6 +3564,9 @@ public final class GroebnerBasis {
               BigInteger firstPrime,
               HilbertSeries hilbertSeries,
               boolean trySparse) {
+        // required for Hilbert functions
+        assert isHomogeneousIdeal(ideal) || isGradedOrder(monomialOrder);
+
         // simplify generators as much as possible
         ideal = prepareGenerators(ideal, monomialOrder);
         if (ideal.size() == 1)
@@ -3796,7 +3774,9 @@ public final class GroebnerBasis {
     };
 
     /**
-     * Sparse Groebner basis
+     * Sparse Groebner basis via "linear lifting". Given a generating set and a skeleton of Groebner basis (may be
+     * computed via mod prime etc.), it build a system of equations and finds a true Groebner basis, or return null if
+     * the system was not solvable.
      *
      * @param generators    generators
      * @param gbSkeleton    skeleton of true reduced Groebner basis
