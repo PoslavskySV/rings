@@ -116,7 +116,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate Z[X] polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, String... variables) {
-        return Parser.parse(string, MonomialOrder.LEX, variables);
+        return Parser.parse(string, MonomialOrder.DEFAULT, variables);
     }
 
     /**
@@ -130,7 +130,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, String... variables) {
-        return Parser.parse(string, ring, ring, MonomialOrder.LEX, variables);
+        return Parser.parse(string, ring, ring, MonomialOrder.DEFAULT, variables);
     }
 
     /**

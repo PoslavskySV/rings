@@ -182,7 +182,7 @@ public final class Rings {
      */
     public static <E> MultivariateRing<MultivariatePolynomial<E>>
     MultivariateRing(int nVariables, Ring<E> coefficientRing) {
-        return MultivariateRing(nVariables, coefficientRing, MonomialOrder.LEX);
+        return MultivariateRing(nVariables, coefficientRing, MonomialOrder.DEFAULT);
     }
 
     /**
@@ -235,7 +235,7 @@ public final class Rings {
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
     MultivariateRingZp64(int nVariables, long modulus) {
-        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.LEX);
+        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.DEFAULT);
     }
 
     /**
@@ -258,7 +258,7 @@ public final class Rings {
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
     MultivariateRingZp64(int nVariables, IntegersZp64 modulus) {
-        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.LEX);
+        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.DEFAULT);
     }
 
     /**

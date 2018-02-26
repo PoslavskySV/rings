@@ -75,7 +75,7 @@ public final class UnivariateFactorization {
     PolynomialFactorDecomposition<UnivariatePolynomial<uPoly>>
     FactorOverUnivariate(UnivariatePolynomial<uPoly> poly,
                          Function<MultivariatePolynomial<uPoly>, PolynomialFactorDecomposition<MultivariatePolynomial<uPoly>>> factorFunction) {
-        return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 1, 0, MonomialOrder.LEX))
+        return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 1, 0, MonomialOrder.DEFAULT))
                 .mapTo(MultivariatePolynomial::asUnivariate);
     }
 

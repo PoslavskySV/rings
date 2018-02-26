@@ -20,7 +20,7 @@ final class Parser {
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Ring<E> ring, ElementParser<E> eParser) {
-        return parse(input, ring, eParser, MonomialOrder.LEX);
+        return parse(input, ring, eParser, MonomialOrder.DEFAULT);
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Ring<E> ring, ElementParser<E> eParser, Comparator<DegreeVector> ordering, String... variables) {

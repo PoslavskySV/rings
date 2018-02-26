@@ -135,7 +135,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return multivariate polynomial
      */
     public static MultivariatePolynomialZp64 parse(String string, IntegersZp64 ring, String... variables) {
-        return parse(string, ring, MonomialOrder.LEX, variables);
+        return parse(string, ring, MonomialOrder.DEFAULT, variables);
     }
 
     /**

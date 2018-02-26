@@ -52,7 +52,7 @@ public final class RandomMultivariatePolynomials {
      * @return random polynomial
      */
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {
-        return randomPolynomial(nVars, degree, size, BigInteger.TEN, MonomialOrder.LEX, rnd);
+        return randomPolynomial(nVars, degree, size, BigInteger.TEN, MonomialOrder.DEFAULT, rnd);
     }
 
     /**
@@ -89,7 +89,7 @@ public final class RandomMultivariatePolynomials {
      * @return random polynomial
      */
     public static MultivariatePolynomialZp64 randomPolynomial(int nVars, int degree, int size, IntegersZp64 ring, RandomGenerator rnd) {
-        return randomPolynomial(nVars, degree, size, ring, MonomialOrder.LEX, rnd);
+        return randomPolynomial(nVars, degree, size, ring, MonomialOrder.DEFAULT, rnd);
     }
 
     /**

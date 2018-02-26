@@ -130,7 +130,8 @@ class Examples2 {
   @Test
   def testQuotientRing: Unit = {
     import syntax._
-    def genericAsserions[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](baseRing: IMultivariateRing[Term, Poly, E]) = {
+    def genericAssertions[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+    (baseRing: IMultivariateRing[Term, Poly, E]): Unit = {
       val (x, y, z) = baseRing("x", "y", "z")
       val ideal = {
         implicit val __ = baseRing
@@ -151,6 +152,7 @@ class Examples2 {
       assert(poly == poly %% ideal)
     }
 
-    genericAsserions(MultivariateRing(Q, Array("x", "y", "z")))
+    genericAssertions(MultivariateRing(Q, Array("x", "y", "z")))
+    genericAssertions(MultivariateRingZp64(17, Array("x", "y", "z")))
   }
 }
