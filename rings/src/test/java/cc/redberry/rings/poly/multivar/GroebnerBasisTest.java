@@ -701,6 +701,18 @@ public class GroebnerBasisTest extends AMultivariateTest {
     }
 
     @Test
+    public void test23() throws Exception {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("-y^2 - 3*y + z^2 + 3", Z, LEX, vars),
+                b = parse("x*z + y*z + z^2", Z, LEX, vars),
+                c = parse("-3*x*y + 2*y*z + 6*z^2", Z, LEX, vars),
+                d = parse("-2*y*z + z^2 + 2*z + 1", Z, LEX, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c, d);
+        System.out.println(GroebnerBasis(mod(gens, 11777), LEX));
+    }
+
+    @Test
     public void testHilbertSeries1() throws Exception {
         String[] vars = {"x", "y", "z"};
         MultivariatePolynomial

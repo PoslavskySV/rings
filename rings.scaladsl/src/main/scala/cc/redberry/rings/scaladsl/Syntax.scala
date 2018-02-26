@@ -20,19 +20,23 @@ trait UnivariateCfSyntax {
 }
 
 trait MultivariateSyntax {
-  implicit def multivariateOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly]]
-  (lhs: Poly)(implicit ringSupport: RingSupport[Poly]): MultivariateOps[Term, Poly]
-  = new MultivariateOps[Term, Poly](lhs)(ringSupport.ringEv(lhs))
+  implicit def multivariateOps[Poly <: AMultivariatePolynomial[_, Poly]]
+  (lhs: Poly)(implicit ringSupport: RingSupport[Poly]): MultivariateOps[Poly]
+  = new MultivariateOps[Poly](lhs)(ringSupport.ringEv(lhs))
 
-  implicit def multivariateOpsZp64
+  implicit def multivariateTermOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly]]
+  (lhs: Poly)(implicit ringSupport: RingSupport[Poly]): MultivariateTermOps[Term, Poly]
+  = new MultivariateTermOps[Term, Poly](lhs)(ringSupport.ringEv(lhs))
+
+  implicit def multivariateTermOpsZp64
   (lhs: MultivariatePolynomialZp64)(implicit ringSupport: RingSupport[MultivariatePolynomialZp64])
-  : MultivariateOps[MonomialZp64, MultivariatePolynomialZp64]
-  = new MultivariateOps[MonomialZp64, MultivariatePolynomialZp64](lhs)(ringSupport.ringEv(lhs))
+  : MultivariateTermOps[MonomialZp64, MultivariatePolynomialZp64]
+  = new MultivariateTermOps[MonomialZp64, MultivariatePolynomialZp64](lhs)(ringSupport.ringEv(lhs))
 
-  implicit def multivariateOpsE[E]
+  implicit def multivariateTermOpsE[E]
   (lhs: MultivariatePolynomial[E])(implicit ringSupport: RingSupport[MultivariatePolynomial[E]])
-  : MultivariateOps[Monomial[E], MultivariatePolynomial[E]]
-  = new MultivariateOps[Monomial[E], MultivariatePolynomial[E]](lhs)(ringSupport.ringEv(lhs))
+  : MultivariateTermOps[Monomial[E], MultivariatePolynomial[E]]
+  = new MultivariateTermOps[Monomial[E], MultivariatePolynomial[E]](lhs)(ringSupport.ringEv(lhs))
 }
 
 trait MultivariateCfSyntax {

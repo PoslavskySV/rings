@@ -199,7 +199,7 @@ public final class MultivariateDivision {
 
             dividend = dividend.subtract(new Monomial<>(dvPseudoDiv, ring.divideExact(lt.coefficient, gcd)), dividers[iPseudoDiv]);
         }
-        return remainder.primitivePart();
+        return remainder.primitivePartSameSign();
     }
 
     /**

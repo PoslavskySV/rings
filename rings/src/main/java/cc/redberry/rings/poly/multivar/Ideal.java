@@ -77,7 +77,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
     }
 
     private Poly mod0(Poly poly) {
-        return MultivariateDivision.remainder(setOrdering(poly), groebnerBasis);
+        return MultivariateDivision.pseudoRemainder(setOrdering(poly), groebnerBasis);
     }
 
     /**
@@ -220,6 +220,21 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         // add 1 - y*poly
         yGenerators.add(yPoly.createOne().subtract(yPoly.createMonomial(yPoly.nVariables - 1, 1).multiply(yPoly)));
         return create(yGenerators).isTrivial();
+    }
+
+    /**
+     * Returns the union of this and oth
+     */
+    public Ideal<Term, Poly> union(Poly oth) {
+        factory.assertSameCoefficientRingWith(oth);
+        if (oth.isZero())
+            return this;
+        if (oth.isOne())
+            return trivial(factory);
+
+        List<Poly> l = new ArrayList<>(groebnerBasis);
+        l.add(oth);
+        return create(l, monomialOrder);
     }
 
     /**
@@ -390,7 +405,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
 
     @Override
     public String toString(String[] variables) {
-        return "[" + groebnerBasis.stream().map(p -> p.toString(variables)).collect(Collectors.joining(", ")) + "]";
+        return "<" + groebnerBasis.stream().map(p -> p.toString(variables)).collect(Collectors.joining(", ")) + ">";
     }
 
     @Override

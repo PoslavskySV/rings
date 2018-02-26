@@ -90,6 +90,18 @@ private[scaladsl] trait Predef {
   implicit def asRing(ring: IntegersZp64): Ring[Long] = new RingZp64(ring)
 
   /**
+    * Delegate [[Ideal]] methods for [[Ideal]]
+    */
+  implicit def idealMethods[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](ideal: Ideal[Term, Poly, E]):
+  rings.poly.multivar.Ideal[Term, Poly] = ideal.theIdeal
+
+  /**
+    * Implicitly convert [[rings.poly.multivar.Ideal]] to [[Ideal]]
+    */
+  implicit def asIdeal[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](ideal: poly.multivar.Ideal[Term, Poly]):
+  Ideal[Term, Poly, E] = new Ideal[Term, Poly, E](MultivariateRing[Term, Poly, E](ideal.getBasisGenerator(0)), ideal)
+
+  /**
     * Ring of integers (Z)
     */
   val Z: Ring[BigInteger] = rings.Rings.Z

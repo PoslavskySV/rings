@@ -590,7 +590,8 @@ public interface Ring<E> extends
     }
 
     /**
-     * Converts a value from other ring to this ring.
+     * Converts a value from other ring to this ring. The result is not guarantied to be a new instance (i.e. {@code val
+     * == valueOf(val)} is possible).
      *
      * @param val some element from any ring
      * @return this ring element associated with specified {@code val}

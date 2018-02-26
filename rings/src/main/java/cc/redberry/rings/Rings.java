@@ -284,7 +284,6 @@ public final class Rings {
         return MultivariateRing(nVariables, gf);
     }
 
-
     /**
      * Generic factory for polynomial ring
      */
@@ -294,5 +293,23 @@ public final class Rings {
             return (IPolynomialRing<Poly>) UnivariateRing((IUnivariatePolynomial) factory);
         else
             return (IPolynomialRing<Poly>) MultivariateRing((AMultivariatePolynomial) factory);
+    }
+
+    /**
+     * Quotient ring {@code baseRing/<modulus> }
+     */
+    public static <uPoly extends IUnivariatePolynomial<uPoly>>
+    UnivariateQuotientRing<uPoly>
+    Quotient(IPolynomialRing<uPoly> baseRing, uPoly modulus) {
+        return new UnivariateQuotientRing<>(baseRing, modulus);
+    }
+
+    /**
+     * Quotient ring {@code baseRing/<ideal> }
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    MultivariateQuotientRing<Term, Poly>
+    Quotient(IPolynomialRing<Poly> baseRing, Ideal<Term, Poly> ideal) {
+        return new MultivariateQuotientRing<>(baseRing, ideal);
     }
 }
