@@ -2404,7 +2404,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
                         RandomMultivariatePolynomials.randomPolynomial(nVariables,
                                 rndd.nextInt(minDegree, maxDegree),
                                 rndd.nextInt(minSize, maxSize),
-                                domain, MonomialOrder.LEX, rnd);
+                                domain, MonomialOrder.DEFAULT, rnd);
 
                 if (sample.isConstant() || sample.isMonomial())
                     continue;

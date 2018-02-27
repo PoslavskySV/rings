@@ -563,16 +563,16 @@ public final class HenselLifting {
         }
     }
 
-    static <Poly extends IPolynomial<Poly>> void correctUnit(Poly poly, Poly[] factors) {
-        Poly lc = poly.lcAsPoly();
-        Poly flc = Arrays.stream(factors)
-                .map(IPolynomial::lcAsPoly)
-                .reduce(poly.createOne(), IPolynomial::multiply);
-        assert lc.isConstant();
-        assert flc.isConstant();
-
-        factors[0].multiplyByLC(lc.divideByLC(flc));
-    }
+//    static <Poly extends IPolynomial<Poly>> void correctUnit(Poly poly, Poly[] factors) {
+//        Poly lc = poly.lcAsPoly();
+//        Poly flc = Arrays.stream(factors)
+//                .map(IPolynomial::lcAsPoly)
+//                .reduce(poly.createOne(), IPolynomial::multiply);
+//        assert lc.isConstant();
+//        assert flc.isConstant();
+//
+//        factors[0].multiplyByLC(lc.divideByLC(flc));
+//    }
 
     /**
      * Fast bivariate Hensel lifting which uses dense representation for bivariate polynomials and without leading

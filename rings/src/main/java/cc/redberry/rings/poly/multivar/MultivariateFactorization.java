@@ -1987,7 +1987,7 @@ public final class MultivariateFactorization {
 
                     // Poly lcCorrection = evaluation.evaluateFrom(lcRest, 2);
                     for (int i = 0; i < biFactorsMain.size(); i++) {
-                        assert biFactorsArrayMain[i].lt().exponents[0] == biFactorsArrayMain[i].degree(0);
+                        assert biFactorsArrayMain[i].lt(MonomialOrder.LEX).exponents[0] == biFactorsArrayMain[i].degree(0);
 
                         lcFactors[i].multiply(lcRest);
                         Poly correction = MultivariateDivision.divideExact(evaluation.evaluateFrom(lcFactors[i], 2), biFactorsArrayMain[i].lc(0));

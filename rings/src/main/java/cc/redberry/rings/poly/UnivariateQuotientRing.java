@@ -31,12 +31,11 @@ public class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<Poly>>
     @Override
     @SuppressWarnings("unchecked")
     public Poly mod(Poly el) {
-        return (fastDiv == null
+        return fastDiv == null
                 ? modulus.isConstant()
                 ? (Poly) divideByConstant((UnivariatePolynomial) el, (UnivariatePolynomial) modulus)
-                : UnivariateDivision.pseudoDivideAndRemainder(el, modulus, true)[1]
-                : UnivariateDivision.remainderFast(el, modulus, fastDiv, true))
-                .canonical();
+                : UnivariateDivision.pseudoDivideAndRemainder(el, modulus, true)[1].canonical()
+                : UnivariateDivision.remainderFast(el, modulus, fastDiv, true);
     }
 
     private static <E> UnivariatePolynomial<E> divideByConstant(UnivariatePolynomial<E> poly, UnivariatePolynomial<E> modulus) {

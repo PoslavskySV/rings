@@ -386,6 +386,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
+    public MultivariatePolynomialZp64 lcAsPoly(Comparator<DegreeVector> ordering) {
+        return createConstant(lc(ordering));
+    }
+
+    @Override
     public MultivariatePolynomialZp64 ccAsPoly() {
         return createConstant(cc());
     }
@@ -592,6 +597,15 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     /**
+     * Returns the leading coefficient of this polynomial with respect to specified ordering
+     *
+     * @return leading coefficient of this polynomial with respect to specified ordering
+     */
+    public long lc(Comparator<DegreeVector> ordering) {
+        return lt(ordering).coefficient;
+    }
+
+    /**
      * Sets the leading coefficient to the specified value
      *
      * @param val new value for the lc
@@ -707,15 +721,25 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return divide(lc());
     }
 
+    @Override
+    public MultivariatePolynomialZp64 monic(Comparator<DegreeVector> ordering) {
+        if (isZero())
+            return this;
+        return divide(lc(ordering));
+    }
+
     /**
-     * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is {@code
-     * monic(modulus).multiply(factor)} ).
-     *
-     * @param factor the factor
-     * @return {@code this}
+     * Sets {@code this} to its monic part (with respect to given ordering) multiplied by the given factor;
      */
     public MultivariatePolynomialZp64 monic(long factor) {
         return multiply(ring.multiply(ring.modulus(factor), ring.reciprocal(lc())));
+    }
+
+    /**
+     * Sets {@code this} to its monic part (with respect to given ordering) multiplied by the given factor;
+     */
+    public MultivariatePolynomialZp64 monic(Comparator<DegreeVector> ordering, long factor) {
+        return multiply(ring.multiply(ring.modulus(factor), ring.reciprocal(lc(ordering))));
     }
 
     @Override
@@ -723,6 +747,15 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         if (lc() == other.lc())
             return this;
         return monic(other.lc());
+    }
+
+    @Override
+    public MultivariatePolynomialZp64 monicWithLC(Comparator<DegreeVector> ordering, MultivariatePolynomialZp64 other) {
+        long lc = lc(ordering);
+        long olc = other.lc(ordering);
+        if (lc == olc)
+            return this;
+        return monic(ordering, olc);
     }
 
     /**

@@ -128,7 +128,7 @@ class Examples2 {
   }
 
   @Test
-  def testQuotientRing: Unit = {
+  def testQuotientRing1: Unit = {
     import syntax._
     def genericAssertions[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
     (baseRing: IMultivariateRing[Term, Poly, E]): Unit = {
@@ -154,5 +154,29 @@ class Examples2 {
 
     genericAssertions(MultivariateRing(Q, Array("x", "y", "z")))
     genericAssertions(MultivariateRingZp64(17, Array("x", "y", "z")))
+  }
+
+  @Test
+  def testQuotientRing2: Unit = {
+    import syntax._
+    val baseRing = UnivariateRing(Q, "x")
+    val x = baseRing("x")
+
+    // poly in a base ring
+    val basePoly = {
+      implicit val ring = baseRing
+      123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
+    }
+
+    val modulus = x.pow(2) + 1
+    // poly in a quotient ring
+    val quotPoly = {
+      implicit val ring = UnivariateQuotientRing(baseRing, modulus)
+      123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
+    }
+
+    assert(basePoly.degree() == 31)
+    assert(quotPoly.degree() == 1)
+    assert(quotPoly == basePoly % modulus)
   }
 }

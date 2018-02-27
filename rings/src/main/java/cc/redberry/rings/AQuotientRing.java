@@ -80,6 +80,8 @@ public abstract class AQuotientRing<E> implements Ring<E> {
 
     @Override
     public E[] divideAndRemainder(E dividend, E divider) {
+        if (baseRing.isUnit(divider))
+            return createArray(multiply(dividend, baseRing.reciprocal(divider)), getZero());
         throw new UnsupportedOperationException("Algebraic structure of ring is unknown");
     }
 
@@ -89,6 +91,8 @@ public abstract class AQuotientRing<E> implements Ring<E> {
             return element;
         if (isMinusOne(element))
             return element;
+        if (baseRing.isUnit(element))
+            return valueOf(baseRing.reciprocal(element));
         throw new UnsupportedOperationException("Algebraic structure of ring is unknown");
     }
 
@@ -114,7 +118,7 @@ public abstract class AQuotientRing<E> implements Ring<E> {
 
     @Override
     public boolean isUnit(E element) {
-        return false;
+        return baseRing.isUnit(element);
     }
 
     @Override

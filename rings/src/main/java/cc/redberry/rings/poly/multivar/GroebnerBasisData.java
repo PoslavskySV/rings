@@ -202,7 +202,7 @@ public final class GroebnerBasisData {
 
 
     public static List<MultivariatePolynomial<Rational<BigInteger>>> cyclic(int n) {
-        MultivariatePolynomial<Rational<BigInteger>> factory = MultivariatePolynomial.zero(n, Q, MonomialOrder.DEFAULT);
+        MultivariatePolynomial<Rational<BigInteger>> factory = MultivariatePolynomial.zero(n, Q, MonomialOrder.GREVLEX);
 
         MultivariatePolynomial<Rational<BigInteger>>[] vars = new MultivariatePolynomial[n];
         for (int i = 0; i < n; ++i)

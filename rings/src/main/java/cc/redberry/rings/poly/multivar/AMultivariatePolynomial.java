@@ -127,7 +127,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * Rename variables from [0,1,...N] to [newVariables[0], newVariables[1], ..., newVariables[N]] (new instance
      * created)
      *
-     * @param e  the term
+     * @param e            the term
      * @param newVariables the new variables
      * @return renamed term
      */
@@ -816,6 +816,17 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     public abstract IUnivariatePolynomial contentUnivariate(int variable);
 
     /**
+     * Make this poly monic considering leading term with respect to given ordering
+     */
+    public abstract Poly monic(Comparator<DegreeVector> ordering);
+
+    /**
+     * Sets {@code this} to its monic part multiplied by the leading coefficient of {@code other} with respect to given
+     * ordering
+     */
+    public abstract Poly monicWithLC(Comparator<DegreeVector> ordering, Poly oth);
+
+    /**
      * Gives the content of this considered as R[variable][other_variables]
      *
      * @param variable the variable
@@ -894,6 +905,19 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Returns the leading term in this polynomial according to specified ordering
+     *
+     * @return the leading term in this polynomial according to specified ordering
+     */
+    public final Term lt(Comparator<DegreeVector> ordering) {
+        if (ordering.equals(this.ordering))
+            return lt();
+        if (size() == 0)
+            return monomialAlgebra.getZeroTerm(nVariables);
+        return terms.values().stream().max(ordering).get();
+    }
+
+    /**
      * Returns the leading term in this polynomial according to ordering
      *
      * @return the leading term in this polynomial according to ordering
@@ -901,6 +925,11 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     public final Term lt() {
         return size() == 0 ? monomialAlgebra.getZeroTerm(nVariables) : terms.last();
     }
+
+    /**
+     * Returns the leading coefficient with respect to specified ordering as a constant poly
+     */
+    public abstract Poly lcAsPoly(Comparator<DegreeVector> ordering);
 
     /**
      * Returns the leading term in this polynomial according to ordering

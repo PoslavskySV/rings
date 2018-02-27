@@ -885,6 +885,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             throw new ArithmeticException("Divide by zero");
         if (ring.isOne(factor))
             return this;
+        if (ring.isMinusOne(factor))
+            return negate();
         if (ring.isField()) // this is typically much faster
             return multiply(ring.reciprocal(factor));
 

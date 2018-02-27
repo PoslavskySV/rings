@@ -308,8 +308,8 @@ public final class Rings {
      * Quotient ring {@code baseRing/<ideal> }
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    MultivariateQuotientRing<Term, Poly>
+    QuotientRing<Term, Poly>
     Quotient(IPolynomialRing<Poly> baseRing, Ideal<Term, Poly> ideal) {
-        return new MultivariateQuotientRing<>(baseRing, ideal);
+        return new QuotientRing<>(baseRing, ideal);
     }
 }

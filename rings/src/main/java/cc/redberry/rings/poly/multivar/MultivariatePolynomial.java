@@ -417,6 +417,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public MultivariatePolynomial<E> lcAsPoly(Comparator<DegreeVector> ordering) {
+        return createConstant(lc(ordering));
+    }
+
+    @Override
     public MultivariatePolynomial<E> ccAsPoly() {
         return createConstant(cc());
     }
@@ -597,6 +602,15 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
+     * Returns the leading coefficient of this polynomial with respect to specified ordering
+     *
+     * @return leading coefficient of this polynomial with respect to specified ordering
+     */
+    public E lc(Comparator<DegreeVector> ordering) {
+        return lt(ordering).coefficient;
+    }
+
+    /**
      * Sets the leading coefficient to the specified value
      *
      * @param val new value for the lc
@@ -695,6 +709,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> primitivePartSameSign() {
+        if (isZero())
+            return this;
         E c = content();
         if (signumOfLC() < 0)
             c = ring.negate(c);
@@ -719,6 +735,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> divideOrNull(E factor) {
         if (ring.isOne(factor))
             return this;
+        if (ring.isMinusOne(factor))
+            return negate();
         if (ring.isField())
             return multiply(ring.reciprocal(factor)); // <- this is typically faster than the division
         for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
@@ -774,6 +792,13 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return divideOrNull(lc());
     }
 
+    @Override
+    public MultivariatePolynomial<E> monic(Comparator<DegreeVector> ordering) {
+        if (isZero())
+            return this;
+        return divideOrNull(lc(ordering));
+    }
+
     /**
      * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is {@code
      * monic(modulus).multiply(factor)} ).
@@ -786,11 +811,28 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return multiply(factor).divideOrNull(lc);
     }
 
+    /**
+     * Sets {@code this} to its monic part (with respect to given ordering) multiplied by the given factor;
+     */
+    public MultivariatePolynomial<E> monic(Comparator<DegreeVector> ordering, E factor) {
+        E lc = lc(ordering);
+        return multiply(factor).divideOrNull(lc);
+    }
+
     @Override
     public MultivariatePolynomial<E> monicWithLC(MultivariatePolynomial<E> other) {
         if (lc().equals(other.lc()))
             return this;
         return monic(other.lc());
+    }
+
+    @Override
+    public MultivariatePolynomial<E> monicWithLC(Comparator<DegreeVector> ordering, MultivariatePolynomial<E> other) {
+        E lc = lc(ordering);
+        E olc = other.lc(ordering);
+        if (lc.equals(olc))
+            return this;
+        return monic(ordering, olc);
     }
 
     /**

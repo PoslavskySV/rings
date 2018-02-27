@@ -54,7 +54,17 @@ public final class MonomialOrder {
             };
 
     /** Default monomial order (GREVLEX) */
-    public static final Comparator<DegreeVector> DEFAULT = GREVLEX;
+    public static final Comparator<DegreeVector> DEFAULT = parse(System.getProperty("defaultMonomialOrder", "grevlex").toLowerCase());
+
+    static Comparator<DegreeVector> parse(String string) {
+        switch (string.toLowerCase()) {
+            case "lex": return LEX;
+            case "grlex": return GRLEX;
+            case "grevlex": return GREVLEX;
+            case "alex": return ALEX;
+            default: throw new RuntimeException("unknown: " + string);
+        }
+    }
 
     /**
      * Block product of orderings
