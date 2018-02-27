@@ -220,7 +220,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
     @RequiresSingular
     public void test6_cyclic() throws Exception {
         IntegersZp64 ring = new IntegersZp64(17);
-        for (int i = 5; i <= its(7, 8); i++) {
+        for (int i = 5; i <= its(7, 7); i++) {
             System.out.println(String.format("=> Cyclic%s:", i));
             List<MultivariatePolynomialZp64> ideal =
                     GroebnerBasisData.cyclic(i)
