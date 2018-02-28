@@ -214,7 +214,7 @@ class MultivariateOps[Poly <: AMultivariatePolynomial[_, Poly]](self: Poly)(ring
   def %%*(other: Poly*): Poly =
     JavaConversions.remainder[Poly](self, other: _*)
 
-  def %%(ideal: Ideal[_, Poly, _]): Poly = ideal.theIdeal.mod(self)
+  def %%(ideal: Ideal[_, Poly, _]): Poly = ideal.theIdeal.normalForm(self)
 }
 
 class MultivariateTermOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly]](self: Poly)(ring: Ring[Poly]) {

@@ -24,7 +24,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
     /** list of original generators */
     private final List<Poly> originalGenerators;
     /** monomial order used for standard basis */
-    private final Comparator<DegreeVector> monomialOrder;
+    public final Comparator<DegreeVector> ordering;
     /** util factory polynomial (ordered by monomialOrder) */
     private final Poly factory;
     /** Groebner basis with respect to {@code monomialOrder} */
@@ -36,7 +36,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         this.originalGenerators = Collections.unmodifiableList(originalGenerators);
         this.factory = groebnerBasis.get(0).createZero();
         this.groebnerBasis = groebnerBasis;
-        this.monomialOrder = factory.ordering;
+        this.ordering = factory.ordering;
         this.ring = Rings.MultivariateRing(factory);
     }
 
@@ -48,16 +48,16 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
      * The monomial order used for Groebner basis
      */
     public Comparator<DegreeVector> getMonomialOrder() {
-        return monomialOrder;
+        return ordering;
     }
 
     /**
      * Set the monomial order used for Groebner basis of this ideal
      */
-    public Ideal<Term, Poly> setMonomialOrder(Comparator<DegreeVector> newMonomialOrder) {
-        if (monomialOrder == newMonomialOrder)
+    public Ideal<Term, Poly> changeOrder(Comparator<DegreeVector> newMonomialOrder) {
+        if (ordering == newMonomialOrder)
             return this;
-        if (isGradedOrder(monomialOrder) || !isGradedOrder(newMonomialOrder))
+        if (isGradedOrder(ordering) || !isGradedOrder(newMonomialOrder))
             return new Ideal<>(originalGenerators, HilbertConvertBasis(groebnerBasis, newMonomialOrder));
 
         return create(originalGenerators, newMonomialOrder);
@@ -73,7 +73,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
 
     /** set ordering of poly to monomialOrder */
     private Poly setOrdering(Poly poly) {
-        return setOrdering(poly, monomialOrder);
+        return setOrdering(poly, ordering);
     }
 
     private Poly mod0(Poly poly) {
@@ -83,7 +83,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
     /**
      * Reduces {@code poly} modulo this ideal
      */
-    public Poly mod(Poly poly) {
+    public Poly normalForm(Poly poly) {
         Comparator<DegreeVector> originalOrder = poly.ordering;
         return setOrdering(mod0(poly), originalOrder);
     }
@@ -159,6 +159,15 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
     }
 
     /**
+     * Ideal of leading terms
+     */
+    public Ideal<Term, Poly> ltIdeal() {
+        if (isMonomial())
+            return this;
+        return new Ideal<>(groebnerBasis.stream().map(AMultivariatePolynomial::ltAsPoly).collect(Collectors.toList()));
+    }
+
+    /**
      * Tests whether specified poly is an element of this ideal
      */
     public boolean contains(Poly poly) {
@@ -176,9 +185,9 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
     private HilbertSeries hilbertSeries = null;
 
     /** Hilbert-Poincare series of this ideal */
-    public synchronized HilbertSeries getHilbertSeries() {
+    public synchronized HilbertSeries hilbertSeries() {
         if (hilbertSeries == null) {
-            if (isHomogeneous() || isGradedOrder(monomialOrder))
+            if (isHomogeneous() || isGradedOrder(ordering))
                 hilbertSeries = HilbertSeriesOfLeadingTermsSet(groebnerBasis);
             else
                 // use original generators to construct basis when current ordering is "hard"
@@ -190,12 +199,12 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
 
     /** Returns the affine dimension of this ideal */
     public int dimension() {
-        return getHilbertSeries().dimension();
+        return hilbertSeries().dimension();
     }
 
     /** Returns the affine degree of this ideal */
     public int degree() {
-        return getHilbertSeries().degree();
+        return hilbertSeries().degree();
     }
 
     /**
@@ -210,7 +219,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
     /**
      * Tests whether {@code poly} belongs to the radical of this
      */
-    public boolean isRadicalMember(Poly poly) {
+    public boolean radicalContains(Poly poly) {
         // adjoin new variable to all generators (convert to F[X][y])
         List<Poly> yGenerators = groebnerBasis.stream()
                 .map(AMultivariatePolynomial::joinNewVariable)
@@ -234,7 +243,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
 
         List<Poly> l = new ArrayList<>(groebnerBasis);
         l.add(oth);
-        return create(l, monomialOrder);
+        return create(l, ordering);
     }
 
     /**
@@ -250,7 +259,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         List<Poly> l = new ArrayList<>();
         l.addAll(groebnerBasis);
         l.addAll(oth.groebnerBasis);
-        return create(l, monomialOrder);
+        return create(l, ordering);
     }
 
     /**
@@ -267,7 +276,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         for (Poly a : groebnerBasis)
             for (Poly b : oth.groebnerBasis)
                 generators.add(a.clone().multiply(b));
-        return create(generators, monomialOrder);
+        return create(generators, ordering);
     }
 
     /**
@@ -306,9 +315,9 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         factory.assertSameCoefficientRingWith(oth);
 
         if (isTrivial())
-            return create(Collections.singletonList(oth), monomialOrder);
+            return create(Collections.singletonList(oth), ordering);
         if (oth.isZero())
-            return trivial(oth, monomialOrder);
+            return trivial(oth, ordering);
         if (oth.isOne() || this.isEmpty())
             return this;
 
@@ -331,7 +340,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
             return this;
         if (isPrincipal() && oth.isPrincipal())
             // intersection of principal ideals is easy
-            return create(Collections.singletonList(ring.lcm(getBasisGenerator(0), oth.getBasisGenerator(0))), monomialOrder);
+            return create(Collections.singletonList(ring.lcm(getBasisGenerator(0), oth.getBasisGenerator(0))), ordering);
 
         // we compute (t * I + (1 - t) * J) ∩ R[X]
         Poly t = factory.insertVariable(0).createMonomial(0, 1);
@@ -344,14 +353,14 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
 
         Comparator<DegreeVector> blockOrder = MonomialOrder.product(
                 MonomialOrder.LEX, 1,
-                monomialOrder, factory.nVariables);
+                ordering, factory.nVariables);
 
         // elimination
         tGenerators = GroebnerBasis(tGenerators, blockOrder);
         List<Poly> result = tGenerators.stream()
                 .filter(p -> p.degree(0) == 0)
                 .map(p -> p.dropVariable(0))
-                .map(p -> p.setOrdering(monomialOrder)) // <- restore order!
+                .map(p -> p.setOrdering(ordering)) // <- restore order!
                 .collect(Collectors.toList());
         canonicalize(result);
         return new Ideal<>(result);
@@ -394,7 +403,7 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         if (o == null || getClass() != o.getClass()) return false;
 
         Ideal<?, ?> ideal = (Ideal<?, ?>) o;
-        return monomialOrder.equals(ideal.monomialOrder)
+        return ordering.equals(ideal.ordering)
                 && groebnerBasis.equals(ideal.groebnerBasis);
     }
 

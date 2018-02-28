@@ -144,7 +144,7 @@ public class IdealTest {
         System.out.println(ideal.degree());
 
         System.out.println(ideal);
-        System.out.println(ideal.setMonomialOrder(LEX));
+        System.out.println(ideal.changeOrder(LEX));
     }
 
     @Test
@@ -156,15 +156,15 @@ public class IdealTest {
                 "x^2*y*z^3 - y*z^2 + 2*x^5",
                 "x*y*z^3 - y*z^12 + 2*x*y*z^5"
         }, Z, LEX, vars);
-        assertEquals(lex, Ideal.create(lex.getOriginalGenerators(), GREVLEX).setMonomialOrder(LEX));
+        assertEquals(lex, Ideal.create(lex.getOriginalGenerators(), GREVLEX).changeOrder(LEX));
 
         assertEquals(3, lex.nBasisGenerators());
         assertEquals(0, lex.dimension());
         assertEquals(62, lex.degree());
-        assertEquals(UnivariatePolynomial.parse("1+3*x+6*x^2+10*x^3+14*x^4+16*x^5+12*x^6", Q), lex.getHilbertSeries().numerator);
+        assertEquals(UnivariatePolynomial.parse("1+3*x+6*x^2+10*x^3+14*x^4+16*x^5+12*x^6", Q), lex.hilbertSeries().numerator);
 
 
-        Ideal<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> graded = lex.setMonomialOrder(GREVLEX);
+        Ideal<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> graded = lex.changeOrder(GREVLEX);
         assertEquals(graded, Ideal.create(lex.getOriginalGenerators(), GREVLEX));
 
         assertEquals(18, graded.nBasisGenerators());

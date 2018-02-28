@@ -300,7 +300,7 @@ public final class Rings {
      */
     public static <uPoly extends IUnivariatePolynomial<uPoly>>
     UnivariateQuotientRing<uPoly>
-    Quotient(IPolynomialRing<uPoly> baseRing, uPoly modulus) {
+    UnivariateQuotientRing(IPolynomialRing<uPoly> baseRing, uPoly modulus) {
         return new UnivariateQuotientRing<>(baseRing, modulus);
     }
 
@@ -309,7 +309,7 @@ public final class Rings {
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     QuotientRing<Term, Poly>
-    Quotient(IPolynomialRing<Poly> baseRing, Ideal<Term, Poly> ideal) {
+    QuotientRing(IPolynomialRing<Poly> baseRing, Ideal<Term, Poly> ideal) {
         return new QuotientRing<>(baseRing, ideal);
     }
 }

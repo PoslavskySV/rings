@@ -151,6 +151,17 @@ public interface Ring<E> extends
     E multiply(E a, E b);
 
     /**
+     * Multiplies two elements
+     *
+     * @param a the first element
+     * @param b the second element
+     * @return a * b
+     */
+    default E multiply(E a, long b) {
+        return multiply(a, valueOf(b));
+    }
+
+    /**
      * Multiplies the array of elements
      *
      * @param elements the elements

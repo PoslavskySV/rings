@@ -24,7 +24,7 @@ public class QuotientRing<Term extends AMonomial<Term>, Poly extends AMultivaria
 
     @Override
     public Poly mod(Poly el) {
-        return ideal.mod(el);
+        return ideal.normalForm(el);
     }
 
     @Override

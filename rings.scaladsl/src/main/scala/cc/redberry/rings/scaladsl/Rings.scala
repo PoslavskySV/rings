@@ -614,7 +614,7 @@ final case class UnivariateRing[E](coefficientDomain: Ring[E], override val vari
   */
 final case class UnivariateQuotientRing[Poly <: IUnivariatePolynomial[Poly], E]
 (baseRing: IUnivariateRing[Poly, E], modulus: Poly)
-  extends IUnivariateRing[Poly, E](rings.Rings.Quotient[Poly](baseRing.theRing, modulus), baseRing.variable) {
+  extends IUnivariateRing[Poly, E](rings.Rings.UnivariateQuotientRing[Poly](baseRing.theRing, modulus), baseRing.variable) {
   /**
     * The coefficient ring
     */
@@ -912,7 +912,7 @@ final case class Ideal[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[
   /**
     * Set the monomial order used for Groebner basis of this ideal
     */
-  def setMonomialOrder(newOrder: Ordering) = Ideal(ring, theIdeal.setMonomialOrder(newOrder))
+  def changeOrder(newOrder: Ordering) = Ideal(ring, theIdeal.changeOrder(newOrder))
 
   def +(oth: Ideal[Term, Poly, E]): Ideal[Term, Poly, E] = union(oth)
 
@@ -931,6 +931,11 @@ final case class Ideal[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[
   def ∪(oth: Poly): Ideal[Term, Poly, E] = union(oth)
 
   def ∩(oth: Ideal[Term, Poly, E]): Ideal[Term, Poly, E] = intersection(oth)
+
+  lazy val groebnerBasis: Seq[Poly] = {
+    import scala.collection.JavaConverters._
+    theIdeal.getGroebnerBasis.asScala.toList
+  }
 
   /**
     * Returns the union of this and oth
@@ -972,6 +977,11 @@ final case class Ideal[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[
     */
   def quotient(oth: Poly) = Ideal(ring, theIdeal.quotient(oth))
 
+  /**
+    * Ideal of leading terms
+    */
+  lazy val ltIdeal: Ideal[Term, Poly, E] = Ideal(ring, theIdeal.ltIdeal())
+
   override def toString = theIdeal.toString(ring.variables)
 }
 
@@ -980,9 +990,13 @@ object Ideal {
   import scala.collection.JavaConverters._
 
   def apply[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
-  (ring: IMultivariateRing[Term, Poly, E], generators: Seq[Poly])
+  (ring: IMultivariateRing[Term, Poly, E], generators: Seq[Poly], monomialOrder: Ordering)
   : Ideal[Term, Poly, E] =
-    new Ideal[Term, Poly, E](ring, poly.multivar.Ideal.create[Term, Poly](generators.toList.asJava, ring.factory().ordering))
+    new Ideal[Term, Poly, E](ring, poly.multivar.Ideal.create[Term, Poly](generators.toList.asJava, monomialOrder))
+
+  def apply[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+  (ring: IMultivariateRing[Term, Poly, E], generators: Seq[Poly])
+  : Ideal[Term, Poly, E] = apply(ring, generators, ring.factory().ordering)
 
   def apply[E](generators: Seq[MultivariatePolynomial[E]], monomialOrder: Ordering = null)
               (implicit ring: IMultivariateRing[Monomial[E], MultivariatePolynomial[E], E] = null)
@@ -1032,7 +1046,7 @@ object IdealZp64 {
 final case class QuotientRing[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
 (baseRing: IMultivariateRing[Term, Poly, E], ideal: Ideal[Term, Poly, E])
   extends IMultivariateRing[Term, Poly, E](
-    rings.Rings.Quotient[Term, Poly](baseRing.theRing, ideal.theIdeal),
+    rings.Rings.QuotientRing[Term, Poly](baseRing.theRing, ideal.theIdeal),
     baseRing.variables, baseRing.theRing.factory().ordering) {
   /**
     * Evaluate poly for given variable

@@ -3341,18 +3341,18 @@ public final class GroebnerBasis {
         /** Initial numerator (numerator and denominator may have nontrivial GCD) */
         public final UnivariatePolynomial<Rational<BigInteger>> initialNumerator;
         /** Initial denominator exponent (numerator and denominator may have nontrivial GCD) */
-        public final int initialDenominatorDegree;
+        public final int initialDenominatorExponent;
         /** Reduced numerator (GCD is cancelled) */
         public final UnivariatePolynomial<Rational<BigInteger>> numerator;
         /** Denominator exponent of reduced HPS(t) (that is ideal Krull dimension) */
         public final int denominatorExponent;
 
-        private HilbertSeries(UnivariatePolynomial<Rational<BigInteger>> initialNumerator, int initialDenominatorDegree) {
+        private HilbertSeries(UnivariatePolynomial<Rational<BigInteger>> initialNumerator, int initialDenominatorExponent) {
             this.initialNumerator = initialNumerator;
-            this.initialDenominatorDegree = initialDenominatorDegree;
+            this.initialDenominatorExponent = initialDenominatorExponent;
 
             UnivariatePolynomial<Rational<BigInteger>> reducedNumerator = initialNumerator;
-            int reducedDenominatorDegree = initialDenominatorDegree;
+            int reducedDenominatorDegree = initialDenominatorExponent;
             while (!initialNumerator.isZero()) {
                 UnivariatePolynomial<Rational<BigInteger>> div = UnivariateDivision.divideOrNull(reducedNumerator, DENOMINATOR, true);
                 if (div == null)
