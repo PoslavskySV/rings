@@ -31,7 +31,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public final Ring<E> ring;
 
     MultivariatePolynomial(int nVariables, Ring<E> ring, Comparator<DegreeVector> ordering, MonomialSet<Monomial<E>> terms) {
-        super(nVariables, ordering, terms);
+        super(nVariables, ordering, new IMonomialAlgebra.MonomialAlgebra<>(ring), terms);
         this.ring = ring;
     }
 
@@ -44,25 +44,13 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             E r = ring.add(o.coefficient, n.coefficient);
             if (ring.isZero(r))
                 return null;
-            else {
+            else
                 return o.setCoefficient(r);
-            }
         });
     }
 
     static <E> void subtract(MonomialSet<Monomial<E>> polynomial, Monomial<E> term, Ring<E> ring) {
-        if (ring.isZero(term.coefficient))
-            return;
-        Monomial<E> pTerm = polynomial.get(term);
-        if (pTerm == null)
-            polynomial.add(term.negate(ring));
-        else {
-            E r = ring.subtract(pTerm.coefficient, term.coefficient);
-            if (ring.isZero(r))
-                polynomial.remove(pTerm);
-            else
-                polynomial.add(pTerm.setCoefficient(r));
-        }
+        add(polynomial, term.setCoefficient(ring.negate(term.coefficient)), ring);
     }
 
     /**
@@ -76,7 +64,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public static <E> MultivariatePolynomial<E> create(int nVariables, Ring<E> ring, Comparator<DegreeVector> ordering, Iterable<Monomial<E>> terms) {
         MonomialSet<Monomial<E>> map = new MonomialSet<>(ordering);
         for (Monomial<E> term : terms)
-            add(map, term.setRing(ring), ring);
+            add(map, term.setCoefficient(ring.valueOf(term.coefficient)), ring);
 
         return new MultivariatePolynomial<>(nVariables, ring, ordering, map);
     }
@@ -113,8 +101,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param ordering   the ordering
      * @return unit polynomial
      */
+    @SuppressWarnings("unchecked")
     public static <E> MultivariatePolynomial<E> one(int nVariables, Ring<E> ring, Comparator<DegreeVector> ordering) {
-        return create(nVariables, ring, ordering, Monomial.withZeroExponents(nVariables, ring.getOne()));
+        return create(nVariables, ring, ordering, new Monomial<>(nVariables, ring.getOne()));
     }
 
     /**
@@ -127,7 +116,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate Z[X] polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, String... variables) {
-        return Parser.parse(string, MonomialOrder.LEX, variables);
+        return Parser.parse(string, MonomialOrder.DEFAULT, variables);
     }
 
     /**
@@ -141,7 +130,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, String... variables) {
-        return Parser.parse(string, ring, ring, MonomialOrder.LEX, variables);
+        return Parser.parse(string, ring, ring, MonomialOrder.DEFAULT, variables);
     }
 
     /**
@@ -252,7 +241,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         MonomialSet<Monomial<UnivariatePolynomial<E>>> newData = new MonomialSet<>(ordering);
         for (Monomial<E> e : terms) {
             add(newData, new Monomial<>(
-                            e.set(variable, 0).exponents,
+                            e.dvSetZero(variable),
                             factory.createMonomial(e.coefficient, e.exponents[variable])),
                     pDomain);
         }
@@ -266,7 +255,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         MonomialSet<Monomial<UnivariatePolynomial<E>>> newData = new MonomialSet<>(ordering);
         for (Monomial<E> e : terms) {
             add(newData, new Monomial<>(
-                            e.without(variable).exponents,
+                            e.dvWithout(variable),
                             factory.createMonomial(e.coefficient, e.exponents[variable])),
                     pDomain);
         }
@@ -281,12 +270,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             int[] coeffExponents = new int[nVariables];
             for (int var : variables)
                 coeffExponents[var] = term.exponents[var];
-            Monomial<E> restTerm = term.setZero(variables, this.ring.getOne());
-            Monomial<MultivariatePolynomial<E>> newTerm
-                    = new Monomial<>(
-                    restTerm.exponents,
-                    restTerm.totalDegree,
-                    create(new Monomial<>(coeffExponents, term.coefficient)));
+            Monomial<MultivariatePolynomial<E>> newTerm =
+                    new Monomial<>(
+                            term.dvSetZero(variables),
+                            create(new Monomial<>(coeffExponents, ArraysUtil.sum(coeffExponents), term.coefficient)));
 
             add(terms, newTerm, ring);
         }
@@ -311,10 +298,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             for (int var : restVariables)
                 termExponents[i++] = term.exponents[var];
 
-            Monomial<MultivariatePolynomial<E>> newTerm
-                    = new Monomial<>(
-                    termExponents,
-                    create(variables.length, this.ring, this.ordering, new Monomial<>(coeffExponents, term.coefficient)));
+            Monomial<MultivariatePolynomial<E>> newTerm =
+                    new Monomial<>(
+                            termExponents,
+                            create(variables.length, this.ring, this.ordering, new Monomial<>(coeffExponents, term.coefficient)));
 
             add(terms, newTerm, ring);
         }
@@ -335,13 +322,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         MultivariatePolynomial<E> result = zero(nVariables, ring, poly.ordering);
         for (Monomial<UnivariatePolynomial<E>> entry : poly.terms) {
             UnivariatePolynomial<E> uPoly = entry.coefficient;
-            int[] dv = ArraysUtil.insert(entry.exponents, variable, 0);
+            DegreeVector dv = entry.dvInsert(variable);
             for (int i = 0; i <= uPoly.degree(); ++i) {
                 if (uPoly.isZeroAt(i))
                     continue;
-                int[] cdv = dv.clone();
-                cdv[variable] = i;
-                result.add(new Monomial<>(cdv, uPoly.get(i)));
+                result.add(new Monomial<>(dv.dvSet(variable, i), uPoly.get(i)));
             }
         }
         return result;
@@ -432,6 +417,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public MultivariatePolynomial<E> lcAsPoly(Comparator<DegreeVector> ordering) {
+        return createConstant(lc(ordering));
+    }
+
+    @Override
     public MultivariatePolynomial<E> ccAsPoly() {
         return createConstant(cc());
     }
@@ -439,21 +429,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     MultivariatePolynomial<E> create(int nVariables, Comparator<DegreeVector> ordering, MonomialSet<Monomial<E>> monomialTerms) {
         return new MultivariatePolynomial<>(nVariables, ring, ordering, monomialTerms);
-    }
-
-    @Override
-    public Monomial<E> createTermWithUnitCoefficient(int[] exponents) {
-        return new Monomial<E>(exponents, ring.getOne());
-    }
-
-    @Override
-    public Monomial<E> createUnitTerm() {
-        return Monomial.withZeroExponents(nVariables, ring.getOne());
-    }
-
-    @Override
-    public Monomial<E> createZeroTerm() {
-        return Monomial.withZeroExponents(nVariables, ring.getZero());
     }
 
     @Override
@@ -512,24 +487,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return setRing(poly.ring);
     }
 
-    @Override
-    boolean isZeroMonomial(Monomial<E> a) {
-        return ring.isZero(a.coefficient);
-    }
-
-    @Override
-    Monomial<E> multiply(Monomial<E> a, Monomial<E> b) {
-        return a.multiply(b, ring.multiply(a.coefficient, b.coefficient));
-    }
-
-    @Override
-    Monomial<E> divideOrNull(Monomial<E> a, Monomial<E> b) {
-        E e = ring.divideOrNull(a.coefficient, b.coefficient);
-        if (e == null)
-            return null;
-        return a.divide(b, e);
-    }
-
     /** release caches */
     @Override
     protected void release() {
@@ -549,7 +506,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return clone();
         MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
         for (Monomial<E> e : terms)
-            add(newData, e.setRing(newRing));
+            add(newData, e.setCoefficient(newRing.valueOf(e.coefficient)));
         return new MultivariatePolynomial<>(nVariables, newRing, ordering, newData);
     }
 
@@ -567,7 +524,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> createConstant(E val) {
         MonomialSet<Monomial<E>> data = new MonomialSet<>(ordering);
         if (!ring.isZero(val))
-            data.add(Monomial.withZeroExponents(nVariables, val));
+            data.add(new Monomial<>(nVariables, val));
         return new MultivariatePolynomial<>(nVariables, ring, ordering, data);
     }
 
@@ -589,10 +546,10 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param lc       the leading coefficient
      * @return linear polynomial {@code cc + lc * variable}
      */
-    public MultivariatePolynomial<E> createLinear(int variable, E cc, E lc) {
+    public final MultivariatePolynomial<E> createLinear(int variable, E cc, E lc) {
         MonomialSet<Monomial<E>> data = new MonomialSet<>(ordering);
         if (!ring.isZero(cc))
-            data.add(Monomial.withZeroExponents(nVariables, cc));
+            data.add(new Monomial<>(nVariables, cc));
         if (!ring.isZero(lc)) {
             int[] lcDegreeVector = new int[nVariables];
             lcDegreeVector[variable] = 1;
@@ -634,11 +591,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return size() == 0 || (size() == 1 && terms.first().isZeroVector());
     }
 
-    @Override
-    public Monomial<E> lt() {
-        return size() == 0 ? Monomial.withZeroExponents(nVariables, ring.getZero()) : terms.last();
-    }
-
     /**
      * Returns the leading coefficient of this polynomial that is coefficient of the largest term according to the
      * ordering.
@@ -647,6 +599,15 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     public E lc() {
         return lt().coefficient;
+    }
+
+    /**
+     * Returns the leading coefficient of this polynomial with respect to specified ordering
+     *
+     * @return leading coefficient of this polynomial with respect to specified ordering
+     */
+    public E lc(Comparator<DegreeVector> ordering) {
+        return lt(ordering).coefficient;
     }
 
     /**
@@ -668,7 +629,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return constant coefficient of this polynomial
      */
     public E cc() {
-        Monomial<E> zero = Monomial.withZeroExponents(nVariables, ring.getZero());
+        Monomial<E> zero = new Monomial<>(nVariables, ring.getZero());
         return terms.getOrDefault(zero, zero).coefficient;
     }
 
@@ -736,13 +697,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @Override
     public MultivariatePolynomial<E> primitivePart() {
-        MultivariatePolynomial<E> r = divideOrNull(content());
+        if (isZero())
+            return this;
+        E content = content();
+        if (signumOfLC() < 0 && ring.signum(content) > 0)
+            content = ring.negate(content);
+        MultivariatePolynomial<E> r = divideOrNull(content);
         assert r != null;
         return r;
     }
 
     @Override
     public MultivariatePolynomial<E> primitivePartSameSign() {
+        if (isZero())
+            return this;
         E c = content();
         if (signumOfLC() < 0)
             c = ring.negate(c);
@@ -767,6 +735,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> divideOrNull(E factor) {
         if (ring.isOne(factor))
             return this;
+        if (ring.isMinusOne(factor))
+            return negate();
         if (ring.isField())
             return multiply(ring.reciprocal(factor)); // <- this is typically faster than the division
         for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
@@ -800,7 +770,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return divideOrNull(monomial.coefficient);
         MonomialSet<Monomial<E>> map = new MonomialSet<>(ordering);
         for (Monomial<E> term : terms) {
-            Monomial<E> dv = divideOrNull(term, monomial);
+            Monomial<E> dv = monomialAlgebra.divideOrNull(term, monomial);
             if (dv == null)
                 return null;
             map.add(dv);
@@ -822,6 +792,13 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return divideOrNull(lc());
     }
 
+    @Override
+    public MultivariatePolynomial<E> monic(Comparator<DegreeVector> ordering) {
+        if (isZero())
+            return this;
+        return divideOrNull(lc(ordering));
+    }
+
     /**
      * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is {@code
      * monic(modulus).multiply(factor)} ).
@@ -834,9 +811,28 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return multiply(factor).divideOrNull(lc);
     }
 
+    /**
+     * Sets {@code this} to its monic part (with respect to given ordering) multiplied by the given factor;
+     */
+    public MultivariatePolynomial<E> monic(Comparator<DegreeVector> ordering, E factor) {
+        E lc = lc(ordering);
+        return multiply(factor).divideOrNull(lc);
+    }
+
     @Override
     public MultivariatePolynomial<E> monicWithLC(MultivariatePolynomial<E> other) {
+        if (lc().equals(other.lc()))
+            return this;
         return monic(other.lc());
+    }
+
+    @Override
+    public MultivariatePolynomial<E> monicWithLC(Comparator<DegreeVector> ordering, MultivariatePolynomial<E> other) {
+        E lc = lc(ordering);
+        E olc = other.lc(ordering);
+        if (lc.equals(olc))
+            return this;
+        return monic(ordering, olc);
     }
 
     /**
@@ -873,9 +869,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
         for (Monomial<E> el : terms) {
             E val = ring.multiply(el.coefficient, powers.pow(el.exponents[variable]));
-            add(newData, el.setZero(variable, val));
+            add(newData, el.setZero(variable).setCoefficient(val));
         }
-        return new MultivariatePolynomial<E>(nVariables, ring, ordering, newData);
+        return new MultivariatePolynomial<>(nVariables, ring, ordering, newData);
     }
 
     UnivariatePolynomial<E> evaluateAtZeroAllExcept(int variable) {
@@ -943,7 +939,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             E value = el.coefficient;
             for (int i = 0; i < variables.length; ++i) {
                 value = ring.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
-                r = r.setZero(variables[i], value);
+                r = r.setZero(variables[i]).setCoefficient(value);
             }
 
             add(newData, r);
@@ -989,7 +985,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         PrecomputedPowers<E> powers = new PrecomputedPowers<>(value, ring);
         for (Monomial<E> el : terms) {
             E val = ring.multiply(el.coefficient, powers.pow(el.exponents[variable]));
-            add(newData, el.without(variable, val));
+            add(newData, el.without(variable).setCoefficient(val));
         }
         return new MultivariatePolynomial<>(nVariables - 1, ring, ordering, newData);
     }
@@ -1245,16 +1241,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public MultivariatePolynomial<E> negate() {
-        for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
-            Monomial<E> term = entry.getValue();
-            entry.setValue(term.negate(ring));
-        }
-        release();
-        return this;
-    }
-
-    @Override
     void add(MonomialSet<Monomial<E>> terms, Monomial<E> term) {
         add(terms, term, ring);
     }
@@ -1274,7 +1260,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         oth = ring.valueOf(oth);
         if (ring.isZero(oth))
             return this;
-        add(terms, Monomial.withZeroExponents(nVariables, oth));
+        add(terms, new Monomial<>(nVariables, oth));
         release();
         return this;
     }
@@ -1336,9 +1322,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
         MonomialSet<Monomial<E>> newMap = new MonomialSet<>(ordering);
         for (Monomial<E> thisElement : terms) {
-            E val = ring.multiply(thisElement.coefficient, monomial.coefficient);
-            if (!ring.isZero(val))
-                newMap.add(thisElement.multiply(monomial, val));
+            Monomial<E> mul = monomialAlgebra.multiply(thisElement, monomial);
+            if (!ring.isZero(mul.coefficient))
+                newMap.add(mul);
         }
 
         return loadFrom(newMap);
@@ -1374,7 +1360,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         MonomialSet<Monomial<E>> newMap = new MonomialSet<>(ordering);
         for (Monomial<E> othElement : oth.terms)
             for (Monomial<E> thisElement : terms)
-                add(newMap, thisElement.multiply(othElement, ring.multiply(thisElement.coefficient, othElement.coefficient)));
+                add(newMap, monomialAlgebra.multiply(thisElement, othElement));
 
         return loadFrom(newMap);
     }
@@ -1659,7 +1645,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> parsePoly(String string, String[] variables) {
         MultivariatePolynomial<E> r = parse(string, ring, ordering, variables);
         if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field");
+            throw new IllegalArgumentException("not from this field: " + string);
         return r;
     }
 
@@ -1692,7 +1678,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             E coeff = term.coefficient;
             if (ring.isZero(coeff))
                 continue;
-            String monomialString = term.toString(vars);
+            String monomialString = term.dvToString(vars);
             if (first) {
                 if (!ring.isOne(coeff) || monomialString.isEmpty()) {
                     sb.append(coeffToString(cfxToString, coeff));

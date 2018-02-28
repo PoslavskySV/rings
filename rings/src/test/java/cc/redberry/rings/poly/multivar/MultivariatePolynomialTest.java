@@ -241,7 +241,7 @@ public class MultivariatePolynomialTest extends AMultivariateTest {
         for (int v = 0; v < poly.nVariables; v++) {
             final int var = v;
             MultivariatePolynomial<BigInteger> r = IntStream.rangeClosed(0, poly.degree(var))
-                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new Monomial<BigInteger>(poly.nVariables, var, i, BigInteger.ONE)))
+                    .mapToObj(i -> poly.coefficientOf(var, i).multiply(new Monomial<BigInteger>(poly.nVariables, BigInteger.ONE).set(var, i)))
                     .reduce(poly.createZero(), (a, b) -> a.add(b));
             assertEquals(poly, r);
         }

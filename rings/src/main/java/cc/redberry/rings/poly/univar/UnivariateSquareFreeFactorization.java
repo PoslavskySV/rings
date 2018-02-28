@@ -192,7 +192,7 @@ public final class UnivariateSquareFreeFactorization {
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
         if (canConvertToZp64(poly))
-            return SquareFreeFactorizationMusser(asOverZp64(poly)).map(Conversions64bit::convert);
+            return SquareFreeFactorizationMusser(asOverZp64(poly)).mapTo(Conversions64bit::convert);
 
         poly = poly.clone();
         Poly lc = poly.lcAsPoly();

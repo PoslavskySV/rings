@@ -2,6 +2,12 @@
 
    <br/>
 
+
+.. |Groebner| raw:: html
+
+   Gr&ouml;bner
+
+
 .. _ref-basicconcepts:
 
 ==========
@@ -16,10 +22,10 @@ Rings library structure
 
  - ``rings`` |br| the core of |Rings| library written entirely in Java. It includes:
  
- 	- ``rings.bigint`` |br| arbitrary precision integers (fork of `tbuktu/bigint <https://github.com/tbuktu/bigint>`_)
- 	- ``rings.primes`` |br| prime numbers including prime factorization, primality test etc.
- 	- ``rings.poly.univar`` |br| univariate polynomials and algorithms with them including GCD and factorization
- 	- ``rings.poly.multivar`` |br| multivariate polynomials and algorithms with them including GCD, factorization, Groebner basis etc.
+    - ``rings.bigint`` |br| arbitrary precision integers (fork of `tbuktu/bigint <https://github.com/tbuktu/bigint>`_)
+    - ``rings.primes`` |br| prime numbers including prime factorization, primality test etc.
+    - ``rings.poly.univar`` |br| univariate polynomials and algorithms with them including GCD and factorization
+    - ``rings.poly.multivar`` |br| multivariate polynomials and algorithms with them including GCD, factorization, |Groebner| basis etc.
  
  - ``rings.scaladsl`` |br| Scala wrappers and syntax definitions for |Rings|
 
@@ -30,26 +36,30 @@ Examples in this user guide require some imports to be in the scope. The followi
 
    .. code-tab:: scala
 
-   		import cc.redberry.rings
-   		import rings.{bigint, primes, poly}
-		import rings.poly.{univar, multivar}
-		import rings.scaladsl._
-		import syntax._
+        import cc.redberry.rings
+        import rings.{bigint, primes, poly}
+        import rings.poly.{univar, multivar}
+        import rings.scaladsl._
+        import syntax._
 
    .. code-tab:: java
 
-		import cc.redberry.rings.*
-		import cc.redberry.rings.poly.*
-		import cc.redberry.rings.poly.univar.*
-		import cc.redberry.rings.poly.multivar.*
+        import cc.redberry.rings.*
+        import cc.redberry.rings.poly.*
+        import cc.redberry.rings.poly.univar.*
+        import cc.redberry.rings.poly.multivar.*
 
-		import static cc.redberry.rings.poly.PolynomialMethods.*
-		import static cc.redberry.rings.Rings.*
+        import static cc.redberry.rings.poly.PolynomialMethods.*
+        import static cc.redberry.rings.Rings.*
 
 
+
+
+Numbers
+=======
 
 Integers
-========
+""""""""
 
 There are two basic types of integer numbers that we have to deal with when doing algebra in computer: machine integers and arbitrary-precision integers. For the machine integers the Java's primitive 64-bit ``long`` type is used (since most modern CPUs are 64-bit). Internally |Rings| use machine numbers for representation of integers modulo prime numbers less than :math:`2^{64}` which is done for performance reasons (see :ref:`ref-machine-arithmetic`). For the arbitrary-precision integers |Rings| use improved ``BigInteger`` class `github.com/tbuktu/bigint <https://github.com/tbuktu/bigint>`_ (`rings.bigint.BigInteger`_) instead of built-in ``java.math.BigInteger``. The improved `BigInteger`_ has Schönhage-Strassen multiplication and Barrett division algorithms for large integers which is a significant performance improvement in comparison to native Java's implementation.
 
@@ -61,17 +71,17 @@ There are two basic types of integer numbers that we have to deal with when doin
 
     .. code-block:: java
 
-    	BigInteger fromString = Z.parse("12345689");
-    	BigInteger fromInt    = Z.valueOf(12345689);
-    	BigInteger fromLong   = Z.valueOf(1234568987654321L);
+        BigInteger fromString = Z.parse("12345689");
+        BigInteger fromInt    = Z.valueOf(12345689);
+        BigInteger fromLong   = Z.valueOf(1234568987654321L);
 
     In Scala:
 
     .. code-block:: scala
 
-    	val fromString : IntZ = Z("12345689")
-    	val fromInt    : IntZ = Z(12345689)
-    	val fromLong   : IntZ = Z(1234568987654321L)
+        val fromString : IntZ = Z("12345689")
+        val fromInt    : IntZ = Z(12345689)
+        val fromLong   : IntZ = Z(1234568987654321L)
 
     (the type definition ``type IntZ = ring.bigint.BigInteger`` is introduced in Scala DSL)
 
@@ -95,29 +105,29 @@ The following code snippet gives some illustrations:
 
    .. code-tab:: java
 
-		int intNumber = 1234567;
-		// false
-		boolean primeQ = SmallPrimes.isPrime(intNumber);
-		// 1234577
-		int intPrime = SmallPrimes.nextPrime(intNumber);
-		// [127, 9721]
-		int[] intFactors = SmallPrimes.primeFactors(intNumber);
+        int intNumber = 1234567;
+        // false
+        boolean primeQ = SmallPrimes.isPrime(intNumber);
+        // 1234577
+        int intPrime = SmallPrimes.nextPrime(intNumber);
+        // [127, 9721]
+        int[] intFactors = SmallPrimes.primeFactors(intNumber);
 
-		long longNumber = 12345671234567123L;
-		// false
-		primeQ = BigPrimes.isPrime(longNumber);
-		// 12345671234567149
-		long longPrime = BigPrimes.nextPrime(longNumber);
-		// [1323599, 9327350077]
-		long[] longFactors = BigPrimes.primeFactors(longNumber);
+        long longNumber = 12345671234567123L;
+        // false
+        primeQ = BigPrimes.isPrime(longNumber);
+        // 12345671234567149
+        long longPrime = BigPrimes.nextPrime(longNumber);
+        // [1323599, 9327350077]
+        long[] longFactors = BigPrimes.primeFactors(longNumber);
 
-		BigInteger bigNumber = Z.parse("321536584276145124691487234561832756183746531874567");
-		// false
-		primeQ = BigPrimes.isPrime(bigNumber);
-		// 321536584276145124691487234561832756183746531874827
-		BigInteger bigPrime = BigPrimes.nextPrime(bigNumber);
-		// [3, 29, 191, 797359, 1579057, 14916359, 1030298906727233717673336103]
-		List<BigInteger> bigFactors = BigPrimes.primeFactors(bigNumber);
+        BigInteger bigNumber = Z.parse("321536584276145124691487234561832756183746531874567");
+        // false
+        primeQ = BigPrimes.isPrime(bigNumber);
+        // 321536584276145124691487234561832756183746531874827
+        BigInteger bigPrime = BigPrimes.nextPrime(bigNumber);
+        // [3, 29, 191, 797359, 1579057, 14916359, 1030298906727233717673336103]
+        List<BigInteger> bigFactors = BigPrimes.primeFactors(bigNumber);
 
 
 .. _SmallPrimes: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/primes/SmallPrimes.java
@@ -127,7 +137,7 @@ The following code snippet gives some illustrations:
 .. _ref-machine-arithmetic:
 
 Modular arithmetic with machine integers
-========================================
+""""""""""""""""""""""""""""""""""""""""
 
 There is one special ring --- ring :math:`Z_p` of integers modulo prime number :math:`p < 2^{64}` --- which is used in the basis of many fundamental algorithms. In contrast to :math:`Z_p` with arbitrary large characteristic, for characteristic that fits into 64-bit word one can use machine integers to significantly speed up basic math operations. Operations in :math:`Z_p` require applying ``mod`` operation which in turn implies integer division. Integer division is a very slow CPU instruction; and what is more important is that it breaks CPU pipelining. On the other hand, operations in :math:`Z_p` imply taking ``mod`` with a fixed modulus :math:`p` and one can do some precomputation beforehand and then reduce integer divisions to multiplications that are over a magnitude times faster. The details of this trick can be found in `Hacker's Delight <http://www.hackersdelight.org>`_. |Rings| use `libdivide4j`_ library for fast integer division with precomputation which is ported from the well known C/C++ `libdivide`_ library. With this precomputation the ``mod`` operation becomes several times faster than the native CPU instruction, which boosts the overall performance of many of |Rings| algorithms in more than 3 times.
 
@@ -141,18 +151,18 @@ The ring :math:`Z_p` with :math:`p < 2^{64}` is implemented in `IntegersZp64`_ c
 
    .. code-tab:: java
 
-		// Z/p with p = 2^7 - 1 (Mersenne prime)
-		IntegersZp64 field = new IntegersZp64(127);
-		//     1000 = 111 mod 127
-		assert field.modulus(1000) == 111;
-		// 100 + 100 = 73 mod 127
-		assert field.add(100, 100) == 73;
-		//  12 - 100 = 39 mod 127
-		assert field.subtract(12, 100) == 39;
-		//  55 * 78  = 73 mod 127
-		assert field.multiply(55, 78) == 99;
-		//   1 / 43  = 65 mod 127
-		assert field.reciprocal(43) == 65;
+        // Z/p with p = 2^7 - 1 (Mersenne prime)
+        IntegersZp64 field = new IntegersZp64(127);
+        //     1000 = 111 mod 127
+        assert field.modulus(1000) == 111;
+        // 100 + 100 = 73 mod 127
+        assert field.add(100, 100) == 73;
+        //  12 - 100 = 39 mod 127
+        assert field.subtract(12, 100) == 39;
+        //  55 * 78  = 73 mod 127
+        assert field.multiply(55, 78) == 99;
+        //   1 / 43  = 65 mod 127
+        assert field.reciprocal(43) == 65;
 
 It is worst to mention, that multiplication defined in `IntegersZp64`_ is especially fast when characteristic is less than :math:`2^{32}`: in this case multiplication of two numbers fits the machine 64-bit word (no ``long`` overflow), while in the opposite case Montgomery reduction will be used:
 
@@ -160,21 +170,21 @@ It is worst to mention, that multiplication defined in `IntegersZp64`_ is especi
 
    .. code-tab:: java
 
-   		// Z/p with p = 2^31 - 1 (Mersenne prime) - fits 32-bit word
-		IntegersZp64 field32 = new IntegersZp64((1L << 31) - 1L);
-		// does not cause long overflow - fast 
-		assert field32.multiply(0xabcdef12, 0x12345678) == 0x7e86a4d6;
+        // Z/p with p = 2^31 - 1 (Mersenne prime) - fits 32-bit word
+        IntegersZp64 field32 = new IntegersZp64((1L << 31) - 1L);
+        // does not cause long overflow - fast 
+        assert field32.multiply(0xabcdef12, 0x12345678) == 0x7e86a4d6;
 
 
-		// Z/p with p = 2^61 - 1 (Mersenne prime) - doesn't fit 32-bit word
-		IntegersZp64 field64 = new IntegersZp64((1L << 61) - 1L);
-		// cause long overflow - Montgomery reduction will be used - not so fast 
-		assert field64.multiply(0x0bcdef1234567890L, 0x0234567890abcdefL) == 0xf667077306fd7a8L;
+        // Z/p with p = 2^61 - 1 (Mersenne prime) - doesn't fit 32-bit word
+        IntegersZp64 field64 = new IntegersZp64((1L << 61) - 1L);
+        // cause long overflow - Montgomery reduction will be used - not so fast 
+        assert field64.multiply(0x0bcdef1234567890L, 0x0234567890abcdefL) == 0xf667077306fd7a8L;
 
 
 .. note::
-	
-	`IntegersZp64`_ is used in order to achieve the best possible performance of many fundamental algorithms which underlie in the basis of many high-level features such as GCD and factorization in arbitrary polynomial rings. Since `IntegersZp64`_ operates with primitive ``longs`` and Java doesn't support generics with primitives, `IntegersZp64`_ stands separately from the elegant type hierarchy of generic rings implemented in |Rings| (see :ref:`ref-rings`). For the same reason some of the algorithms have two implementations: one for rings over generic elements and one for `IntegersZp64`_. This internal complication is hidden from the user, and the switch between generic and primitive types is done automatically in the internals of |Rings| when it can really make gain in the performance.
+    
+    `IntegersZp64`_ is used in order to achieve the best possible performance of many fundamental algorithms which underlie in the basis of many high-level features such as GCD and factorization in arbitrary polynomial rings. Since `IntegersZp64`_ operates with primitive ``longs`` and Java doesn't support generics with primitives, `IntegersZp64`_ stands separately from the elegant type hierarchy of generic rings implemented in |Rings| (see :ref:`ref-rings`). For the same reason some of the algorithms have two implementations: one for rings over generic elements and one for `IntegersZp64`_. This internal complication is hidden from the user, and the switch between generic and primitive types is done automatically in the internals of |Rings| when it can really make gain in the performance.
 
 
 .. _IntegersZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/IntegersZp64.java
@@ -192,26 +202,26 @@ The concept of mathematical ring is implemented in the generic interface `Ring<E
 
    .. code-tab:: java
 
-		// The ring Z/17
-		Ring<BigInteger> ring = Zp(Z.valueOf(17));
-		
-		//     103 = 1 mod 17 
-		BigInteger el  = ring.valueOf(Z.valueOf(103));
-		assert  el.intValue() == 1;
-		
-		// 99 + 88 = 0 mod 17
-		BigInteger add = ring.add(Z.valueOf(99),
-		                          Z.valueOf(88));
-		assert add.intValue() == 0;
+        // The ring Z/17
+        Ring<BigInteger> ring = Zp(Z.valueOf(17));
+        
+        //     103 = 1 mod 17 
+        BigInteger el  = ring.valueOf(Z.valueOf(103));
+        assert  el.intValue() == 1;
+        
+        // 99 + 88 = 0 mod 17
+        BigInteger add = ring.add(Z.valueOf(99),
+                                  Z.valueOf(88));
+        assert add.intValue() == 0;
 
-		// 99 * 77 = 7 mod 17
-		BigInteger mul = ring.multiply(Z.valueOf(99),
-		                               Z.valueOf(77));
-		assert mul.intValue() == 7;
+        // 99 * 77 = 7 mod 17
+        BigInteger mul = ring.multiply(Z.valueOf(99),
+                                       Z.valueOf(77));
+        assert mul.intValue() == 7;
 
-		// 1  / 99 = 11 mod 17
-		BigInteger inv = ring.reciprocal(Z.valueOf(99));
-		assert inv.intValue() == 11;
+        // 1  / 99 = 11 mod 17
+        BigInteger inv = ring.reciprocal(Z.valueOf(99));
+        assert inv.intValue() == 11;
 
 
 The interface `Ring<E>`_ additionally defines algebraic operations inherent to more specialized types of rings:
@@ -226,16 +236,16 @@ These operations can be summarized in the following methods from `Ring<E>`_ inte
 
    .. code-tab:: java
 
-		// Methods from Ring<E> interface:
+        // Methods from Ring<E> interface:
 
-		// GCD domain operation:
-		E gcd(E a, E b);
+        // GCD domain operation:
+        E gcd(E a, E b);
 
-		// Euclidean ring operation:
-		E[] divideAndRemainder(E dividend, E divider);
+        // Euclidean ring operation:
+        E[] divideAndRemainder(E dividend, E divider);
 
-		// Field operation:
-		E reciprocal(E element);
+        // Field operation:
+        E reciprocal(E element);
 
 One can check whether the ring ``R`` is a field or a Euclidean ring using ``R.isField()`` and ``R.isEuclideanRing()`` methods.
 
@@ -245,14 +255,14 @@ One can check whether the ring ``R`` is a field or a Euclidean ring using ``R.is
 
     .. code-block:: java
 
-		// ring Z
-		Ring<BigInteger> notField = Z;
-		// it is not a fielf
-		assert !notField.isField();
-		// this is OK (1/1 = 1)
-		assert notField.reciprocal(Z.getOne()).isOne();
-		// this will throw UnsupportedOperationException
-		notField.reciprocal(Z.valueOf(10)); // <- error
+        // ring Z
+        Ring<BigInteger> notField = Z;
+        // it is not a fielf
+        assert !notField.isField();
+        // this is OK (1/1 = 1)
+        assert notField.reciprocal(Z.getOne()).isOne();
+        // this will throw UnsupportedOperationException
+        notField.reciprocal(Z.valueOf(10)); // <- error
 
 
 Each `Ring<E>`_ implementation provides the information about its mathematical nature and its properties like cardinality, characteristic etc. Another important method defined in `Ring<E>`_ is ``parse(String)`` which converts string into ring element. Illustrations:
@@ -261,37 +271,37 @@ Each `Ring<E>`_ implementation provides the information about its mathematical n
 
    .. code-tab:: java
 
-		// Z is not a field
-		assert  Z.isEuclideanRing();
-		assert !Z.isField();
-		assert !Z.isFinite();
+        // Z is not a field
+        assert  Z.isEuclideanRing();
+        assert !Z.isField();
+        assert !Z.isFinite();
 
-		// Q is an infinite field
-		assert  Q.isField();
-		assert !Q.isFinite();
-		assert  Q.parse("2/3").equals(
-			   new Rational<>(Z, Z.valueOf(2), Z.valueOf(3)));
+        // Q is an infinite field
+        assert  Q.isField();
+        assert !Q.isFinite();
+        assert  Q.parse("2/3").equals(
+               new Rational<>(Z, Z.valueOf(2), Z.valueOf(3)));
 
-		// GF(2^10) is a finite field
-		FiniteField<UnivariatePolynomialZp64> gf = GF(2, 10);
-		assert gf.isField();
-		assert gf.isFinite();
-		assert gf.characteristic().intValue() == 2;
-		assert gf.cardinality().intValue() == 1 << 10;
-		System.out.println(gf.parse("1 + z + z^10"));
+        // GF(2^10) is a finite field
+        FiniteField<UnivariatePolynomialZp64> gf = GF(2, 10);
+        assert gf.isField();
+        assert gf.isFinite();
+        assert gf.characteristic().intValue() == 2;
+        assert gf.cardinality().intValue() == 1 << 10;
+        System.out.println(gf.parse("1 + z + z^10"));
 
-		// Z/3[x] is Euclidean ring but not a field
-		UnivariateRing<UnivariatePolynomialZp64> zp3x = UnivariateRingZp64(3);
-		assert  zp3x.isEuclideanRing();
-		assert !zp3x.isField();
-		assert !zp3x.isFinite();
-		assert  zp3x.characteristic().intValue() == 3;
-		assert  zp3x.parse("1 + 14*x + 15*x^10").equals(
-			   UnivariatePolynomialZ64.create(1, 2).modulus(3));
+        // Z/3[x] is Euclidean ring but not a field
+        UnivariateRing<UnivariatePolynomialZp64> zp3x = UnivariateRingZp64(3);
+        assert  zp3x.isEuclideanRing();
+        assert !zp3x.isField();
+        assert !zp3x.isFinite();
+        assert  zp3x.characteristic().intValue() == 3;
+        assert  zp3x.parse("1 + 14*x + 15*x^10").equals(
+               UnivariatePolynomialZ64.create(1, 2).modulus(3));
 
 
-Examples of rings
-"""""""""""""""""
+List of built-in rings
+""""""""""""""""""""""
 
 Some predefined common rings and convenient methods for instantiation of new rings are placed in `Rings`_ class or directly in `scaladsl`_ package object in Scala DSL. Below is the list of what is available by default in |Rings|:
 
@@ -322,6 +332,10 @@ Some predefined common rings and convenient methods for instantiation of new rin
 | :math:`Z_p[x_1, \dots, x_N]`           | Multivariate polynomial ring with exactly :math:`N`                 | ``MultivariateRingZp64(N, p)`` or ``MultivariateRingZp64(p, vars)`` in Scala        |
 | with :math:`p < 2^{64}`                | variables over coefficient ring :math:`Z_p` with :math:`p < 2^{64}` |                                                                                     |
 +----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+| :math:`R[x]/\langle p(x) \rangle`      | Univariate quotient ring                                            | ``UnivariateQuotientRing(baseRing, poly)``                                          |
++----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
+| :math:`R[x_1, \dots, x_N]/I`           | Multivariate quotient ring                                          | ``QuotientRing(baseRing, ideal)``                                                   |
++----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
 
 
 .. [*] Class `IntegersZp64`_ which represents :math:`Z_p` with :math:`p < 2^{64}` does not inherit `Ring<E>`_ interface (see :ref:`ref-machine-arithmetic`)
@@ -330,8 +344,10 @@ Some predefined common rings and convenient methods for instantiation of new rin
 .. _Rings: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Rings.java
 .. _scaladsl: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/package.scala
 
+
+
 Galois fields
-^^^^^^^^^^^^^
+"""""""""""""
 
 Galois field :math:`GF(p^q)` with prime characteristic :math:`p` and cardinality :math:`p^q` can be created by specifying :math:`p` and :math:`q` in which case the irreducible polynomial will be generated automatically or by explicitly specifying the irreducible:
 
@@ -339,85 +355,85 @@ Galois field :math:`GF(p^q)` with prime characteristic :math:`p` and cardinality
 
    .. code-tab:: scala
 
-		// Galois field GF(7^10) represented by univariate polynomials
-		// in variable "z" over Z/7 modulo some irreducible polynomial
-		// (irreducible polynomial will be generated automatically)
-		val gf7_10 = GF(7, 10, "z")
-		assert(gf7_10.characteristic == Z(7))
-		assert(gf7_10.cardinality == Z(7).pow(10))
+        // Galois field GF(7^10) represented by univariate polynomials
+        // in variable "z" over Z/7 modulo some irreducible polynomial
+        // (irreducible polynomial will be generated automatically)
+        val gf7_10 = GF(7, 10, "z")
+        assert(gf7_10.characteristic == Z(7))
+        assert(gf7_10.cardinality == Z(7).pow(10))
 
-		// GF(7^3) generated by irreducible polynomial "1 + 3*z + z^2 + z^3"
-		val gf7_3 = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
-		assert(gf7_3.characteristic == Z(7))
-		assert(gf7_3.cardinality == Z(7 * 7 * 7))
+        // GF(7^3) generated by irreducible polynomial "1 + 3*z + z^2 + z^3"
+        val gf7_3 = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
+        assert(gf7_3.characteristic == Z(7))
+        assert(gf7_3.cardinality == Z(7 * 7 * 7))
 
    .. code-tab:: java
 
-		// Galois field GF(7^10)
-		// (irreducible polynomial will be generated automatically)
-		FiniteField<UnivariatePolynomialZp64> gf7_10 = GF(7, 10);
-		assert gf7_10.characteristic().intValue() == 7;
-		assert gf7_10.cardinality().equals(Z.valueOf(7).pow(10));
+        // Galois field GF(7^10)
+        // (irreducible polynomial will be generated automatically)
+        FiniteField<UnivariatePolynomialZp64> gf7_10 = GF(7, 10);
+        assert gf7_10.characteristic().intValue() == 7;
+        assert gf7_10.cardinality().equals(Z.valueOf(7).pow(10));
 
-		// GF(7^3) generated by irreducible polynomial "1 + 3*z + z^2 + z^3"
-		FiniteField<UnivariatePolynomialZp64> gf7_3 = GF(UnivariatePolynomialZ64.create(1, 3, 1, 1).modulus(7));
-		assert gf7_3.characteristic().intValue() == 7;
-		assert gf7_3.cardinality().intValue() == 7 * 7 * 7;
+        // GF(7^3) generated by irreducible polynomial "1 + 3*z + z^2 + z^3"
+        FiniteField<UnivariatePolynomialZp64> gf7_3 = GF(UnivariatePolynomialZ64.create(1, 3, 1, 1).modulus(7));
+        assert gf7_3.characteristic().intValue() == 7;
+        assert gf7_3.cardinality().intValue() == 7 * 7 * 7;
 
 Galois fields with arbitrary large characteristic are available:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		// Mersenne prime 2^107 - 1
-		val characteristic = Z(2).pow(107) - 1
-		// Galois field GF((2^107 - 1) ^ 16)
-		implicit val field = GF(characteristic, 16, "z")
-		
-		assert(field.cardinality() == characteristic.pow(16))
-		
+        // Mersenne prime 2^107 - 1
+        val characteristic = Z(2).pow(107) - 1
+        // Galois field GF((2^107 - 1) ^ 16)
+        implicit val field = GF(characteristic, 16, "z")
+        
+        assert(field.cardinality() == characteristic.pow(16))
+        
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		// Mersenne prime 2^107 - 1
-		BigInteger characteristic = Z.getOne().shiftLeft(107).decrement();
-		// Galois field GF((2^107 - 1) ^ 16)
-		FiniteField<UnivariatePolynomial<BigInteger>> field = GF(characteristic, 16);
+        // Mersenne prime 2^107 - 1
+        BigInteger characteristic = Z.getOne().shiftLeft(107).decrement();
+        // Galois field GF((2^107 - 1) ^ 16)
+        FiniteField<UnivariatePolynomial<BigInteger>> field = GF(characteristic, 16);
 
-		assert(field.cardinality().equals(characteristic.pow(16)));
+        assert(field.cardinality().equals(characteristic.pow(16)));
 
 
 Implementation of Galois fields uses assymptotically fast algorithm for polynomial division with precomputed inverses via Newton iterations (see :ref:`ref-univariate-divison`).
 
 
 Fields of fractions
-^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""
 
 Field of fractions can be defined over any GCD ring :math:`R`. The simplest example is the field :math:`Q` of fractions over :math:`Z`:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		implicit val field = Frac(Z) // the same as Q
+        implicit val field = Frac(Z) // the same as Q
 
-		assert( field("13/6") == field("2/3") + field("3/2") )
-		assert( field("5/6")  == field("2/3") + field("1/6") )
-		
+        assert( field("13/6") == field("2/3") + field("3/2") )
+        assert( field("5/6")  == field("2/3") + field("1/6") )
+        
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		Rationals<BigInteger> field = Frac(Z); // the same as Q
+        Rationals<BigInteger> field = Frac(Z); // the same as Q
 
-		assert field.parse("13/6")
-		        .equals(field.add(field.parse("2/3"),
-		                field.parse("3/2")));
+        assert field.parse("13/6")
+                .equals(field.add(field.parse("2/3"),
+                        field.parse("3/2")));
 
-		assert field.parse("5/6")
-		        .equals(field.add(
-		                field.parse("2/3"),
-		                field.parse("1/6")));
+        assert field.parse("5/6")
+                .equals(field.add(
+                        field.parse("2/3"),
+                        field.parse("1/6")));
 
 
 The common GCD is automatically canceled in the numerator and denominator. Another illustration: field :math:`Frac(Z[x, y, z])` of rational functions over :math:`x`, :math:`y` and :math:`z`:
@@ -425,30 +441,30 @@ The common GCD is automatically canceled in the numerator and denominator. Anoth
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		val ring = MultivariateRing(Z, Array("x", "y", "z"))
-		implicit val field = Frac(ring)
+        val ring = MultivariateRing(Z, Array("x", "y", "z"))
+        implicit val field = Frac(ring)
 
-		val a = field("(x + y + z)/(1 - x - y)")
-		val b = field("(x^2 - y^2 + z^2)/(1 - x^2 - 2*x*y - y^2)")
+        val a = field("(x + y + z)/(1 - x - y)")
+        val b = field("(x^2 - y^2 + z^2)/(1 - x^2 - 2*x*y - y^2)")
 
-		println(a + b)		
+        println(a + b)      
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		Ring<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
-		Ring<Rational<MultivariatePolynomial<BigInteger>>> field = Frac(ring);
+        Ring<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        Ring<Rational<MultivariatePolynomial<BigInteger>>> field = Frac(ring);
 
-		Rational<MultivariatePolynomial<BigInteger>> 
-				a = field.parse("(x + y + z)/(1 - x - y)"),
-				b = field.parse("(x^2 - y^2 + z^2)/(1 - x^2 - 2*x*y - y^2)");
+        Rational<MultivariatePolynomial<BigInteger>> 
+                a = field.parse("(x + y + z)/(1 - x - y)"),
+                b = field.parse("(x^2 - y^2 + z^2)/(1 - x^2 - 2*x*y - y^2)");
 
-		System.out.println(field.add(a, b));
+        System.out.println(field.add(a, b));
 
 
 Univariate polynomial rings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""
 
 Polynomial ring :math:`R[x]` can be defined over arbitrary coefficient ring :math:`R`. There are two separate implementations of univariate rings:
 
@@ -460,70 +476,70 @@ Illustrations:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		// Ring Z/3[x]
-		val zp3x = UnivariateRingZp64(3, "x")
-		// parse univariate poly from string
-		val p1 = zp3x("4 + 8*x + 13*x^2")
-		val p2 = zp3x("4 - 8*x + 13*x^2")
-		assert (p1 + p2 == zp3x("2 - x^2") )
-
-
-		// GF(7^3)
-		val cfRing = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
-		// GF(7^3)[x]
-		val gfx = UnivariateRing(cfRing, "x")
-		// parse univariate poly from string
-		val r1 = gfx("4 + (8 + z)*x + (13 - z^43)*x^2")
-		val r2 = gfx("4 - (8 + z)*x + (13 + z^43)*x^2")
-		assert(r1 + r2 == gfx("1 - 2*x^2"))
-		val (div, rem) = r1 /% r2
-		assert(r1 == r2 * div + rem)
-		
-	.. code-tab:: java
-
-		// Ring Z/3[x]
-		UnivariateRing<UnivariatePolynomialZp64> zp3x = UnivariateRingZp64(3);
-		// parse univariate poly from string
-		UnivariatePolynomialZp64
-		        p1 = zp3x.parse("4 + 8*x + 13*x^2"),
-		        p2 = zp3x.parse("4 - 8*x + 13*x^2");
-		assert zp3x.add(p1, p2).equals(zp3x.parse("2 - x^2"));
+        // Ring Z/3[x]
+        val zp3x = UnivariateRingZp64(3, "x")
+        // parse univariate poly from string
+        val p1 = zp3x("4 + 8*x + 13*x^2")
+        val p2 = zp3x("4 - 8*x + 13*x^2")
+        assert (p1 + p2 == zp3x("2 - x^2") )
 
 
-		// GF(7^3)
-		FiniteField<UnivariatePolynomialZp64> cfRing = GF(UnivariateRingZp64(7).parse("1 + 3*z + z^2 + z^3"));
-		// GF(7^3)[x]
-		UnivariateRing<UnivariatePolynomial<UnivariatePolynomialZp64>> gfx = UnivariateRing(cfRing);
-		// parse univariate poly from string
-		UnivariatePolynomial<UnivariatePolynomialZp64>
-		        r1 = gfx.parse("4 + (8 + z)*x + (13 - z^43)*x^2"),
-		        r2 = gfx.parse("4 - (8 + z)*x + (13 + z^43)*x^2");
-		assert gfx.add(r1, r2).equals(gfx.parse("1 - 2*x^2"));
-		UnivariatePolynomial<UnivariatePolynomialZp64>
-		        divRem[] = divideAndRemainder(r1, r2),
-		        div = divRem[0],
-		        rem = divRem[1];
-		assert r1.equals(gfx.add(gfx.multiply(r2, div), rem));
+        // GF(7^3)
+        val cfRing = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
+        // GF(7^3)[x]
+        val gfx = UnivariateRing(cfRing, "x")
+        // parse univariate poly from string
+        val r1 = gfx("4 + (8 + z)*x + (13 - z^43)*x^2")
+        val r2 = gfx("4 - (8 + z)*x + (13 + z^43)*x^2")
+        assert(r1 + r2 == gfx("1 - 2*x^2"))
+        val (div, rem) = r1 /% r2
+        assert(r1 == r2 * div + rem)
+        
+    .. code-tab:: java
+
+        // Ring Z/3[x]
+        UnivariateRing<UnivariatePolynomialZp64> zp3x = UnivariateRingZp64(3);
+        // parse univariate poly from string
+        UnivariatePolynomialZp64
+                p1 = zp3x.parse("4 + 8*x + 13*x^2"),
+                p2 = zp3x.parse("4 - 8*x + 13*x^2");
+        assert zp3x.add(p1, p2).equals(zp3x.parse("2 - x^2"));
+
+
+        // GF(7^3)
+        FiniteField<UnivariatePolynomialZp64> cfRing = GF(UnivariateRingZp64(7).parse("1 + 3*z + z^2 + z^3"));
+        // GF(7^3)[x]
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomialZp64>> gfx = UnivariateRing(cfRing);
+        // parse univariate poly from string
+        UnivariatePolynomial<UnivariatePolynomialZp64>
+                r1 = gfx.parse("4 + (8 + z)*x + (13 - z^43)*x^2"),
+                r2 = gfx.parse("4 - (8 + z)*x + (13 + z^43)*x^2");
+        assert gfx.add(r1, r2).equals(gfx.parse("1 - 2*x^2"));
+        UnivariatePolynomial<UnivariatePolynomialZp64>
+                divRem[] = divideAndRemainder(r1, r2),
+                div = divRem[0],
+                rem = divRem[1];
+        assert r1.equals(gfx.add(gfx.multiply(r2, div), rem));
 
 
 .. tip::
-	
-	For univariate polynomial rings over :math:`Z_p` with :math:`p < 2^{64}` it is always preferred to use ``UnivariateRingZp64(p, "x")`` instead of generic ``UnivariateRing(Zp(p), "x")``. In the latter case the generic data structures will be used (arbitrary precision integers etc.), while in the former the specialized implementation and algorithms will be used (see :ref:`ref-machine-arithmetic`) which are in several times faster than the generic ones. For example, from the mathematical point of view the following two lines define the same ring :math:`Z_{3}[x]`:
+    
+    For univariate polynomial rings over :math:`Z_p` with :math:`p < 2^{64}` it is always preferred to use ``UnivariateRingZp64(p, "x")`` instead of generic ``UnivariateRing(Zp(p), "x")``. In the latter case the generic data structures will be used (arbitrary precision integers etc.), while in the former the specialized implementation and algorithms will be used (see :ref:`ref-machine-arithmetic`) which are in several times faster than the generic ones. For example, from the mathematical point of view the following two lines define the same ring :math:`Z_{3}[x]`:
 
-	.. code-block:: scala
+    .. code-block:: scala
 
-		val ringA = UnivariateRingZp64(3, "x")
-		val ringB = UnivariateRing(Zp(3), "x")
+        val ringA = UnivariateRingZp64(3, "x")
+        val ringB = UnivariateRing(Zp(3), "x")
 
-	Though the math meaning is the same, ``ringA`` uses optimized polynomials `UnivariatePolynomialZp64`_ while ``ringB`` uses generic `UnivariatePolynomial<E>`_; as result, operations in ``ringA`` are in several times faster than in ``ringB``.
+    Though the math meaning is the same, ``ringA`` uses optimized polynomials `UnivariatePolynomialZp64`_ while ``ringB`` uses generic `UnivariatePolynomial<E>`_; as result, operations in ``ringA`` are in several times faster than in ``ringB``.
 
 Further details about univariate polynomials are in :ref:`ref-univariate-polynomials` section.
 
 
 Multivariate polynomial rings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""
 
 Polynomial ring :math:`R[x_1, \dots, x_N]` can be defined over arbitrary coefficient ring :math:`R`. There are two separate implementations of multivariate rings:
 
@@ -535,68 +551,215 @@ Illustrations:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		// Ring Z/3[x, y, z]
-		val zp3xyz = MultivariateRingZp64(3, Array("x", "y", "z"))
-		// parse univariate poly from string
-		val p1 = zp3xyz("4 + 8*x*y + 13*x^2*z^5")
-		val p2 = zp3xyz("4 - 8*x*y + 13*x^2*z^5")
-		assert (p1 + p2 == zp3xyz("2 - x^2*z^5") )
-
-
-		// GF(7^3)
-		val cfRing = GF(UnivariateRingZp64(7, "t")("1 + 3*t + t^2 + t^3"), "t")
-		// GF(7^3)[x, y, z]
-		val gfx = MultivariateRing(cfRing, Array("x", "y", "z"))
-		// parse univariate poly from string
-		val r1 = gfx("4 + (8 + t)*x*y + (13 - t^43)*x^2*z^5")
-		val r2 = gfx("4 - (8 + t)*x*y + (13 + t^43)*x^2*z^5")
-		assert(r1 + r2 == gfx("1 - 2*x^2*z^5"))
-		val (div, rem) = r1 /% r2
-		assert(r1 == r2 * div + rem)
-		
-	.. code-tab:: java
-
-		String[] vars = {"x", "y", "z"};
-		// Ring Z/3[x, y, z]
-		MultivariateRing<MultivariatePolynomialZp64> zp3xyz = MultivariateRingZp64(3, 3);
-		// parse univariate poly from string
-		MultivariatePolynomialZp64
-		        p1 = zp3xyz.parse("4 + 8*x*y + 13*x^2*z^5", vars),
-		        p2 = zp3xyz.parse("4 - 8*x*y + 13*x^2*z^5", vars);
-		assert zp3xyz.add(p1, p2).equals(zp3xyz.parse("2 - x^2*z^5", vars));
+        // Ring Z/3[x, y, z]
+        val zp3xyz = MultivariateRingZp64(3, Array("x", "y", "z"))
+        // parse univariate poly from string
+        val p1 = zp3xyz("4 + 8*x*y + 13*x^2*z^5")
+        val p2 = zp3xyz("4 - 8*x*y + 13*x^2*z^5")
+        assert (p1 + p2 == zp3xyz("2 - x^2*z^5") )
 
 
-		// GF(7^3)
-		FiniteField<UnivariatePolynomialZp64> cfRing = GF(UnivariateRingZp64(7).parse("1 + 3*z + z^2 + z^3"));
-		// GF(7^3)[x, y, z]
-		MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> gfxyz = MultivariateRing(3, cfRing);
-		// parse univariate poly from string
-		MultivariatePolynomial<UnivariatePolynomialZp64>
-		        r1 = gfxyz.parse("4 + (8 + z)*x*y + (13 - z^43)*x^2*z^5", vars),
-		        r2 = gfxyz.parse("4 - (8 + z)*x*y + (13 + z^43)*x^2*z^5", vars);
-		assert gfxyz.add(r1, r2).equals(gfxyz.parse("1 - 2*x^2*z^5", vars));
-		MultivariatePolynomial<UnivariatePolynomialZp64>
-		        divRem[] = divideAndRemainder(r1, r2),
-		        div = divRem[0],
-		        rem = divRem[1];
-		assert r1.equals(gfxyz.add(gfxyz.multiply(r2, div), rem));
+        // GF(7^3)
+        val cfRing = GF(UnivariateRingZp64(7, "t")("1 + 3*t + t^2 + t^3"), "t")
+        // GF(7^3)[x, y, z]
+        val gfx = MultivariateRing(cfRing, Array("x", "y", "z"))
+        // parse univariate poly from string
+        val r1 = gfx("4 + (8 + t)*x*y + (13 - t^43)*x^2*z^5")
+        val r2 = gfx("4 - (8 + t)*x*y + (13 + t^43)*x^2*z^5")
+        assert(r1 + r2 == gfx("1 - 2*x^2*z^5"))
+        val (div, rem) = r1 /% r2
+        assert(r1 == r2 * div + rem)
+        
+    .. code-tab:: java
+
+        String[] vars = {"x", "y", "z"};
+        // Ring Z/3[x, y, z]
+        MultivariateRing<MultivariatePolynomialZp64> zp3xyz = MultivariateRingZp64(3, 3);
+        // parse univariate poly from string
+        MultivariatePolynomialZp64
+                p1 = zp3xyz.parse("4 + 8*x*y + 13*x^2*z^5", vars),
+                p2 = zp3xyz.parse("4 - 8*x*y + 13*x^2*z^5", vars);
+        assert zp3xyz.add(p1, p2).equals(zp3xyz.parse("2 - x^2*z^5", vars));
+
+
+        // GF(7^3)
+        FiniteField<UnivariatePolynomialZp64> cfRing = GF(UnivariateRingZp64(7).parse("1 + 3*z + z^2 + z^3"));
+        // GF(7^3)[x, y, z]
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> gfxyz = MultivariateRing(3, cfRing);
+        // parse univariate poly from string
+        MultivariatePolynomial<UnivariatePolynomialZp64>
+                r1 = gfxyz.parse("4 + (8 + z)*x*y + (13 - z^43)*x^2*z^5", vars),
+                r2 = gfxyz.parse("4 - (8 + z)*x*y + (13 + z^43)*x^2*z^5", vars);
+        assert gfxyz.add(r1, r2).equals(gfxyz.parse("1 - 2*x^2*z^5", vars));
+        MultivariatePolynomial<UnivariatePolynomialZp64>
+                divRem[] = divideAndRemainder(r1, r2),
+                div = divRem[0],
+                rem = divRem[1];
+        assert r1.equals(gfxyz.add(gfxyz.multiply(r2, div), rem));
 
 
 .. tip::
-	
-	For multivariate polynomial rings over :math:`Z_p` with :math:`p < 2^{64}` one should always prefer to use ``MultivariateRingZp64(p, vars)`` instead of generic ``MultivariateRing(Zp(p), vars)``. In the latter case the generic data structures will be used (arbitrary precision integers etc.), while in the former the specialized implementation and algorithms will be used (see :ref:`ref-machine-arithmetic`) which are in several times faster than the generic ones. For example, from the mathematical point of view the following two lines define the same ring :math:`Z_{3}[x, y, z]`:
+    
+    For multivariate polynomial rings over :math:`Z_p` with :math:`p < 2^{64}` one should always prefer to use ``MultivariateRingZp64(p, vars)`` instead of generic ``MultivariateRing(Zp(p), vars)``. In the latter case the generic data structures will be used (arbitrary precision integers etc.), while in the former the specialized implementation and algorithms will be used (see :ref:`ref-machine-arithmetic`) which are in several times faster than the generic ones. For example, from the mathematical point of view the following two lines define the same ring :math:`Z_{3}[x, y, z]`:
 
-	.. code-block:: scala
+    .. code-block:: scala
 
-		val ringA = MultivariateRingZp64(3, Array("x", "y", "z"))
-		val ringB = MultivariateRing(Zp(3), Array("x", "y", "z"))
+        val ringA = MultivariateRingZp64(3, Array("x", "y", "z"))
+        val ringB = MultivariateRing(Zp(3), Array("x", "y", "z"))
 
-	Though the math meaning is the same, ``ringA`` uses optimized polynomials `MultivariatePolynomialZp64`_ while ``ringB`` uses generic `MultivariatePolynomial<E>`_; as result, operations in ``ringA`` are in several times faster than in ``ringB``.
+    Though the math meaning is the same, ``ringA`` uses optimized polynomials `MultivariatePolynomialZp64`_ while ``ringB`` uses generic `MultivariatePolynomial<E>`_; as result, operations in ``ringA`` are in several times faster than in ``ringB``.
 
 
 Further details about multivariate polynomials are in :ref:`ref-multivariate-polynomials` section.
+
+
+.. _ref-quotient-rings:
+
+Quotient rings
+""""""""""""""
+
+There are two types of quotient rings available in |Rings|:
+
+ - Univariate quotient rings :math:`R[x] / \langle p(x) \rangle`
+ - Multivariate quotient rings :math:`R[x_1, \dots, x_N]/I`, where :math:`I` is some :ref:`ideal <ref-ideals>` in :math:`R[x_1, \dots, x_N]`
+
+Operations in a univariate quotient ring :math:`R[x] / \langle p(x) \rangle` translate to operations in :math:`R[x]` with the result reduced modulo :math:`p(x)`:
+
+.. tabs::
+    .. code-tab:: scala
+        
+        // base ring Q[x]
+        val baseRing = UnivariateRing(Q, "x")
+        val x = baseRing("x")
+
+        // poly in a base ring
+        val basePoly = {
+          implicit val ring = baseRing
+          123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
+        }
+
+        val modulus = x.pow(2) + 1
+        // poly in a quotient ring Q[x]/<x^2 + 1>
+        val quotPoly = {
+          implicit val ring = UnivariateQuotientRing(baseRing, modulus)
+          123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
+        }
+
+        assert(basePoly.degree() == 31)
+        assert(quotPoly.degree() == 1)
+        assert(quotPoly == basePoly % modulus)
+
+    .. code-tab:: java
+        
+        // base ring
+        UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> baseRing = UnivariateRing(Q);
+        // poly in base ring
+        UnivariatePolynomial<Rational<BigInteger>> basePoly = baseRing.parse("123 * x^31 + 123 * x^2 + (1/2) * x + 1");
+
+        UnivariatePolynomial<Rational<BigInteger>> modulus = baseRing.parse("x^2 + 1");
+        // quotient ring
+        UnivariateQuotientRing<UnivariatePolynomial<Rational<BigInteger>>> quotRing = UnivariateQuotientRing(baseRing, modulus);
+        // same poly in quotient ring
+        UnivariatePolynomial<Rational<BigInteger>> quotPoly = quotRing.parse("123 * x^31 + 123 * x^2 + (1/2) * x + 1");
+
+        assert basePoly.degree() == 31;
+        assert quotPoly.degree() == 1;
+        assert quotPoly.equals(remainder(basePoly, modulus));
+
+.. important::
+
+    If the base ring is not a Euclidean domain, than :ref:`pseudo division <ref-univariate-divison>` is used to obtain the unique remainder.
+
+
+Operations in a multivariate quotient ring :math:`R[x_1, \dots, x_N] / I` translate to operations in :math:`R[x_1, \dots, x_N]` with the result uniquely reduced modulo ideal :math:`I` (i.e. taking a remainder of :ref:`multivariate division <ref-multivariate-division-with-remainder>` of polynomial by a |Groebner| basis of the ideal, which is always unique):
+
+.. tabs::
+    .. code-tab:: scala
+
+        // base ring Q[x,y,z]
+        val baseRing = MultivariateRing(Q, Array("x", "y", "z"))
+        val (x, y, z) = baseRing("x", "y", "z")
+
+        // ideal in a base ring generated by two polys <x^2 + y^12 - z, x^2*z + y^2 - 1>
+        // a proper Groebner basis will be constructed automatically
+        val ideal = {
+          implicit val ring = baseRing
+          Ideal(baseRing, Seq(x.pow(2) + y.pow(12) - z, x.pow(2) * z + y.pow(2) - 1))
+        }
+
+        // do some math in a quotient ring
+        val polyQuot = {
+          // quotient ring Q[x,y,z]/I
+          implicit val ring = QuotientRing(baseRing, ideal)
+
+          val poly1 = 10 * x.pow(12) + 11 * y.pow(11) + 12 * z.pow(10)
+          val poly2 = x * y - y * z - z * x
+          // algebraic operations performed in a quotient ring
+          11 * poly1 + poly1 * poly1 * poly2
+        }
+
+        // do the same math in a base ring
+        val polyBase = {
+          implicit val ring = baseRing
+          val poly1 = 10 * x.pow(12) + 11 * y.pow(11) + 12 * z.pow(10)
+          val poly2 = x * y - y * z - z * x
+          // algebraic operations performed in a base ring
+          11 * poly1 + poly1 * poly1 * poly2
+        }
+
+        assert(polyQuot != polyBase)
+        assert(polyQuot == polyBase %% ideal)
+
+
+    .. code-tab:: java
+
+        // base ring Q[x,y,z]
+        MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>> 
+                baseRing = MultivariateRing(3, Q);
+
+        // ideal in a base ring generated by two polys <x^2 + y^12 - z, x^2*z + y^2 - 1>
+        // a proper Groebner basis will be constructed automatically
+        MultivariatePolynomial<Rational<BigInteger>>
+                generator1 = baseRing.parse("x^2 + y^12 - z"),
+                generator2 = baseRing.parse("x^2*z + y^2 - 1");
+        Ideal<Monomial<Rational<BigInteger>>, MultivariatePolynomial<Rational<BigInteger>>>
+                ideal = Ideal.create(Arrays.asList(generator1, generator2));
+        // quotient ring Q[x,y,z]/I
+        QuotientRing<Monomial<Rational<BigInteger>>, MultivariatePolynomial<Rational<BigInteger>>>
+                quotRing = QuotientRing(baseRing, ideal);
+
+        // do some math in a quotient ring
+        MultivariatePolynomial<Rational<BigInteger>>
+                q1 = quotRing.parse("10 * x^12 + 11 * y^11 + 12 * z^10"),
+                q2 = quotRing.parse("x * y - y * z - z * x"),
+                polyQuot = quotRing.add(
+                        quotRing.multiply(q1, 11),
+                        quotRing.multiply(q1, q1, q2));
+
+        // do the same math in a base ring
+        MultivariatePolynomial<Rational<BigInteger>>
+                b1 = baseRing.parse("10 * x^12 + 11 * y^11 + 12 * z^10"),
+                b2 = baseRing.parse("x * y - y * z - z * x"),
+                polyBase = baseRing.add(
+                        baseRing.multiply(b1, 11),
+                        baseRing.multiply(b1, b1, b2));
+
+        assert !polyQuot.equals(polyBase);
+        assert  polyQuot.equals(ideal.normalForm(polyBase));
+
+For details on how |Rings| constructs |Groebner| bases of ideals see :ref:`ref-ideals`.
+
+.. important::
+
+    If the coefficient ring :math:`R` of a base ring is not a field, |Rings| will "effectively" perform all operations with coefficients as in the field of fractions :math:`Frac(R)`. Thus, in |Rings| the ring :math:`Z[x_1, \dots, x_N]/I` is actually the same as :math:`Q[x_1, \dots, x_N]/I`.
+
+
+.. note::
+
+    The algebraic structure of quotient rings can't be determined algorithmically in a general case. So, the ring methods ``isFied()`` and ``cardinality()`` (and other related methods) are not supported for quotient rings.
+
 
 .. _ref-scala-dsl:
 
@@ -607,44 +770,44 @@ Scala DSL allows to use standard mathematical operators for elements of arbitrar
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		implicit val ring = UnivariateRing(Zp(3), "x")
-		val (a, b) = ring("1 + 2*x^2", "1 - x")
+        implicit val ring = UnivariateRing(Zp(3), "x")
+        val (a, b) = ring("1 + 2*x^2", "1 - x")
 
-		// compiles to ring.add(a, b)
-		val add = a + b
-		// compiles to ring.subtract(a, b)
-		val sub = a - b
-		// compiles to ring.multiply(a, b)
-		val mul = a * b
-		// compiles to ring.divideExact(a, b)
-		val div = a / b
-		// compiles to ring.divideAndRemainder(a, b)
-		val divRem = a /% b
-		// compiles to ring.increment(a, b)
-		val inc = a ++
-		// compiles to ring.decrement(a, b)
-		val dec = a --
-		// compiles to ring.negate(a, b)
-		val neg = -a
+        // compiles to ring.add(a, b)
+        val add = a + b
+        // compiles to ring.subtract(a, b)
+        val sub = a - b
+        // compiles to ring.multiply(a, b)
+        val mul = a * b
+        // compiles to ring.divideExact(a, b)
+        val div = a / b
+        // compiles to ring.divideAndRemainder(a, b)
+        val divRem = a /% b
+        // compiles to ring.increment(a, b)
+        val inc = a ++
+        // compiles to ring.decrement(a, b)
+        val dec = a --
+        // compiles to ring.negate(a, b)
+        val neg = -a
 
 Note that in the above example the ring instance is defined as ``implicit``. In this case all mathematical operations are delegated directly to the ring defined in the scope: e.g. ``a + b`` compiles to ``ring.add(a, b)``. Without the ``implicit`` keyword the behaviour may be different:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		val a: IntZ = 10
-		val b: IntZ = 11
+        val a: IntZ = 10
+        val b: IntZ = 11
 
-		// no any implicit Ring[IntZ] instance in the scope
-		// compiles to a.add(b) (integer addition)
-		assert(a + b === 21)
+        // no any implicit Ring[IntZ] instance in the scope
+        // compiles to a.add(b) (integer addition)
+        assert(a + b === 21)
 
-		implicit val ring = Zp(13)
-		// compiles to ring.add(a, b) (addition mod 13)
-		assert(a + b === 8)
+        implicit val ring = Zp(13)
+        // compiles to ring.add(a, b) (addition mod 13)
+        assert(a + b === 8)
 
 As a general rule, if there is no any appropriate implicit ring instance in the scope (like in the first assertion in the above example), some default ring will be used. This default ring just delegates all mathematical operations to those defined by the corresponding type: e.g. ``a + b`` compiles to ``a.add(b)`` (or something equivalent). The default rings are available for integers (:math:`Z`), polynomials (instantiated via ``rings.Rings.PolynomialRing(evidence)``) and rationals (instantiated via ``rings.Rings.Frac(evidence)``).
 
@@ -848,95 +1011,95 @@ The first thing about the internal representation of polynomials is that polynom
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		import multivar.MultivariatePolynomial
+        import multivar.MultivariatePolynomial
 
-		// when parsing "x" will be considered as the "first variable"
-		// and "y" as "the second", then in the result the particular
-		// names "x" and "y" are erased
-		val poly1 = MultivariatePolynomial.parse("x^2 + x*y", "x", "y")
-		// parse the same polynomial but using "a" and "b" instead of "x" and "y"
-		val poly2 = MultivariatePolynomial.parse("a^2 + a*b", "a", "b")
-		// polynomials are equal (no matter which variable names were used when parsing)
-		assert(poly1 == poly2)
-		// degree in the first variable
-		assert(poly1.degree(0) == 2)
-		// degree in the second variable
-		assert(poly1.degree(1) == 1)
+        // when parsing "x" will be considered as the "first variable"
+        // and "y" as "the second", then in the result the particular
+        // names "x" and "y" are erased
+        val poly1 = MultivariatePolynomial.parse("x^2 + x*y", "x", "y")
+        // parse the same polynomial but using "a" and "b" instead of "x" and "y"
+        val poly2 = MultivariatePolynomial.parse("a^2 + a*b", "a", "b")
+        // polynomials are equal (no matter which variable names were used when parsing)
+        assert(poly1 == poly2)
+        // degree in the first variable
+        assert(poly1.degree(0) == 2)
+        // degree in the second variable
+        assert(poly1.degree(1) == 1)
 
-		// this poly differs from poly2 since now "a" is "the second"
-		// variable and "b" is "the first"
-		val poly3 = MultivariatePolynomial.parse("a^2 + a*b", "b", "a")
-		assert(poly3 != poly2)
-		// swap the first and the second variables and the result is equal to poly2
-		assert(poly3.swapVariables(0, 1) == poly2)
-
-
-		// the default toString() will use the default
-		// variables "x", "y", "z"  (if more variables 
-		// then it will use "x1", "x2", ... , "xN")
-		// the result will be "x*y + x^2"
-		println(poly1)
-		// specify which variable names use for printing
-		// the result will be "a*b + a^2"
-		println(poly1.toString(Array("a", "b")))
-		// the result will be "a*b + b^2"
-		println(poly1.toString(Array("b", "a")))
-
-	.. code-tab:: java
-
-		// when parsing "x" will be considered as the "first variable"
-		// and "y" as "the second" => in the result the particular
-		// names "x" and "y" are erased
-		MultivariatePolynomial<BigInteger> poly1 = MultivariatePolynomial.parse("x^2 + x*y", "x", "y");
-		// parse the same polynomial but using "a" and "b" instead of "x" and "y"
-		MultivariatePolynomial<BigInteger> poly2 = MultivariatePolynomial.parse("a^2 + a*b", "a", "b");
-		// polynomials are equal (no matter which variable names were used when parsing)
-		assert poly1.equals(poly2);
-		// degree in the first variable
-		assert poly1.degree(0) == 2;
-		// degree in the second variable
-		assert poly1.degree(1) == 1;
-
-		// this poly differs from poly2 since now "a" is "the second"
-		// variable and "b" is "the first"
-		MultivariatePolynomial<BigInteger> poly3 = MultivariatePolynomial.parse("a^2 + a*b", "b", "a");
-		assert !poly3.equals(poly2);
-		// swap the first and the second variables and the result is equal to poly2
-		assert AMultivariatePolynomial.swapVariables(poly3, 0, 1).equals(poly2);
+        // this poly differs from poly2 since now "a" is "the second"
+        // variable and "b" is "the first"
+        val poly3 = MultivariatePolynomial.parse("a^2 + a*b", "b", "a")
+        assert(poly3 != poly2)
+        // swap the first and the second variables and the result is equal to poly2
+        assert(poly3.swapVariables(0, 1) == poly2)
 
 
-		// the default toString() will use the default
-		// variables "x", "y", "z"  (if more variables 
-		// then it will use "x1", "x2", ... , "xN")
-		// the result will be "x*y + x^2"
-		System.out.println(poly1);
-		// specify which variable names use for printing
-		// the result will be "a*b + a^2"
-		System.out.println(poly1.toString(new String[]{"a", "b"}));
-		// the result will be "a*b + b^2"
-		System.out.println(poly1.toString(new String[]{"b", "a"}));
+        // the default toString() will use the default
+        // variables "x", "y", "z"  (if more variables 
+        // then it will use "x1", "x2", ... , "xN")
+        // the result will be "x*y + x^2"
+        println(poly1)
+        // specify which variable names use for printing
+        // the result will be "a*b + a^2"
+        println(poly1.toString(Array("a", "b")))
+        // the result will be "a*b + b^2"
+        println(poly1.toString(Array("b", "a")))
+
+    .. code-tab:: java
+
+        // when parsing "x" will be considered as the "first variable"
+        // and "y" as "the second" => in the result the particular
+        // names "x" and "y" are erased
+        MultivariatePolynomial<BigInteger> poly1 = MultivariatePolynomial.parse("x^2 + x*y", "x", "y");
+        // parse the same polynomial but using "a" and "b" instead of "x" and "y"
+        MultivariatePolynomial<BigInteger> poly2 = MultivariatePolynomial.parse("a^2 + a*b", "a", "b");
+        // polynomials are equal (no matter which variable names were used when parsing)
+        assert poly1.equals(poly2);
+        // degree in the first variable
+        assert poly1.degree(0) == 2;
+        // degree in the second variable
+        assert poly1.degree(1) == 1;
+
+        // this poly differs from poly2 since now "a" is "the second"
+        // variable and "b" is "the first"
+        MultivariatePolynomial<BigInteger> poly3 = MultivariatePolynomial.parse("a^2 + a*b", "b", "a");
+        assert !poly3.equals(poly2);
+        // swap the first and the second variables and the result is equal to poly2
+        assert AMultivariatePolynomial.swapVariables(poly3, 0, 1).equals(poly2);
+
+
+        // the default toString() will use the default
+        // variables "x", "y", "z"  (if more variables 
+        // then it will use "x1", "x2", ... , "xN")
+        // the result will be "x*y + x^2"
+        System.out.println(poly1);
+        // specify which variable names use for printing
+        // the result will be "a*b + a^2"
+        System.out.println(poly1.toString(new String[]{"a", "b"}));
+        // the result will be "a*b + b^2"
+        System.out.println(poly1.toString(new String[]{"b", "a"}));
 
 
 With Scala DSL the information about string names of variables may be stored in the ring instance. In Scala DSL, when parsing polynomial via ``ring(string)`` it is allowed to use only those variables that were specified when instantiating the ring. To get the internally used integer index of variable there is ``ring.index("stringVar")`` method; to print polynomial using the stored strings for variables there is ``ring.show(object)`` method. Illustration:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-	    // "x" is the first variable "y" is the second
-	    val ring = MultivariateRing(Z, Array("x", "y"))
-	    assert (ring.index("x") == 0)
-	    assert (ring.index("y") == 1)
-	    // parse polynomial
-	    val poly = ring("x^2 + x*y")
-	    // stringify poly using "x" and "y" for variables
-	    println(ring show poly)
+        // "x" is the first variable "y" is the second
+        val ring = MultivariateRing(Z, Array("x", "y"))
+        assert (ring.index("x") == 0)
+        assert (ring.index("y") == 1)
+        // parse polynomial
+        val poly = ring("x^2 + x*y")
+        // stringify poly using "x" and "y" for variables
+        println(ring show poly)
 
-	    // this is forbidden (IllegalArgumentException will be thrown):
-	    // (can't use "a" and "b" instead of "x" and "y")
-	    val poly = ring("a^2 + b*c") // <- error!
+        // this is forbidden (IllegalArgumentException will be thrown):
+        // (can't use "a" and "b" instead of "x" and "y")
+        val poly = ring("a^2 + b*c") // <- error!
 
 ----
 
@@ -944,31 +1107,31 @@ The second important note about internal implementation of polynomials is that p
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		val ring = UnivariateRing(Z, "x")
-		val (p1, p2, p3) = ring("x", "x^2", "x^3")
+        val ring = UnivariateRing(Z, "x")
+        val (p1, p2, p3) = ring("x", "x^2", "x^3")
 
-		// this WILL modify p1
-		p1.add(p2)
-		// this will NOT modify p2
-		p2.copy().add(p3)
-		// this will NOT modify p2
-		ring.add(p2, p3)
-		// this will NOT modify p2
-		p2 + p3
+        // this WILL modify p1
+        p1.add(p2)
+        // this will NOT modify p2
+        p2.copy().add(p3)
+        // this will NOT modify p2
+        ring.add(p2, p3)
+        // this will NOT modify p2
+        p2 + p3
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		UnivariatePolynomial
-		        p1 = UnivariatePolynomial.parse("x", Z),
-		        p2 = UnivariatePolynomial.parse("x^2", Z),
-		        p3 = UnivariatePolynomial.parse("x^3", Z);
+        UnivariatePolynomial
+                p1 = UnivariatePolynomial.parse("x", Z),
+                p2 = UnivariatePolynomial.parse("x^2", Z),
+                p3 = UnivariatePolynomial.parse("x^3", Z);
 
-		// this WILL modify p1
-		p1.add(p2);
-		// this will NOT modify p2
-		p2.copy().add(p3);
+        // this WILL modify p1
+        p1.add(p2);
+        // this will NOT modify p2
+        p2.copy().add(p3);
 
 There are strong reasons to use mutable data structures internally for implementation of polynomial algebra. However, it may be confusing when just using the API. So it is always preffered to use ring instance for mathematical operations: use ``ring.add(a, b)`` instead of ``a.add(b)`` and so on.
 
@@ -985,84 +1148,84 @@ The parent interface for all polynomials is `IPolynomial<PolyType>`_. The follow
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		/**
-		 * @tparam Poly type of polynomials
-		 */
-		def genericFunc[Poly <: IPolynomial[Poly]](poly: Poly): Poly = {
-		    poly.pow(2) * 3 + poly * 2 + 1
-		}
+        /**
+         * @tparam Poly type of polynomials
+         */
+        def genericFunc[Poly <: IPolynomial[Poly]](poly: Poly): Poly = {
+            poly.pow(2) * 3 + poly * 2 + 1
+        }
 
-		// univariate polynomials over Zp64
-		val uRing = UnivariateRingZp64(17, "x")
-		println(uRing show genericFunc(uRing("1 + 2*x + 3*x^2")))
+        // univariate polynomials over Zp64
+        val uRing = UnivariateRingZp64(17, "x")
+        println(uRing show genericFunc(uRing("1 + 2*x + 3*x^2")))
 
-		// multivariate polynomials over Z
-		val mRing = MultivariateRing(Z, Array("x", "y", "z"))
-		println(mRing show genericFunc(mRing("1 + x + y + z")))
+        // multivariate polynomials over Z
+        val mRing = MultivariateRing(Z, Array("x", "y", "z"))
+        println(mRing show genericFunc(mRing("1 + x + y + z")))
 
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		/**
-		 * @param <Poly> polynomial type
-		 */
-		static <Poly extends IPolynomial<Poly>> Poly genericFunc(Poly poly) {
-		return poly.createOne().add(
-		        poly.copy().multiply(2),
-		        polyPow(poly, 2).multiply(3));
-		}
+        /**
+         * @param <Poly> polynomial type
+         */
+        static <Poly extends IPolynomial<Poly>> Poly genericFunc(Poly poly) {
+        return poly.createOne().add(
+                poly.copy().multiply(2),
+                polyPow(poly, 2).multiply(3));
+        }
 
-		// univariate polynomials over Zp64
-		System.out.println(genericFunc(UnivariatePolynomialZ64.create(1, 2, 3).modulus(17)));
-		// multivariate polynomials over Z
-		System.out.println(genericFunc(MultivariatePolynomial.parse("1 + x + y + z")));
+        // univariate polynomials over Zp64
+        System.out.println(genericFunc(UnivariatePolynomialZ64.create(1, 2, 3).modulus(17)));
+        // multivariate polynomials over Z
+        System.out.println(genericFunc(MultivariatePolynomial.parse("1 + x + y + z")));
 
 
 Note that there is no any specific polynomial ring used in the ``genericFunc`` and mathematical operations are delegated to the polynomial instances (plain polynomial addition/multiplication is used). Compare it to the following almost identical example, where the polynomial ring is specified directly and all math operations are delegated to the `Ring<E>`_ instance:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		/**
-		  * @tparam Poly type of polynomials
-		  * @tparam E    type of polynomial coefficients
-		  */
-		def genericFuncWithRing[Poly <: IPolynomial[Poly], E](poly: Poly)
-		    (implicit ring: IPolynomialRing[Poly, E]): Poly = {
-		  poly.pow(2) * 3 + poly * 2 + 1
-		}
+        /**
+          * @tparam Poly type of polynomials
+          * @tparam E    type of polynomial coefficients
+          */
+        def genericFuncWithRing[Poly <: IPolynomial[Poly], E](poly: Poly)
+            (implicit ring: IPolynomialRing[Poly, E]): Poly = {
+          poly.pow(2) * 3 + poly * 2 + 1
+        }
 
-		// univariate polynomials over Zp64
-		val uRing = UnivariateRingZp64(17, "x")
-		println(uRing show genericFuncWithRing(uRing("1 + 2*x + 3*x^2"))(uRing))
+        // univariate polynomials over Zp64
+        val uRing = UnivariateRingZp64(17, "x")
+        println(uRing show genericFuncWithRing(uRing("1 + 2*x + 3*x^2"))(uRing))
 
-		// multivariate polynomials over Z
-		val mRing = MultivariateRing(Z, Array("x", "y", "z"))
-		println(mRing show genericFuncWithRing(mRing("1 + x + y + z"))(mRing))
+        // multivariate polynomials over Z
+        val mRing = MultivariateRing(Z, Array("x", "y", "z"))
+        println(mRing show genericFuncWithRing(mRing("1 + x + y + z"))(mRing))
 
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		/**
-		 * @param <Poly> polynomial type
-		 */
-		static <Poly extends IPolynomial<Poly>> Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) {
-		    return ring.add(
-		            ring.getOne(),
-		            ring.multiply(poly, ring.valueOf(2)),
-		            ring.multiply(ring.pow(poly, 2), ring.valueOf(3)));
-		}
+        /**
+         * @param <Poly> polynomial type
+         */
+        static <Poly extends IPolynomial<Poly>> Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) {
+            return ring.add(
+                    ring.getOne(),
+                    ring.multiply(poly, ring.valueOf(2)),
+                    ring.multiply(ring.pow(poly, 2), ring.valueOf(3)));
+        }
 
-		// univariate polynomials over Zp64
-		UnivariateRing<UnivariatePolynomialZp64> uRing = UnivariateRingZp64(17);
-		System.out.println(genericFuncWithRing(uRing.parse("1 + 2*x + 3*x^2"), uRing));
+        // univariate polynomials over Zp64
+        UnivariateRing<UnivariatePolynomialZp64> uRing = UnivariateRingZp64(17);
+        System.out.println(genericFuncWithRing(uRing.parse("1 + 2*x + 3*x^2"), uRing));
 
-		// multivariate polynomials over Z
-		MultivariateRing<MultivariatePolynomial<BigInteger>> mRing = MultivariateRing(3, Z);
-		System.out.println(genericFuncWithRing(mRing.parse("1 + x + y + z"), mRing));
+        // multivariate polynomials over Z
+        MultivariateRing<MultivariatePolynomial<BigInteger>> mRing = MultivariateRing(3, Z);
+        System.out.println(genericFuncWithRing(mRing.parse("1 + x + y + z"), mRing));
 
 
 While in case of ``UnivariateRingZp64`` or ``MultivariateRing`` both ``genericFunc``  and ``genericFuncWithRing`` give the same result, in the case of e.g. Galois field the results will be different, since mathematical operations in Galois field are performed modulo the irreducible polynomial:
@@ -1070,35 +1233,35 @@ While in case of ``UnivariateRingZp64`` or ``MultivariateRing`` both ``genericFu
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		// GF(13^4)
-		implicit val gf = GF(13, 4, "z")
-		// some element of GF(13^4)
-		val poly = gf("1 + z + z^2 + z^3 + z^4").pow(10)
+        // GF(13^4)
+        implicit val gf = GF(13, 4, "z")
+        // some element of GF(13^4)
+        val poly = gf("1 + z + z^2 + z^3 + z^4").pow(10)
 
-		val noRing = genericFunc(poly)
-		println(noRing)
+        val noRing = genericFunc(poly)
+        println(noRing)
 
-		val withRing = genericFuncWithRing(poly)
-		println(withRing)
+        val withRing = genericFuncWithRing(poly)
+        println(withRing)
 
-		assert(noRing != withRing)
+        assert(noRing != withRing)
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		// GF(13^4)
-		FiniteField<UnivariatePolynomialZp64> gf = GF(13, 4);
-		// some element of GF(13^4)
-		UnivariatePolynomialZp64 poly = gf.pow(gf.parse("1 + z + z^2 + z^3 + z^4"), 10);
+        // GF(13^4)
+        FiniteField<UnivariatePolynomialZp64> gf = GF(13, 4);
+        // some element of GF(13^4)
+        UnivariatePolynomialZp64 poly = gf.pow(gf.parse("1 + z + z^2 + z^3 + z^4"), 10);
 
-		UnivariatePolynomialZp64 noRing = genericFunc(poly);
-		System.out.println(noRing);
+        UnivariatePolynomialZp64 noRing = genericFunc(poly);
+        System.out.println(noRing);
 
-		UnivariatePolynomialZp64 withRing = genericFuncWithRing(poly, gf);
-		System.out.println(withRing);
+        UnivariatePolynomialZp64 withRing = genericFuncWithRing(poly, gf);
+        System.out.println(withRing);
 
-		assert !noRing.equals(withRing);
+        assert !noRing.equals(withRing);
 
 .. _IPolynomial<PolyType>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/IPolynomial.java
 
@@ -1139,33 +1302,33 @@ Internally both implementations use dense data structure (array of coefficients)
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		/**
-		  * @tparam Poly type of univariate polynomials
-		  */
-		def genericFunc[Poly <: IUnivariatePolynomial[Poly]](poly: Poly) = ???
+        /**
+          * @tparam Poly type of univariate polynomials
+          */
+        def genericFunc[Poly <: IUnivariatePolynomial[Poly]](poly: Poly) = ???
 
-		/**
-		  * @tparam Poly type of univariate polynomials
-		  * @tparam E    type of polynomial coefficients
-		  */
-		def genericFuncWithRing[Poly <: IUnivariatePolynomial[Poly], E](poly: Poly)
-		    (implicit ring: IUnivariateRing[Poly, E]) =  ???
+        /**
+          * @tparam Poly type of univariate polynomials
+          * @tparam E    type of polynomial coefficients
+          */
+        def genericFuncWithRing[Poly <: IUnivariatePolynomial[Poly], E](poly: Poly)
+            (implicit ring: IUnivariateRing[Poly, E]) =  ???
 
-	.. code-tab:: java
+    .. code-tab:: java
 
- 		/**
-		 * @param <Poly> univariate polynomial type
-		 */
-		static <Poly extends IUnivariatePolynomial<Poly>>
-		Poly genericFunc(Poly poly) { return null; }
+        /**
+         * @param <Poly> univariate polynomial type
+         */
+        static <Poly extends IUnivariatePolynomial<Poly>>
+        Poly genericFunc(Poly poly) { return null; }
 
-		/**
-		 * @param <Poly> univariate polynomial type
-		 */
-		static <Poly extends IUnivariatePolynomial<Poly>>
-		Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
+        /**
+         * @param <Poly> univariate polynomial type
+         */
+        static <Poly extends IUnivariatePolynomial<Poly>>
+        Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
 
 .. _ref-univariate-divison:
@@ -1183,51 +1346,51 @@ The upper-level method ``UnivariateDivision.divideAndRemainder`` switches betwee
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		implicit val ring = UnivariateRingZp64(17, "x")
-		// some random divider
-		val divider = ring.randomElement()
-		// some random dividend
-		val dividend = 1 + 2 * divider + 3 * divider.pow(2)
+        implicit val ring = UnivariateRingZp64(17, "x")
+        // some random divider
+        val divider = ring.randomElement()
+        // some random dividend
+        val dividend = 1 + 2 * divider + 3 * divider.pow(2)
 
-		// quotient and remainder using built-in methods
-		val (divPlain, remPlain) = dividend /% divider
+        // quotient and remainder using built-in methods
+        val (divPlain, remPlain) = dividend /% divider
 
-		// precomputed Newton inverses, need to calculate it only once
-		implicit val invMod = divider.precomputedInverses
-		// quotient and remainder computed using fast
-		// algorithm with precomputed Newton inverses
-		val (divFast, remFast) = dividend /%% divider
+        // precomputed Newton inverses, need to calculate it only once
+        implicit val invMod = divider.precomputedInverses
+        // quotient and remainder computed using fast
+        // algorithm with precomputed Newton inverses
+        val (divFast, remFast) = dividend /%% divider
 
-		// results are the same
-		assert((divPlain, remPlain) == (divFast, remFast))
+        // results are the same
+        assert((divPlain, remPlain) == (divFast, remFast))
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		UnivariateRing<UnivariatePolynomialZp64> ring = UnivariateRingZp64(17);
-		// some random divider
-		UnivariatePolynomialZp64 divider = ring.randomElement();
-		// some random dividend
-		UnivariatePolynomialZp64 dividend = ring.add(
-		        ring.valueOf(1),
-		        ring.multiply(ring.valueOf(2), divider),
-		        ring.multiply(ring.valueOf(3), ring.pow(divider, 2)));
+        UnivariateRing<UnivariatePolynomialZp64> ring = UnivariateRingZp64(17);
+        // some random divider
+        UnivariatePolynomialZp64 divider = ring.randomElement();
+        // some random dividend
+        UnivariatePolynomialZp64 dividend = ring.add(
+                ring.valueOf(1),
+                ring.multiply(ring.valueOf(2), divider),
+                ring.multiply(ring.valueOf(3), ring.pow(divider, 2)));
 
-		// quotient and remainder using built-in methods
-		UnivariatePolynomialZp64[] divRemPlain
-		        = UnivariateDivision.divideAndRemainder(dividend, divider, true);
+        // quotient and remainder using built-in methods
+        UnivariatePolynomialZp64[] divRemPlain
+                = UnivariateDivision.divideAndRemainder(dividend, divider, true);
 
-		// precomputed Newton inverses, need to calculate it only once
-		UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod
-		        = UnivariateDivision.fastDivisionPreConditioning(divider);
-		// quotient and remainder computed using fast
-		// algorithm with precomputed Newton inverses
-		UnivariatePolynomialZp64[] divRemFast
-		        = UnivariateDivision.divideAndRemainderFast(dividend, divider, invMod, true);
+        // precomputed Newton inverses, need to calculate it only once
+        UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod
+                = UnivariateDivision.fastDivisionPreConditioning(divider);
+        // quotient and remainder computed using fast
+        // algorithm with precomputed Newton inverses
+        UnivariatePolynomialZp64[] divRemFast
+                = UnivariateDivision.divideAndRemainderFast(dividend, divider, invMod, true);
 
-		// results are the same
-		assert Arrays.equals(divRemPlain, divRemFast);
+        // results are the same
+        assert Arrays.equals(divRemPlain, divRemFast);
 
 
 Details of implementation can be found in `UnivariateDivision`_.
@@ -1247,77 +1410,77 @@ The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidea
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		import poly.univar.UnivariateGCD._
+        import poly.univar.UnivariateGCD._
 
-		// Polynomials over field
-		val ringZp = UnivariateRingZp64(17, "x")
-		val a = ringZp("1 + 3*x + 2*x^2")
-		val b = ringZp("1 - x^2")
-		// Euclid and Half-GCD algorithms for polynomials over field
-		assert(EuclidGCD(a, b) == HalfGCD(a, b))
-		// Extended Euclidean algorithm
-		val (gcd, s, t) = ExtendedEuclidGCD(a, b) match {case Array(gcd, s, t) => (gcd, s, t)}
-		assert(a * s + b * t == gcd)
-		// Extended Half-GCD algorithm
-		val (gcd1, s1, t1) = ExtendedHalfGCD(a, b) match {case Array(gcd, s, t) => (gcd, s, t)}
-		assert((gcd1, s1, t1) == (gcd, s, t))
-
-
-		// Polynomials over Z
-		val ringZ = UnivariateRing(Z, "x")
-		val aZ = ringZ("1 + 3*x + 2*x^2")
-		val bZ = ringZ("1 - x^2")
-		// GCD for polynomials over Z
-		assert(ModularGCD(aZ, bZ) == ringZ("1 + x"))
+        // Polynomials over field
+        val ringZp = UnivariateRingZp64(17, "x")
+        val a = ringZp("1 + 3*x + 2*x^2")
+        val b = ringZp("1 - x^2")
+        // Euclid and Half-GCD algorithms for polynomials over field
+        assert(EuclidGCD(a, b) == HalfGCD(a, b))
+        // Extended Euclidean algorithm
+        val (gcd, s, t) = ExtendedEuclidGCD(a, b) match {case Array(gcd, s, t) => (gcd, s, t)}
+        assert(a * s + b * t == gcd)
+        // Extended Half-GCD algorithm
+        val (gcd1, s1, t1) = ExtendedHalfGCD(a, b) match {case Array(gcd, s, t) => (gcd, s, t)}
+        assert((gcd1, s1, t1) == (gcd, s, t))
 
 
-		// Bivariate polynomials represented as Z[y][x]
-		val ringXY = UnivariateRing(UnivariateRing(Z, "y"), "x")
-		val aXY = ringXY("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2")
-		val bXY = ringXY("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2")
-		// Subresultant sequence
-		val subResultants = SubresultantRemainders(aXY, bXY)
-		// The GCD
-		val gcdXY = subResultants.gcd.primitivePart
-		assert(aXY % gcdXY === 0 && bXY % gcdXY === 0)
-
-	.. code-tab:: java
-
-		// Polynomials over field
-		UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(1, 3, 2).modulus(17);
-		UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(1, 0, -1).modulus(17);
-		// Euclid and Half-GCD algorithms for polynomials over field
-		assert EuclidGCD(a, b).equals(HalfGCD(a, b));
-		// Extended Euclidean algorithm
-		UnivariatePolynomialZp64[] xgcd = ExtendedEuclidGCD(a, b);
-		assert a.copy().multiply(xgcd[1]).add(b.copy().multiply(xgcd[2])).equals(xgcd[0]);
-		// Extended Half-GCD algorithm
-		UnivariatePolynomialZp64[] xgcd1 = ExtendedHalfGCD(a, b);
-		assert Arrays.equals(xgcd, xgcd1);
+        // Polynomials over Z
+        val ringZ = UnivariateRing(Z, "x")
+        val aZ = ringZ("1 + 3*x + 2*x^2")
+        val bZ = ringZ("1 - x^2")
+        // GCD for polynomials over Z
+        assert(ModularGCD(aZ, bZ) == ringZ("1 + x"))
 
 
-		// Polynomials over Z
-		UnivariatePolynomial<BigInteger> aZ = UnivariatePolynomial.create(1, 3, 2);
-		UnivariatePolynomial<BigInteger> bZ = UnivariatePolynomial.create(1, 0, -1);
-		// GCD for polynomials over Z
-		assert ModularGCD(aZ, bZ).equals(UnivariatePolynomial.create(1, 1));
+        // Bivariate polynomials represented as Z[y][x]
+        val ringXY = UnivariateRing(UnivariateRing(Z, "y"), "x")
+        val aXY = ringXY("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2")
+        val bXY = ringXY("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2")
+        // Subresultant sequence
+        val subResultants = SubresultantRemainders(aXY, bXY)
+        // The GCD
+        val gcdXY = subResultants.gcd.primitivePart
+        assert(aXY % gcdXY === 0 && bXY % gcdXY === 0)
+
+    .. code-tab:: java
+
+        // Polynomials over field
+        UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(1, 3, 2).modulus(17);
+        UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(1, 0, -1).modulus(17);
+        // Euclid and Half-GCD algorithms for polynomials over field
+        assert EuclidGCD(a, b).equals(HalfGCD(a, b));
+        // Extended Euclidean algorithm
+        UnivariatePolynomialZp64[] xgcd = ExtendedEuclidGCD(a, b);
+        assert a.copy().multiply(xgcd[1]).add(b.copy().multiply(xgcd[2])).equals(xgcd[0]);
+        // Extended Half-GCD algorithm
+        UnivariatePolynomialZp64[] xgcd1 = ExtendedHalfGCD(a, b);
+        assert Arrays.equals(xgcd, xgcd1);
 
 
-		// Bivariate polynomials represented as Z[y][x]
-		UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
-		        ringXY = UnivariateRing(UnivariateRing(Z));
-		UnivariatePolynomial<UnivariatePolynomial<BigInteger>>
-		        aXY = ringXY.parse("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2"),
-		        bXY = ringXY.parse("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2");
-		//// Subresultant sequence
-		PolynomialRemainders<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
-		        subResultants = SubresultantRemainders(aXY, bXY);
-		// The GCD
-		UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcdXY = subResultants.gcd().primitivePart();
-		assert UnivariateDivision.remainder(aXY, gcdXY, true).isZero();
-		assert UnivariateDivision.remainder(bXY, gcdXY, true).isZero();
+        // Polynomials over Z
+        UnivariatePolynomial<BigInteger> aZ = UnivariatePolynomial.create(1, 3, 2);
+        UnivariatePolynomial<BigInteger> bZ = UnivariatePolynomial.create(1, 0, -1);
+        // GCD for polynomials over Z
+        assert ModularGCD(aZ, bZ).equals(UnivariatePolynomial.create(1, 1));
+
+
+        // Bivariate polynomials represented as Z[y][x]
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
+                ringXY = UnivariateRing(UnivariateRing(Z));
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>>
+                aXY = ringXY.parse("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2"),
+                bXY = ringXY.parse("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2");
+        //// Subresultant sequence
+        PolynomialRemainders<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
+                subResultants = SubresultantRemainders(aXY, bXY);
+        // The GCD
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcdXY = subResultants.gcd().primitivePart();
+        assert UnivariateDivision.remainder(aXY, gcdXY, true).isZero();
+        assert UnivariateDivision.remainder(bXY, gcdXY, true).isZero();
 
 Details of implementation can be found in `UnivariateGCD`_.
 
@@ -1338,48 +1501,48 @@ Univariate factorization is supported for polynomials in :math:`F[x]` where :mat
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		// ring GF(13^5)[x] (coefficient domain is finite field)
-		val ringF = UnivariateRing(GF(13, 5, "z"), "x")
-		// some random polynomial composed from some factors
-		val polyF = ringF.randomElement() * ringF.randomElement() * ringF.randomElement().pow(10)
-		// perform square-free factorization
-		println(ringF show FactorSquareFree(polyF))
-		// perform complete factorization
-		println(ringF show Factor(polyF))
-
-
-		// ring Q[x]
-		val ringQ = UnivariateRing(Q, "x")
-		// some random polynomial composed from some factors
-		val polyQ = ringQ.randomElement() * ringQ.randomElement() * ringQ.randomElement().pow(10)
-		// perform square-free factorization
-		println(ringQ show FactorSquareFree(polyQ))
-		// perform complete factorization
-		println(ringQ show Factor(polyQ))
-
-	.. code-tab:: java
-
-		// ring GF(13^5)[x] (coefficient domain is finite field)
-		UnivariateRing<UnivariatePolynomial<UnivariatePolynomialZp64>> ringF = UnivariateRing(GF(13, 5));
-		// some random polynomial composed from some factors
-		UnivariatePolynomial<UnivariatePolynomialZp64> polyF = ringF.randomElement().multiply(ringF.randomElement().multiply(polyPow(ringF.randomElement(), 10)));
-
-		// perform square-free factorization
-		System.out.println(FactorSquareFree(polyF));
-		// perform complete factorization
-		System.out.println(Factor(polyF));
+        // ring GF(13^5)[x] (coefficient domain is finite field)
+        val ringF = UnivariateRing(GF(13, 5, "z"), "x")
+        // some random polynomial composed from some factors
+        val polyF = ringF.randomElement() * ringF.randomElement() * ringF.randomElement().pow(10)
+        // perform square-free factorization
+        println(ringF show FactorSquareFree(polyF))
+        // perform complete factorization
+        println(ringF show Factor(polyF))
 
 
-		// ring Q[x]
-		UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> ringQ = UnivariateRing(Q);
-		// some random polynomial composed from some factors
-		UnivariatePolynomial<Rational<BigInteger>> polyQ = ringQ.randomElement().multiply(ringQ.randomElement().multiply(polyPow(ringQ.randomElement(), 10)));
-		// perform square-free factorization
-		System.out.println(FactorSquareFree(polyQ));
-		// perform complete factorization
-		System.out.println(Factor(polyQ));
+        // ring Q[x]
+        val ringQ = UnivariateRing(Q, "x")
+        // some random polynomial composed from some factors
+        val polyQ = ringQ.randomElement() * ringQ.randomElement() * ringQ.randomElement().pow(10)
+        // perform square-free factorization
+        println(ringQ show FactorSquareFree(polyQ))
+        // perform complete factorization
+        println(ringQ show Factor(polyQ))
+
+    .. code-tab:: java
+
+        // ring GF(13^5)[x] (coefficient domain is finite field)
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomialZp64>> ringF = UnivariateRing(GF(13, 5));
+        // some random polynomial composed from some factors
+        UnivariatePolynomial<UnivariatePolynomialZp64> polyF = ringF.randomElement().multiply(ringF.randomElement().multiply(polyPow(ringF.randomElement(), 10)));
+
+        // perform square-free factorization
+        System.out.println(FactorSquareFree(polyF));
+        // perform complete factorization
+        System.out.println(Factor(polyF));
+
+
+        // ring Q[x]
+        UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> ringQ = UnivariateRing(Q);
+        // some random polynomial composed from some factors
+        UnivariatePolynomial<Rational<BigInteger>> polyQ = ringQ.randomElement().multiply(ringQ.randomElement().multiply(polyPow(ringQ.randomElement(), 10)));
+        // perform square-free factorization
+        System.out.println(FactorSquareFree(polyQ));
+        // perform complete factorization
+        System.out.println(Factor(polyQ));
 
 Details of implementation can be found in `UnivariateSquareFreeFactorization`_, `DistinctDegreeFactorization`_, `EqualDegreeFactorization`_ and `UnivariateFactorization`_.
 
@@ -1398,54 +1561,54 @@ Irreducibility test and generation of random irreducible polynomials are availbl
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		import rings.poly.univar.IrreduciblePolynomials._
-		val random = new Random()
+        import rings.poly.univar.IrreduciblePolynomials._
+        val random = new Random()
 
-		// random irreducible polynomial in Z/2[x] of degree 10 (UnivariatePolynomialZp64)
-		val poly1 = randomIrreduciblePolynomial(2, 10, random)
-		assert(poly1.degree() == 10)
-		assert(irreducibleQ(poly1))
+        // random irreducible polynomial in Z/2[x] of degree 10 (UnivariatePolynomialZp64)
+        val poly1 = randomIrreduciblePolynomial(2, 10, random)
+        assert(poly1.degree() == 10)
+        assert(irreducibleQ(poly1))
 
-		// random irreducible polynomial in Z/2[x] of degree 10 (UnivariatePolynomial[Integer])
-		val poly2 = randomIrreduciblePolynomial(Zp(2).theRing, 10, random)
-		assert(poly2.degree() == 10)
-		assert(irreducibleQ(poly2))
+        // random irreducible polynomial in Z/2[x] of degree 10 (UnivariatePolynomial[Integer])
+        val poly2 = randomIrreduciblePolynomial(Zp(2).theRing, 10, random)
+        assert(poly2.degree() == 10)
+        assert(irreducibleQ(poly2))
 
-		// random irreducible polynomial in GF(11^15)[x] of degree 10 (this may take few seconds)
-		val poly3 = randomIrreduciblePolynomial(GF(11, 15).theRing, 10, random)
-		assert(poly3.degree() == 10)
-		assert(irreducibleQ(poly3))
+        // random irreducible polynomial in GF(11^15)[x] of degree 10 (this may take few seconds)
+        val poly3 = randomIrreduciblePolynomial(GF(11, 15).theRing, 10, random)
+        assert(poly3.degree() == 10)
+        assert(irreducibleQ(poly3))
 
-		// random irreducible polynomial in Z[x] of degree 10
-		val poly4 = randomIrreduciblePolynomialOverZ(10, random)
-		assert(poly4.degree() == 10)
-		assert(irreducibleQ(poly4))
+        // random irreducible polynomial in Z[x] of degree 10
+        val poly4 = randomIrreduciblePolynomialOverZ(10, random)
+        assert(poly4.degree() == 10)
+        assert(irreducibleQ(poly4))
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		Well44497b random = new Well44497b();
+        Well44497b random = new Well44497b();
 
-		// random irreducible polynomial in Z/2[x] of degree 10
-		UnivariatePolynomialZp64 poly1 = randomIrreduciblePolynomial(2, 10, random);
-		assert poly1.degree() == 10;
-		assert irreducibleQ(poly1);
+        // random irreducible polynomial in Z/2[x] of degree 10
+        UnivariatePolynomialZp64 poly1 = randomIrreduciblePolynomial(2, 10, random);
+        assert poly1.degree() == 10;
+        assert irreducibleQ(poly1);
 
-		// random irreducible polynomial in Z/2[x] of degree 10
-		UnivariatePolynomial<BigInteger> poly2 = randomIrreduciblePolynomial(Zp(2), 10, random);
-		assert poly2.degree() == 10;
-		assert irreducibleQ(poly2);
+        // random irreducible polynomial in Z/2[x] of degree 10
+        UnivariatePolynomial<BigInteger> poly2 = randomIrreduciblePolynomial(Zp(2), 10, random);
+        assert poly2.degree() == 10;
+        assert irreducibleQ(poly2);
 
-		// random irreducible polynomial in GF(11^15)[x] of degree 10 (this may take few seconds)
-		UnivariatePolynomial<UnivariatePolynomialZp64> poly3 = randomIrreduciblePolynomial(GF(11, 15), 10, random);
-		assert poly3.degree() == 10;
-		assert irreducibleQ(poly3);
+        // random irreducible polynomial in GF(11^15)[x] of degree 10 (this may take few seconds)
+        UnivariatePolynomial<UnivariatePolynomialZp64> poly3 = randomIrreduciblePolynomial(GF(11, 15), 10, random);
+        assert poly3.degree() == 10;
+        assert irreducibleQ(poly3);
 
-		// random irreducible polynomial in Z[x] of degree 10
-		UnivariatePolynomial<BigInteger> poly4 = randomIrreduciblePolynomialOverZ(10, random);
-		assert poly4.degree() == 10;
-		assert irreducibleQ(poly4);
+        // random irreducible polynomial in Z[x] of degree 10
+        UnivariatePolynomial<BigInteger> poly4 = randomIrreduciblePolynomialOverZ(10, random);
+        assert poly4.degree() == 10;
+        assert irreducibleQ(poly4);
 
 
 The details about implementation can be found in  `IrreduciblePolynomials`_.
@@ -1462,38 +1625,38 @@ Polynomial interpolation via Newton method can be done in the following way:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		import rings.poly.univar.UnivariateInterpolation._
+        import rings.poly.univar.UnivariateInterpolation._
 
-		// points
-		val points = Array(1L, 2L, 3L, 12L)
-		// values
-		val values = Array(3L, 2L, 1L, 6L)
+        // points
+        val points = Array(1L, 2L, 3L, 12L)
+        // values
+        val values = Array(3L, 2L, 1L, 6L)
 
-		// interpolate using Newton method
-		val result = new InterpolationZp64(Zp64(17))
-		  .update(points, values)
-		  .getInterpolatingPolynomial
+        // interpolate using Newton method
+        val result = new InterpolationZp64(Zp64(17))
+          .update(points, values)
+          .getInterpolatingPolynomial
 
-		// result.evaluate(points(i)) = values(i)
-		assert(points.zipWithIndex.forall { case (point, i) => result.evaluate(point) == values(i) })
+        // result.evaluate(points(i)) = values(i)
+        assert(points.zipWithIndex.forall { case (point, i) => result.evaluate(point) == values(i) })
 
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		// points
-		long[] points = {1L, 2L, 3L, 12L};
-		// values
-		long[] values = {3L, 2L, 1L, 6L};
+        // points
+        long[] points = {1L, 2L, 3L, 12L};
+        // values
+        long[] values = {3L, 2L, 1L, 6L};
 
-		// interpolate using Newton method
-		UnivariatePolynomialZp64 result = new InterpolationZp64(Zp64(17))
-		        .update(points, values)
-		        .getInterpolatingPolynomial();
+        // interpolate using Newton method
+        UnivariatePolynomialZp64 result = new InterpolationZp64(Zp64(17))
+                .update(points, values)
+                .getInterpolatingPolynomial();
 
-		// result.evaluate(points(i)) = values(i)
-		assert IntStream.range(0, points.length).allMatch(i -> result.evaluate(points[i]) == values[i]);
+        // result.evaluate(points(i)) = values(i)
+        assert IntStream.range(0, points.length).allMatch(i -> result.evaluate(points[i]) == values[i]);
 
 
 With Scala DSL it is quite easy to implement Lagrange interpolation formula:
@@ -1501,40 +1664,40 @@ With Scala DSL it is quite easy to implement Lagrange interpolation formula:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		/*  Lagrange interpolation formula */
-		def lagrange[Poly <: IUnivariatePolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: IUnivariateRing[Poly, E]) = {
-		  points.indices
-		    .foldLeft(ring getZero) { case (sum, i) =>
-		      sum + points.indices
-		        .filter(_ != i)
-		        .foldLeft(ring getConstant values(i)) { case (product, j) =>
-		          implicit val cfRing = ring.cfRing
-		          val E: E = points(i) - points(j)
-		          product * (ring.`x` - points(j)) / E
-		        }
-		    }
-		}
+        /*  Lagrange interpolation formula */
+        def lagrange[Poly <: IUnivariatePolynomial[Poly], E](points: Seq[E], values: Seq[E])(implicit ring: IUnivariateRing[Poly, E]) = {
+          points.indices
+            .foldLeft(ring getZero) { case (sum, i) =>
+              sum + points.indices
+                .filter(_ != i)
+                .foldLeft(ring getConstant values(i)) { case (product, j) =>
+                  implicit val cfRing = ring.cfRing
+                  val E: E = points(i) - points(j)
+                  product * (ring.`x` - points(j)) / E
+                }
+            }
+        }
 
-		import rings.poly.univar.UnivariateInterpolation._
+        import rings.poly.univar.UnivariateInterpolation._
 
-		// coefficient ring GF(13, 5)
-		implicit val cfRing = GF(13, 5, "z")
-		val z = cfRing("z")
-		// some points
-		val points = Array(1 + z, 2 + z, 3 + z, 12 + z)
-		// some values
-		val values = Array(3 + z, 2 + z, 1 + z, 6 + z)
+        // coefficient ring GF(13, 5)
+        implicit val cfRing = GF(13, 5, "z")
+        val z = cfRing("z")
+        // some points
+        val points = Array(1 + z, 2 + z, 3 + z, 12 + z)
+        // some values
+        val values = Array(3 + z, 2 + z, 1 + z, 6 + z)
 
-		// interpolate with Newton iterations
-		val withNewton = new Interpolation(cfRing)
-		  .update(points, values)
-		  .getInterpolatingPolynomial
-		// interpolate using Lagrange formula
-		val withLagrange = lagrange(points, values)(UnivariateRing(cfRing, "x"))
-		// results are the same
-		assert(withNewton == withLagrange)
+        // interpolate with Newton iterations
+        val withNewton = new Interpolation(cfRing)
+          .update(points, values)
+          .getInterpolatingPolynomial
+        // interpolate using Lagrange formula
+        val withLagrange = lagrange(points, values)(UnivariateRing(cfRing, "x"))
+        // results are the same
+        assert(withNewton == withLagrange)
 
 
 
@@ -1560,7 +1723,7 @@ Multivariate polynomials
  - `MultivariatePolynomialZp64`_  --- multivariate polynomials over :math:`Z_p` with :math:`p < 2^{64}`. Implementation of `MultivariatePolynomialZp64`_ uses efficient algorithms for arithmetic in :math:`Z_p` (see :ref:`ref-machine-arithmetic`)
  - `MultivariatePolynomial<E>`_ --- multivariate polynomials over generic coefficient ring `Ring<E>`_
 
-Internally both implementations use sparse data structure --- map (``java.util.TreeMap``) from degree vectors (`DegreeVector`_) to monomials. Monomial type is implemented as just a degree vector which additionally holds a coefficient. So in correspondence with the two implementations of multivariate polynomials there are two implementations of monomials:
+Internally both implementations use sparse data structure --- map (``java.util.TreeMap``) from degree vectors (`DegreeVector`_) to monomials (`AMonomial`_) . Monomial type is implemented as just a degree vector which additionally holds a coefficient. So in correspondence with the two implementations of multivariate polynomials there are two implementations of monomials:
 
  - `MonomialZp64`_ --- monomial that stores machine-number coefficient (``long``) and is used by `MultivariatePolynomialZp64`_ 
  - `Monomial<E>`_ --- monomial that stores generic coefficient of type ``E`` and is used by `MultivariatePolynomial<E>`_
@@ -1570,71 +1733,71 @@ The generic parent class for multivariate polynomials is `AMultivariatePolynomia
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		/**
-		  * @tparam Monomial    type of monomials
-		  * @tparam Poly        type of multivariate polynomials
-		  */
-		def genericFunc[
-				Monomial <: DegreeVector[Monomial], 
-				Poly <: AMultivariatePolynomial[Monomial, Poly]
-			](poly: Poly) = ???
+        /**
+          * @tparam Monomial    type of monomials
+          * @tparam Poly        type of multivariate polynomials
+          */
+        def genericFunc[
+                Monomial <: AMonomial[Monomial], 
+                Poly <: AMultivariatePolynomial[Monomial, Poly]
+            ](poly: Poly) = ???
 
-		/**
-		  * @tparam Monomial    type of monomials
-		  * @tparam Poly        type of multivariate polynomials
-		  * @tparam Coefficient type of polynomial coefficients
-		  */
-		def genericFuncWithRing[
-				Monomial <: DegreeVector[Monomial], 
-				Poly <: AMultivariatePolynomial[Monomial, Poly], 
-				Coefficient
-			](poly: Poly)
-			 (implicit ring: IMultivariateRing[Monomial, Poly, Coefficient]) = ???
+        /**
+          * @tparam Monomial    type of monomials
+          * @tparam Poly        type of multivariate polynomials
+          * @tparam Coefficient type of polynomial coefficients
+          */
+        def genericFuncWithRing[
+                Monomial <: AMonomial[Monomial], 
+                Poly <: AMultivariatePolynomial[Monomial, Poly], 
+                Coefficient
+            ](poly: Poly)
+             (implicit ring: IMultivariateRing[Monomial, Poly, Coefficient]) = ???
 
-		implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
-		import ring.{MonomialType, PolyType, CoefficientType}
+        implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
+        import ring.{MonomialType, PolyType, CoefficientType}
 
-		val poly = ring.randomElement()
+        val poly = ring.randomElement()
 
-		// call generic func directly
-		genericFunc[MonomialType, PolyType, CoefficientType](poly)
-		genericFuncWithRing[MonomialType, PolyType, CoefficientType](poly)
+        // call generic func directly
+        genericFunc[MonomialType, PolyType, CoefficientType](poly)
+        genericFuncWithRing[MonomialType, PolyType, CoefficientType](poly)
 
-		// define shortcuts
-		val func = (p: ring.PolyType) => 
-			genericFunc[MonomialType, PolyType, CoefficientType](p)
-		val funcWithRing = (p: ring.PolyType) => 
-			genericFuncWithRing[MonomialType, PolyType, CoefficientType](p)(ring)
+        // define shortcuts
+        val func = (p: ring.PolyType) => 
+            genericFunc[MonomialType, PolyType, CoefficientType](p)
+        val funcWithRing = (p: ring.PolyType) => 
+            genericFuncWithRing[MonomialType, PolyType, CoefficientType](p)(ring)
 
-		// call with shortcuts
-		func(poly)
-		funcWithRing(poly)
+        // call with shortcuts
+        func(poly)
+        funcWithRing(poly)
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		/**
-		 * @param <Monomial> type of monomials
-		 * @param <Poly>     type of multivariate polynomials
-		 */
-		static <Monomial extends DegreeVector<Monomial>,
-		        Poly extends AMultivariatePolynomial<Monomial, Poly>>
-		Poly genericFunc(Poly poly) { return null; }
+        /**
+         * @param <Monomial> type of monomials
+         * @param <Poly>     type of multivariate polynomials
+         */
+        static <Monomial extends AMonomial<Monomial>,
+                Poly extends AMultivariatePolynomial<Monomial, Poly>>
+        Poly genericFunc(Poly poly) { return null; }
 
-		/**
-		 * @param <Monomial> type of monomials
-		 * @param <Poly>     type of multivariate polynomials
-		 */
-		static <Monomial extends DegreeVector<Monomial>,
-		        Poly extends AMultivariatePolynomial<Monomial, Poly>>
-		Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
+        /**
+         * @param <Monomial> type of monomials
+         * @param <Poly>     type of multivariate polynomials
+         */
+        static <Monomial extends AMonomial<Monomial>,
+                Poly extends AMultivariatePolynomial<Monomial, Poly>>
+        Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
-		// call generic funcs
-		genericFunc(MultivariatePolynomial.parse("a + b"));
+        // call generic funcs
+        genericFunc(MultivariatePolynomial.parse("a + b"));
 
-		MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
-		genericFuncWithRing(ring.parse("a + b"), ring);		
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        genericFuncWithRing(ring.parse("a + b"), ring);     
 
 
 .. _MultivariatePolynomialZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariatePolynomialZp64.java
@@ -1644,6 +1807,8 @@ The generic parent class for multivariate polynomials is `AMultivariatePolynomia
 .. _AMultivariatePolynomial<MonomialType, PolyType>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/AMultivariatePolynomial.java
 
 .. _DegreeVector: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/DegreeVector.java
+
+.. _AMonomial: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/AMonomial.java
 
 .. _MonomialZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MonomialZp64.java
 
@@ -1660,55 +1825,57 @@ Monomial order
  - ``GRLEX`` |br| Graded lexicographic monomial order.
  - ``GREVLEX`` |br| Graded reverse lexicographic monomial order.
  
-By default |Rings| use ``LEX`` order though the monomial order can be changed in many ways. Examples:
+By default |Rings| use ``GREVLEX`` order though the monomial order can be changed in many ways. Examples:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		import MonomialOrder._
+        import MonomialOrder._
 
-		val ring = MultivariateRing(Z, Array("x", "y"), GREVLEX)
+        val ring = MultivariateRing(Z, Array("x", "y"), GREVLEX)
 
-		// monomials in GREVLEX order
-		val poly = ring("x + x^2*y^2 + x*y")
-		assert(poly.ordering == GREVLEX)
+        // monomials in GREVLEX order
+        val poly = ring("x + x^2*y^2 + x*y")
+        assert(poly.ordering == GREVLEX)
 
-		// monomials in LEX order
-		val poly2 = poly.setOrdering(LEX)
-		assert(poly2.ordering == LEX)
+        // monomials in LEX order
+        val poly2 = poly.setOrdering(LEX)
+        assert(poly2.ordering == LEX)
 
-		// monomials in GREVLEX order (lhs ordering is used in binary operations)
-		val add = poly + poly2
-		assert(add.ordering == GREVLEX)
+        // monomials in GREVLEX order (lhs ordering is used in binary operations)
+        val add = poly + poly2
+        assert(add.ordering == GREVLEX)
 
-		// monomials in LEX order (lhs ordering is used in binary operations)
-		val add2 = poly2 + poly
-		assert(add2.ordering == LEX)
+        // monomials in LEX order (lhs ordering is used in binary operations)
+        val add2 = poly2 + poly
+        assert(add2.ordering == LEX)
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		MultivariateRing<MultivariatePolynomial<BigInteger>> ring
-		        = MultivariateRing(2, Z, MonomialOrder.GREVLEX);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring
+                = MultivariateRing(2, Z, MonomialOrder.GREVLEX);
 
-		// poly in GREVLEX
-		MultivariatePolynomial<BigInteger> poly = ring.parse("x + x^2*y^2 + x*y");
-		assert poly.ordering == MonomialOrder.GREVLEX;
+        // poly in GREVLEX
+        MultivariatePolynomial<BigInteger> poly = ring.parse("x + x^2*y^2 + x*y");
+        assert poly.ordering == MonomialOrder.GREVLEX;
 
-		// poly in LEX
-		MultivariatePolynomial<BigInteger> poly2 = poly.setOrdering(MonomialOrder.LEX);
-		assert poly2.ordering == MonomialOrder.LEX;
+        // poly in LEX
+        MultivariatePolynomial<BigInteger> poly2 = poly.setOrdering(MonomialOrder.LEX);
+        assert poly2.ordering == MonomialOrder.LEX;
 
-		// poly in GREVLEX (ordering of lhs is used)
-		MultivariatePolynomial<BigInteger> add = ring.add(poly, poly2);
-		assert add.ordering == MonomialOrder.GREVLEX;
+        // poly in GREVLEX (ordering of lhs is used)
+        MultivariatePolynomial<BigInteger> add = ring.add(poly, poly2);
+        assert add.ordering == MonomialOrder.GREVLEX;
 
-		// poly in LEX (ordering of lhs is used)
-		MultivariatePolynomial<BigInteger> add2 = ring.add(poly2, poly);
-		assert add2.ordering == MonomialOrder.LEX;
+        // poly in LEX (ordering of lhs is used)
+        MultivariatePolynomial<BigInteger> add2 = ring.add(poly2, poly);
+        assert add2.ordering == MonomialOrder.LEX;
 
 .. _MonomialOrder: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MonomialOrder.java
 
+
+.. _ref-multivariate-division-with-remainder:
 
 Multivariate division with remainder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1725,61 +1892,61 @@ Examples:
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		val ring = MultivariateRing(Z, Array("x", "y", "z"), MonomialOrder.LEX)
+        val ring = MultivariateRing(Z, Array("x", "y", "z"), MonomialOrder.LEX)
 
-		val dividend = ring("x - x^2*y^2 + 2*x*y + 1 - z*y^2*x^2 + z").pow(3)
-		val divider1 = ring("x + y")
-		val divider2 = ring("x + z")
-		val divider3 = ring("y + z")
+        val dividend = ring("x - x^2*y^2 + 2*x*y + 1 - z*y^2*x^2 + z").pow(3)
+        val divider1 = ring("x + y")
+        val divider2 = ring("x + z")
+        val divider3 = ring("y + z")
 
-		{
-		  val (quot1, quot2, rem) = dividend /%/% (divider1, divider2)
-		  assert(dividend == divider1 * quot1 + divider2 * quot2 + rem)
-		}
+        {
+          val (quot1, quot2, rem) = dividend /%/% (divider1, divider2)
+          assert(dividend == divider1 * quot1 + divider2 * quot2 + rem)
+        }
 
 
-		{
-		  val (quot1, quot2, quot3, rem) = dividend /%/% (divider1, divider2, divider3)
-		  assert(dividend == divider1 * quot1 + divider2 * quot2 + divider3 * quot3 + rem)
-		}
+        {
+          val (quot1, quot2, quot3, rem) = dividend /%/% (divider1, divider2, divider3)
+          assert(dividend == divider1 * quot1 + divider2 * quot2 + divider3 * quot3 + rem)
+        }
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		String[] variables = {"x", "y", "z"};
-		MultivariatePolynomial<BigInteger>
-		        dividend = MultivariatePolynomial.parse("x - x^2*y^2 + 2*x*y + 1 - z*y^2*x^2 + z", variables),
-		        divider1 = MultivariatePolynomial.parse("x + y", variables),
-		        divider2 = MultivariatePolynomial.parse("x + z", variables),
-		        divider3 = MultivariatePolynomial.parse("y + z", variables);
+        String[] variables = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                dividend = MultivariatePolynomial.parse("x - x^2*y^2 + 2*x*y + 1 - z*y^2*x^2 + z", variables),
+                divider1 = MultivariatePolynomial.parse("x + y", variables),
+                divider2 = MultivariatePolynomial.parse("x + z", variables),
+                divider3 = MultivariatePolynomial.parse("y + z", variables);
 
-		dividend = polyPow(dividend, 3);
+        dividend = polyPow(dividend, 3);
 
-		{
-		    MultivariatePolynomial<BigInteger>[] divRem
-		            = MultivariateDivision.divideAndRemainder(dividend, divider1, divider2);
+        {
+            MultivariatePolynomial<BigInteger>[] divRem
+                    = MultivariateDivision.divideAndRemainder(dividend, divider1, divider2);
 
-		    MultivariatePolynomial<BigInteger>
-		            quot1 = divRem[0], quot2 = divRem[1], rem = divRem[2];
+            MultivariatePolynomial<BigInteger>
+                    quot1 = divRem[0], quot2 = divRem[1], rem = divRem[2];
 
-		    assert dividend.equals(rem.copy().add(
-		            quot1.copy().multiply(divider1),
-		            quot2.copy().multiply(divider2)));
-		}
+            assert dividend.equals(rem.copy().add(
+                    quot1.copy().multiply(divider1),
+                    quot2.copy().multiply(divider2)));
+        }
 
-		{
-		    MultivariatePolynomial<BigInteger>[] divRem
-		            = MultivariateDivision.divideAndRemainder(dividend, divider1, divider2, divider3);
+        {
+            MultivariatePolynomial<BigInteger>[] divRem
+                    = MultivariateDivision.divideAndRemainder(dividend, divider1, divider2, divider3);
 
-		    MultivariatePolynomial<BigInteger>
-		            quot1 = divRem[0], quot2 = divRem[1], quot3 = divRem[2], rem = divRem[3];
+            MultivariatePolynomial<BigInteger>
+                    quot1 = divRem[0], quot2 = divRem[1], quot3 = divRem[2], rem = divRem[3];
 
-		    assert dividend.equals(rem.copy().add(
-		            quot1.copy().multiply(divider1),
-		            quot2.copy().multiply(divider2),
-		            quot3.copy().multiply(divider3)));
-		}
+            assert dividend.equals(rem.copy().add(
+                    quot1.copy().multiply(divider1),
+                    quot2.copy().multiply(divider2),
+                    quot3.copy().multiply(divider3)));
+        }
 
 .. important::
     The resulting array of :math:`quotients` and :math:`remainder` depend on the order of dividers in the array and on the used monomial order.
@@ -1807,97 +1974,97 @@ The upper-level method ``MultivariateGCD.PolynomialGCD`` switches between Zippel
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		import rings.poly.multivar.MultivariateGCD._
-		
-		// some large finite field
-		val modulus = SmallPrimes.nextPrime(1 << 15)
-		val ring = MultivariateRingZp64(modulus, Array("x", "y", "z"))
+        import rings.poly.multivar.MultivariateGCD._
+        
+        // some large finite field
+        val modulus = SmallPrimes.nextPrime(1 << 15)
+        val ring = MultivariateRingZp64(modulus, Array("x", "y", "z"))
 
-		val a = ring("x^2 - x*y + z^5")
-		val b = ring("x^2 + x*y^7 + x*y*z^2")
+        val a = ring("x^2 - x*y + z^5")
+        val b = ring("x^2 + x*y^7 + x*y*z^2")
 
-		val gcd = ring("x + y + z")
-		val poly1 = a * gcd
-		val poly2 = b * gcd
+        val gcd = ring("x + y + z")
+        val poly1 = a * gcd
+        val poly2 = b * gcd
 
-		// EZGCD in finite field
-		val ez = EZGCD(poly1, poly2)
-		assert(ez == gcd)
+        // EZGCD in finite field
+        val ez = EZGCD(poly1, poly2)
+        assert(ez == gcd)
 
-		// EEZGCD in finite field
-		val eez = EEZGCD[ring.MonomialType, ring.PolyType](poly1, poly2)
-		assert(eez == gcd)
+        // EEZGCD in finite field
+        val eez = EEZGCD[ring.MonomialType, ring.PolyType](poly1, poly2)
+        assert(eez == gcd)
 
-		// ZippelGCD in finite field
-		val zippel = ZippelGCD(poly1, poly2)
-		assert(zippel == gcd)
+        // ZippelGCD in finite field
+        val zippel = ZippelGCD(poly1, poly2)
+        assert(zippel == gcd)
 
-		// some very small finite field (Z/2)
-		val z2 = Zp64(2)
-		val z2GCD = gcd.setRing(z2)
-		val z2Poly1 = a.setRing(z2) * z2GCD
-		val z2Poly2 = b.setRing(z2) * z2GCD
+        // some very small finite field (Z/2)
+        val z2 = Zp64(2)
+        val z2GCD = gcd.setRing(z2)
+        val z2Poly1 = a.setRing(z2) * z2GCD
+        val z2Poly2 = b.setRing(z2) * z2GCD
 
-		// Kaltofen’s & Monagan’s generic modular GCD
-		val modGF = ModularGCDInGF(z2Poly1, z2Poly2)
-		assert(modGF == z2GCD)
+        // Kaltofen’s & Monagan’s generic modular GCD
+        val modGF = ModularGCDInGF(z2Poly1, z2Poly2)
+        assert(modGF == z2GCD)
 
-		// Z
-		val zGCD = gcd.setRing[IntZ](Z)
-		val zPoly1 = a.setRing[IntZ](Z) * zGCD
-		val zPoly2 = b.setRing[IntZ](Z) * zGCD
+        // Z
+        val zGCD = gcd.setRing[IntZ](Z)
+        val zPoly1 = a.setRing[IntZ](Z) * zGCD
+        val zPoly2 = b.setRing[IntZ](Z) * zGCD
 
-		// Modular GCD in Z with sparse interpolation
-		val mod = ModularGCD(zPoly1, zPoly2)
-		assert(mod == zGCD)
+        // Modular GCD in Z with sparse interpolation
+        val mod = ModularGCD(zPoly1, zPoly2)
+        assert(mod == zGCD)
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		// some large finite field
-		IntegersZp64 zpRing = Zp64(SmallPrimes.nextPrime(1 << 15));
-		MultivariatePolynomialZp64
-		        a = MultivariatePolynomialZp64.parse("x^2 - x*y + z^5", zpRing),
-		        b = MultivariatePolynomialZp64.parse("x^2 + x*y^7 + x*y*z^2", zpRing);
+        // some large finite field
+        IntegersZp64 zpRing = Zp64(SmallPrimes.nextPrime(1 << 15));
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("x^2 - x*y + z^5", zpRing),
+                b = MultivariatePolynomialZp64.parse("x^2 + x*y^7 + x*y*z^2", zpRing);
 
-		MultivariatePolynomialZp64
-		        gcd = MultivariatePolynomialZp64.parse("x + y + z", zpRing),
-		        poly1 = a.copy().multiply(gcd),
-		        poly2 = b.copy().multiply(gcd);
+        MultivariatePolynomialZp64
+                gcd = MultivariatePolynomialZp64.parse("x + y + z", zpRing),
+                poly1 = a.copy().multiply(gcd),
+                poly2 = b.copy().multiply(gcd);
 
-		// EZGCD in finite field
-		MultivariatePolynomialZp64 ez = EZGCD(poly1, poly2);
-		assert ez.equals(gcd);
+        // EZGCD in finite field
+        MultivariatePolynomialZp64 ez = EZGCD(poly1, poly2);
+        assert ez.equals(gcd);
 
-		// EEZGCD in finite field
-		MultivariatePolynomialZp64 eez = EEZGCD(poly1, poly2);
-		assert eez.equals(gcd);
+        // EEZGCD in finite field
+        MultivariatePolynomialZp64 eez = EEZGCD(poly1, poly2);
+        assert eez.equals(gcd);
 
-		// ZippelGCD in finite field
-		MultivariatePolynomialZp64 zippel = ZippelGCD(poly1, poly2);
-		assert zippel.equals(gcd);
+        // ZippelGCD in finite field
+        MultivariatePolynomialZp64 zippel = ZippelGCD(poly1, poly2);
+        assert zippel.equals(gcd);
 
-		// some very small finite field (Z/2)
-		IntegersZp64 z2 = Zp64(2);
-		MultivariatePolynomialZp64
-		        z2GCD = gcd.setRing(z2),
-		        z2Poly1 = a.setRing(z2).multiply(z2GCD),
-		        z2Poly2 = b.setRing(z2).multiply(z2GCD);
+        // some very small finite field (Z/2)
+        IntegersZp64 z2 = Zp64(2);
+        MultivariatePolynomialZp64
+                z2GCD = gcd.setRing(z2),
+                z2Poly1 = a.setRing(z2).multiply(z2GCD),
+                z2Poly2 = b.setRing(z2).multiply(z2GCD);
 
-		// Kaltofen’s & Monagan’s generic modular GCD
-		MultivariatePolynomialZp64 modGF = ModularGCDInGF(z2Poly1, z2Poly2);
-		assert modGF.equals(z2GCD);
+        // Kaltofen’s & Monagan’s generic modular GCD
+        MultivariatePolynomialZp64 modGF = ModularGCDInGF(z2Poly1, z2Poly2);
+        assert modGF.equals(z2GCD);
 
-		// Z
-		MultivariatePolynomial<BigInteger>
-		        zGCD = gcd.setRing(Z),
-		        zPoly1 = a.setRing(Z).multiply(zGCD),
-		        zPoly2 = b.setRing(Z).multiply(zGCD);
+        // Z
+        MultivariatePolynomial<BigInteger>
+                zGCD = gcd.setRing(Z),
+                zPoly1 = a.setRing(Z).multiply(zGCD),
+                zPoly2 = b.setRing(Z).multiply(zGCD);
 
-		// Modular GCD in Z with sparse interpolation
-		MultivariatePolynomial<BigInteger> mod = ModularGCD(zPoly1, zPoly2);
-		assert mod.equals(zGCD);
+        // Modular GCD in Z with sparse interpolation
+        MultivariatePolynomial<BigInteger> mod = ModularGCD(zPoly1, zPoly2);
+        assert mod.equals(zGCD);
    
 
 
@@ -1906,42 +2073,42 @@ If one need to calculate GCD of more than two polynomials, it is better to do wi
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		val ring = MultivariateRing(Z, Array("x", "y", "z"))
-		val (rndDegree, rndSize) = (5, 5)
+        val ring = MultivariateRing(Z, Array("x", "y", "z"))
+        val (rndDegree, rndSize) = (5, 5)
 
-		// some random gcd
-		val gcd = ring.randomElement(rndDegree, rndSize)
-		// array of random polynomials which have gcd
-		val polys = (0 until 10).map(_ => ring.randomElement(rndDegree, rndSize) * gcd)
+        // some random gcd
+        val gcd = ring.randomElement(rndDegree, rndSize)
+        // array of random polynomials which have gcd
+        val polys = (0 until 10).map(_ => ring.randomElement(rndDegree, rndSize) * gcd)
 
-		// fast algorithm for array of polynomials will be used
-		val fastGCD = PolynomialGCD(polys: _*)
-		// slow step-by-step gcd calculation
-		val slowGCD = polys.foldLeft(ring.getZero)((p1, p2) => PolynomialGCD(p1, p2))
-		// result the same
-		assert(fastGCD == slowGCD)
+        // fast algorithm for array of polynomials will be used
+        val fastGCD = PolynomialGCD(polys: _*)
+        // slow step-by-step gcd calculation
+        val slowGCD = polys.foldLeft(ring.getZero)((p1, p2) => PolynomialGCD(p1, p2))
+        // result the same
+        assert(fastGCD == slowGCD)
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
-		int rndDegree = 5, rndSize = 5;
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        int rndDegree = 5, rndSize = 5;
 
-		// some random gcd
-		MultivariatePolynomial<BigInteger> gcd = ring.randomElement(rndDegree, rndSize);
-		// array of random polynomials which have gcd
-		MultivariatePolynomial<BigInteger>[] polys = IntStream.range(0, 10)
-		        .mapToObj(i -> ring.randomElement(rndDegree, rndSize).multiply(gcd))
-		        .toArray(MultivariatePolynomial[]::new);
+        // some random gcd
+        MultivariatePolynomial<BigInteger> gcd = ring.randomElement(rndDegree, rndSize);
+        // array of random polynomials which have gcd
+        MultivariatePolynomial<BigInteger>[] polys = IntStream.range(0, 10)
+                .mapToObj(i -> ring.randomElement(rndDegree, rndSize).multiply(gcd))
+                    .toArray(MultivariatePolynomial[]::new);
 
-		// fast algorithm for array of polynomials will be used
-		MultivariatePolynomial<BigInteger> fastGCD = PolynomialGCD(polys);
-		// slow step-by-step gcd calculation
-		MultivariatePolynomial<BigInteger> slowGCD = Arrays.stream(polys)
-		        .reduce(ring.getZero(), MultivariateGCD::PolynomialGCD);
-		// result the same
-		assert fastGCD.equals(slowGCD);
+        // fast algorithm for array of polynomials will be used
+        MultivariatePolynomial<BigInteger> fastGCD = PolynomialGCD(polys);
+        // slow step-by-step gcd calculation
+        MultivariatePolynomial<BigInteger> slowGCD = Arrays.stream(polys)
+                .reduce(ring.getZero(), MultivariateGCD::PolynomialGCD);
+        // result the same
+        assert fastGCD.equals(slowGCD);
 
 
 Details of implementation can be found in `MultivariateGCD`_.
@@ -1963,66 +2130,66 @@ Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]`
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		// ring GF(13^5)[x, y, z] (coefficient domain is finite field)
-		val ringF = MultivariateRing(GF(13, 5), Array("x", "y", "z"))
-		// generate random poly of degree 5 and size 5
-		def randomPolyF = ringF.randomElement(5, 5) + 1
+        // ring GF(13^5)[x, y, z] (coefficient domain is finite field)
+        val ringF = MultivariateRing(GF(13, 5), Array("x", "y", "z"))
+        // generate random poly of degree 5 and size 5
+        def randomPolyF = ringF.randomElement(5, 5) + 1
 
-		// some random polynomial composed from some factors
-		val polyF = randomPolyF * randomPolyF * randomPolyF.pow(2)
-		// perform square-free factorization
-		println(ringF show FactorSquareFree(polyF))
-		// perform complete factorization
-		println(ringF show Factor(polyF))
-
-
-		// ring Q[x, y, z]
-		val ringQ = MultivariateRing(Q, Array("x", "y", "z"))
-		// generate random poly of degree 5 and size 5
-		def randomPolyQ = ringQ.randomElement(5, 5) + 1
-
-		// some random polynomial composed from some factors
-		val polyQ = randomPolyQ * randomPolyQ * randomPolyQ.pow(2)
-		// perform square-free factorization
-		println(ringQ show FactorSquareFree(polyQ))
-		// perform complete factorization
-		println(ringQ show Factor(polyQ))
-
-	.. code-tab:: java
-
-		// ring GF(13^5)[x, y, z] (coefficient domain is finite field)
-		MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>>
-		    ringF = MultivariateRing(3, GF(13, 5));
-
-		// generate random poly of degree 5 and size 5
-		Supplier<MultivariatePolynomial<UnivariatePolynomialZp64>> randomPolyF
-		    = () -> ringF.randomElement(5, 5).increment();
-
-		// some random polynomial composed from some factors
-		MultivariatePolynomial<UnivariatePolynomialZp64> polyF =
-		    randomPolyF.get().multiply(
-		            randomPolyF.get(), ringF.pow(randomPolyF.get(), 2));
-		// perform square-free factorization
-		System.out.println(FactorSquareFree(polyF));
-		// perform complete factorization
-		System.out.println(Factor(polyF));
+        // some random polynomial composed from some factors
+        val polyF = randomPolyF * randomPolyF * randomPolyF.pow(2)
+        // perform square-free factorization
+        println(ringF show FactorSquareFree(polyF))
+        // perform complete factorization
+        println(ringF show Factor(polyF))
 
 
-		// ring Q[x, y, z]
-		MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>> ringQ = MultivariateRing(3, Q);
+        // ring Q[x, y, z]
+        val ringQ = MultivariateRing(Q, Array("x", "y", "z"))
+        // generate random poly of degree 5 and size 5
+        def randomPolyQ = ringQ.randomElement(5, 5) + 1
 
-		Supplier<MultivariatePolynomial<Rational<BigInteger>>> randomPolyQ
-		    = () -> ringQ.randomElement(5, 5).increment();
-		// some random polynomial composed from some factors
-		MultivariatePolynomial<Rational<BigInteger>> polyQ =
-		    randomPolyQ.get().multiply(
-		            randomPolyQ.get(), ringQ.pow(randomPolyQ.get(), 2));
-		// perform square-free factorization
-		System.out.println(FactorSquareFree(polyQ));
-		// perform complete factorization
-		System.out.println(Factor(polyQ));
+        // some random polynomial composed from some factors
+        val polyQ = randomPolyQ * randomPolyQ * randomPolyQ.pow(2)
+        // perform square-free factorization
+        println(ringQ show FactorSquareFree(polyQ))
+        // perform complete factorization
+        println(ringQ show Factor(polyQ))
+
+    .. code-tab:: java
+
+        // ring GF(13^5)[x, y, z] (coefficient domain is finite field)
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>>
+            ringF = MultivariateRing(3, GF(13, 5));
+
+        // generate random poly of degree 5 and size 5
+        Supplier<MultivariatePolynomial<UnivariatePolynomialZp64>> randomPolyF
+            = () -> ringF.randomElement(5, 5).increment();
+
+        // some random polynomial composed from some factors
+        MultivariatePolynomial<UnivariatePolynomialZp64> polyF =
+            randomPolyF.get().multiply(
+                    randomPolyF.get(), ringF.pow(randomPolyF.get(), 2));
+        // perform square-free factorization
+        System.out.println(FactorSquareFree(polyF));
+        // perform complete factorization
+        System.out.println(Factor(polyF));
+
+
+        // ring Q[x, y, z]
+        MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>> ringQ = MultivariateRing(3, Q);
+
+        Supplier<MultivariatePolynomial<Rational<BigInteger>>> randomPolyQ
+            = () -> ringQ.randomElement(5, 5).increment();
+        // some random polynomial composed from some factors
+        MultivariatePolynomial<Rational<BigInteger>> polyQ =
+            randomPolyQ.get().multiply(
+                    randomPolyQ.get(), ringQ.pow(randomPolyQ.get(), 2));
+        // perform square-free factorization
+        System.out.println(FactorSquareFree(polyQ));
+        // perform complete factorization
+        System.out.println(Factor(polyQ));
 
 
 Details of implementation can be found in `MultivariateSquareFreeFactorization`_, `HenselLifting`_ and `MultivariateFactorization`_.
@@ -2039,64 +2206,445 @@ Multivariate polynomial interpolation via Newton method can be done in the follo
 
 .. tabs::
 
-	.. code-tab:: scala
+    .. code-tab:: scala
 
-		import rings.poly.multivar.MultivariateInterpolation._
+        import rings.poly.multivar.MultivariateInterpolation._
 
-		// ring GF(13^6)[x, y, z]
-		implicit val ring = MultivariateRing(GF(13, 6, "t"), Array("x", "y", "z"))
-		val (x, y, z) = ring("x", "y", "z")
+        // ring GF(13^6)[x, y, z]
+        implicit val ring = MultivariateRing(GF(13, 6, "t"), Array("x", "y", "z"))
+        val (x, y, z) = ring("x", "y", "z")
 
-		// coefficient ring GF(13^6)
-		val cfRing = ring.cfRing
-		val t = cfRing("t")
-		// some points for interpolation
-		val points: Array[ring.CoefficientType] = {
-		  // hide implicit ring
-		  val ring: Any = null
-		  // enable operations in cfRing
-		  implicit val _ = cfRing
-		  Array(1 + t, 2 + t, 3 + t, 12 + t)
-		}
+        // coefficient ring GF(13^6)
+        val cfRing = ring.cfRing
+        val t = cfRing("t")
+        // some points for interpolation
+        val points: Array[ring.CoefficientType] = {
+          // hide implicit ring
+          val ring: Any = null
+          // enable operations in cfRing
+          implicit val _ = cfRing
+          Array(1 + t, 2 + t, 3 + t, 12 + t)
+        }
 
-		// some values for interpolation
-		val values = Array(x + y, x.pow(2) + y * t, y.pow(3), x.pow(4) * t + y)
+        // some values for interpolation
+        val values = Array(x + y, x.pow(2) + y * t, y.pow(3), x.pow(4) * t + y)
 
-		// interpolation polynomial values for variable z
-		val result = new Interpolation(ring.variable("z"), ring)
-		  .update(points, values)
-		  .getInterpolatingPolynomial
+        // interpolation polynomial values for variable z
+        val result = new Interpolation(ring.variable("z"), ring)
+          .update(points, values)
+          .getInterpolatingPolynomial
 
-		assert(points.zipWithIndex.forall { case (point, i) => result("z" -> point) == values(i) })
+        assert(points.zipWithIndex.forall { case (point, i) => result("z" -> point) == values(i) })
 
-	.. code-tab:: java
+    .. code-tab:: java
 
-		// ring GF(13^6)[x, y, z]
-		FiniteField<UnivariatePolynomialZp64> cfRing = GF(13, 6);
-		MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> 
-			ring = MultivariateRing(3, cfRing);
+        // ring GF(13^6)[x, y, z]
+        FiniteField<UnivariatePolynomialZp64> cfRing = GF(13, 6);
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> 
+            ring = MultivariateRing(3, cfRing);
 
-		UnivariatePolynomialZp64[] points = {
-		    cfRing.parse("1 + t"),
-		    cfRing.parse("2 + t"),
-		    cfRing.parse("3 + t"),
-		    cfRing.parse("12 + t")
-		};
+        UnivariatePolynomialZp64[] points = {
+            cfRing.parse("1 + t"),
+            cfRing.parse("2 + t"),
+            cfRing.parse("3 + t"),
+            cfRing.parse("12 + t")
+        };
 
-		String[] vars = {"x", "y", "z"};
-		// some values for interpolation
-		MultivariatePolynomial[] values = {
-		    ring.parse("x + y", vars),
-		    ring.parse(" x^2 + (t) * y", vars),
-		    ring.parse("y^3", vars),
-		    ring.parse("(t) * x^4 + y", vars)
-		};
+        String[] vars = {"x", "y", "z"};
+        // some values for interpolation
+        MultivariatePolynomial[] values = {
+            ring.parse("x + y", vars),
+            ring.parse(" x^2 + (t) * y", vars),
+            ring.parse("y^3", vars),
+            ring.parse("(t) * x^4 + y", vars)
+        };
 
-		// interpolation polynomial values for variable z
-		MultivariatePolynomial<UnivariatePolynomialZp64> result =
-		    new MultivariateInterpolation.Interpolation(2, ring)
-		            .update(points, values)
-		            .getInterpolatingPolynomial();
+        // interpolation polynomial values for variable z
+        MultivariatePolynomial<UnivariatePolynomialZp64> result =
+            new MultivariateInterpolation.Interpolation(2, ring)
+                    .update(points, values)
+                    .getInterpolatingPolynomial();
 
-		assert IntStream.range(0, points.length)
-			.allMatch(i -> result.evaluate(2, points[i]).equals(values[i]));
+        assert IntStream.range(0, points.length)
+            .allMatch(i -> result.evaluate(2, points[i]).equals(values[i]));
+
+
+
+
+.. _ref-ideals:
+
+Ideals in multivariate polynomial rings
+=======================================
+
+The concept of ideal is implemented in the `Ideal`_ class which defines basic operations with ideals. `Ideal`_ can be created by providing a finite set of polynomial generators. |Groebner| basis (see :ref:`next section <ref-groebner-basis>`)  will be computed automatically with respect to specified monomial order. If no any specific monomial order provided, the monomial order of the base ring will be used (in turn, if no any particular order for base ring specified, ``GREVLEX`` will be used). 
+
+
+The following methods are available:
+
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Description                          | Java method                 | Scala method                            |
++======================================+=============================+=========================================+
+| Get computed Groebner basis          | ``I.getGroebnerBasis()``    | ``I.groebnerBasis``                     |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Normal form of polynomial            | ``I.normalForm(p)``         | ``I.normalForm(p)`` or ``p %% I``       |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Ideal membership                     | ``I.contains(p)``           | ``I.contains(p)``                       |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Radical of ideal membership          | ``I.radicalContains(p)``    | ``I.radicalContains(p)``                |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Dimension of ideal                   | ``I.dimension()``           | ``I.dimension``                         |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Degree of ideal                      | ``I.degree()``              | ``I.degree``                            |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Union of ideals                      | ``I.union(J)``              | ``I union J`` or ``I + J`` or ``I ∪ J`` |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Intersection of ideals               | ``I.intersection(J)``       | ``I intersection J`` or ``I ∩ J``       |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Multiplication of ideals             | ``I.multiply(J)``           | ``I * J``                               |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Quotient of ideals                   | ``I.quotient(J)``           | ``I :/ J``                              |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Hilbert-Poincare  series             | ``I.hilbertSeries()``       | ``I.hilbertSeries``                     |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Ideal of leading terms :math:`LT(I)` | ``I.ltIdeal()``             | ``I.ltIdeal``                           |
++--------------------------------------+-----------------------------+-----------------------------------------+
+| Change monomial order                | ``I.changeOrder(newOrder)`` | ``I.changeOrder(newOrder)``             |
++--------------------------------------+-----------------------------+-----------------------------------------+
+
+
+Examples:
+
+.. tabs::
+
+    .. code-tab:: scala
+
+        implicit val ring = MultivariateRingZp64(17, Array("x", "y", "z"))
+        val (x, y, z) = ring("x", "y", "z")
+
+        // create ideal with two generators using GREVLEX monomial order for underlying Groebner basis
+        val I = Ideal(ring, Seq(x.pow(2) + y.pow(12) - z, x.pow(2) * z + y.pow(2) - 1), GREVLEX)
+        // I is proper ideal
+        assert(I.isProper)
+
+        // get computed Groebner basis
+        val gb = I.groebnerBasis
+        println(gb)
+
+        // check some ideal properties
+        assert(I.dimension == 1)
+        assert(I.degree == 36)
+
+        // create another ideal with only one generator
+        val J = Ideal(ring, Seq(x.pow(4) * y.pow(4) + 1), GREVLEX)
+        // J is principal ideal
+        assert(J.isPrincipal)
+        assert(J.dimension == 2)
+        assert(J.degree == 8)
+
+
+        val union = I union J
+        // union is zero dimensional ideal
+        assert(union.dimension == 0)
+        // change order to LEX (elimination order)
+        val eliminated = union.changeOrder(LEX)
+        // system can now be solved easily
+        println(eliminated)
+
+
+        val intersection = I intersection J
+        // intersection is still 2-dimensional
+        assert(intersection.dimension == 2)
+        // multiplication in this case is equal to intersection
+        val times = I * J
+        assert(times == intersection)
+
+
+        // yet another ideal
+        val K = Ideal(ring, Seq(z * x.pow(4) - z * y.pow(14) + y * z.pow(16), (x + y + z).pow(4)), GREVLEX)
+        // compute complicated quotient ideal
+        val quot = (I * J * K) :/ times
+        assert(quot == K) 
+
+    .. code-tab:: java
+
+        MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(3, 17);
+
+        // create ideal with two generators using GREVLEX monomial order for underlying Groebner basis
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> I = Ideal.create(Arrays.asList(
+            ring.parse("x^2 + y^12 - z"),
+            ring.parse("x^2 * z + y^2 - 1")), GREVLEX);
+        // I is proper ideal
+        assert I.isProper();
+
+        // get computed Groebner basis
+        List<MultivariatePolynomialZp64> gb = I.getGroebnerBasis();
+        System.out.println(gb);
+
+        // check some ideal properties
+        assert I.dimension() == 1;
+        assert I.degree() == 36;
+
+        // create another ideal with only one generator
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> J = Ideal.create(Arrays.asList(
+            ring.parse("x^4 * y^4 + 1")), GREVLEX);
+        // J is principal ideal
+        assert J.isPrincipal();
+        assert J.dimension() == 2;
+        assert J.degree() == 8;
+
+
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> union = I.union(J);
+        // union is zero dimensional ideal
+        assert union.dimension() == 0;
+        // change order to LEX (elimination order)
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> eliminated = union.changeOrder(LEX);
+        // system can now be solved easily
+        System.out.println(eliminated);
+
+
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> intersection = I.intersection(J);
+        // intersection is still 2-dimensional
+        assert intersection.dimension() == 2;
+        // multiplication in this case is equal to intersection
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> times = I.multiply(J);
+        assert times.equals(intersection);
+
+
+        // yet another ideal
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> K = Ideal.create(Arrays.asList(
+            ring.parse("z * x^4 - z * y^14 + y * z^16"),
+            ring.pow(ring.parse("x + y + z"), 4)), GREVLEX);
+        // compute complicated quotient ideal
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> quot = (I.multiply(J).multiply(K)).quotient(times);
+        assert quot.equals(K);
+
+
+The normal form operation is used to contstruct :ref:`qotient rings <ref-quotient-rings>`. It is equivalent to taking a remainder of :ref:`multivariate division <ref-multivariate-division-with-remainder>` of polynomial by a |Groebner| basis of the ideal. The monomial order used to perform that division is the order which was used to compute |Groebner| basis of ideal:
+
+
+.. tabs::
+
+    .. code-tab:: scala
+
+        // base ring in LEX order
+        implicit val ring = MultivariateRing(Q, Array("x", "y", "z", "t"), LEX)
+        val (x, y, z, t) = ring("x", "y", "z", "t")
+
+        // some polynomial in a base ring order (LEX)
+        val poly = x + (y^2) * z + (z^3) * y * t + (t^4) * z * y
+        assert(poly.ordering == LEX)
+
+        // some ideal with Groebner basis computed in GREVLEX
+        val idealGrevLex = Ideal(ring, 
+                                 Seq(y * (x^3) + z * (t^3) - 1,
+                                     x * y - y * z - z * x + (t^3)),
+                                 GREVLEX)
+        assert(idealGrevLex.ordering == GREVLEX)
+
+        // normal form of poly will be computed with respect to GREVLEX
+        // then the result will be re-sorted according to the base ring order (LEX)
+        val nfGrevLex = poly %% idealGrevLex
+        assert(nfGrevLex.ordering == LEX)
+
+        // the same ideal with Groebner basis in LEX order
+        val idealLex = idealGrevLex.changeOrder(LEX)
+        assert(idealLex.ordering == LEX)
+
+        // normal form of poly will be computed with respect to LEX
+        val nfLex = poly %% idealLex
+        assert(nfLex.ordering == LEX)
+
+        // Normal forms computed against LEX basis and GREVLEX basis
+        // are different (although both polynomials are sorted in LEX)
+        assert(nfGrevLex != nfLex)
+
+    .. code-tab:: java
+
+        // base ring in LEX order
+        MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>> ring = MultivariateRing(4, Q, LEX);
+        String[] variables = {"x", "y", "z", "t"};
+
+        // some polynomial in a base ring order (LEX)
+        MultivariatePolynomial<Rational<BigInteger>> poly =
+                ring.parse("x + y^2 * z + z^3 * y * t + t^4 * z * y", variables);
+        assert poly.ordering == LEX;
+
+        // some ideal with Groebner basis computed in GREVLEX
+        Ideal<Monomial<Rational<BigInteger>>, MultivariatePolynomial<Rational<BigInteger>>>
+                idealGrevLex = Ideal.create(Arrays.asList(
+                            ring.parse("y * x^3 + z * t^3 - 1", variables),
+                            ring.parse("x * y - y * z - z * x + t^3", variables)),
+                        GREVLEX);
+        assert idealGrevLex.ordering == GREVLEX;
+
+        // normal form of poly will be computed with respect to GREVLEX
+        // then the result will be re-sorted according to the base ring order (LEX)
+        MultivariatePolynomial<Rational<BigInteger>> nfGrevLex = idealGrevLex.normalForm(poly);
+        assert nfGrevLex.ordering == LEX;
+
+        // the same ideal with Groebner basis in LEX order
+        Ideal<Monomial<Rational<BigInteger>>, MultivariatePolynomial<Rational<BigInteger>>>
+                idealLex = idealGrevLex.changeOrder(LEX);
+        assert idealLex.ordering == LEX;
+
+        // normal form of poly will be computed with respect to LEX
+        MultivariatePolynomial<Rational<BigInteger>> nfLex = idealLex.normalForm(poly);
+        assert nfLex.ordering == LEX;
+
+        // Normal forms computed against LEX basis and GREVLEX basis
+        // are different (although both polynomials are sorted in LEX)
+        assert !nfGrevLex.equals(nfLex);
+
+
+.. important::
+
+    If the coefficient ring :math:`R` of a base ring is not a field, |Rings| will "effectively" perform all operations with coefficients as in the field of fractions :math:`Frac(R)`. Thus, in |Rings| ideals in :math:`Z[x_1, \dots, x_N]` are actually treated as ideals in :math:`Q[x_1, \dots, x_N]`.
+
+
+
+.. _Ideal: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/Ideal.java
+
+
+.. _ref-hilbert-series:
+
+Hilbert-Poincare series
+"""""""""""""""""""""""
+
+The Hilbert-Poincare series of ideal in the :math:`N`-variate polynomial ring :math:`S = R[x_1, \dots, x_N]` has the following form:
+
+.. math::
+
+   HPS_{S/I}(t) = \frac{N_1(t)}{(1 - t)^N} = \frac{N_2(t)}{(1 - t)^d}
+
+where the last equality is obtained by cancellation of common :math:`(1 - t)` factors from numerator and denominator. We'll refer the latter form of Hilbert-Poincare series as reduced form. Dimension and degree of ideal are easily computable from its reduced Hilbert-Poincare series: dimension of ideal equal to the degree of denominator and degree of ideal equal to :math:`N_2(1)`.
+
+
+Hilbert series of ideal can be obtained by the ``I.hilbertSeries()`` method. The return object has the following properties:
+
++-----------------------------------------------------------------------------+------------------------------+
+| Description                                                                 | Java/Scala method            |
++=============================================================================+==============================+
+| Initial numerator :math:`N_1(t)`                                            | ``hps.initialNumerator``     |
++-----------------------------------------------------------------------------+------------------------------+
+| Reduced numerator :math:`N_2(t)`                                            | ``hps.numerator``            |
++-----------------------------------------------------------------------------+------------------------------+
+| Dimension of ideal                                                          | ``hps.dimension()``          |
++-----------------------------------------------------------------------------+------------------------------+
+| Degree of ideal                                                             | ``hps.degree()``             |
++-----------------------------------------------------------------------------+------------------------------+
+| Hilbert polynomial :math:`HP(m) \in Q[m]`                                   | ``hps.hilbertPolynomial()``  |
++-----------------------------------------------------------------------------+------------------------------+
+| Integer Hilbert polynomial :math:`HP_Z(m) = (\mbox{dim} - 1)! \times HP(m)` | ``hps.hilbertPolynomialZ()`` |
++-----------------------------------------------------------------------------+------------------------------+
+
+
+Examples:
+
+.. tabs::
+
+    .. code-tab:: scala
+
+        implicit val ring = MultivariateRingZp64(32003, Array("x", "y", "z"))
+        val (x, y, z) = ring("x", "y", "z")
+
+        // some ideal
+        val ideal = Ideal(ring, Seq(x.pow(2), y.pow(2), z.pow(2)))
+        // get Hilbert-Poincare series
+        val hps = ideal.hilbertSeries
+
+        assert(hps.dimension == 0)
+        assert(hps.degree == 8)
+
+        // series numerator
+        println(hps.initialNumerator)
+        // reduced series numerator
+        println(hps.numerator)
+
+        // integer Hilbert polynomial
+        println(hps.hilbertPolynomialZ)
+        // rational Hilbert polynomial
+        println(hps.hilbertPolynomial)
+
+    .. code-tab:: java
+
+        MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(3, 32003);
+        Ideal<MonomialZp64, MultivariatePolynomialZp64> ideal
+                = Ideal.create(Arrays.asList(
+                            ring.parse("x^2"), 
+                            ring.parse("y^2"), 
+                            ring.parse("z^2")));
+        // get Hilbert-Poincare series
+        HilbertSeries hps = ideal.hilbertSeries();
+
+        assert hps.dimension() == 0;
+        assert hps.degree() == 8;
+
+        // series numerator
+        System.out.println(hps.initialNumerator);
+        // reduced series numerator
+        System.out.println(hps.numerator);
+
+        // integer Hilbert polynomial
+        System.out.println(hps.hilbertPolynomialZ());
+        // rational Hilbert polynomial
+        System.out.println(hps.hilbertPolynomial());
+
+
+Hilbert-Poincare series of ideal is computed with algorithm describerd in [Trav96]_. If the ideal :math:`I` is represented by its |Groebner| basis in graded order or is homoheneous, then Hilbert series of leading terms ideal is computed, otherwise some "easy" graded |Groebner| basis is computed first.
+
+.. _ref-groebner-basis:
+
+|Groebner| bases algorithms
+"""""""""""""""""""""""""""
+
+|Rings| uses different algorithms for computing |Groebner| bases of ideals depending on monomial order and coefficient ring used. They are the following:
+
+ - In all algorithms the Gebauer-Moller installation [GebM88]_, [BecW93]_ of Buchberger criteria is used
+ - |Groebner| bases in finite fields for graded orders are computed with the use of Faugere's F4 algorithm [Faug99]_ with fast sparse linear algebra [FauL10]_ and simplification algorithm due to [JouV11]_
+ - |Groebner| bases for non graded orders are first computed with respect to some graded order and then the order is changed with the use of Hilbert-driven methods [Trav96]_ (with optional use of homogenezation-dehomogenezation steps)
+ - |Groebner| bases in :math:`Z` (resp. :math:`Q`) may either use F4 or Buchbeger algorithms directly or, in some cases, switch to modular algorithm [Arno03]_ (especially for small number of indeterminates)
+ - If the Hilbert-Poincare series of ideal is known in advance, Hilbert-driven algorithm [Trav96]_, [CLOS97]_ will be used
+ - If non of the above cases apply, the plain Buchberger algorithm [Buch76]_, [BecW93]_, [CLOS97]_ is used
+ - Plain Buchberger algorithm may use either normal selection strategy (for graded orders) or sugar strategy (e.g. for lexicographic order) [GMNR88]_
+
+There is no any general way to select the best algorithm *a priori*, so the default choise of the algorithm may not be optimal. For example, in some cases for polynomials over :math:`Q` Buchberger or F4 algorithms may be tremendously slow, while modular algorithm is very fast, while in other, no more rare cases, modular algorithm may be dramatically slower than plain Buchberger. So, the general advice for complicated ideals is to try different algorithms when the default method is slow.
+
+All algorithms are available from `GroebnerBasis`_ class:
+
+.. tabs::
+
+    .. code-tab:: java
+
+        // some ideal in Z[x,y,z] with very simple Groebner basis
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                a = parse("8*x^2*y^2 + 5*x*y^3 + 3*x^3*z + x^2*y*z", Z, vars),
+                b = parse("x^5 + 2*y^3*z^2 + 13*y^2*z^3 + 5*y*z^4", Z, vars),
+                c = parse("8*x^3 + 12*y^3 + x*z^2 + 3", Z, vars),
+                d = parse("7*x^2*y^4 + 18*x*y^3*z^2 + y^3*z^3", Z, vars);
+        List<MultivariatePolynomial<BigInteger>> gens = Arrays.asList(a, b, c, d);
+
+
+        // The default method will use modular algorithm in this case
+        List<MultivariatePolynomial<BigInteger>> gb = GroebnerBasis.GroebnerBasis(gens, GREVLEX);
+        // Groebner bases is very simple: <x, z^2, 1 + 4*y^3>
+        System.out.println(gb);
+
+        // Modular algorithm will take few milliseconds
+        List<MultivariatePolynomial<BigInteger>> mod = GroebnerBasis.ModularGB(gens, GREVLEX);
+        assert mod.equals(gb);
+
+        // F4 algorithm will also take few milliseconds
+        List<MultivariatePolynomial<BigInteger>> f4 = GroebnerBasis.F4GB(gens, GREVLEX);
+        assert f4.equals(gb);
+
+        // But Buchberger algorithm will take several minutes
+        // because of intermediate expression swell
+        List<MultivariatePolynomial<BigInteger>> buch = GroebnerBasis.BuchbergerGB(gens, GREVLEX);
+        assert buch.equals(gb);
+
+
+
+
+.. _GroebnerBasis: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java
+

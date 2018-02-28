@@ -39,7 +39,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public final IntegersZp64 ring;
 
     private MultivariatePolynomialZp64(int nVariables, IntegersZp64 ring, Comparator<DegreeVector> ordering, MonomialSet<MonomialZp64> lMonomialTerms) {
-        super(nVariables, ordering, lMonomialTerms);
+        super(nVariables, ordering, new IMonomialAlgebra.MonomialAlgebraZp64(ring), lMonomialTerms);
         this.ring = ring;
     }
 
@@ -50,25 +50,13 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             long r = ring.add(o.coefficient, n.coefficient);
             if (r == 0)
                 return null;
-            else {
+            else
                 return o.setCoefficient(r);
-            }
         });
     }
 
     private static void subtract(MonomialSet<MonomialZp64> polynomial, MonomialZp64 term, IntegersZp64 ring) {
-        if (term.coefficient == 0)
-            return;
-        MonomialZp64 pTerm = polynomial.get(term);
-        if (pTerm == null)
-            polynomial.add(term.negate(ring));
-        else {
-            long r = ring.subtract(pTerm.coefficient, term.coefficient);
-            if (r == 0)
-                polynomial.remove(pTerm);
-            else
-                polynomial.add(pTerm.setCoefficient(r));
-        }
+        add(polynomial, term.setCoefficient(ring.negate(term.coefficient)), ring);
     }
 
     /**
@@ -95,7 +83,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public static MultivariatePolynomialZp64 create(int nVariables, IntegersZp64 ring, Comparator<DegreeVector> ordering, Iterable<MonomialZp64> terms) {
         MonomialSet<MonomialZp64> map = new MonomialSet<>(ordering);
         for (MonomialZp64 term : terms)
-            add(map, term.setRing(ring), ring);
+            add(map, term.setCoefficient(ring.modulus(term.coefficient)), ring);
 
         return new MultivariatePolynomialZp64(nVariables, ring, ordering, map);
     }
@@ -133,7 +121,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return unit
      */
     public static MultivariatePolynomialZp64 one(int nVariables, IntegersZp64 ring, Comparator<DegreeVector> ordering) {
-        return create(nVariables, ring, ordering, MonomialZp64.withZeroExponents(nVariables, 1L));
+        return create(nVariables, ring, ordering, new MonomialZp64(nVariables, 1L));
     }
 
     /**
@@ -147,7 +135,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return multivariate polynomial
      */
     public static MultivariatePolynomialZp64 parse(String string, IntegersZp64 ring, String... variables) {
-        return parse(string, ring, MonomialOrder.LEX, variables);
+        return parse(string, ring, MonomialOrder.DEFAULT, variables);
     }
 
     /**
@@ -215,7 +203,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         MonomialSet<Monomial<UnivariatePolynomialZp64>> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 e : terms) {
             Monomial<UnivariatePolynomialZp64> eMonomial = new Monomial<>(
-                    e.set(variable, 0).exponents,
+                    e.dvSetZero(variable),
                     factory.createMonomial(e.coefficient, e.exponents[variable]));
             MultivariatePolynomial.add(newData, eMonomial, pDomain);
         }
@@ -229,7 +217,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         MonomialSet<Monomial<UnivariatePolynomialZp64>> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 e : terms) {
             Monomial<UnivariatePolynomialZp64> eMonomial = new Monomial<>(
-                    e.without(variable).exponents,
+                    e.dvWithout(variable),
                     factory.createMonomial(e.coefficient, e.exponents[variable]));
             MultivariatePolynomial.add(newData, eMonomial, pDomain);
         }
@@ -244,12 +232,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             int[] coeffExponents = new int[nVariables];
             for (int var : variables)
                 coeffExponents[var] = term.exponents[var];
-            MonomialZp64 restTerm = term.setZero(variables, 1);
-            Monomial<MultivariatePolynomialZp64> newTerm
-                    = new Monomial<>(
-                    restTerm.exponents,
-                    restTerm.totalDegree,
-                    create(new MonomialZp64(coeffExponents, term.coefficient)));
+
+            Monomial<MultivariatePolynomialZp64> newTerm =
+                    new Monomial<>(
+                            term.dvSetZero(variables),
+                            create(new MonomialZp64(coeffExponents, term.coefficient)));
 
             MultivariatePolynomial.add(terms, newTerm, ring);
         }
@@ -274,10 +261,10 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             for (int var : restVariables)
                 termExponents[i++] = term.exponents[var];
 
-            Monomial<MultivariatePolynomialZp64> newTerm
-                    = new Monomial<>(
-                    termExponents,
-                    create(variables.length, this.ring, this.ordering, new MonomialZp64(coeffExponents, term.coefficient)));
+            Monomial<MultivariatePolynomialZp64> newTerm =
+                    new Monomial<>(
+                            termExponents,
+                            create(variables.length, this.ring, this.ordering, new MonomialZp64(coeffExponents, term.coefficient)));
 
             MultivariatePolynomial.add(terms, newTerm, ring);
         }
@@ -298,13 +285,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         MultivariatePolynomialZp64 result = zero(nVariables, ring, poly.ordering);
         for (Monomial<UnivariatePolynomialZp64> entry : poly.terms) {
             UnivariatePolynomialZp64 uPoly = entry.coefficient;
-            int[] dv = ArraysUtil.insert(entry.exponents, variable, 0);
+            DegreeVector dv = entry.dvInsert(variable);
             for (int i = 0; i <= uPoly.degree(); ++i) {
                 if (uPoly.isZeroAt(i))
                     continue;
-                int[] cdv = dv.clone();
-                cdv[variable] = i;
-                result.add(new MonomialZp64(cdv, uPoly.get(i)));
+                result.add(new MonomialZp64(dv.dvSet(variable, i), uPoly.get(i)));
             }
         }
         return result;
@@ -401,6 +386,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
+    public MultivariatePolynomialZp64 lcAsPoly(Comparator<DegreeVector> ordering) {
+        return createConstant(lc(ordering));
+    }
+
+    @Override
     public MultivariatePolynomialZp64 ccAsPoly() {
         return createConstant(cc());
     }
@@ -408,21 +398,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     @Override
     MultivariatePolynomialZp64 create(int nVariables, Comparator<DegreeVector> ordering, MonomialSet<MonomialZp64> lMonomialTerms) {
         return new MultivariatePolynomialZp64(nVariables, ring, ordering, lMonomialTerms);
-    }
-
-    @Override
-    public MonomialZp64 createTermWithUnitCoefficient(int[] exponents) {
-        return new MonomialZp64(exponents, 1L);
-    }
-
-    @Override
-    public MonomialZp64 createUnitTerm() {
-        return MonomialZp64.withZeroExponents(nVariables, 1L);
-    }
-
-    @Override
-    public MonomialZp64 createZeroTerm() {
-        return MonomialZp64.withZeroExponents(nVariables, 0L);
     }
 
     @Override
@@ -479,21 +454,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return clone();
     }
 
-    @Override
-    boolean isZeroMonomial(MonomialZp64 a) {
-        return a.coefficient == 0L;
-    }
-
-    @Override
-    MonomialZp64 multiply(MonomialZp64 a, MonomialZp64 b) {
-        return a.multiply(b, ring.multiply(a.coefficient, b.coefficient));
-    }
-
-    @Override
-    MonomialZp64 divideOrNull(MonomialZp64 a, MonomialZp64 b) {
-        return a.divide(b, ring.divide(a.coefficient, b.coefficient));
-    }
-
     /** release caches */
     @Override
     protected void release() {
@@ -522,7 +482,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public MultivariatePolynomialZp64 setRing(IntegersZp64 newDomain) {
         MonomialSet<MonomialZp64> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 e : terms)
-            add(newData, e.setRing(newDomain));
+            add(newData, e.setCoefficient(newDomain.modulus(e.coefficient)));
         return new MultivariatePolynomialZp64(nVariables, newDomain, ordering, newData);
     }
 
@@ -536,7 +496,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public <E> MultivariatePolynomial<E> setRing(Ring<E> newRing) {
         MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 e : terms)
-            MultivariatePolynomial.add(newData, e.setRing(newRing), newRing);
+            MultivariatePolynomial.add(newData, new Monomial<>(e, newRing.valueOf(e.coefficient)), newRing);
         return new MultivariatePolynomial(nVariables, newRing, ordering, newData);
     }
 
@@ -554,7 +514,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public MultivariatePolynomialZp64 createConstant(long val) {
         MonomialSet<MonomialZp64> data = new MonomialSet<>(ordering);
         if (val != 0)
-            data.add(MonomialZp64.withZeroExponents(nVariables, val));
+            data.add(new MonomialZp64(nVariables, val));
         return new MultivariatePolynomialZp64(nVariables, ring, ordering, data);
     }
 
@@ -583,7 +543,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         cc = ring.modulus(cc);
 
         if (cc != 0L)
-            data.add(MonomialZp64.withZeroExponents(nVariables, cc));
+            data.add(new MonomialZp64(nVariables, cc));
         if (lc != 0L) {
             int[] lcDegreeVector = new int[nVariables];
             lcDegreeVector[variable] = 1;
@@ -626,12 +586,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return size() == 0 || (size() == 1 && terms.first().isZeroVector());
     }
 
-
-    @Override
-    public MonomialZp64 lt() {
-        return size() == 0 ? MonomialZp64.withZeroExponents(nVariables, 0L) : terms.last();
-    }
-
     /**
      * Returns the leading coefficient of this polynomial that is coefficient of the largest term according to the
      * ordering.
@@ -640,6 +594,15 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      */
     public long lc() {
         return lt().coefficient;
+    }
+
+    /**
+     * Returns the leading coefficient of this polynomial with respect to specified ordering
+     *
+     * @return leading coefficient of this polynomial with respect to specified ordering
+     */
+    public long lc(Comparator<DegreeVector> ordering) {
+        return lt(ordering).coefficient;
     }
 
     /**
@@ -661,7 +624,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return constant coefficient of this polynomial
      */
     public long cc() {
-        MonomialZp64 zero = MonomialZp64.withZeroExponents(nVariables, 0L);
+        MonomialZp64 zero = new MonomialZp64(nVariables, 0L);
         return terms.getOrDefault(zero, zero).coefficient;
     }
 
@@ -734,10 +697,10 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         long reciprocal = ring.reciprocal(monomial.coefficient);
         MonomialSet<MonomialZp64> map = new MonomialSet<>(ordering);
         for (MonomialZp64 term : terms) {
-            MonomialZp64 dv = term.divide(monomial, ring.multiply(term.coefficient, reciprocal));
+            DegreeVector dv = term.dvDivideOrNull(monomial);
             if (dv == null)
                 return null;
-            map.add(dv);
+            map.add(new MonomialZp64(dv, ring.multiply(term.coefficient, reciprocal)));
         }
         loadFrom(map);
         release();
@@ -758,20 +721,41 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return divide(lc());
     }
 
+    @Override
+    public MultivariatePolynomialZp64 monic(Comparator<DegreeVector> ordering) {
+        if (isZero())
+            return this;
+        return divide(lc(ordering));
+    }
+
     /**
-     * Sets {@code this} to its monic part multiplied by the {@code factor} modulo {@code modulus} (that is {@code
-     * monic(modulus).multiply(factor)} ).
-     *
-     * @param factor the factor
-     * @return {@code this}
+     * Sets {@code this} to its monic part (with respect to given ordering) multiplied by the given factor;
      */
     public MultivariatePolynomialZp64 monic(long factor) {
         return multiply(ring.multiply(ring.modulus(factor), ring.reciprocal(lc())));
     }
 
+    /**
+     * Sets {@code this} to its monic part (with respect to given ordering) multiplied by the given factor;
+     */
+    public MultivariatePolynomialZp64 monic(Comparator<DegreeVector> ordering, long factor) {
+        return multiply(ring.multiply(ring.modulus(factor), ring.reciprocal(lc(ordering))));
+    }
+
     @Override
     public MultivariatePolynomialZp64 monicWithLC(MultivariatePolynomialZp64 other) {
+        if (lc() == other.lc())
+            return this;
         return monic(other.lc());
+    }
+
+    @Override
+    public MultivariatePolynomialZp64 monicWithLC(Comparator<DegreeVector> ordering, MultivariatePolynomialZp64 other) {
+        long lc = lc(ordering);
+        long olc = other.lc(ordering);
+        if (lc == olc)
+            return this;
+        return monic(ordering, olc);
     }
 
     /**
@@ -807,7 +791,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         MonomialSet<MonomialZp64> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 el : terms) {
             long val = ring.multiply(el.coefficient, powers.pow(el.exponents[variable]));
-            add(newData, el.setZero(variable, val));
+            add(newData, el.setZero(variable).setCoefficient(val));
         }
         return new MultivariatePolynomialZp64(nVariables, ring, ordering, newData);
     }
@@ -872,7 +856,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             long value = el.coefficient;
             for (int i = 0; i < variables.length; ++i) {
                 value = ring.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
-                r = r.setZero(variables[i], value);
+                r = r.setZero(variables[i]).setCoefficient(value);
             }
 
             add(newData, r);
@@ -903,7 +887,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         lPrecomputedPowers powers = new lPrecomputedPowers(value, ring);
         for (MonomialZp64 el : terms) {
             long val = ring.multiply(el.coefficient, powers.pow(el.exponents[variable]));
-            add(newData, el.without(variable, val));
+            add(newData, el.without(variable).setCoefficient(val));
         }
         return new MultivariatePolynomialZp64(nVariables - 1, ring, ordering, newData);
     }
@@ -1131,16 +1115,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
-    public MultivariatePolynomialZp64 negate() {
-        for (Entry<DegreeVector, MonomialZp64> entry : terms.entrySet()) {
-            MonomialZp64 term = entry.getValue();
-            entry.setValue(term.negate(ring));
-        }
-        release();
-        return this;
-    }
-
-    @Override
     void add(MonomialSet<MonomialZp64> terms, MonomialZp64 term) {
         add(terms, term, ring);
     }
@@ -1160,7 +1134,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         oth = ring.modulus(oth);
         if (oth == 0)
             return this;
-        add(terms, MonomialZp64.withZeroExponents(nVariables, oth));
+        add(terms, new MonomialZp64(nVariables, oth));
         release();
         return this;
     }
@@ -1222,9 +1196,9 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
 
         MonomialSet<MonomialZp64> newMap = new MonomialSet<>(ordering);
         for (MonomialZp64 thisElement : terms) {
-            long val = ring.multiply(thisElement.coefficient, monomial.coefficient);
-            if (val != 0)
-                newMap.add(thisElement.multiply(monomial, val));
+            MonomialZp64 mul = monomialAlgebra.multiply(thisElement, monomial);
+            if (mul.coefficient != 0)
+                newMap.add(mul);
         }
 
         return loadFrom(newMap);
@@ -1250,7 +1224,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         MonomialSet<MonomialZp64> newMap = new MonomialSet<>(ordering);
         for (MonomialZp64 othElement : oth.terms)
             for (MonomialZp64 thisElement : terms)
-                add(newMap, thisElement.multiply(othElement, ring.multiply(thisElement.coefficient, othElement.coefficient)), ring);
+                add(newMap, monomialAlgebra.multiply(thisElement, othElement), ring);
 
         return loadFrom(newMap);
     }
@@ -1540,7 +1514,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             long coeff = term.coefficient;
             if (coeff == 0)
                 continue;
-            String monomialString = term.toString(vars);
+            String monomialString = term.dvToString(vars);
             if (first) {
                 if (coeff != 1 || monomialString.isEmpty()) {
                     sb.append(coeff);

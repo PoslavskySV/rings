@@ -444,6 +444,8 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
 
     @Override
     public lPoly monicWithLC(lPoly other) {
+        if (lc() == other.lc())
+            return self;
         return monic(other.lc());
     }
 

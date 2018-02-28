@@ -151,6 +151,17 @@ public interface Ring<E> extends
     E multiply(E a, E b);
 
     /**
+     * Multiplies two elements
+     *
+     * @param a the first element
+     * @param b the second element
+     * @return a * b
+     */
+    default E multiply(E a, long b) {
+        return multiply(a, valueOf(b));
+    }
+
+    /**
      * Multiplies the array of elements
      *
      * @param elements the elements
@@ -161,6 +172,20 @@ public interface Ring<E> extends
         E r = elements[0];
         for (int i = 1; i < elements.length; i++)
             r = multiply(r, elements[i]);
+        return r;
+    }
+
+    /**
+     * Multiplies the array of elements
+     *
+     * @param elements the elements
+     * @return product of the array
+     */
+    @SuppressWarnings("unchecked")
+    default E multiply(Iterable<E> elements) {
+        E r = getOne();
+        for (E e : elements)
+            r = multiplyMutable(r, e);
         return r;
     }
 
@@ -416,6 +441,26 @@ public interface Ring<E> extends
     }
 
     /**
+     * Returns the least common multiple of two elements
+     *
+     * @param elements the elements
+     * @return lcm
+     */
+    default E lcm(E... elements) {
+        return divideExact(multiply(elements), gcd(elements));
+    }
+
+    /**
+     * Returns the least common multiple of two elements
+     *
+     * @param elements the elements
+     * @return lcm
+     */
+    default E lcm(Iterable<E> elements) {
+        return divideExact(multiply(elements), gcd(elements));
+    }
+
+    /**
      * Returns greatest common divisor of specified elements
      *
      * @param elements the elements
@@ -556,7 +601,8 @@ public interface Ring<E> extends
     }
 
     /**
-     * Converts a value from other ring to this ring.
+     * Converts a value from other ring to this ring. The result is not guarantied to be a new instance (i.e. {@code val
+     * == valueOf(val)} is possible).
      *
      * @param val some element from any ring
      * @return this ring element associated with specified {@code val}
@@ -631,6 +677,22 @@ public interface Ring<E> extends
             // NOTE: getZero() is invoked each time in a loop in order to fill array with unique elements
             array[i] = getZero();
         return array;
+    }
+
+    /**
+     * Creates 2d array of ring elements of specified shape filled with zero elements
+     *
+     * @param m result length
+     * @param n length of each array in the result
+     * @return 2d array E[m][n] filled with zero elements
+     */
+    @SuppressWarnings("unchecked")
+    default E[][] createZeroesArray2d(int m, int n) {
+        E[][] arr = createArray2d(m, n);
+        for (E[] a : arr)
+            for (int i = 0; i < a.length; ++i)
+                a[i] = getZero();
+        return arr;
     }
 
     /**

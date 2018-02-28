@@ -50,7 +50,7 @@ public final class IntegersZp extends AIntegers {
 
     @Override
     public boolean isUnit(BigInteger element) {
-        return !modulus.divideAndRemainder(element)[1].isZero();
+        return !element.isZero() && !modulus.divideAndRemainder(element)[1].isZero();
     }
 
     /**

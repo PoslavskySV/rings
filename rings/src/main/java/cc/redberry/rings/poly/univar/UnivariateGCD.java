@@ -8,8 +8,8 @@ import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.poly.Util.Tuple2;
+import cc.redberry.rings.poly.multivar.AMonomial;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
-import cc.redberry.rings.poly.multivar.DegreeVector;
 import cc.redberry.rings.poly.multivar.MultivariateGCD;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
@@ -71,7 +71,7 @@ public final class UnivariateGCD {
         return null;
     }
 
-    private static <Term extends DegreeVector<Term>,
+    private static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     UnivariatePolynomial<Poly> PolynomialGCDOverMultivariate(UnivariatePolynomial<Poly> a,
                                                              UnivariatePolynomial<Poly> b) {

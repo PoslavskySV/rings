@@ -5,6 +5,9 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.univar.RandomUnivariatePolynomials;
+import cc.redberry.rings.poly.univar.UnivariateDivision;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
@@ -18,7 +21,7 @@ import static org.junit.Assert.*;
 /**
  * @since 1.0
  */
-public class MultivariateDivisionTest extends AMultivariateTest  {
+public class MultivariateDivisionTest extends AMultivariateTest {
     @Test
     public void test1() throws Exception {
         String[] vars = {"a", "b"};
@@ -161,6 +164,25 @@ public class MultivariateDivisionTest extends AMultivariateTest  {
                 dividend = MultivariatePolynomialZp64.parse("a^2*b", domain, vars),
                 divider = MultivariatePolynomialZp64.parse("b", domain, vars);
         System.out.println(MultivariateDivision.divideExact(dividend, divider));
+    }
+
+    @Test
+    public void test12() throws Exception {
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < 100; ++i) {
+            UnivariatePolynomial<BigInteger>
+                    dividend = RandomUnivariatePolynomials.randomPoly(30, Rings.Z, rnd),
+                    divider = RandomUnivariatePolynomials.randomPoly(10, Rings.Z, rnd);
+
+            UnivariatePolynomial<BigInteger> expected = UnivariateDivision.pseudoDivideAndRemainder(dividend, divider, false)[1].canonical();
+
+            UnivariatePolynomial<BigInteger> actual =
+                    MultivariateDivision.pseudoRemainder(
+                            MultivariatePolynomial.asMultivariate(dividend, 1, 0, MonomialOrder.GREVLEX),
+                            MultivariatePolynomial.asMultivariate(divider, 1, 0, MonomialOrder.GREVLEX)
+                    ).asUnivariate().canonical();
+            assertEquals(expected, actual);
+        }
     }
 
     static void testRandomReduce(int nIterations, int nVariables, int nDividers,

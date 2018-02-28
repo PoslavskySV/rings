@@ -44,7 +44,7 @@ public final class HenselLifting {
     /**
      * Gives primitive part of poly considered as R[x2,x3,...,xN][x0]
      */
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly primitivePart(Poly poly) {
         // multivariate GCDs will be used for calculation of primitive part
         return AMultivariatePolynomial.asMultivariate(poly.asUnivariate(0).primitivePart(), 0);
@@ -72,7 +72,7 @@ public final class HenselLifting {
      * Holds a substitution x2 -> b2, ..., xN -> bN
      */
     interface IEvaluation<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
 
         /**
@@ -477,7 +477,7 @@ public final class HenselLifting {
      * x_i
      */
     static final class MultiDiophantineSolver<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>> {
         final IEvaluation<Term, Poly> evaluation;
@@ -563,16 +563,16 @@ public final class HenselLifting {
         }
     }
 
-    static <Poly extends IPolynomial<Poly>> void correctUnit(Poly poly, Poly[] factors) {
-        Poly lc = poly.lcAsPoly();
-        Poly flc = Arrays.stream(factors)
-                .map(IPolynomial::lcAsPoly)
-                .reduce(poly.createOne(), IPolynomial::multiply);
-        assert lc.isConstant();
-        assert flc.isConstant();
-
-        factors[0].multiplyByLC(lc.divideByLC(flc));
-    }
+//    static <Poly extends IPolynomial<Poly>> void correctUnit(Poly poly, Poly[] factors) {
+//        Poly lc = poly.lcAsPoly();
+//        Poly flc = Arrays.stream(factors)
+//                .map(IPolynomial::lcAsPoly)
+//                .reduce(poly.createOne(), IPolynomial::multiply);
+//        assert lc.isConstant();
+//        assert flc.isConstant();
+//
+//        factors[0].multiplyByLC(lc.divideByLC(flc));
+//    }
 
     /**
      * Fast bivariate Hensel lifting which uses dense representation for bivariate polynomials and without leading
@@ -618,7 +618,7 @@ public final class HenselLifting {
      */
     @SuppressWarnings("unchecked")
     public static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     void bivariateLiftNoLCCorrection0(Poly base, Poly[] factors,
@@ -638,7 +638,7 @@ public final class HenselLifting {
      * @param factorsLC the correct leading coefficients
      */
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void imposeLeadingCoefficients(Poly[] factors, Poly[] factorsLC) {
         if (factorsLC != null)
@@ -658,7 +658,7 @@ public final class HenselLifting {
      */
     @SuppressWarnings("unchecked")
     static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     void bivariateLift0(Poly base, Poly[] factors, Poly[] factorsLC,
@@ -691,7 +691,7 @@ public final class HenselLifting {
 
     @SuppressWarnings("unchecked")
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     uPoly[] asUnivariate(Poly[] array, IEvaluation<Term, Poly> evaluation) {
@@ -705,7 +705,7 @@ public final class HenselLifting {
 
     @SuppressWarnings("unchecked")
     private static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     Poly[] asMultivariate(uPoly[] array, int nVariables, int variable, Comparator<DegreeVector> ordering) {
@@ -722,7 +722,7 @@ public final class HenselLifting {
      */
     @SuppressWarnings("unchecked")
     public static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     UnivariatePolynomial<uPoly> seriesExpansionDense(Ring<uPoly> ring, Poly poly, int variable, IEvaluation<Term, Poly> evaluate) {
@@ -737,7 +737,7 @@ public final class HenselLifting {
      * Converts power series {@link #seriesExpansionDense(Ring, AMultivariatePolynomial, int, IEvaluation)} back to
      * multivariate polynomial
      */
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     Poly denseSeriesToPoly(Poly factory, UnivariatePolynomial<uPoly> series, int seriesVariable, IEvaluation<Term, Poly> evaluation) {
@@ -757,7 +757,7 @@ public final class HenselLifting {
      * @param evaluation evaluation point
      */
     public static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void multivariateLiftAutomaticLC(Poly base,
                                      Poly[] factors,
@@ -793,7 +793,7 @@ public final class HenselLifting {
      * @param evaluation evaluation point
      */
     public static <
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void multivariateLiftAutomaticLC(Poly base,
                                      Poly[] factors,
@@ -832,7 +832,7 @@ public final class HenselLifting {
      * @param degreeBounds bound on lifting degrees
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void multivariateLift0(Poly base,
                            Poly[] factors, Poly[] factorsLC,
@@ -857,7 +857,7 @@ public final class HenselLifting {
      * @param from         variable to start lifting with
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>,
             uPoly extends IUnivariatePolynomial<uPoly>>
     void multivariateLift0(Poly base,
@@ -931,7 +931,7 @@ public final class HenselLifting {
      * Generates a power series expansion for poly about the point specified by variable and evaluation
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     UnivariatePolynomial<Poly> seriesExpansion(Ring<Poly> ring, Poly poly, int variable, IEvaluation<Term, Poly> evaluate) {
         int degree = poly.degree(variable);
@@ -945,7 +945,7 @@ public final class HenselLifting {
      * Converts power series {@link #seriesExpansion(Ring, AMultivariatePolynomial, int, IEvaluation)} back to
      * multivariate polynomial
      */
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly seriesToPoly(Poly factory, UnivariatePolynomial<Poly> series, int seriesVariable, IEvaluation<Term, Poly> evaluation) {
         Poly result = factory.createZero();
@@ -1098,7 +1098,7 @@ public final class HenselLifting {
     /**
      * Sparse Hensel lifting
      */
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly[] sparseLifting(Poly base, Poly[] biFactors, Poly[] lc) {
         List<List<Term>>
                 // terms that are fixed
@@ -1128,7 +1128,7 @@ public final class HenselLifting {
             // too large problem for sparse lifting -> probably we will run out of memory
             return null;
 
-        // true factors represented as R[x1, x2, ..., xN, u1, ..., uK]
+        // true factors represented as R[x0, x1, x2, ..., xN, u1, ..., uK]
         List<Poly> trueFactors = new ArrayList<>();
         int unkCounter = base.nVariables;
         for (int i = 0; i < biFactors.length; i++) {
@@ -1143,11 +1143,11 @@ public final class HenselLifting {
             trueFactors.add(trueFactor);
         }
 
-        // multiply our trueFactors in R[x1, x2, ..., xN, u1, ..., uK]
+        // multiply our trueFactors in R[x0, x1, x2, ..., xN, u1, ..., uK]
         Poly lhsBase = trueFactors.stream().reduce(trueFactors.get(0).createOne(), (a, b) -> a.multiply(b));
 
         // <- matching lhsBase and base in (x0, x1)
-        // base as R[x0, x1][x0, x1, x3, ... xN]
+        // base as R[x0, x1][x0, x1, x2, ... xN]
         MultivariatePolynomial<Poly> biBase =
                 base.asOverMultivariate(ArraysUtil.sequence(2, base.nVariables));
         // The main equations to solve
@@ -1253,7 +1253,7 @@ public final class HenselLifting {
      * Solves a block of linear equations in sparse lifting
      */
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     BlockSolution<Term, Poly> solveBlock(List<Equation<Term, Poly>> block) {
         Equation<Term, Poly> baseEq = block.get(0);
@@ -1326,7 +1326,7 @@ public final class HenselLifting {
     }
 
     @SuppressWarnings("unchecked")
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     void addRow(IPolynomialRing<Poly> polyRing, Equation<Term, Poly> eq,
                 List<Rational<Poly>[]> lhs, List<Rational<Poly>> rhs, int[] unknowns) {
@@ -1343,7 +1343,7 @@ public final class HenselLifting {
     }
 
     static final class BlockSolution<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
         final int[] unknowns;
         final Poly[] solutions;
@@ -1364,7 +1364,7 @@ public final class HenselLifting {
      * A single equation for sparse lifting
      */
     static final class Equation<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
         /** lhs in R[x0, x1, ...., xN][u1, ... uL] */
         final MultivariatePolynomial<Poly> lhs;
@@ -1457,14 +1457,14 @@ public final class HenselLifting {
     }
 
     /** split terms in polynomials that are fixed (those coming from l.c.) and with unknown coefficients */
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void populateUnknownTerms(Poly biPoly, Poly lc, List<Term> fixed, List<Term> unknown) {
         // degree in x0
         int xDeg = biPoly.degree(0);
         for (Term term : biPoly.terms) {
             if (term.exponents[0] == xDeg) {
                 Poly cf = lc.coefficientOf(1, term.exponents[1]);
-                term = term.setCoefficientFrom(cf.createUnitTerm());
+                term = term.setCoefficientFrom(cf.monomialAlgebra.getUnitTerm(cf.nVariables));
                 fixed.addAll(cf.multiply(term).terms.values());
             } else
                 unknown.add(term);

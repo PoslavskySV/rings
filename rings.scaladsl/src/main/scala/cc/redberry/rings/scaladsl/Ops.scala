@@ -2,7 +2,6 @@ package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
 import cc.redberry.rings.Rational
-import cc.redberry.rings.poly.multivar.MultivariateDivision
 
 class RingOps[E](self: E)(ring: Ring[E]) {
   private def constant(value: Int): E = ring.valueOf(value)
@@ -173,7 +172,52 @@ class UnivariateCfOps[Poly <: IUnivariatePolynomial[Poly], E](self: Poly)(pRing:
   def eval(point: Int): E = pRing.eval(self, pRing.cfValue(point))
 }
 
-class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly]](self: Poly)(ring: Ring[Poly]) {
+class MultivariateOps[Poly <: AMultivariatePolynomial[_, Poly]](self: Poly)(ring: Ring[Poly]) {
+  def swapVariables(i: Int, j: Int): Poly = JavaConversions.swapVariables[Poly](self, i, j)
+
+  def /%/%(other: (Poly, Poly)): (Poly, Poly, Poly) = {
+    val r = JavaConversions.divideAndRemainder[Poly](self, other._1, other._2)
+    (r(0), r(1), r(2))
+  }
+
+  def /%/%(other: (Poly, Poly, Poly)): (Poly, Poly, Poly, Poly) = {
+    val r = JavaConversions.divideAndRemainder[Poly](self, other._1, other._2, other._3)
+    (r(0), r(1), r(2), r(3))
+  }
+
+  def /%/%(other: (Poly, Poly, Poly, Poly)): (Poly, Poly, Poly, Poly, Poly) = {
+    val r = JavaConversions.divideAndRemainder[Poly](self, other._1, other._2, other._3, other._4)
+    (r(0), r(1), r(2), r(3), r(4))
+  }
+
+  def /%/%(other: (Poly, Poly, Poly, Poly, Poly)): (Poly, Poly, Poly, Poly, Poly, Poly) = {
+    val r = JavaConversions.divideAndRemainder[Poly](self, other._1, other._2, other._3, other._4, other._5)
+    (r(0), r(1), r(2), r(3), r(4), r(5))
+  }
+
+  def /%/%*(other: Poly*): Array[Poly] =
+    JavaConversions.divideAndRemainder[Poly](self, other: _*)
+
+
+  def %%(other: (Poly, Poly)): Poly =
+    JavaConversions.remainder[Poly](self, other._1, other._2)
+
+  def %%(other: (Poly, Poly, Poly)): Poly =
+    JavaConversions.remainder[Poly](self, other._1, other._2, other._3)
+
+  def %%(other: (Poly, Poly, Poly, Poly)): Poly =
+    JavaConversions.remainder[Poly](self, other._1, other._2, other._3, other._4)
+
+  def %%(other: (Poly, Poly, Poly, Poly, Poly)): Poly =
+    JavaConversions.remainder[Poly](self, other._1, other._2, other._3, other._4, other._5)
+
+  def %%*(other: Poly*): Poly =
+    JavaConversions.remainder[Poly](self, other: _*)
+
+  def %%(ideal: Ideal[_, Poly, _]): Poly = ideal.theIdeal.normalForm(self)
+}
+
+class MultivariateTermOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly]](self: Poly)(ring: Ring[Poly]) {
   def +(other: Term): Poly = ring valueOf self.copy().add(other)
 
   def -(other: Term): Poly = ring valueOf self.copy().subtract(other)
@@ -187,49 +231,9 @@ class MultivariateOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomia
     else
       ring valueOf r
   }
-
-  def swapVariables(i: Int, j: Int): Poly = rings.poly.multivar.AMultivariatePolynomial.swapVariables[Term, Poly](self, i, j)
-
-  def /%/%(other: (Poly, Poly)): (Poly, Poly, Poly) = {
-    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2)
-    (r(0), r(1), r(2))
-  }
-
-  def /%/%(other: (Poly, Poly, Poly)): (Poly, Poly, Poly, Poly) = {
-    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2, other._3)
-    (r(0), r(1), r(2), r(3))
-  }
-
-  def /%/%(other: (Poly, Poly, Poly, Poly)): (Poly, Poly, Poly, Poly, Poly) = {
-    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2, other._3, other._4)
-    (r(0), r(1), r(2), r(3), r(4))
-  }
-
-  def /%/%(other: (Poly, Poly, Poly, Poly, Poly)): (Poly, Poly, Poly, Poly, Poly, Poly) = {
-    val r = MultivariateDivision.divideAndRemainder[Term, Poly](self, other._1, other._2, other._3, other._4, other._5)
-    (r(0), r(1), r(2), r(3), r(4), r(5))
-  }
-
-  def /%/%*(other: Poly*): Array[Poly] =
-    MultivariateDivision.divideAndRemainder[Term, Poly](self, other: _*)
-
-  def %%(other: (Poly, Poly)): Poly =
-    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2)
-
-  def %%(other: (Poly, Poly, Poly)): Poly =
-    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2, other._3)
-
-  def %%(other: (Poly, Poly, Poly, Poly)): Poly =
-    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2, other._3, other._4)
-
-  def %%(other: (Poly, Poly, Poly, Poly, Poly)): Poly =
-    MultivariateDivision.remainder[Term, Poly](self, other._1, other._2, other._3, other._4, other._5)
-
-  def %%*(other: Poly*): Poly =
-    MultivariateDivision.remainder[Term, Poly](self, other: _*)
 }
 
-class MultivariateCfOps[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)(pRing: IMultivariateRing[Term, Poly, E]) {
+class MultivariateCfOps[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)(pRing: IMultivariateRing[Term, Poly, E]) {
   def toTraversable: TraversableOnce[Term] = {
     import scala.collection.JavaConverters._
     self.asScala
