@@ -70,7 +70,7 @@ res13: FactorDecomposition[MultivariatePolynomial[IntZ]] =
 Rings are currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your `build.sbt` file:
 
 ``` scala
-libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.3"
+libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.3"
 ```
 
 For using Rings solely in Java there is Maven artifact:

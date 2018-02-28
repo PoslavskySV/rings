@@ -64,7 +64,7 @@ Java/Scala library
 
 .. code-block:: scala
 
-	libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.3"
+	libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.3"
 
 For using |Rings| solely in Java there is Maven artifact:
 
