@@ -60,7 +60,7 @@ Now run |Rings|\ *.repl*:
 Java/Scala library
 ^^^^^^^^^^^^^^^^^^
 
-|Rings| are currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your ``build.sbt`` file:
+|Rings| is currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your ``build.sbt`` file:
 
 .. code-block:: scala
 
@@ -174,7 +174,7 @@ Galois fields:
 		GF(UnivariatePolynomialZ64.create(1, 3, 1, 1).modulus(7));
 
 
-Fields of raional functions:
+Fields of rational functions:
 
 .. tabs::
 
@@ -298,7 +298,6 @@ Factor polynomial in :math:`Z_{17}[x]`:
 
 		// factorize poly
 		val factors = Factor(poly)
-
 		println(factors)
 
 
@@ -327,10 +326,9 @@ Coefficient rings with arbitrary large characteristic are available:
 
 		// ring Z/1237940039285380274899124357[x]
 		implicit val ring = UnivariateRing(cfRing, "x")
-
-		// factorize poly
 		val poly = ring("4 + 8*x + 12*x^2 + 5*x^5 + 16*x^6 + 27*x^7 + 18*x^8")
 		
+		// factorize poly
 		println(Factor(poly))
 
    .. code-tab:: java
@@ -342,8 +340,7 @@ Coefficient rings with arbitrary large characteristic are available:
 		    .parse("4 + 8*x + 12*x^2 + 5*x^5 - x^6 + 10*x^7 + x^8", cfRing);
 
 		// factorize poly
-		FactorDecomposition<UnivariatePolynomial<BigInteger>> factors = Factor(poly);
-		System.out.println(factors);
+		System.out.println(Factor(poly));
 
 
 (large primes can be generated with ``BigPrimes.nextPrime`` method, see :ref:`ref-primes`).
@@ -396,8 +393,7 @@ Ring of univariate polynomials over elements of Galois field :math:`GF(7,3)[x]`:
 		        poly = ring.parse("1 - (1 - z^3) * x^6 + (1 - 2*z) * x^33 + x^66");
 
 		// factorize poly
-		FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors 
-		        = Factor(poly);
+		FactorDecomposition<UnivariatePolynomial<UnivariatePolynomialZp64>> factors = Factor(poly);
 		System.out.println(factors);
 
 

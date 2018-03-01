@@ -61,7 +61,7 @@ Numbers
 Integers
 """"""""
 
-There are two basic types of integer numbers that we have to deal with when doing algebra in computer: machine integers and arbitrary-precision integers. For the machine integers the Java's primitive 64-bit ``long`` type is used (since most modern CPUs are 64-bit). Internally |Rings| use machine numbers for representation of integers modulo prime numbers less than :math:`2^{64}` which is done for performance reasons (see :ref:`ref-machine-arithmetic`). For the arbitrary-precision integers |Rings| use improved ``BigInteger`` class `github.com/tbuktu/bigint <https://github.com/tbuktu/bigint>`_ (`rings.bigint.BigInteger`_) instead of built-in ``java.math.BigInteger``. The improved `BigInteger`_ has Schönhage-Strassen multiplication and Barrett division algorithms for large integers which is a significant performance improvement in comparison to native Java's implementation.
+There are two basic types of integer numbers that we have to deal with when doing algebra in computer: machine integers and arbitrary-precision integers. For the machine integers the Java's primitive 64-bit ``long`` type is used (since most modern CPUs are 64-bit). Internally |Rings| uses machine numbers for representation of integers modulo prime numbers less than :math:`2^{64}` which is done for performance reasons (see :ref:`ref-machine-arithmetic`). For the arbitrary-precision integers |Rings| uses improved ``BigInteger`` class `github.com/tbuktu/bigint <https://github.com/tbuktu/bigint>`_ (`rings.bigint.BigInteger`_) instead of built-in ``java.math.BigInteger``. The improved `BigInteger`_ has Schönhage-Strassen multiplication and Barrett division algorithms for large integers which is a significant performance improvement in comparison to native Java's implementation.
 
 
 .. tip:: 
@@ -139,7 +139,7 @@ The following code snippet gives some illustrations:
 Modular arithmetic with machine integers
 """"""""""""""""""""""""""""""""""""""""
 
-There is one special ring --- ring :math:`Z_p` of integers modulo prime number :math:`p < 2^{64}` --- which is used in the basis of many fundamental algorithms. In contrast to :math:`Z_p` with arbitrary large characteristic, for characteristic that fits into 64-bit word one can use machine integers to significantly speed up basic math operations. Operations in :math:`Z_p` require applying ``mod`` operation which in turn implies integer division. Integer division is a very slow CPU instruction; and what is more important is that it breaks CPU pipelining. On the other hand, operations in :math:`Z_p` imply taking ``mod`` with a fixed modulus :math:`p` and one can do some precomputation beforehand and then reduce integer divisions to multiplications that are over a magnitude times faster. The details of this trick can be found in `Hacker's Delight <http://www.hackersdelight.org>`_. |Rings| use `libdivide4j`_ library for fast integer division with precomputation which is ported from the well known C/C++ `libdivide`_ library. With this precomputation the ``mod`` operation becomes several times faster than the native CPU instruction, which boosts the overall performance of many of |Rings| algorithms in more than 3 times.
+There is one special ring --- ring :math:`Z_p` of integers modulo prime number :math:`p < 2^{64}` --- which is used in the basis of many fundamental algorithms. In contrast to :math:`Z_p` with arbitrary large characteristic, for characteristic that fits into 64-bit word one can use machine integers to significantly speed up basic math operations. Operations in :math:`Z_p` require applying ``mod`` operation which in turn implies integer division. Integer division is a very slow CPU instruction; and what is more important is that it breaks CPU pipelining. On the other hand, operations in :math:`Z_p` imply taking ``mod`` with a fixed modulus :math:`p` and one can do some precomputation beforehand and then reduce integer divisions to multiplications that are over a magnitude times faster. The details of this trick can be found in `Hacker's Delight <http://www.hackersdelight.org>`_. |Rings| uses `libdivide4j`_ library for fast integer division with precomputation which is ported from the well known C/C++ `libdivide`_ library. With this precomputation the ``mod`` operation becomes several times faster than the native CPU instruction, which boosts the overall performance of many of |Rings| algorithms in more than 3 times.
 
 .. _libdivide4j: https://github.com/PoslavskySV/libdivide4j/
 
@@ -303,7 +303,7 @@ Each `Ring<E>`_ implementation provides the information about its mathematical n
 List of built-in rings
 """"""""""""""""""""""
 
-Some predefined common rings and convenient methods for instantiation of new rings are placed in `Rings`_ class or directly in `scaladsl`_ package object in Scala DSL. Below is the list of what is available by default in |Rings|:
+Some common rings and convenient methods for instantiation of new rings are placed in `Rings`_ class or directly in `scaladsl`_ package object in Scala DSL. Below is the list of what is available by default in |Rings|:
 
 +----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
 | Ring                                   | Description                                                         | Method in ``Rings`` / ``scaladsl``                                                  |
@@ -670,7 +670,7 @@ Operations in a univariate quotient ring :math:`R[x] / \langle p(x) \rangle` tra
 
 .. important::
 
-    If the base ring is not a Euclidean domain, than :ref:`pseudo division <ref-univariate-divison>` is used to obtain the unique remainder.
+    If the base ring :math:`R[x]` is not a Euclidean domain, than :ref:`pseudo division <ref-univariate-divison>` is used to obtain the unique remainder.
 
 
 Operations in a multivariate quotient ring :math:`R[x_1, \dots, x_N] / I` translate to operations in :math:`R[x_1, \dots, x_N]` with the result uniquely reduced modulo ideal :math:`I` (i.e. taking a remainder of :ref:`multivariate division <ref-multivariate-division-with-remainder>` of polynomial by a |Groebner| basis of the ideal, which is always unique):
@@ -911,23 +911,25 @@ Multivariate polynomial operators
 
 Operators defined on multivariate polynomials:
 
-+-------------------------------+-----------------------------------------------------------------------+
-| Scala DSL                     | Java equivalent                                                       |
-+===============================+=======================================================================+
-| ``a(variable -> value)``      | ``a.evaluate(variable, value)``                                       |
-+-------------------------------+-----------------------------------------------------------------------+
-| ``a.eval(variable -> value)`` | ``a.evaluate(variable, value)``                                       |
-+-------------------------------+-----------------------------------------------------------------------+
-| ``a.swapVariables(i, j)``     | ``AMultivariatePolynomial.swapVariables(a, i, j)``                    |
-+-------------------------------+-----------------------------------------------------------------------+
-| ``a /%/% (tuple)``            | ``MultivariateDivision.divideAndRemainder(a, tuple: _*)``             |
-+-------------------------------+-----------------------------------------------------------------------+
-| ``a /%/%* (dividers*)``       | ``MultivariateDivision.divideAndRemainder(a, dividers: _*)``          |
-+-------------------------------+-----------------------------------------------------------------------+
-| ``a %% (tuple)``              | ``MultivariateDivision.remainder(a, tuple: _*)``                      |
-+-------------------------------+-----------------------------------------------------------------------+
-| ``a %%* (dividers*)``         | ``MultivariateDivision.remainder(a, dividers: _*)``                   |
-+-------------------------------+-----------------------------------------------------------------------+
++-------------------------------+--------------------------------------------------------------+
+| Scala DSL                     | Java equivalent                                              |
++===============================+==============================================================+
+| ``a(variable -> value)``      | ``a.evaluate(variable, value)``                              |
++-------------------------------+--------------------------------------------------------------+
+| ``a.eval(variable -> value)`` | ``a.evaluate(variable, value)``                              |
++-------------------------------+--------------------------------------------------------------+
+| ``a.swapVariables(i, j)``     | ``AMultivariatePolynomial.swapVariables(a, i, j)``           |
++-------------------------------+--------------------------------------------------------------+
+| ``a /%/% (tuple)``            | ``MultivariateDivision.divideAndRemainder(a, tuple: _*)``    |
++-------------------------------+--------------------------------------------------------------+
+| ``a /%/%* (dividers*)``       | ``MultivariateDivision.divideAndRemainder(a, dividers: _*)`` |
++-------------------------------+--------------------------------------------------------------+
+| ``a %% (tuple)``              | ``MultivariateDivision.remainder(a, tuple: _*)``             |
++-------------------------------+--------------------------------------------------------------+
+| ``a %% ideal``                | ``ideal.normalForm(a)``                                      |
++-------------------------------+--------------------------------------------------------------+
+| ``a %%* (dividers*)``         | ``MultivariateDivision.remainder(a, dividers: _*)``          |
++-------------------------------+--------------------------------------------------------------+
 
 
 .. note::
@@ -971,7 +973,29 @@ Methods added to `IPolynomialRing[Poly, E]`_  interface (``Poly`` is polynomial 
 +------------------------------+--------------------------------------------------------------------------------------------------+
 
 
+
 For more details see `IPolynomialRing[Poly, E]`_.
+
+Ideal methods
+"""""""""""""
+
+Methods added to ``Ideal[Term, Poly, E]`` class:
+
++------------+-----------------------+
+| Scala DSL  | Java equivalent       |
++============+=======================+
+| ``I + J``  | ``I.union(J)``        |
++------------+-----------------------+
+| ``I ∪ J``  | ``I.union(J)``        |
++------------+-----------------------+
+| ``I ∩ J``  | ``I.intersection(J)`` |
++------------+-----------------------+
+| ``I * J``  | ``I.multiply(J)``     |
++------------+-----------------------+
+| ``I :/ J`` | ``I.quotient(J)``     |
++------------+-----------------------+
+
+For more details see :ref:`ref-ideals`.
 
 
 .. _Ring<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Ring.java
@@ -997,7 +1021,7 @@ Polynomials
 ===========
 
 
-|Rings| have separate implementation of univariate (dense) and multivariate (sparse) polynomials. Polynomials over :math:`Z_p` with :math:`p < 2^{64}` are also implemented separately and specifically optimized (coefficients are represented as primitive machine integers instead of generic templatized objects and fast modular arithmetic is used, see :ref:`ref-machine-arithmetic`). Below the type hierarchy of polynomial classes is shown:
+|Rings| has separate implementation of univariate (dense) and multivariate (sparse) polynomials. Polynomials over :math:`Z_p` with :math:`p < 2^{64}` are also implemented separately and specifically optimized (coefficients are represented as primitive machine integers instead of generic templatized objects and fast modular arithmetic is used, see :ref:`ref-machine-arithmetic`). Below the type hierarchy of polynomial classes is shown:
 
 .. figure:: _static/PolyUML.png
    :scale: 100%
@@ -1292,7 +1316,7 @@ The examples of polynomial factorization and GCD are given in the below sections
 Univariate polynomials
 """"""""""""""""""""""
 
-|Rings| have two separate implementations of univariate polynomials:
+|Rings| has two separate implementations of univariate polynomials:
 
  - `UnivariatePolynomialZp64`_  --- univariate polynomials over :math:`Z_p` with :math:`p < 2^{64}`. Implementation of `UnivariatePolynomialZp64`_ uses specifically optimized data structure and efficient algorithms for arithmetic in :math:`Z_p` (see :ref:`ref-machine-arithmetic`).
  - `UnivariatePolynomial<E>`_ --- univariate polynomials over generic coefficient ring `Ring<E>`_.
@@ -1404,7 +1428,7 @@ Univariate GCD
  - ``UnivariateGCD.EuclidGCD`` and ``UnivariateGCD.ExtedndedEuclidGCD`` |br|  Euclidean algorithm (and its extended version)
  - ``UnivariateGCD.HalfGCD`` and ``UnivariateGCD.ExtedndedHalfGCD`` |br|  Half-GCD (and its extended version) (Sec. 11 [GaGe03]_)
  - ``UnivariateGCD.SubresultantRemainders`` |br|  Subresultant sequences (Sec. 7.3 in [GeCL92]_)
- - ``UnivariateGCD.ModularGCD`` |br|  Modular GCD (Sec. 6.7 in [GaGe03]_, small primes version)
+ - ``UnivariateGCD.ModularGCD`` and ``UnivariateGCD.ModularExtendedGCD`` |br|  Modular GCD (Sec. 6.7 in [GaGe03]_, small primes version) and modular extended GCD with rational reconstruction (Sec. 6.11 in [GaGe03]_)
 
 The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidean algorithm and Half-GCD for polynomials in :math:`F[x]` where :math:`F` is a finite field. For polynomials in :math:`Z[x]` and :math:`Q[x]` the modular algorithm is used (small primes version). In other cases algorithm with subresultant sequences is used. Examples:
 
@@ -1718,7 +1742,7 @@ With Scala DSL it is quite easy to implement Lagrange interpolation formula:
 Multivariate polynomials
 """"""""""""""""""""""""
 
-|Rings| have two separate implementations of multivariate polynomials:
+|Rings| has two separate implementations of multivariate polynomials:
 
  - `MultivariatePolynomialZp64`_  --- multivariate polynomials over :math:`Z_p` with :math:`p < 2^{64}`. Implementation of `MultivariatePolynomialZp64`_ uses efficient algorithms for arithmetic in :math:`Z_p` (see :ref:`ref-machine-arithmetic`)
  - `MultivariatePolynomial<E>`_ --- multivariate polynomials over generic coefficient ring `Ring<E>`_
@@ -1818,14 +1842,14 @@ The generic parent class for multivariate polynomials is `AMultivariatePolynomia
 Monomial order
 ^^^^^^^^^^^^^^
 
-|Rings| use sparse data structure for multivariate polynomials --- a sorted map (``java.util.TreeMap``) of degree vectors to monomials. Different sort functions of degree vectors correspond to different monomial orders. There are several monomial orders predefined in `MonomialOrder`_:
+|Rings| uses sparse data structure for multivariate polynomials --- a sorted map (``java.util.TreeMap``) of degree vectors to monomials. Different sort functions of degree vectors correspond to different monomial orders. There are several monomial orders predefined in `MonomialOrder`_:
 
  - ``LEX`` |br| Lexicographic monomial order.
  - ``ALEX`` |br| Antilexicographic monomial order.
  - ``GRLEX`` |br| Graded lexicographic monomial order.
  - ``GREVLEX`` |br| Graded reverse lexicographic monomial order.
  
-By default |Rings| use ``GREVLEX`` order though the monomial order can be changed in many ways. Examples:
+By default |Rings| uses ``GREVLEX`` order though the monomial order can be changed in many ways. Examples:
 
 .. tabs::
 
@@ -1949,7 +1973,7 @@ Examples:
         }
 
 .. important::
-    The resulting array of :math:`quotients` and :math:`remainder` depend on the order of dividers in the array and on the used monomial order.
+    The resulting array of :math:`quotients` and :math:`remainder` depend on the order of dividers in the array and on the used monomial order. To get a unique result, use |Groebner| basis (see :ref:`ref-ideals`).
 
 Details of implementation can be found in `MultivariateDivision`_.
 
@@ -1959,7 +1983,7 @@ Details of implementation can be found in `MultivariateDivision`_.
 Multivariate GCD
 ^^^^^^^^^^^^^^^^
 
-|Rings| have several algorithms for multivariate GCD:
+|Rings| has several algorithms for multivariate GCD:
 
  - ``BrownGCD`` |br| Brown's GCD for multivariate polynomials over finite fields (see [Brow71]_, Sec 7.4 in [GeCL92]_, [Yang09]_).
  - ``ZippelGCD`` |br| Zippel's sparse algorithm for multivariate GCD over fields. Works both in case of monic polynomials with fast Vandermonde linear systems (see [Zipp79]_, [Zipp93]_) and in case of non-monic input (LINZIP, see [dKMW05]_, [Yang09]_).
@@ -2124,7 +2148,7 @@ Multivariate factorization
 Implementation of multivariate factorization in |Rings| is distributed over two classes:
 
  - ``MultivariateSquareFreeFactorization`` |br| Square-free factorization of multivariate polynomials. In the case of zero characteristic Yun's algorithm is used (Sec. 14.6 in [GaGe03]_), otherwise Musser's algorithm is used (Sec. 8.3 in [GeCL92]_, [Muss71]_).
- - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z` and :math:`Q`. In the case of bivariate polynomials |Rings| use fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Both sparse lifting and fast quasi-dense algorithm due to Bernardin (see [Bern99]_ and [LeeM13]_) are used. 
+ - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z` and :math:`Q`. In the case of bivariate polynomials |Rings| uses fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Both sparse lifting and fast quasi-dense algorithm due to Bernardin (see [Bern99]_ and [LeeM13]_) are used. 
    
 Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]` where :math:`F` is either finite field, :math:`Z`, :math:`Q` or other polynomial ring. Examples:
 

@@ -123,59 +123,67 @@ Multivariate rings
 
 24. *Modular GCD over Z with sparse interpolation* |____| ([Zipp79]_, [Zipp93]_, [dKMW05]_) |br| (the same interpolation techniques as in `ZippelGCD` is used):
 
- - `MultivariateGCD.ModularGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
+ - `MultivariateGCD.ZippelGCDInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-25. *Kaltofen's & Monagan's generic modular GCD* |____| ([KalM99]_) |br| used for computing multivariate GCD over finite fields of very small cardinality:
+25. *Modular GCD over Z (small primes version)*:
+
+ - `MultivariateGCD.ModularGCDInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
+
+26. *Kaltofen's & Monagan's generic modular GCD* |____| ([KalM99]_) |br| used for computing multivariate GCD over finite fields of very small cardinality:
 
  - `MultivariateGCD.ModularGCDInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-26. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* |____| ([LeeM13]_):
+27. *Kaltofen's & Monagan's generic modular GCD with EEZ-GCD for modular images* |____| ([KalM99]_) |br| used for computing multivariate GCD over finite fields of very small cardinality:
+
+ -  `MultivariateGCD.KaltofenMonaganEEZModularGCDInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
+
+28. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* |____| ([LeeM13]_):
 
  - `MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
 
-27. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* |____| ([Muss71]_, Sec. 8.3 in [GeCL92]_):
+29. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* |____| ([Muss71]_, Sec. 8.3 in [GeCL92]_):
 
  - `MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
  - `MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
 
-28. *Bernardin's fast dense multivariate Hensel lifting* |____| ([Bern99]_, [LeeM13]_) |br| both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
+30. *Bernardin's fast dense multivariate Hensel lifting* |____| ([Bern99]_, [LeeM13]_) |br| both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
 
  - `multivar.HenselLifting <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java>`_
 
-29. *Sparse Hensel lifting* |____| ([Kalt85]_, [LeeM13]_)
+31. *Sparse Hensel lifting* |____| ([Kalt85]_, [LeeM13]_)
 
  - `multivar.HenselLifting <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java>`_
 
-30. *Fast dense bivariate factorization with recombination* |____| ([Bern99]_, [LeeM13]_):
+32. *Fast dense bivariate factorization with recombination* |____| ([Bern99]_, [LeeM13]_):
 
  - `MultivariateFactorization.bivariateDenseFactorSquareFreeInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
  - `MultivariateFactorization.bivariateDenseFactorSquareFreeInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-31. *Kaltofen's multivariate factorization in finite fields* |____| ([Kalt85]_, [LeeM13]_) |br| modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to [LeeM13]_, but at the same time has many differences in details:
+33. *Kaltofen's multivariate factorization in finite fields* |____| ([Kalt85]_, [LeeM13]_) |br| modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to [LeeM13]_, but at the same time has many differences in details:
 
  - `MultivariateFactorization.factorInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-32. *Kaltofen's multivariate factorization Z* |____| ([Kalt85]_, [LeeM13]_) |br| (with the same modifications as for algorithm for finite fields):
+34. *Kaltofen's multivariate factorization Z* |____| ([Kalt85]_, [LeeM13]_) |br| (with the same modifications as for algorithm for finite fields):
 
  - `MultivariateFactorization.factorInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-33. *Multivariate polynomial interpolation with Newton method*:
+35. *Multivariate polynomial interpolation with Newton method*:
 
  - `MultivariateInterpolation <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateInterpolation.java>`_
  
-34. *Buchberger algorihm for Groebner basis* |____| ([Buch76]_, [BecW93]_, [CLOS97]_) |br| with Gebauer-Moller installation of Buchberger criteria ([GebM88]_, [BecW93]_) and sugar strategy for lexicographic orders ([GMNR88]_):
+36. *Buchberger algorihm for Groebner basis* |____| ([Buch76]_, [BecW93]_, [CLOS97]_) |br| with Gebauer-Moller installation of Buchberger criteria ([GebM88]_, [BecW93]_) and sugar strategy for lexicographic orders ([GMNR88]_):
 
  - `GroebnerBasis.BuchbergerGB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java>`_
 
-35. *Faugere's F4 algorithm for Groebner basis* |____| ([Faug99]_) |br| with fast sparse linear algebra [FauL10]_ and simplification algoritm from [JouV11]_:
+37. *Faugere's F4 algorithm for Groebner basis* |____| ([Faug99]_) |br| with fast sparse linear algebra [FauL10]_ and simplification algoritm from [JouV11]_:
 
  - `GroebnerBasis.F4GB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java>`_
 
-36. *Hilbert-Poincare series and Hilbert-driven methods for Groebner bases* |____| ([Trav96]_):
+38. *Hilbert-Poincare series and Hilbert-driven methods for Groebner bases* |____| ([Trav96]_):
 
  - `GroebnerBasis.HilbertGB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java>`_
 
-37. *Modular Groebner bases in Z* |____| ([Arno03]_):
+39. *Modular Groebner bases in Z* |____| ([Arno03]_):
 
  - `GroebnerBasis.ModularGB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java>`_
 

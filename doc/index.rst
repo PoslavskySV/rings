@@ -26,9 +26,9 @@ The key features of |Rings| include:
 
  * :ref:`Polynomial GCD → <ref-polynomial-methods>` |br| :feature:`Polynomial GCD over arbitrary coefficient domains`
 
- * :ref:`Univariate factorization → <ref-univariate-factorization>` |br| :feature:`Univariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q`
+ * :ref:`Univariate factorization → <ref-univariate-factorization>` |br| :feature:`Univariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q` etc
    
- * :ref:`Multivariate factorization → <ref-multivariate-factorization>` |br| :feature:`Multivariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q`
+ * :ref:`Multivariate factorization → <ref-multivariate-factorization>` |br| :feature:`Multivariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q` etc
  
  * :ref:`Commutative algebra → <ref-rings>` |br| :feature:`Arbitrary rings, Galois fields, polynomial ideals etc`
 
@@ -41,7 +41,7 @@ The key features of |Rings| include:
 
 For a quick overview of what |Rings| can do proceed to :ref:`ref-quickstart` and try out |Rings|\ *.repl*.
 
-Rings are hosted at GitHub: https://github.com/PoslavskySV/rings.
+Rings sources are hosted at GitHub: https://github.com/PoslavskySV/rings.
 
 .. toctree::
    :caption: Documentation:
