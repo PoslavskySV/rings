@@ -1880,7 +1880,8 @@ public final class MultivariateGCD {
         a.assertSameCoefficientRingWith(skeleton);
 
         // a and b must be content-free
-        assert contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant();
+//        if (!contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD).isConstant())
+//            return null;
 //        MultivariatePolynomialZp64 content = contentGCD(a, b, 0, MultivariateGCD::PolynomialGCD);
 //        a = divideExact(a, content);
 //        b = divideExact(b, content);

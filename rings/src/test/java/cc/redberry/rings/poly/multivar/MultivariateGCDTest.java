@@ -1323,6 +1323,32 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     @Test
+    public void testSmallDomain_sparse_variables_random_a() throws Exception {
+        for (int i = 220; i < 250; ++i) {
+            //System.out.println(i);
+            PrivateRandom.getRandom().setSeed(i);
+            IntegersZp64 domain = new IntegersZp64(29);
+            String[] vars = WithVariables.defaultVars(100);
+            MultivariatePolynomialZp64
+                    a = MultivariatePolynomialZp64.parse("x4*x6^3*x7^4*x8*x9^3*x13^4*x17^2*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^5*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+23*x4*x6^3*x7^4*x8*x9^3*x13^4*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^6*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^3*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+17*x4*x6^3*x7^4*x8*x9^3*x13^4*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^7*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^2*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+3*x4*x6^3*x7^4*x8*x9^3*x13^4*x17^2*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^5*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^3*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+15*x4*x6^3*x7^4*x8*x9^3*x13^4*x17^2*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^7*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^2*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99", domain, vars),
+                    b = MultivariatePolynomialZp64.parse("24*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^4*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81*x87*x89*x96^5*x100^2+x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^2*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50^2*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^3*x87*x89*x96^5*x100^2+2*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^2*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50^3*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^2*x87*x89*x96^5*x100^2+14*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^4*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^3*x87*x89*x96^5*x100^2+12*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^4*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50^3*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^2*x87*x89*x96^5*x100^2", domain, vars),
+                    gcd = MultivariatePolynomialZp64.parse("23*x17^2*x50+7*x50^2*x81^2+14*x50^3*x81+11*x17^2*x50*x81^2+26*x17^2*x50^3*x81", domain, vars),
+                    actual = MultivariatePolynomialZp64.parse("2*x17^2*x50*x81+17*x50^2*x81^3+5*x50^3*x81^2+6*x17^2*x50*x81^3+x17^2*x50^3*x81^2", domain, vars);
+
+            MultivariatePolynomialZp64 lResult = KaltofenMonaganSparseModularGCDInGF(a, b);
+            checkConsistency(lResult);
+            assertTrue(dividesQ(lResult, gcd));
+
+            Conversions64bit.SWITCH_TO_64bit = false;
+            MultivariatePolynomial<BigInteger> result = KaltofenMonaganSparseModularGCDInGF(a.toBigPoly(), b.toBigPoly());
+            checkConsistency(result);
+            assertTrue(dividesQ(result, gcd.toBigPoly()));
+
+            assertEquals(result.size(), lResult.size());
+        }
+    }
+
+    @Test
     public void testSmallDomain2() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};
