@@ -626,7 +626,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public UnivariatePolynomial<E> primitivePart() {
         E content = content();
-        if (signumOfLC() < 0)
+        if (signumOfLC() < 0 && ring.signum(content) > 0)
             content = ring.negate(content);
         if (ring.isMinusOne(content))
             return negate();
@@ -885,6 +885,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             throw new ArithmeticException("Divide by zero");
         if (ring.isOne(factor))
             return this;
+        if (ring.isMinusOne(factor))
+            return negate();
         if (ring.isField()) // this is typically much faster
             return multiply(ring.reciprocal(factor));
 
@@ -931,6 +933,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public UnivariatePolynomial<E> monicWithLC(UnivariatePolynomial<E> other) {
+        if (lc().equals(other.lc()))
+            return this;
         return monic(other.lc());
     }
 

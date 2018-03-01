@@ -416,7 +416,7 @@ class SyntaxTest {
   }
 
   final case class Ideal[
-  Term <: DegreeVector[Term],
+  Term <: AMonomial[Term],
   Poly <: AMultivariatePolynomial[Term, Poly],
   E](generators: Set[Poly])(implicit val ring: IMultivariateRing[Term, Poly, E]) {
 
@@ -475,19 +475,19 @@ class SyntaxTest {
   }
 
   object Ideal {
-    def empty[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](implicit ring: IMultivariateRing[Term, Poly, E]) = Ideal[Term, Poly, E](Set.empty[Poly])(ring)
+    def empty[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](implicit ring: IMultivariateRing[Term, Poly, E]) = Ideal[Term, Poly, E](Set.empty[Poly])(ring)
 
     def apply(generators: Seq[MultivariatePolynomialZp64])(implicit ring: MultivariateRingZp64) = Ideal[MonomialZp64, MultivariatePolynomialZp64, Long](generators.toSet)(ring)
 
     def apply[E](generators: Seq[MultivariatePolynomial[E]])(implicit ring: MultivariateRing[E]) = Ideal[Monomial[E], MultivariatePolynomial[E], E](generators.toSet)(ring)
   }
 
-  class IdealOperators[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly) {
+  class IdealOperators[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly) {
     def mod(ideal: Ideal[Term, Poly, E]) = ideal mod self
   }
 
   object IdealSyntax {
-    implicit def idealOperators[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)
+    implicit def idealOperators[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E](self: Poly)
     : IdealOperators[Term, Poly, E]
     = new IdealOperators[Term, Poly, E](self)
 
@@ -499,7 +499,7 @@ class SyntaxTest {
     : IdealOperators[Monomial[E], MultivariatePolynomial[E], E]
     = new IdealOperators[Monomial[E], MultivariatePolynomial[E], E](self)
 
-    def idealImplicits[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+    def idealImplicits[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
     (implicit ring: IMultivariateRing[Term, Poly, E])
     : Poly => IdealOperators[Term, Poly, E]
     = self => new IdealOperators[Term, Poly, E](self)
@@ -542,7 +542,7 @@ class SyntaxTest {
       //assertEquals(2, mod3.degree("z"))
     }
 
-    def genericIdealTest[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+    def genericIdealTest[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
     (p: Poly, ring: IMultivariateRing[Term, Poly, E], ideal: Ideal[Term, Poly, E]): Unit = {
       import IdealSyntax._
       import syntax._

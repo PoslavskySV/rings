@@ -62,21 +62,21 @@ public final class UnivariateFactorization {
         return (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring instanceof UnivariateRing);
     }
 
-    static <Term extends DegreeVector<Term>,
+    static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<UnivariatePolynomial<Poly>>
     FactorOverMultivariate(UnivariatePolynomial<Poly> poly,
                            Function<Poly, PolynomialFactorDecomposition<Poly>> factorFunction) {
         return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 0, true))
-                .map(p -> p.asUnivariateEliminate(0));
+                .mapTo(p -> p.asUnivariateEliminate(0));
     }
 
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     PolynomialFactorDecomposition<UnivariatePolynomial<uPoly>>
     FactorOverUnivariate(UnivariatePolynomial<uPoly> poly,
                          Function<MultivariatePolynomial<uPoly>, PolynomialFactorDecomposition<MultivariatePolynomial<uPoly>>> factorFunction) {
-        return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 1, 0, MonomialOrder.LEX))
-                .map(MultivariatePolynomial::asUnivariate);
+        return factorFunction.apply(AMultivariatePolynomial.asMultivariate(poly, 1, 0, MonomialOrder.DEFAULT))
+                .mapTo(MultivariatePolynomial::asUnivariate);
     }
 
     /**
@@ -90,7 +90,7 @@ public final class UnivariateFactorization {
         UnivariatePolynomial<E> integral = cmd._1;
         E denominator = cmd._2;
         return Factor(integral)
-                .map(p -> Util.asOverRationals(poly.ring, p))
+                .mapTo(p -> Util.asOverRationals(poly.ring, p))
                 .addUnit(poly.createConstant(new Rational<>(integral.ring, integral.ring.getOne(), denominator)));
     }
 
@@ -135,7 +135,7 @@ public final class UnivariateFactorization {
     public static <Poly extends IUnivariatePolynomial<Poly>> PolynomialFactorDecomposition<Poly> FactorInGF(Poly poly) {
         Util.ensureOverFiniteField(poly);
         if (canConvertToZp64(poly))
-            return FactorInGF(asOverZp64(poly)).map(Conversions64bit::convert);
+            return FactorInGF(asOverZp64(poly)).mapTo(Conversions64bit::convert);
 
         PolynomialFactorDecomposition<Poly> result = earlyFactorizationChecks(poly);
         if (result != null)
@@ -156,7 +156,7 @@ public final class UnivariateFactorization {
     public static <T extends IUnivariatePolynomial<T>> PolynomialFactorDecomposition<T> FactorSquareFreeInGF(T poly) {
         Util.ensureOverFiniteField(poly);
         if (canConvertToZp64(poly))
-            return FactorInGF(asOverZp64(poly)).map(Conversions64bit::convert);
+            return FactorInGF(asOverZp64(poly)).mapTo(Conversions64bit::convert);
 
         PolynomialFactorDecomposition<T> result = PolynomialFactorDecomposition.empty(poly);
         FactorSquareFreeInGF(poly, 1, result);
@@ -424,7 +424,7 @@ public final class UnivariateFactorization {
     /** machine integers -> BigIntegers */
     static <T extends AUnivariatePolynomial64<T>> PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>>
     convertFactorizationToBigIntegers(PolynomialFactorDecomposition<T> decomposition) {
-        return decomposition.map(AUnivariatePolynomial64::toBigPoly);
+        return decomposition.mapTo(AUnivariatePolynomial64::toBigPoly);
     }
 
     /** determines the lower bound for the possible modulus for Zp trials */

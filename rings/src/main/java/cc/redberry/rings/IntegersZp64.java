@@ -1,6 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.libdivide4j.FastDivision.*;
+import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.MachineArithmetic;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well44497b;
@@ -41,6 +42,11 @@ public final class IntegersZp64 implements java.io.Serializable {
     /** Returns {@code val % this.modulus} */
     public long modulus(long val) {
         return modSignedFast(val, magic);
+    }
+
+    /** Returns {@code val % this.modulus} */
+    public long modulus(BigInteger val) {
+        return val.isLong() ? modSignedFast(val.longValue(), magic) : val.mod(BigInteger.valueOf(modulus)).longValue();
     }
 
     /** Inplace sets elements of {@code data} to {@code data % this.modulus} */

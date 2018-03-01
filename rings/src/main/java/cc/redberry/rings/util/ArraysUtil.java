@@ -24,6 +24,7 @@ package cc.redberry.rings.util;
 
 
 import cc.redberry.rings.bigint.BigInteger;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -195,6 +196,11 @@ public final class ArraysUtil {
         }
     }
 
+    public static void shuffle(int[] array, RandomGenerator rnd) {
+        for (int i = 0; i < 2 * array.length; ++i)
+            swap(array, rnd.nextInt(array.length), rnd.nextInt(array.length));
+    }
+
     /**
      * Sort array & return array with removed repetitive values.
      *
@@ -354,6 +360,14 @@ public final class ArraysUtil {
         return newArray;
     }
 
+    public static long[] insert(long[] array, int position, long value) {
+        long[] newArray = new long[array.length + 1];
+        System.arraycopy(array, 0, newArray, 0, position);
+        System.arraycopy(array, position, newArray, position + 1, array.length - position);
+        newArray[position] = value;
+        return newArray;
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> T[] insert(T[] array, int position, T value) {
         T[] newArray = (T[]) Array.newInstance(value.getClass(), array.length + 1);
@@ -361,6 +375,11 @@ public final class ArraysUtil {
         System.arraycopy(array, position, newArray, position + 1, array.length - position);
         newArray[position] = value;
         return newArray;
+    }
+
+    public static void reverse(int[] array, int from, int to) {
+        for (int i = 0; i < (to - from) / 2; ++i)
+            swap(array, from + i, to - 1 - i);
     }
 
     public static void reverse(long[] array, int from, int to) {
@@ -374,6 +393,10 @@ public final class ArraysUtil {
     }
 
     public static <T> void reverse(T[] array) {
+        reverse(array, 0, array.length);
+    }
+
+    public static void reverse(int[] array) {
         reverse(array, 0, array.length);
     }
 
@@ -424,6 +447,13 @@ public final class ArraysUtil {
         return a;
     }
 
+    public static long max(long[] array) {
+        long a = Long.MIN_VALUE;
+        for (long i : array)
+            a = Math.max(a, i);
+        return a;
+    }
+
     public static int max(int[] array, int from, int to) {
         int a = Integer.MIN_VALUE; ;
         for (int i = from; i < to; i++)
@@ -441,6 +471,13 @@ public final class ArraysUtil {
     public static int min(int[] array) {
         int a = Integer.MAX_VALUE;
         for (int i : array)
+            a = Math.min(a, i);
+        return a;
+    }
+
+    public static long min(long[] array) {
+        long a = Long.MAX_VALUE;
+        for (long i : array)
             a = Math.min(a, i);
         return a;
     }
@@ -511,6 +548,20 @@ public final class ArraysUtil {
 
     public static int sum(final int[] array) {
         return sum(array, 0, array.length);
+    }
+
+    public static int[] sum(final int[] a, final int[] b) {
+        int[] c = new int[a.length];
+        for (int i = 0; i < c.length; i++)
+            c[i] = a[i] + b[i];
+        return c;
+    }
+
+    public static int[] subtract(final int[] a, final int[] b) {
+        int[] c = new int[a.length];
+        for (int i = 0; i < c.length; i++)
+            c[i] = a[i] - b[i];
+        return c;
     }
 
     public static int sum(final int[] array, int from) {
@@ -820,6 +871,42 @@ public final class ArraysUtil {
         }
         return r;
     }
+
+
+    /**
+     * Removes elements at specified {@code positions} in specified {@code array}. This method preserve the relative
+     * order of elements in specified {@code array}.
+     *
+     * @param array     array of elements
+     * @param positions positions of elements that should be removed
+     * @return new array with removed elements at specified positions
+     * @throws ArrayIndexOutOfBoundsException if some position larger then array length
+     */
+    public static long[] remove(long[] array, int[] positions) {
+        if (array == null)
+            throw new NullPointerException();
+        int[] p = getSortedDistinct(positions.clone());
+        if (p.length == 0)
+            return array;
+
+        int size = p.length, pointer = 0, s = array.length;
+        for (; pointer < size; ++pointer)
+            if (p[pointer] >= s)
+                throw new ArrayIndexOutOfBoundsException();
+
+        long[] r = new long[array.length - p.length];
+
+        pointer = 0;
+        int i = -1;
+        for (int j = 0; j < s; ++j) {
+            if (pointer < size - 1 && j > p[pointer])
+                ++pointer;
+            if (j == p[pointer]) continue;
+            else r[++i] = array[j];
+        }
+        return r;
+    }
+
 
     /**
      * Selects elements from specified {@code array} at specified {@code positions}. The resulting array preserves the

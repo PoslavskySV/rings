@@ -1,7 +1,9 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
+import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
@@ -11,18 +13,21 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static cc.redberry.rings.Rings.Q;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
+
 /**
  * @since 1.0
  */
 public class ParserTest extends AMultivariateTest {
     @Test
     public void test1() throws Exception {
-        Rings.Q.parse("+12");
+        Q.parse("+12");
     }
 
     @Test
     public void test2() throws Exception {
-        System.out.println(Parser.parse("(2/3)*a*b^2 - (1/3)*a^3*b^2", Rings.Q, Rings.Q, MonomialOrder.LEX));
+        System.out.println(Parser.parse("(2/3)*a*b^2 - (1/3)*a^3*b^2", Q, Q, MonomialOrder.LEX));
     }
 
     @Test
@@ -76,5 +81,16 @@ public class ParserTest extends AMultivariateTest {
     @Test
     public void test5() throws Exception {
         System.out.println(MultivariatePolynomialZp64.parse("12312341231412423142342343125234234321423 + x", new IntegersZp64(3), MonomialOrder.LEX));
+    }
+
+    @Test
+    public void test6() throws Exception {
+        String[] vars = {"u0", "u1", "u2", "u3"};
+        MultivariatePolynomial<Rational<BigInteger>>
+                a = MultivariatePolynomial.parse("u3*u3 + u2*u2 + u1*u1 + u0*u0 + u1*u1 + u2*u2 + u3*u3 - u0", Q, GREVLEX, vars),
+                b = MultivariatePolynomial.parse("u3*0 + u2*0 + u1*u3 + u0*u2 + u1*u1 + u2*u0 + u3*u1 - u2", Q, GREVLEX, vars);
+
+        System.out.println(a.toString(vars));
+        System.out.println(b.toString(vars));
     }
 }

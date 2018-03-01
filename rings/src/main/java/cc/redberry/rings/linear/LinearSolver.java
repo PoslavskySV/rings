@@ -47,18 +47,30 @@ public final class LinearSolver {
     }
 
     /**
-     * Gives the row‐reduced form of the matrix
+     * Gives the row echelon form of the matrix
      *
      * @param ring   the ring
      * @param matrix the matrix
      * @return the number of free variables
      */
     public static <E> int rowEchelonForm(Ring<E> ring, E[][] matrix) {
-        return rowEchelonForm(ring, matrix, null);
+        return rowEchelonForm(ring, matrix, null, false);
     }
 
     /**
-     * Gives the row‐reduced form of the linear system {@code lhs.x = rhs}.
+     * Gives the row echelon form of the matrix
+     *
+     * @param ring   the ring
+     * @param matrix the matrix
+     * @param reduce whether to calculate reduced row echelon form
+     * @return the number of free variables
+     */
+    public static <E> int rowEchelonForm(Ring<E> ring, E[][] matrix, boolean reduce) {
+        return rowEchelonForm(ring, matrix, null, reduce);
+    }
+
+    /**
+     * Gives the row echelon form of the linear system {@code lhs.x = rhs}.
      *
      * @param ring the ring
      * @param lhs  the lhs of the system
@@ -66,6 +78,19 @@ public final class LinearSolver {
      * @return the number of free variables
      */
     public static <E> int rowEchelonForm(Ring<E> ring, E[][] lhs, E[] rhs) {
+        return rowEchelonForm(ring, lhs, rhs, false);
+    }
+
+    /**
+     * Gives the row echelon form of the linear system {@code lhs.x = rhs}.
+     *
+     * @param ring   the ring
+     * @param lhs    the lhs of the system
+     * @param rhs    the rhs of the system
+     * @param reduce whether to calculate reduced row echelon form
+     * @return the number of free variables
+     */
+    public static <E> int rowEchelonForm(Ring<E> ring, E[][] lhs, E[] rhs, boolean reduce) {
         if (rhs != null && lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
 
@@ -82,18 +107,23 @@ public final class LinearSolver {
             // find pivot row and swap
             int row = iColumn - nZeroColumns;
             int max = row;
-            for (int iRow = row + 1; iRow < nRows; ++iRow)
-                if (ring.compare(lhs[iRow][iColumn], lhs[max][iColumn]) > 0)
-                    max = iRow;
+            if (ring.isZero(lhs[row][iColumn])) {
+                for (int iRow = row + 1; iRow < nRows; ++iRow)
+                    if (!ring.isZero(lhs[iRow][iColumn])) {
+                        max = iRow;
+                        break;
+                    }
 
-            ArraysUtil.swap(lhs, row, max);
-            if (rhs != null)
-                ArraysUtil.swap(rhs, row, max);
+                ArraysUtil.swap(lhs, row, max);
+                if (rhs != null)
+                    ArraysUtil.swap(rhs, row, max);
+            }
 
             // singular
             if (ring.isZero(lhs[row][iColumn])) {
                 //nothing to do on this column
                 ++nZeroColumns;
+                to = Math.min(nRows + nZeroColumns, nColumns);
                 continue;
             }
 
@@ -107,7 +137,55 @@ public final class LinearSolver {
                         lhs[iRow][iCol] = ring.subtract(lhs[iRow][iCol], ring.multiply(alpha, lhs[row][iCol]));
             }
         }
+        if (reduce)
+            reducedRowEchelonForm(ring, lhs, rhs);
         return nZeroColumns;
+    }
+
+    /**
+     * Gives the reduced row echelon form of the linear system {@code lhs.x = rhs} from a given row echelon form.
+     *
+     * @param ring the ring
+     * @param lhs  the lhs of the system in the row echelon form
+     * @param rhs  the rhs of the system
+     */
+    public static <E> void reducedRowEchelonForm(Ring<E> ring, E[][] lhs, E[] rhs) {
+        int nRows = lhs.length;
+        int nColumns = lhs[0].length;
+
+        //number of zero columns
+        int nZeroColumns = 0;
+        for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
+            // find pivot row and swap
+            int iRow = iColumn - nZeroColumns;
+            if (ring.isZero(lhs[iRow][iColumn])) {
+                ++nZeroColumns;
+                to = Math.min(nRows + nZeroColumns, nColumns);
+                continue;
+            }
+
+            // scale current row
+            E[] row = lhs[iRow];
+            E val = row[iColumn];
+            E valInv = ring.reciprocal(val);
+
+            for (int i = iColumn; i < nColumns; i++)
+                row[i] = ring.multiply(valInv, row[i]);
+            if (rhs != null)
+                rhs[iRow] = ring.multiply(valInv, rhs[iRow]);
+
+            // scale all rows before
+            for (int i = 0; i < iRow; i++) {
+                E[] pRow = lhs[i];
+                E v = pRow[iColumn];
+                if (ring.isZero(v))
+                    continue;
+                for (int j = iColumn; j < nColumns; ++j)
+                    pRow[j] = ring.subtract(pRow[j], ring.multiply(v, row[j]));
+                if (rhs != null)
+                    rhs[i] = ring.subtract(rhs[i], ring.multiply(v, rhs[iColumn]));
+            }
+        }
     }
 
     /**
@@ -342,25 +420,50 @@ public final class LinearSolver {
     /* ========================================= Machine numbers ============================================ */
 
     /**
-     * Gives the row‐reduced form of the matrix
+     * Gives the row echelon form of the matrix
      *
      * @param ring   the ring
      * @param matrix the matrix
      * @return the number of free variables
      */
     public static int rowEchelonForm(IntegersZp64 ring, long[][] matrix) {
-        return rowEchelonForm(ring, matrix, null);
+        return rowEchelonForm(ring, matrix, false);
     }
 
     /**
-     * Gives the row‐reduced form of the linear system {@code lhs.x = rhs}.
+     * Gives the row echelon form of the matrix
+     *
+     * @param ring   the ring
+     * @param matrix the matrix
+     * @param reduce whether to calculate reduced row echelon form
+     * @return the number of free variables
+     */
+    public static int rowEchelonForm(IntegersZp64 ring, long[][] matrix, boolean reduce) {
+        return rowEchelonForm(ring, matrix, null, reduce);
+    }
+
+    /**
+     * Gives the row echelon form of the linear system {@code lhs.x = rhs} (rhs may be null).
      *
      * @param ring the ring
      * @param lhs  the lhs of the system
-     * @param rhs  the rhs of the system
+     * @param rhs  the rhs of the system (may be null)
      * @return the number of free variables
      */
     public static int rowEchelonForm(IntegersZp64 ring, long[][] lhs, long[] rhs) {
+        return rowEchelonForm(ring, lhs, rhs, false);
+    }
+
+    /**
+     * Gives the row echelon form of the linear system {@code lhs.x = rhs} (rhs may be null).
+     *
+     * @param ring   the ring
+     * @param lhs    the lhs of the system
+     * @param rhs    the rhs of the system (may be null)
+     * @param reduce whether to calculate reduced row echelon form
+     * @return the number of free variables
+     */
+    public static int rowEchelonForm(IntegersZp64 ring, long[][] lhs, long[] rhs, boolean reduce) {
         if (rhs != null && lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
 
@@ -376,19 +479,24 @@ public final class LinearSolver {
 
             // find pivot row and swap
             int row = iColumn - nZeroColumns;
-            int max = row;
-            for (int iRow = row + 1; iRow < nRows; ++iRow)
-                if (lhs[iRow][iColumn] > lhs[max][iColumn])
-                    max = iRow;
+            int nonZero = row;
+            if (lhs[row][iColumn] == 0) {
+                for (int iRow = row + 1; iRow < nRows; ++iRow)
+                    if (lhs[iRow][iColumn] != 0) {
+                        nonZero = iRow;
+                        break;
+                    }
 
-            ArraysUtil.swap(lhs, row, max);
-            if (rhs != null)
-                ArraysUtil.swap(rhs, row, max);
+                ArraysUtil.swap(lhs, row, nonZero);
+                if (rhs != null)
+                    ArraysUtil.swap(rhs, row, nonZero);
+            }
 
             // singular
             if (lhs[row][iColumn] == 0) {
                 //nothing to do on this column
                 ++nZeroColumns;
+                to = Math.min(nRows + nZeroColumns, nColumns);
                 continue;
             }
 
@@ -402,7 +510,55 @@ public final class LinearSolver {
                         lhs[iRow][iCol] = ring.subtract(lhs[iRow][iCol], ring.multiply(alpha, lhs[row][iCol]));
             }
         }
+        if (reduce)
+            reducedRowEchelonForm(ring, lhs, rhs);
         return nZeroColumns;
+    }
+
+    /**
+     * Gives the reduced row echelon form of the linear system {@code lhs.x = rhs} from a given row echelon form.
+     *
+     * @param ring the ring
+     * @param lhs  the lhs of the system in the row echelon form
+     * @param rhs  the rhs of the system
+     */
+    public static void reducedRowEchelonForm(IntegersZp64 ring, long[][] lhs, long[] rhs) {
+        int nRows = lhs.length;
+        int nColumns = lhs[0].length;
+
+        //number of zero columns
+        int nZeroColumns = 0;
+        for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
+            // find pivot row and swap
+            int iRow = iColumn - nZeroColumns;
+            if (lhs[iRow][iColumn] == 0) {
+                ++nZeroColumns;
+                to = Math.min(nRows + nZeroColumns, nColumns);
+                continue;
+            }
+
+            // scale current row
+            long[] row = lhs[iRow];
+            long val = row[iColumn];
+            long valInv = ring.reciprocal(val);
+
+            for (int i = iColumn; i < nColumns; i++)
+                row[i] = ring.multiply(valInv, row[i]);
+            if (rhs != null)
+                rhs[iRow] = ring.multiply(valInv, rhs[iRow]);
+
+            // scale all rows before
+            for (int i = 0; i < iRow; i++) {
+                long[] pRow = lhs[i];
+                long v = pRow[iColumn];
+                if (v == 0)
+                    continue;
+                for (int j = iColumn; j < nColumns; ++j)
+                    pRow[j] = ring.subtract(pRow[j], ring.multiply(v, row[j]));
+                if (rhs != null)
+                    rhs[i] = ring.subtract(rhs[i], ring.multiply(v, rhs[iColumn]));
+            }
+        }
     }
 
     /**

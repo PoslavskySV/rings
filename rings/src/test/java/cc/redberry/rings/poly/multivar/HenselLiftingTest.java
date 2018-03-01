@@ -514,13 +514,13 @@ public class HenselLiftingTest extends AMultivariateTest {
     /* ==================================== Test data =============================================== */
 
     private interface Lifting<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
         void lift(Poly base, Poly[] factors, Poly[] factorsLC, IEvaluation<Term, Poly> evaluation, int[] degreeBounds, int from);
     }
 
     final class BivariateLift<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
             implements Lifting<Term, Poly> {
         @Override
@@ -529,7 +529,7 @@ public class HenselLiftingTest extends AMultivariateTest {
         }
     }
 
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void testHenselLift(FactorizationInput.SampleDecompositionSource<Poly> source, int nIterations,
                         Function<Poly, IEvaluationLoop<Term, Poly>> evalFactory,
                         Lifting<Term, Poly> algorithm, boolean correctLC, int from) {

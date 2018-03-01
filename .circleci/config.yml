@@ -19,6 +19,9 @@ jobs:
 
       - run:
           command: |
+              sudo apt-get install singular
+      - run:
+          command: |
               git submodule sync --recursive
               git submodule update --init --recursive
               cd libdivide4j
@@ -27,7 +30,7 @@ jobs:
       - run: 
           command: |
               cd rings
-              mvn clean test -DrunLongTests=true -e -ff
+              mvn clean test -DrunLongTests=true -DsingularPath=/usr/bin/Singular -e -ff
               mvn install -DskipTests=true
        
       - run:

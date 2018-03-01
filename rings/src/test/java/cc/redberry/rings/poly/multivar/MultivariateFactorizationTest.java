@@ -5,7 +5,6 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
-import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.test.FactorizationInput;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.test.Benchmark;
@@ -34,7 +33,7 @@ import static cc.redberry.rings.poly.multivar.MultivariateFactorization.factorPr
 /**
  * @since 1.0
  */
-public class MultivariateFactorizationTest extends APolynomialTest {
+public class MultivariateFactorizationTest extends AMultivariateTest {
     @Ignore
     @Test
     public void testBivariate1() throws Exception {
@@ -2149,7 +2148,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
     static boolean PRINT_FACTORS = false;
     static boolean DO_ASSERTION = true;
 
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void testFactorizationAlgorithm(FactorizationInput.SampleDecompositionSource<Poly> source,
                                     int nIterations,
                                     FactorizationInput.FactorizationAlgorithm<Poly> algorithm) {
@@ -2283,7 +2282,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
                         .toArray(MultivariatePolynomial[]::new));
     }
 
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorizationInput.SampleDecompositionSource<Poly> orderVarsByDegree(FactorizationInput.SampleDecompositionSource<Poly> source) {
         return new FactorizationInput.SampleDecompositionSource<Poly>() {
             @Override
@@ -2305,7 +2304,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         };
     }
 
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorizationInput.SampleDecompositionSource<Poly> filterMonomialContent(FactorizationInput.SampleDecompositionSource<Poly> source) {
         return new FactorizationInput.SampleDecompositionSource<Poly>() {
             @Override
@@ -2326,7 +2325,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         };
     }
 
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorizationInput.SampleDecompositionSource<Poly> filterNonPrimitive(FactorizationInput.SampleDecompositionSource<Poly> source) {
         return new FactorizationInput.SampleDecompositionSource<Poly>() {
             @Override
@@ -2346,7 +2345,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
         };
     }
 
-    static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     FactorizationInput.SampleDecompositionSource<Poly> filterNonSquareFree(FactorizationInput.SampleDecompositionSource<Poly> source) {
         return new FactorizationInput.SampleDecompositionSource<Poly>() {
             @Override
@@ -2405,7 +2404,7 @@ public class MultivariateFactorizationTest extends APolynomialTest {
                         RandomMultivariatePolynomials.randomPolynomial(nVariables,
                                 rndd.nextInt(minDegree, maxDegree),
                                 rndd.nextInt(minSize, maxSize),
-                                domain, MonomialOrder.LEX, rnd);
+                                domain, MonomialOrder.DEFAULT, rnd);
 
                 if (sample.isConstant() || sample.isMonomial())
                     continue;
