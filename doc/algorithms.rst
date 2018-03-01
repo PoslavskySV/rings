@@ -7,6 +7,8 @@
 
 .. |____| replace:: |_|
 
+
+
 ========================================
 Index of algorithms implemented in Rings
 ========================================
@@ -92,7 +94,7 @@ Univariate rings
 
  - `IrreduciblePolynomials.irreducibleQ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java>`_
 
-18. *Ben-Or’s generation of irreducible polynomials* |____| (Sec. 14.9 in [GaGe03]_):
+18. *Ben-Or's generation of irreducible polynomials* |____| (Sec. 14.9 in [GaGe03]_):
 
  - `IrreduciblePolynomials.randomIrreduciblePolynomial <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java>`_
 
@@ -121,7 +123,7 @@ Multivariate rings
 
  - `MultivariateGCD.EEZGCD <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
-24. *Modular GCD over Z with sparse interpolation* |____| ([Zipp79]_, [Zipp93]_, [dKMW05]_) |br| (the same interpolation techniques as in `ZippelGCD` is used):
+24. *Modular GCD over Z with sparse interpolation* |____| ([Zipp79]_, [Zipp93]_, [dKMW05]_) |br| (the same interpolation techniques as in ``ZippelGCD`` is used):
 
  - `MultivariateGCD.ZippelGCDInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>`_
 
@@ -204,21 +206,21 @@ References
 
 .. [BreK98] R P Brent and H T Kung. Fast algorithms for manipulating formal power series. J. Assoc. Comput. Math. 25:581-595, 1978
 
-.. [Brow71] W S Brown. On Euclid’s algorithm and the computation of polynomial greatest common divisors. J. ACM, 18(4):478–504, 1971.
+.. [Brow71] W S Brown. On Euclid's algorithm and the computation of polynomial greatest common divisors. J. ACM, 18(4):478–504, 1971.
 
-.. [Zipp79] R E Zippel. Probabilistic algorithms for sparse polynomials. In Proceedings of the International Symposiumon on Symbolic and Algebraic Computation, EUROSAM ’79, pages 216–226, London, UK, UK, 1979. Springer-Verlag.
+.. [Zipp79] R E Zippel. Probabilistic algorithms for sparse polynomials. In Proceedings of the International Symposiumon on Symbolic and Algebraic Computation, EUROSAM '79, pages 216–226, London, UK, UK, 1979. Springer-Verlag.
 
 .. [Zipp93] R E Zippel. Effective Polynomial Computation. Kluwer International Series in Engineering and Computer Science. Kluwer Academic Publishers, 1993.
 
-.. [dKMW05] J de Kleine, M B Monagan, A D Wittkopf. Algorithms for the Non-monic Case of the Sparse Modular GCD Algorithm. Proceeding of ISSAC ’05, ACM Press, pp. 124-131 , 2005.
+.. [dKMW05] J de Kleine, M B Monagan, A D Wittkopf. Algorithms for the Non-monic Case of the Sparse Modular GCD Algorithm. Proceeding of ISSAC '05, ACM Press, pp. 124-131 , 2005.
 
-.. [Yang09] S Yang. Computing the greatest common divisor of multivariate polynomials over finite fields. Master’s thesis, Simon Fraser University, 2009.
+.. [Yang09] S Yang. Computing the greatest common divisor of multivariate polynomials over finite fields. Master's thesis, Simon Fraser University, 2009.
 
-.. [MosY73] J Moses and D Y Y Yun, "The EZGCD Algorithm," pp. 159-166 in Proc. ACM Annual Conference, (1973).
+.. [MosY73] J Moses and D Y Y Yun, "The EZGCD Algorithm" pp. 159-166 in Proc. ACM Annual Conference, (1973).
 
 .. [Wang80] P S Wang, "The EEZ-GCD Algorithm," ACM SIGSAMBull., 14 pp. 50-60 (1980).
 
-.. [KalM99] E Kaltofen, M. B. Monagan. On the Genericity of the Modular Polynomial GCD Algorithm. Proceeding of ISSAC ’99, ACM Press, 59-66, 1999.
+.. [KalM99] E Kaltofen, M. B. Monagan. On the Genericity of the Modular Polynomial GCD Algorithm. Proceeding of ISSAC '99, ACM Press, 59-66, 1999.
 
 .. [Bern99] L Bernardin. Factorization of Multivariate Polynomials over Finite Fields. PhD thesis, ETH Zu ̈rich, 1999.
 
@@ -236,9 +238,9 @@ References
 
 .. [Buch76] B Buchberger, Theoretical Basis for the Reduction of Polynomials to Canonical Forms, ACM SIGSAM Bulletin. ACM. 10 (3): 19–29
 
-.. [GebM88] R Gebauer and H Moller, On an Installation of Buchberger’s Algorithm, Journal of Symbolic Computation, 6(2 and 3):275–286, October/December 1988
+.. [GebM88] R Gebauer and H Moller, On an Installation of Buchberger's Algorithm, Journal of Symbolic Computation, 6(2 and 3):275–286, October/December 1988
 
-.. [GMNR88] A Giovini, T Mora, G Niesi, L Robbiano and C Traverso, One sugar cube, please, or Selection strategies in the Buchberger Algorithm. In S. M. Watt, editor, Proceedings of the 1991 International Symposium on Symbolic and Algebraic Computation. ISSAC’ 91, ACM Press, 1991.
+.. [GMNR88] A Giovini, T Mora, G Niesi, L Robbiano and C Traverso, One sugar cube, please, or Selection strategies in the Buchberger Algorithm. In S. M. Watt, editor, Proceedings of the 1991 International Symposium on Symbolic and Algebraic Computation. ISSAC'91, ACM Press, 1991.
 
 .. [BecW93] T Becker and V Weispfenning, Groebner Bases, a Computationnal Approach to Commutative Algebra. Graduate Texts in Mathematics. Springer-Verlag, 1993.
 
