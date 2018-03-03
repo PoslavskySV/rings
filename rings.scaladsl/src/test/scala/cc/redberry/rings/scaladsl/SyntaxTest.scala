@@ -410,7 +410,7 @@ class SyntaxTest {
 
       assertEquals(
         interpolate(points.toSeq, values.toSeq),
-        UnivariateInterpolation.interpolateNewton(ring._cfRing, points, values)
+        UnivariateInterpolation.interpolateNewton(ring.cfRingZp64, points, values)
       )
     }
   }

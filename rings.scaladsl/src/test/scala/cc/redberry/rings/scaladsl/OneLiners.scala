@@ -71,7 +71,7 @@ class OneLiners {
     rats :+ ints.foldLeft(Rational(ring(0)))(_ + _)
   }
 
-  def apart[Term <: DegreeVector[Term], Poly <: AMultivariatePolynomial[Term, Poly], Cf]
+  def apart[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], Cf]
   (frac: Rational[Poly], variable: Int)(implicit ring: IMultivariateRing[Term, Poly, Cf]): Seq[Rational[Poly]] = {
 
     import Conversions._

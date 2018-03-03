@@ -22,7 +22,7 @@ object Conversions {
     val variables = r.variables.toSeq
     val cfVars = vars map variables
     val maVars = variables diff cfVars
-    MultivariateRing(IPolynomialRing(raw.factory().ring.getZero).setVariableNames(cfVars.toArray), maVars.toArray)
+    MultivariateRing(PolynomialRing(raw.factory().ring.getZero).setVariableNames(cfVars.toArray), maVars.toArray)
   }
 
   def asUnivariate[Poly <: AMultivariatePolynomial[_, Poly]](p: Poly, variable: Int)
@@ -34,7 +34,7 @@ object Conversions {
     val raw: poly.IPolynomialRing[UnivariatePolynomial[Poly]] = MultivariateConversions.asUnivariate[Poly](r, variable)
     val cfVars = ListBuffer[String](r.variables: _*)
     cfVars.remove(variable)
-    UnivariateRing(IPolynomialRing(raw.factory().ring.getZero).setVariableNames(cfVars.toArray), r.variables(variable))
+    UnivariateRing(PolynomialRing(raw.factory().ring.getZero).setVariableNames(cfVars.toArray), r.variables(variable))
   }
 
   def fromUnivariate[Poly <: AMultivariatePolynomial[_, Poly]](p: UnivariatePolynomial[Poly], variable: Int)
@@ -44,6 +44,6 @@ object Conversions {
   : IPolynomialRing[Poly, Cf] = {
     val raw: poly.IPolynomialRing[Poly] = MultivariateConversions.fromUnivariate[Poly](r, variable)
     val vars = r.cfRing.asInstanceOf[IPolynomialRing[_, _]].variables.toSeq
-    IPolynomialRing(raw.factory()).setVariableNames((vars.take(variable) ++ Seq(r.variable) ++ vars.drop(variable)).toArray)
+    PolynomialRing(raw.factory()).setVariableNames((vars.take(variable) ++ Seq(r.variable) ++ vars.drop(variable)).toArray)
   }
 }
