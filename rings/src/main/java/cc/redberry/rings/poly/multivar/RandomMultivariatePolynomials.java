@@ -36,7 +36,8 @@ public final class RandomMultivariatePolynomials {
             BigInteger cfx = RandomUtil.randomInt(bound, rnd);
             if (rnd.nextBoolean() && rnd.nextBoolean())
                 cfx = cfx.negate();
-            terms[i] = new Monomial<>(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
+            int[] exponents = RandomUtil.randomIntArray(nVars, 0, nd, rnd);
+            terms[i] = new Monomial<>(exponents, cfx);
         }
         return MultivariatePolynomial.create(nVars, Rings.Z, ordering, terms);
     }
@@ -51,7 +52,7 @@ public final class RandomMultivariatePolynomials {
      * @return random polynomial
      */
     public static MultivariatePolynomial<BigInteger> randomPolynomial(int nVars, int degree, int size, RandomGenerator rnd) {
-        return randomPolynomial(nVars, degree, size, BigInteger.TEN, MonomialOrder.LEX, rnd);
+        return randomPolynomial(nVars, degree, size, BigInteger.TEN, MonomialOrder.DEFAULT, rnd);
     }
 
     /**
@@ -71,7 +72,8 @@ public final class RandomMultivariatePolynomials {
         Monomial<E>[] terms = new Monomial[size];
         for (int i = 0; i < size; i++) {
             E cfx = ring.randomElement(rnd);
-            terms[i] = new Monomial<>(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
+            int[] exponents = RandomUtil.randomIntArray(nVars, 0, nd, rnd);
+            terms[i] = new Monomial<>(exponents, cfx);
         }
         return MultivariatePolynomial.create(nVars, ring, ordering, terms);
     }
@@ -87,7 +89,7 @@ public final class RandomMultivariatePolynomials {
      * @return random polynomial
      */
     public static MultivariatePolynomialZp64 randomPolynomial(int nVars, int degree, int size, IntegersZp64 ring, RandomGenerator rnd) {
-        return randomPolynomial(nVars, degree, size, ring, MonomialOrder.LEX, rnd);
+        return randomPolynomial(nVars, degree, size, ring, MonomialOrder.DEFAULT, rnd);
     }
 
     /**
@@ -107,7 +109,8 @@ public final class RandomMultivariatePolynomials {
         MonomialZp64[] terms = new MonomialZp64[size];
         for (int i = 0; i < size; i++) {
             long cfx = ring.randomElement(rnd);
-            terms[i] = new MonomialZp64(RandomUtil.randomIntArray(nVars, 0, nd, rnd), cfx);
+            int[] exponents = RandomUtil.randomIntArray(nVars, 0, nd, rnd);
+            terms[i] = new MonomialZp64(exponents, cfx);
         }
         return MultivariatePolynomialZp64.create(nVars, ring, ordering, terms);
     }
@@ -122,7 +125,7 @@ public final class RandomMultivariatePolynomials {
      * @return random polynomial
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly randomPolynomial(Poly factory, int degree, int size, RandomGenerator rnd) {
         if (factory instanceof MultivariatePolynomialZp64)
             return (Poly) randomPolynomial(((MultivariatePolynomialZp64) factory).nVariables, degree, size, ((MultivariatePolynomialZp64) factory).ring, ((MultivariatePolynomialZp64) factory).ordering, rnd);

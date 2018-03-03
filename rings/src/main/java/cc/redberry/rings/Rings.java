@@ -182,7 +182,7 @@ public final class Rings {
      */
     public static <E> MultivariateRing<MultivariatePolynomial<E>>
     MultivariateRing(int nVariables, Ring<E> coefficientRing) {
-        return MultivariateRing(nVariables, coefficientRing, MonomialOrder.LEX);
+        return MultivariateRing(nVariables, coefficientRing, MonomialOrder.DEFAULT);
     }
 
     /**
@@ -190,7 +190,7 @@ public final class Rings {
      *
      * @param factory factory
      */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     MultivariateRing<Poly> MultivariateRing(Poly factory) {
         return new MultivariateRing<>(factory);
     }
@@ -235,7 +235,7 @@ public final class Rings {
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
     MultivariateRingZp64(int nVariables, long modulus) {
-        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.LEX);
+        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.DEFAULT);
     }
 
     /**
@@ -258,7 +258,7 @@ public final class Rings {
      */
     public static MultivariateRing<MultivariatePolynomialZp64>
     MultivariateRingZp64(int nVariables, IntegersZp64 modulus) {
-        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.LEX);
+        return MultivariateRingZp64(nVariables, modulus, MonomialOrder.DEFAULT);
     }
 
     /**
@@ -284,7 +284,6 @@ public final class Rings {
         return MultivariateRing(nVariables, gf);
     }
 
-
     /**
      * Generic factory for polynomial ring
      */
@@ -294,5 +293,23 @@ public final class Rings {
             return (IPolynomialRing<Poly>) UnivariateRing((IUnivariatePolynomial) factory);
         else
             return (IPolynomialRing<Poly>) MultivariateRing((AMultivariatePolynomial) factory);
+    }
+
+    /**
+     * Quotient ring {@code baseRing/<modulus> }
+     */
+    public static <uPoly extends IUnivariatePolynomial<uPoly>>
+    UnivariateQuotientRing<uPoly>
+    UnivariateQuotientRing(IPolynomialRing<uPoly> baseRing, uPoly modulus) {
+        return new UnivariateQuotientRing<>(baseRing, modulus);
+    }
+
+    /**
+     * Quotient ring {@code baseRing/<ideal> }
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    QuotientRing<Term, Poly>
+    QuotientRing(IPolynomialRing<Poly> baseRing, Ideal<Term, Poly> ideal) {
+        return new QuotientRing<>(baseRing, ideal);
     }
 }

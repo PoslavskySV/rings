@@ -10,6 +10,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.Benchmark;
+import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.RandomDataGenerator;
 import cc.redberry.rings.util.RandomUtil;
 import cc.redberry.rings.util.TimeUnits;
@@ -26,7 +27,6 @@ import java.util.function.BiFunction;
 
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.AMultivariatePolynomial.renameVariables;
-import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.divideExact;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.dividesQ;
 import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
@@ -52,9 +52,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testBrown1() throws Exception {
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(1321323));
         MultivariatePolynomial<BigInteger>
-                a = parse("c*b*a^2+b^2 + c", domain, LEX),
-                b = parse("a^2+2*b^2 + 2*c", domain, LEX),
-                gcd = parse("c*a+b+a+ c*a^3", domain, LEX);
+                a = parse("c*b*a^2+b^2 + c", domain, MonomialOrder.DEFAULT),
+                b = parse("a^2+2*b^2 + 2*c", domain, MonomialOrder.DEFAULT),
+                gcd = parse("c*a+b+a+ c*a^3", domain, MonomialOrder.DEFAULT);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -64,9 +64,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testBrown2() throws Exception {
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(1321323));
         MultivariatePolynomial<BigInteger>
-                a = parse("c*b*a^2+b^2 + c", domain, LEX),
-                b = parse("a^2+2*b^2 + 2*c", domain, LEX),
-                gcd = parse("c*a*b+b*b+a*b+ c*a^3*b", domain, LEX);
+                a = parse("c*b*a^2+b^2 + c", domain, MonomialOrder.DEFAULT),
+                b = parse("a^2+2*b^2 + 2*c", domain, MonomialOrder.DEFAULT),
+                gcd = parse("c*a*b+b*b+a*b+ c*a^3*b", domain, MonomialOrder.DEFAULT);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -76,9 +76,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testBrown3() throws Exception {
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(659));
         MultivariatePolynomial<BigInteger>
-                a = parse("656*c^2+7*b^3*c+656*a*b^2+2*a^3*c+5*a^3*b^3", domain, LEX),
-                b = parse("654+654*a*b^2*c^2+a*b^3*c^2+652*a^2*b*c^2+656*a^2*b^2*c", domain, LEX),
-                gcd = parse("7*b+655*a*b^3*c^2+6*a^2*b^3*c^2", domain, LEX);
+                a = parse("656*c^2+7*b^3*c+656*a*b^2+2*a^3*c+5*a^3*b^3", domain, MonomialOrder.DEFAULT),
+                b = parse("654+654*a*b^2*c^2+a*b^3*c^2+652*a^2*b*c^2+656*a^2*b^2*c", domain, MonomialOrder.DEFAULT),
+                gcd = parse("7*b+655*a*b^3*c^2+6*a^2*b^3*c^2", domain, MonomialOrder.DEFAULT);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -88,9 +88,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testBrown3a() throws Exception {
         IntegersZp domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger>
-                a = parse("656*c^2+7*b^3*c+656*a*b^2+2*a^3*c+5*a^3*b^3", domain, LEX),
-                b = parse("654+654*a*b^2*c^2+a*b^3*c^2+652*a^2*b*c^2+656*a^2*b^2*c", domain, LEX),
-                gcd = parse("7*b^6+655*a*b^3*c^6+6*a^2*b^3*c^4", domain, LEX);
+                a = parse("656*c^2+7*b^3*c+656*a*b^2+2*a^3*c+5*a^3*b^3", domain, MonomialOrder.DEFAULT),
+                b = parse("654+654*a*b^2*c^2+a*b^3*c^2+652*a^2*b*c^2+656*a^2*b^2*c", domain, MonomialOrder.DEFAULT),
+                gcd = parse("7*b^6+655*a*b^3*c^6+6*a^2*b^3*c^4", domain, MonomialOrder.DEFAULT);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -101,9 +101,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(653);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger>
-                a = parse("6*b^5*c+a*b^3+a^2*b^2+a^2*b^2*c+a^3*b*c^3", domain, LEX, vars),
-                b = parse("9*a*b^2*c^6+a*b^4*c^6+a^2*b^2*c^3+a^5*b^2+a^5*b^6*c^4+a^6*c+a^6*b^2*c", domain, LEX, vars),
-                gcd = parse("653*b^3*c^4+b^4+b^5*c^3+a^2*b*c^2+a^4*b^2*c^4", domain, LEX, vars);
+                a = parse("6*b^5*c+a*b^3+a^2*b^2+a^2*b^2*c+a^3*b*c^3", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("9*a*b^2*c^6+a*b^4*c^6+a^2*b^2*c^3+a^5*b^2+a^5*b^6*c^4+a^6*c+a^6*b^2*c", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("653*b^3*c^4+b^4+b^5*c^3+a^2*b*c^2+a^4*b^2*c^4", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -116,9 +116,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(653);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger>
-                a = parse("561*a^2*c^2+a^2*b^2*c+a^3*b+a^4*b^2+a^4*b^5*c^3+a^5*b", domain, LEX, vars),
-                b = parse("561*a*c^3+a*b^4*c^5+a^2*c^2+a^2*b^6*c^3+a^3*b^6*c^5+a^5*b^5*c^3+a^5*b^5*c^6", domain, LEX, vars),
-                gcd = parse("4*c^2+b^4+a^2*b^4*c+a^3*b^2*c+a^3*b^6+a^5*b^2*c^6+a^6*b^5", domain, LEX, vars);
+                a = parse("561*a^2*c^2+a^2*b^2*c+a^3*b+a^4*b^2+a^4*b^5*c^3+a^5*b", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("561*a*c^3+a*b^4*c^5+a^2*c^2+a^2*b^6*c^3+a^3*b^6*c^5+a^5*b^5*c^3+a^5*b^5*c^6", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("4*c^2+b^4+a^2*b^4*c+a^3*b^2*c+a^3*b^6+a^5*b^2*c^6+a^6*b^5", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -130,9 +130,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(937);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger>
-                a = parse("931*a^3*b^4*c+a^4+a^4*b^6*c^2+a^5*b*c^3+a^6*b*c^2", domain, LEX, vars),
-                b = parse("932*b*c+a*b^6*c^2+a^3*b*c^2+a^3*b^3*c^5+a^3*b^5*c+a^5*b^5*c^3+a^6*b^2*c^6+a^6*b^4*c^5+a^6*b^6", domain, LEX, vars),
-                gcd = parse("935*c^2+c^4+a^3*b*c^5+a^3*b^2*c^3+a^4*b^3", domain, LEX, vars);
+                a = parse("931*a^3*b^4*c+a^4+a^4*b^6*c^2+a^5*b*c^3+a^6*b*c^2", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("932*b*c+a*b^6*c^2+a^3*b*c^2+a^3*b^3*c^5+a^3*b^5*c+a^5*b^5*c^3+a^6*b^2*c^6+a^6*b^4*c^5+a^6*b^6", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("935*c^2+c^4+a^3*b*c^5+a^3*b^2*c^3+a^4*b^3", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -144,9 +144,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(569);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger>
-                a = parse("563*b^2*c+6*b^4*c^3+4*a*b^4*c^3+563*a*b^4*c^4+560*a^2*b^5*c^2+9*a^3*b^4*c+5*a^4*c^2+7*a^4*b^3*c^5+4*a^5*b^4*c^5+6*a^5*b^5", domain, LEX, vars),
-                b = parse("4*b^2*c+5*b^2*c^3+5*b^3*c+3*a^2*b+3*a^2*b*c^2+565*a^3*b*c^2", domain, LEX, vars),
-                gcd = parse("4+8*b^2*c^3+4*b^3+8*b^3*c+7*a*c+a*b*c+7*a^2*b^2+2*a^2*b^2*c^2+5*a^3*c^2+5*a^3*c^3", domain, LEX, vars);
+                a = parse("563*b^2*c+6*b^4*c^3+4*a*b^4*c^3+563*a*b^4*c^4+560*a^2*b^5*c^2+9*a^3*b^4*c+5*a^4*c^2+7*a^4*b^3*c^5+4*a^5*b^4*c^5+6*a^5*b^5", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("4*b^2*c+5*b^2*c^3+5*b^3*c+3*a^2*b+3*a^2*b*c^2+565*a^3*b*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("4+8*b^2*c^3+4*b^3+8*b^3*c+7*a*c+a*b*c+7*a^2*b^2+2*a^2*b^2*c^2+5*a^3*c^2+5*a^3*c^3", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -209,9 +209,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(569);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger>
-                a = parse("a^4 + c^4", domain, LEX, vars),
-                b = parse("4*b^2*c+5*b^2*c^3+5*b^3*c+3*a^2*b+3*a^2*b*c^2+565*a^3*b*c^2", domain, LEX, vars),
-                gcd = parse("a^2 + c^2", domain, LEX, vars);
+                a = parse("a^4 + c^4", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("4*b^2*c+5*b^2*c^3+5*b^3*c+3*a^2*b+3*a^2*b*c^2+565*a^3*b*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("a^2 + c^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -223,9 +223,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(569);
         String[] vars = {"a", "b", "c", "d"};
         MultivariatePolynomial<BigInteger>
-                a = parse("a^4 + c^4", domain, LEX, vars),
-                b = parse("b^2 + d^2", domain, LEX, vars),
-                gcd = parse("d^2", domain, LEX, vars);
+                a = parse("a^4 + c^4", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("b^2 + d^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("d^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertBrownGCD(gcd, a, b);
@@ -236,12 +236,12 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(5642359);
         String[] vars = {"a", "b"};
         MultivariatePolynomial<BigInteger>
-                a = parse("1199884 + 4783764*b + b^2 + 3215597*a*b + 2196297*a*b^2 + 4781733*a^4 + a^4*b + 2196297*a^5*b", domain, LEX, vars),
-                b = parse("4645946 + 3921107*b + b^2 + 5605437*a*b + 2196297*a*b^2 + 4781733*a^3 + a^3*b + 2196297*a^4*b", domain, LEX, vars);
+                a = parse("1199884 + 4783764*b + b^2 + 3215597*a*b + 2196297*a*b^2 + 4781733*a^4 + a^4*b + 2196297*a^5*b", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("4645946 + 3921107*b + b^2 + 5605437*a*b + 2196297*a*b^2 + 4781733*a^3 + a^3*b + 2196297*a^4*b", domain, MonomialOrder.DEFAULT, vars);
 
         MultivariatePolynomial<BigInteger> gcdActual = BrownGCD(a, b);
         gcdActual = gcdActual.monic().multiply(domain.valueOf(4781733));
-        MultivariatePolynomial<BigInteger> expected = parse("1574588 + 4559668*b + 4781733*a*b", domain, LEX, vars);
+        MultivariatePolynomial<BigInteger> expected = parse("1574588 + 4559668*b + 4781733*a*b", domain, MonomialOrder.DEFAULT, vars);
         assertEquals(expected, gcdActual);
     }
 
@@ -260,9 +260,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
         MultivariatePolynomial<BigInteger>
-                a = parse("a^2 + b^2 + a*c^2", domain, LEX, vars),
-                b = parse("a^2 + 2*b^2 + b*c^2", domain, LEX, vars),
-                gcd = parse("a^2 + c*a + b + a*c*b + a*c^2", domain, LEX, vars);
+                a = parse("a^2 + b^2 + a*c^2", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("a^2 + 2*b^2 + b*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("a^2 + c*a + b + a*c*b + a*c^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
@@ -294,9 +294,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
         MultivariatePolynomial<BigInteger>
-                a = parse("a^2 + b^2 + a*c^2", domain, LEX, vars),
-                b = parse("a^2 + 2*b^2 + b*c^2", domain, LEX, vars),
-                gcd = parse("a^2 + c*a + b + a*c*b + a*c^2", domain, LEX, vars);
+                a = parse("a^2 + b^2 + a*c^2", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("a^2 + 2*b^2 + b*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("a^2 + c*a + b + a*c*b + a*c^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertZippelGCD(gcd, a, b);
@@ -308,9 +308,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(31579447));
         System.out.println(domain);
         MultivariatePolynomial<BigInteger>
-                a = parse("b^2 + a*c + a*b*c^2 + a*b^2 + a^5", domain, LEX, vars),
-                b = parse("1 + a*b", domain, LEX, vars),
-                gcd = parse("1 + a*b*c^2 + a^2*c^2 + a^2*b*c^2 + a^2*b^2*c^2 + a^7", domain, LEX, vars);
+                a = parse("b^2 + a*c + a*b*c^2 + a*b^2 + a^5", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("1 + a*b", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("1 + a*b*c^2 + a^2*c^2 + a^2*b*c^2 + a^2*b^2*c^2 + a^7", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
@@ -333,9 +333,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(31579447));
         MultivariatePolynomial<BigInteger>
-                a = parse("1+3*b*c^2+7*b^2*c^2+4*a+7*a^3*c^2+a^6", domain, LEX, vars),
-                b = parse("b^3*c^2+a*b^2*c+9*a^2*b*c+9*a^3*b*c^2+a^7", domain, LEX, vars),
-                gcd = parse("b^3*c^2+2*a*c+5*a*b+2*a*b^2*c+4*a*b^3*c^2+5*a^3*b+a^7", domain, LEX, vars);
+                a = parse("1+3*b*c^2+7*b^2*c^2+4*a+7*a^3*c^2+a^6", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("b^3*c^2+a*b^2*c+9*a^2*b*c+9*a^3*b*c^2+a^7", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("b^3*c^2+2*a*c+5*a*b+2*a*b^2*c+4*a*b^3*c^2+5*a^3*b+a^7", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
@@ -405,9 +405,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(31579447));
         MultivariatePolynomial<BigInteger>
-                a = parse("29322275*b+5*b*c+6*a^2*b^3*c^2+29322274*a^2*b^3*c^2*d^3+5*a^3*b*c^2*d^2+a^11", domain, LEX, vars),
-                b = parse("7*a^3*b^3*c^3*d^4+9*a^3*b^4*c+29322274*a^3*b^4*c^5*d^2+29322277*a^5*b*c*d+a^5*b^4+a^15", domain, LEX, vars),
-                gcd = parse("4*d^2+8*c^2*d+4*b*c+6*b^3*c^2*d^2+2*a^3*b^2*c^3*d+a^10", domain, LEX, vars);
+                a = parse("29322275*b+5*b*c+6*a^2*b^3*c^2+29322274*a^2*b^3*c^2*d^3+5*a^3*b*c^2*d^2+a^11", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("7*a^3*b^3*c^3*d^4+9*a^3*b^4*c+29322274*a^3*b^4*c^5*d^2+29322277*a^5*b*c*d+a^5*b^4+a^15", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("4*d^2+8*c^2*d+4*b*c+6*b^3*c^2*d^2+2*a^3*b^2*c^3*d+a^10", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
@@ -448,9 +448,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(26478253);
         PrivateRandom.getRandom().setSeed(0);
         MultivariatePolynomial<BigInteger>
-                a = parse("26478246*a*c^2+7*a*b+26478250*a*b*c^2+26478249*a*b^3*c^2+26478248*a^2*c^2+8*a^3*b*c^2+a^7", domain, LEX, vars),
-                b = parse("4*b^3*c^2+7*a+5*a*b+8*a*b^2+6*a^3*b^2*c+a^7", domain, LEX, vars),
-                gcd = parse("26478248*a*b^2*c^2+3*a*b^3*c^2+2*a^2*b^3*c^2+5*a^3*c+a^8", domain, LEX, vars);
+                a = parse("26478246*a*c^2+7*a*b+26478250*a*b*c^2+26478249*a*b^3*c^2+26478248*a^2*c^2+8*a^3*b*c^2+a^7", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("4*b^3*c^2+7*a+5*a*b+8*a*b^2+6*a^3*b^2*c+a^7", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("26478248*a*b^2*c^2+3*a*b^3*c^2+2*a^2*b^3*c^2+5*a^3*c+a^8", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
         assertNotNull(ZippelGCD(a, b));
@@ -463,9 +463,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(31579447);
         MultivariatePolynomial<BigInteger>
-                a = parse("5*a+29923129*a*b*c^2+3*a*b^2+29923132*a^2*b*c^2+7*a^3*c", domain, LEX, vars),
-                b = parse("4*c^2+29923126*a*c^2+5*a*b+6*a^2*b^2*c^3+29923128*a^3*c^3", domain, LEX, vars),
-                gcd = parse("29923132+8*b*c^3+29923132*b^2*c^3+8*a*b*c+7*a^3*b^3*c", domain, LEX, vars);
+                a = parse("5*a+29923129*a*b*c^2+3*a*b^2+29923132*a^2*b*c^2+7*a^3*c", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("4*c^2+29923126*a*c^2+5*a*b+6*a^2*b^2*c^3+29923128*a^3*c^3", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("29923132+8*b*c^3+29923132*b^2*c^3+8*a*b*c+7*a^3*b^3*c", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
@@ -524,9 +524,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
         MultivariatePolynomial<BigInteger>
-                a = parse("5*a^2*c^2+5*a^2*b^2*c^2+5*a^2*b^4*c^3+9*a^2*b^5*c^5+25709547*a^3*b^6*c^6+8*a^4*b*c^3+a^4*b^3*c+5*a^4*b^3*c^6", domain, LEX, vars),
-                b = parse("3*a*b^2*c^2+2*a^2*b^4+25709540*a^4*b*c^6+7*a^5*c^2+8*a^6*b*c^3", domain, LEX, vars),
-                gcd = parse("a + 5*b^2*c^6+2*a^4*b^4*c^5+25709543*a^5*b^2*c^5+9*a^6*c+25709540*a^6*c^3", domain, LEX, vars);
+                a = parse("5*a^2*c^2+5*a^2*b^2*c^2+5*a^2*b^4*c^3+9*a^2*b^5*c^5+25709547*a^3*b^6*c^6+8*a^4*b*c^3+a^4*b^3*c+5*a^4*b^3*c^6", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("3*a*b^2*c^2+2*a^2*b^4+25709540*a^4*b*c^6+7*a^5*c^2+8*a^6*b*c^3", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("a + 5*b^2*c^6+2*a^4*b^4*c^5+25709543*a^5*b^2*c^5+9*a^6*c+25709540*a^6*c^3", domain, MonomialOrder.DEFAULT, vars);
 
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
@@ -539,9 +539,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
         MultivariatePolynomial<BigInteger>
-                a = parse("a + b + c", domain, LEX, vars),
-                b = parse("a - b + c", domain, LEX, vars),
-                gcd = parse("a^3*b+2*a^3+c*a^3+12*b^2+24*b+12*b*c", domain, LEX, vars);
+                a = parse("a + b + c", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("a - b + c", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("a^3*b+2*a^3+c*a^3+12*b^2+24*b+12*b*c", domain, MonomialOrder.DEFAULT, vars);
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
 
@@ -555,9 +555,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c", "d", "e"};
         IntegersZp domain = new IntegersZp(SmallPrimes.nextPrime(100000));
         MultivariatePolynomial<BigInteger>
-                a = parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", domain, LEX, vars),
-                b = parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", domain, LEX, vars),
-                gcd = parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", domain, LEX, vars);
+                a = parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", domain, MonomialOrder.DEFAULT, vars);
 
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
@@ -588,9 +588,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp domain = new IntegersZp(100011111111101L);
 //        IntegersZp ring = new IntegersZp(100019);
         MultivariatePolynomial<BigInteger>
-                a = parse("38*a^32*b^6 + 2147483093*a^52*b^26 + 357*a^36*b^34 + 44*a^8*b^39 + 19*a^52*b^40 + 563*a^42*b^41 + 613*a^48*b^55 + 2147483167*a^4*b^60 + 257*a^44*b^68 + 639*a^55*b^72", domain, LEX, vars),
-                b = parse("2147482723*a^4*b^5 + 627*a^67*b^8 + 243*a^60*b^15 + 555*a^62*b^20 + 394*a^27*b^22 + 2147483150*b^25 + 952*a^39*b^48 + 40*a^61*b^56 + 447*a^70*b^59 + 261*a^15*b^60", domain, LEX, vars),
-                gcd = parse("893*a^6*b^13 + 737*a^47*b^15 + 376*a^2*b^28 + 783*a^20*b^28 + 2147482938*a^31*b^30 + 868*a^53*b^30 + 35*a*b^36 + 2147482960*a^31*b^49 + 23*a^8*b^71 + 898*a^61*b^71", domain, LEX, vars);
+                a = parse("38*a^32*b^6 + 2147483093*a^52*b^26 + 357*a^36*b^34 + 44*a^8*b^39 + 19*a^52*b^40 + 563*a^42*b^41 + 613*a^48*b^55 + 2147483167*a^4*b^60 + 257*a^44*b^68 + 639*a^55*b^72", domain, MonomialOrder.DEFAULT, vars),
+                b = parse("2147482723*a^4*b^5 + 627*a^67*b^8 + 243*a^60*b^15 + 555*a^62*b^20 + 394*a^27*b^22 + 2147483150*b^25 + 952*a^39*b^48 + 40*a^61*b^56 + 447*a^70*b^59 + 261*a^15*b^60", domain, MonomialOrder.DEFAULT, vars),
+                gcd = parse("893*a^6*b^13 + 737*a^47*b^15 + 376*a^2*b^28 + 783*a^20*b^28 + 2147482938*a^31*b^30 + 868*a^53*b^30 + 35*a*b^36 + 2147482960*a^31*b^49 + 23*a^8*b^71 + 898*a^61*b^71", domain, MonomialOrder.DEFAULT, vars);
 
         a = a.clone().multiply(gcd);
         b = b.clone().multiply(gcd);
@@ -629,9 +629,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD));
     }
 
-
     @Test
-    public void testPairedIterator() throws Exception {
+    public void testPairedIterator1() throws Exception {
         RandomGenerator rnd = getRandom();
         int nIterations = its(1000, 1000);
         for (int n = 0; n < nIterations; n++) {
@@ -639,8 +638,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                     a = randomPolynomial(5, 50, 20, rnd),
                     b = randomPolynomial(5, 50, 20, rnd);
 
-            PairIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                    it = new PairIterator<>(a, b);
+            PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                    it = new PairedIterator<>(a, b);
 
             MultivariatePolynomial<BigInteger> acc = a.createZero();
             while (it.hasNext()) {
@@ -649,17 +648,36 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 acc.add(it.bTerm);
                 assertTrue(it.aTerm.coefficient.isZero() || it.bTerm.coefficient.isZero() || 0 == a.ordering.compare(it.aTerm, it.bTerm));
             }
-            assertEquals(acc, a.clone().add(b));
+            assertEquals(a.clone().add(b), acc);
         }
+    }
+
+    @Test
+    public void testPairedIterator2() throws Exception {
+        MultivariatePolynomial<BigInteger>
+                a = parse(" y  +   0  +  x*y   + x*y^2 + x*y^3 + x*y^4  +   0    "),
+                b = parse(" 0  +   x  +   0    +   0   +  0    +   0    + x^2*y^2");
+
+        PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
+                it = new PairedIterator<>(a, b);
+
+        MultivariatePolynomial<BigInteger> acc = a.createZero();
+        while (it.hasNext()) {
+            it.advance();
+            acc.add(it.aTerm);
+            acc.add(it.bTerm);
+            assertTrue(it.aTerm.coefficient.isZero() || it.bTerm.coefficient.isZero() || 0 == a.ordering.compare(it.aTerm, it.bTerm));
+        }
+        assertEquals(a.clone().add(b), acc);
     }
 
     @Test
     public void testSparseInterpolation1() throws Exception {
         IntegersZp domain = new IntegersZp(31574773);
         MultivariatePolynomial<BigInteger>
-                a = parse("31574768*a*b^2*c^4+4*a^4*b^3+3*a^5*b+31574764*a^5*b^5*c^5+6*a^6*b^3*c^2", domain, LEX),
-                b = parse("7*a^2*b^6*c^3+a^5*b^4*c^4+31574764*a^6*c^3+5*a^6*b^2*c^2", domain, LEX),
-                gcd = parse("9*c^4+31574766*a*b^2+2*a^2*b*c^2+31574768*a^2*b^3*c^6+9*a^3*b^2*c^3", domain, LEX);
+                a = parse("31574768*a*b^2*c^4+4*a^4*b^3+3*a^5*b+31574764*a^5*b^5*c^5+6*a^6*b^3*c^2", domain, MonomialOrder.DEFAULT),
+                b = parse("7*a^2*b^6*c^3+a^5*b^4*c^4+31574764*a^6*c^3+5*a^6*b^2*c^2", domain, MonomialOrder.DEFAULT),
+                gcd = parse("9*c^4+31574766*a*b^2+2*a^2*b*c^2+31574768*a^2*b^3*c^6+9*a^3*b^2*c^3", domain, MonomialOrder.DEFAULT);
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -670,9 +688,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testSparseInterpolation2() throws Exception {
         IntegersZp domain = new IntegersZp(24001871);
         MultivariatePolynomial<BigInteger>
-                a = parse("3*b^4*c^2+7*b^4*c^3+4*a*b^5*c^3+6*a^4*b^6+24001865*a^5*b", domain, LEX, "a", "b", "c"),
-                b = parse("5*a*c^4+9*a^4*b^4*c^2+9*a^6*b*c^6", domain, LEX, "a", "b", "c"),
-                gcd = parse("5*a*b^2*c^2+a*b^2*c^4+24001866*a*b^4*c^3 + 1", domain, LEX, "a", "b", "c");
+                a = parse("3*b^4*c^2+7*b^4*c^3+4*a*b^5*c^3+6*a^4*b^6+24001865*a^5*b", domain, MonomialOrder.DEFAULT, "a", "b", "c"),
+                b = parse("5*a*c^4+9*a^4*b^4*c^2+9*a^6*b*c^6", domain, MonomialOrder.DEFAULT, "a", "b", "c"),
+                gcd = parse("5*a*b^2*c^2+a*b^2*c^4+24001866*a*b^4*c^3 + 1", domain, MonomialOrder.DEFAULT, "a", "b", "c");
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -683,9 +701,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testSparseInterpolation3() throws Exception {
         IntegersZp domain = new IntegersZp(17312587);
         MultivariatePolynomial<BigInteger>
-                a = parse("5*a^3*c^6+9*a^5*b^2*c^3+7*a^5*b^6*c^5+8*a^5*b^6*c^6+6*a^6*b^6*c", domain, LEX, "a", "b", "c"),
-                b = parse("17312581*c^6+5*a^2*b^2*c^6+3*a^4*b^6*c^4+2*a^5+4*a^5*b^3*c^6", domain, LEX, "a", "b", "c"),
-                gcd = parse("1 + 5*a^5*b*c^2+6*a^5*b^3*c^6+2*a^5*b^4*c^4", domain, LEX, "a", "b", "c");
+                a = parse("5*a^3*c^6+9*a^5*b^2*c^3+7*a^5*b^6*c^5+8*a^5*b^6*c^6+6*a^6*b^6*c", domain, MonomialOrder.DEFAULT, "a", "b", "c"),
+                b = parse("17312581*c^6+5*a^2*b^2*c^6+3*a^4*b^6*c^4+2*a^5+4*a^5*b^3*c^6", domain, MonomialOrder.DEFAULT, "a", "b", "c"),
+                gcd = parse("1 + 5*a^5*b*c^2+6*a^5*b^3*c^6+2*a^5*b^4*c^4", domain, MonomialOrder.DEFAULT, "a", "b", "c");
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -697,9 +715,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testSparseInterpolation4() throws Exception {
         IntegersZp domain = new IntegersZp(27445993);
         MultivariatePolynomial<BigInteger>
-                a = parse("7*a*b*c^3+8*a^3*c+8*a^4*b^2*c^4+8*a^4*b^6*c^6", domain, LEX, "a", "b", "c"),
-                b = parse("1 + a*b^6*c^2+6*a^2*b^3*c^3+27445990*a^3*b^6*c^2", domain, LEX, "a", "b", "c"),
-                gcd = parse("1 + 5*b*c^3+8*b^5*c+4*b^6+5*a*b^3+4*a^6*b^3*c^3", domain, LEX, "a", "b", "c");
+                a = parse("7*a*b*c^3+8*a^3*c+8*a^4*b^2*c^4+8*a^4*b^6*c^6", domain, MonomialOrder.DEFAULT, "a", "b", "c"),
+                b = parse("1 + a*b^6*c^2+6*a^2*b^3*c^3+27445990*a^3*b^6*c^2", domain, MonomialOrder.DEFAULT, "a", "b", "c"),
+                gcd = parse("1 + 5*b*c^3+8*b^5*c+4*b^6+5*a*b^3+4*a^6*b^3*c^3", domain, MonomialOrder.DEFAULT, "a", "b", "c");
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -744,9 +762,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     @Test
     public void testSparseInterpolation5() throws Exception {
         MultivariatePolynomial<BigInteger>
-                a = parse("7*a*b*c^3+8*a^3*c+8*a^4*b^2*c^4+8*a^4*b^6*c^6", Rings.Z, LEX, "a", "b", "c"),
-                b = parse("1 + a*b^6*c^2+6*a^2*b^3*c^3+27445990*a^3*b^6*c^2", Rings.Z, LEX, "a", "b", "c"),
-                gcd = parse("1 + 5*b*c^3+8*b^5*c+4*b^6+5*a*b^3+4*a^6*b^3*c^3", Rings.Z, LEX, "a", "b", "c");
+                a = parse("7*a*b*c^3+8*a^3*c+8*a^4*b^2*c^4+8*a^4*b^6*c^6", Rings.Z, MonomialOrder.DEFAULT, "a", "b", "c"),
+                b = parse("1 + a*b^6*c^2+6*a^2*b^3*c^3+27445990*a^3*b^6*c^2", Rings.Z, MonomialOrder.DEFAULT, "a", "b", "c"),
+                gcd = parse("1 + 5*b*c^3+8*b^5*c+4*b^6+5*a*b^3+4*a^6*b^3*c^3", Rings.Z, MonomialOrder.DEFAULT, "a", "b", "c");
 
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -846,9 +864,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
             rnd.setSeed(i);
             IntegersZp domain = new IntegersZp(1049);
             MultivariatePolynomial<BigInteger>
-                    a = parse("15*a*b^5*c^5*d^3+27*a^2*b^10*c^4*d+35*a^3*b^7*c^5*d^4+20*a^3*b^7*c^5*d^5+40*a^4*b^11*c^11*d^10+63*a^4*b^12*c^4*d^2+36*a^4*b^12*c^4*d^3+72*a^5*b^16*c^10*d^8+243*a^6*b^12*c^9*d^4+15*a^6*b^15*c*d^3+15*a^6*b^15*c^11*d^10+45*a^7*b^9*c^11*d^7+5*a^7*b^14*c^7*d^4+12*a^8*b*c*d^11+35*a^8*b^14*c^4*d^8+567*a^8*b^14*c^9*d^5+324*a^8*b^14*c^9*d^6+81*a^8*b^14*c^10*d^5+231*a^8*b^15*c^3*d^10+35*a^8*b^17*c*d^4+20*a^8*b^17*c*d^5+35*a^8*b^17*c^11*d^11+20*a^8*b^17*c^11*d^12+9*a^8*b^19*c^6*d^2+15*a^9*c^10*d^11+415*a^9*b^6*c^4*d^11+390*a^9*b^8*c^8*d^5+648*a^9*b^18*c^15*d^11+63*a^9*b^19*c^3*d^6+40*a^9*b^21*c^7*d^10+40*a^9*b^21*c^17*d^17+24*a^10*c^3*d^11+28*a^10*b^3*c*d^12+16*a^10*b^3*c*d^13+747*a^10*b^11*c^3*d^9+20*a^10*b^12*c^4*d^5+702*a^10*b^13*c^7*d^3+405*a^10*b^14*c^5*d^5+539*a^10*b^17*c^3*d^11+308*a^10*b^17*c^3*d^12+35*a^11*b^2*c^10*d^12+20*a^11*b^2*c^10*d^13+32*a^11*b^7*c^7*d^18+36*a^11*b^17*c^3*d^3+729*a^11*b^19*c^4*d^3+616*a^11*b^21*c^9*d^17+56*a^12*b^2*c^3*d^12+32*a^12*b^2*c^3*d^13+40*a^12*b^6*c^16*d^18+729*a^12*b^16*c^15*d^8+45*a^12*b^19*c^7*d^7+45*a^12*b^19*c^17*d^14+81*a^12*b^21*c^11*d^5+5*a^12*b^24*c^3*d^4+5*a^12*b^24*c^13*d^11+18*a^13*b^3*c^5*d^13+64*a^13*b^6*c^9*d^18+567*a^13*b^21*c^8*d^9+35*a^13*b^24*d^8+35*a^13*b^24*c^10*d^15+36*a^14*b^5*c^7*d^15+4*a^14*b^10*c^3*d^12+429*a^14*b^13*c^8*d^12+24*a^14*b^15*c^12*d^6+415*a^14*b^16*d^11+415*a^14*b^16*c^10*d^18+390*a^14*b^18*c^4*d^5+390*a^14*b^18*c^14*d^12+693*a^14*b^19*c^9*d^14+77*a^14*b^24*c^5*d^11+45*a^15*b^4*c^16*d^15+42*a^15*b^5*c^5*d^14+24*a^15*b^5*c^5*d^15+5*a^15*b^9*c^12*d^12+28*a^15*b^10*d^16+324*a^15*b^19*c^8*d^6+267*a^15*b^21*c^9*d^6+20*a^15*b^22*d^5+20*a^15*b^22*c^10*d^12+405*a^15*b^24*c*d^5+539*a^15*b^24*c^2*d^15+405*a^15*b^24*c^11*d^12+332*a^16*b^2*d^19+312*a^16*b^4*c^4*d^13+72*a^16*b^4*c^9*d^15+8*a^16*b^9*c^5*d^12+35*a^16*b^9*c^9*d^16+48*a^16*b^9*c^11*d^20+97*a^16*b^16*c^2*d^18+761*a^16*b^18*c^6*d^12+415*a^17*b*c^9*d^19+390*a^17*b^3*c^13*d^13+16*a^17*b^8*d^13+56*a^17*b^9*c^2*d^16+324*a^17*b^10*c*d^13+308*a^17*b^22*c^2*d^12+992*a^17*b^24*c^3*d^12+664*a^18*b*c^2*d^19+624*a^18*b^3*c^6*d^13+20*a^18*b^7*c^9*d^13+405*a^18*b^9*c^10*d^13+32*a^19*b^7*c^2*d^13+54*a^19*b^7*c^11*d^17+648*a^19*b^9*c^3*d^13+6*a^19*b^12*c^7*d^14+42*a^20*b^12*c^4*d^18+498*a^21*b^4*c^4*d^21+468*a^21*b^6*c^8*d^15+24*a^22*b^10*c^4*d^15+486*a^22*b^12*c^5*d^15", domain, LEX),
-                    b = parse("12*c^6*d^2+234*b^8*c^8*d^6+28*a^2*b^2*c^6*d^3+16*a^2*b^2*c^6*d^4+3*a^2*b^7*c^5*d+546*a^2*b^10*c^8*d^7+312*a^2*b^10*c^8*d^8+32*a^3*b^6*c^12*d^9+624*a^3*b^14*c^14*d^13+7*a^4*b^9*c^5*d^2+4*a^4*b^9*c^5*d^3+8*a^5*b^13*c^11*d^8+12*a^6*b*c^6+36*a^6*b^4*c^12*d^6+4*a^6*b^9*c^8*d^3+702*a^6*b^12*c^14*d^10+78*a^6*b^17*c^10*d^7+28*a^7*b^9*c^5*d^7+546*a^7*b^17*c^7*d^11+3*a^8*c*d^3+332*a^8*b*c^5*d^10+28*a^8*b^3*c^6*d+16*a^8*b^3*c^6*d^2+312*a^8*b^3*c^9*d^4+180*a^8*b^9*c^7*d^14+9*a^8*b^11*c^11*d^5+839*a^8*b^11*c^11*d^8+a^8*b^16*c^7*d^2+16*a^9*b^7*c^5*d^4+32*a^9*b^7*c^12*d^7+324*a^9*b^9*c^6*d^4+312*a^9*b^15*c^7*d^8+7*a^9*b^16*c^4*d^6+24*a^9*b^17*c^8*d^8+7*a^10*b^2*c*d^4+4*a^10*b^2*c*d^5+83*a^10*b^8*c^4*d^9+78*a^10*b^10*c^8*d^3+8*a^11*b^6*c^7*d^10+4*a^11*b^14*c^4*d^3+81*a^11*b^16*c^5*d^3+36*a^12*b^5*c^12*d^4+4*a^12*b^10*c^8*d+28*a^13*b^10*c^5*d^5+332*a^14*b^2*c^5*d^8+9*a^14*b^4*c^7*d^7+312*a^14*b^4*c^9*d^2+a^14*b^9*c^3*d^4+16*a^15*b^8*c^5*d^2+7*a^15*b^9*d^8+324*a^15*b^10*c^6*d^2+83*a^16*b*d^11+78*a^16*b^3*c^4*d^5+4*a^17*b^7*d^5+81*a^17*b^9*c*d^5", domain, LEX),
-                    base = parse("3*c+7*a^2*b^2*c*d+4*a^2*b^2*c*d^2+8*a^3*b^6*c^7*d^7+9*a^6*b^4*c^7*d^4+a^6*b^9*c^3*d+7*a^7*b^9*d^5+17492158*a^8*b*d^8+17492153*a^8*b^3*c^4*d^2+4*a^9*b^7*d^2+17492156*a^9*b^9*c*d^2", domain, LEX);
+                    a = parse("15*a*b^5*c^5*d^3+27*a^2*b^10*c^4*d+35*a^3*b^7*c^5*d^4+20*a^3*b^7*c^5*d^5+40*a^4*b^11*c^11*d^10+63*a^4*b^12*c^4*d^2+36*a^4*b^12*c^4*d^3+72*a^5*b^16*c^10*d^8+243*a^6*b^12*c^9*d^4+15*a^6*b^15*c*d^3+15*a^6*b^15*c^11*d^10+45*a^7*b^9*c^11*d^7+5*a^7*b^14*c^7*d^4+12*a^8*b*c*d^11+35*a^8*b^14*c^4*d^8+567*a^8*b^14*c^9*d^5+324*a^8*b^14*c^9*d^6+81*a^8*b^14*c^10*d^5+231*a^8*b^15*c^3*d^10+35*a^8*b^17*c*d^4+20*a^8*b^17*c*d^5+35*a^8*b^17*c^11*d^11+20*a^8*b^17*c^11*d^12+9*a^8*b^19*c^6*d^2+15*a^9*c^10*d^11+415*a^9*b^6*c^4*d^11+390*a^9*b^8*c^8*d^5+648*a^9*b^18*c^15*d^11+63*a^9*b^19*c^3*d^6+40*a^9*b^21*c^7*d^10+40*a^9*b^21*c^17*d^17+24*a^10*c^3*d^11+28*a^10*b^3*c*d^12+16*a^10*b^3*c*d^13+747*a^10*b^11*c^3*d^9+20*a^10*b^12*c^4*d^5+702*a^10*b^13*c^7*d^3+405*a^10*b^14*c^5*d^5+539*a^10*b^17*c^3*d^11+308*a^10*b^17*c^3*d^12+35*a^11*b^2*c^10*d^12+20*a^11*b^2*c^10*d^13+32*a^11*b^7*c^7*d^18+36*a^11*b^17*c^3*d^3+729*a^11*b^19*c^4*d^3+616*a^11*b^21*c^9*d^17+56*a^12*b^2*c^3*d^12+32*a^12*b^2*c^3*d^13+40*a^12*b^6*c^16*d^18+729*a^12*b^16*c^15*d^8+45*a^12*b^19*c^7*d^7+45*a^12*b^19*c^17*d^14+81*a^12*b^21*c^11*d^5+5*a^12*b^24*c^3*d^4+5*a^12*b^24*c^13*d^11+18*a^13*b^3*c^5*d^13+64*a^13*b^6*c^9*d^18+567*a^13*b^21*c^8*d^9+35*a^13*b^24*d^8+35*a^13*b^24*c^10*d^15+36*a^14*b^5*c^7*d^15+4*a^14*b^10*c^3*d^12+429*a^14*b^13*c^8*d^12+24*a^14*b^15*c^12*d^6+415*a^14*b^16*d^11+415*a^14*b^16*c^10*d^18+390*a^14*b^18*c^4*d^5+390*a^14*b^18*c^14*d^12+693*a^14*b^19*c^9*d^14+77*a^14*b^24*c^5*d^11+45*a^15*b^4*c^16*d^15+42*a^15*b^5*c^5*d^14+24*a^15*b^5*c^5*d^15+5*a^15*b^9*c^12*d^12+28*a^15*b^10*d^16+324*a^15*b^19*c^8*d^6+267*a^15*b^21*c^9*d^6+20*a^15*b^22*d^5+20*a^15*b^22*c^10*d^12+405*a^15*b^24*c*d^5+539*a^15*b^24*c^2*d^15+405*a^15*b^24*c^11*d^12+332*a^16*b^2*d^19+312*a^16*b^4*c^4*d^13+72*a^16*b^4*c^9*d^15+8*a^16*b^9*c^5*d^12+35*a^16*b^9*c^9*d^16+48*a^16*b^9*c^11*d^20+97*a^16*b^16*c^2*d^18+761*a^16*b^18*c^6*d^12+415*a^17*b*c^9*d^19+390*a^17*b^3*c^13*d^13+16*a^17*b^8*d^13+56*a^17*b^9*c^2*d^16+324*a^17*b^10*c*d^13+308*a^17*b^22*c^2*d^12+992*a^17*b^24*c^3*d^12+664*a^18*b*c^2*d^19+624*a^18*b^3*c^6*d^13+20*a^18*b^7*c^9*d^13+405*a^18*b^9*c^10*d^13+32*a^19*b^7*c^2*d^13+54*a^19*b^7*c^11*d^17+648*a^19*b^9*c^3*d^13+6*a^19*b^12*c^7*d^14+42*a^20*b^12*c^4*d^18+498*a^21*b^4*c^4*d^21+468*a^21*b^6*c^8*d^15+24*a^22*b^10*c^4*d^15+486*a^22*b^12*c^5*d^15", domain, MonomialOrder.DEFAULT),
+                    b = parse("12*c^6*d^2+234*b^8*c^8*d^6+28*a^2*b^2*c^6*d^3+16*a^2*b^2*c^6*d^4+3*a^2*b^7*c^5*d+546*a^2*b^10*c^8*d^7+312*a^2*b^10*c^8*d^8+32*a^3*b^6*c^12*d^9+624*a^3*b^14*c^14*d^13+7*a^4*b^9*c^5*d^2+4*a^4*b^9*c^5*d^3+8*a^5*b^13*c^11*d^8+12*a^6*b*c^6+36*a^6*b^4*c^12*d^6+4*a^6*b^9*c^8*d^3+702*a^6*b^12*c^14*d^10+78*a^6*b^17*c^10*d^7+28*a^7*b^9*c^5*d^7+546*a^7*b^17*c^7*d^11+3*a^8*c*d^3+332*a^8*b*c^5*d^10+28*a^8*b^3*c^6*d+16*a^8*b^3*c^6*d^2+312*a^8*b^3*c^9*d^4+180*a^8*b^9*c^7*d^14+9*a^8*b^11*c^11*d^5+839*a^8*b^11*c^11*d^8+a^8*b^16*c^7*d^2+16*a^9*b^7*c^5*d^4+32*a^9*b^7*c^12*d^7+324*a^9*b^9*c^6*d^4+312*a^9*b^15*c^7*d^8+7*a^9*b^16*c^4*d^6+24*a^9*b^17*c^8*d^8+7*a^10*b^2*c*d^4+4*a^10*b^2*c*d^5+83*a^10*b^8*c^4*d^9+78*a^10*b^10*c^8*d^3+8*a^11*b^6*c^7*d^10+4*a^11*b^14*c^4*d^3+81*a^11*b^16*c^5*d^3+36*a^12*b^5*c^12*d^4+4*a^12*b^10*c^8*d+28*a^13*b^10*c^5*d^5+332*a^14*b^2*c^5*d^8+9*a^14*b^4*c^7*d^7+312*a^14*b^4*c^9*d^2+a^14*b^9*c^3*d^4+16*a^15*b^8*c^5*d^2+7*a^15*b^9*d^8+324*a^15*b^10*c^6*d^2+83*a^16*b*d^11+78*a^16*b^3*c^4*d^5+4*a^17*b^7*d^5+81*a^17*b^9*c*d^5", domain, MonomialOrder.DEFAULT),
+                    base = parse("3*c+7*a^2*b^2*c*d+4*a^2*b^2*c*d^2+8*a^3*b^6*c^7*d^7+9*a^6*b^4*c^7*d^4+a^6*b^9*c^3*d+7*a^7*b^9*d^5+17492158*a^8*b*d^8+17492153*a^8*b^3*c^4*d^2+4*a^9*b^7*d^2+17492156*a^9*b^9*c*d^2", domain, MonomialOrder.DEFAULT);
 
             MultivariatePolynomialZp64
                     la = asOverZp64(a),
@@ -875,8 +893,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
         rnd.setSeed(743);
         IntegersZp domain = new IntegersZp(1049);
         MultivariatePolynomial<BigInteger>
-                a = parse("15*a*b^5*c^5*d^3+27*a^2*b^10*c^4*d+35*a^3*b^7*c^5*d^4+20*a^3*b^7*c^5*d^5+40*a^4*b^11*c^11*d^10+63*a^4*b^12*c^4*d^2+36*a^4*b^12*c^4*d^3+72*a^5*b^16*c^10*d^8+243*a^6*b^12*c^9*d^4+15*a^6*b^15*c*d^3+15*a^6*b^15*c^11*d^10+45*a^7*b^9*c^11*d^7+5*a^7*b^14*c^7*d^4+12*a^8*b*c*d^11+35*a^8*b^14*c^4*d^8+567*a^8*b^14*c^9*d^5+324*a^8*b^14*c^9*d^6+81*a^8*b^14*c^10*d^5+231*a^8*b^15*c^3*d^10+35*a^8*b^17*c*d^4+20*a^8*b^17*c*d^5+35*a^8*b^17*c^11*d^11+20*a^8*b^17*c^11*d^12+9*a^8*b^19*c^6*d^2+15*a^9*c^10*d^11+415*a^9*b^6*c^4*d^11+390*a^9*b^8*c^8*d^5+648*a^9*b^18*c^15*d^11+63*a^9*b^19*c^3*d^6+40*a^9*b^21*c^7*d^10+40*a^9*b^21*c^17*d^17+24*a^10*c^3*d^11+28*a^10*b^3*c*d^12+16*a^10*b^3*c*d^13+747*a^10*b^11*c^3*d^9+20*a^10*b^12*c^4*d^5+702*a^10*b^13*c^7*d^3+405*a^10*b^14*c^5*d^5+539*a^10*b^17*c^3*d^11+308*a^10*b^17*c^3*d^12+35*a^11*b^2*c^10*d^12+20*a^11*b^2*c^10*d^13+32*a^11*b^7*c^7*d^18+36*a^11*b^17*c^3*d^3+729*a^11*b^19*c^4*d^3+616*a^11*b^21*c^9*d^17+56*a^12*b^2*c^3*d^12+32*a^12*b^2*c^3*d^13+40*a^12*b^6*c^16*d^18+729*a^12*b^16*c^15*d^8+45*a^12*b^19*c^7*d^7+45*a^12*b^19*c^17*d^14+81*a^12*b^21*c^11*d^5+5*a^12*b^24*c^3*d^4+5*a^12*b^24*c^13*d^11+18*a^13*b^3*c^5*d^13+64*a^13*b^6*c^9*d^18+567*a^13*b^21*c^8*d^9+35*a^13*b^24*d^8+35*a^13*b^24*c^10*d^15+36*a^14*b^5*c^7*d^15+4*a^14*b^10*c^3*d^12+429*a^14*b^13*c^8*d^12+24*a^14*b^15*c^12*d^6+415*a^14*b^16*d^11+415*a^14*b^16*c^10*d^18+390*a^14*b^18*c^4*d^5+390*a^14*b^18*c^14*d^12+693*a^14*b^19*c^9*d^14+77*a^14*b^24*c^5*d^11+45*a^15*b^4*c^16*d^15+42*a^15*b^5*c^5*d^14+24*a^15*b^5*c^5*d^15+5*a^15*b^9*c^12*d^12+28*a^15*b^10*d^16+324*a^15*b^19*c^8*d^6+267*a^15*b^21*c^9*d^6+20*a^15*b^22*d^5+20*a^15*b^22*c^10*d^12+405*a^15*b^24*c*d^5+539*a^15*b^24*c^2*d^15+405*a^15*b^24*c^11*d^12+332*a^16*b^2*d^19+312*a^16*b^4*c^4*d^13+72*a^16*b^4*c^9*d^15+8*a^16*b^9*c^5*d^12+35*a^16*b^9*c^9*d^16+48*a^16*b^9*c^11*d^20+97*a^16*b^16*c^2*d^18+761*a^16*b^18*c^6*d^12+415*a^17*b*c^9*d^19+390*a^17*b^3*c^13*d^13+16*a^17*b^8*d^13+56*a^17*b^9*c^2*d^16+324*a^17*b^10*c*d^13+308*a^17*b^22*c^2*d^12+992*a^17*b^24*c^3*d^12+664*a^18*b*c^2*d^19+624*a^18*b^3*c^6*d^13+20*a^18*b^7*c^9*d^13+405*a^18*b^9*c^10*d^13+32*a^19*b^7*c^2*d^13+54*a^19*b^7*c^11*d^17+648*a^19*b^9*c^3*d^13+6*a^19*b^12*c^7*d^14+42*a^20*b^12*c^4*d^18+498*a^21*b^4*c^4*d^21+468*a^21*b^6*c^8*d^15+24*a^22*b^10*c^4*d^15+486*a^22*b^12*c^5*d^15", domain, LEX),
-                b = parse("12*c^6*d^2+234*b^8*c^8*d^6+28*a^2*b^2*c^6*d^3+16*a^2*b^2*c^6*d^4+3*a^2*b^7*c^5*d+546*a^2*b^10*c^8*d^7+312*a^2*b^10*c^8*d^8+32*a^3*b^6*c^12*d^9+624*a^3*b^14*c^14*d^13+7*a^4*b^9*c^5*d^2+4*a^4*b^9*c^5*d^3+8*a^5*b^13*c^11*d^8+12*a^6*b*c^6+36*a^6*b^4*c^12*d^6+4*a^6*b^9*c^8*d^3+702*a^6*b^12*c^14*d^10+78*a^6*b^17*c^10*d^7+28*a^7*b^9*c^5*d^7+546*a^7*b^17*c^7*d^11+3*a^8*c*d^3+332*a^8*b*c^5*d^10+28*a^8*b^3*c^6*d+16*a^8*b^3*c^6*d^2+312*a^8*b^3*c^9*d^4+180*a^8*b^9*c^7*d^14+9*a^8*b^11*c^11*d^5+839*a^8*b^11*c^11*d^8+a^8*b^16*c^7*d^2+16*a^9*b^7*c^5*d^4+32*a^9*b^7*c^12*d^7+324*a^9*b^9*c^6*d^4+312*a^9*b^15*c^7*d^8+7*a^9*b^16*c^4*d^6+24*a^9*b^17*c^8*d^8+7*a^10*b^2*c*d^4+4*a^10*b^2*c*d^5+83*a^10*b^8*c^4*d^9+78*a^10*b^10*c^8*d^3+8*a^11*b^6*c^7*d^10+4*a^11*b^14*c^4*d^3+81*a^11*b^16*c^5*d^3+36*a^12*b^5*c^12*d^4+4*a^12*b^10*c^8*d+28*a^13*b^10*c^5*d^5+332*a^14*b^2*c^5*d^8+9*a^14*b^4*c^7*d^7+312*a^14*b^4*c^9*d^2+a^14*b^9*c^3*d^4+16*a^15*b^8*c^5*d^2+7*a^15*b^9*d^8+324*a^15*b^10*c^6*d^2+83*a^16*b*d^11+78*a^16*b^3*c^4*d^5+4*a^17*b^7*d^5+81*a^17*b^9*c*d^5", domain, LEX);
+                a = parse("15*a*b^5*c^5*d^3+27*a^2*b^10*c^4*d+35*a^3*b^7*c^5*d^4+20*a^3*b^7*c^5*d^5+40*a^4*b^11*c^11*d^10+63*a^4*b^12*c^4*d^2+36*a^4*b^12*c^4*d^3+72*a^5*b^16*c^10*d^8+243*a^6*b^12*c^9*d^4+15*a^6*b^15*c*d^3+15*a^6*b^15*c^11*d^10+45*a^7*b^9*c^11*d^7+5*a^7*b^14*c^7*d^4+12*a^8*b*c*d^11+35*a^8*b^14*c^4*d^8+567*a^8*b^14*c^9*d^5+324*a^8*b^14*c^9*d^6+81*a^8*b^14*c^10*d^5+231*a^8*b^15*c^3*d^10+35*a^8*b^17*c*d^4+20*a^8*b^17*c*d^5+35*a^8*b^17*c^11*d^11+20*a^8*b^17*c^11*d^12+9*a^8*b^19*c^6*d^2+15*a^9*c^10*d^11+415*a^9*b^6*c^4*d^11+390*a^9*b^8*c^8*d^5+648*a^9*b^18*c^15*d^11+63*a^9*b^19*c^3*d^6+40*a^9*b^21*c^7*d^10+40*a^9*b^21*c^17*d^17+24*a^10*c^3*d^11+28*a^10*b^3*c*d^12+16*a^10*b^3*c*d^13+747*a^10*b^11*c^3*d^9+20*a^10*b^12*c^4*d^5+702*a^10*b^13*c^7*d^3+405*a^10*b^14*c^5*d^5+539*a^10*b^17*c^3*d^11+308*a^10*b^17*c^3*d^12+35*a^11*b^2*c^10*d^12+20*a^11*b^2*c^10*d^13+32*a^11*b^7*c^7*d^18+36*a^11*b^17*c^3*d^3+729*a^11*b^19*c^4*d^3+616*a^11*b^21*c^9*d^17+56*a^12*b^2*c^3*d^12+32*a^12*b^2*c^3*d^13+40*a^12*b^6*c^16*d^18+729*a^12*b^16*c^15*d^8+45*a^12*b^19*c^7*d^7+45*a^12*b^19*c^17*d^14+81*a^12*b^21*c^11*d^5+5*a^12*b^24*c^3*d^4+5*a^12*b^24*c^13*d^11+18*a^13*b^3*c^5*d^13+64*a^13*b^6*c^9*d^18+567*a^13*b^21*c^8*d^9+35*a^13*b^24*d^8+35*a^13*b^24*c^10*d^15+36*a^14*b^5*c^7*d^15+4*a^14*b^10*c^3*d^12+429*a^14*b^13*c^8*d^12+24*a^14*b^15*c^12*d^6+415*a^14*b^16*d^11+415*a^14*b^16*c^10*d^18+390*a^14*b^18*c^4*d^5+390*a^14*b^18*c^14*d^12+693*a^14*b^19*c^9*d^14+77*a^14*b^24*c^5*d^11+45*a^15*b^4*c^16*d^15+42*a^15*b^5*c^5*d^14+24*a^15*b^5*c^5*d^15+5*a^15*b^9*c^12*d^12+28*a^15*b^10*d^16+324*a^15*b^19*c^8*d^6+267*a^15*b^21*c^9*d^6+20*a^15*b^22*d^5+20*a^15*b^22*c^10*d^12+405*a^15*b^24*c*d^5+539*a^15*b^24*c^2*d^15+405*a^15*b^24*c^11*d^12+332*a^16*b^2*d^19+312*a^16*b^4*c^4*d^13+72*a^16*b^4*c^9*d^15+8*a^16*b^9*c^5*d^12+35*a^16*b^9*c^9*d^16+48*a^16*b^9*c^11*d^20+97*a^16*b^16*c^2*d^18+761*a^16*b^18*c^6*d^12+415*a^17*b*c^9*d^19+390*a^17*b^3*c^13*d^13+16*a^17*b^8*d^13+56*a^17*b^9*c^2*d^16+324*a^17*b^10*c*d^13+308*a^17*b^22*c^2*d^12+992*a^17*b^24*c^3*d^12+664*a^18*b*c^2*d^19+624*a^18*b^3*c^6*d^13+20*a^18*b^7*c^9*d^13+405*a^18*b^9*c^10*d^13+32*a^19*b^7*c^2*d^13+54*a^19*b^7*c^11*d^17+648*a^19*b^9*c^3*d^13+6*a^19*b^12*c^7*d^14+42*a^20*b^12*c^4*d^18+498*a^21*b^4*c^4*d^21+468*a^21*b^6*c^8*d^15+24*a^22*b^10*c^4*d^15+486*a^22*b^12*c^5*d^15", domain, MonomialOrder.DEFAULT),
+                b = parse("12*c^6*d^2+234*b^8*c^8*d^6+28*a^2*b^2*c^6*d^3+16*a^2*b^2*c^6*d^4+3*a^2*b^7*c^5*d+546*a^2*b^10*c^8*d^7+312*a^2*b^10*c^8*d^8+32*a^3*b^6*c^12*d^9+624*a^3*b^14*c^14*d^13+7*a^4*b^9*c^5*d^2+4*a^4*b^9*c^5*d^3+8*a^5*b^13*c^11*d^8+12*a^6*b*c^6+36*a^6*b^4*c^12*d^6+4*a^6*b^9*c^8*d^3+702*a^6*b^12*c^14*d^10+78*a^6*b^17*c^10*d^7+28*a^7*b^9*c^5*d^7+546*a^7*b^17*c^7*d^11+3*a^8*c*d^3+332*a^8*b*c^5*d^10+28*a^8*b^3*c^6*d+16*a^8*b^3*c^6*d^2+312*a^8*b^3*c^9*d^4+180*a^8*b^9*c^7*d^14+9*a^8*b^11*c^11*d^5+839*a^8*b^11*c^11*d^8+a^8*b^16*c^7*d^2+16*a^9*b^7*c^5*d^4+32*a^9*b^7*c^12*d^7+324*a^9*b^9*c^6*d^4+312*a^9*b^15*c^7*d^8+7*a^9*b^16*c^4*d^6+24*a^9*b^17*c^8*d^8+7*a^10*b^2*c*d^4+4*a^10*b^2*c*d^5+83*a^10*b^8*c^4*d^9+78*a^10*b^10*c^8*d^3+8*a^11*b^6*c^7*d^10+4*a^11*b^14*c^4*d^3+81*a^11*b^16*c^5*d^3+36*a^12*b^5*c^12*d^4+4*a^12*b^10*c^8*d+28*a^13*b^10*c^5*d^5+332*a^14*b^2*c^5*d^8+9*a^14*b^4*c^7*d^7+312*a^14*b^4*c^9*d^2+a^14*b^9*c^3*d^4+16*a^15*b^8*c^5*d^2+7*a^15*b^9*d^8+324*a^15*b^10*c^6*d^2+83*a^16*b*d^11+78*a^16*b^3*c^4*d^5+4*a^17*b^7*d^5+81*a^17*b^9*c*d^5", domain, MonomialOrder.DEFAULT);
 
         MultivariatePolynomialZp64
                 la = asOverZp64(a),
@@ -1079,9 +1097,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c", "d", "e"};
         Ring<BigInteger> ring = Rings.Z;
         MultivariatePolynomial<BigInteger>
-                a = parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", ring, LEX, vars),
-                b = parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", ring, LEX, vars),
-                gcd = parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", ring, LEX, vars);
+                a = parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", ring, MonomialOrder.DEFAULT, vars),
+                b = parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", ring, MonomialOrder.DEFAULT, vars),
+                gcd = parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", ring, MonomialOrder.DEFAULT, vars);
 
         int[] newVariables = {4, 1, 3, 2, 0};
         a = renameVariables(a, newVariables);
@@ -1129,9 +1147,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         String[] vars = {"a", "b", "c", "d", "e"};
         IntegersZp64 ring = Rings.Zp64(1031);
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", ring, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", ring, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", ring, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("2147483167*a^4*b^60*c^57*d^26*e+44*a^8*b^39*c^67*d^22*e^17+38*a^32*b^6*c^13*d^10*e^3+357*a^36*b^34*c^60*d^2*e^59+563*a^42*b^41*c^45*d^52*e^14+257*a^44*b^68*c^43*d^2*e^73+613*a^48*b^55*c^22*d^32*e^19+2147483093*a^52*b^26*c^4*d^72*e^32+19*a^52*b^40*c^26*d^45*e^55+639*a^55*b^72*c^55*d^65", ring, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("2147483150*b^25*c^18*d^62*e^59+2147482723*a^4*b^5*c^65*d^26*e^7+261*a^15*b^60*c^59*d^63*e^53+394*a^27*b^22*c^34*d^54*e^13+952*a^39*b^48*c^17*d^54*e^16+243*a^60*b^15*c^3*d^51*e^46+40*a^61*b^56*c^39*d^40*e^21+555*a^62*b^20*c^20*d^60*e^47+627*a^67*b^8*c^22*d^67*e^61+447*a^70*b^59*c^71*d^24*e^5", ring, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("35*a*b^36*c^74*d^62*e^51+376*a^2*b^28*c^64*e^53+893*a^6*b^13*c^60*d^44*e^42+23*a^8*b^71*c^40*d^36*e^11+783*a^20*b^28*c^12*d^31*e^68+2147482938*a^31*b^30*c^40*d^65*e^72+2147482960*a^31*b^49*c^38*d^71*e^55+737*a^47*b^15*c^71*d^13*e^72+868*a^53*b^30*c^40*d^29*e^46+898*a^61*b^71*c^13*d^50*e^66", ring, MonomialOrder.DEFAULT, vars);
 
         int[] newVariables = {4, 1, 3, 2, 0};
         a = renameVariables(a, newVariables);
@@ -1175,19 +1193,19 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (int i = 0; i < 10; i++) {
             FiniteField<UnivariatePolynomialZp64> field = FiniteField.GF17p5;
             MultivariatePolynomial<UnivariatePolynomialZp64>
-                    a = MultivariatePolynomial.zero(3, field, LEX)
-                    .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 2, 3, 4, 5).modulus(17)), 1, 1, 3))
-                    .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 3, 2, 13).modulus(17)), 3, 2, 1))
-                    .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 13, 12, 13).modulus(17)), 0, 2, 1)),
-                    b = MultivariatePolynomial.zero(3, field, LEX)
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5).modulus(17)), 1, 1, 13))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 1, 2, 13).modulus(17)), 2, 2, 1))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 113, 112, 13).modulus(17)), 10, 2, 1)),
-                    gcd = MultivariatePolynomial.one(3, field, LEX)
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5, 12).modulus(17)), 11, 1, 13))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(11, 2, 1, 1, 2, 13).modulus(17)), 21, 2, 1))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 10, 12, 1))
-                            .add(Monomial.create(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 0, 0, 1));
+                    a = MultivariatePolynomial.zero(3, field, MonomialOrder.DEFAULT)
+                    .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 2, 3, 4, 5).modulus(17)), 1, 1, 3))
+                    .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 3, 2, 13).modulus(17)), 3, 2, 1))
+                    .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 13, 12, 13).modulus(17)), 0, 2, 1)),
+                    b = MultivariatePolynomial.zero(3, field, MonomialOrder.DEFAULT)
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5).modulus(17)), 1, 1, 13))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 1, 1, 2, 13).modulus(17)), 2, 2, 1))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 11, 113, 112, 13).modulus(17)), 10, 2, 1)),
+                    gcd = MultivariatePolynomial.one(3, field, MonomialOrder.DEFAULT)
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(1, 1, 3, 4, 5, 12).modulus(17)), 11, 1, 13))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(11, 2, 1, 1, 2, 13).modulus(17)), 21, 2, 1))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 10, 12, 1))
+                            .add(createMonomial(field.valueOf(UnivariatePolynomialZ64.create(2, 111, 113, 112, 13, 12).modulus(17)), 0, 0, 1));
 
             a = a.clone().add(b).multiply(gcd);
             b = b.clone().subtract(gcd).multiply(gcd);
@@ -1305,6 +1323,32 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     @Test
+    public void testSmallDomain_sparse_variables_random_a() throws Exception {
+        for (int i = 220; i < 250; ++i) {
+            //System.out.println(i);
+            PrivateRandom.getRandom().setSeed(i);
+            IntegersZp64 domain = new IntegersZp64(29);
+            String[] vars = WithVariables.defaultVars(100);
+            MultivariatePolynomialZp64
+                    a = MultivariatePolynomialZp64.parse("x4*x6^3*x7^4*x8*x9^3*x13^4*x17^2*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^5*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+23*x4*x6^3*x7^4*x8*x9^3*x13^4*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^6*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^3*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+17*x4*x6^3*x7^4*x8*x9^3*x13^4*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^7*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^2*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+3*x4*x6^3*x7^4*x8*x9^3*x13^4*x17^2*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^5*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^3*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99+15*x4*x6^3*x7^4*x8*x9^3*x13^4*x17^2*x18^3*x21^5*x22*x23^3*x26*x27*x28^5*x30^2*x31^4*x32^3*x34*x37^4*x40^5*x41*x42^5*x44^2*x48^4*x49^5*x50^7*x52^5*x53^4*x56^2*x58*x59^5*x61*x64^3*x70^5*x72^3*x73^5*x75*x76^5*x79^3*x81^2*x83^2*x84*x85^5*x88*x90*x92^5*x93^5*x95^2*x97^5*x99", domain, vars),
+                    b = MultivariatePolynomialZp64.parse("24*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^4*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81*x87*x89*x96^5*x100^2+x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^2*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50^2*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^3*x87*x89*x96^5*x100^2+2*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^2*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50^3*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^2*x87*x89*x96^5*x100^2+14*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^4*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^3*x87*x89*x96^5*x100^2+12*x1^3*x2^3*x3*x5^3*x10^2*x11*x12^4*x15^4*x16^2*x17^4*x19*x20^4*x33^5*x36^4*x38*x39^4*x43^4*x45^3*x46^2*x47^3*x50^3*x51^4*x55*x57*x60^3*x62^5*x63^4*x65^4*x66^3*x67^2*x68*x69^2*x71*x74*x77*x78^3*x80*x81^2*x87*x89*x96^5*x100^2", domain, vars),
+                    gcd = MultivariatePolynomialZp64.parse("23*x17^2*x50+7*x50^2*x81^2+14*x50^3*x81+11*x17^2*x50*x81^2+26*x17^2*x50^3*x81", domain, vars),
+                    actual = MultivariatePolynomialZp64.parse("2*x17^2*x50*x81+17*x50^2*x81^3+5*x50^3*x81^2+6*x17^2*x50*x81^3+x17^2*x50^3*x81^2", domain, vars);
+
+            MultivariatePolynomialZp64 lResult = KaltofenMonaganSparseModularGCDInGF(a, b);
+            checkConsistency(lResult);
+            assertTrue(dividesQ(lResult, gcd));
+
+            Conversions64bit.SWITCH_TO_64bit = false;
+            MultivariatePolynomial<BigInteger> result = KaltofenMonaganSparseModularGCDInGF(a.toBigPoly(), b.toBigPoly());
+            checkConsistency(result);
+            assertTrue(dividesQ(result, gcd.toBigPoly()));
+
+            assertEquals(result.size(), lResult.size());
+        }
+    }
+
+    @Test
     public void testSmallDomain2() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};
@@ -1348,13 +1392,13 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testArrayGCD1() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
-                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, LEX),
+                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, MonomialOrder.DEFAULT),
                 arr[] = {
-                        MultivariatePolynomialZp64.parse("c*b*a^2 + b^2 + c + b*a^15 + d", domain, LEX).multiply(gcd),
-                        MultivariatePolynomialZp64.parse("a^12 + 2*b^12 + 2*c + c*a^5 + d*a", domain, LEX).multiply(gcd),
-                        MultivariatePolynomialZp64.parse("a^2 + 2*b^12 + 2*c + c*a^5 + d*a", domain, LEX).multiply(gcd),
-                        MultivariatePolynomialZp64.parse("a^12 - 2*b^2 + 2*c^3 + c*a^5 + d*a", domain, LEX).multiply(gcd),
-                        MultivariatePolynomialZp64.parse("b^12 - 2*b^2 + 2*c^3 + c*a^5 + d*a", domain, LEX).multiply(gcd)
+                        MultivariatePolynomialZp64.parse("c*b*a^2 + b^2 + c + b*a^15 + d", domain, MonomialOrder.DEFAULT).multiply(gcd),
+                        MultivariatePolynomialZp64.parse("a^12 + 2*b^12 + 2*c + c*a^5 + d*a", domain, MonomialOrder.DEFAULT).multiply(gcd),
+                        MultivariatePolynomialZp64.parse("a^2 + 2*b^12 + 2*c + c*a^5 + d*a", domain, MonomialOrder.DEFAULT).multiply(gcd),
+                        MultivariatePolynomialZp64.parse("a^12 - 2*b^2 + 2*c^3 + c*a^5 + d*a", domain, MonomialOrder.DEFAULT).multiply(gcd),
+                        MultivariatePolynomialZp64.parse("b^12 - 2*b^2 + 2*c^3 + c*a^5 + d*a", domain, MonomialOrder.DEFAULT).multiply(gcd)
                 };
 
         MultivariatePolynomialZp64 aGcd = MultivariateGCD.PolynomialGCD(arr);
@@ -1386,7 +1430,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 MultivariatePolynomial.parse("((1+y^2)*x^0)+((y)*x^0)*b+b^3+((1+y)*x^0)*b^4", domain),
         };
         for (int i = 0; i < 100; i++)
-            assertTrue(MultivariateGCD.PolynomialGCD(arr).isOne());
+            assertTrue(MultivariateGCD.PolynomialGCD(arr).isConstant());
     }
 
     @Test
@@ -1413,15 +1457,42 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 MultivariatePolynomial.parse("(x^2)+b+(x)*b^3+(x+x^2)*b^4+(1+x)*b^6+(1+x^2)*b^7", domain),
                 MultivariatePolynomial.parse("(1+x^2)+(x)*b+b^3+(1+x)*b^4", domain),
         };
-        assertTrue(MultivariateGCD.PolynomialGCD(arr).isOne());
+        assertTrue(MultivariateGCD.PolynomialGCD(arr).isConstant());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testArrayGCD4() throws Exception {
+        // very tricky example with recursive finite fields modulo 2
+        MultivariatePolynomial<MultivariatePolynomial<BigInteger>>[] pp = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("2").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("4").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("6").setNVariables(4).asOverMultivariateEliminate(2, 3)};
+
+        assertEquals(pp[0].parsePoly("2"), MultivariateGCD.PolynomialGCD(pp));
+
+
+        pp = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("2*x*y*z*t").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("4 - 2").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("6*x*y*z*t - 2").setNVariables(4).asOverMultivariateEliminate(2, 3)};
+
+        assertEquals(pp[0].parsePoly("2"), MultivariateGCD.PolynomialGCD(pp));
+
+        pp = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("2*x*y*z*t - 16").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("4*x - 2").setNVariables(4).asOverMultivariateEliminate(2, 3),
+                MultivariatePolynomial.parse("6*x*y*z*t - 2").setNVariables(4).asOverMultivariateEliminate(2, 3)};
+
+        assertEquals(pp[0].parsePoly("2"), MultivariateGCD.PolynomialGCD(pp));
     }
 
     @Test
     public void testCommonZeroes1() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("1 + c*b*a^2+b^2 + c + a^5", domain, LEX),
-                b = MultivariatePolynomialZp64.parse("a^2+2*b^2 + 2*c + a^5", domain, LEX);
+                a = MultivariatePolynomialZp64.parse("1 + c*b*a^2+b^2 + c + a^5", domain, MonomialOrder.DEFAULT),
+                b = MultivariatePolynomialZp64.parse("a^2+2*b^2 + 2*c + a^5", domain, MonomialOrder.DEFAULT);
         ZeroVariables pZeros = commonPossibleZeroes(a, b, a.nVariables);
         assertTrue(pZeros.pZeros.size() > 0);
         for (BitSet z : pZeros.pZeros) {
@@ -1434,8 +1505,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testCommonZeroes2() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("1 + c*b*a^2+b^2 + c + a^5*d + e*a + b*g - f", domain, LEX),
-                b = MultivariatePolynomialZp64.parse("a^2+2*b^2 + 2*c + a^5 + a*b*c*d*e*f + g", domain, LEX);
+                a = MultivariatePolynomialZp64.parse("1 + c*b*a^2+b^2 + c + a^5*d + e*a + b*g - f", domain, MonomialOrder.DEFAULT),
+                b = MultivariatePolynomialZp64.parse("a^2+2*b^2 + 2*c + a^5 + a*b*c*d*e*f + g", domain, MonomialOrder.DEFAULT);
         MultivariatePolynomialZp64 ac = a.clone();
         ZeroVariables pZeros = commonPossibleZeroes(a, b, a.nVariables);
         assertTrue(pZeros.pZeros.size() > 0);
@@ -1518,9 +1589,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testEZGCD1() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("c*b*a^2 + b^2 + c + b*a^15 + d", domain, LEX),
-                b = MultivariatePolynomialZp64.parse("a^12 + 2*b^12 + 2*c + c*a^5 + d*a", domain, LEX),
-                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, LEX);
+                a = MultivariatePolynomialZp64.parse("c*b*a^2 + b^2 + c + b*a^15 + d", domain, MonomialOrder.DEFAULT),
+                b = MultivariatePolynomialZp64.parse("a^12 + 2*b^12 + 2*c + c*a^5 + d*a", domain, MonomialOrder.DEFAULT),
+                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c^15*a^3 + b*c*a^5 + d^2*c*a", domain, MonomialOrder.DEFAULT);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
 
@@ -1532,11 +1603,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
 
-                u = MultivariatePolynomialZp64.parse("c*b*a + b^2 + c + b*a^2 + 1", domain, LEX),
-                v = MultivariatePolynomialZp64.parse("2 + a^2 + 2*b^2 + 2*c + c*a^2 + a", domain, LEX),
+                u = MultivariatePolynomialZp64.parse("c*b*a + b^2 + c + b*a^2 + 1", domain, MonomialOrder.DEFAULT),
+                v = MultivariatePolynomialZp64.parse("2 + a^2 + 2*b^2 + 2*c + c*a^2 + a", domain, MonomialOrder.DEFAULT),
                 a = u.clone().square().multiply(u).multiply(v),
                 b = v.clone().square().multiply(u),
-                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c*a^3 + b*c*a^2 + c*a", domain, LEX)
+                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c*a^3 + b*c*a^2 + c*a", domain, MonomialOrder.DEFAULT)
                         .multiply(u).multiply(v).multiply(v);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -1548,9 +1619,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         PrivateRandom.getRandom().setSeed(4);
         IntegersZp64 domain = new IntegersZp64(15627449);
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("3*b^2*c*d+5*a*d^2+15627444*a*b^2*c+15627440*a^2*b^2*c^2", domain, LEX),
-                b = MultivariatePolynomialZp64.parse("4*b*c^2*d^2+8*b^2*c*d^2+15627440*b^3*d^2+3*a*c^3+a^2*b", domain, LEX),
-                gcd = MultivariatePolynomialZp64.parse("15627440*b^2*c^3+7*b^3*c+6*a*b^2*c^3*d^2+7*a^2*b*d+5*a^3*c^2*d^3+6*a^3*b^2*c^2*d", domain, LEX);
+                a = MultivariatePolynomialZp64.parse("3*b^2*c*d+5*a*d^2+15627444*a*b^2*c+15627440*a^2*b^2*c^2", domain, MonomialOrder.DEFAULT),
+                b = MultivariatePolynomialZp64.parse("4*b*c^2*d^2+8*b^2*c*d^2+15627440*b^3*d^2+3*a*c^3+a^2*b", domain, MonomialOrder.DEFAULT),
+                gcd = MultivariatePolynomialZp64.parse("15627440*b^2*c^3+7*b^3*c+6*a*b^2*c^3*d^2+7*a^2*b*d+5*a^3*c^2*d^3+6*a^3*b^2*c^2*d", domain, MonomialOrder.DEFAULT);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
@@ -1562,9 +1633,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(15627449);
         String[] vars = {"b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("13312440+25*d", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("902776+10710357*c+6547542*c^2+4925527*b+2965659*b*c+20*b*c^2+2903103*b^2+40*b^2*c+15627404*b^3", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("102871+8266210*d+5121205*d^2+16248*d^3+1722152*c+2574791*c*d+10788581*c*d^2+15247596*c*d^3+8472569*c^2+898837*c^2*d+14099452*c^2*d^2+c^2*d^3", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("13312440+25*d", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("902776+10710357*c+6547542*c^2+4925527*b+2965659*b*c+20*b*c^2+2903103*b^2+40*b^2*c+15627404*b^3", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("102871+8266210*d+5121205*d^2+16248*d^3+1722152*c+2574791*c*d+10788581*c*d^2+15247596*c*d^3+8472569*c^2+898837*c^2*d+14099452*c^2*d^2+c^2*d^3", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
@@ -1576,9 +1647,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(24254707);
         String[] vars = {"b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("24254706*b+b^2*c+7*a*c+5*a*b^2+2*a^2*b*c+24254705*a^2*b*c^2+a^2*b^2*c^2", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("4*b*c+6*b^2*c+4*a^2+7*a^2*b*c^2+3*a^2*b^2*c", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("9*c+24254705*a*c^2+6*a*b^2+4*a^2+3*a^2*c+24254698*a^2*b^2*c", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("24254706*b+b^2*c+7*a*c+5*a*b^2+2*a^2*b*c+24254705*a^2*b*c^2+a^2*b^2*c^2", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("4*b*c+6*b^2*c+4*a^2+7*a^2*b*c^2+3*a^2*b^2*c", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("9*c+24254705*a*c^2+6*a*b^2+4*a^2+3*a^2*c+24254698*a^2*b^2*c", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
@@ -1590,9 +1661,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(24254707);
         String[] vars = {"b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("11106134 + 20915017*a + 948048*a^2 + 18101438*b + 8523620*a*b + 19589342*a^2*b + 13684993*b^2 + 8219998*a*b^2 + 24254698*a^2*b^2", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("12760358 + 5425698*a + 5129306*a^2 + 14380683*b + 16257092*a*b + 24254680*a^2*b + 4515223*b^2 + 24254644*a*b^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("9740181 + 21604578*a + 9691573*a^2 + 11040951*b + 17951441*a*b + a^2*b", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("11106134 + 20915017*a + 948048*a^2 + 18101438*b + 8523620*a*b + 19589342*a^2*b + 13684993*b^2 + 8219998*a*b^2 + 24254698*a^2*b^2", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("12760358 + 5425698*a + 5129306*a^2 + 14380683*b + 16257092*a*b + 24254680*a^2*b + 4515223*b^2 + 24254644*a*b^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("9740181 + 21604578*a + 9691573*a^2 + 11040951*b + 17951441*a*b + a^2*b", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
@@ -1604,9 +1675,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(28565767);
         String[] vars = {"a", "b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("6*c^2*d+3*a*d^2+9*a*d^3+28565764*a^2*b*d^2+2*a^2*b^2*c*d^2+9*a^3*c*d^2+3*a^3*b^2*c*d^2", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("c^2*d^2+28565766*a*b^2*d^2+2*a*b^2*c*d+28565763*a^2*c^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("6*c*d+7*c*d^2+7*a*b^2+8*a^2*b*c^2", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("6*c^2*d+3*a*d^2+9*a*d^3+28565764*a^2*b*d^2+2*a^2*b^2*c*d^2+9*a^3*c*d^2+3*a^3*b^2*c*d^2", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("c^2*d^2+28565766*a*b^2*d^2+2*a*b^2*c*d+28565763*a^2*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("6*c*d+7*c*d^2+7*a*b^2+8*a^2*b*c^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
@@ -1618,9 +1689,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(28565767);
         String[] vars = {"a", "b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("1564663 + 63*d", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("15383307 + 22520298*b + 12522045*b^2 + 9677552*c + 7*c^2 + 3221049*d + 5785123*b*d + 28565760*b^2*d", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("21095373 + c", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("1564663 + 63*d", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("15383307 + 22520298*b + 12522045*b^2 + 9677552*c + 7*c^2 + 3221049*d + 5785123*b*d + 28565760*b^2*d", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("21095373 + c", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
@@ -1632,9 +1703,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(8678027);
         String[] vars = {"a", "b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("6*c^2*d+2*b^2*c^2*d^2+a*c^2+a*b^2*c^2", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("3*b^3*c*d^2+2*a*b^2*d^2+8678026*a^2*c^3*d^3+8678018*a^2*b+5*a^3*b^2*c^3*d", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("8678020*c^2+3*b*c+6*b^2*c^2*d+2*a^2*b^3*c+8678020*a^3*c*d^3", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("6*c^2*d+2*b^2*c^2*d^2+a*c^2+a*b^2*c^2", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("3*b^3*c*d^2+2*a*b^2*d^2+8678026*a^2*c^3*d^3+8678018*a^2*b+5*a^3*b^2*c^3*d", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("8678020*c^2+3*b*c+6*b^2*c^2*d+2*a^2*b^3*c+8678020*a^3*c*d^3", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1647,9 +1718,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(28996511);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("6*b^2*c^2+b^3*c+28996505*a*b*c+28996507*a*b^2+4*a*b^2*c^3", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("6*b^2*c+12*a*b^2*c+3*a^2*b^2*c^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("9+28996505*c^2+7*a*b*c+8*a*b*c^2+9*a^2*b^2*c^2", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("6*b^2*c^2+b^3*c+28996505*a*b*c+28996507*a*b^2+4*a*b^2*c^3", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("6*b^2*c+12*a*b^2*c+3*a^2*b^2*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("9+28996505*c^2+7*a*b*c+8*a*b*c^2+9*a^2*b^2*c^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1662,9 +1733,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(22687397);
         String[] vars = {"a", "b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("7*d+7*b^2*c^2+3*a*c^2+2*a^2*d+6*a^2*d^2+9*a^2*c^2*d", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("2*a*b*c^2+22687392*a*b^2*c^2*d^2+9*a*b^2*c^3+22687395*a*b^3*c*d+3*a^2*c*d^3+6*a^3+8*a^3*b^2*c*d^3", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("22687391*d^2+22687393*b*c^2*d^2+5*a+5*a*b+8*a*b^2*c^2*d^2+4*a^2*b^2*c^2", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("7*d+7*b^2*c^2+3*a*c^2+2*a^2*d+6*a^2*d^2+9*a^2*c^2*d", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("2*a*b*c^2+22687392*a*b^2*c^2*d^2+9*a*b^2*c^3+22687395*a*b^3*c*d+3*a^2*c*d^3+6*a^3+8*a^3*b^2*c*d^3", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("22687391*d^2+22687393*b*c^2*d^2+5*a+5*a*b+8*a*b^2*c^2*d^2+4*a^2*b^2*c^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1677,9 +1748,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(22687397);
         String[] vars = {"a", "b", "c", "d"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("11244809 + 22687361*a^2 + 30*b + 11244809*c + 30*b*c", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("21851038 + 15893672*a + 14760820*a^2 + 12564491*a^3 + 11694181*a^4 + 16683489*a^5 + 11244809*b + 9237198*a*b + 4795625*a^2*b + 6123527*a^3*b + 5432952*a^4*b + 22659623*a^5*b + 15*b^2 + 14306815*a*b^2 + 15896207*a^2*b^2 + 9051*a^3*b^2 + 22645277*a^4*b^2 + 11745*a*b^3 + 35100*a^2*b^3 + 2299511*c + 15893672*a*c + 1652686*a^2*c + 6762669*a^3*c + 19488092*a^4*c + 3757801*a^5*c + 11247299*b*c + 9237198*a*b*c + 12416836*a^2*b*c + 19792351*a^3*b*c + 9233182*a^4*b*c + 22686257*a^5*b*c + 15*b^2*c + 14306815*a*b^2*c + 15890231*a^2*b^2*c + 22668450*a^3*b^2*c + 22687373*a^4*b^2*c + 11745*a*b^3*c + 35100*a^2*b^3*c + 9448492*c^2 + 11808378*a*c^2 + 20057596*a^2*c^2 + 20794627*a^3*c^2 + 18785592*a^4*c^2 + 4960279*a^5*c^2 + 21841949*b*c^2 + 2669531*a*b*c^2 + 13194739*a^2*b*c^2 + 10436283*a^3*b*c^2 + 19195830*a^4*b*c^2 + 5885213*a^5*b*c^2 + 8273012*b^2*c^2 + 20876792*a*b^2*c^2 + 19005620*a^2*b^2*c^2 + 6957603*a^3*b^2*c^2 + 17675248*a^4*b^2*c^2 + 22615613*a^5*b^2*c^2 + 7430983*b^3*c^2 + 18240653*a*b^3*c^2 + 4232985*a^2*b^3*c^2 + 147044*a^3*b^3*c^2 + 48*a^4*b^3*c^2 + 5976*b^4*c^2 + 42092*a*b^4*c^2 + 24*a^2*b^4*c^2 + 9149236*c^3 + 9268605*a*c^3 + 4080916*a^2*c^3 + 6163313*a^3*c^3 + 2920*a^4*c^3 + 3127846*a^5*c^3 + 11966525*b*c^3 + 22671967*a*b*c^3 + 22683508*a^2*b*c^3 + 21437536*a^3*b*c^3 + 4916674*a^5*b*c^3 + 1168*b^2*c^3 + 2213725*a^3*b^2*c^3 + 22684357*a^5*b^2*c^3 + 61720*a^3*b^3*c^3 + 12936437*c^4 + 9268605*a*c^4 + 15448872*a^2*c^4 + 21785946*a^3*c^4 + 4125558*a^4*c^4 + 19072832*a^5*c^4 + 19011898*b*c^4 + 22671967*a*b*c^4 + 4208806*a^2*b*c^4 + 15458267*a^3*b*c^4 + 22681557*a^4*b*c^4 + 3920321*a^5*b*c^4 + 41624*b^2*c^4 + 22684477*a^2*b^2*c^4 + 3920321*a^3*b^2*c^4 + 7937375*a^5*b^2*c^4 + 12854049*a^3*b^3*c^4 + 6080*a^5*b^3*c^4 + 3040*a^3*b^4*c^4 + 12125660*a*c^5 + 12572867*a^3*c^5 + 12572867*a*b*c^5 + 22685877*a^3*b*c^5 + 22686637*a*b^2*c^5", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("1", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("11244809 + 22687361*a^2 + 30*b + 11244809*c + 30*b*c", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("21851038 + 15893672*a + 14760820*a^2 + 12564491*a^3 + 11694181*a^4 + 16683489*a^5 + 11244809*b + 9237198*a*b + 4795625*a^2*b + 6123527*a^3*b + 5432952*a^4*b + 22659623*a^5*b + 15*b^2 + 14306815*a*b^2 + 15896207*a^2*b^2 + 9051*a^3*b^2 + 22645277*a^4*b^2 + 11745*a*b^3 + 35100*a^2*b^3 + 2299511*c + 15893672*a*c + 1652686*a^2*c + 6762669*a^3*c + 19488092*a^4*c + 3757801*a^5*c + 11247299*b*c + 9237198*a*b*c + 12416836*a^2*b*c + 19792351*a^3*b*c + 9233182*a^4*b*c + 22686257*a^5*b*c + 15*b^2*c + 14306815*a*b^2*c + 15890231*a^2*b^2*c + 22668450*a^3*b^2*c + 22687373*a^4*b^2*c + 11745*a*b^3*c + 35100*a^2*b^3*c + 9448492*c^2 + 11808378*a*c^2 + 20057596*a^2*c^2 + 20794627*a^3*c^2 + 18785592*a^4*c^2 + 4960279*a^5*c^2 + 21841949*b*c^2 + 2669531*a*b*c^2 + 13194739*a^2*b*c^2 + 10436283*a^3*b*c^2 + 19195830*a^4*b*c^2 + 5885213*a^5*b*c^2 + 8273012*b^2*c^2 + 20876792*a*b^2*c^2 + 19005620*a^2*b^2*c^2 + 6957603*a^3*b^2*c^2 + 17675248*a^4*b^2*c^2 + 22615613*a^5*b^2*c^2 + 7430983*b^3*c^2 + 18240653*a*b^3*c^2 + 4232985*a^2*b^3*c^2 + 147044*a^3*b^3*c^2 + 48*a^4*b^3*c^2 + 5976*b^4*c^2 + 42092*a*b^4*c^2 + 24*a^2*b^4*c^2 + 9149236*c^3 + 9268605*a*c^3 + 4080916*a^2*c^3 + 6163313*a^3*c^3 + 2920*a^4*c^3 + 3127846*a^5*c^3 + 11966525*b*c^3 + 22671967*a*b*c^3 + 22683508*a^2*b*c^3 + 21437536*a^3*b*c^3 + 4916674*a^5*b*c^3 + 1168*b^2*c^3 + 2213725*a^3*b^2*c^3 + 22684357*a^5*b^2*c^3 + 61720*a^3*b^3*c^3 + 12936437*c^4 + 9268605*a*c^4 + 15448872*a^2*c^4 + 21785946*a^3*c^4 + 4125558*a^4*c^4 + 19072832*a^5*c^4 + 19011898*b*c^4 + 22671967*a*b*c^4 + 4208806*a^2*b*c^4 + 15458267*a^3*b*c^4 + 22681557*a^4*b*c^4 + 3920321*a^5*b*c^4 + 41624*b^2*c^4 + 22684477*a^2*b^2*c^4 + 3920321*a^3*b^2*c^4 + 7937375*a^5*b^2*c^4 + 12854049*a^3*b^3*c^4 + 6080*a^5*b^3*c^4 + 3040*a^3*b^4*c^4 + 12125660*a*c^5 + 12572867*a^3*c^5 + 12572867*a*b*c^5 + 22685877*a^3*b*c^5 + 22686637*a*b^2*c^5", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("1", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1692,9 +1763,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(13666309);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("4*b^2*c^3+3*a*b^3+2*a*b^3*c+4*a*b^3*c^3+2*a^3*b^2*c", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("5*b*c+5*a*b+13666307*a*b*c+7*a^2*c+6*a^2*c^2+13666307*a^2*b", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("4*b^2+15*a*b^2*c+4*a^2+13666308*a^2*c", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("4*b^2*c^3+3*a*b^3+2*a*b^3*c+4*a*b^3*c^3+2*a^3*b^2*c", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("5*b*c+5*a*b+13666307*a*b*c+7*a^2*c+6*a^2*c^2+13666307*a^2*b", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("4*b^2+15*a*b^2*c+4*a^2+13666308*a^2*c", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1707,8 +1778,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(13666309);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("3338057+430735*b+13248829*b^2+11374034*b^3+3423812*a+698808*a*b+7995810*a*b^2+60*a*b^3+8933188*a^2+13666305*a^2*b", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("7990553+3359122*b+846494*b^2+131346*a+12831229*a*b+6789484*a*b^2+12272859*a^2+7995810*a^2*b+90*a^2*b^2+13666303*a^3", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("3338057+430735*b+13248829*b^2+11374034*b^3+3423812*a+698808*a*b+7995810*a*b^2+60*a*b^3+8933188*a^2+13666305*a^2*b", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("7990553+3359122*b+846494*b^2+131346*a+12831229*a*b+6789484*a*b^2+12272859*a^2+7995810*a^2*b+90*a^2*b^2+13666303*a^3", domain, MonomialOrder.DEFAULT, vars);
         System.out.println(EZGCD(a, b));
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
@@ -1720,9 +1791,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(22687397);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("30*b+30*b*c+22687361*a^2", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("2490*b*c+6800*b*c^2+4310*b*c^3+15*b^2+15*b^2*c+1168*b^2*c^3+41624*b^2*c^4+14028*b^3*c^2+5976*b^4*c^2+40950*a*b+40950*a*b*c+22671967*a*b*c^3+22671967*a*b*c^4+28*a*b^2*c^2+22686637*a*b^2*c^5+11745*a*b^3+11745*a*b^3*c+42092*a*b^4*c^2+22684409*a^2*c+22681057*a^2*c^2+22645773*a^2*c^3+22687379*a^2*b+22673369*a^2*b*c+22681172*a^2*b*c^2+22683508*a^2*b*c^3+83248*a^2*b*c^4+22681421*a^2*b^2*c+28056*a^2*b^2*c^2+22684477*a^2*b^2*c^4+35100*a^2*b^3+35100*a^2*b^3*c+11952*a^2*b^3*c^2+24*a^2*b^4*c^2+22638257*a^3+22687369*a^3*c+18516*a^3*c^3+760*a^3*c^4+56*a^3*b*c^2+22685877*a^3*b*c^5+9051*a^3*b^2+22668450*a^3*b^2*c+147044*a^3*b^3*c^2+61720*a^3*b^3*c^3+3040*a^3*b^4*c^4+7470*a^4*c^2+2920*a^4*c^3+22681557*a^4*b*c^4+22645277*a^4*b^2+22687373*a^4*b^2*c+48*a^4*b^3*c^2+22659623*a^5*b+22686257*a^5*b*c+22615613*a^5*b^2*c^2+22684357*a^5*b^2*c^3+6080*a^5*b^3*c^4", domain, LEX, vars);
-//                gcd = MultivariatePolynomialZp64.parse("4*b^2+15*a*b^2*c+4*a^2+13666308*a^2*c", ring, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("30*b+30*b*c+22687361*a^2", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("2490*b*c+6800*b*c^2+4310*b*c^3+15*b^2+15*b^2*c+1168*b^2*c^3+41624*b^2*c^4+14028*b^3*c^2+5976*b^4*c^2+40950*a*b+40950*a*b*c+22671967*a*b*c^3+22671967*a*b*c^4+28*a*b^2*c^2+22686637*a*b^2*c^5+11745*a*b^3+11745*a*b^3*c+42092*a*b^4*c^2+22684409*a^2*c+22681057*a^2*c^2+22645773*a^2*c^3+22687379*a^2*b+22673369*a^2*b*c+22681172*a^2*b*c^2+22683508*a^2*b*c^3+83248*a^2*b*c^4+22681421*a^2*b^2*c+28056*a^2*b^2*c^2+22684477*a^2*b^2*c^4+35100*a^2*b^3+35100*a^2*b^3*c+11952*a^2*b^3*c^2+24*a^2*b^4*c^2+22638257*a^3+22687369*a^3*c+18516*a^3*c^3+760*a^3*c^4+56*a^3*b*c^2+22685877*a^3*b*c^5+9051*a^3*b^2+22668450*a^3*b^2*c+147044*a^3*b^3*c^2+61720*a^3*b^3*c^3+3040*a^3*b^4*c^4+7470*a^4*c^2+2920*a^4*c^3+22681557*a^4*b*c^4+22645277*a^4*b^2+22687373*a^4*b^2*c+48*a^4*b^3*c^2+22659623*a^5*b+22686257*a^5*b*c+22615613*a^5*b^2*c^2+22684357*a^5*b^2*c^3+6080*a^5*b^3*c^4", domain, MonomialOrder.DEFAULT, vars);
+//                gcd = MultivariatePolynomialZp64.parse("4*b^2+15*a*b^2*c+4*a^2+13666308*a^2*c", ring, MonomialOrder.DEFAULT, vars);
 //        a = a.multiply(gcd);
 //        b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1735,9 +1806,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(9607987);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("8+3*a+6*a^2*b*c^2+6*a^2*b^2*c", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("6*b^2+8*b^2*c+9607986*a*b+a*b*c^2+a^2*c+2*a^2*b+7*a^2*b*c^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("6*b*c+6*a*b*c+9607979*a*b^2*c^2+3*a*b^3*c^3+9607982*a^3*b^3", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("8+3*a+6*a^2*b*c^2+6*a^2*b^2*c", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("6*b^2+8*b^2*c+9607986*a*b+a*b*c^2+a^2*c+2*a^2*b+7*a^2*b*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("6*b*c+6*a*b*c+9607979*a*b^2*c^2+3*a*b^3*c^3+9607982*a^3*b^3", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1750,9 +1821,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(9607987);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("6998457+9068733*c+9042619*c^2+1283895*c^3+3738482*c^4+4888116*c^5+5574926*b+6161435*b*c+3428490*b*c^2+1423636*b*c^3+7718978*b*c^4+9607957*b*c^5+5803370*b^2+3797801*b^2*c+1899022*b^2*c^2+1286548*b^2*c^3+6635895*b^3+1871925*b^3*c+2687295*b^3*c^2+9406093*b^3*c^3+3101467*b^4+8800611*b^4*c+5291877*b^4*c^2+18*b^4*c^3", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("4572338+8988826*c+5700575*c^2+6517458*c^3+7602268*b+8674751*b*c+4253585*b*c^2+9607947*b*c^3+1248945*b^2+3165308*b^2*c+9363637*b^3+9338813*b^3*c+8757270*b^4+24*b^4*c", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("1", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("6998457+9068733*c+9042619*c^2+1283895*c^3+3738482*c^4+4888116*c^5+5574926*b+6161435*b*c+3428490*b*c^2+1423636*b*c^3+7718978*b*c^4+9607957*b*c^5+5803370*b^2+3797801*b^2*c+1899022*b^2*c^2+1286548*b^2*c^3+6635895*b^3+1871925*b^3*c+2687295*b^3*c^2+9406093*b^3*c^3+3101467*b^4+8800611*b^4*c+5291877*b^4*c^2+18*b^4*c^3", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("4572338+8988826*c+5700575*c^2+6517458*c^3+7602268*b+8674751*b*c+4253585*b*c^2+9607947*b*c^3+1248945*b^2+3165308*b^2*c+9363637*b^3+9338813*b^3*c+8757270*b^4+24*b^4*c", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("1", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1765,9 +1836,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(592346501);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("56*b+47*b*c+37*a*b*c^2+43*a^2*b*c", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("26*b*c^2+54*a*c+4*a^2*b+2*a^2*b*c+42*a^2*b*c^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("13*c+50*a*b+51*a^2*b*c+65*a^2*b^2*c^3+33*a^3*b^2", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("56*b+47*b*c+37*a*b*c^2+43*a^2*b*c", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("26*b*c^2+54*a*c+4*a^2*b+2*a^2*b*c+42*a^2*b*c^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("13*c+50*a*b+51*a^2*b*c+65*a^2*b^2*c^3+33*a^3*b^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1780,9 +1851,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(592346501);
         String[] vars = {"a", "b"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("125427093 + 287292359*a + 259899124*a^2 + 224214583*b + 423992120*a*b + 1221*a^2*b + 522309957*b^2 + 1419*a*b^2", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("364341910 + 56968290*a + 134477777*a^2 + 264733241*b + 223672725*a*b + 365910146*a^2*b + 448183856*b^2 + 56041492*a*b^2 + 1386*a^2*b^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("8864159 + 332216825*a + 307171438*a^2 + 574396609*a^3 + b", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("125427093 + 287292359*a + 259899124*a^2 + 224214583*b + 423992120*a*b + 1221*a^2*b + 522309957*b^2 + 1419*a*b^2", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("364341910 + 56968290*a + 134477777*a^2 + 264733241*b + 223672725*a*b + 365910146*a^2*b + 448183856*b^2 + 56041492*a*b^2 + 1386*a^2*b^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("8864159 + 332216825*a + 307171438*a^2 + 574396609*a^3 + b", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EZGCD(a, b));
@@ -1829,9 +1900,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(9607987);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("6998457+9068733*c+9042619*c^2+1283895*c^3+3738482*c^4+4888116*c^5+5574926*b+6161435*b*c+3428490*b*c^2+1423636*b*c^3+7718978*b*c^4+9607957*b*c^5+5803370*b^2+3797801*b^2*c+1899022*b^2*c^2+1286548*b^2*c^3+6635895*b^3+1871925*b^3*c+2687295*b^3*c^2+9406093*b^3*c^3+3101467*b^4+8800611*b^4*c+5291877*b^4*c^2+18*b^4*c^3", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("4572338+8988826*c+5700575*c^2+6517458*c^3+7602268*b+8674751*b*c+4253585*b*c^2+9607947*b*c^3+1248945*b^2+3165308*b^2*c+9363637*b^3+9338813*b^3*c+8757270*b^4+24*b^4*c", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("1", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("6998457+9068733*c+9042619*c^2+1283895*c^3+3738482*c^4+4888116*c^5+5574926*b+6161435*b*c+3428490*b*c^2+1423636*b*c^3+7718978*b*c^4+9607957*b*c^5+5803370*b^2+3797801*b^2*c+1899022*b^2*c^2+1286548*b^2*c^3+6635895*b^3+1871925*b^3*c+2687295*b^3*c^2+9406093*b^3*c^3+3101467*b^4+8800611*b^4*c+5291877*b^4*c^2+18*b^4*c^3", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("4572338+8988826*c+5700575*c^2+6517458*c^3+7602268*b+8674751*b*c+4253585*b*c^2+9607947*b*c^3+1248945*b^2+3165308*b^2*c+9363637*b^3+9338813*b^3*c+8757270*b^4+24*b^4*c", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("1", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EEZGCD(a, b));
@@ -1844,9 +1915,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(16604789);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("6*a*c*d^2+2*a*c^2+2*a*b^2*d+3*a*b^2*c^2*d^2", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("7*b^2*c^3*d+6*a^2*b^2*c^3+16604785*a^2*b^3*d+9*a^3*b*c^2+16604781*a^3*b*c^3", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("4*c^2*d+8*a+4*a*c^3*d^2+16604785*a^2*d^3+2*a^2*b^2*c^3*d", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("6*a*c*d^2+2*a*c^2+2*a*b^2*d+3*a*b^2*c^2*d^2", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("7*b^2*c^3*d+6*a^2*b^2*c^3+16604785*a^2*b^3*d+9*a^3*b*c^2+16604781*a^3*b*c^3", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("4*c^2*d+8*a+4*a*c^3*d^2+16604785*a^2*d^3+2*a^2*b^2*c^3*d", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EEZGCD(a, b));
@@ -1859,9 +1930,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(31012727);
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("4*c+3*b*c^2+4*a*c+31012723*a*b+2*a^2*c+7*a^2*b*c", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("7*c^2+2*b*c^2+3*a*b*c^2+31012724*a*b^2+a^2*b^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("31012726*b*c+31012724*b*c^2+3*a*b", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("4*c+3*b*c^2+4*a*c+31012723*a*b+2*a^2*c+7*a^2*b*c", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("7*c^2+2*b*c^2+3*a*b*c^2+31012724*a*b^2+a^2*b^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("31012726*b*c+31012724*b*c^2+3*a*b", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EEZGCD(a, b));
@@ -1874,9 +1945,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(31012727);
         String[] vars = {"a", "b"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("31012718 + 3*b", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("12*a + 47454*a^2 + 30989135*b + 12*a*b + 9801*a^2*b + 41292*a*b^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("20675151*a + 31012726*a^2 + b", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("31012718 + 3*b", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("12*a + 47454*a^2 + 30989135*b + 12*a*b + 9801*a^2*b + 41292*a*b^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("20675151*a + 31012726*a^2 + b", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EEZGCD(a, b));
@@ -1889,9 +1960,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(26662411);
         String[] vars = {"a", "b", "c", "d", "e"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("26662407*a^3*b^3*c*d^5*e^6+3*a^3*b^6*c^3*e^2+4*a^4*b^2*c^3*e^3+8*a^4*b^5*c^6*d^4*e^4+7*a^6*b*c^3*d", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("8*c+26662402*b*c*d+8*b^2*c*d*e+b^2*c^2+a*b*e^2+a^2*d*e^2+8*a^2*d^2*e^2+5*a^2*b*c*d^2*e^2+15*a^2*b*c^2*d", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("5*b^2*d^2*e^2+9*b^2*c^2*e+26662408*b^2*c^2*e^2+3*a*c^2*e+3*a*b*d^2+26662408*a*b^2*d*e+26662407*a*b^2*d^2*e^2+a^2*d^2*e^2+26662402*a^2*b^2*c*e^2", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("26662407*a^3*b^3*c*d^5*e^6+3*a^3*b^6*c^3*e^2+4*a^4*b^2*c^3*e^3+8*a^4*b^5*c^6*d^4*e^4+7*a^6*b*c^3*d", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("8*c+26662402*b*c*d+8*b^2*c*d*e+b^2*c^2+a*b*e^2+a^2*d*e^2+8*a^2*d^2*e^2+5*a^2*b*c*d^2*e^2+15*a^2*b*c^2*d", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("5*b^2*d^2*e^2+9*b^2*c^2*e+26662408*b^2*c^2*e^2+3*a*c^2*e+3*a*b*d^2+26662408*a*b^2*d*e+26662407*a*b^2*d^2*e^2+a^2*d^2*e^2+26662402*a^2*b^2*c*e^2", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         System.out.println(EEZGCD(a, b));
@@ -1905,9 +1976,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(26662411);
         String[] vars = {"a", "b", "c", "d", "e"};
         MultivariatePolynomialZp64
-                a = MultivariatePolynomialZp64.parse("15*c^2*d+27*b^2+26662402*b^2*d+26662402*a*c+26662399*a*c^2*d+26662384*a^2*b*d", domain, LEX, vars),
-                b = MultivariatePolynomialZp64.parse("26657131*c^7*d^8+46200*b*c^2*d^2+26593651*b*c^3*d^2+20960*b*c^3*d^3+2620*b^2*c^2*d^2+26652907*b^2*c^5*d^7+3168*b^2*c^5*d^8+83160*b^3*d+26634691*b^3*d^2+26538643*b^3*c*d+78984*b^3*c*d^2+26649835*b^3*c*d^3+4716*b^4*d+26660839*b^4*d^2+7640*a*c^2*d^4+3168*a*c^6*d^7+26651827*a*c^7*d^6+4224*a*c^7*d^8+26634691*a*b*c*d+35952*a*b*c^2+41256*a*b*c^2*d+26612875*a*b*c^2*d^2+26631226*a*b*c^3+36672*a*b*c^3*d+55008*a*b*c^3*d^2+26645643*a*b*c^3*d^3+13752*a*b^2*d^3+26657827*a*b^2*d^4+26660839*a*b^2*c*d+4584*a*b^2*c^2+26660324*a*b^2*c^2*d^2+17640*a*b^2*c^2*d^5+26644891*a*b^2*c^5*d^7+35976*a*b^3*d+26621965*a*b^3*c*d+27720*a*b^3*c*d^2+3465*a*b^4*d+13833*a*b^4*d^3+31752*a*b^4*d^4+26651827*a*b^4*d^5+40*a*b^5*c^6*d^6+72*a*b^7*c^4*d^5+26662387*a*b^7*c^4*d^6+26657827*a^2*c*d^3+3465*a^2*c^2*d^2+26656299*a^2*c^2*d^4+5775*a^2*c^3*d^4+46200*a^2*c^4*d^4+26656571*a^2*c^7*d^8+11992*a^2*b*c^2*d^2+26648929*a^2*b*c^3*d^2+9240*a^2*b*c^3*d^3+38200*a^2*b*c^4*d^4+9504*a^2*b*c^5*d^8+26579251*a^2*b^2*d^2+4494*a^2*b^2*d^3+123768*a^2*b^2*c*d^2+26635078*a^2*b^2*c*d^3+26648362*a^2*b^2*c*d^4+1155*a^2*b^2*c^2*d^2+100680*a^2*b^2*c^2*d^3+26639302*a^2*b^2*c^2*d^4+26648299*a^2*b^2*c^2*d^5+114600*a^2*b^2*c^3*d^2+26657695*a^2*b^3*d^2+68760*a^2*b^3*c^2*d^3+26639491*a^2*b^3*c^2*d^4+3300*a^2*b^4*d^4+206280*a^2*b^4*c*d+26593651*a^2*b^4*c*d^2+26662387*a^2*b^5*c^5*d^5+36888*a^2*b^5*c^6*d^4+26662379*a^2*b^5*c^6*d^6+6336*a^2*b^7*c^4*d^5+26658946*a^3*c^2*d^3+1498*a^3*c^2*d^4+4494*a^3*c^3*d^2+26634691*a^3*c^3*d^3+26657791*a^3*c^3*d^4+35952*a^3*c^4*d^2+26625451*a^3*c^4*d^4+26648659*a^3*b*d^4+26639491*a^3*b*c^3*d^3+17325*a^3*b*c^4*d^2+26631851*a^3*b*c^4*d^4+4497*a^3*b^2*c*d^3+26593651*a^3*b^2*c^2*d+35976*a^3*b^2*c^2*d^3+1100*a^3*b^2*c^2*d^5+51975*a^3*b^2*c^3+26621831*a^3*b^2*c^3*d^2+26630659*a^3*b^3*d^5+22470*a^3*b^3*c^2*d^3+159390*a^3*b^4*c*d+26631751*a^3*b^4*c*d^2+2112*a^3*b^5*c^6*d^6+26662339*a^3*b^6*c^4*d^6+1499*a^4*c^3*d^4+11992*a^4*c^4*d^4+26652016*a^4*b*c*d^4+26579251*a^4*b*c^2*d^4+7490*a^4*b*c^4*d^4+26631751*a^4*b^2*c^2*d+26593651*a^4*b^2*c^2*d^4+5775*a^4*b^2*c^3+26644001*a^4*b^2*c^3*d^2+26456131*a^4*b^3*c*d^2+15456*a^4*b^4*c*d+5152*a^5*b^2*c^3*d^2+26570431*a^5*b^3*c*d^2", domain, LEX, vars),
-                gcd = MultivariatePolynomialZp64.parse("1", domain, LEX, vars);
+                a = MultivariatePolynomialZp64.parse("15*c^2*d+27*b^2+26662402*b^2*d+26662402*a*c+26662399*a*c^2*d+26662384*a^2*b*d", domain, MonomialOrder.DEFAULT, vars),
+                b = MultivariatePolynomialZp64.parse("26657131*c^7*d^8+46200*b*c^2*d^2+26593651*b*c^3*d^2+20960*b*c^3*d^3+2620*b^2*c^2*d^2+26652907*b^2*c^5*d^7+3168*b^2*c^5*d^8+83160*b^3*d+26634691*b^3*d^2+26538643*b^3*c*d+78984*b^3*c*d^2+26649835*b^3*c*d^3+4716*b^4*d+26660839*b^4*d^2+7640*a*c^2*d^4+3168*a*c^6*d^7+26651827*a*c^7*d^6+4224*a*c^7*d^8+26634691*a*b*c*d+35952*a*b*c^2+41256*a*b*c^2*d+26612875*a*b*c^2*d^2+26631226*a*b*c^3+36672*a*b*c^3*d+55008*a*b*c^3*d^2+26645643*a*b*c^3*d^3+13752*a*b^2*d^3+26657827*a*b^2*d^4+26660839*a*b^2*c*d+4584*a*b^2*c^2+26660324*a*b^2*c^2*d^2+17640*a*b^2*c^2*d^5+26644891*a*b^2*c^5*d^7+35976*a*b^3*d+26621965*a*b^3*c*d+27720*a*b^3*c*d^2+3465*a*b^4*d+13833*a*b^4*d^3+31752*a*b^4*d^4+26651827*a*b^4*d^5+40*a*b^5*c^6*d^6+72*a*b^7*c^4*d^5+26662387*a*b^7*c^4*d^6+26657827*a^2*c*d^3+3465*a^2*c^2*d^2+26656299*a^2*c^2*d^4+5775*a^2*c^3*d^4+46200*a^2*c^4*d^4+26656571*a^2*c^7*d^8+11992*a^2*b*c^2*d^2+26648929*a^2*b*c^3*d^2+9240*a^2*b*c^3*d^3+38200*a^2*b*c^4*d^4+9504*a^2*b*c^5*d^8+26579251*a^2*b^2*d^2+4494*a^2*b^2*d^3+123768*a^2*b^2*c*d^2+26635078*a^2*b^2*c*d^3+26648362*a^2*b^2*c*d^4+1155*a^2*b^2*c^2*d^2+100680*a^2*b^2*c^2*d^3+26639302*a^2*b^2*c^2*d^4+26648299*a^2*b^2*c^2*d^5+114600*a^2*b^2*c^3*d^2+26657695*a^2*b^3*d^2+68760*a^2*b^3*c^2*d^3+26639491*a^2*b^3*c^2*d^4+3300*a^2*b^4*d^4+206280*a^2*b^4*c*d+26593651*a^2*b^4*c*d^2+26662387*a^2*b^5*c^5*d^5+36888*a^2*b^5*c^6*d^4+26662379*a^2*b^5*c^6*d^6+6336*a^2*b^7*c^4*d^5+26658946*a^3*c^2*d^3+1498*a^3*c^2*d^4+4494*a^3*c^3*d^2+26634691*a^3*c^3*d^3+26657791*a^3*c^3*d^4+35952*a^3*c^4*d^2+26625451*a^3*c^4*d^4+26648659*a^3*b*d^4+26639491*a^3*b*c^3*d^3+17325*a^3*b*c^4*d^2+26631851*a^3*b*c^4*d^4+4497*a^3*b^2*c*d^3+26593651*a^3*b^2*c^2*d+35976*a^3*b^2*c^2*d^3+1100*a^3*b^2*c^2*d^5+51975*a^3*b^2*c^3+26621831*a^3*b^2*c^3*d^2+26630659*a^3*b^3*d^5+22470*a^3*b^3*c^2*d^3+159390*a^3*b^4*c*d+26631751*a^3*b^4*c*d^2+2112*a^3*b^5*c^6*d^6+26662339*a^3*b^6*c^4*d^6+1499*a^4*c^3*d^4+11992*a^4*c^4*d^4+26652016*a^4*b*c*d^4+26579251*a^4*b*c^2*d^4+7490*a^4*b*c^4*d^4+26631751*a^4*b^2*c^2*d+26593651*a^4*b^2*c^2*d^4+5775*a^4*b^2*c^3+26644001*a^4*b^2*c^3*d^2+26456131*a^4*b^3*c*d^2+15456*a^4*b^4*c*d+5152*a^5*b^2*c^3*d^2+26570431*a^5*b^3*c*d^2", domain, MonomialOrder.DEFAULT, vars),
+                gcd = MultivariatePolynomialZp64.parse("1", domain, MonomialOrder.DEFAULT, vars);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
@@ -1942,11 +2013,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
 
-                u = MultivariatePolynomialZp64.parse("c*b*a + b^2 + c + b*a^2 + 1", domain, LEX),
-                v = MultivariatePolynomialZp64.parse("2 + a^2 + 2*b^2 + 2*c + c*a^2 + a", domain, LEX),
+                u = MultivariatePolynomialZp64.parse("c*b*a + b^2 + c + b*a^2 + 1", domain, MonomialOrder.DEFAULT),
+                v = MultivariatePolynomialZp64.parse("2 + a^2 + 2*b^2 + 2*c + c*a^2 + a", domain, MonomialOrder.DEFAULT),
                 a = u.clone().square().multiply(u).multiply(v),
                 b = v.clone().square().multiply(u),
-                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c*a^3 + b*c*a^2 + c*a", domain, LEX)
+                gcd = MultivariatePolynomialZp64.parse("c*a + b + a + c*a^3 + b*c*a^2 + c*a", domain, MonomialOrder.DEFAULT)
                         .multiply(u).multiply(v).multiply(v);
         a = a.multiply(gcd);
         b = b.multiply(gcd);
@@ -2164,7 +2235,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     /** sample data for test of GCD */
     public static final class GCDSample<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
         /** sample polynomials */
         public final Poly a, b;
@@ -2228,7 +2299,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** substitute random values for some variables */
-    public static <Term extends DegreeVector<Term>,
+    public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDSampleData<Term, Poly> filterZeros(final GCDSampleData<Term, Poly> data) {
         return new GCDSampleData<Term, Poly>() {
@@ -2248,7 +2319,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** substitute random values for some variables */
-    public static <Term extends DegreeVector<Term>,
+    public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDSampleData<Term, Poly> fixVariables(final GCDSampleData<Term, Poly> data, int nActuallyUsedVariables) {
         return new GCDSampleData<Term, Poly>() {
@@ -2286,7 +2357,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** probable coprime polynomials */
-    public static <Term extends DegreeVector<Term>,
+    public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     GCDSampleData<Term, Poly> coprimeData(final GCDSampleData<Term, Poly> data) {
         return new GCDSampleData<Term, Poly>() {
@@ -2305,7 +2376,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     /** provides random data for GCD tests */
     public static abstract class GCDSampleData<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>> {
 
         final DescriptiveStatistics
@@ -2378,7 +2449,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     /** provides random data for GCD tests */
     public static abstract class AGCDSampleData<
-            Term extends DegreeVector<Term>,
+            Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
             extends GCDSampleData<Term, Poly> {
         public final int nVarsMin, nVarsMax,
@@ -2447,7 +2518,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             MultivariatePolynomialZp64[] data = new MultivariatePolynomialZp64[3];
             for (int i = 0; i < 3; i++) {
                 MultivariatePolynomialZp64
-                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), domain, LEX, rnd);
+                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), domain, MonomialOrder.DEFAULT, rnd);
 
                 // make coefficients small
                 p = p.setRing(66).setRing(domain);
@@ -2486,7 +2557,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             MultivariatePolynomial<E>[] data = new MultivariatePolynomial[3];
             for (int i = 0; i < 3; i++) {
                 MultivariatePolynomial<E>
-                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), ring, LEX, rnd);
+                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), ring, MonomialOrder.DEFAULT, rnd);
 
                 if (primitive)
                     p = MultivariatePolynomial.asNormalMultivariate(p.asOverUnivariateEliminate(0).primitivePart(), 0);
@@ -2528,7 +2599,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     /** run specified gcd algorithms on sample input */
-    public static <Term extends DegreeVector<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void testGCDAlgorithms(GCDSampleData<Term, Poly> sampleData, int nIterations,
                            GCDAlgorithm<Poly>... algorithms) {
         System.out.println("\nRunning gcd tests for " + Arrays.toString(algorithms));
@@ -2689,5 +2760,9 @@ public class MultivariateGCDTest extends AMultivariateTest {
             assertFalse(value == 0);
             assertTrue(value == domain.modulus(value));
         }
+    }
+
+    static <E> Monomial<E> createMonomial(E cf, int... exps) {
+        return new Monomial<>(exps, ArraysUtil.sum(exps), cf);
     }
 }

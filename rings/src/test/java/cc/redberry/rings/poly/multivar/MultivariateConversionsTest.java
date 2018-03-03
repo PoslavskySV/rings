@@ -5,9 +5,9 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rationals;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
-import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import org.junit.Test;
 
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
  * @author Stanislav Poslavsky
  * @since 1.0
  */
-public class MultivariateConversionsTest {
+public class MultivariateConversionsTest extends AMultivariateTest {
     @Test
     public void test1() throws Exception {
         MultivariatePolynomial<BigInteger>

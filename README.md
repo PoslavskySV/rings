@@ -2,14 +2,14 @@
 [![image](https://readthedocs.org/projects/rings/badge/?version=latest)](https://rings.readthedocs.io)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.svg)](http://www.javadoc.io/doc/cc.redberry/rings)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?label=scaladoc)](http://www.javadoc.io/doc/cc.redberry/rings.scaladsl_2.12)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.2%7Cjar)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.2%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.3%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.3%7Cjar)
 [![image](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat)](https://opensource.org/licenses/Apache-2.0)
 
 Rings: efficient Java/Scala library for polynomial rings
 ========================================================
 
-Rings is an efficient implementation of univariate and multivariate polynomial algebra over arbitrary coefficient rings. It makes use of asymptotically fast algorithms for basic algebraic operations as well as for advanced methods like GCDs and polynomial factorization. Performance achieved in Rings is comparable to well known solutions like Singular/NTL/FLINT/Maple/Mathematica.
+Rings is an efficient implementation of univariate and multivariate polynomial algebra over arbitrary coefficient rings. It makes use of asymptotically fast algorithms for basic algebraic operations as well as for advanced methods like GCDs, factorization and Gröbner bases. Performance achieved in Rings is comparable to well known solutions like Singular/NTL/FLINT/Maple/Mathematica.
 
 The key features of Rings include:
 
@@ -17,7 +17,8 @@ The key features of Rings include:
 > -  [Polynomial GCD →](http://rings.readthedocs.io/en/latest/guide.html#ref-polynomial-methods) Polynomial GCD over arbitrary coefficient domains
 > -  [Univariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-univariate-factorization) Univariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
 > -  [Multivariate factorization →](http://rings.readthedocs.io/en/latest/guide.html#ref-multivariate-factorization) Multivariate polynomial factorization over arbitrary finite fields, *Z* and *Q*
-> -  [Algebra →](http://rings.readthedocs.io/en/latest/guide.html#ref-rings) Arbitrary rings, Galois fields etc
+> -  [Commutative algebra →](http://rings.readthedocs.io/en/latest/guide.html#ref-rings) Arbitrary rings, Galois fields, polynomial ideals etc
+> -  [Ideals and Gröbner bases →](http://rings.readthedocs.io/en/latest/guide.html#ref-ideals) Polynomial ideals and efficient algorithms for Gröbner bases
 > -  [Scala DSL →](http://rings.readthedocs.io/en/latest/guide.html#ref-scala-dsl) Powerful domain specific language in Scala
 > -  [Fast →](http://rings.readthedocs.io/en/latest/benchmarks.html) Really fast library suitable for real-world computational challenges
 
@@ -46,7 +47,7 @@ Now run Rings<i>.repl</i>:
 ``` scala
 $ rings.repl
 Loading...
-Rings 2.2: efficient Java/Scala library for polynomial rings
+Rings 2.3: efficient Java/Scala library for polynomial rings
 
 @ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -66,10 +67,10 @@ res13: FactorDecomposition[MultivariatePolynomial[IntZ]] =
 
 ### Java/Scala library
 
-Rings are currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your `build.sbt` file:
+Rings is currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your `build.sbt` file:
 
 ``` scala
-libraryDependencies += "cc.redberry" % "rings.scaladsl" % "2.2"
+libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.3"
 ```
 
 For using Rings solely in Java there is Maven artifact:
@@ -78,12 +79,12 @@ For using Rings solely in Java there is Maven artifact:
 <dependency>
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.2</version>
+    <version>2.3</version>
 </dependency>
 ```
 
-Examples: algebra, GCDs, factorization, programming
----------------------------------------------------
+Examples: rings, ideals, Gröbner bases, GCDs & factorization
+-------------------------------------------------------------
 
 Below examples can be evaluated directly in the Rings<i>.repl</i>. If using Rings in Scala, the following preambula will import all required things from Rings library:
 
@@ -99,163 +100,8 @@ Java examples can be found in the [complete documentation pages](https://rings.r
 
 ------------------------------------------------------------------------
 
-Do some algebra in Galois field *GF(17^9)*:
+### Some built-in rings
 
-``` scala
-// GF(17^9) (irreducible poly in Z/17[x] will be generated automaticaly)
-implicit val ring = GF(17, 9, "x")
-
-// some random element from ring
-val a = ring.randomElement()
-val b = a.pow(1000)
-val c = 1 / b
-
-assert ( b * c === 1)
-
-// explicitly parse ring element from string
-val d = ring("1 + x + x^2 + x^3 + 15*x^999")
-// do some math ops
-val some = a / (b + c) + a.pow(6) - a * b * c * d
-```
-
-------------------------------------------------------------------------
-
-Some math with multivariate polynomials from *Z\[x, y, z\]*:
-
-``` scala
-// Z[x, y, z]
-implicit val ring = MultivariateRing(Z, Array("x", "y", "z")) 
-
-val (x, y, z) = ring("x", "y", "z") 
-
-// do some math
-val a = (x + y + z).pow(2) - 1 
-val b = (x - y - z - 1).pow(2) + x + y + z - 1 
-val c = (a + b + 1).pow(9) - a - b - 1
-
-// reduce c modulo a and b (multivariate division with remainder)
-val (div1, div2, rem) = c /%/% (a, b)
-```
-
-------------------------------------------------------------------------
-
-Univariate extended GCD in *Z_{17}\[x\]*:
-
-``` scala
-// ring Z/17[x]
-implicit val ring = UnivariateRingZp64(17, "x")
-
-val x = ring("x")
-
-val poly1 = 1 + x + x.pow(2) + x.pow(3)
-val poly2 = 1 + 2 * x + 9 * x.pow(2)
-val (gcd, s, t) = PolynomialExtendedGCD(poly1, poly2) match { case Array(gcd,s,t) => (gcd,s,t) }
-
-println((gcd, s, t))
-```
-
-------------------------------------------------------------------------
-
-Multivariate GCD in *Z\[a, b, c\]*:
-
-``` scala
-// ring Z[a, b, c]
-implicit val ring = MultivariateRing(Z, Array("a", "b", "c"))
-
-val poly1 = ring("-b-b*c-b^2+a+a*c+a^2")
-val poly2 = ring("b^2+b^2*c+b^3+a*b^2+a^2+a^2*c+a^2*b+a^3")
-
-val gcd   = PolynomialGCD(poly1, poly2)
-
-println(s"gcd: ${ring show gcd}")
-```
-
-------------------------------------------------------------------------
-
-Factor polynomial in *Z_{17}\[x\]*:
-
-``` scala
-// ring Z/17[x]
-implicit val ring = UnivariateRingZp64(17, "x")x
-
-val poly = ring("4 + 8*x + 12*x^2 + 5*x^5 - x^6 + 10*x^7 + x^8")
-
-// factorize poly
-val factors = Factor(poly)
-
-println(factors)
-```
-
-Coefficient rings with arbitrary large characteristic are available:
-
-``` scala
-// coefficient ring Z/1237940039285380274899124357 (the next prime to 2^100)
-val modulus = Z("1267650600228229401496703205653")
-val cfRing  = Zp(modulus)
-
-// ring Z/1237940039285380274899124357[x]
-implicit val ring = UnivariateRing(cfRing, "x")
-
-val poly = ring("4 + 8*x + 12*x^2 + 5*x^5 + 16*x^6 + 27*x^7 + 18*x^8")
-
-println(Factor(poly))
-```
-
-(large primes can be generated with `BigPrimes.nextPrime` method, see [Prime numbers](http://rings.readthedocs.io/en/latest/guide.html#ref-primes)).
-
-------------------------------------------------------------------------
-
-Factor polynomial in *Z_2\[x, y, z\]*:
-
-``` scala
-// ring Z/2[x, y, z]
-implicit val ring = MultivariateRingZp64(2, Array("x", "y", "z"))
-
-val (x, y, z) = ring("x", "y", "z")
-
-val factors = Factor(1 + (1 + x + y + z).pow(2) + (x + y + z).pow(4))
-
-println(factors)
-```
-
-------------------------------------------------------------------------
-
-Factor polynomial in *Z\[a, b, c\]*:
-
-``` scala
-// ring Z[a, b, c]
-implicit val ring = MultivariateRing(Z, Array("a", "b", "c"))
-
-val (a, b, c) = ring("a", "b", "c")
-
-val factors = Factor(1 - (1 + a + b + c).pow(2) - (2 + a + b + c).pow(3))
-
-println(ring show factors)
-```
-
-------------------------------------------------------------------------
-
-Factor polynomial in *Q\[x, y, z\]*:
-
-``` scala
-// ring Q[x, y, z]
-implicit val ring = MultivariateRing(Q, Array("x", "y", "z"))
-
-val poly = ring(
-  """
-    |(1/6)*y*z + (1/6)*y^3*z^2 - (1/2)*y^6*z^5 - (1/2)*y^8*z^6
-    |-(1/3)*x*z - (1/3)*x*y^2*z^2 + x*y^5*z^5 + x*y^7*z^6
-    |+(1/9)*x^2*y^2*z - (1/3)*x^2*y^7*z^5 - (2/9)*x^3*y*z
-    |+(2/3)*x^3*y^6*z^5 - (1/2)*x^6*y - (1/2)*x^6*y^3*z
-    |+x^7 + x^7*y^2*z - (1/3)*x^8*y^2 + (2/3)*x^9*y
-  """.stripMargin)
-
-val factors = Factor(poly)
-
-println(factors)
-```
-
-------------------------------------------------------------------------
 
 Polynomial rings over *Z* and *Q*:
 
@@ -289,7 +135,7 @@ GF(7, 10, "x")
 GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
 ```
 
-Fractional fields:
+Fields of rational functions:
 
 ``` scala
 // Field of fractions of univariate polynomials Z[x]
@@ -298,50 +144,297 @@ Frac(UnivariateRing(Z, "x"))
 Frac(MultivariateRingZp64(19, Array("x", "y", "z")))
 ```
 
-------------------------------------------------------------------------
+### Univariate polynomials
 
-Ring of univariate polynomials over elements of Galois field *GF(7^3)\[x\]*:
+Some algebra in Galois field *GF(17,9)*:
 
 ``` scala
-// Elements of GF(7^3) are represented as polynomials
+// Galois field GF(17, 9) with irreducible 
+// poly in Z/17[t] generated automaticaly
+implicit val ring = GF(17, 9, "t")
+
+// pick some random field element
+val a = ring.randomElement()
+// raise field element to the power of 1000
+val b = a.pow(1000)
+// reciprocal of field element
+val c = 1 / b
+
+assert ( b * c === 1)
+
+// explicitly parse field element from string:
+// input poly will be automatically converted to
+// element of GF(17, 9) (reduced modulo field generator)
+val d = ring("1 + t + t^2 + t^3 + 15 * t^999")
+// do some arbitrary math ops in the field
+val some = a / (b + c) + a.pow(6) - a * b * c * d
+```
+
+------------------------------------------------------------------------
+
+Extended GCD in *Z_{17}[x]*:
+
+``` scala
+// polynomial ring Z/17[x]
+implicit val ring = UnivariateRingZp64(17, "x")
+// parse ring element
+val x = ring("x")
+
+// construct some polynomials
+val poly1 = 1 + x + x.pow(2) + x.pow(3)
+val poly2 = 1 + 2 * x + 9 * x.pow(2)
+
+// compute (gcd, s, t) such that s * poly1 + t * poly2 = gcd
+val Array(gcd, s, t) = PolynomialExtendedGCD(poly1, poly2)
+assert (s * poly1 + t * poly2 == gcd)
+
+println((gcd, s, t))
+```
+
+------------------------------------------------------------------------
+
+Factor polynomial in *Z_{17}[x]*:
+
+``` scala
+// polynomial ring Z/17[x]
+implicit val ring = UnivariateRingZp64(17, "x")x
+
+// parse polynomial from string
+val poly = ring("4 + 8*x + 12*x^2 + 5*x^5 - x^6 + 10*x^7 + x^8")
+
+// factorize poly
+val factors = Factor(poly)
+
+println(factors)
+```
+
+Coefficient rings with arbitrary large characteristic are available:
+
+
+``` scala
+// coefficient ring Z/1237940039285380274899124357 (the next prime to 2^100)
+val modulus = Z("1267650600228229401496703205653")
+val cfRing  = Zp(modulus)
+
+// ring Z/1237940039285380274899124357[x]
+implicit val ring = UnivariateRing(cfRing, "x")
+val poly = ring("4 + 8*x + 12*x^2 + 5*x^5 + 16*x^6 + 27*x^7 + 18*x^8")
+
+// factorize poly
+println(Factor(poly))
+```
+
+(large primes can be generated with `BigPrimes.nextPrime` method, see [Prime numbers](http://rings.readthedocs.io/en/latest/guide.html#ref-primes)).
+
+
+------------------------------------------------------------------------
+
+Ring of univariate polynomials over elements of Galois field *GF(7,3)[x]*:
+
+``` scala
+// elements of coefficient field GF(7,3) are represented as polynomials
 // over "z" modulo irreducible polynomial "1 + 3*z + z^2 + z^3"
 val cfRing = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
 
 assert(cfRing.characteristic().intValue() == 7)
 assert(cfRing.cardinality().intValue() == 343)
 
-// Ring GF(7^3)[x]
+// polynomial ring GF(7^3)[x]
 implicit val ring = UnivariateRing(cfRing, "x")
 
-// Coefficients of polynomials in GF(7^3)[x] are elements of GF(7^3)
+// parse poly in GF(7^3)[x] from string
+// coefficients of polynomials in GF(7,3)[x] are elements
+// of GF(7,3) that is polynomials over "z"
 val poly = ring("1 - (1 - z^3) * x^6 + (1 - 2*z) * x^33 + x^66")
 
-// factorize poly (in this examples there will be 9 factors)
+// factorize poly
 val factors = Factor(poly)
 println(s"${ring show factors}")
 ```
 
-------------------------------------------------------------------------
+### Multivariate polynomials
 
-Ring of multivariate polynomials over elements of Galois field *GF(7^3)\[x, y, z\]*:
+Some math with multivariate polynomials from *Z[x, y, z]*:
 
 ``` scala
-// Elements of GF(7^3) are represented as polynomials
+// ring Z[x, y, z]
+implicit val ring = MultivariateRing(Z, Array("x", "y", "z")) 
+// parse some ring elements
+val (x, y, z) = ring("x", "y", "z") 
+
+// construct some polynomials using different math ops
+val a = (x + y + z).pow(2) - 1 
+val b = (x - y - z - 1).pow(2) + x + y + z - 1 
+val c = (a + b + 1).pow(9) - a - b - 1
+
+// reduce c modulo a and b (multivariate division with remainder)
+val (div1, div2, rem) = c /%/% (a, b)
+```
+
+------------------------------------------------------------------------
+
+Multivariate GCD in *Z[a, b, c]*:
+
+``` scala
+// ring Z[a, b, c]
+implicit val ring = MultivariateRing(Z, Array("a", "b", "c"))
+
+// parse polynomials from strings
+val poly1 = ring("-b-b*c-b^2+a+a*c+a^2")
+val poly2 = ring("b^2+b^2*c+b^3+a*b^2+a^2+a^2*c+a^2*b+a^3")
+
+// compute multivariate GCD
+val gcd   = PolynomialGCD(poly1, poly2)
+assert (poly1 % gcd === 0)
+assert (poly2 % gcd === 0)
+println(gcd)
+```
+
+------------------------------------------------------------------------
+
+Factor polynomial in *Z_{2}[x, y, z]*:
+
+``` scala
+// ring Z/2[x, y, z]
+implicit val ring = MultivariateRingZp64(2, Array("x", "y", "z"))
+val (x, y, z) = ring("x", "y", "z")
+
+// factorize poly
+val factors = Factor(1 + (1 + x + y + z).pow(2) + (x + y + z).pow(4))
+println(factors)
+```
+
+------------------------------------------------------------------------
+
+Factor polynomial in *Z[a, b, c]*:
+
+``` scala
+// ring Z[a, b, c]
+implicit val ring = MultivariateRing(Z, Array("a", "b", "c"))
+val (a, b, c) = ring("a", "b", "c")
+
+// factorize poly
+val factors = Factor(1 - (1 + a + b + c).pow(2) - (2 + a + b + c).pow(3))
+println(ring show factors)
+```
+
+------------------------------------------------------------------------
+
+Factor polynomial in *Q[x, y, z]*:
+
+``` scala
+// ring Q[x, y, z]
+implicit val ring = MultivariateRing(Q, Array("x", "y", "z"))
+
+// parse some poly from string
+val poly = ring(
+  """
+    |(1/6)*y*z + (1/6)*y^3*z^2 - (1/2)*y^6*z^5 - (1/2)*y^8*z^6
+    |-(1/3)*x*z - (1/3)*x*y^2*z^2 + x*y^5*z^5 + x*y^7*z^6
+    |+(1/9)*x^2*y^2*z - (1/3)*x^2*y^7*z^5 - (2/9)*x^3*y*z
+    |+(2/3)*x^3*y^6*z^5 - (1/2)*x^6*y - (1/2)*x^6*y^3*z
+    |+x^7 + x^7*y^2*z - (1/3)*x^8*y^2 + (2/3)*x^9*y
+  """.stripMargin)
+
+// factorize poly
+val factors = Factor(poly)
+println(factors)
+```
+
+------------------------------------------------------------------------
+
+Ring of multivariate polynomials over elements of Galois field *GF(7,3)[x, y, z]*:
+
+``` scala
+// elements of GF(7,3) are represented as polynomials
 // over "z" modulo irreducible polynomial "1 + 3*z + z^2 + z^3"
 val cfRing = GF(UnivariateRingZp64(7, "z")("1 + 3*z + z^2 + z^3"), "z")
-// Ring GF(7^3)[x]
+// ring GF(7,3)[a,b,c]
 implicit val ring = MultivariateRing(cfRing, Array("a", "b", "c"))
 
-// Coefficients of polynomials in GF(7^3)[x] are elements of GF(7^3)
+// parse poly in GF(7^3)[a,b,c] from string
+// coefficients of polynomials in GF(7,3)[a,b,c] are elements
+// of GF(7,3) that is polynomials over "z"
 val poly = ring("1 - (1 - z^3) * a^6*b + (1 - 2*z) * c^33 + a^66")
+
+//factorize poly
+println(Factor(poly))
+```
+
+
+### Ideals and Groebner bases
+
+Construct some ideal and check its properties:
+
+``` scala
+// ring Z/17[x,y,z]
+implicit val ring = MultivariateRingZp64(17, Array("x", "y", "z"))
+val (x, y, z) = ring("x", "y", "z")
+
+// create ideal with two generators using GREVLEX monomial order for underlying Groebner basis
+val I = Ideal(ring, Seq(x.pow(2) + y.pow(12) - z, x.pow(2) * z + y.pow(2) - 1), GREVLEX)
+// I is proper ideal
+assert(I.isProper)
+
+// get computed Groebner basis
+val gb = I.groebnerBasis
+println(gb)
+
+// check some ideal properties
+assert(I.dimension == 1)
+assert(I.degree == 36)
+```
+
+Unions, intersections and quotients of ideals:
+
+``` scala
+// create another ideal with only one generator
+val J = Ideal(ring, Seq(x.pow(4) * y.pow(4) + 1), GREVLEX)
+// J is principal ideal
+assert(J.isPrincipal)
+
+val union = I union J
+// union is zero dimensional ideal
+assert(union.dimension == 0)
+
+val intersection = I intersection J
+// intersection is still 2-dimensional
+assert(intersection.dimension == 2)
+
+// yet another ideal
+val K = Ideal(ring, Seq(z * x.pow(4) - z * y.pow(14) + y * z.pow(16), (x + y + z).pow(4)), GREVLEX)
+// compute complicated quotient ideal
+val quotient = (I * J * K) :/ times
+assert(quotient == K) 
 ```
 
 
 ------------------------------------------------------------------------
 
+Construct lexicographic Gröbner basis to solve a system of equations:
+
+``` scala
+// ring Q[a, b, c]
+implicit val ring = MultivariateRing(Q, Array("x", "y", "z"))
+
+// parse some polynomials from strings
+val a = ring("8*x^2*y^2 + 5*x*y^3 + 3*x^3*z + x^2*y*z")
+val b = ring("x^5 + 2*y^3*z^2 + 13*y^2*z^3 + 5*y*z^4")
+val c = ring("8*x^3 + 12*y^3 + x*z^2 + 3")
+val d = ring("7*x^2*y^4 + 18*x*y^3*z^2 + y^3*z^3")
+
+// construct ideal with Groebner basis in LEX order
+val ideal = Ideal(ring, Seq(a, b, c, d), LEX)
+// it is very simple: <z^2, x, 1+4*y^3>
+println(ideal)
+```
+
+
+### Programming
+
 Implement generic function for solving linear Diophantine equations:
 
-```scala
+``` scala
 /**
   * Solves equation \sum f_i s_i  = gcd(f_1, \dots, f_N) for given f_i and unknown s_i
   * @return a tuple (gcd, solution)
@@ -355,7 +448,7 @@ def solveDiophantine[E](fi: Seq[E])(implicit ring: Ring[E]) =
 
 Implement generic function for computing partial fraction decomposition:
 
-```scala
+``` scala
 /** Computes partial fraction decomposition of given rational */
 def apart[E](frac: Rational[E]) = {
   implicit val ring: Ring[E] = frac.ring
@@ -369,10 +462,9 @@ def apart[E](frac: Rational[E]) = {
 }
 ```
 
-
 Apply that function to elements of different rings:
 
-```scala
+``` scala
 // partial fraction decomposition for rationals
 // gives List(184/479, (-10)/13, 1/8, (-10)/47, 1)
 val qFracs = apart( Q("1234213 / 2341352"))
@@ -383,7 +475,6 @@ val ufRing = Frac(UnivariateRingZp64(17, "x"))
 val pFracs = apart( ufRing("1 / (3 - 3*x^2 - x^3 + x^5)") )
 ```
 
-
 ------------------------------------------------------------------------
 
 Implement Lagrange method for univariate interpolation:
@@ -392,7 +483,7 @@ Implement Lagrange method for univariate interpolation:
     p(x) = \sum_i p(x_i) \Pi_{j \ne i} \frac{x_{\phantom{i}} - x_j}{x_i -x_j}
 ```
 
-```scala
+``` scala
 /** Lagrange polynomial interpolation formula */
 def interpolate[Poly <: IUnivariatePolynomial[Poly], Coef]
     (points: Seq[(Coef, Coef)])
@@ -411,11 +502,9 @@ def interpolate[Poly <: IUnivariatePolynomial[Poly], Coef]
     }
 ```
 
+Interpolate polynomial from *Frac(Z_{13}[a,b,c])[x]*:
 
-Interpolate polynomial from `Frac(Z_{13}[a,b,c])[x]`:
-
-
-```scala
+``` scala
 // coefficient ring Frac(Z/13[a,b,c])
 val cfRing = Frac(MultivariateRingZp64(2, Array("a", "b", "c")))
 val (a, b, c) = cfRing("a", "b", "c")
@@ -426,6 +515,7 @@ val data = Seq(a -> b, b -> c, c -> a)
 val poly = interpolate(data)
 assert(data.forall { case (p, v) => poly.eval(p) == v })
 ```
+
 
 Highlighted benchmarks
 ----------------------
@@ -590,19 +680,19 @@ Index of algorithms implemented in Rings
 
 25. *Modular GCD over Z (small primes version)*:
 
-    > - [MultivariateGCD.ModularGCDInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>)
+    > - [MultivariateGCD.ModularGCDInZ](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
 26. *Kaltofen's & Monagan's generic modular GCD with sparse interpolation* (\[KalM99\])
 
     used for computing multivariate GCD over finite fields of very small cardinality:
 
-    > - [MultivariateGCD.KaltofenMonaganSparseModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>)
+    > - [MultivariateGCD.KaltofenMonaganSparseModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
 27. *Kaltofen's & Monagan's generic modular GCD with EEZ-GCD for modular images* (\[KalM99\])
 
     used for computing multivariate GCD over finite fields of very small cardinality:
 
-    > - [MultivariateGCD.KaltofenMonaganEEZModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java>)
+    > - [MultivariateGCD.KaltofenMonaganEEZModularGCDInGF](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java)
 
 28. *Multivariate square-free factorization in zero characteristic (Yun's algorithm)* (\[LeeM13\]):
 
@@ -644,6 +734,27 @@ Index of algorithms implemented in Rings
 
     > -  [MultivariateInterpolation](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateInterpolation.java)
 
+36. *Buchberger algorihm for Groebner basis* (\[Buch76\], \[BecW93\], \[CLOS97\])
+
+    with Gebauer-Moller installation of Buchberger criteria (\[GebM88\], \[BecW93\]) and sugar strategy for lexicographic orders (\[GMNR88\]):
+
+    > - [GroebnerBasis.BuchbergerGB](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java)
+
+37. *Faugere's F4 algorithm for Groebner basis* (\[Faug99\])
+
+    with fast sparse linear algebra \[FauL10\] and simplification algoritm from \[JouV11\]:
+
+    > - [GroebnerBasis.F4GB](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java)
+
+38. *Hilbert-Poincare series and Hilbert-driven methods for Groebner bases* (\[Trav96\]):
+
+    > - [GroebnerBasis.HilbertGB](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java)
+
+39. *Modular Groebner bases in Z* (\[Arno03\]):
+
+    > - [GroebnerBasis.ModularGB](https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java)
+
+
 ### References
 
  * `[GaGe03]` J von zur Gathen and J Gerhard. Modern computer algebra (2 ed.). Cambridge University Press, 2003.
@@ -663,6 +774,16 @@ Index of algorithms implemented in Rings
  * `[Bern99]` L Bernardin. Factorization of Multivariate Polynomials over Finite Fields. PhD thesis, ETH Zurich, 1999.
  * `[LeeM13]` M M-D Lee, Factorization of multivariate polynomials,  Ph.D. thesis, University of Kaiserslautern, 2013
  * `[Kalt85]` E Kaltofen. Sparse Hensel lifting. In EUROCAL 85 European Conf. Comput. Algebra Proc. Vol. 2, pages 4–17, 1985.
+ * `[Trav96]` C Traverso, Hilbert Functions and the Buchberger Algorithm, J. Symbolic Comp., 22(4):355–376, 1996.
+ * `[Faug99]` J-C Faugere, A new efficient algorithm for computing Gröbner bases (F4), Journal of Pure and Applied Algebra. Elsevier Science. 139 (1): 61–88, 1999
+ * `[FauL10]` J-C Faugere, S Lachartre, Parallel Gaussian elimination for Gröbner bases computations in finite fields, PASCO (2010)
+ * `[JouV11]` A Joux, V Vitse, A Variant of the F4 Algorithm. In: Kiayias A. (eds) Topics in Cryptology – CT-RSA 2011. CT-RSA 2011. Lecture Notes in Computer Science, vol 6558. Springer, Berlin, Heidelberg
+ * `[Buch76]` B Buchberger, Theoretical Basis for the Reduction of Polynomials to Canonical Forms, ACM SIGSAM Bulletin. ACM. 10 (3): 19–29
+ * `[GebM88]` R Gebauer and H Moller, On an Installation of Buchberger’s Algorithm, Journal of Symbolic Computation, 6(2 and 3):275–286, October/December 1988
+ * `[GMNR88]` A Giovini, T Mora, G Niesi, L Robbiano and C Traverso, One sugar cube, please, or Selection strategies in the Buchberger Algorithm. In S. M. Watt, editor, Proceedings of the 1991 International Symposium on Symbolic and Algebraic Computation. ISSAC’ 91, ACM Press, 1991.
+ * `[BecW93]` T Becker and V Weispfenning, Groebner Bases, a Computationnal Approach to Commutative Algebra. Graduate Texts in Mathematics. Springer-Verlag, 1993.
+ * `[CLOS97]` D Cox, J Little and D O’Shea, Ideals, Varieties, and Algorithms: An Introduction to Computational Algebraic Geometry and Commutative Algebra, Springer, 1997
+ * `[Arno03]` E Arnold, Modular algorithms for computing Gröbner bases, Journal of Symbolic Computation Vol. 35, Issue 4, April 2003, Pages 403-419
 
 ------------------------------------------------------------------------
 

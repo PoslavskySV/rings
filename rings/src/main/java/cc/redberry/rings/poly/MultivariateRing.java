@@ -66,6 +66,17 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
     }
 
     /**
+     * Creates multivariate polynomial over the same ring as this with the single monomial
+     *
+     * @param term the monomial
+     * @return multivariate polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public Poly create(DegreeVector term) {
+        return factory.create(term);
+    }
+
+    /**
      * Generates random multivariate polynomial
      *
      * @param degree maximal degree of the result

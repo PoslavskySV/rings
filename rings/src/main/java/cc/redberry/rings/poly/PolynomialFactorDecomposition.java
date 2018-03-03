@@ -137,7 +137,7 @@ public final class PolynomialFactorDecomposition<Poly extends IPolynomial<Poly>>
         return this;
     }
 
-    public <OthPoly extends IPolynomial<OthPoly>> PolynomialFactorDecomposition<OthPoly> map(Function<Poly, OthPoly> mapper) {
+    public <OthPoly extends IPolynomial<OthPoly>> PolynomialFactorDecomposition<OthPoly> mapTo(Function<Poly, OthPoly> mapper) {
         return of(mapper.apply(unit), factors.stream().map(mapper).collect(Collectors.toList()), exponents);
     }
 

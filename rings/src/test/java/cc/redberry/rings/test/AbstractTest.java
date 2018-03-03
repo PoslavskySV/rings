@@ -22,6 +22,7 @@ public class AbstractTest {
 
     @Before
     public void beforeMethod() throws Exception {
+        System.out.println("=====> " + name.getMethodName());
         if (getClass().getMethod(name.getMethodName()).isAnnotationPresent(TimeConsuming.class))
             Assume.assumeTrue(runTimeConsumingTests());
         if (getClass().getMethod(name.getMethodName()).isAnnotationPresent(Benchmark.class))

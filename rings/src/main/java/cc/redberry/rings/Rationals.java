@@ -99,12 +99,12 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
-    public Rational getZero() {
+    public Rational<E> getZero() {
         return zero;
     }
 
     @Override
-    public Rational getOne() {
+    public Rational<E> getOne() {
         return one;
     }
 

@@ -1,25 +1,29 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.util.ArraysUtil;
 
 /**
- * Monomial with machine integer coefficient.
+ * Monomial with coefficient from Zp with p < 2^64
  *
+ * @see cc.redberry.rings.poly.multivar.IMonomialAlgebra.MonomialAlgebraZp64
  * @since 1.0
  */
-public final class MonomialZp64 extends DegreeVector<MonomialZp64> {
-    private static final long serialVersionUID = 1L;
-    /** The coefficient */
+public final class MonomialZp64 extends AMonomial<MonomialZp64> {
+    /** the coefficient */
     public final long coefficient;
 
     /**
-     * Creates monomial with specified degree vector and coefficient
-     *
-     * @param exponents   the degree vector
-     * @param totalDegree sum of exponents
+     * @param degreeVector DegreeVector
+     * @param coefficient  the coefficient
+     */
+    public MonomialZp64(DegreeVector degreeVector, long coefficient) {
+        super(degreeVector);
+        this.coefficient = coefficient;
+    }
+
+    /**
+     * @param exponents   exponents
+     * @param totalDegree total degree (sum of exponents)
      * @param coefficient the coefficient
      */
     public MonomialZp64(int[] exponents, int totalDegree, long coefficient) {
@@ -28,9 +32,7 @@ public final class MonomialZp64 extends DegreeVector<MonomialZp64> {
     }
 
     /**
-     * Creates monomial with specified degree vector and coefficient
-     *
-     * @param exponents   the degree vector
+     * @param exponents   exponents
      * @param coefficient the coefficient
      */
     public MonomialZp64(int[] exponents, long coefficient) {
@@ -38,123 +40,43 @@ public final class MonomialZp64 extends DegreeVector<MonomialZp64> {
         this.coefficient = coefficient;
     }
 
-    /**
-     * Creates monomial with specified number of variables and one single variable with non zero exponent
-     *
-     * @param nVariables  the number of variables
-     * @param variable    the only one variable with non zero exponent
-     * @param exponent    the exponent
-     * @param coefficient the coefficient
-     */
-    public MonomialZp64(int nVariables, int variable, int exponent, long coefficient) {
-        super(nVariables, variable, exponent);
-        this.coefficient = coefficient;
-    }
-
-    /** Reduces the coefficient modulo new modulus */
-    public MonomialZp64 setRing(IntegersZp64 newDomain) {
-        long e = newDomain.modulus(coefficient);
-        return coefficient == e ? this : new MonomialZp64(exponents, totalDegree, e);
-    }
-
-    /** Set's the coefficient to {@code newRing.valueOf(coefficient) } */
-    public <E> Monomial<E> setRing(Ring<E> newRing) {
-        E e = newRing.valueOf(coefficient);
-        return new Monomial<>(exponents, totalDegree, e);
-    }
-
-    @Override
-    public MonomialZp64 setDegreeVector(int[] newDegree, int newTotalDegree) {
-        return new MonomialZp64(newDegree, newTotalDegree, coefficient);
+    public MonomialZp64(int nVariables, long coefficient) {
+        this(new int[nVariables], 0, coefficient);
     }
 
     @Override
     public MonomialZp64 setCoefficientFrom(MonomialZp64 oth) {
-        return new MonomialZp64(exponents, totalDegree, oth.coefficient);
+        if (coefficient == oth.coefficient)
+            return this;
+        return new MonomialZp64(this, oth.coefficient);
     }
 
-    /** Set's monomial coefficient to a specified value */
-    public MonomialZp64 setCoefficient(long value) {
-        return value == coefficient ? this : new MonomialZp64(exponents, totalDegree, value);
+    @Override
+    public MonomialZp64 setDegreeVector(DegreeVector oth) {
+        if (this == oth)
+            return this;
+        if (oth == null)
+            return null;
+        if (oth.exponents == exponents)
+            return this;
+        return new MonomialZp64(oth, coefficient);
     }
 
-    /** Negates the coefficient */
-    public MonomialZp64 negate(IntegersZp64 ring) {
-        return setCoefficient(ring.negate(coefficient));
+    @Override
+    public MonomialZp64 setDegreeVector(int[] exponents, int totalDegree) {
+        if (this.exponents == exponents)
+            return this;
+        return new MonomialZp64(exponents, totalDegree, coefficient);
     }
 
-    /** Multiplies this monomial by {@code oth} and sets the resulting coefficient to a specified value */
-    public MonomialZp64 multiply(DegreeVector oth, long coefficient) {
-        int[] newExponents = new int[exponents.length];
-        for (int i = 0; i < exponents.length; i++)
-            newExponents[i] = exponents[i] + oth.exponents[i];
-        return new MonomialZp64(newExponents, totalDegree + oth.totalDegree, coefficient);
-    }
-
-    /**
-     * Divides this by {@code oth} and sets the resulting coefficient to a specified value or returns null if exact
-     * division is not possible
-     */
-    public MonomialZp64 divide(DegreeVector oth, long coefficient) {
-        int[] newExponents = new int[exponents.length];
-        for (int i = 0; i < exponents.length; i++) {
-            newExponents[i] = exponents[i] - oth.exponents[i];
-            if (newExponents[i] < 0)
-                return null;
-        }
-        return new MonomialZp64(newExponents, totalDegree - oth.totalDegree, coefficient);
-    }
-
-    /**
-     * Removes specified variable from degree vector  (number of variables will be reduced)
-     *
-     * @param variable    the variable
-     * @param coefficient the new coefficient
-     */
-    public MonomialZp64 without(int variable, long coefficient) {
-        if (exponents.length == 1) {
-            assert variable == 0;
-            return new MonomialZp64(new int[0], 0, coefficient);
-        }
-        return new MonomialZp64(ArraysUtil.remove(exponents, variable), totalDegree - exponents[variable], coefficient);
-    }
-
-    /**
-     * Set exponent of specified variable to zero and the coefficient to a new value
-     *
-     * @param variable    the variable
-     * @param coefficient the new coefficient
-     */
-    public MonomialZp64 setZero(int variable, long coefficient) {
-        if (exponents.length == 1) {
-            assert variable == 0;
-            return new MonomialZp64(new int[1], 0, coefficient);
-        }
-        int[] newExponents = exponents.clone();
-        newExponents[variable] = 0;
-        return new MonomialZp64(newExponents, totalDegree - exponents[variable], coefficient);
-    }
-
-    /**
-     * Set exponents of specified variables to zero and the coefficient to a new value
-     *
-     * @param variables   the variables
-     * @param coefficient the new coefficient
-     */
-    public MonomialZp64 setZero(int[] variables, long coefficient) {
-        if (variables.length == 0)
-            return setCoefficient(coefficient);
-        int[] newExponents = exponents.clone();
-        int totalDeg = totalDegree;
-        for (int var : variables) {
-            totalDeg -= exponents[var];
-            newExponents[var] = 0;
-        }
-        return new MonomialZp64(newExponents, totalDeg, coefficient);
+    public MonomialZp64 setCoefficient(long c) {
+        if (coefficient == c)
+            return this;
+        return new MonomialZp64(exponents, totalDegree, c);
     }
 
     public Monomial<BigInteger> toBigMonomial() {
-        return new Monomial<>(exponents, totalDegree, BigInteger.valueOf(coefficient));
+        return new Monomial<>(this, BigInteger.valueOf(coefficient));
     }
 
     @Override
@@ -171,19 +93,18 @@ public final class MonomialZp64 extends DegreeVector<MonomialZp64> {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + Long.hashCode(coefficient);
+        result = 31 * result + (int) (coefficient ^ (coefficient >>> 32));
         return result;
     }
 
-    /**
-     * Creates monomial with all zero exponents and specified coefficient (constant monomial)
-     *
-     * @param nVariables  the number of variables
-     * @param coefficient the coefficient
-     * @return constant monomial with specified coefficient
-     */
-    public static MonomialZp64 withZeroExponents(int nVariables, long coefficient) {
-        int[] exponents = nVariables < zeroDegreeVectors.length ? zeroDegreeVectors[nVariables] : new int[nVariables];
-        return new MonomialZp64(exponents, 0, coefficient);
+    @Override
+    public String toString() {
+        String dvString = super.toString();
+        String cfString = Long.toString(coefficient);
+        if (dvString.isEmpty())
+            return cfString;
+        if (coefficient == 1)
+            return dvString;
+        return coefficient + "*" + dvString;
     }
 }

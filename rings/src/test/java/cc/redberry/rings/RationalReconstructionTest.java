@@ -13,6 +13,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static cc.redberry.rings.Rings.Z;
+
 /**
  * @since 2.3
  */
@@ -51,5 +53,12 @@ public class RationalReconstructionTest extends AbstractTest {
             long[] re = RationalReconstruction.reconstruct(n, modulus, Math.abs(num) + 10, Math.abs(den) + 10);
             Assert.assertEquals(n, MachineArithmetic.mod(re[0] * MachineArithmetic.modInverse(re[1], modulus), modulus));
         }
+    }
+
+    @Test
+    public void test3() throws Exception {
+        Assert.assertArrayEquals(Z.createArray(Z.valueOf(13), Z.valueOf(12)), RationalReconstruction.reconstructFareyErrorTolerant(Z.valueOf(22684), Z.valueOf(38885)));
+        Assert.assertArrayEquals(Z.createArray(Z.valueOf(-85), Z.valueOf(40)), RationalReconstruction.reconstructFareyErrorTolerant(Z.valueOf(16524), Z.valueOf(38885)));
+        Assert.assertArrayEquals(Z.createArray(Z.valueOf(91), Z.valueOf(84)), RationalReconstruction.reconstructFareyErrorTolerant(Z.valueOf(464), Z.valueOf(38885)));
     }
 }

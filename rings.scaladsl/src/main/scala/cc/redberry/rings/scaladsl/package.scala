@@ -8,7 +8,8 @@ import cc.redberry.rings.poly.PolynomialFactorDecomposition
   */
 package object scaladsl extends Predef {
 
-  type Ordering = java.util.Comparator[DegreeVector[_]]
+  type DegreeVector = poly.multivar.DegreeVector
+  type Ordering = java.util.Comparator[DegreeVector]
   type IntZ = bigint.BigInteger
 
   type IPolynomial[P <: poly.IPolynomial[P]]
@@ -20,12 +21,12 @@ package object scaladsl extends Predef {
   type UnivariatePolynomialZp64 = poly.univar.UnivariatePolynomialZp64
   type PrecomputedInverse[Poly <: IUnivariatePolynomial[Poly]] = poly.univar.UnivariateDivision.InverseModMonomial[Poly]
 
-  type DegreeVector[E <: poly.multivar.DegreeVector[E]] = poly.multivar.DegreeVector[E]
+  type AMonomial[E <: poly.multivar.AMonomial[E]] = poly.multivar.AMonomial[E]
   type MonomialZp64 = poly.multivar.MonomialZp64
   type Monomial[E] = poly.multivar.Monomial[E]
 
   type AMultivariatePolynomial[
-  T <: poly.multivar.DegreeVector[T],
+  T <: poly.multivar.AMonomial[T],
   P <: poly.multivar.AMultivariatePolynomial[T, P]]
   = poly.multivar.AMultivariatePolynomial[T, P]
   type MultivariatePolynomial[E] = poly.multivar.MultivariatePolynomial[E]

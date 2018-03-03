@@ -20,7 +20,7 @@ final class Parser {
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Ring<E> ring, ElementParser<E> eParser) {
-        return parse(input, ring, eParser, MonomialOrder.LEX);
+        return parse(input, ring, eParser, MonomialOrder.DEFAULT);
     }
 
     static <E> MultivariatePolynomial<E> parse(String input, Ring<E> ring, ElementParser<E> eParser, Comparator<DegreeVector> ordering, String... variables) {
@@ -78,8 +78,8 @@ final class Parser {
         Monomial<E> toMonomialTerm(String[] map) {
             int[] degrees = new int[map.length];
             for (int i = 0; i < variables.length; i++)
-                degrees[ArraysUtil.firstIndexOf(variables[i], map)] = exponents[i];
-            return new Monomial<>(degrees, coefficient);
+                degrees[ArraysUtil.firstIndexOf(variables[i], map)] += exponents[i];
+            return new Monomial<>(degrees, ArraysUtil.sum(degrees), coefficient);
         }
 
         @Override
