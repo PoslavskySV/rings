@@ -6,10 +6,7 @@ import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.util.ArraysUtil;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -1050,6 +1047,18 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      */
     public <T> UnivariatePolynomial<T> mapCoefficients(Ring<T> ring, Function<E, T> mapper) {
         return stream().map(mapper).collect(new PolynomialCollector<>(ring));
+    }
+
+    /**
+     * Applies transformation function to this and returns the result. This method is equivalent of {@code
+     * stream().map(mapper).collect(new PolynomialCollector<>(ring))}.
+     *
+     * @param ring   ring of the new polynomial
+     * @param mapper function that maps coefficients of this to coefficients of the result
+     * @return a new polynomial with the coefficients obtained from this by applying {@code mapper}
+     */
+    public UnivariatePolynomialZp64 mapCoefficients(IntegersZp64 ring, ToLongFunction<E> mapper) {
+        return UnivariatePolynomialZp64.create(ring, stream().mapToLong(mapper).toArray());
     }
 
     private static final class ListToPoly<E> implements Function<List<E>, UnivariatePolynomial<E>> {

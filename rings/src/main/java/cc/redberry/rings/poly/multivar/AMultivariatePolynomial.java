@@ -422,7 +422,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @param variables the variables
      */
-    public final Poly dropSelectVariables(int[] variables) {
+    public final Poly dropSelectVariables(int... variables) {
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
             newData.add(term.dropSelect(variables));
@@ -779,7 +779,20 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
      * variables} that is polynomial in R[variables][other_variables]
      */
-    public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int... variables);
+    public final MultivariatePolynomial<Poly> asOverMultivariateEliminate(int... variables) {
+        return asOverMultivariateEliminate(variables, ordering);
+    }
+
+    /**
+     * Converts this to a multivariate polynomial with coefficients being multivariate polynomials polynomials over
+     * {@code variables} that is polynomial in R[variables][other_variables]
+     *
+     * @param variables the variables to separate
+     * @param prdering  monomial order to use for result
+     * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
+     * variables} that is polynomial in R[variables][other_variables]
+     */
+    public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int[] variables, Comparator<DegreeVector> prdering);
 
     /**
      * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly
@@ -999,7 +1012,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     /** check whether number of variables is the same */
     final void checkSameDomainWith(Term oth) {
         if (nVariables != oth.exponents.length)
-            throw new IllegalArgumentException("Combining multivariate polynomials from different fields");
+            throw new IllegalArgumentException("Combining multivariate polynomials from different fields: this.nVariables = " + nVariables + " oth.nVariables = " + oth.nVariables());
     }
 
     /**

@@ -33,7 +33,7 @@ import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.linear.LinearSolver.SystemInfo.*;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
-import static cc.redberry.rings.poly.multivar.MonomialOrder.GRLEX;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
 
 /**
  * Groebner bases.
@@ -621,13 +621,6 @@ public final class GroebnerBasis {
                 return c;
             return a.ordering.compare(a.lt(), b.lt());
         }
-    }
-
-    /** whether monomial order is graded */
-    static boolean isGradedOrder(Comparator<DegreeVector> monomialOrder) {
-        return monomialOrder == GREVLEX
-                || monomialOrder == GRLEX
-                || monomialOrder instanceof GrevLexWithPermutation;
     }
 
     /** whether this monomial order is OK for use with homogenization-dehomogenization algorithms */

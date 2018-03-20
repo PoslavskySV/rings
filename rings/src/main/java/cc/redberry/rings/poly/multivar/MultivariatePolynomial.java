@@ -281,7 +281,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public MultivariatePolynomial<MultivariatePolynomial<E>> asOverMultivariateEliminate(int... variables) {
+    public MultivariatePolynomial<MultivariatePolynomial<E>> asOverMultivariateEliminate(int[] variables, Comparator<DegreeVector> ordering) {
         variables = variables.clone();
         Arrays.sort(variables);
         int[] restVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(nVariables), variables);
@@ -887,6 +887,16 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             uData[uExp] = ring.add(uData[uExp], el.coefficient);
         }
         return UnivariatePolynomial.createUnsafe(ring, uData);
+    }
+
+    /**
+     * Evaluates this polynomial at specified points
+     */
+    @SuppressWarnings("unchecked")
+    public E evaluate(E... values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+        return evaluate(ArraysUtil.sequence(0, nVariables), values).cc();
     }
 
     /**

@@ -169,7 +169,7 @@ public final class HenselLifting {
             this.values = values;
             this.ring = ring;
             this.ordering = ordering;
-            this.precomputedPowers = new lPrecomputedPowersHolder(nVariables, ArraysUtil.sequence(1, nVariables), values, ring);
+            this.precomputedPowers = MultivariatePolynomialZp64.mkPrecomputedPowers(nVariables, ring, ArraysUtil.sequence(1, nVariables), values);
             this.linearPowers = new lUSubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
                 linearPowers[i] = new lUSubstitution(UnivariatePolynomialZ64.create(-values[i], 1).modulus(ring), i + 1, nVariables, ordering);

@@ -21,6 +21,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
@@ -2229,6 +2232,31 @@ public class MultivariateGCDTest extends AMultivariateTest {
         MultivariatePolynomialZp64 bg = b.clone().multiply(g);
 
         System.out.println(PolynomialGCD(ag, bg));
+    }
+
+    @Ignore
+    @Test
+    // todo remove
+    public void testHugePoly1() throws Exception {
+        int N = 20;
+        MultivariateRing<MultivariatePolynomialZp64> R = Rings.MultivariateRingZp64(3, SmallPrimes.nextPrime(1 << 25));
+
+        for (int j = 1; j < 100; ++j) {
+            BufferedReader in = Files.newBufferedReader(Paths.get("/Users/poslavskysv/Projects/form-4.2.0/rings.tmp.in"));
+            for (int i = 1; i < 2; ++i) {
+                String s1 = in.readLine();
+                String s2 = in.readLine();
+                MultivariatePolynomialZp64 p = R.parse(s1);
+                MultivariatePolynomialZp64 q = R.parse(s2);
+                long t1 = System.nanoTime();
+                MultivariatePolynomialZp64 gcd = MultivariateGCD.ZippelGCD(p, q);
+                long t2 = System.nanoTime();
+
+                System.out.println("Total   : " + TimeUnits.nanosecondsToString(t2 - t1));
+                System.out.println();
+            }
+            in.close();
+        }
     }
 
     /* =============================================== Test data =============================================== */
