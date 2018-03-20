@@ -254,7 +254,7 @@ public final class HenselLifting {
             this.values = values;
             this.ring = ring;
             this.ordering = ordering;
-            this.precomputedPowers = new MultivariatePolynomial.PrecomputedPowersHolder<>(nVariables, ArraysUtil.sequence(1, nVariables), values, ring);
+            this.precomputedPowers = MultivariatePolynomial.mkPrecomputedPowers(nVariables, ring, ArraysUtil.sequence(1, nVariables), values);
             this.linearPowers = new MultivariatePolynomial.USubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
                 linearPowers[i] = new MultivariatePolynomial.USubstitution<>(

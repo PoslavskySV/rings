@@ -8,6 +8,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -16,6 +17,7 @@ import java.util.stream.IntStream;
 import static cc.redberry.rings.bigint.BigInteger.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.*;
+import static cc.redberry.rings.util.TimeUnits.statisticsNanotime;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -168,7 +170,7 @@ public class MultivariatePolynomialTest extends AMultivariateTest {
 
         int[] evalVars = {1, 2};
         int[] raiseFactors = {2, 1};
-        MultivariatePolynomial<BigInteger> r = poly.evaluate(new PrecomputedPowersHolder<>(poly.nVariables, evalVars, new BigInteger[]{BigInteger.valueOf(4229599), BigInteger.valueOf(9)}, domain), evalVars, raiseFactors);
+        MultivariatePolynomial<BigInteger> r = poly.evaluate(evalVars, new BigInteger[]{BigInteger.valueOf(4229599).pow(2), BigInteger.valueOf(9)});
         assertEquals(parse("1694989 + 336131*a + 4996260*a^2 + 91*a^3 + a^4", domain, LEX, vars), r);
     }
 
@@ -416,5 +418,232 @@ public class MultivariatePolynomialTest extends AMultivariateTest {
         for (int i = permutation.length - 1; i >= 0; --i)
             inv[permutation[i]] = i;
         return inv;
+    }
+
+
+    @Test
+    public void testDenseRecursiveForm1() throws Exception {
+        MultivariatePolynomial<BigInteger> p = MultivariatePolynomial.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5");
+        UnivariatePolynomial recForm = p.toDenseRecursiveForm();
+        assertEquals(p, fromDenseRecursiveForm(recForm, 3, MonomialOrder.DEFAULT));
+    }
+
+    @Test
+    public void testDenseRecursiveForm2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        for (int i = 0; i < 1000; ++i) {
+            MultivariatePolynomial<BigInteger> p = RandomMultivariatePolynomials.randomPolynomial(
+                    rnd.nextInt(2, 7),
+                    rnd.nextInt(1, 50),
+                    rnd.nextInt(1, 100),
+                    Rings.Z, MonomialOrder.DEFAULT, rnd.getRandomGenerator());
+            UnivariatePolynomial recForm = p.toDenseRecursiveForm();
+            assertEquals(p, fromDenseRecursiveForm(recForm, p.nVariables, MonomialOrder.DEFAULT));
+        }
+    }
+
+    @Test
+    public void testDenseRecursiveEvaluate1() throws Exception {
+        MultivariatePolynomial<BigInteger> p = MultivariatePolynomial.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5");
+        UnivariatePolynomial recForm = p.toDenseRecursiveForm();
+        BigInteger[] values = {BigInteger.valueOf(11), BigInteger.valueOf(2), BigInteger.valueOf(3)};
+        assertEquals(p.evaluate(values), evaluateDenseRecursiveForm(recForm, p.nVariables, values));
+    }
+
+    @Test
+    public void testDenseRecursiveEvaluate2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        Ring<BigInteger> ring = Rings.Zp(17);
+        DescriptiveStatistics
+                recStat = new DescriptiveStatistics(),
+                recEvalStat = new DescriptiveStatistics(),
+                plainStat = new DescriptiveStatistics();
+
+        long start, elapsed;
+        int nIterations = 100;
+        int
+                nVars = 3,
+                minDeg = 30,
+                minSize = 1000;
+
+        for (int i = 0; i < nIterations; ++i) {
+            if (i == nIterations / 10)
+                Arrays.asList(recStat, recEvalStat, plainStat).forEach(DescriptiveStatistics::clear);
+
+            MultivariatePolynomial<BigInteger> p = RandomMultivariatePolynomials.randomPolynomial(
+                    nVars,
+                    rnd.nextInt(minDeg, 2 * minDeg),
+                    rnd.nextInt(minSize, 2 * minSize),
+                    ring, MonomialOrder.DEFAULT, rnd.getRandomGenerator());
+            BigInteger[] values = new BigInteger[p.nVariables];
+            for (int j = 0; j < values.length; j++)
+                values[j] = ring.randomElement(rnd.getRandomGenerator());
+
+            start = System.nanoTime();
+            UnivariatePolynomial recForm = p.toDenseRecursiveForm();
+            elapsed = System.nanoTime() - start;
+            recStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            BigInteger recVal = evaluateDenseRecursiveForm(recForm, p.nVariables, values);
+            elapsed = System.nanoTime() - start;
+
+            recStat.addValue(elapsed);
+            recEvalStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            BigInteger plainVal = p.evaluate(values);
+            elapsed = System.nanoTime() - start;
+            plainStat.addValue(elapsed);
+
+            assertEquals(plainVal, recVal);
+        }
+        System.out.println("Recursive             : " + statisticsNanotime(recStat));
+        System.out.println("Recursive (eval only) : " + statisticsNanotime(recEvalStat));
+        System.out.println("Plain                 : " + statisticsNanotime(plainStat));
+    }
+
+    @Test
+    public void testSparseRecursiveForm1() throws Exception {
+        MultivariatePolynomial<BigInteger> p = MultivariatePolynomial.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5");
+        AMultivariatePolynomial recForm = p.toSparseRecursiveForm();
+        assertEquals(p, fromSparseRecursiveForm(recForm, 3, MonomialOrder.DEFAULT));
+    }
+
+    @Test
+    public void testSparseRecursiveForm2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        for (int i = 0; i < 1000; ++i) {
+            MultivariatePolynomial<BigInteger> p = RandomMultivariatePolynomials.randomPolynomial(
+                    rnd.nextInt(2, 7),
+                    rnd.nextInt(1, 50),
+                    rnd.nextInt(1, 100),
+                    Rings.Z, MonomialOrder.DEFAULT, rnd.getRandomGenerator());
+            AMultivariatePolynomial recursiveRep = p.toSparseRecursiveForm();
+            assertEquals(p, fromSparseRecursiveForm(recursiveRep, p.nVariables, MonomialOrder.DEFAULT));
+        }
+    }
+
+    @Test
+    public void testSparseRecursiveEvaluate1() throws Exception {
+        MultivariatePolynomial<BigInteger> p = MultivariatePolynomial.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5");
+        AMultivariatePolynomial recForm = p.toSparseRecursiveForm();
+        BigInteger[] values = {BigInteger.valueOf(11), BigInteger.valueOf(2), BigInteger.valueOf(3)};
+        assertEquals(p.evaluate(values), evaluateSparseRecursiveForm(recForm, p.nVariables, values));
+    }
+
+    @Test
+    public void testSparseRecursiveEvaluate2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        Ring<BigInteger> ring = Rings.Zp(17);
+        DescriptiveStatistics
+                recStat = new DescriptiveStatistics(),
+                recEvalStat = new DescriptiveStatistics(),
+                plainStat = new DescriptiveStatistics();
+
+        long start, elapsed;
+        int nIterations = 100;
+        int
+                nVars = 3,
+                minDeg = 30,
+                minSize = 1000;
+
+        for (int i = 0; i < nIterations; ++i) {
+            if (i == nIterations / 10)
+                Arrays.asList(recStat, recEvalStat, plainStat).forEach(DescriptiveStatistics::clear);
+
+            MultivariatePolynomial<BigInteger> p = RandomMultivariatePolynomials.randomPolynomial(
+                    nVars,
+                    rnd.nextInt(minDeg, 2 * minDeg),
+                    rnd.nextInt(minSize, 2 * minSize),
+                    ring, MonomialOrder.DEFAULT, rnd.getRandomGenerator());
+            BigInteger[] values = new BigInteger[p.nVariables];
+            for (int j = 0; j < values.length; j++)
+                values[j] = ring.randomElement(rnd.getRandomGenerator());
+
+            start = System.nanoTime();
+            AMultivariatePolynomial recForm = p.toSparseRecursiveForm();
+            elapsed = System.nanoTime() - start;
+            recStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            BigInteger recVal = evaluateSparseRecursiveForm(recForm, p.nVariables, values);
+            elapsed = System.nanoTime() - start;
+
+            recStat.addValue(elapsed);
+            recEvalStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            BigInteger plainVal = p.evaluate(values);
+            elapsed = System.nanoTime() - start;
+            plainStat.addValue(elapsed);
+
+            assertEquals(plainVal, recVal);
+        }
+        System.out.println("Recursive             : " + statisticsNanotime(recStat));
+        System.out.println("Recursive (eval only) : " + statisticsNanotime(recEvalStat));
+        System.out.println("Plain                 : " + statisticsNanotime(plainStat));
+    }
+
+    @Test
+    public void testHornerForm1() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        Ring<BigInteger> ring = Rings.Zp(17);
+        DescriptiveStatistics
+                hornerStat = new DescriptiveStatistics(),
+                hornerCreateStat = new DescriptiveStatistics(),
+                plainStat = new DescriptiveStatistics();
+
+        long start, elapsed;
+        int nIterations = 100, nEvaluations = its(10, 10);
+        int
+                nVars = 5,
+                minDeg = 3250,
+                minSize = 1000;
+
+        int[] varsSeq = ArraysUtil.sequence(0, nVars);
+        for (int i = 0; i < nIterations; ++i) {
+            if (i == nIterations / 10)
+                Arrays.asList(hornerStat, hornerCreateStat, plainStat).forEach(DescriptiveStatistics::clear);
+
+            MultivariatePolynomial<BigInteger> p = RandomMultivariatePolynomials.randomPolynomial(
+                    nVars,
+                    rndd.nextInt(minDeg, 2 * minDeg),
+                    rndd.nextInt(minSize, 2 * minSize),
+                    ring, MonomialOrder.DEFAULT, rnd);
+
+            int[] variables = new int[3 + rnd.nextInt(p.nVariables - 3)];
+            BigInteger[] values = new BigInteger[variables.length];
+            ArraysUtil.shuffle(varsSeq, rnd);
+
+            System.arraycopy(varsSeq, 0, variables, 0, values.length);
+
+            start = System.nanoTime();
+            HornerForm<BigInteger> hornerForm = p.getHornerForm(variables);
+            elapsed = System.nanoTime() - start;
+            hornerStat.addValue(elapsed);
+            hornerCreateStat.addValue(elapsed);
+
+            for (int nEval = 0; nEval < nEvaluations; ++nEval) {
+                for (int j = 0; j < values.length; j++)
+                    values[j] = ring.randomElement(rnd);
+
+                start = System.nanoTime();
+                MultivariatePolynomial<BigInteger> horner = hornerForm.evaluate(values);
+                elapsed = System.nanoTime() - start;
+                hornerStat.addValue(elapsed);
+
+                start = System.nanoTime();
+                MultivariatePolynomial<BigInteger> plain = p.eliminate(variables, values);
+                elapsed = System.nanoTime() - start;
+                plainStat.addValue(elapsed);
+
+                assertEquals(plain, horner);
+            }
+        }
+        System.out.println("Horner             : " + statisticsNanotime(hornerStat));
+        System.out.println("Horner create      : " + statisticsNanotime(hornerCreateStat));
+        System.out.println("Plain              : " + statisticsNanotime(plainStat));
     }
 }

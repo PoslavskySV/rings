@@ -1010,27 +1010,27 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @param evaluationVariables variables which will be substituted
      */
     @SuppressWarnings("unchecked")
-    public HornerForm getHornerForm(int[] evaluationVariables) {
+    public HornerFormZp64 getHornerForm(int[] evaluationVariables) {
         int[] evalDegrees = ArraysUtil.select(degrees(), evaluationVariables);
         MultivariatePolynomial<MultivariatePolynomialZp64> p = asOverMultivariateEliminate(evaluationVariables);
         Ring<AMultivariatePolynomial> newRing = Rings.PolynomialRing(p.cc().toSparseRecursiveForm());
-        return new HornerForm(ring, evalDegrees, evaluationVariables.length,
+        return new HornerFormZp64(ring, evalDegrees, evaluationVariables.length,
                 p.mapCoefficients(newRing, MultivariatePolynomialZp64::toSparseRecursiveForm));
     }
 
     /**
      * A representation of multivariate polynomial specifically optimized for fast evaluation of given variables
      */
-    public static final class HornerForm {
+    public static final class HornerFormZp64 {
         private final IntegersZp64 ring;
         private final int nEvalVariables;
         private final int[] evalDegrees;
         private final MultivariatePolynomial<AMultivariatePolynomial> recForm;
 
-        private HornerForm(IntegersZp64 ring,
-                           int[] evalDegrees,
-                           int nEvalVariables,
-                           MultivariatePolynomial<AMultivariatePolynomial> recForm) {
+        private HornerFormZp64(IntegersZp64 ring,
+                               int[] evalDegrees,
+                               int nEvalVariables,
+                               MultivariatePolynomial<AMultivariatePolynomial> recForm) {
             this.ring = ring;
             this.evalDegrees = evalDegrees;
             this.nEvalVariables = nEvalVariables;
@@ -1120,21 +1120,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         return evaluateAtZero(variables);
     }
 
-    /* cached array of units */
-    private static int[][] ones = new int[16][];
-
-    private static int[] ones(int len) {
-        if (len < ones.length)
-            return ones[len];
-        else
-            return ArraysUtil.arrayOf(1, len);
-    }
-
-    static {
-        for (int i = 0; i < ones.length; i++)
-            ones[i] = ArraysUtil.arrayOf(1, i);
-    }
-
     /** substitutes {@code values} for {@code variables} */
     @SuppressWarnings("unchecked")
     MultivariatePolynomialZp64 evaluate(lPrecomputedPowersHolder powers, int[] variables) {
@@ -1205,21 +1190,20 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public MultivariatePolynomialZp64 eliminate(int[] variables, long[] values) {
         for (long value : values)
             if (value != 0)
-                return eliminate(mkPrecomputedPowers(variables, values), variables, ones(nVariables));
+                return eliminate(mkPrecomputedPowers(variables, values), variables);
 
         // <- all values are zero
         return evaluateAtZero(variables).dropVariables(variables);
     }
 
     /** substitutes {@code values} for {@code variables} */
-    @SuppressWarnings("unchecked")
-    MultivariatePolynomialZp64 eliminate(lPrecomputedPowersHolder powers, int[] variables, int[] raiseFactors) {
+    MultivariatePolynomialZp64 eliminate(lPrecomputedPowersHolder powers, int[] variables) {
         MonomialSet<MonomialZp64> newData = new MonomialSet<>(ordering);
         for (MonomialZp64 el : terms) {
             MonomialZp64 r = el;
             long value = el.coefficient;
-            for (int i = 0; i < variables.length; ++i)
-                value = ring.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
+            for (int variable : variables)
+                value = ring.multiply(value, powers.pow(variable, el.exponents[variable]));
             r = r.without(variables).setCoefficient(value);
 
             add(newData, r);

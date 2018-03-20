@@ -703,7 +703,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
             System.arraycopy(varsSeq, 0, variables, 0, values.length);
 
             start = System.nanoTime();
-            HornerForm hornerForm = p.getHornerForm(variables);
+            HornerFormZp64 hornerForm = p.getHornerForm(variables);
             elapsed = System.nanoTime() - start;
             hornerStat.addValue(elapsed);
             hornerCreateStat.addValue(elapsed);

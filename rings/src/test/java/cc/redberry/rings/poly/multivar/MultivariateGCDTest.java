@@ -22,11 +22,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
+import java.util.zip.GZIPInputStream;
 
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.AMultivariatePolynomial.renameVariables;
@@ -2234,18 +2234,14 @@ public class MultivariateGCDTest extends AMultivariateTest {
         System.out.println(PolynomialGCD(ag, bg));
     }
 
-    @Ignore
     @Test
-    // todo remove
     public void testHugePoly1() throws Exception {
-        int N = 20;
         MultivariateRing<MultivariatePolynomialZp64> R = Rings.MultivariateRingZp64(3, SmallPrimes.nextPrime(1 << 25));
-
-        for (int j = 1; j < 100; ++j) {
-            BufferedReader in = Files.newBufferedReader(Paths.get("/Users/poslavskysv/Projects/form-4.2.0/rings.tmp.in"));
-            for (int i = 1; i < 2; ++i) {
+        for (int j = 1; j < 2; ++j) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(MultivariateGCDTest.class.getClassLoader().getResourceAsStream("cc/redberry/rings/poly/multivar/HugeGCD.txt.gz"))))) {
                 String s1 = in.readLine();
                 String s2 = in.readLine();
+
                 MultivariatePolynomialZp64 p = R.parse(s1);
                 MultivariatePolynomialZp64 q = R.parse(s2);
                 long t1 = System.nanoTime();
@@ -2255,7 +2251,6 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 System.out.println("Total   : " + TimeUnits.nanosecondsToString(t2 - t1));
                 System.out.println();
             }
-            in.close();
         }
     }
 
