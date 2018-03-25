@@ -587,6 +587,15 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
     }
 
     @Test
+    public void testNonPrimeMod1() throws Exception {
+        IntegersZp64 ring = Rings.Zp64(9);
+        MultivariatePolynomialZp64 p = MultivariatePolynomialZp64.parse("3*x + 3*y + 3*z", ring);
+        System.out.println(p);
+        p.multiply(3);
+        assertTrue(p.isZero());
+    }
+
+    @Test
     public void testSparseRecursiveForm1() throws Exception {
         MultivariatePolynomialZp64 p = MultivariatePolynomialZp64.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5", Rings.Zp64(17));
         AMultivariatePolynomial recForm = p.toSparseRecursiveForm();
@@ -679,7 +688,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
                 plainStat = new DescriptiveStatistics();
 
         long start, elapsed;
-        int nIterations = 100, nEvaluations = its(10,10);
+        int nIterations = 100, nEvaluations = its(10, 10);
         int
                 nVars = 5,
                 minDeg = 3250,

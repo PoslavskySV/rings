@@ -36,6 +36,7 @@ import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.parse;
 import static cc.redberry.rings.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
+import static cc.redberry.rings.util.TimeUnits.nanosecondsToString;
 import static org.junit.Assert.*;
 
 /**
@@ -277,7 +278,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
         for (int i = 0; i < 100; i++) {
             SparseInterpolation<BigInteger> sparseInterpolation
-                    = createInterpolation(variable, a, b, skeleton, rnd);
+                    = createInterpolation(variable, a, b, skeleton, 1, rnd);
             BigInteger point = domain.randomElement(rnd);
             assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
@@ -286,7 +287,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 lskeleton = asOverZp64(skeleton), lgcd = asOverZp64(gcd);
         for (int i = 0; i < 100; i++) {
             lSparseInterpolation sparseInterpolation
-                    = createInterpolation(variable, la, lb, lskeleton, rnd);
+                    = createInterpolation(variable, la, lb, lskeleton, 1, rnd);
             long point = domain.asMachineRing().randomElement(rnd);
             assertEquals(lgcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
@@ -325,9 +326,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        }
     }
 
     @Test
@@ -350,9 +353,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        }
     }
 
     @Test
@@ -376,10 +381,10 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 int rndSeed = i ^ n;
                 rnd.setSeed(rndSeed);
                 SparseInterpolation<BigInteger> sparseInterpolation
-                        = createInterpolation(variable, data.a.toBigPoly(), data.b.toBigPoly(), skeleton.toBigPoly(), rnd);
+                        = createInterpolation(variable, data.a.toBigPoly(), data.b.toBigPoly(), skeleton.toBigPoly(), 1 + (1 << 30) * (i % 2), rnd);
 
                 lSparseInterpolation lSparseInterpolation
-                        = createInterpolation(variable, data.a, data.b, skeleton, rnd);
+                        = createInterpolation(variable, data.a, data.b, skeleton, 1, rnd);
                 long point = data.a.ring.randomElement(rnd);
                 try {
                     MultivariatePolynomialZp64 expected = data.gcd.evaluate(variable, point).monic();
@@ -421,9 +426,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        }
     }
 
     @Test
@@ -480,9 +487,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point).monic(), sparseInterpolation.evaluate(point).monic());
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point).monic(), sparseInterpolation.evaluate(point).monic());
+        }
     }
 
     @Test
@@ -574,10 +583,10 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
             assertEquals(10, ZippelGCD(aL, bL).size());
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             start = System.nanoTime();
             System.out.println(ZippelGCD(aL.clone().increment(), bL));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             System.out.println();
 //            System.out.println(TimeUnits.nanosecondsToString(MultivariateGCD.BROWN));
         }
@@ -607,10 +616,10 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
             assertEquals(10, ZippelGCD(aL, bL).size());
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             start = System.nanoTime();
             System.out.println(ZippelGCD(aL.clone().increment(), bL));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             System.out.println();
         }
     }
@@ -1126,11 +1135,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
             System.out.println();
             long start = System.nanoTime();
             System.out.println(ZippelGCDInZ(a.clone().increment(), b));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
             assertTrue(dividesQ(ZippelGCDInZ(a, b), gcd));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
         }
 
 
@@ -1214,7 +1223,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             b = b.clone().subtract(gcd).multiply(gcd);
             long start = System.nanoTime();
             assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
         }
     }
 
@@ -2104,7 +2113,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
             Assert.assertFalse(PolynomialGCD(a, b).isConstant());
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
         }
         //12s
         //3s
@@ -2234,11 +2243,14 @@ public class MultivariateGCDTest extends AMultivariateTest {
         System.out.println(PolynomialGCD(ag, bg));
     }
 
+    @Ignore("too expensive (memory limit in CI)")
     @Test
     public void testHugePoly1() throws Exception {
         MultivariateRing<MultivariatePolynomialZp64> R = Rings.MultivariateRingZp64(3, SmallPrimes.nextPrime(1 << 25));
         for (int j = 1; j < 2; ++j) {
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(MultivariateGCDTest.class.getClassLoader().getResourceAsStream("cc/redberry/rings/poly/multivar/HugeGCD.txt.gz"))))) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                    MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                            "cc/redberry/rings/poly/multivar/HugeGCDinZp.txt.gz"))))) {
                 String s1 = in.readLine();
                 String s2 = in.readLine();
 
@@ -2248,7 +2260,32 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 MultivariatePolynomialZp64 gcd = MultivariateGCD.ZippelGCD(p, q);
                 long t2 = System.nanoTime();
 
-                System.out.println("Total   : " + TimeUnits.nanosecondsToString(t2 - t1));
+                System.out.println("Total time : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size   : " + gcd.size());
+                System.out.println();
+            }
+        }
+    }
+
+    @Ignore("too expensive (memory limit in CI)")
+    @Test
+    public void testHugePoly2() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> R = Rings.MultivariateRing(3, Rings.Z);
+        for (int j = 1; j < 4; ++j) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                    MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                            "cc/redberry/rings/poly/multivar/HugeGCDinZ.txt.gz"))))) {
+                String s1 = in.readLine();
+                String s2 = in.readLine();
+
+                MultivariatePolynomial<BigInteger> p = R.parse(s1);
+                MultivariatePolynomial<BigInteger> q = R.parse(s2);
+                long t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = MultivariateGCD.PolynomialGCD(p, q);
+                long t2 = System.nanoTime();
+
+                System.out.println("Total time : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size   : " + gcd.size());
                 System.out.println();
             }
         }

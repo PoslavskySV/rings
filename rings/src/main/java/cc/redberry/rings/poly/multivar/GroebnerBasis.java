@@ -3827,7 +3827,7 @@ public final class GroebnerBasis {
         // initial ideal viewed as R[u0, u1, ..., uM][x0, ..., xN]
         List<MultivariatePolynomial<Poly>> initialIdeal
                 = generators
-                .stream().map(p -> pRing.factory().create(p.terms.values()
+                .stream().map(p -> pRing.factory().create(p.collection()
                         .stream().map(t -> new Monomial<>(t, cfRing.factory().create(uTerm.setCoefficientFrom(t))))
                         .collect(Collectors.toList())))
                 .collect(Collectors.toList());
@@ -3998,7 +3998,7 @@ public final class GroebnerBasis {
             if (!gbElement.stream().allMatch(Poly::isConstant))
                 return null;
 
-            result.add(factory.create(gbElement.terms.values()
+            result.add(factory.create(gbElement.collection()
                     .stream()
                     .map(t -> t.coefficient.lt().setDegreeVector(t)).collect(Collectors.toList())));
         }
@@ -4091,7 +4091,7 @@ public final class GroebnerBasis {
 
     /** whether poly is linear */
     static boolean isLinear(AMultivariatePolynomial<? extends AMonomial, ?> poly) {
-        return poly.terms.values().stream().allMatch(t -> t.totalDegree <= 1);
+        return poly.collection().stream().allMatch(t -> t.totalDegree <= 1);
     }
 
     /** A single equation */

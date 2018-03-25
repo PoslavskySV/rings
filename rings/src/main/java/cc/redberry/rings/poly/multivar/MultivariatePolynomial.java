@@ -622,6 +622,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         if (isZero())
             return add(val);
         terms.add(lt().setCoefficient(ring.valueOf(val)));
+        release();
         return this;
     }
 
@@ -1379,6 +1380,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         E pow(int variable, int exponent) {
             return powers[variable].pow(exponent);
         }
+
+        @Override
+        public PrecomputedPowersHolder<E> clone(){
+            return new PrecomputedPowersHolder<>(ring, powers.clone());
+        }
     }
 
 
@@ -1605,10 +1611,14 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return this;
         if (ring.isZero(factor))
             return toZero();
-        for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
+        Iterator<Entry<DegreeVector, Monomial<E>>> it = terms.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<DegreeVector, Monomial<E>> entry = it.next();
             Monomial<E> term = entry.getValue();
             E val = ring.multiply(term.coefficient, factor);
-            if (!ring.isZero(val))
+            if (ring.isZero(val))
+                it.remove();
+            else
                 entry.setValue(term.setCoefficient(val));
         }
         release();
@@ -1750,6 +1760,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             }
             terms.add(new Monomial<>(exponents, it.value().coefficient));
         }
+        release();
         return this;
     }
 

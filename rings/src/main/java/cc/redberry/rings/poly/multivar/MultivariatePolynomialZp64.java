@@ -451,7 +451,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
 
     @Override
     public MultivariatePolynomialZp64 setCoefficientRingFrom(MultivariatePolynomialZp64 lMonomialTerms) {
-        return clone();
+        return setRing(lMonomialTerms.ring);
     }
 
     /** release caches */
@@ -615,6 +615,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         if (isZero())
             return add(val);
         terms.add(lt().setCoefficient(ring.modulus(val)));
+        release();
         return this;
     }
 
@@ -1218,8 +1219,8 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
 
     /** cached powers used to save some time */
     public static final class lPrecomputedPowers {
-        private final long value;
-        private final IntegersZp64 ring;
+        public final long value;
+        public final IntegersZp64 ring;
         private final long[] precomputedPowers;
 
         public lPrecomputedPowers(long value, IntegersZp64 ring) {
@@ -1305,6 +1306,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
 
         public long pow(int variable, int exponent) {
             return powers[variable].pow(exponent);
+        }
+
+        @Override
+        public lPrecomputedPowersHolder clone() {
+            return new lPrecomputedPowersHolder(ring, powers.clone());
         }
     }
 
@@ -1512,10 +1518,14 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             return this;
         if (factor == 0)
             return toZero();
-        for (Entry<DegreeVector, MonomialZp64> entry : terms.entrySet()) {
+        Iterator<Entry<DegreeVector, MonomialZp64>> it = terms.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<DegreeVector, MonomialZp64> entry = it.next();
             MonomialZp64 term = entry.getValue();
             long val = ring.multiply(term.coefficient, factor);
-            if (val != 0)
+            if (val == 0)
+                it.remove();
+            else
                 entry.setValue(term.setCoefficient(val));
         }
         release();
@@ -1652,6 +1662,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             }
             terms.add(new MonomialZp64(exponents, it.value().coefficient));
         }
+        release();
         return this;
     }
 
