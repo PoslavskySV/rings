@@ -290,7 +290,10 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /** release caches */
-    protected void release() { /* add cache in the future */ }
+    protected void release() {
+        cachesDegrees = null;
+        cachedDegree = -1;
+    }
 
     /**
      * Returns the number of terms in this polynomial
@@ -362,37 +365,6 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
-     * Sparsity level: size / (product of degrees)
-     */
-    public double sparsity() {
-        double sparsity = size();
-        for (int d : degrees()) {
-            if (d != 0)
-                sparsity /= (d + 1);
-        }
-        return sparsity;
-    }
-
-    /**
-     * Sparsity level: {@code size / nDenseTerms} where nDenseTerms is a total number of possible distinct terms with
-     * total degree not larger than distinct total degrees presented in this.
-     */
-    public double sparsity2() {
-        TIntHashSet distinctTotalDegrees = new TIntHashSet();
-        terms.keySet().stream().mapToInt(dv -> dv.totalDegree).forEach(distinctTotalDegrees::add);
-        TIntIterator it = distinctTotalDegrees.iterator();
-        double nDenseTerms = 0.0;
-        while (it.hasNext()) {
-            int deg = it.next();
-            double d = BigIntegerUtil.binomial(deg + nVariables - 1, deg).doubleValue();
-            nDenseTerms += d;
-            if (d == Double.MAX_VALUE)
-                return size() / d;
-        }
-        return size() / nDenseTerms;
-    }
-
-    /**
      * Makes a copy of this with the specified variable dropped
      *
      * @param variable the variable
@@ -422,7 +394,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @param variables the variables
      */
-    public final Poly dropSelectVariables(int[] variables) {
+    public final Poly dropSelectVariables(int... variables) {
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
             newData.add(term.dropSelect(variables));
@@ -488,13 +460,16 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return the number of variables (those which are not units)
      */
     public final int nUsedVariables() {
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         int r = 0;
         for (int d : degrees)
             if (d != 0)
                 ++r;
         return r;
     }
+
+    /** cached degree() */
+    private int cachedDegree = -1;
 
     /**
      * Returns the total degree of this polynomial, that is the maximal total degree among all terms
@@ -504,10 +479,13 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     @Override
     public int degree() {
         // fixme replace with degreeSum ?
-        int max = 0;
-        for (Term db : terms)
-            max = Math.max(max, db.totalDegree);
-        return max;
+        if (cachedDegree == -1) {
+            int max = 0;
+            for (Term db : terms)
+                max = Math.max(max, db.totalDegree);
+            cachedDegree = max;
+        }
+        return cachedDegree;
     }
 
     /**
@@ -516,7 +494,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return the maximal degree of variables in this polynomial
      */
     public int degreeMax() {
-        return ArraysUtil.max(degrees());
+        return ArraysUtil.max(degreesRef());
     }
 
     /**
@@ -526,10 +504,23 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return the degree of this polynomial with respect to specified variable
      */
     public final int degree(int variable) {
-        int max = 0;
-        for (Term db : terms)
-            max = Math.max(max, db.exponents[variable]);
-        return max;
+        return degreesRef()[variable];
+    }
+
+    /** cached degrees */
+    private int[] cachesDegrees = null;
+
+    /** returns reference (content must not be modified) */
+    protected int[] degreesRef() {
+        if (cachesDegrees == null) {
+            int[] degrees = new int[nVariables];
+            for (Term db : terms)
+                for (int i = 0; i < nVariables; i++)
+                    if (db.exponents[i] > degrees[i])
+                        degrees[i] = db.exponents[i];
+            return cachesDegrees = degrees;
+        }
+        return cachesDegrees;
     }
 
     /**
@@ -540,12 +531,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      */
     @Override
     public final int[] degrees() {
-        int[] degrees = new int[nVariables];
-        for (Term db : terms)
-            for (int i = 0; i < nVariables; i++)
-                if (db.exponents[i] > degrees[i])
-                    degrees[i] = db.exponents[i];
-        return degrees;
+        return degreesRef().clone();
     }
 
     /**
@@ -576,7 +562,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      */
     @Override
     public final int degreeSum() {
-        return ArraysUtil.sum(degrees());
+        return ArraysUtil.sum(degreesRef());
     }
 
     /**
@@ -584,6 +570,37 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      */
     public final int totalDegree() {
         return degreeSum();
+    }
+
+    /**
+     * Sparsity level: size / (product of degrees)
+     */
+    public double sparsity() {
+        double sparsity = size();
+        for (int d : degreesRef()) {
+            if (d != 0)
+                sparsity /= (d + 1);
+        }
+        return sparsity;
+    }
+
+    /**
+     * Sparsity level: {@code size / nDenseTerms} where nDenseTerms is a total number of possible distinct terms with
+     * total degree not larger than distinct total degrees presented in this.
+     */
+    public double sparsity2() {
+        TIntHashSet distinctTotalDegrees = new TIntHashSet();
+        terms.keySet().stream().mapToInt(dv -> dv.totalDegree).forEach(distinctTotalDegrees::add);
+        TIntIterator it = distinctTotalDegrees.iterator();
+        double nDenseTerms = 0.0;
+        while (it.hasNext()) {
+            int deg = it.next();
+            double d = BigIntegerUtil.binomial(deg + nVariables - 1, deg).doubleValue();
+            nDenseTerms += d;
+            if (d == Double.MAX_VALUE)
+                return size() / d;
+        }
+        return size() / nDenseTerms;
     }
 
     /**
@@ -641,7 +658,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
             return 0;
         if (nVariables == 1)
             return 0;
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         int var = -1;
         for (int i = 0; i < nVariables; i++) {
             if (degrees[i] != 0) {
@@ -779,7 +796,20 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
      * variables} that is polynomial in R[variables][other_variables]
      */
-    public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int... variables);
+    public final MultivariatePolynomial<Poly> asOverMultivariateEliminate(int... variables) {
+        return asOverMultivariateEliminate(variables, ordering);
+    }
+
+    /**
+     * Converts this to a multivariate polynomial with coefficients being multivariate polynomials polynomials over
+     * {@code variables} that is polynomial in R[variables][other_variables]
+     *
+     * @param variables the variables to separate
+     * @param prdering  monomial order to use for result
+     * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
+     * variables} that is polynomial in R[variables][other_variables]
+     */
+    public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int[] variables, Comparator<DegreeVector> prdering);
 
     /**
      * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly
@@ -864,6 +894,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         for (Term term : oldData)
             terms.add(term.set(variable, term.exponents[variable] + exponent));
 
+        release();
         return self;
     }
 
@@ -901,6 +932,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
                 it.remove();
         }
         terms.putAll(lc.terms);
+        release();
         return self;
     }
 
@@ -999,7 +1031,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     /** check whether number of variables is the same */
     final void checkSameDomainWith(Term oth) {
         if (nVariables != oth.exponents.length)
-            throw new IllegalArgumentException("Combining multivariate polynomials from different fields");
+            throw new IllegalArgumentException("Combining multivariate polynomials from different fields: this.nVariables = " + nVariables + " oth.nVariables = " + oth.nVariables());
     }
 
     /**
@@ -1073,6 +1105,17 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         release();
         return self;
     }
+
+    /**
+     * Puts {@code monomial} to this polynomial replacing the previous entry if was
+     */
+    public final Poly put(Term monomial) {
+        checkSameDomainWith(monomial);
+        terms.add(monomial);
+        release();
+        return self;
+    }
+
 
     /**
      * Subtracts {@code monomial} from this polynomial
@@ -1168,6 +1211,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         Term unit = monomialAlgebra.getUnitTerm(nVariables);
         for (Map.Entry<DegreeVector, Term> entry : terms.entrySet())
             entry.setValue(unit.setDegreeVector(entry.getKey()));
+        release();
         return self;
     }
 
@@ -1197,7 +1241,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @param oth other multivariate polynomial
      * @return {@code true} if {@code this} and {@code oth} have the same skeleton and {@code false} otherwise
      */
-    public final boolean sameSkeletonQ(Poly oth) {
+    public final boolean sameSkeletonQ(AMultivariatePolynomial oth) {
         return getSkeleton().equals(oth.getSkeleton());
     }
 
@@ -1209,7 +1253,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return {@code true} if {@code this} and {@code oth} have the same skeleton with respect to specified {@code
      * variables} and {@code false} otherwise
      */
-    public final boolean sameSkeletonQ(Poly oth, int... variables) {
+    public final boolean sameSkeletonQ(AMultivariatePolynomial oth, int... variables) {
         return getSkeleton(variables).equals(oth.getSkeleton(variables));
     }
 
@@ -1222,7 +1266,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return {@code true} if {@code this} and {@code oth} have the same skeleton with respect to all except specified
      * {@code variables} and {@code false} otherwise
      */
-    public final boolean sameSkeletonExceptQ(Poly oth, int... variables) {
+    public final boolean sameSkeletonExceptQ(AMultivariatePolynomial oth, int... variables) {
         return getSkeletonExcept(variables).equals(oth.getSkeletonExcept(variables));
     }
 

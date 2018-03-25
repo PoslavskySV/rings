@@ -65,6 +65,7 @@ public final class HenselLifting {
                 poly.release();
             }
         }
+        poly.release();
         return poly;
     }
 
@@ -169,7 +170,7 @@ public final class HenselLifting {
             this.values = values;
             this.ring = ring;
             this.ordering = ordering;
-            this.precomputedPowers = new lPrecomputedPowersHolder(nVariables, ArraysUtil.sequence(1, nVariables), values, ring);
+            this.precomputedPowers = MultivariatePolynomialZp64.mkPrecomputedPowers(nVariables, ring, ArraysUtil.sequence(1, nVariables), values);
             this.linearPowers = new lUSubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
                 linearPowers[i] = new lUSubstitution(UnivariatePolynomialZ64.create(-values[i], 1).modulus(ring), i + 1, nVariables, ordering);
@@ -254,7 +255,7 @@ public final class HenselLifting {
             this.values = values;
             this.ring = ring;
             this.ordering = ordering;
-            this.precomputedPowers = new MultivariatePolynomial.PrecomputedPowersHolder<>(nVariables, ArraysUtil.sequence(1, nVariables), values, ring);
+            this.precomputedPowers = MultivariatePolynomial.mkPrecomputedPowers(nVariables, ring, ArraysUtil.sequence(1, nVariables), values);
             this.linearPowers = new MultivariatePolynomial.USubstitution[nVariables - 1];
             for (int i = 0; i < nVariables - 1; i++)
                 linearPowers[i] = new MultivariatePolynomial.USubstitution<>(
@@ -1387,7 +1388,7 @@ public final class HenselLifting {
             this.lhs = lhs;
             this.rhs = rhs;
             this.lhsDegrees = this.lhs.degrees();
-            this.isLinear = lhs.terms.values().stream().allMatch(__ -> __.totalDegree <= 1);
+            this.isLinear = lhs.getSkeleton().stream().allMatch(__ -> __.totalDegree <= 1);
             int nUnknowns = 0;
             for (int lhsDegree : lhsDegrees)
                 nUnknowns += lhsDegree == 0 ? 0 : 1;
@@ -1461,11 +1462,11 @@ public final class HenselLifting {
     void populateUnknownTerms(Poly biPoly, Poly lc, List<Term> fixed, List<Term> unknown) {
         // degree in x0
         int xDeg = biPoly.degree(0);
-        for (Term term : biPoly.terms) {
+        for (Term term : biPoly) {
             if (term.exponents[0] == xDeg) {
                 Poly cf = lc.coefficientOf(1, term.exponents[1]);
                 term = term.setCoefficientFrom(cf.monomialAlgebra.getUnitTerm(cf.nVariables));
-                fixed.addAll(cf.multiply(term).terms.values());
+                fixed.addAll(cf.multiply(term).collection());
             } else
                 unknown.add(term);
         }

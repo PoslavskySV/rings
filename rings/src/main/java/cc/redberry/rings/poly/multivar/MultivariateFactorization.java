@@ -426,7 +426,7 @@ public final class MultivariateFactorization {
 
     /** Newton polygon of bivariate polynomial */
     static int[][] NewtonPolygon(AMultivariatePolynomial<? extends DegreeVector, ?> poly) {
-        return NewtonPolygon(poly.terms.keySet());
+        return NewtonPolygon(poly.getSkeleton());
     }
 
     /**

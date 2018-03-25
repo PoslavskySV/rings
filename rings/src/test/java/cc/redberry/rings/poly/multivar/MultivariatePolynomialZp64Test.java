@@ -4,11 +4,14 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
+import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.ArraysUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -16,6 +19,7 @@ import java.util.stream.IntStream;
 
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.*;
+import static cc.redberry.rings.util.TimeUnits.statisticsNanotime;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -178,8 +182,7 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
         MultivariatePolynomialZp64 poly = parse(" b^2*c^2+b^3+a*c^4+a*b*c^2+a*b^2+a*b^2*c+2*a^2*c^2+a^2*c^3+a^2*b+a^2*b^2+a^3+a^3*c+a^3*c^2+a^4", domain, LEX, vars);
 
         int[] evalVars = {1, 2};
-        int[] raiseFactors = {2, 1};
-        MultivariatePolynomialZp64 r = poly.evaluate(new lPrecomputedPowersHolder(poly.nVariables, evalVars, new long[]{4229599, 9}, domain), evalVars, raiseFactors);
+        MultivariatePolynomialZp64 r = poly.evaluate(evalVars, new long[]{domain.powMod(4229599, 2), 9});
         assertEquals(parse("1694989 + 336131*a + 4996260*a^2 + 91*a^3 + a^4", domain, LEX, vars), r);
     }
 
@@ -499,5 +502,240 @@ public class MultivariatePolynomialZp64Test extends AMultivariateTest {
             assertEquals(ev, ev2);
             System.out.println();
         }
+    }
+
+    @Test
+    public void testDenseRecursiveForm1() throws Exception {
+        MultivariatePolynomialZp64 p = MultivariatePolynomialZp64.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5", Rings.Zp64(17));
+        IUnivariatePolynomial recForm = p.toDenseRecursiveForm();
+        assertEquals(p, fromDenseRecursiveForm(recForm, MonomialOrder.DEFAULT));
+    }
+
+    @Test
+    public void testDenseRecursiveForm2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        for (int i = 0; i < 1000; ++i) {
+            MultivariatePolynomialZp64 p = RandomMultivariatePolynomials.randomPolynomial(
+                    rnd.nextInt(2, 7),
+                    rnd.nextInt(1, 50),
+                    rnd.nextInt(1, 100),
+                    Rings.Zp64(17), rnd.getRandomGenerator());
+            IUnivariatePolynomial recForm = p.toDenseRecursiveForm();
+            assertEquals(p, fromDenseRecursiveForm(recForm, MonomialOrder.DEFAULT));
+        }
+    }
+
+    @Test
+    public void testDenseRecursiveEvaluate1() throws Exception {
+        MultivariatePolynomialZp64 p = MultivariatePolynomialZp64.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5", Rings.Zp64(17));
+        IUnivariatePolynomial recForm = p.toDenseRecursiveForm();
+        long[] values = {11, 2, 3};
+        assertEquals(p.evaluate(values), evaluateDenseRecursiveForm(recForm, values));
+    }
+
+    @Test
+    public void testDenseRecursiveEvaluate2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        IntegersZp64 ring = Rings.Zp64(SmallPrimes.nextPrime(1 << 15));
+        DescriptiveStatistics
+                recStat = new DescriptiveStatistics(),
+                recEvalStat = new DescriptiveStatistics(),
+                plainStat = new DescriptiveStatistics();
+
+        long start, elapsed;
+        int nIterations = 100;
+        int
+                nVars = 3,
+                minDeg = 30,
+                minSize = 1000;
+
+        for (int i = 0; i < nIterations; ++i) {
+            if (i == nIterations / 10)
+                Arrays.asList(recStat, recEvalStat, plainStat).forEach(DescriptiveStatistics::clear);
+
+            MultivariatePolynomialZp64 p = RandomMultivariatePolynomials.randomPolynomial(
+                    nVars,
+                    rnd.nextInt(minDeg, 2 * minDeg),
+                    rnd.nextInt(minSize, 2 * minSize),
+                    ring, rnd.getRandomGenerator());
+            long[] values = new long[p.nVariables];
+            for (int j = 0; j < values.length; j++)
+                values[j] = ring.randomElement(rnd.getRandomGenerator());
+
+            start = System.nanoTime();
+            IUnivariatePolynomial recForm = p.toDenseRecursiveForm();
+            elapsed = System.nanoTime() - start;
+            recStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            long recVal = evaluateDenseRecursiveForm(recForm, values);
+            elapsed = System.nanoTime() - start;
+
+            recStat.addValue(elapsed);
+            recEvalStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            long plainVal = p.evaluate(values);
+            elapsed = System.nanoTime() - start;
+            plainStat.addValue(elapsed);
+
+            assertEquals(plainVal, recVal);
+        }
+        System.out.println("Recursive             : " + statisticsNanotime(recStat));
+        System.out.println("Recursive (eval only) : " + statisticsNanotime(recEvalStat));
+        System.out.println("Plain                 : " + statisticsNanotime(plainStat));
+    }
+
+    @Test
+    public void testNonPrimeMod1() throws Exception {
+        IntegersZp64 ring = Rings.Zp64(9);
+        MultivariatePolynomialZp64 p = MultivariatePolynomialZp64.parse("3*x + 3*y + 3*z", ring);
+        System.out.println(p);
+        p.multiply(3);
+        assertTrue(p.isZero());
+    }
+
+    @Test
+    public void testSparseRecursiveForm1() throws Exception {
+        MultivariatePolynomialZp64 p = MultivariatePolynomialZp64.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5", Rings.Zp64(17));
+        AMultivariatePolynomial recForm = p.toSparseRecursiveForm();
+        assertEquals(p, fromSparseRecursiveForm(recForm, MonomialOrder.DEFAULT));
+    }
+
+    @Test
+    public void testSparseRecursiveForm2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        for (int i = 0; i < 1000; ++i) {
+            MultivariatePolynomialZp64 p = RandomMultivariatePolynomials.randomPolynomial(
+                    rnd.nextInt(2, 7),
+                    rnd.nextInt(1, 50),
+                    rnd.nextInt(1, 100),
+                    Rings.Zp64(17), rnd.getRandomGenerator());
+            AMultivariatePolynomial recursiveRep = p.toSparseRecursiveForm();
+            assertEquals(p, fromSparseRecursiveForm(recursiveRep, MonomialOrder.DEFAULT));
+        }
+    }
+
+    @Test
+    public void testSparseRecursiveEvaluate1() throws Exception {
+        MultivariatePolynomialZp64 p = MultivariatePolynomialZp64.parse("x^2*y^3*z^4 + 1 + x*y + x*z^5", Rings.Zp64(17));
+        AMultivariatePolynomial recForm = p.toSparseRecursiveForm();
+        long[] values = {11, 2, 3};
+        assertEquals(p.evaluate(values), evaluateSparseRecursiveForm(recForm, values));
+    }
+
+    @Test
+    public void testSparseRecursiveEvaluate2() throws Exception {
+        RandomDataGenerator rnd = getRandomData();
+        IntegersZp64 ring = Rings.Zp64(SmallPrimes.nextPrime(1 << 15));
+        DescriptiveStatistics
+                recStat = new DescriptiveStatistics(),
+                recEvalStat = new DescriptiveStatistics(),
+                plainStat = new DescriptiveStatistics();
+
+        long start, elapsed;
+        int nIterations = 100;
+        int
+                nVars = 3,
+                minDeg = 30,
+                minSize = 1000;
+
+        for (int i = 0; i < nIterations; ++i) {
+            if (i == nIterations / 10)
+                Arrays.asList(recStat, recEvalStat, plainStat).forEach(DescriptiveStatistics::clear);
+
+            MultivariatePolynomialZp64 p = RandomMultivariatePolynomials.randomPolynomial(
+                    nVars,
+                    rnd.nextInt(minDeg, 2 * minDeg),
+                    rnd.nextInt(minSize, 2 * minSize),
+                    ring, rnd.getRandomGenerator());
+            long[] values = new long[p.nVariables];
+            for (int j = 0; j < values.length; j++)
+                values[j] = ring.randomElement(rnd.getRandomGenerator());
+
+            start = System.nanoTime();
+            AMultivariatePolynomial recForm = p.toSparseRecursiveForm();
+            elapsed = System.nanoTime() - start;
+            recStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            long recVal = evaluateSparseRecursiveForm(recForm, values);
+            elapsed = System.nanoTime() - start;
+
+            recStat.addValue(elapsed);
+            recEvalStat.addValue(elapsed);
+
+            start = System.nanoTime();
+            long plainVal = p.evaluate(values);
+            elapsed = System.nanoTime() - start;
+            plainStat.addValue(elapsed);
+
+            assertEquals(plainVal, recVal);
+        }
+        System.out.println("Recursive             : " + statisticsNanotime(recStat));
+        System.out.println("Recursive (eval only) : " + statisticsNanotime(recEvalStat));
+        System.out.println("Plain                 : " + statisticsNanotime(plainStat));
+    }
+
+    @Test
+    public void testHornerForm1() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        IntegersZp64 ring = Rings.Zp64(SmallPrimes.nextPrime(1 << 15));
+        DescriptiveStatistics
+                hornerStat = new DescriptiveStatistics(),
+                hornerCreateStat = new DescriptiveStatistics(),
+                plainStat = new DescriptiveStatistics();
+
+        long start, elapsed;
+        int nIterations = 100, nEvaluations = its(10, 10);
+        int
+                nVars = 5,
+                minDeg = 3250,
+                minSize = 1000;
+
+        int[] varsSeq = ArraysUtil.sequence(0, nVars);
+        for (int i = 0; i < nIterations; ++i) {
+            if (i == nIterations / 10)
+                Arrays.asList(hornerStat, hornerCreateStat, plainStat).forEach(DescriptiveStatistics::clear);
+
+            MultivariatePolynomialZp64 p = RandomMultivariatePolynomials.randomPolynomial(
+                    nVars,
+                    rndd.nextInt(minDeg, 2 * minDeg),
+                    rndd.nextInt(minSize, 2 * minSize),
+                    ring, rnd);
+
+            int[] variables = new int[3 + rnd.nextInt(p.nVariables - 3)];
+            long[] values = new long[variables.length];
+            ArraysUtil.shuffle(varsSeq, rnd);
+
+            System.arraycopy(varsSeq, 0, variables, 0, values.length);
+
+            start = System.nanoTime();
+            HornerFormZp64 hornerForm = p.getHornerForm(variables);
+            elapsed = System.nanoTime() - start;
+            hornerStat.addValue(elapsed);
+            hornerCreateStat.addValue(elapsed);
+
+            for (int nEval = 0; nEval < nEvaluations; ++nEval) {
+                for (int j = 0; j < values.length; j++)
+                    values[j] = ring.randomElement(rnd);
+
+                start = System.nanoTime();
+                MultivariatePolynomialZp64 horner = hornerForm.evaluate(values);
+                elapsed = System.nanoTime() - start;
+                hornerStat.addValue(elapsed);
+
+                start = System.nanoTime();
+                MultivariatePolynomialZp64 plain = p.eliminate(variables, values);
+                elapsed = System.nanoTime() - start;
+                plainStat.addValue(elapsed);
+
+                assertEquals(plain, horner);
+            }
+        }
+        System.out.println("Horner             : " + statisticsNanotime(hornerStat));
+        System.out.println("Horner create      : " + statisticsNanotime(hornerCreateStat));
+        System.out.println("Plain              : " + statisticsNanotime(plainStat));
     }
 }

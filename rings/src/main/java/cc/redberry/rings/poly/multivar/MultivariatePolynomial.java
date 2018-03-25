@@ -6,21 +6,23 @@ import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.iterator.TLongObjectIterator;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Iterator;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
+
+import static cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.DEFAULT_POWERS_CACHE_SIZE;
+import static cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.MAX_POWERS_CACHE_SIZE;
 
 /**
  * @since 1.0
@@ -217,7 +219,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public UnivariatePolynomial<E> asUnivariate() {
         if (isConstant())
             return UnivariatePolynomial.constant(ring, lc());
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         int theVar = -1;
         for (int i = 0; i < degrees.length; i++) {
             if (degrees[i] != 0) {
@@ -281,7 +283,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public MultivariatePolynomial<MultivariatePolynomial<E>> asOverMultivariateEliminate(int... variables) {
+    public MultivariatePolynomial<MultivariatePolynomial<E>> asOverMultivariateEliminate(int[] variables, Comparator<DegreeVector> ordering) {
         variables = variables.clone();
         Arrays.sort(variables);
         int[] restVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(nVariables), variables);
@@ -620,6 +622,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         if (isZero())
             return add(val);
         terms.add(lt().setCoefficient(ring.valueOf(val)));
+        release();
         return this;
     }
 
@@ -836,6 +839,263 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
+     * Gives a recursive univariate representation of this poly.
+     */
+    public UnivariatePolynomial toDenseRecursiveForm() {
+        if (nVariables == 0)
+            throw new IllegalArgumentException("#variables = 0");
+        return toDenseRecursiveForm(nVariables - 1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private UnivariatePolynomial toDenseRecursiveForm(int variable) {
+        if (variable == 0)
+            return asUnivariate();
+        UnivariatePolynomial<MultivariatePolynomial<E>> result = asUnivariateEliminate(variable);
+
+        IUnivariatePolynomial[] data = new IUnivariatePolynomial[result.degree() + 1];
+        for (int j = 0; j < data.length; ++j)
+            data[j] = result.get(j).toDenseRecursiveForm(variable - 1);
+
+        return UnivariatePolynomial.create(Rings.PolynomialRing(data[0]), data);
+    }
+
+    /**
+     * Converts poly from a recursive univariate representation.
+     *
+     * @param recForm    recursive univariate representation
+     * @param nVariables number of variables in multivariate polynomial
+     * @param ordering   monomial order
+     */
+    public static <E> MultivariatePolynomial<E> fromDenseRecursiveForm(UnivariatePolynomial recForm,
+                                                                       int nVariables,
+                                                                       Comparator<DegreeVector> ordering) {
+        return fromDenseRecursiveForm(recForm, nVariables, ordering, nVariables - 1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> MultivariatePolynomial<E> fromDenseRecursiveForm(UnivariatePolynomial recForm,
+                                                                        int nVariables,
+                                                                        Comparator<DegreeVector> ordering,
+                                                                        int variable) {
+        if (variable == 0)
+            return asMultivariate(recForm, nVariables, 0, ordering);
+
+        UnivariatePolynomial<UnivariatePolynomial> _recForm = (UnivariatePolynomial<UnivariatePolynomial>) recForm;
+        MultivariatePolynomial<E>[] data = new MultivariatePolynomial[_recForm.degree() + 1];
+        for (int j = 0; j < data.length; ++j)
+            data[j] = fromDenseRecursiveForm(_recForm.get(j), nVariables, ordering, variable - 1);
+
+        return asMultivariate(UnivariatePolynomial.create(Rings.MultivariateRing(data[0]), data), variable);
+    }
+
+    /**
+     * Evaluates polynomial given in a dense recursive form at a given points
+     */
+    @SuppressWarnings("unchecked")
+    public static <E> E evaluateDenseRecursiveForm(UnivariatePolynomial recForm, int nVariables, E[] values) {
+        // compute number of variables
+        UnivariatePolynomial p = recForm;
+        int n = nVariables - 1;
+        while (n > 0) {
+            p = (UnivariatePolynomial) ((UnivariatePolynomial) p).cc();
+            --n;
+        }
+        if (nVariables != values.length)
+            throw new IllegalArgumentException();
+        return evaluateDenseRecursiveForm(recForm, values, ((UnivariatePolynomial<E>) p).ring, nVariables - 1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> E evaluateDenseRecursiveForm(UnivariatePolynomial recForm, E[] values, Ring<E> ring, int variable) {
+        if (variable == 0)
+            return ((UnivariatePolynomial<E>) recForm).evaluate(values[0]);
+        UnivariatePolynomial<UnivariatePolynomial> _recForm = (UnivariatePolynomial<UnivariatePolynomial>) recForm;
+        E result = ring.getZero();
+        for (int i = _recForm.degree(); i >= 0; --i)
+            result = ring.add(ring.multiply(values[variable], result), evaluateDenseRecursiveForm(_recForm.get(i), values, ring, variable - 1));
+
+        return result;
+    }
+
+    /**
+     * Gives a recursive sparse univariate representation of this poly.
+     */
+    public AMultivariatePolynomial toSparseRecursiveForm() {
+        if (nVariables == 0)
+            throw new IllegalArgumentException("#variables = 0");
+        return toSparseRecursiveForm(nVariables - 1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private AMultivariatePolynomial toSparseRecursiveForm(int variable) {
+        if (variable == 0) {
+            assert MonomialOrder.isGradedOrder(ordering);
+            return this.setNVariables(1);
+        }
+        MultivariatePolynomial<MultivariatePolynomial<E>> result = asOverMultivariateEliminate(ArraysUtil.sequence(0, variable), MonomialOrder.GRLEX);
+
+        Monomial<AMultivariatePolynomial>[] data = new Monomial[result.size() == 0 ? 1 : result.size()];
+        int j = 0;
+        for (Monomial<MultivariatePolynomial<E>> term : result.size() == 0 ? Collections.singletonList(result.lt()) : result)
+            data[j++] = new Monomial(term, term.coefficient.toSparseRecursiveForm(variable - 1));
+
+        return MultivariatePolynomial.create(1, Rings.MultivariateRing(data[0].coefficient), MonomialOrder.GRLEX, data);
+    }
+
+    /**
+     * Converts poly from a recursive univariate representation.
+     *
+     * @param recForm    recursive univariate representation
+     * @param nVariables number of variables in multivariate polynomial
+     * @param ordering   monomial order
+     */
+    public static <E> MultivariatePolynomial<E> fromSparseRecursiveForm(AMultivariatePolynomial recForm,
+                                                                        int nVariables,
+                                                                        Comparator<DegreeVector> ordering) {
+        return fromSparseRecursiveForm(recForm, nVariables, ordering, nVariables - 1);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> MultivariatePolynomial<E> fromSparseRecursiveForm(AMultivariatePolynomial recForm,
+                                                                         int nVariables,
+                                                                         Comparator<DegreeVector> ordering,
+                                                                         int variable) {
+        if (variable == 0) {
+            assert recForm.nVariables == 1;
+            return ((MultivariatePolynomial<E>) recForm).setNVariables(nVariables).setOrdering(ordering);
+        }
+
+        MultivariatePolynomial<AMultivariatePolynomial> _recForm = (MultivariatePolynomial<AMultivariatePolynomial>) recForm;
+        Monomial<MultivariatePolynomial<E>>[] data = new Monomial[_recForm.size() == 0 ? 1 : _recForm.size()];
+        int j = 0;
+        for (Monomial<AMultivariatePolynomial> term : _recForm.size() == 0 ? Collections.singletonList(_recForm.lt()) : _recForm) {
+            int[] exponents = new int[nVariables];
+            exponents[variable] = term.totalDegree;
+            data[j++] = new Monomial<>(exponents, term.totalDegree, fromSparseRecursiveForm(term.coefficient, nVariables, ordering, variable - 1));
+        }
+
+        MultivariatePolynomial<MultivariatePolynomial<E>> result = MultivariatePolynomial.create(nVariables, Rings.MultivariateRing(data[0].coefficient), ordering, data);
+        return asNormalMultivariate(result);
+    }
+
+    /**
+     * Evaluates polynomial given in a sparse recursive form at a given points
+     */
+    @SuppressWarnings("unchecked")
+    public static <E> E evaluateSparseRecursiveForm(AMultivariatePolynomial recForm, int nVariables, E[] values) {
+        // compute number of variables
+        AMultivariatePolynomial p = recForm;
+        TIntArrayList degrees = new TIntArrayList();
+        int n = nVariables - 1;
+        while (n > 0) {
+            p = (AMultivariatePolynomial) ((MultivariatePolynomial) p).cc();
+            degrees.add(p.degree());
+            --n;
+        }
+        degrees.add(p.degree());
+        if (nVariables != values.length)
+            throw new IllegalArgumentException();
+
+        Ring<E> ring = ((MultivariatePolynomial<E>) p).ring;
+
+        PrecomputedPowers<E>[] pp = new PrecomputedPowers[nVariables];
+        for (int i = 0; i < nVariables; ++i)
+            pp[i] = new PrecomputedPowers<>(Math.min(degrees.get(i), MAX_POWERS_CACHE_SIZE), values[i], ring);
+
+        return evaluateSparseRecursiveForm(recForm, new PrecomputedPowersHolder<>(ring, pp), nVariables - 1);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <E> E evaluateSparseRecursiveForm(AMultivariatePolynomial recForm, PrecomputedPowersHolder<E> ph, int variable) {
+        Ring<E> ring = ph.ring;
+        if (variable == 0) {
+            assert MonomialOrder.isGradedOrder(recForm.ordering);
+            MultivariatePolynomial<E> _recForm = (MultivariatePolynomial<E>) recForm;
+
+            Iterator<Monomial<E>> it = _recForm.terms.descendingIterator();
+            int previousExponent = -1;
+            E result = ring.getZero();
+            while (it.hasNext()) {
+                Monomial<E> m = it.next();
+                assert previousExponent == -1 || previousExponent > m.totalDegree;
+                result = ring.add(
+                        ring.multiply(result, ph.pow(variable, previousExponent == -1 ? 1 : previousExponent - m.totalDegree)),
+                        m.coefficient);
+                previousExponent = m.totalDegree;
+            }
+            if (previousExponent > 0)
+                result = ring.multiply(result, ph.pow(variable, previousExponent));
+            return result;
+        }
+        MultivariatePolynomial<AMultivariatePolynomial> _recForm = (MultivariatePolynomial<AMultivariatePolynomial>) recForm;
+
+        Iterator<Monomial<AMultivariatePolynomial>> it = _recForm.terms.descendingIterator();
+        int previousExponent = -1;
+        E result = ring.getZero();
+        while (it.hasNext()) {
+            Monomial<AMultivariatePolynomial> m = it.next();
+            assert previousExponent == -1 || previousExponent > m.totalDegree;
+            result = ring.add(
+                    ring.multiply(result, ph.pow(variable, previousExponent == -1 ? 1 : previousExponent - m.totalDegree)),
+                    evaluateSparseRecursiveForm(m.coefficient, ph, variable - 1));
+            previousExponent = m.totalDegree;
+        }
+        if (previousExponent > 0)
+            result = ring.multiply(result, ph.pow(variable, previousExponent));
+        return result;
+    }
+
+    /**
+     * Gives data structure for fast Horner-like sparse evaluation of this multivariate polynomial
+     *
+     * @param evaluationVariables variables which will be substituted
+     */
+    @SuppressWarnings("unchecked")
+    public HornerForm getHornerForm(int[] evaluationVariables) {
+        int[] evalDegrees = ArraysUtil.select(degreesRef(), evaluationVariables);
+        MultivariatePolynomial<MultivariatePolynomial<E>> p = asOverMultivariateEliminate(evaluationVariables);
+        Ring<AMultivariatePolynomial> newRing = Rings.PolynomialRing(p.cc().toSparseRecursiveForm());
+        return new HornerForm(ring, evalDegrees, evaluationVariables.length,
+                p.mapCoefficients(newRing, MultivariatePolynomial::toSparseRecursiveForm));
+    }
+
+    /**
+     * A representation of multivariate polynomial specifically optimized for fast evaluation of given variables
+     */
+    public static final class HornerForm<E> {
+        private final Ring<E> ring;
+        private final int nEvalVariables;
+        private final int[] evalDegrees;
+        private final MultivariatePolynomial<AMultivariatePolynomial> recForm;
+
+        private HornerForm(Ring<E> ring,
+                           int[] evalDegrees,
+                           int nEvalVariables,
+                           MultivariatePolynomial<AMultivariatePolynomial> recForm) {
+            this.ring = ring;
+            this.evalDegrees = evalDegrees;
+            this.nEvalVariables = nEvalVariables;
+            this.recForm = recForm;
+        }
+
+        /**
+         * Substitute given values for evaluation variables (for example, if this is in R[x1,x2,x3,x4] and evaluation
+         * variables are x2 and x4, the result will be a poly in R[x1,x3]).
+         */
+        @SuppressWarnings("unchecked")
+        public MultivariatePolynomial<E> evaluate(E[] values) {
+            if (values.length != nEvalVariables)
+                throw new IllegalArgumentException();
+            PrecomputedPowers<E>[] pp = new PrecomputedPowers[nEvalVariables];
+            for (int i = 0; i < nEvalVariables; ++i)
+                pp[i] = new PrecomputedPowers<>(Math.min(evalDegrees[i], MAX_POWERS_CACHE_SIZE), values[i], ring);
+            return recForm.mapCoefficients(ring,
+                    p -> evaluateSparseRecursiveForm(p, new PrecomputedPowersHolder<>(ring, pp), nEvalVariables - 1));
+        }
+    }
+
+    /**
      * Returns a copy of this with {@code value} substituted for {@code variable}.
      *
      * @param variable the variable
@@ -890,6 +1150,16 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
+     * Evaluates this polynomial at specified points
+     */
+    @SuppressWarnings("unchecked")
+    public E evaluate(E... values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+        return evaluate(ArraysUtil.sequence(0, nVariables), values).cc();
+    }
+
+    /**
      * Returns a copy of this with {@code values} substituted for {@code variables}.
      *
      * @param variables the variables
@@ -903,44 +1173,22 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> evaluate(int[] variables, E[] values) {
         for (E value : values)
             if (!ring.isZero(value))
-                return evaluate(new PrecomputedPowersHolder<>(nVariables, variables, values, ring), variables, ones(nVariables));
+                return evaluate(mkPrecomputedPowers(variables, values), variables);
 
         // <- all values are zero
         return evaluateAtZero(variables);
     }
 
-    /* cached array of units */
-    private static int[][] ones = new int[16][];
-
-    private static int[] ones(int len) {
-        if (len < ones.length)
-            return ones[len];
-        else
-            return ArraysUtil.arrayOf(1, len);
-    }
-
-    static {
-        for (int i = 0; i < ones.length; i++)
-            ones[i] = ArraysUtil.arrayOf(1, i);
-    }
-
     /** substitutes {@code values} for {@code variables} */
     @SuppressWarnings("unchecked")
     MultivariatePolynomial<E> evaluate(PrecomputedPowersHolder<E> powers, int[] variables) {
-        return evaluate(powers, variables, ones(variables.length));
-    }
-
-    /** substitutes {@code values} for {@code variables} */
-    @SuppressWarnings("unchecked")
-    MultivariatePolynomial<E> evaluate(PrecomputedPowersHolder<E> powers, int[] variables, int[] raiseFactors) {
         MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
         for (Monomial<E> el : terms) {
             Monomial<E> r = el;
             E value = el.coefficient;
-            for (int i = 0; i < variables.length; ++i) {
-                value = ring.multiply(value, powers.pow(variables[i], raiseFactors[i] * el.exponents[variables[i]]));
-                r = r.setZero(variables[i]).setCoefficient(value);
-            }
+            for (int variable : variables)
+                value = ring.multiply(value, powers.pow(variable, el.exponents[variable]));
+            r = r.setZero(variables).setCoefficient(value);
 
             add(newData, r);
         }
@@ -1004,17 +1252,49 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return eliminate(variable, ring.valueOf(value));
     }
 
-    private static final int SIZE_OF_POWERS_CACHE = 32;
+
+    /**
+     * Returns a copy of this with {@code values} substituted for {@code variables}
+     *
+     * @param variables the variables
+     * @param values    the values
+     * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
+     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
+     * #eliminate(int, long)})
+     */
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E> eliminate(int[] variables, E[] values) {
+        for (E value : values)
+            if (!ring.isZero(value))
+                return eliminate(mkPrecomputedPowers(variables, values), variables);
+
+        // <- all values are zero
+        return evaluateAtZero(variables).dropVariables(variables);
+    }
+
+    /** substitutes {@code values} for {@code variables} */
+    MultivariatePolynomial<E> eliminate(PrecomputedPowersHolder<E> powers, int[] variables) {
+        MonomialSet<Monomial<E>> newData = new MonomialSet<>(ordering);
+        for (Monomial<E> el : terms) {
+            Monomial<E> r = el;
+            E value = el.coefficient;
+            for (int variable : variables)
+                value = ring.multiply(value, powers.pow(variable, el.exponents[variable]));
+            r = r.without(variables).setCoefficient(value);
+
+            add(newData, r);
+        }
+        return new MultivariatePolynomial<>(nVariables - variables.length, ring, ordering, newData);
+    }
 
     /** cached powers used to save some time */
     static final class PrecomputedPowers<E> {
         private final E value;
         private final Ring<E> ring;
-        // TODO: store map here
         private final E[] precomputedPowers;
 
         PrecomputedPowers(E value, Ring<E> ring) {
-            this(SIZE_OF_POWERS_CACHE, value, ring);
+            this(DEFAULT_POWERS_CACHE_SIZE, value, ring);
         }
 
         PrecomputedPowers(int cacheSize, E value, Ring<E> ring) {
@@ -1044,32 +1324,66 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public PrecomputedPowersHolder<E> mkPrecomputedPowers(int variable, E value) {
+        PrecomputedPowers<E>[] pp = new PrecomputedPowers[nVariables];
+        pp[variable] = new PrecomputedPowers<>(Math.min(degree(variable), MAX_POWERS_CACHE_SIZE), value, ring);
+        return new PrecomputedPowersHolder<>(ring, pp);
+    }
+
+    @SuppressWarnings("unchecked")
+    public PrecomputedPowersHolder<E> mkPrecomputedPowers(int[] variables, E[] values) {
+        int[] degrees = degreesRef();
+        PrecomputedPowers<E>[] pp = new PrecomputedPowers[nVariables];
+        for (int i = 0; i < variables.length; ++i)
+            pp[variables[i]] = new PrecomputedPowers<>(Math.min(degrees[variables[i]], MAX_POWERS_CACHE_SIZE), values[i], ring);
+        return new PrecomputedPowersHolder<>(ring, pp);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E> PrecomputedPowersHolder<E> mkPrecomputedPowers(int nVariables, Ring<E> ring, int[] variables, E[] values) {
+        PrecomputedPowers<E>[] pp = new PrecomputedPowers[nVariables];
+        for (int i = 0; i < variables.length; ++i)
+            pp[variables[i]] = new PrecomputedPowers<>(MAX_POWERS_CACHE_SIZE, values[i], ring);
+        return new PrecomputedPowersHolder<>(ring, pp);
+    }
+
+    @SuppressWarnings("unchecked")
+    public PrecomputedPowersHolder<E> mkPrecomputedPowers(E[] values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+        int[] degrees = degreesRef();
+        PrecomputedPowers<E>[] pp = new PrecomputedPowers[nVariables];
+        for (int i = 0; i < nVariables; ++i)
+            pp[i] = new PrecomputedPowers<>(Math.min(degrees[i], MAX_POWERS_CACHE_SIZE), values[i], ring);
+        return new PrecomputedPowersHolder<>(ring, pp);
+    }
+
     /** holds an array of precomputed powers */
-    static final class PrecomputedPowersHolder<E> {
-        final int cacheSize;
+    public static final class PrecomputedPowersHolder<E> {
         final Ring<E> ring;
         final PrecomputedPowers<E>[] powers;
 
-        PrecomputedPowersHolder(int nVariables, int[] variables, E[] points, Ring<E> ring) {
-            this(SIZE_OF_POWERS_CACHE, nVariables, variables, points, ring);
-        }
-
-        @SuppressWarnings("unchecked")
-        PrecomputedPowersHolder(int cacheSize, int nVariables, int[] variables, E[] points, Ring<E> ring) {
-            this.cacheSize = cacheSize;
+        public PrecomputedPowersHolder(Ring<E> ring, PrecomputedPowers<E>[] powers) {
             this.ring = ring;
-            this.powers = new PrecomputedPowers[nVariables];
-            for (int i = 0; i < points.length; i++)
-                powers[variables[i]] = points[i] == null ? null : new PrecomputedPowers<>(cacheSize, points[i], ring);
+            this.powers = powers;
         }
 
         void set(int i, E point) {
             if (powers[i] == null || !powers[i].value.equals(point))
-                powers[i] = new PrecomputedPowers<>(cacheSize, point, ring);
+                powers[i] = new PrecomputedPowers<>(powers[i] == null
+                        ? DEFAULT_POWERS_CACHE_SIZE
+                        : powers[i].precomputedPowers.length,
+                        point, ring);
         }
 
         E pow(int variable, int exponent) {
             return powers[variable].pow(exponent);
+        }
+
+        @Override
+        public PrecomputedPowersHolder<E> clone(){
+            return new PrecomputedPowersHolder<>(ring, powers.clone());
         }
     }
 
@@ -1297,10 +1611,14 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return this;
         if (ring.isZero(factor))
             return toZero();
-        for (Entry<DegreeVector, Monomial<E>> entry : terms.entrySet()) {
+        Iterator<Entry<DegreeVector, Monomial<E>>> it = terms.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<DegreeVector, Monomial<E>> entry = it.next();
             Monomial<E> term = entry.getValue();
             E val = ring.multiply(term.coefficient, factor);
-            if (!ring.isZero(val))
+            if (ring.isZero(val))
+                it.remove();
+            else
                 entry.setValue(term.setCoefficient(val));
         }
         release();
@@ -1367,8 +1685,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     private MultivariatePolynomial<E> multiplyKronecker(MultivariatePolynomial<E> oth) {
         int[] resultDegrees = new int[nVariables];
-        int[] thisDegrees = degrees();
-        int[] othDegrees = oth.degrees();
+        int[] thisDegrees = degreesRef();
+        int[] othDegrees = oth.degreesRef();
         for (int i = 0; i < resultDegrees.length; i++)
             resultDegrees[i] = thisDegrees[i] + othDegrees[i];
 
@@ -1442,6 +1760,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             }
             terms.add(new Monomial<>(exponents, it.value().coefficient));
         }
+        release();
         return this;
     }
 
