@@ -150,7 +150,7 @@ public final class MultivariateGCD {
         polysInSum.add(arr[1]);
 
         RandomGenerator rnd = PrivateRandom.getRandom();
-        int[] sumDegrees = sum.degrees();
+        int[] sumDegrees = sum.degreesRef();
         int nFails = 0; // #tries to add a poly
         for (int i = 2; i < arr.length; i++) {
             AMultivariatePolynomial tmp;
@@ -159,9 +159,9 @@ public final class MultivariateGCD {
             } while (tmp.isZero());
 
             boolean shouldHaveCC = !arr[i].ccAsPoly().isZero() || !sum.ccAsPoly().isZero();
-            int[] expectedDegrees = ArraysUtil.max(sumDegrees, tmp.degrees());
+            int[] expectedDegrees = ArraysUtil.max(sumDegrees, tmp.degreesRef());
             sum = sum.add(tmp);
-            if (!Arrays.equals(expectedDegrees, sum.degrees()) || (shouldHaveCC && sum.ccAsPoly().isZero())) {
+            if (!Arrays.equals(expectedDegrees, sum.degreesRef()) || (shouldHaveCC && sum.ccAsPoly().isZero())) {
                 // adding of a non-zero factor reduced the degree of the result
                 // the common reason is that the cardinality is very small (e.g. 2, so that x + x = 0)
                 if (nFails == 2) {
@@ -504,8 +504,8 @@ public final class MultivariateGCD {
 
         int
                 nVariables = a.nVariables,
-                aDegrees[] = a.degrees(),
-                bDegrees[] = b.degrees(),
+                aDegrees[] = a.degreesRef(),
+                bDegrees[] = b.degreesRef(),
                 degreeBounds[] = new int[nVariables]; // degree bounds for gcd
 
         // populate initial gcd degree bounds
@@ -2196,7 +2196,7 @@ public final class MultivariateGCD {
         //store points that were already used in interpolation
         Set<E> globalEvaluationStack = new HashSet<>();
 
-        int[] aDegrees = a.degrees(), bDegrees = b.degrees();
+        int[] aDegrees = a.degreesRef(), bDegrees = b.degreesRef();
         int failedSparseInterpolations = 0;
 
         int[] tmpDegreeBounds = degreeBounds.clone();
@@ -2222,7 +2222,7 @@ public final class MultivariateGCD {
                     bVal = b.evaluate(variable, seedPoint);
 
             // check for unlucky substitution
-            int[] aValDegrees = aVal.degrees(), bValDegrees = bVal.degrees();
+            int[] aValDegrees = aVal.degreesRef(), bValDegrees = bVal.degreesRef();
             for (int i = variable - 1; i >= 0; --i)
                 if (aDegrees[i] != aValDegrees[i] || bDegrees[i] != bValDegrees[i])
                     continue main;
@@ -2378,7 +2378,7 @@ public final class MultivariateGCD {
     private static <E> MultivariatePolynomial.PrecomputedPowersHolder<E> mkPrecomputedPowers(
             MultivariatePolynomial<E> a, MultivariatePolynomial<E> b,
             int[] evaluationVariables, E[] evaluationPoint) {
-        int[] degrees = ArraysUtil.max(a.degrees(), b.degrees());
+        int[] degrees = ArraysUtil.max(a.degreesRef(), b.degreesRef());
         MultivariatePolynomial.PrecomputedPowers<E>[] pp = new MultivariatePolynomial.PrecomputedPowers[a.nVariables];
         for (int i = 0; i < evaluationVariables.length; ++i)
             pp[evaluationVariables[i]] = new MultivariatePolynomial.PrecomputedPowers<>(
@@ -3321,7 +3321,7 @@ public final class MultivariateGCD {
         //store points that were already used in interpolation
         TLongHashSet globalEvaluationStack = new TLongHashSet();
 
-        int[] aDegrees = a.degrees(), bDegrees = b.degrees();
+        int[] aDegrees = a.degreesRef(), bDegrees = b.degreesRef();
         int failedSparseInterpolations = 0;
 
         int[] tmpDegreeBounds = degreeBounds.clone();
@@ -3347,7 +3347,7 @@ public final class MultivariateGCD {
                     bVal = b.evaluate(variable, seedPoint);
 
             // check for unlucky substitution
-            int[] aValDegrees = aVal.degrees(), bValDegrees = bVal.degrees();
+            int[] aValDegrees = aVal.degreesRef(), bValDegrees = bVal.degreesRef();
             for (int i = variable - 1; i >= 0; --i)
                 if (aDegrees[i] != aValDegrees[i] || bDegrees[i] != bValDegrees[i])
                     continue main;
@@ -3499,7 +3499,7 @@ public final class MultivariateGCD {
     private static MultivariatePolynomialZp64.lPrecomputedPowersHolder mkPrecomputedPowers(
             MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b,
             int[] evaluationVariables, long[] evaluationPoint) {
-        int[] degrees = ArraysUtil.max(a.degrees(), b.degrees());
+        int[] degrees = ArraysUtil.max(a.degreesRef(), b.degreesRef());
         MultivariatePolynomialZp64.lPrecomputedPowers[] pp = new MultivariatePolynomialZp64.lPrecomputedPowers[a.nVariables];
         for (int i = 0; i < evaluationVariables.length; ++i)
             pp[evaluationVariables[i]] = new MultivariatePolynomialZp64.lPrecomputedPowers(

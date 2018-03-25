@@ -219,7 +219,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public UnivariatePolynomial<E> asUnivariate() {
         if (isConstant())
             return UnivariatePolynomial.constant(ring, lc());
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         int theVar = -1;
         for (int i = 0; i < degrees.length; i++) {
             if (degrees[i] != 0) {
@@ -1053,7 +1053,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      */
     @SuppressWarnings("unchecked")
     public HornerForm getHornerForm(int[] evaluationVariables) {
-        int[] evalDegrees = ArraysUtil.select(degrees(), evaluationVariables);
+        int[] evalDegrees = ArraysUtil.select(degreesRef(), evaluationVariables);
         MultivariatePolynomial<MultivariatePolynomial<E>> p = asOverMultivariateEliminate(evaluationVariables);
         Ring<AMultivariatePolynomial> newRing = Rings.PolynomialRing(p.cc().toSparseRecursiveForm());
         return new HornerForm(ring, evalDegrees, evaluationVariables.length,
@@ -1333,7 +1333,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     @SuppressWarnings("unchecked")
     public PrecomputedPowersHolder<E> mkPrecomputedPowers(int[] variables, E[] values) {
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         PrecomputedPowers<E>[] pp = new PrecomputedPowers[nVariables];
         for (int i = 0; i < variables.length; ++i)
             pp[variables[i]] = new PrecomputedPowers<>(Math.min(degrees[variables[i]], MAX_POWERS_CACHE_SIZE), values[i], ring);
@@ -1352,7 +1352,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public PrecomputedPowersHolder<E> mkPrecomputedPowers(E[] values) {
         if (values.length != nVariables)
             throw new IllegalArgumentException();
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         PrecomputedPowers<E>[] pp = new PrecomputedPowers[nVariables];
         for (int i = 0; i < nVariables; ++i)
             pp[i] = new PrecomputedPowers<>(Math.min(degrees[i], MAX_POWERS_CACHE_SIZE), values[i], ring);
@@ -1685,8 +1685,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     private MultivariatePolynomial<E> multiplyKronecker(MultivariatePolynomial<E> oth) {
         int[] resultDegrees = new int[nVariables];
-        int[] thisDegrees = degrees();
-        int[] othDegrees = oth.degrees();
+        int[] thisDegrees = degreesRef();
+        int[] othDegrees = oth.degreesRef();
         for (int i = 0; i < resultDegrees.length; i++)
             resultDegrees[i] = thisDegrees[i] + othDegrees[i];
 

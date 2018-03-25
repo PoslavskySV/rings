@@ -460,7 +460,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return the number of variables (those which are not units)
      */
     public final int nUsedVariables() {
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         int r = 0;
         for (int d : degrees)
             if (d != 0)
@@ -479,7 +479,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     @Override
     public int degree() {
         // fixme replace with degreeSum ?
-        if(cachedDegree == -1) {
+        if (cachedDegree == -1) {
             int max = 0;
             for (Term db : terms)
                 max = Math.max(max, db.totalDegree);
@@ -494,7 +494,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return the maximal degree of variables in this polynomial
      */
     public int degreeMax() {
-        return ArraysUtil.max(degrees());
+        return ArraysUtil.max(degreesRef());
     }
 
     /**
@@ -504,11 +504,24 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @return the degree of this polynomial with respect to specified variable
      */
     public final int degree(int variable) {
-        return degrees()[variable];
+        return degreesRef()[variable];
     }
 
     /** cached degrees */
     private int[] cachesDegrees = null;
+
+    /** returns reference (content must not be modified) */
+    protected int[] degreesRef() {
+        if (cachesDegrees == null) {
+            int[] degrees = new int[nVariables];
+            for (Term db : terms)
+                for (int i = 0; i < nVariables; i++)
+                    if (db.exponents[i] > degrees[i])
+                        degrees[i] = db.exponents[i];
+            return cachesDegrees = degrees;
+        }
+        return cachesDegrees;
+    }
 
     /**
      * Returns an array of degrees of all variables, so that is i-th element of the result is the polynomial degree with
@@ -518,15 +531,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      */
     @Override
     public final int[] degrees() {
-        if (cachesDegrees == null) {
-            int[] degrees = new int[nVariables];
-            for (Term db : terms)
-                for (int i = 0; i < nVariables; i++)
-                    if (db.exponents[i] > degrees[i])
-                        degrees[i] = db.exponents[i];
-            cachesDegrees = degrees;
-        }
-        return cachesDegrees;
+        return degreesRef().clone();
     }
 
     /**
@@ -557,7 +562,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      */
     @Override
     public final int degreeSum() {
-        return ArraysUtil.sum(degrees());
+        return ArraysUtil.sum(degreesRef());
     }
 
     /**
@@ -572,7 +577,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      */
     public double sparsity() {
         double sparsity = size();
-        for (int d : degrees()) {
+        for (int d : degreesRef()) {
             if (d != 0)
                 sparsity /= (d + 1);
         }
@@ -653,7 +658,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
             return 0;
         if (nVariables == 1)
             return 0;
-        int[] degrees = degrees();
+        int[] degrees = degreesRef();
         int var = -1;
         for (int i = 0; i < nVariables; i++) {
             if (degrees[i] != 0) {
