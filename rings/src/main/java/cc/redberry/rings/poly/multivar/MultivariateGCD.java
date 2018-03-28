@@ -2673,6 +2673,7 @@ public final class MultivariateGCD {
 
     /** Number of retries when raise condition occurs; then drop up with new homomorphism */
     private static final int
+            SMALL_FIELD_BIT_LENGTH = 13,
             NUMBER_OF_UNDER_DETERMINED_RETRIES = 8,
             NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD = 24;
 
@@ -2698,7 +2699,7 @@ public final class MultivariateGCD {
             int raiseFactor = 0;
 
             // choose dynamically, depending on the cardinality of cyclic group (equal to ring.characteristic)
-            int nTries = ring.characteristic().bitLength() < 10
+            int nTries = ring.characteristic().bitLength() <= SMALL_FIELD_BIT_LENGTH
                     ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
                     : NUMBER_OF_UNDER_DETERMINED_RETRIES;
             for (int iTry = 0; iTry < nTries; ++iTry) {
@@ -3800,7 +3801,7 @@ public final class MultivariateGCD {
             int nUnknowns = globalSkeleton.size(), nUnknownScalings = -1;
             int raiseFactor = 0;
 
-            int nTries = ring.modulus < 1024
+            int nTries = ring.modulus <= (1 << SMALL_FIELD_BIT_LENGTH)
                     ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
                     : NUMBER_OF_UNDER_DETERMINED_RETRIES;
             for (int iTry = 0; iTry < nTries; ++iTry) {

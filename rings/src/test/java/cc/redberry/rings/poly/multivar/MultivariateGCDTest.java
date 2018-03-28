@@ -2291,6 +2291,25 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
+    @Test(timeout = 100_000L)
+    public void testMediumCharacteristic1() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(5, Rings.Zp(4099));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                        "cc/redberry/rings/poly/multivar/MediumCharacteristicHugePoly.txt.gz"))))) {
+
+            MultivariatePolynomial<BigInteger> a = ring.parse(in.readLine());
+            MultivariatePolynomial<BigInteger> b = ring.parse(in.readLine());
+
+            for (boolean switch64 : Arrays.asList(true, false)) {
+                Conversions64bit.SWITCH_TO_64bit = switch64;
+                long start = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = PolynomialGCD(a, b);
+                System.out.println(nanosecondsToString(System.nanoTime() - start));
+            }
+        }
+    }
+
     /* =============================================== Test data =============================================== */
 
     /** sample data for test of GCD */
