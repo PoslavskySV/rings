@@ -100,7 +100,7 @@ public class LinearSolverTest extends AbstractTest {
         long modulus = 5642359;
         BigInteger[] solution = new BigInteger[rhs0.length];
         SystemInfo r = solve(new IntegersZp(modulus), convert(lhs0), convert(rhs0), solution);
-        Assert.assertEquals(SystemInfo.UnderDetermined, r);
+        Assert.assertTrue(r instanceof  SystemInfo.UnderDetermined);
     }
 
     @Test

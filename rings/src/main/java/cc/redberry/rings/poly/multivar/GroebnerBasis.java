@@ -4060,7 +4060,7 @@ public final class GroebnerBasis {
 
             if (result == Inconsistent)
                 return Inconsistent;
-            else if (result == UnderDetermined)
+            else if (result instanceof UnderDetermined)
                 return Consistent;
 
             // update non-linear equations with new solutions
@@ -4367,7 +4367,7 @@ public final class GroebnerBasis {
                 if (solve == Inconsistent)
                     return solve;
 
-                if (solve == UnderDetermined)
+                if (solve instanceof UnderDetermined)
                     continue;
 
                 equations.removeAll(block);

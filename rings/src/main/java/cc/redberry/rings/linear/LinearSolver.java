@@ -211,13 +211,25 @@ public final class LinearSolver {
     /**
      * Info about linear system
      */
-    public enum SystemInfo {
+    public interface SystemInfo {
         /** Under-determined system */
-        UnderDetermined,
+        final class UnderDetermined implements SystemInfo {
+            /** estimated number of not determined variables */
+            public final int nUnderDetermined;
+
+            public UnderDetermined(int nUnderDetermined) {
+                this.nUnderDetermined = nUnderDetermined;
+            }
+
+            public UnderDetermined() { this(1); }
+        }
+
+        UnderDetermined UnderDetermined = new UnderDetermined(1);
+
         /** Inconsistent system */
-        Inconsistent,
+        SystemInfo Inconsistent = new SystemInfo() {};
         /** Consistent system */
-        Consistent
+        SystemInfo Consistent = new SystemInfo() {};
     }
 
     /**
@@ -241,7 +253,7 @@ public final class LinearSolver {
                 return Consistent;
             }
             if (lhs[0].length > 1)
-                return UnderDetermined;
+                return new UnderDetermined(lhs.length - 1);
             if (lhs[0].length < 1)
                 return Inconsistent;
         }
@@ -249,7 +261,7 @@ public final class LinearSolver {
         int nUnderDetermined = rowEchelonForm(ring, lhs, rhs);
         if (nUnderDetermined > 0)
             // under-determined system
-            return UnderDetermined;
+            return new UnderDetermined(nUnderDetermined);
 
         int nRows = rhs.length;
         int nColumns = lhs[0].length;
@@ -602,7 +614,7 @@ public final class LinearSolver {
                 return Consistent;
             }
             if (lhs[0].length > 1)
-                return UnderDetermined;
+                return new UnderDetermined(lhs[0].length - 1);
             if (lhs[0].length < 1)
                 return Inconsistent;
         }
@@ -610,7 +622,7 @@ public final class LinearSolver {
         int nUnderDetermined = rowEchelonForm(ring, lhs, rhs);
         if (nUnderDetermined > 0)
             // under-determined system
-            return UnderDetermined;
+            return new UnderDetermined(nUnderDetermined);
 
         int nRows = rhs.length;
         int nColumns = lhs[0].length;

@@ -1292,7 +1292,7 @@ public final class HenselLifting {
                 break;
             if (info == LinearSolver.SystemInfo.Inconsistent)
                 return null;
-            if (info == LinearSolver.SystemInfo.UnderDetermined) {
+            if (info instanceof LinearSolver.SystemInfo.UnderDetermined) {
                 // update matrix data with fresh reduced system
                 lhs.clear();
                 lhs.addAll(Arrays.asList(lhsMatrix));

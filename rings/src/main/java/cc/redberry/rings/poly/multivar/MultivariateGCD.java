@@ -598,8 +598,8 @@ public final class MultivariateGCD {
 
             // coefficients in R[{used}][{dummies}]
             Poly[]
-                    aEffective = a.asOverMultivariateEliminate(usedVariables).coefficientsArray(),
-                    bEffective = b.asOverMultivariateEliminate(usedVariables).coefficientsArray();
+                    aEffective = getRidOfUnusedVariables(a, degreeBounds),
+                    bEffective = getRidOfUnusedVariables(b, degreeBounds);
 
             Poly[] all = ArraysUtil.addAll(aEffective, bEffective);
             // recursive call in PolynomialGCD
@@ -610,6 +610,43 @@ public final class MultivariateGCD {
         }
 
         return null;
+    }
+
+    // get rid of unused variables
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly[] getRidOfUnusedVariables(Poly poly, int[] degreeBounds) {
+        TIntArrayList
+                // variables that absent in poly, i.e.
+                // may be dropped with dropVariables (very fast)
+                drop = new TIntArrayList(),
+                // variables that present in poly, but don't
+                // present in GCD numerated as after invocation of dropVariables
+                unused = new TIntArrayList();
+        for (int i = 0; i < poly.nVariables; ++i) {
+            if (poly.degree(i) == 0)
+                drop.add(i);
+            else if (degreeBounds[i] == 0)
+                unused.add(i - drop.size());
+        }
+
+        // fast drop variables
+        Poly reduced = poly.dropVariables(drop.toArray());
+
+        // if there are no more redundant variables, just return
+        if (unused.isEmpty()) {
+            Poly[] array = reduced.createArray(1);
+            array[0] = reduced;
+            return array;
+        }
+
+        // faster method for univariate
+        if (unused.size() == 1)
+            return Arrays.stream(reduced.asUnivariateEliminate(unused.get(0)).getDataReferenceUnsafe())
+                    .filter(p -> !p.isZero()).toArray(reduced::createArray);
+
+        // used variables in transformed poly
+        int[] usedVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(0, reduced.nVariables), unused.toArray());
+        return reduced.asOverMultivariateEliminate(usedVariables).coefficientsArray();
     }
 
     @SuppressWarnings("unchecked")
@@ -2698,17 +2735,23 @@ public final class MultivariateGCD {
             int nUnknowns = globalSkeleton.size(), nUnknownScalings = -1;
             int raiseFactor = 0;
 
-            // choose dynamically, depending on the cardinality of cyclic group (equal to ring.characteristic)
-            int nTries = ring.characteristic().bitLength() <= SMALL_FIELD_BIT_LENGTH
+            // number of retries before meet raise condition
+            int nUnderDeterminedRetries = ring.characteristic().bitLength() <= SMALL_FIELD_BIT_LENGTH
                     ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
                     : NUMBER_OF_UNDER_DETERMINED_RETRIES;
-            for (int iTry = 0; iTry < nTries; ++iTry) {
+
+            // required number of evaluations to make before try to solve the system
+            int nUnderDetermined = 0;
+            for (; ; ) {
                 int previousFreeVars = -1, underDeterminedTries = 0;
+                int nEvaluationsDone = 0;
                 for (; ; ) {
                     // increment at each loop!
                     ++nUnknownScalings;
                     // sequential powers of evaluation point
                     ++raiseFactor;
+                    // increase evaluations counter
+                    ++nEvaluationsDone;
 
                     E lastVarValue = newPoint;
                     if (variable == -1)
@@ -2736,11 +2779,11 @@ public final class MultivariateGCD {
                         system.oneMoreEquation(rhs, nUnknownScalings != 0);
                         totalEquations += system.nEquations();
                     }
-                    if (nUnknowns + nUnknownScalings <= totalEquations)
+
+                    if (nEvaluationsDone >= nUnderDetermined && (nUnknowns + nUnknownScalings <= totalEquations))
                         break;
 
-
-                    if (underDeterminedTries > nTries) {
+                    if (underDeterminedTries > nUnderDeterminedRetries) {
                         // raise condition: new equations does not fix enough variables
                         return null;
                     }
@@ -2756,9 +2799,18 @@ public final class MultivariateGCD {
 
                 MultivariatePolynomial<E> result = a.createZero();
                 LinearSolver.SystemInfo info = solveLinZip(a, systems, nUnknownScalings, result);
-                if (info == LinearSolver.SystemInfo.UnderDetermined)
+                if (info instanceof LinearSolver.SystemInfo.UnderDetermined) {
+                    // how much variables are still not solved
+                    int nStillUnderDetermined = ((LinearSolver.SystemInfo.UnderDetermined) info).nUnderDetermined;
+
+                    if (nUnderDetermined != 0 && (nStillUnderDetermined >= nUnderDetermined))
+                        // no any new solutions obtained so far => bad homomorphism
+                        return null;
+
                     //try to generate more equations
+                    nUnderDetermined = nStillUnderDetermined;
                     continue;
+                }
                 if (info == LinearSolver.SystemInfo.Consistent)
                     //well done
                     return result;
@@ -2766,9 +2818,6 @@ public final class MultivariateGCD {
                     //inconsistent system => unlucky homomorphism
                     return null;
             }
-
-            // the system is still under-determined => bad evaluation homomorphism
-            return null;
         }
     }
 
@@ -2808,6 +2857,10 @@ public final class MultivariateGCD {
                 terms[i] = unknowns.get(i).setCoefficient(solution[i]);
             destination.add(terms);
         }
+
+        // even if under-determined, the specific value should be returned
+        assert info != LinearSolver.SystemInfo.UnderDetermined;
+
         return info;
     }
 
@@ -3801,16 +3854,23 @@ public final class MultivariateGCD {
             int nUnknowns = globalSkeleton.size(), nUnknownScalings = -1;
             int raiseFactor = 0;
 
-            int nTries = ring.modulus <= (1 << SMALL_FIELD_BIT_LENGTH)
+            // number of retries before meet raise condition
+            int nUnderDeterminedRetries = ring.modulus <= (1 << SMALL_FIELD_BIT_LENGTH)
                     ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
                     : NUMBER_OF_UNDER_DETERMINED_RETRIES;
-            for (int iTry = 0; iTry < nTries; ++iTry) {
+
+            // required number of evaluations to make before try to solve the system
+            int nUnderDetermined = 0;
+            for (; ; ) {
                 int previousFreeVars = -1, underDeterminedTries = 0;
+                int nEvaluationsDone = 0;
                 for (; ; ) {
                     // increment at each loop!
                     ++nUnknownScalings;
                     // sequential powers of evaluation point
                     ++raiseFactor;
+                    // increase evaluations counter
+                    ++nEvaluationsDone;
 
                     long lastVarValue = newPoint;
                     if (variable == -1)
@@ -3838,11 +3898,11 @@ public final class MultivariateGCD {
                         system.oneMoreEquation(rhs, nUnknownScalings != 0);
                         totalEquations += system.nEquations();
                     }
-                    if (nUnknowns + nUnknownScalings <= totalEquations)
+
+                    if (nEvaluationsDone >= nUnderDetermined && (nUnknowns + nUnknownScalings <= totalEquations))
                         break;
 
-
-                    if (underDeterminedTries > nTries) {
+                    if (underDeterminedTries > nUnderDeterminedRetries) {
                         // raise condition: new equations does not fix enough variables
                         return null;
                     }
@@ -3858,9 +3918,18 @@ public final class MultivariateGCD {
 
                 MultivariatePolynomialZp64 result = a.createZero();
                 LinearSolver.SystemInfo info = solveLinZip(a, systems, nUnknownScalings, result);
-                if (info == LinearSolver.SystemInfo.UnderDetermined)
+                if (info instanceof LinearSolver.SystemInfo.UnderDetermined) {
+                    // how much variables are still not solved
+                    int nStillUnderDetermined = ((LinearSolver.SystemInfo.UnderDetermined) info).nUnderDetermined;
+
+                    if (nUnderDetermined != 0 && (nStillUnderDetermined >= nUnderDetermined))
+                        // no any new solutions obtained so far => bad homomorphism
+                        return null;
+
                     //try to generate more equations
+                    nUnderDetermined = nStillUnderDetermined;
                     continue;
+                }
                 if (info == LinearSolver.SystemInfo.Consistent)
                     //well done
                     return result;
@@ -3868,9 +3937,6 @@ public final class MultivariateGCD {
                     //inconsistent system => unlucky homomorphism
                     return null;
             }
-
-            // the system is still under-determined => bad evaluation homomorphism
-            return null;
         }
     }
 
@@ -3910,6 +3976,10 @@ public final class MultivariateGCD {
                 terms[i] = unknowns.get(i).setCoefficient(solution[i]);
             destination.add(terms);
         }
+
+        // even if under-determined, the specific value should be returned
+        assert info != LinearSolver.SystemInfo.UnderDetermined;
+
         return info;
     }
 

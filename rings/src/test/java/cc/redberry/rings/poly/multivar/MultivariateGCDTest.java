@@ -2291,6 +2291,39 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
+    @Ignore("too expensive (memory limit in CI)")
+    @Test
+    public void testHugePoly3() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> R = Rings.MultivariateRing(7, Rings.Z);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                        "cc/redberry/rings/poly/multivar/HugeGCDinZ.LinZip.txt.gz"))))) {
+            int iProblem = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.startsWith("#"))
+                    continue;
+                String[] split = line.split("\t");
+
+                MultivariatePolynomial<BigInteger>
+                        p = R.parse(split[1]),
+                        q = R.parse(split[2]),
+                        expected = R.parse(split[3]);
+
+                long t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = MultivariateGCD.PolynomialGCD(p, q);
+                long t2 = System.nanoTime();
+                assertTrue(dividesQ(gcd, expected));
+
+                System.out.println("Problem    : " + iProblem);
+                System.out.println("Total time : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size   : " + gcd.size());
+                System.out.println();
+                ++iProblem;
+            }
+        }
+    }
+
     @Test(timeout = 100_000L)
     public void testMediumCharacteristic1() throws Exception {
         MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(5, Rings.Zp(4099));
