@@ -1859,7 +1859,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public MultivariatePolynomialZp64 parsePoly(String string, String[] variables) {
         MultivariatePolynomialZp64 r = parse(string, ring, ordering, variables);
         if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field");
+            throw new IllegalArgumentException("not from this field: " + string);
         return r;
     }
 

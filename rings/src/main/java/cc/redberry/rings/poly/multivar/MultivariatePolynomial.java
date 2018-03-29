@@ -1971,7 +1971,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     public MultivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String[] variables) {
         MultivariatePolynomial<E> r = Parser.parse(string, ring, eParser, ordering, variables);
         if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field");
+            throw new IllegalArgumentException("not from this field: " + string);
         return r;
     }
 
