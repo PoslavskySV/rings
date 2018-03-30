@@ -2293,7 +2293,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             }
         }
 
-        //Total time : 234s
+        //Total time : 113s
         //GCD size   : 3380
     }
 
