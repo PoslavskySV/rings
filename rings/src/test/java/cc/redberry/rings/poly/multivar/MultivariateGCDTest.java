@@ -2350,6 +2350,52 @@ public class MultivariateGCDTest extends AMultivariateTest {
         //GCD size   : 201
     }
 
+    @Ignore("too expensive (memory limit in CI)")
+    @Test
+    public void testHugePoly4() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>>
+                R = Rings.MultivariateRing(3, Rings.Z),
+                modR = Rings.MultivariateRing(3, Rings.Zp(1073741827));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                        "cc/redberry/rings/poly/multivar/HugeHugeGCDinZ.txt.gz"))))) {
+            int iProblem = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.startsWith("#"))
+                    continue;
+                String[] split = line.split("\t");
+
+                MultivariatePolynomial<BigInteger>
+                        p = R.parse(split[1]),
+                        q = R.parse(split[2]),
+                        expected = R.parse(split[3]);
+
+
+                System.out.println("Problem    : " + iProblem++);
+                long t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = MultivariateGCD.PolynomialGCD(p, q);
+                long t2 = System.nanoTime();
+                assertTrue(dividesQ(gcd, expected));
+
+                System.out.println("Total time (Z)   : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size         : " + gcd.size());
+                System.out.println();
+
+                t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> mgcd = MultivariateGCD.PolynomialGCD(modR.valueOf(p), modR.valueOf(q));
+                t2 = System.nanoTime();
+                assertTrue(dividesQ(gcd, expected));
+
+                System.out.println("Total time (mod) : " + nanosecondsToString(t2 - t1));
+                System.out.println("MGCD size        : " + mgcd.size());
+                System.out.println();
+            }
+        }
+        // > 1444s
+        // 355s
+    }
+
     @Test(timeout = 100_000L) // =====> testMediumCharacteristic1   elapsed 12s
     public void testMediumCharacteristic1() throws Exception {
         MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(5, Rings.Zp(4099));

@@ -1186,10 +1186,7 @@ public final class MultivariateGCD {
                 if (previousBase != null && candidate.equals(previousBase)) {
                     previousBase = candidate;
                     //first check b since b is less degree
-                    if (!MultivariateDivision.dividesQ(b, candidate))
-                        continue;
-
-                    if (!MultivariateDivision.dividesQ(a, candidate))
+                    if (!isGCDTriplet(b, a, candidate))
                         continue;
 
                     return gcdInput.restoreGCD(candidate);
@@ -1384,10 +1381,7 @@ public final class MultivariateGCD {
             // two trials didn't change the result, probably we are done
             MultivariatePolynomial<BigInteger> candidate = MultivariatePolynomial.asPolyZSymmetric(base).primitivePart();
             //first check b since b is less degree
-            if (!MultivariateDivision.dividesQ(b, candidate))
-                continue;
-
-            if (!MultivariateDivision.dividesQ(a, candidate))
+            if (!isGCDTriplet(b, a, candidate))
                 continue;
 
             return gcdInput.restoreGCD(candidate);
@@ -1734,7 +1728,7 @@ public final class MultivariateGCD {
                     continue main_loop;
                 }
 
-                if (!MultivariateDivision.dividesQ(aMod, modularGCD) || !MultivariateDivision.dividesQ(bMod, modularGCD)) {
+                if (!isGCDTriplet(aMod, bMod, modularGCD)) {
                     // extremely rare event
                     // bad base prime chosen
                     continue main_loop;
@@ -1794,12 +1788,8 @@ public final class MultivariateGCD {
                 if (basePrime.degree() >= uDegreeBound || (previousBase != null && candidate.equals(previousBase))) {
                     previousBase = candidate;
                     //first check b since b is less degree
-                    if (!MultivariateDivision.dividesQ(b, candidate))
+                    if (!isGCDTriplet(b, a, candidate))
                         continue;
-
-                    if (!MultivariateDivision.dividesQ(a, candidate))
-                        continue;
-
 
                     return candidate;
                 }
@@ -1901,10 +1891,7 @@ public final class MultivariateGCD {
             // two trials didn't change the result, probably we are done
             MultivariatePolynomial<uPoly> candidate = base.clone().primitivePart();
             //first check b since b is less degree
-            if (!MultivariateDivision.dividesQ(b, candidate))
-                continue;
-
-            if (!MultivariateDivision.dividesQ(a, candidate))
+            if (!isGCDTriplet(b, a, candidate))
                 continue;
 
             return candidate;
@@ -2122,13 +2109,48 @@ public final class MultivariateGCD {
             return null;
         MultivariatePolynomial<E> interpolated =
                 MultivariatePolynomial.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariateEliminate(variable).primitivePart(), variable);
-        if (!MultivariateDivision.dividesQ(a, interpolated) || !MultivariateDivision.dividesQ(b, interpolated))
+        if (!isGCDTriplet(a, b, interpolated))
             return null;
 
         if (contentGCD == null)
             return interpolated;
         MultivariatePolynomial<E> poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
         return interpolated.multiply(poly);
+    }
+
+    // when to use fast division check
+    private static final int LARGE_SIZE_USE_FAST_DIV_TEST = 64_000;
+
+    /** test whether gcd divide a and b **/
+    private static <E> boolean isGCDTriplet(MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, MultivariatePolynomial<E> gcd) {
+        if (Math.max(a.size(), b.size()) > LARGE_SIZE_USE_FAST_DIV_TEST) {
+            Ring<E> ring = a.ring;
+            E[] subs = ring.createArray(a.nVariables - 1);
+            for (int i = 0; i < subs.length; ++i)
+                subs[i] = ring.randomNonZeroElement(PrivateRandom.getRandom());
+
+            MultivariatePolynomial.PrecomputedPowersHolder<E> powers = a.mkPrecomputedPowers(ArraysUtil.sequence(0, a.nVariables - 1), subs);
+
+            UnivariatePolynomial<E> uniDiv = subsToUnivariate(gcd, powers);
+            // fast check
+            if (!UnivariateDivision.remainder(subsToUnivariate(a, powers), uniDiv, false).isZero()
+                    || !UnivariateDivision.remainder(subsToUnivariate(b, powers), uniDiv, false).isZero())
+                return false;
+        }
+
+        return MultivariateDivision.dividesQ(a, gcd) && MultivariateDivision.dividesQ(b, gcd);
+    }
+
+    /** substitute all variables except last one **/
+    private static <E> UnivariatePolynomial<E> subsToUnivariate(MultivariatePolynomial<E> a, MultivariatePolynomial.PrecomputedPowersHolder<E> powers) {
+        E[] aUni = a.ring.createZeroesArray(a.degree(a.nVariables - 1) + 1);
+        for (Monomial<E> t : a) {
+            E val = t.coefficient;
+            for (int i = 0; i < a.nVariables - 1; ++i)
+                val = a.ring.multiply(val, powers.pow(i, t.exponents[i]));
+            aUni[t.exponents[a.nVariables - 1]] = a.ring.add(aUni[t.exponents[a.nVariables - 1]], val);
+        }
+        return UnivariatePolynomial.createUnsafe(a.ring, aUni);
     }
 
     /**
@@ -2740,18 +2762,25 @@ public final class MultivariateGCD {
                     ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
                     : NUMBER_OF_UNDER_DETERMINED_RETRIES;
 
-            // required number of evaluations to make before try to solve the system
-            int nUnderDetermined = 0;
-            for (; ; ) {
-                int previousFreeVars = -1, underDeterminedTries = 0;
-                int nEvaluationsDone = 0;
+            int previousFreeVars = -1, underDeterminedTries = 0;
+            boolean lastChanceUsed = false;
+            for (int iTry = 0; ; ++iTry) {
+                if (iTry == nUnderDeterminedRetries) {
+                    if (lastChanceUsed)
+                        // allow this trick only once, then break
+                        break;
+                    else {
+                        // give the last chance
+                        lastChanceUsed = true;
+                        nUnderDeterminedRetries += nUnderDeterminedLinZip(a, systems, nUnknownScalings);
+                    }
+                }
+
                 for (; ; ) {
                     // increment at each loop!
                     ++nUnknownScalings;
                     // sequential powers of evaluation point
                     ++raiseFactor;
-                    // increase evaluations counter
-                    ++nEvaluationsDone;
 
                     E lastVarValue = newPoint;
                     if (variable == -1)
@@ -2780,13 +2809,12 @@ public final class MultivariateGCD {
                         totalEquations += system.nEquations();
                     }
 
-                    if (nEvaluationsDone >= nUnderDetermined && (nUnknowns + nUnknownScalings <= totalEquations))
+                    if (nUnknowns + nUnknownScalings <= totalEquations)
                         break;
 
-                    if (underDeterminedTries > nUnderDeterminedRetries) {
+                    if (underDeterminedTries > nUnderDeterminedRetries)
                         // raise condition: new equations does not fix enough variables
                         return null;
-                    }
 
                     int freeVars = nUnknowns + nUnknownScalings - totalEquations;
                     if (freeVars >= previousFreeVars)
@@ -2799,18 +2827,9 @@ public final class MultivariateGCD {
 
                 MultivariatePolynomial<E> result = a.createZero();
                 LinearSolver.SystemInfo info = solveLinZip(a, systems, nUnknownScalings, result);
-                if (info instanceof LinearSolver.SystemInfo.UnderDetermined) {
-                    // how much variables are still not solved
-                    int nStillUnderDetermined = ((LinearSolver.SystemInfo.UnderDetermined) info).nUnderDetermined;
-
-                    if (nUnderDetermined != 0 && (nStillUnderDetermined >= nUnderDetermined))
-                        // no any new solutions obtained so far => bad homomorphism
-                        return null;
-
+                if (info == LinearSolver.SystemInfo.UnderDetermined)
                     //try to generate more equations
-                    nUnderDetermined = nStillUnderDetermined;
                     continue;
-                }
                 if (info == LinearSolver.SystemInfo.Consistent)
                     //well done
                     return result;
@@ -2818,7 +2837,35 @@ public final class MultivariateGCD {
                     //inconsistent system => unlucky homomorphism
                     return null;
             }
+            // still under determined
+            return null;
         }
+    }
+
+    private static <E> int nUnderDeterminedLinZip(MultivariatePolynomial<E> factory, LinZipSystem<E>[] subSystems, int nUnknownScalings) {
+        int nUnknownsMonomials = 0;
+        for (LinZipSystem<E> system : subSystems)
+            nUnknownsMonomials += system.skeleton.length;
+
+        int nUnknownsTotal = nUnknownsMonomials + nUnknownScalings;
+        ArrayList<E[]> lhsGlobal = new ArrayList<>();
+        int offset = 0;
+        Ring<E> ring = factory.ring;
+        for (LinZipSystem<E> system : subSystems) {
+            for (int j = 0; j < system.matrix.size(); j++) {
+                E[] row = ring.createZeroesArray(nUnknownsTotal);
+                E[] subRow = system.matrix.get(j);
+
+                System.arraycopy(subRow, 0, row, offset, subRow.length);
+                if (j > 0)
+                    row[nUnknownsMonomials + j - 1] = system.scalingMatrix.get(j);
+                lhsGlobal.add(row);
+            }
+
+            offset += system.skeleton.length;
+        }
+
+        return LinearSolver.rowEchelonForm(factory.ring, lhsGlobal.toArray(ring.createArray2d(lhsGlobal.size())), null, false, false);
     }
 
     private static <E> LinearSolver.SystemInfo solveLinZip(MultivariatePolynomial<E> factory, LinZipSystem<E>[] subSystems, int nUnknownScalings, MultivariatePolynomial<E> destination) {
@@ -2857,9 +2904,6 @@ public final class MultivariateGCD {
                 terms[i] = unknowns.get(i).setCoefficient(solution[i]);
             destination.add(terms);
         }
-
-        // even if under-determined, the specific value should be returned
-        assert info != LinearSolver.SystemInfo.UnderDetermined;
 
         return info;
     }
@@ -3274,14 +3318,49 @@ public final class MultivariateGCD {
             return null;
         MultivariatePolynomialZp64 interpolated =
                 MultivariatePolynomialZp64.asNormalMultivariate(interpolation.getInterpolatingPolynomial().asOverUnivariateEliminate(variable).primitivePart(), variable);
-        if (!MultivariateDivision.dividesQ(a, interpolated) || !MultivariateDivision.dividesQ(b, interpolated))
+
+        if (!isGCDTriplet(a, b, interpolated))
             return null;
 
         if (contentGCD == null)
             return interpolated;
+
         MultivariatePolynomialZp64 poly = AMultivariatePolynomial.asMultivariate(contentGCD, a.nVariables, variable, a.ordering);
         return interpolated.multiply(poly);
     }
+
+    /** test whether gcd divide a and b **/
+    private static boolean isGCDTriplet(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b, MultivariatePolynomialZp64 gcd) {
+        if (Math.max(a.size(), b.size()) > LARGE_SIZE_USE_FAST_DIV_TEST) {
+            IntegersZp64 ring = a.ring;
+            long[] subs = new long[a.nVariables - 1];
+            for (int i = 0; i < subs.length; ++i)
+                subs[i] = ring.randomNonZeroElement(PrivateRandom.getRandom());
+
+            MultivariatePolynomialZp64.lPrecomputedPowersHolder powers = a.mkPrecomputedPowers(ArraysUtil.sequence(0, a.nVariables - 1), subs);
+
+            UnivariatePolynomialZp64 uniDiv = subsToUnivariate(gcd, powers);
+            // fast check
+            if (!UnivariateDivision.remainder(subsToUnivariate(a, powers), uniDiv, false).isZero()
+                    || !UnivariateDivision.remainder(subsToUnivariate(b, powers), uniDiv, false).isZero())
+                return false;
+        }
+
+        return MultivariateDivision.dividesQ(a, gcd) && MultivariateDivision.dividesQ(b, gcd);
+    }
+
+    /** substitute all variables except last one **/
+    private static UnivariatePolynomialZp64 subsToUnivariate(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64.lPrecomputedPowersHolder powers) {
+        long[] aUni = new long[a.degree(a.nVariables - 1) + 1];
+        for (MonomialZp64 t : a) {
+            long val = t.coefficient;
+            for (int i = 0; i < a.nVariables - 1; ++i)
+                val = a.ring.multiply(val, powers.pow(i, t.exponents[i]));
+            aUni[t.exponents[a.nVariables - 1]] = a.ring.add(aUni[t.exponents[a.nVariables - 1]], val);
+        }
+        return UnivariatePolynomialZp64.createUnsafe(a.ring, aUni);
+    }
+
 
     /**
      * Calculates GCD of two multivariate polynomials over Zp using Zippel's algorithm with sparse interpolation.
@@ -3859,18 +3938,25 @@ public final class MultivariateGCD {
                     ? NUMBER_OF_UNDER_DETERMINED_RETRIES_SMALL_FIELD
                     : NUMBER_OF_UNDER_DETERMINED_RETRIES;
 
-            // required number of evaluations to make before try to solve the system
-            int nUnderDetermined = 0;
-            for (; ; ) {
-                int previousFreeVars = -1, underDeterminedTries = 0;
-                int nEvaluationsDone = 0;
+            int previousFreeVars = -1, underDeterminedTries = 0;
+            boolean lastChanceUsed = false;
+            for (int iTry = 0; ; ++iTry) {
+                if (iTry == nUnderDeterminedRetries) {
+                    if (lastChanceUsed)
+                        // allow this trick only once, then break
+                        break;
+                    else {
+                        // give the last chance
+                        lastChanceUsed = true;
+                        nUnderDeterminedRetries += nUnderDeterminedLinZip(a, systems, nUnknownScalings);
+                    }
+                }
+
                 for (; ; ) {
                     // increment at each loop!
                     ++nUnknownScalings;
                     // sequential powers of evaluation point
                     ++raiseFactor;
-                    // increase evaluations counter
-                    ++nEvaluationsDone;
 
                     long lastVarValue = newPoint;
                     if (variable == -1)
@@ -3899,7 +3985,7 @@ public final class MultivariateGCD {
                         totalEquations += system.nEquations();
                     }
 
-                    if (nEvaluationsDone >= nUnderDetermined && (nUnknowns + nUnknownScalings <= totalEquations))
+                    if (nUnknowns + nUnknownScalings <= totalEquations)
                         break;
 
                     if (underDeterminedTries > nUnderDeterminedRetries) {
@@ -3918,18 +4004,9 @@ public final class MultivariateGCD {
 
                 MultivariatePolynomialZp64 result = a.createZero();
                 LinearSolver.SystemInfo info = solveLinZip(a, systems, nUnknownScalings, result);
-                if (info instanceof LinearSolver.SystemInfo.UnderDetermined) {
-                    // how much variables are still not solved
-                    int nStillUnderDetermined = ((LinearSolver.SystemInfo.UnderDetermined) info).nUnderDetermined;
-
-                    if (nUnderDetermined != 0 && (nStillUnderDetermined >= nUnderDetermined))
-                        // no any new solutions obtained so far => bad homomorphism
-                        return null;
-
+                if (info == LinearSolver.SystemInfo.UnderDetermined)
                     //try to generate more equations
-                    nUnderDetermined = nStillUnderDetermined;
                     continue;
-                }
                 if (info == LinearSolver.SystemInfo.Consistent)
                     //well done
                     return result;
@@ -3937,10 +4014,43 @@ public final class MultivariateGCD {
                     //inconsistent system => unlucky homomorphism
                     return null;
             }
+            // still under determined
+            return null;
         }
     }
 
-    private static LinearSolver.SystemInfo solveLinZip(MultivariatePolynomialZp64 factory, lLinZipSystem[] subSystems, int nUnknownScalings, MultivariatePolynomialZp64 destination) {
+    private static int nUnderDeterminedLinZip(MultivariatePolynomialZp64 factory,
+                                              lLinZipSystem[] subSystems,
+                                              int nUnknownScalings) {
+
+        int nUnknownsMonomials = 0;
+        for (lLinZipSystem system : subSystems)
+            nUnknownsMonomials += system.skeleton.length;
+
+        int nUnknownsTotal = nUnknownsMonomials + nUnknownScalings;
+        ArrayList<long[]> lhsGlobal = new ArrayList<>();
+        int offset = 0;
+        for (lLinZipSystem system : subSystems) {
+            for (int j = 0; j < system.matrix.size(); j++) {
+                long[] row = new long[nUnknownsTotal];
+                long[] subRow = system.matrix.get(j);
+
+                System.arraycopy(subRow, 0, row, offset, subRow.length);
+                if (j > 0)
+                    row[nUnknownsMonomials + j - 1] = system.scalingMatrix.get(j);
+                lhsGlobal.add(row);
+            }
+
+            offset += system.skeleton.length;
+        }
+
+        return LinearSolver.rowEchelonForm(factory.ring, lhsGlobal.toArray(new long[lhsGlobal.size()][]), null, false, false);
+    }
+
+    private static LinearSolver.SystemInfo solveLinZip(MultivariatePolynomialZp64 factory,
+                                                       lLinZipSystem[] subSystems,
+                                                       int nUnknownScalings,
+                                                       MultivariatePolynomialZp64 destination) {
         ArrayList<MonomialZp64> unknowns = new ArrayList<>();
         for (lLinZipSystem system : subSystems)
             for (MonomialZp64 degreeVector : system.skeleton)
@@ -3976,9 +4086,6 @@ public final class MultivariateGCD {
                 terms[i] = unknowns.get(i).setCoefficient(solution[i]);
             destination.add(terms);
         }
-
-        // even if under-determined, the specific value should be returned
-        assert info != LinearSolver.SystemInfo.UnderDetermined;
 
         return info;
     }
@@ -4382,7 +4489,7 @@ public final class MultivariateGCD {
                 gcd = HenselLifting.primitivePart(gcd);
             }
 
-            if (MultivariateDivision.dividesQ(b, gcd) && MultivariateDivision.dividesQ(a, gcd))
+            if (isGCDTriplet(b, a, gcd))
                 return evaluations.reconstruct(gcd);
         }
     }
@@ -4938,8 +5045,19 @@ public final class MultivariateGCD {
                 gcd = HenselLifting.primitivePart(gcd);
             }
 
-            if (MultivariateDivision.dividesQ(b, gcd) && MultivariateDivision.dividesQ(a, gcd))
+            if (isGCDTriplet(b, a, gcd))
                 return gcd;
         }
+    }
+
+    /** test whether gcd divide a and b **/
+    @SuppressWarnings("unchecked")
+    private static <Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    boolean isGCDTriplet(Poly a, Poly b, Poly gcd) {
+        if (a instanceof MultivariatePolynomial)
+            return isGCDTriplet((MultivariatePolynomial) a, (MultivariatePolynomial) b, (MultivariatePolynomial) gcd);
+        else
+            return isGCDTriplet((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b, (MultivariatePolynomialZp64) gcd);
     }
 }
