@@ -1,6 +1,8 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.poly.test.APolynomialTest;
+import cc.redberry.rings.util.TimeUnits;
+import org.junit.After;
 import org.junit.Assume;
 
 /**
@@ -8,6 +10,8 @@ import org.junit.Assume;
  */
 public class AMultivariateTest extends APolynomialTest {
     private final boolean run;
+
+    long start;
 
     public AMultivariateTest() {
         // prevent to switch from generic ring to 64-bit arithmetic
@@ -18,6 +22,12 @@ public class AMultivariateTest extends APolynomialTest {
     @Override
     public void beforeMethod() throws Exception {
         super.beforeMethod();
+        start = System.nanoTime();
         Assume.assumeTrue(run);
+    }
+
+    @After
+    public void afterMethod() {
+        System.out.println("=====> " + name.getMethodName() + "   elapsed " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
     }
 }
