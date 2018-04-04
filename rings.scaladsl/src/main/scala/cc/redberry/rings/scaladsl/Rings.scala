@@ -580,7 +580,7 @@ object GF {
   * @param cfRingZp64 coefficient ring
   * @param variable   variable
   */
-final case class UnivariateRingZp64 private(cfRingZp64: IntegersZp64, override val variable: String)
+final case class UnivariateRingZp64(cfRingZp64: IntegersZp64, override val variable: String)
   extends AUnivariateRingZp64(rings.Rings.UnivariateRingZp64(cfRingZp64), variable) {
   val modulus: Long = cfRingZp64.modulus
   /**
@@ -597,11 +597,6 @@ object UnivariateRingZp64 {
     * Zp[variable] with specified modulus
     */
   def apply(modulus: Long, variable: String): UnivariateRingZp64 = new UnivariateRingZp64(new IntegersZp64(modulus), variable)
-
-  /**
-    * Zp[variable] with specified coefficient ring (Zp)
-    */
-  def apply(domain: IntegersZp64, variable: String) = new UnivariateRingZp64(domain, variable)
 }
 
 /**

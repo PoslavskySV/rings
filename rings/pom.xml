@@ -50,6 +50,15 @@
     </scm>
 
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources/cc/redberry/rings/poly/multivar</directory>
+                <excludes>
+                    <exclude>*</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -66,7 +75,7 @@
                     <source>1.8</source>
                     <target>1.8</target>
                     <!--<compilerArguments>-->
-                        <!--<verbose/>-->
+                    <!--<verbose/>-->
                     <!--</compilerArguments>-->
                 </configuration>
                 <executions>
@@ -81,7 +90,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.0.2</version>
                 <executions>
                     <execution>
                         <goals>
