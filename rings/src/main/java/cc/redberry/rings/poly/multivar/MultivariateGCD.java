@@ -308,6 +308,7 @@ public final class MultivariateGCD {
             return ZippelGCDInZ(a, b);
     }
 
+    private static final double SPARSITY_THRESHOLD_NVARS_4 = 0.2;
     private static final double SPARSITY2_THRESHOLD = 0.5;
     private static final int SPARSITY_SIZE_THRESHOLD = 256;
 
@@ -316,7 +317,8 @@ public final class MultivariateGCD {
                 && a.size() > SPARSITY_SIZE_THRESHOLD
                 && b.size() > SPARSITY_SIZE_THRESHOLD
                 && a.sparsity2() > SPARSITY2_THRESHOLD
-                && b.sparsity2() > SPARSITY2_THRESHOLD;
+                && b.sparsity2() > SPARSITY2_THRESHOLD
+                && (a.nVariables > 4 || (a.sparsity() > SPARSITY_THRESHOLD_NVARS_4 && b.sparsity() > SPARSITY_THRESHOLD_NVARS_4));
     }
 
     @SuppressWarnings("unchecked")
