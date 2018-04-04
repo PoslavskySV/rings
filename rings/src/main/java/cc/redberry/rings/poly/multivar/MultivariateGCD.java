@@ -2135,8 +2135,11 @@ public final class MultivariateGCD {
 
             UnivariatePolynomial<E> uniDiv = subsToUnivariate(gcd, powers);
             // fast check
-            if (!UnivariateDivision.remainder(subsToUnivariate(a, powers), uniDiv, false).isZero()
-                    || !UnivariateDivision.remainder(subsToUnivariate(b, powers), uniDiv, false).isZero())
+            UnivariatePolynomial<E> ra = UnivariateDivision.remainder(subsToUnivariate(a, powers), uniDiv, false);
+            if (ra == null || !ra.isZero())
+                return false;
+            UnivariatePolynomial<E> rb = UnivariateDivision.remainder(subsToUnivariate(b, powers), uniDiv, false);
+            if (rb == null || !rb.isZero())
                 return false;
         }
 
