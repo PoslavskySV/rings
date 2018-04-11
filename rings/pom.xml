@@ -54,8 +54,14 @@
             <testResource>
                 <directory>src/test/resources/cc/redberry/rings/poly/multivar</directory>
                 <excludes>
-                    <exclude>*</exclude>
+                    <exclude>HugeGCDinZ.LinZip.txt.gz</exclude>
+                    <exclude>HugeGCDinZ.txt.gz</exclude>
+                    <exclude>HugeGCDinZp.txt.gz</exclude>
+                    <exclude>HugeHugeGCDinZ.txt.gz</exclude>
                 </excludes>
+                <includes>
+                    <include>MediumCharacteristicHugePoly.txt.gz</include>
+                </includes>
             </testResource>
         </testResources>
 
