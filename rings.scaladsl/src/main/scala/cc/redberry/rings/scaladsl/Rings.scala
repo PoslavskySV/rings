@@ -13,7 +13,11 @@ import scala.language.{existentials, implicitConversions, postfixOps}
   *
   * @param theRing the [[Ring]]
   **/
-sealed class Ring[E](val theRing: rings.Ring[E]) extends ToStringSupport[E] with ElementParser[E] with RingSupport[E] {
+sealed class Ring[E](val theRing: rings.Ring[E])
+  extends ToStringSupport[E]
+    with ElementParser[E]
+    with RingSupport[E]
+    with Serializable {
 
   override def ringEv(ev: E): Ring[E] = this
 
@@ -229,7 +233,7 @@ abstract class IPolynomialRing[Poly <: IPolynomial[Poly], E]
   protected[scaladsl] final def divRem(a: Poly, b: Poly): (Poly, Poly) = {
     val qd = theRing.divideAndRemainder(a, b)
     if (qd == null)
-      throw new ArithmeticException(s"not divisible with remainder: ${this show a } / ${this show b }")
+      throw new ArithmeticException(s"not divisible with remainder: ${this show a} / ${this show b}")
     (qd(0), qd(1))
   }
 
