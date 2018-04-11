@@ -54,7 +54,7 @@ public final class LinearSolver {
      * @return the number of free variables
      */
     public static <E> int rowEchelonForm(Ring<E> ring, E[][] matrix) {
-        return rowEchelonForm(ring, matrix, null, false);
+        return rowEchelonForm(ring, matrix, null, false, false);
     }
 
     /**
@@ -66,7 +66,7 @@ public final class LinearSolver {
      * @return the number of free variables
      */
     public static <E> int rowEchelonForm(Ring<E> ring, E[][] matrix, boolean reduce) {
-        return rowEchelonForm(ring, matrix, null, reduce);
+        return rowEchelonForm(ring, matrix, null, reduce, false);
     }
 
     /**
@@ -78,19 +78,20 @@ public final class LinearSolver {
      * @return the number of free variables
      */
     public static <E> int rowEchelonForm(Ring<E> ring, E[][] lhs, E[] rhs) {
-        return rowEchelonForm(ring, lhs, rhs, false);
+        return rowEchelonForm(ring, lhs, rhs, false, false);
     }
 
     /**
      * Gives the row echelon form of the linear system {@code lhs.x = rhs}.
      *
-     * @param ring   the ring
-     * @param lhs    the lhs of the system
-     * @param rhs    the rhs of the system
-     * @param reduce whether to calculate reduced row echelon form
+     * @param ring                   the ring
+     * @param lhs                    the lhs of the system
+     * @param rhs                    the rhs of the system
+     * @param reduce                 whether to calculate reduced row echelon form
+     * @param breakOnUnderDetermined whether to return immediately if it was detected that system is under determined
      * @return the number of free variables
      */
-    public static <E> int rowEchelonForm(Ring<E> ring, E[][] lhs, E[] rhs, boolean reduce) {
+    public static <E> int rowEchelonForm(Ring<E> ring, E[][] lhs, E[] rhs, boolean reduce, boolean breakOnUnderDetermined) {
         if (rhs != null && lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
 
@@ -121,6 +122,8 @@ public final class LinearSolver {
 
             // singular
             if (ring.isZero(lhs[row][iColumn])) {
+                if (breakOnUnderDetermined)
+                    return 1;
                 //nothing to do on this column
                 ++nZeroColumns;
                 to = Math.min(nRows + nZeroColumns, nColumns);
@@ -217,7 +220,7 @@ public final class LinearSolver {
         /** Inconsistent system */
         Inconsistent,
         /** Consistent system */
-        Consistent
+        Consistent;
     }
 
     /**
@@ -246,7 +249,7 @@ public final class LinearSolver {
                 return Inconsistent;
         }
 
-        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs);
+        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs, false, true);
         if (nUnderDetermined > 0)
             // under-determined system
             return UnderDetermined;
@@ -439,7 +442,7 @@ public final class LinearSolver {
      * @return the number of free variables
      */
     public static int rowEchelonForm(IntegersZp64 ring, long[][] matrix, boolean reduce) {
-        return rowEchelonForm(ring, matrix, null, reduce);
+        return rowEchelonForm(ring, matrix, null, reduce, false);
     }
 
     /**
@@ -451,19 +454,20 @@ public final class LinearSolver {
      * @return the number of free variables
      */
     public static int rowEchelonForm(IntegersZp64 ring, long[][] lhs, long[] rhs) {
-        return rowEchelonForm(ring, lhs, rhs, false);
+        return rowEchelonForm(ring, lhs, rhs, false, false);
     }
 
     /**
      * Gives the row echelon form of the linear system {@code lhs.x = rhs} (rhs may be null).
      *
-     * @param ring   the ring
-     * @param lhs    the lhs of the system
-     * @param rhs    the rhs of the system (may be null)
-     * @param reduce whether to calculate reduced row echelon form
+     * @param ring                   the ring
+     * @param lhs                    the lhs of the system
+     * @param rhs                    the rhs of the system (may be null)
+     * @param reduce                 whether to calculate reduced row echelon form
+     * @param breakOnUnderDetermined whether to return immediately if it was detected that system is under determined
      * @return the number of free variables
      */
-    public static int rowEchelonForm(IntegersZp64 ring, long[][] lhs, long[] rhs, boolean reduce) {
+    public static int rowEchelonForm(IntegersZp64 ring, long[][] lhs, long[] rhs, boolean reduce, boolean breakOnUnderDetermined) {
         if (rhs != null && lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
 
@@ -494,6 +498,8 @@ public final class LinearSolver {
 
             // singular
             if (lhs[row][iColumn] == 0) {
+                if (breakOnUnderDetermined)
+                    return 1;
                 //nothing to do on this column
                 ++nZeroColumns;
                 to = Math.min(nRows + nZeroColumns, nColumns);
@@ -607,7 +613,7 @@ public final class LinearSolver {
                 return Inconsistent;
         }
 
-        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs);
+        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs, false, true);
         if (nUnderDetermined > 0)
             // under-determined system
             return UnderDetermined;

@@ -134,7 +134,7 @@ final class Parser {
             String var = matcher.group("var");
             String exponent = matcher.group("exponent");
             if (var == null || (varRef[0] != null && !var.equals(varRef[0])))
-                throw new RuntimeException("var = " + var + "  ref = " + varRef[0]);
+                throw new RuntimeException("var = " + var + "  ref = " + varRef[0] + " string = " + string);
             if (varRef[0] == null)
                 varRef[0] = var;
             if (exponent != null)

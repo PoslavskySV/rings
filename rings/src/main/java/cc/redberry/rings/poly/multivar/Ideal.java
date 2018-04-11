@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import static cc.redberry.rings.poly.multivar.GroebnerBasis.GroebnerBasis;
 import static cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
 
 /**
  * Ideal represented by its Groebner basis.

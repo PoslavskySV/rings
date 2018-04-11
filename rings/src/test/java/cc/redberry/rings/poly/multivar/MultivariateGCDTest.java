@@ -21,9 +21,12 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
+import java.util.zip.GZIPInputStream;
 
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.AMultivariatePolynomial.renameVariables;
@@ -33,6 +36,7 @@ import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.parse;
 import static cc.redberry.rings.poly.multivar.RandomMultivariatePolynomials.randomPolynomial;
+import static cc.redberry.rings.util.TimeUnits.nanosecondsToString;
 import static org.junit.Assert.*;
 
 /**
@@ -48,7 +52,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         Assert.assertEquals(asOverZp64(actualGCD).monic(), lActualGCD.monic());
     }
 
-    @Test
+    @Test // =====> testBrown1   elapsed 578us
     public void testBrown1() throws Exception {
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(1321323));
         MultivariatePolynomial<BigInteger>
@@ -60,7 +64,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown2   elapsed 444us
     public void testBrown2() throws Exception {
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(1321323));
         MultivariatePolynomial<BigInteger>
@@ -72,7 +76,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown3   elapsed 836us
     public void testBrown3() throws Exception {
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(659));
         MultivariatePolynomial<BigInteger>
@@ -84,7 +88,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown3a   elapsed 1895us
     public void testBrown3a() throws Exception {
         IntegersZp domain = new IntegersZp(17);
         MultivariatePolynomial<BigInteger>
@@ -96,7 +100,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown4   elapsed 3ms
     public void testBrown4() throws Exception {
         IntegersZp domain = new IntegersZp(653);
         String[] vars = {"a", "b", "c"};
@@ -109,7 +113,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown5   elapsed 9ms
     public void testBrown5() throws Exception {
         RandomGenerator rnd = PrivateRandom.getRandom();
         rnd.setSeed(28);
@@ -124,7 +128,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown6   elapsed 5ms
     public void testBrown6() throws Exception {
         PrivateRandom.getRandom().setSeed(1564);
         IntegersZp domain = new IntegersZp(937);
@@ -138,7 +142,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown7   elapsed 3ms
     public void testBrown7() throws Exception {
         PrivateRandom.getRandom().setSeed(2369);
         IntegersZp domain = new IntegersZp(569);
@@ -152,7 +156,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown_random1   elapsed 5s
     public void testBrown_random1() throws Exception {
         RandomGenerator rnd = getRandom();
 
@@ -168,7 +172,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
-    @Test
+    @Test // =====> testBrown_random2   elapsed 257ms
     public void testBrown_random2() throws Exception {
         RandomGenerator rnd = getRandom();
         rnd.setSeed(123);
@@ -186,7 +190,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
-    @Test
+    @Test // =====> testBrown_sparse_variables_random3   elapsed 6s
     public void testBrown_sparse_variables_random3() throws Exception {
         RandomGenerator rnd = getRandom();
 
@@ -203,7 +207,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
-    @Test
+    @Test // =====> testBrown8   elapsed 635us
     public void testBrown8() throws Exception {
         PrivateRandom.getRandom().setSeed(2369);
         IntegersZp domain = new IntegersZp(569);
@@ -217,7 +221,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown9   elapsed 125us
     public void testBrown9() throws Exception {
         PrivateRandom.getRandom().setSeed(2369);
         IntegersZp domain = new IntegersZp(569);
@@ -231,7 +235,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertBrownGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testBrown10   elapsed 552us
     public void testBrown10() throws Exception {
         IntegersZp domain = new IntegersZp(5642359);
         String[] vars = {"a", "b"};
@@ -255,7 +259,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         Assert.assertEquals(asOverZp64(actualGCD).monic(), lActualGCD.monic());
     }
 
-    @Test
+    @Test // =====> testZippel1   elapsed 11ms
     public void testZippel1() throws Exception {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
@@ -274,7 +278,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
         for (int i = 0; i < 100; i++) {
             SparseInterpolation<BigInteger> sparseInterpolation
-                    = createInterpolation(variable, a, b, skeleton, rnd);
+                    = createInterpolation(variable, a, b, skeleton, 1, rnd);
             BigInteger point = domain.randomElement(rnd);
             assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
@@ -283,13 +287,13 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 lskeleton = asOverZp64(skeleton), lgcd = asOverZp64(gcd);
         for (int i = 0; i < 100; i++) {
             lSparseInterpolation sparseInterpolation
-                    = createInterpolation(variable, la, lb, lskeleton, rnd);
+                    = createInterpolation(variable, la, lb, lskeleton, 1, rnd);
             long point = domain.asMachineRing().randomElement(rnd);
             assertEquals(lgcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
         }
     }
 
-    @Test
+    @Test // =====> testZippel2   elapsed 1647us
     public void testZippel2() throws Exception {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
@@ -302,7 +306,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertZippelGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testZippel5   elapsed 1139us
     public void testZippel5() throws Exception {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(31579447));
@@ -322,12 +326,14 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        }
     }
 
-    @Test
+    @Test // =====> testZippel6   elapsed 920us
     public void testZippel6() throws Exception {
         MultivariateGCD.ALWAYS_LINZIP = true;
         String[] vars = {"a", "b", "c"};
@@ -347,12 +353,14 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        }
     }
 
-    @Test
+    @Test // =====> testZippel_monic_random1   elapsed 948ms
     public void testZippel_monic_random1() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 10, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
@@ -373,10 +381,10 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 int rndSeed = i ^ n;
                 rnd.setSeed(rndSeed);
                 SparseInterpolation<BigInteger> sparseInterpolation
-                        = createInterpolation(variable, data.a.toBigPoly(), data.b.toBigPoly(), skeleton.toBigPoly(), rnd);
+                        = createInterpolation(variable, data.a.toBigPoly(), data.b.toBigPoly(), skeleton.toBigPoly(), 1 + (1 << 30) * (i % 2), rnd);
 
                 lSparseInterpolation lSparseInterpolation
-                        = createInterpolation(variable, data.a, data.b, skeleton, rnd);
+                        = createInterpolation(variable, data.a, data.b, skeleton, 1, rnd);
                 long point = data.a.ring.randomElement(rnd);
                 try {
                     MultivariatePolynomialZp64 expected = data.gcd.evaluate(variable, point).monic();
@@ -399,7 +407,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testZippel7   elapsed 1207us
     public void testZippel7() throws Exception {
         MultivariateGCD.ALWAYS_LINZIP = true;
         String[] vars = {"a", "b", "c"};
@@ -418,12 +426,14 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point), sparseInterpolation.evaluate(point));
+        }
     }
 
-    @Test
+    @Test // =====> testZippel_monic_random2   elapsed 3s
     public void testZippel_monic_random2() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 5, minDegree = 3, maxDegree = 5, minSize = 5, maxSize = 10;
@@ -442,7 +452,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 10000) // =====> testZippel9   elapsed 5ms
     public void testZippel9() throws Exception {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(26478253);
@@ -457,7 +467,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertNotNull(ZippelGCD(asOverZp64(a), asOverZp64(b)));
     }
 
-    @Test
+    @Test // =====> testZippel8   elapsed 927us
     public void testZippel8() throws Exception {
         MultivariateGCD.ALWAYS_LINZIP = true;
         String[] vars = {"a", "b", "c"};
@@ -477,12 +487,14 @@ public class MultivariateGCDTest extends AMultivariateTest {
         BigInteger seed = BigInteger.valueOf(7893482);
         MultivariatePolynomial<BigInteger> skeleton = gcd.evaluate(variable, seed);
 
-        SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, rnd);
-        BigInteger point = domain.valueOf(1324);
-        assertEquals(gcd.evaluate(variable, point).monic(), sparseInterpolation.evaluate(point).monic());
+        for (int expEvals : Arrays.asList(1, Integer.MAX_VALUE)) {
+            SparseInterpolation<BigInteger> sparseInterpolation = createInterpolation(variable, a, b, skeleton, expEvals, rnd);
+            BigInteger point = domain.valueOf(1324);
+            assertEquals(gcd.evaluate(variable, point).monic(), sparseInterpolation.evaluate(point).monic());
+        }
     }
 
-    @Test
+    @Test// =====> testZippel_nonmonic_random2   elapsed 6s
     public void testZippel_nonmonic_random2() throws Exception {
         MultivariateGCD.ALWAYS_LINZIP = true;
         RandomGenerator rnd = getRandom();
@@ -503,7 +515,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Brown", MultivariateGCD::BrownGCD));
     }
 
-    @Test
+    @Test // =====> testZippel_nonmonic_random3   elapsed 26s
     public void testZippel_nonmonic_random3() throws Exception {
         MultivariateGCD.ALWAYS_LINZIP = true;
         RandomGenerator rnd = getRandom();
@@ -519,7 +531,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Zippel (non monic)", MultivariateGCD::ZippelGCD));
     }
 
-    @Test
+    @Test // =====> testZippel3   elapsed 4ms
     public void testZippel3() throws Exception {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
@@ -534,7 +546,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertZippelGCD(gcd, a, b);
     }
 
-    @Test
+    @Test // =====> testZippel10   elapsed 995us
     public void testZippel10() throws Exception {
         String[] vars = {"a", "b", "c"};
         IntegersZp domain = new IntegersZp(BigPrimes.nextPrime(5642342L));
@@ -571,10 +583,10 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
             assertEquals(10, ZippelGCD(aL, bL).size());
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             start = System.nanoTime();
             System.out.println(ZippelGCD(aL.clone().increment(), bL));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             System.out.println();
 //            System.out.println(TimeUnits.nanosecondsToString(MultivariateGCD.BROWN));
         }
@@ -604,15 +616,15 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
             assertEquals(10, ZippelGCD(aL, bL).size());
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             start = System.nanoTime();
             System.out.println(ZippelGCD(aL.clone().increment(), bL));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             System.out.println();
         }
     }
 
-    @Test
+    @Test // =====> testZippel_sparse_variables_random   elapsed 6s
     public void testZippel_sparse_variables_random() throws Exception {
         RandomGenerator rnd = getRandom();
 
@@ -629,7 +641,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCD));
     }
 
-    @Test
+    @Test // =====> testPairedIterator1   elapsed 27ms
     public void testPairedIterator1() throws Exception {
         RandomGenerator rnd = getRandom();
         int nIterations = its(1000, 1000);
@@ -652,7 +664,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testPairedIterator2   elapsed 271us
     public void testPairedIterator2() throws Exception {
         MultivariatePolynomial<BigInteger>
                 a = parse(" y  +   0  +  x*y   + x*y^2 + x*y^3 + x*y^4  +   0    "),
@@ -671,7 +683,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(a.clone().add(b), acc);
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation1   elapsed 6ms
     public void testSparseInterpolation1() throws Exception {
         IntegersZp domain = new IntegersZp(31574773);
         MultivariatePolynomial<BigInteger>
@@ -684,7 +696,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), interpolateGCD(asOverZp64(a), asOverZp64(b), asOverZp64(ZippelGCD(a, b)), getRandom()).monic().toBigPoly());
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation2   elapsed 195us
     public void testSparseInterpolation2() throws Exception {
         IntegersZp domain = new IntegersZp(24001871);
         MultivariatePolynomial<BigInteger>
@@ -697,7 +709,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(asOverZp64(gcd).monic(), interpolateGCD(asOverZp64(a), asOverZp64(b), asOverZp64(gcd), getRandom()).monic());
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation3   elapsed 253us
     public void testSparseInterpolation3() throws Exception {
         IntegersZp domain = new IntegersZp(17312587);
         MultivariatePolynomial<BigInteger>
@@ -711,7 +723,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(asOverZp64(gcd).monic(), intrp.monic());
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation4   elapsed 1780us
     public void testSparseInterpolation4() throws Exception {
         IntegersZp domain = new IntegersZp(27445993);
         MultivariatePolynomial<BigInteger>
@@ -728,7 +740,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(lgcd.monic(), intrp.monic());
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation_random1   elapsed 8s
     public void testSparseInterpolation_random1() throws Exception {
         int nIterations = its(1000, 2000);
         RandomGenerator rnd = getRandom();
@@ -759,7 +771,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation5   elapsed 12ms
     public void testSparseInterpolation5() throws Exception {
         MultivariatePolynomial<BigInteger>
                 a = parse("7*a*b*c^3+8*a^3*c+8*a^4*b^2*c^4+8*a^4*b^6*c^6", Rings.Z, MonomialOrder.DEFAULT, "a", "b", "c"),
@@ -788,7 +800,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(gcd1.monic(), intrp.monic());
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation_random2   elapsed 8s
     public void testSparseInterpolation_random2() throws Exception {
         int nIterations = its(500, 1000);
         int badEvaluations = 0;
@@ -887,7 +899,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation6   elapsed 11ms
     public void testSparseInterpolation6() throws Exception {
         RandomGenerator rnd = PrivateRandom.getRandom();
         rnd.setSeed(743);
@@ -911,7 +923,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             assertEquals(lgcd.monic(), intrp.monic());
     }
 
-    @Test
+    @Test // =====> testSparseInterpolation7   elapsed 88ms
     public void testSparseInterpolation7() throws Exception {
         MultivariatePolynomial<BigInteger>
                 a = parse("7*b*c^4*d^6+9*a^2*b*c^8*d^7*e^7+7*a^2*b^6*c^8*d^3*e+8*a^3*c^2*d^6*e^4+7*a^3*b^5*c^7*d^6*e^4+a^4*b^3*c^5*d^8*e^5+25732656*a^5*c^4*d^2*e^3+9*a^5*b^2*c^6*d^5*e^4+25732652*a^6*b^3*c*d*e+25732656*a^7*b^3*c^8*d+a^7*b^3*c^8*d^2*e"),
@@ -947,7 +959,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(gcd0.monic(), actual.monic());
     }
 
-    @Test
+    @Test // =====> testModularGCD1   elapsed 12ms
     public void testModularGCD1() throws Exception {
         MultivariatePolynomial<BigInteger>
                 a = parse("a + 17*b + 2*c"),
@@ -956,7 +968,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
-    @Test
+    @Test // =====> testModularGCD2   elapsed 3ms
     public void testModularGCD2() throws Exception {
         MultivariatePolynomial<BigInteger>
                 a = parse("1234324234*a + 12317*b + 2*c"),
@@ -965,7 +977,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
-    @Test
+    @Test // =====> testModularGCD3   elapsed 10ms
     public void testModularGCD3() throws Exception {
         PrivateRandom.getRandom().setSeed(29);
         MultivariatePolynomial<BigInteger>
@@ -975,7 +987,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
-    @Test
+    @Test // =====> testModularGCD4   elapsed 15ms
     public void testModularGCD4() throws Exception {
         PrivateRandom.getRandom().setSeed(29);
         MultivariatePolynomial<BigInteger>
@@ -985,7 +997,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(gcd, ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)));
     }
 
-    @Test
+    @Test // =====> testModularGCD5   elapsed 14ms
     public void testModularGCD5() throws Exception {
         PrivateRandom.getRandom().setSeed(29);
         MultivariatePolynomial<BigInteger>
@@ -995,7 +1007,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
 
-    @Test
+    @Test // =====> testModularGCD6   elapsed 903ms
     public void testModularGCD6() throws Exception {
         for (int i = 46; i < 100; i++) {
             PrivateRandom.getRandom().setSeed(46);
@@ -1007,7 +1019,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testModularGCD7   elapsed 249us
     public void testModularGCD7() throws Exception {
         PrivateRandom.getRandom().setSeed(46);
         MultivariatePolynomial<BigInteger>
@@ -1017,7 +1029,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
 
-    @Test
+    @Test // =====> testModularGCD8   elapsed 6ms
     public void testModularGCD8() throws Exception {
         PrivateRandom.getRandom().setSeed(48);
         MultivariatePolynomial<BigInteger>
@@ -1027,7 +1039,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertTrue(dividesQ(ZippelGCDInZ(a.clone().multiply(gcd), b.clone().multiply(gcd)), gcd));
     }
 
-    @Test
+    @Test // =====> testModularGCD9   elapsed 3ms
     public void testModularGCD9() throws Exception {
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger>
@@ -1060,7 +1072,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 //        skeleton = divideSkeletonExact(skeleton, content);
 //    }
 
-    @Test
+    @Test // =====> testModularGCD_random1   elapsed 12s
     public void testModularGCD_random1() throws Exception {
         int nIterations = its(1000, 3000);
         RandomGenerator rnd = getRandom();
@@ -1071,7 +1083,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Modular gcd", MultivariateGCD::ZippelGCDInZ));
     }
 
-    @Test
+    @Test // =====> testModularGCD_sparse_variables_random   elapsed 19s
     public void testModularGCD_sparse_variables_random() throws Exception {
         RandomGenerator rnd = getRandom();
 
@@ -1123,11 +1135,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
             System.out.println();
             long start = System.nanoTime();
             System.out.println(ZippelGCDInZ(a.clone().increment(), b));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
             assertTrue(dividesQ(ZippelGCDInZ(a, b), gcd));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
         }
 
 
@@ -1141,7 +1153,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         //        138ms
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 10000) // =====> testGCDInput   elapsed 60ms
     public void testGCDInput() throws Exception {
         PrivateRandom.getRandom().setSeed(1232);
         String[] vars = {"a", "b", "c", "d", "e"};
@@ -1175,7 +1187,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
     }
 
-    @Test
+    @Test // =====> testRationals1   elapsed 363ms
     public void testRationals1() throws Exception {
         MultivariatePolynomial<Rational<BigInteger>>
                 a = parse("-(2/3)*a*b*c - (7/6)*a^3*c^4 + (2/3)*b^3", Rings.Q),
@@ -1188,7 +1200,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertTrue(dividesQ(ZippelGCD(a, b), gcd));
     }
 
-    @Test
+    @Test // =====> testFiniteField1   elapsed 521ms
     public void testFiniteField1() throws Exception {
         for (int i = 0; i < 10; i++) {
             FiniteField<UnivariatePolynomialZp64> field = FiniteField.GF17p5;
@@ -1211,7 +1223,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             b = b.clone().subtract(gcd).multiply(gcd);
             long start = System.nanoTime();
             assertTrue(dividesQ(PolynomialGCD(a, b), gcd));
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
         }
     }
 
@@ -1266,7 +1278,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 //
 //    }
 
-    @Test
+    @Test // =====> testSmallDomain1   elapsed 44ms
     public void testSmallDomain1() throws Exception {
         MultivariatePolynomial<BigInteger>
                 a = parse("a + 2*b + c"),
@@ -1286,7 +1298,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testSmallDomain_random1   elapsed 19s
     public void testSmallDomain_random1() throws Exception {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         int nIterations = its(200, 1000);
@@ -1301,7 +1313,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::KaltofenMonaganSparseModularGCDInGF));
     }
 
-    @Test
+    @Test // =====> testSmallDomain_sparse_variables_random   elapsed 21s
     public void testSmallDomain_sparse_variables_random() throws Exception {
         RandomGenerator rnd = getRandom();
 
@@ -1322,7 +1334,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("Modular gcd (small cardinality)", MultivariateGCD::KaltofenMonaganSparseModularGCDInGF));
     }
 
-    @Test
+    @Test // =====> testSmallDomain_sparse_variables_random_a   elapsed 209ms
     public void testSmallDomain_sparse_variables_random_a() throws Exception {
         for (int i = 220; i < 250; ++i) {
             //System.out.println(i);
@@ -1348,7 +1360,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testSmallDomain2   elapsed 9s
     public void testSmallDomain2() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};
@@ -1373,7 +1385,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testSmallDomain3   elapsed 506us
     public void testSmallDomain3() throws Exception {
         IntegersZp64 domain = new IntegersZp64(5);
         MultivariatePolynomialZp64
@@ -1388,7 +1400,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testArrayGCD1   elapsed 1530us
     public void testArrayGCD1() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
@@ -1405,7 +1417,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(gcd, aGcd);
     }
 
-    @Test
+    @Test // =====> testArrayGCD2   elapsed 15ms
     @SuppressWarnings("unchecked")
     public void testArrayGCD2() throws Exception {
         // very tricky example with recursive finite fields modulo 2
@@ -1433,7 +1445,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             assertTrue(MultivariateGCD.PolynomialGCD(arr).isConstant());
     }
 
-    @Test
+    @Test // =====> testArrayGCD3   elapsed 4ms
     @SuppressWarnings("unchecked")
     public void testArrayGCD3() throws Exception {
         // very tricky example with recursive finite fields modulo 2
@@ -1460,7 +1472,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertTrue(MultivariateGCD.PolynomialGCD(arr).isConstant());
     }
 
-    @Test
+    @Test // =====> testArrayGCD4   elapsed 2ms
     @SuppressWarnings("unchecked")
     public void testArrayGCD4() throws Exception {
         // very tricky example with recursive finite fields modulo 2
@@ -1487,7 +1499,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(pp[0].parsePoly("2"), MultivariateGCD.PolynomialGCD(pp));
     }
 
-    @Test
+    @Test // =====> testCommonZeroes1   elapsed 1048us
     public void testCommonZeroes1() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
@@ -1501,7 +1513,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testCommonZeroes2   elapsed 512us
     public void testCommonZeroes2() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
@@ -1525,7 +1537,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         return poly.evaluateAtZero(vars.toArray());
     }
 
-    @Test
+    @Test // =====> testEZEvaluations1   elapsed 3s
     public void testEZEvaluations1() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
@@ -1540,7 +1552,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testEZEvaluations2   elapsed 52ms
     public void testEZEvaluations2() throws Exception {
         RandomGenerator rnd = getRandom();
         lGCDSampleDataZp sampleData = new lGCDSampleDataZp(3, 4, 2, 3, 5, 7, rnd);
@@ -1561,7 +1573,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testEZEvaluationsRandom   elapsed 1643ms
     public void testEZEvaluationsRandom() throws Exception {
         RandomGenerator rnd = getRandom();
         int nIterations = its(10, 100);
@@ -1585,7 +1597,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testEZGCD1   elapsed 5ms
     public void testEZGCD1() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
@@ -1598,7 +1610,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD2   elapsed 160ms
     public void testEZGCD2() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
@@ -1614,7 +1626,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD3   elapsed 15ms
     public void testEZGCD3() throws Exception {
         PrivateRandom.getRandom().setSeed(4);
         IntegersZp64 domain = new IntegersZp64(15627449);
@@ -1627,7 +1639,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD4   elapsed 803us
     public void testEZGCD4() throws Exception {
         PrivateRandom.getRandom().setSeed(4);
         IntegersZp64 domain = new IntegersZp64(15627449);
@@ -1641,7 +1653,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD5   elapsed 2ms
     public void testEZGCD5() throws Exception {
         PrivateRandom.getRandom().setSeed(0);
         IntegersZp64 domain = new IntegersZp64(24254707);
@@ -1655,7 +1667,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD6   elapsed 868us
     public void testEZGCD6() throws Exception {
         PrivateRandom.getRandom().setSeed(0);
         IntegersZp64 domain = new IntegersZp64(24254707);
@@ -1669,7 +1681,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD7   elapsed 4ms
     public void testEZGCD7() throws Exception {
         PrivateRandom.getRandom().setSeed(6);
         IntegersZp64 domain = new IntegersZp64(28565767);
@@ -1683,7 +1695,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD8   elapsed 282us
     public void testEZGCD8() throws Exception {
         PrivateRandom.getRandom().setSeed(6);
         IntegersZp64 domain = new IntegersZp64(28565767);
@@ -1697,7 +1709,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD9   elapsed 19ms
     public void testEZGCD9() throws Exception {
         PrivateRandom.getRandom().setSeed(27);
         IntegersZp64 domain = new IntegersZp64(8678027);
@@ -1712,7 +1724,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD10   elapsed 3ms
     public void testEZGCD10() throws Exception {
         PrivateRandom.getRandom().setSeed(4);
         IntegersZp64 domain = new IntegersZp64(28996511);
@@ -1727,7 +1739,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD11   elapsed 20ms
     public void testEZGCD11() throws Exception {
         PrivateRandom.getRandom().setSeed(11);
         IntegersZp64 domain = new IntegersZp64(22687397);
@@ -1742,7 +1754,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD12   elapsed 791us
     public void testEZGCD12() throws Exception {
         PrivateRandom.getRandom().setSeed(11);
         IntegersZp64 domain = new IntegersZp64(22687397);
@@ -1757,7 +1769,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD13   elapsed 3ms
     public void testEZGCD13() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(13666309);
@@ -1772,7 +1784,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD14   elapsed 544us
     public void testEZGCD14() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(13666309);
@@ -1785,7 +1797,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
 
-    @Test
+    @Test // =====> testEZGCD15   elapsed 405us
     public void testEZGCD15() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(22687397);
@@ -1800,7 +1812,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD16   elapsed 6ms
     public void testEZGCD16() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(9607987);
@@ -1815,7 +1827,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD17   elapsed 856us
     public void testEZGCD17() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(9607987);
@@ -1830,7 +1842,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD18   elapsed 6ms
     public void testEZGCD18() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(592346501);
@@ -1845,7 +1857,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEZGCD19   elapsed 888us
     public void testEZGCD19() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(592346501);
@@ -1860,7 +1872,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEEZGCD_random1   elapsed 14s
     public void testEEZGCD_random1() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 4, minDegree = 2, maxDegree = 3, minSize = 5, maxSize = 7;
@@ -1874,7 +1886,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD));
     }
 
-    @Test
+    @Test // =====> testEEZGCD_sparse_variables_random   elapsed 9s
     public void testEEZGCD_sparse_variables_random() throws Exception {
         RandomGenerator rnd = getRandom();
 
@@ -1894,7 +1906,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD));
     }
 
-    @Test
+    @Test // =====> testEEZGCD1   elapsed 2ms
     public void testEEZGCD1() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(9607987);
@@ -1909,7 +1921,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEEZGCD2   elapsed 6ms
     public void testEEZGCD2() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(16604789);
@@ -1924,7 +1936,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEEZGCD3   elapsed 608us
     public void testEEZGCD3() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(31012727);
@@ -1939,7 +1951,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEEZGCD4   elapsed 490us
     public void testEEZGCD4() throws Exception {
         PrivateRandom.getRandom().setSeed(50);
         IntegersZp64 domain = new IntegersZp64(31012727);
@@ -1954,7 +1966,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEEZGCD5   elapsed 22ms
     public void testEEZGCD5() throws Exception {
         PrivateRandom.getRandom().setSeed(78);
         IntegersZp64 domain = new IntegersZp64(26662411);
@@ -1970,7 +1982,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
 
-    @Test
+    @Test // =====> testEEZGCD6   elapsed 1235us
     public void testEEZGCD6() throws Exception {
         PrivateRandom.getRandom().setSeed(78);
         IntegersZp64 domain = new IntegersZp64(26662411);
@@ -1984,7 +1996,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testEEZGCD_random2   elapsed 6s
     public void testEEZGCD_random2() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 5, minDegree = 2, maxDegree = 5, minSize = 5, maxSize = 17;
@@ -1996,7 +2008,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD));
     }
 
-    @Test
+    @Test // =====> testEEZGCD_random3   elapsed 25s
     public void testEEZGCD_random3() throws Exception {
         RandomGenerator rnd = getRandom();
         int nVarsMin = 3, nVarsMax = 5, minDegree = 2, maxDegree = 5, minSize = 5, maxSize = 17;
@@ -2008,7 +2020,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 GCDAlgorithm.named("EEZ-GCD", MultivariateGCD::EEZGCD));
     }
 
-    @Test
+    @Test // =====> testEEZGCD7   elapsed 132ms
     public void testEEZGCD7() throws Exception {
         IntegersZp64 domain = new IntegersZp64(BigPrimes.nextPrime(1321323));
         MultivariatePolynomialZp64
@@ -2024,7 +2036,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(ZippelGCD(a, b).monic(), EEZGCD(a, b).monic());
     }
 
-    @Test
+    @Test // =====> testPolynomialGCD1   elapsed 2ms
     public void testPolynomialGCD1() throws Exception {
         // nUsedVariables == 1
         IntegersZp64 domain = new IntegersZp64(19);
@@ -2035,7 +2047,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             assertTrue(PolynomialGCD(a, b).isConstant());
     }
 
-    @Test
+    @Test // =====> testPolynomialGCD2   elapsed 3ms
     public void testPolynomialGCD2() throws Exception {
         // nUsedVariables == 1
         IntegersZp64 domain = new IntegersZp64(19);
@@ -2050,7 +2062,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             assertEquals(gcd, PolynomialGCD(a, b));
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 1000) // =====> testPolynomialGCD3   elapsed 633us
     public void testPolynomialGCD3() throws Exception {
         // nUsedVariables == 1
         IntegersZp64 domain = new IntegersZp64(2);
@@ -2067,7 +2079,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             assertEquals(gcd, PolynomialGCD(a, b));
     }
 
-    @Test(timeout = 10_000)
+    @Test(timeout = 10_000) // =====> testPolynomialGCD4   elapsed 871ms
     public void testPolynomialGCD4() throws Exception {
         Ring<BigInteger> ring = Rings.Z;
         MultivariatePolynomial<BigInteger>
@@ -2079,7 +2091,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         Assert.assertTrue(poly.asUnivariate(1).content().isConstant());
     }
 
-    @Test(timeout = 1000000)
+    @Test(timeout = 1000000) // =====> testSmallDomain4   elapsed 17s
     public void testSmallDomain4() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"a", "b", "c", "d", "e"};
@@ -2101,7 +2113,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
             Assert.assertFalse(PolynomialGCD(a, b).isConstant());
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
         }
         //12s
         //3s
@@ -2109,7 +2121,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         //18s
     }
 
-    @Test(timeout = 100000)
+    @Test(timeout = 100000) // =====> testSmallDomain5   elapsed 186ms
     public void testSmallDomain5() throws Exception {
         IntegersZp64 domain = new IntegersZp64(3);
         String[] vars = {"x", "y"};
@@ -2124,7 +2136,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") // =====> testNestedRing1   elapsed 2s
     public void testNestedRing1() throws Exception {
         for (Ring<?> inner1 : Arrays.asList(
                 Rings.GF(7, 3),
@@ -2151,7 +2163,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
     }
 
-    @Test
+    @Test // =====> testModularGCDInZ1   elapsed 2ms
     public void testModularGCDInZ1() throws Exception {
         BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64>
                 modAlg = MultivariateGCD::ZippelGCD;
@@ -2167,7 +2179,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         assertEquals(g.primitivePart(), ModularGCDInZ(ag, bg, modAlg).primitivePart());
     }
 
-    @Test
+    @Test // =====> testModularGCDInZRandom1   elapsed 39s
     public void testModularGCDInZRandom1() throws Exception {
         BiFunction<MultivariatePolynomialZp64, MultivariatePolynomialZp64, MultivariatePolynomialZp64>
                 modAlg = MultivariateGCD::ZippelGCD;
@@ -2183,7 +2195,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         testGCDAlgorithms(sampleData, nIterations, GCDAlgorithm.named("Modular gcd in Z", zAlg));
     }
 
-    @Test
+    @Test // =====> testEEZGCD8   elapsed 31ms
     public void testEEZGCD8() throws Exception {
         IntegersZp64 cfRing = Rings.Zp64(7);
         MultivariatePolynomialZp64
@@ -2229,6 +2241,180 @@ public class MultivariateGCDTest extends AMultivariateTest {
         MultivariatePolynomialZp64 bg = b.clone().multiply(g);
 
         System.out.println(PolynomialGCD(ag, bg));
+    }
+
+    @Ignore("too expensive (memory limit in CI)")
+    @Test
+    public void testHugePoly1() throws Exception {
+        MultivariateRing<MultivariatePolynomialZp64> R = Rings.MultivariateRingZp64(3, SmallPrimes.nextPrime(1 << 25));
+        for (int j = 1; j < 2; ++j) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                    MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                            "cc/redberry/rings/poly/multivar/HugeGCDinZp.txt.gz"))))) {
+                String s1 = in.readLine();
+                String s2 = in.readLine();
+
+                MultivariatePolynomialZp64 p = R.parse(s1);
+                MultivariatePolynomialZp64 q = R.parse(s2);
+                long t1 = System.nanoTime();
+                MultivariatePolynomialZp64 gcd = MultivariateGCD.ZippelGCD(p, q);
+                long t2 = System.nanoTime();
+
+                System.out.println("Total time : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size   : " + gcd.size());
+                System.out.println();
+            }
+        }
+
+        //Total time : 3s
+        //GCD size   : 263
+    }
+
+    @Ignore("too expensive (memory limit in CI)")
+    @Test
+    public void testHugePoly2() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> R = Rings.MultivariateRing(3, Rings.Z);
+        for (int j = 1; j < 4; ++j) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                    MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                            "cc/redberry/rings/poly/multivar/HugeGCDinZ.txt.gz"))))) {
+                String s1 = in.readLine();
+                String s2 = in.readLine();
+
+                MultivariatePolynomial<BigInteger> p = R.parse(s1);
+                MultivariatePolynomial<BigInteger> q = R.parse(s2);
+                long t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = MultivariateGCD.PolynomialGCD(p, q);
+                long t2 = System.nanoTime();
+
+                System.out.println("Total time : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size   : " + gcd.size());
+                System.out.println();
+            }
+        }
+
+        //Total time : 113s
+        //GCD size   : 3380
+    }
+
+    @Ignore("too expensive (memory limit in CI)")
+    @Test
+    public void testHugePoly3() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> R = Rings.MultivariateRing(7, Rings.Z);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                        "cc/redberry/rings/poly/multivar/HugeGCDinZ.LinZip.txt.gz"))))) {
+            int iProblem = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.startsWith("#"))
+                    continue;
+                String[] split = line.split("\t");
+
+                MultivariatePolynomial<BigInteger>
+                        p = R.parse(split[1]),
+                        q = R.parse(split[2]),
+                        expected = R.parse(split[3]);
+
+                long t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = MultivariateGCD.PolynomialGCD(p, q);
+                long t2 = System.nanoTime();
+                assertTrue(dividesQ(gcd, expected));
+
+                System.out.println("Problem    : " + iProblem);
+                System.out.println("Total time : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size   : " + gcd.size());
+                System.out.println();
+                ++iProblem;
+            }
+        }
+
+        //Problem    : 0
+        //Total time : 30s
+        //GCD size   : 201
+        //
+        //Problem    : 1
+        //Total time : 36s
+        //GCD size   : 201
+        //
+        //Problem    : 2
+        //Total time : 39s
+        //GCD size   : 201
+        //
+        //Problem    : 3
+        //Total time : 31s
+        //GCD size   : 201
+        //
+        //Problem    : 4
+        //Total time : 29s
+        //GCD size   : 201
+    }
+
+    @Ignore("too expensive (memory limit in CI)")
+    @Test
+    public void testHugePoly4() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>>
+                R = Rings.MultivariateRing(3, Rings.Z),
+                modR = Rings.MultivariateRing(3, Rings.Zp(1073741827));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                        "cc/redberry/rings/poly/multivar/HugeHugeGCDinZ.txt.gz"))))) {
+            int iProblem = 0;
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.startsWith("#"))
+                    continue;
+                String[] split = line.split("\t");
+
+                MultivariatePolynomial<BigInteger>
+                        p = R.parse(split[1]),
+                        q = R.parse(split[2]),
+                        expected = R.parse(split[3]);
+
+
+                System.out.println("Problem    : " + iProblem++);
+                long t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = MultivariateGCD.PolynomialGCD(p, q);
+                long t2 = System.nanoTime();
+                assertTrue(dividesQ(gcd, expected));
+
+                System.out.println("Total time (Z)   : " + nanosecondsToString(t2 - t1));
+                System.out.println("GCD size         : " + gcd.size());
+                System.out.println();
+
+                t1 = System.nanoTime();
+                MultivariatePolynomial<BigInteger> mgcd = MultivariateGCD.PolynomialGCD(modR.valueOf(p), modR.valueOf(q));
+                t2 = System.nanoTime();
+                assertTrue(dividesQ(gcd, expected));
+
+                System.out.println("Total time (mod) : " + nanosecondsToString(t2 - t1));
+                System.out.println("MGCD size        : " + mgcd.size());
+                System.out.println();
+            }
+        }
+        // > 1444s
+        // 355s
+    }
+
+    @Test(timeout = 100_000L) // =====> testMediumCharacteristic1   elapsed 12s
+    public void testMediumCharacteristic1() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(5, Rings.Zp(4099));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
+                        "cc/redberry/rings/poly/multivar/MediumCharacteristicHugePoly.txt.gz"))))) {
+
+            MultivariatePolynomial<BigInteger> a = ring.parse(in.readLine());
+            MultivariatePolynomial<BigInteger> b = ring.parse(in.readLine());
+
+            for (boolean switch64 : Arrays.asList(true, false)) {
+                Conversions64bit.SWITCH_TO_64bit = switch64;
+                long start = System.nanoTime();
+                MultivariatePolynomial<BigInteger> gcd = PolynomialGCD(a, b);
+                System.out.println(nanosecondsToString(System.nanoTime() - start));
+            }
+        }
+        //2s
+        //11s
     }
 
     /* =============================================== Test data =============================================== */

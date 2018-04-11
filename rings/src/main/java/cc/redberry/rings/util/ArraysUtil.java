@@ -931,6 +931,25 @@ public final class ArraysUtil {
     }
 
     /**
+     * Selects elements from specified {@code array} at specified {@code positions}. The resulting array preserves the
+     * relative order of elements in specified {@code array}.
+     *
+     * @param array     array of elements
+     * @param positions of elements that should be picked out
+     * @return the array of elements that picked out from specified positions in specified array
+     */
+    public static int[] select(int[] array, int[] positions) {
+        if (array == null)
+            throw new NullPointerException();
+        int[] p = getSortedDistinct(positions);
+        int[] r = new int[p.length];
+        int i = -1;
+        for (int j : p)
+            r[++i] = array[j];
+        return r;
+    }
+
+    /**
      * Converts {@code Set<Integer>} to {@code int[]}
      *
      * @param set a {@link Set} of {@link Integer}

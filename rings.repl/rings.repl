@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ringsVersion=2.2
+ringsVersion=2.3.1
 ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings."
 
 # CHECK JAVA VERSION
@@ -42,7 +42,7 @@ case $os in
     ;;
 esac
 
-# ringsArgs=()
+ammArgs=()
 javaArgs=()
 
 needXmxXms=true
@@ -70,10 +70,8 @@ do
 			printJArgs=true
 			;;
         *)
-			echo "Unknown option: $key"
-			exit 1
-            # ringsArgs+=("${key}")
-            ;;
+            ammArgs+=("${key}")
+			;;
     esac
 done
 
@@ -111,6 +109,21 @@ then
 	echo "-XX:+AggressiveOpts ${javaArgs[@]}"
 fi
 
+
+REPL_PPRINTER=""
+if [ ${#ammArgs[@]} -eq 0 ]; then
+    # Running in REPL mode
+    REPL_PPRINTER='repl.pprinter() = repl.pprinter().copy(additionalHandlers = {
+          case (f: Ordering) => pprint.Tree.Literal(f match {
+            case LEX      => "LEX"
+            case ALEX     => "ALEX"
+            case GRLEX    => "GRLEX"
+            case GREVLEX  => "GREVLEX"
+            case _        => f.toString
+          })
+        })'
+fi
+
 JAVA_OPTS="-XX:+AggressiveOpts ${javaArgs[@]}" amm \
 	-b "Running Ammonite Repl
 $ringsString" \
@@ -131,13 +144,5 @@ $ringsString" \
 		implicit val $$tPrintBigInteger    : pprint.TPrint[IntZ]               = pprint.TPrint.literal[IntZ]("IntZ")
 		implicit val $$tPrintRational      : pprint.TPrint[rings.Rational[_]]  = pprint.TPrint.literal[rings.Rational[_]]("Rational")
 		implicit val $$tPrintMonomialOrder : pprint.TPrint[Ordering]           = pprint.TPrint.literal[Ordering]("MonomialOrder")
-		repl.pprinter() = repl.pprinter().copy(additionalHandlers = {
-		  case (f: Ordering) => pprint.Tree.Literal(f match {
-		    case LEX      => "LEX"
-		    case ALEX     => "ALEX"
-		    case GRLEX    => "GRLEX"
-		    case GREVLEX  => "GREVLEX"
-		    case _        => f.toString
-		  })
-		})
-		def exit = System.exit(0)'
+		'"$REPL_PPRINTER"'
+		def exit = System.exit(0)' ${ammArgs[@]}

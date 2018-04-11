@@ -6,7 +6,7 @@
 
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.3</version>
+    <version>2.3.1</version>
     <packaging>jar</packaging>
     <name>rings</name>
     <url>https://github.com/PoslavskySV/rings/</url>
@@ -50,6 +50,21 @@
     </scm>
 
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources/cc/redberry/rings/poly/multivar</directory>
+                <excludes>
+                    <exclude>HugeGCDinZ.LinZip.txt.gz</exclude>
+                    <exclude>HugeGCDinZ.txt.gz</exclude>
+                    <exclude>HugeGCDinZp.txt.gz</exclude>
+                    <exclude>HugeHugeGCDinZ.txt.gz</exclude>
+                </excludes>
+                <includes>
+                    <include>MediumCharacteristicHugePoly.txt.gz</include>
+                </includes>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -66,7 +81,7 @@
                     <source>1.8</source>
                     <target>1.8</target>
                     <!--<compilerArguments>-->
-                        <!--<verbose/>-->
+                    <!--<verbose/>-->
                     <!--</compilerArguments>-->
                 </configuration>
                 <executions>
@@ -81,7 +96,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
+                <version>3.0.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -95,12 +110,12 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.20.1</version>
                 <configuration>
-                    <argLine>-Xmx2548m</argLine>
+                    <argLine>-Xmx3060m</argLine>
                     <trimStackTrace>true</trimStackTrace>
                     <useFile>false</useFile>
                     <disableXmlReport>true</disableXmlReport>
                     <runOrder>random</runOrder>
-                    <!--<forkCount>0</forkCount>-->
+                    <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>

@@ -81,6 +81,13 @@ public final class MonomialOrder {
         return new ProductOrdering(new Comparator[]{a, b}, new int[]{anVariables, bnVariable});
     }
 
+    /** whether monomial order is graded */
+    public static boolean isGradedOrder(Comparator<DegreeVector> monomialOrder) {
+        return monomialOrder == GREVLEX
+                || monomialOrder == GRLEX
+                || monomialOrder instanceof GrevLexWithPermutation;
+    }
+
     static final class ProductOrdering implements Comparator<DegreeVector>, Serializable {
         final Comparator<DegreeVector> orderings[];
         final int[] nVariables;
