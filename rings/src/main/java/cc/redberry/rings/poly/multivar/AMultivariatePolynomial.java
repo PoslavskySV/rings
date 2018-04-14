@@ -304,6 +304,9 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     public final int size() {return terms.size();}
 
     @Override
+    public final boolean isZero() { return terms.isEmpty(); }
+
+    @Override
     public final Iterator<Term> iterator() {
         return terms.iterator();
     }

@@ -564,11 +564,6 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
-    public boolean isZero() {
-        return terms.size() == 0;
-    }
-
-    @Override
     public boolean isOne() {
         if (size() != 1)
             return false;
