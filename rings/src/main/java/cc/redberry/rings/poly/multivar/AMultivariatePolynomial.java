@@ -711,6 +711,32 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Returns a coefficient before {@code variables^exponents} as a multivariate polynomial and drops all such terms
+     * from this
+     *
+     * @param variables the variables
+     * @param exponents the exponents
+     * @return coefficient before {@code variables^exponents} as a multivariate polynomial
+     */
+    public final Poly dropCoefficientOf(int[] variables, int[] exponents) {
+        if (variables.length != exponents.length)
+            throw new IllegalArgumentException();
+
+        Poly result = createZero();
+        Iterator<Term> it = terms.iterator();
+        out:
+        while (it.hasNext()) {
+            Term e = it.next();
+            for (int i = 0; i < variables.length; i++)
+                if (e.exponents[variables[i]] != exponents[i])
+                    continue out;
+            result.add(e.setZero(variables));
+            it.remove();
+        }
+        return result;
+    }
+
+    /**
      * Converts this polynomial to a univariate polynomial over specified variable with the multivariate coefficient
      * ring.
      *

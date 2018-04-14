@@ -1154,7 +1154,7 @@ public final class HenselLifting {
         // The main equations to solve
         List<Equation<Term, Poly>> equations = new ArrayList<>();
         for (Monomial<Poly> rhs : biBase) {
-            Poly cf = lhsBase.coefficientOf(new int[]{0, 1}, Arrays.copyOf(rhs.exponents, 2));
+            Poly cf = lhsBase.dropCoefficientOf(new int[]{0, 1}, Arrays.copyOf(rhs.exponents, 2));
             Equation<Term, Poly> eq = new Equation<>(cf, rhs.coefficient);
 
             if (!eq.isConsistent())
@@ -1164,8 +1164,6 @@ public final class HenselLifting {
             if (!eq.isIdentity())
                 // don't add identities
                 equations.add(eq.canonical());
-
-            lhsBase.subtract(cf);
         }
 
         if (!lhsBase.isZero()) {
