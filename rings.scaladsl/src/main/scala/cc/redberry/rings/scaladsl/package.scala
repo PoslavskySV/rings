@@ -1,7 +1,5 @@
 package cc.redberry.rings
 
-import cc.redberry.rings.poly.PolynomialFactorDecomposition
-
 
 /**
   * @since 1.0
@@ -11,6 +9,7 @@ package object scaladsl extends Predef {
   type DegreeVector = poly.multivar.DegreeVector
   type Ordering = java.util.Comparator[DegreeVector]
   type IntZ = bigint.BigInteger
+  type Rational[E] = cc.redberry.rings.Rational[E]
 
   type IPolynomial[P <: poly.IPolynomial[P]]
   = poly.IPolynomial[P]
