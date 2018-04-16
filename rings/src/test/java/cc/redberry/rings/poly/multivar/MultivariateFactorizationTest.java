@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.PolynomialMethods.Factor;
@@ -2140,6 +2142,21 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
                 MultivariatePolynomialZp64.parse("x^2*y - z^2*x^3 - y^2*z - 1", Rings.Zp64(2)), 20).decrement();
 
         FactorDecompositionTest.assertFactorization(poly, Factor(poly));
+    }
+
+    @Test(timeout = 100_000L)
+    public void testMultivariateFactorization48() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(5, Z);
+
+        MultivariatePolynomial<BigInteger>
+                p1 = ring.parse("52037*x1^4*x2^3*x3^2*x4*x5+18900*x1^3*x2^10*x3*x4+42072*x1^4*x2*x4^7*x5^4+25153*x1^3*x2^10*x4^5*x5+40049*x2*x3^9*x4^3*x5^10+21479*x1^4*x3^5*x4^14*x5^2+46360*x1^2*x2^5*x3^8*x4^9*x5^2+1426*x1^5*x2^2*x3^2*x4^7*x5^12+53121*x1^3*x2^6*x3^11*x5^9+55693*x1^13*x2^2*x3^10*x5^4+47321*x1^10*x2*x3^7*x4^5*x5^7+53426*x2^11*x3^13*x4^4*x5^2+41556*x2^11*x3*x4^7*x5^12+51863*x1^2*x2^8*x3^10*x4^12*x5+15656*x1^5*x2^8*x3^6*x4^7*x5^9+12962*x1^8*x2^6*x3^5*x4^7*x5^9+51360*x1^5*x2^13*x3^8*x4^5*x5^8+63981*x1^6*x2^14*x3^5*x4^13*x5^3+36882*x1^13*x2^6*x3^8*x4^6*x5^14+3510*x1^5*x2^5*x3^12*x4^12*x5^13+21301*x1^10*x2^14*x3^11*x4^9*x5^9"),
+                p2 = ring.parse("26692*x1^2*x2*x3^2*x5^13+62118*x1^2*x2^6*x3^5*x4^2*x5^7+828*x1^8*x2^6*x3^3*x4^4*x5+63108*x1^14*x2^2*x3^3*x4*x5^4+35392*x1^2*x2^2*x3^14*x4^6+18686*x1^6*x2^9*x3^2*x4^3*x5^5+55647*x2^4*x3^13*x4^6*x5^2+52635*x1^14*x2^5*x4^5*x5+191*x1^2*x3^8*x4^10*x5^6+65201*x1^12*x2*x3^8*x4*x5^5+3551*x1^9*x2*x3^12*x4^4*x5+23009*x1^6*x2^9*x3^6*x4^6+21159*x1^2*x2^9*x3^3*x4^13*x5^2+38666*x1^9*x2^9*x3^3*x5^10+25692*x1^12*x2^9*x3^5*x4^3*x5^5+21256*x1*x2^4*x3^12*x4^12*x5^6+32978*x1^6*x3^14*x4^6*x5^11+35661*x1^12*x2^3*x3^3*x4^14*x5^9+10212*x1^13*x2^14*x3^6*x4^8*x5+65089*x1^9*x2^13*x3^10*x4*x5^10+31555*x1^9*x2^8*x3^6*x4^9*x5^12"),
+                p3 = ring.parse("51940*x3^12*x4*x5^9+28440*x1^7*x2^2*x3^6*x4^4*x5^6+64657*x1^4*x2^9*x3*x4^12+49150*x1*x2^7*x3^6*x4^3*x5^10+39701*x1^7*x2^4*x3^8*x5^8+55736*x1^11*x2^4*x3^7*x5^6+7442*x1^12*x2*x3^11*x4^5+20639*x1^7*x2^3*x4^13*x5^8+45382*x1^4*x2^2*x3^14*x4^4*x5^8+34045*x1^6*x2*x3^10*x4^9*x5^8+57079*x1^11*x2^9*x3^4*x4^3*x5^8+15678*x1^14*x2^5*x3^11*x4^2*x5^3+35697*x1^6*x2^11*x3^4*x4^6*x5^9+20453*x1^11*x2^12*x3^6*x4^7*x5+20337*x1^14*x2^9*x3^5*x4^7*x5^6+32687*x1^13*x2^8*x3^12*x4^3*x5^5+18470*x1^10*x2^6*x3^12*x4^10*x5^3+26468*x1^13*x2^3*x4^13*x5^13+53498*x1^13*x2^4*x3^13*x4^9*x5^6+51463*x1^9*x2^10*x3^10*x4^13*x5^5+17452*x1^11*x2^12*x3^12*x4^14*x5^11");
+        List<MultivariatePolynomial<BigInteger>> o = Arrays.asList(p1, p2, p3);
+        List<MultivariatePolynomial<BigInteger>> m = Stream.of(p1, p2, p3).map(p -> p.setRing(Zp(17)).setRing(Z)).collect(Collectors.toList());
+
+        MultivariatePolynomial<BigInteger> poly = p1.createOne().multiply(m);
+        Assert.assertEquals(3, Factor(poly).size());
     }
 
     /* ==================================== Test data =============================================== */

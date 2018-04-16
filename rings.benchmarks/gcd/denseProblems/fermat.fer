@@ -1,0 +1,51 @@
+&N; &t: &E:
+
+&(J=x1): &(J=x2): &(J=x3): &(J=x4): &(J=x5): &(J=x6): &(J=x7):
+
+exp := 7;
+a := (1 + 3*x1 + 5*x2 + 7*x3 + 9*x4 + 11*x5 + 13*x6 + 15*x7)^(exp) - 1:
+b := (1 - 3*x1 - 5*x2 - 7*x3 + 9*x4 - 11*x5 - 13*x6 + 15*x7)^(exp) + 1:
+g := (1 + 3*x1 + 5*x2 + 7*x3 + 9*x4 + 11*x5 + 13*x6 - 15*x7)^(exp) + 3:
+
+ag := a*g;
+bg := b*g;
+
+start := &_m(&T):
+r := GCD(ag, bg):
+end := &_m(&T):
+elapsed := &_m(end - start):
+elapsed := &_m(elapsed * 1000000);
+!('Done in Z: '): !(elapsed): !;
+
+
+start := &_m(&T):
+r := GCD(ag + 1, bg):
+end := &_m(&T):
+elapsed := &_m(end - start):
+elapsed := &_m(elapsed * 1000000);
+!('Done in Z (trivial): '): !(elapsed): !;
+
+
+&(p = 524287):
+
+
+ag := a*g;
+bg := b*g;
+
+start := &_m(&T):
+r := GCD(ag, bg):
+end := &_m(&T):
+elapsed := &_m(end - start):
+elapsed := &_m(elapsed * 1000000);
+!('Done in Zp: '): !(elapsed): !;
+
+
+start := &_m(&T):
+r := GCD(ag + 1, bg):
+end := &_m(&T):
+elapsed := &_m(end - start):
+elapsed := &_m(elapsed * 1000000);
+!('Done in Zp (trivial): '): !(elapsed): !;
+
+
+&q;

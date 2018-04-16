@@ -1,0 +1,4 @@
+problemId	Rings	Rings_success	Mathematica	Mathematica_success	FORM	FORM_success	Fermat	Fermat_success	Singular	Singular_success
+0	56054419209	true	389680886000	true	62223000000	true	7598316000000	true	NaN	true
+1	60230133024	true	355939800000	true	64822000000	true	NaN	false	NaN	false
+2	63358766670	true	412327694000	true	61353000000	true	NaN	false	NaN	false

@@ -571,11 +571,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public boolean isZero() {
-        return terms.size() == 0;
-    }
-
-    @Override
     public boolean isOne() {
         if (size() != 1)
             return false;

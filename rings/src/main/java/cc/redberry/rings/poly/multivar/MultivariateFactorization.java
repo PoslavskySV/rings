@@ -1110,8 +1110,14 @@ public final class MultivariateFactorization {
                 HenselLifting.seriesExpansionDense(Rings.UnivariateRingZp(modulus), baseZp, 1, evaluation);
 
         // lifted factors (each factor represented as series around y = y0)
-        UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] liftedZp =
-                HenselLifting.bivariateLiftDense(baseSeriesZp, factorsZp, liftDegree);
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>>[] liftedZp;
+        try {
+            liftedZp = HenselLifting.bivariateLiftDense(baseSeriesZp, factorsZp, liftDegree);
+        } catch (ArithmeticException e) {
+            // bad base prime selected
+            // try again
+            return bivariateDenseFactorSquareFreeInZ(poly);
+        }
 
         if (!lcZp.isConstant())
             // drop auxiliary l.c. from factors

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ringsVersion=2.3.1
+ringsVersion=2.3.2
 ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings."
 
 # CHECK JAVA VERSION
@@ -134,6 +134,7 @@ $ringsString" \
 		@ 
 		 
 		import cc.redberry.rings
+        import cc.redberry.rings.primes.{SmallPrimes, BigPrimes}
 		import rings.{bigint, primes, linear, poly}
 		import poly.{univar, multivar}
 		import poly.PolynomialMethods._

@@ -2401,7 +2401,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(5, Rings.Zp(4099));
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
                 MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
-                        "cc/redberry/rings/poly/multivar/MediumCharacteristicHugePoly.txt.gz"))))) {
+                        "MediumCharacteristicHugePoly.txt.gz"))))) {
 
             MultivariatePolynomial<BigInteger> a = ring.parse(in.readLine());
             MultivariatePolynomial<BigInteger> b = ring.parse(in.readLine());
