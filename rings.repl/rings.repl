@@ -134,6 +134,7 @@ $ringsString" \
 		@ 
 		 
 		import cc.redberry.rings
+        import cc.redberry.rings.primes.{SmallPrimes, BigPrimes}
 		import rings.{bigint, primes, linear, poly}
 		import poly.{univar, multivar}
 		import poly.PolynomialMethods._
