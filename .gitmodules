@@ -1,3 +1,6 @@
 [submodule "libdivide4j"]
 	path = libdivide4j
 	url = https://github.com/PoslavskySV/libdivide4j
+[submodule "rings.benchmarks"]
+	path = rings.benchmarks
+	url = git://github.com/PoslavskySV/rings.benchmarks.git
