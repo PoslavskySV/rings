@@ -105,7 +105,7 @@ public final class Rational<E>
     }
 
     /* private constructor without gcd reduction */
-    private Rational(boolean b, Ring<E> ring, E numerator, E denominator) {
+    Rational(boolean b, Ring<E> ring, E numerator, E denominator) {
         E[] nd = ring.createArray(numerator, denominator);
         normalize(ring, nd);
         this.ring = ring;
@@ -156,10 +156,26 @@ public final class Rational<E>
     }
 
     /**
+     * Add {@code other} to this and destroys this data
+     */
+    public Rational<E> addMutable(E val) {
+        E numAdd = ring.multiply(denominator, val); // don't destroy denominator
+        E num = ring.addMutable(numerator, numAdd); // destroy numerator
+        return new Rational<>(ring, num, denominator);
+    }
+
+    /**
      * Add {@code other} to this
      */
     public Rational<E> add(long other) {
         return add(ring.valueOf(other));
+    }
+
+    /**
+     * Add {@code other} to this and destroys this data
+     */
+    public Rational<E> addMutable(long val) {
+        return addMutable(ring.valueOf(val));
     }
 
     /**
@@ -174,8 +190,30 @@ public final class Rational<E>
             num = ring.add(numerator, other.numerator);
             den = denominator;
         } else {
-            num = ring.add(ring.multiply(numerator, other.denominator), ring.multiply(denominator, other.numerator));
+            num = ring.addMutable(ring.multiply(numerator, other.denominator), ring.multiply(denominator, other.numerator));
             den = ring.multiply(denominator, other.denominator);
+        }
+        return new Rational<>(ring, num, den);
+    }
+
+    /**
+     * Add {@code other} to this and destroys this data
+     */
+    public Rational<E> addMutable(Rational<E> other) {
+        if (other.isZero())
+            return this;
+
+        E num, den;
+        if (denominator.equals(other.denominator)) {
+            num = ring.addMutable(numerator, other.numerator); // destroy numerator
+            den = denominator;
+        } else {
+            // fixme calc gcd first
+            den = ring.multiply(denominator, other.denominator); // don't destroy denominator
+            num = ring.addMutable(
+                    ring.multiplyMutable(numerator, other.denominator), // destroy numerator
+                    ring.multiplyMutable(denominator, other.numerator)  // destroy denominator
+            );
         }
         return new Rational<>(ring, num, den);
     }
@@ -196,6 +234,14 @@ public final class Rational<E>
         return new Rational<>(ring, numerator, ring.multiply(denominator, other));
     }
 
+    /**
+     * Divide this by {@code other} and destroy this data
+     */
+    public Rational<E> divideMutable(E other) {
+        if (ring.isZero(other))
+            throw new ArithmeticException("divide by zero");
+        return new Rational<>(ring, numerator, ring.multiplyMutable(denominator, other));
+    }
 
     /**
      * Divide this by {@code other}
@@ -205,13 +251,28 @@ public final class Rational<E>
     }
 
     /**
+     * Divide this by {@code other} and destroy this data
+     */
+    public Rational<E> divideMutable(long l) {
+        return divideMutable(ring.valueOf(l));
+    }
+
+    /**
      * Divide this by {@code other}
      */
-
-    public Rational<E> divide(Rational other) {
+    public Rational<E> divide(Rational<E> other) {
         if (other.isZero())
             throw new ArithmeticException("divide by zero");
         return multiply(other.reciprocal());
+    }
+
+    /**
+     * Divide this by {@code other} and destroy this data
+     */
+    public Rational<E> divideMutable(Rational<E> other) {
+        if (other.isZero())
+            throw new ArithmeticException("divide by zero");
+        return multiplyMutable(other.reciprocal());
     }
 
     /**
@@ -222,10 +283,24 @@ public final class Rational<E>
     }
 
     /**
+     * Multiply this by {@code other} and destroy this data
+     */
+    public Rational<E> multiplyMutable(E other) {
+        return new Rational<>(ring, ring.multiplyMutable(numerator, other), denominator);
+    }
+
+    /**
      * Multiply this by {@code other}
      */
     public Rational<E> multiply(long other) {
         return multiply(ring.valueOf(other));
+    }
+
+    /**
+     * Multiply this by {@code other} and destroy this data
+     */
+    public Rational<E> multiplyMutable(long other) {
+        return multiplyMutable(ring.valueOf(other));
     }
 
     /**
@@ -240,10 +315,31 @@ public final class Rational<E>
     }
 
     /**
+     * Multiply this by {@code other} and destroy this data
+     */
+    public Rational<E> multiplyMutable(Rational<E> other) {
+        if (isZero())
+            return this;
+        if (other.isZero())
+            return other;
+        return new Rational<>(ring,
+                ring.multiplyMutable(numerator, other.numerator), // destroy numerator
+                ring.multiplyMutable(denominator, other.denominator) // destroy denominator
+        );
+    }
+
+    /**
      * Negates this
      */
     public Rational<E> negate() {
-        return new Rational<>(ring, ring.negate(numerator), denominator);
+        return new Rational<>(true, ring, ring.negate(numerator), denominator);
+    }
+
+    /**
+     * Negates this and destroys this data
+     */
+    public Rational<E> negateMutable() {
+        return new Rational<>(true, ring, ring.negateMutable(numerator), denominator);
     }
 
     /**
@@ -261,10 +357,26 @@ public final class Rational<E>
     }
 
     /**
+     * Subtracts {@code other} from this and destroys this data
+     */
+    public Rational<E> subtractMutable(E other) {
+        E numAdd = ring.multiply(denominator, other); // don'y destroy
+        E num = ring.subtractMutable(numerator, numAdd); // destroy numerator
+        return new Rational<>(ring, num, denominator);
+    }
+
+    /**
      * Subtracts {@code other} from this
      */
     public Rational<E> subtract(final long l) {
         return subtract(ring.valueOf(l));
+    }
+
+    /**
+     * Subtracts {@code other} from this and destroys this data
+     */
+    public Rational<E> subtractMutable(final long l) {
+        return subtractMutable(ring.valueOf(l));
     }
 
     /**
@@ -279,8 +391,29 @@ public final class Rational<E>
             num = ring.subtract(numerator, other.numerator);
             den = denominator;
         } else {
-            num = ring.subtract(ring.multiply(numerator, other.denominator), ring.multiply(other.numerator, denominator));
+            num = ring.subtractMutable(ring.multiply(numerator, other.denominator), ring.multiply(other.numerator, denominator));
             den = ring.multiply(denominator, other.denominator);
+        }
+        return new Rational<>(ring, num, den);
+    }
+
+    /**
+     * Subtracts {@code other} from this and destroys this data
+     */
+    public Rational<E> subtractMutable(final Rational<E> other) {
+        if (other.isZero())
+            return this;
+
+        E num, den;
+        if (denominator.equals(other.denominator)) {
+            num = ring.subtractMutable(numerator, other.numerator);
+            den = denominator;
+        } else {
+            den = ring.multiply(denominator, other.denominator); // don't destroy denominator
+            num = ring.subtract(
+                    ring.multiplyMutable(numerator, other.denominator),  // destroy numerator
+                    ring.multiplyMutable(denominator, other.numerator)   // destroy denominator
+            );
         }
         return new Rational<>(ring, num, den);
     }

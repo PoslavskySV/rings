@@ -51,6 +51,9 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
     public abstract Term setDegreeVector(int[] exponents, int totalDegree);
 
     /** Sets the degree vector */
+    public abstract Term forceSetDegreeVector(int[] exponents, int totalDegree);
+
+    /** Sets the degree vector */
     public final Term setDegreeVector(int[] exponents) { return setDegreeVector(exponents, ArraysUtil.sum(exponents));}
 
     /** Multiplies this by oth */

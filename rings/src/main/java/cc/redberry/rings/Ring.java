@@ -337,6 +337,11 @@ public interface Ring<E> extends
         return result;
     }
 
+    /** Internal API */
+    default E divideExactMutable(E dividend, E divider) {
+        return divideExact(dividend, divider);
+    }
+
     /**
      * Gives the inverse element {@code element ^ (-1) }
      *

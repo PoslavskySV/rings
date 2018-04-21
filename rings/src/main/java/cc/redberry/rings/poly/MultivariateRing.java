@@ -22,6 +22,12 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
      */
     public MultivariateRing(Poly factory) { super(factory); }
 
+    @SuppressWarnings("unchecked")
+    public <Term extends AMonomial<Term>> IMonomialAlgebra<Term> monomialAlgebra() {
+        IMonomialAlgebra<?> monomialAlgebra = factory.monomialAlgebra;
+        return (IMonomialAlgebra<Term>) monomialAlgebra;
+    }
+
     @Override
     public int nVariables() { return factory.nVariables; }
 

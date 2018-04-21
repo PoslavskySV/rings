@@ -1377,7 +1377,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         }
 
         @Override
-        public PrecomputedPowersHolder<E> clone(){
+        public PrecomputedPowersHolder<E> clone() {
             return new PrecomputedPowersHolder<>(ring, powers.clone());
         }
     }
@@ -1662,6 +1662,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return this;
         if (oth.isConstant())
             return multiply(oth.cc());
+        if (oth.size() == 1)
+            return multiply(oth.lt());
 
         if (size() > KRONECKER_THRESHOLD && oth.size() > KRONECKER_THRESHOLD)
             return multiplyKronecker(oth);

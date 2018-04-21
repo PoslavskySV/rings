@@ -14,14 +14,9 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     private static final long serialVersionUID = 1L;
     /** Ring that numerator and denominator belongs to */
     public final Ring<E> ring;
-    /** constants */
-    private final Rational<E> zero, one, minusOne;
 
     public Rationals(Ring<E> ring) {
         this.ring = ring;
-        this.zero = Rational.zero(ring);
-        this.one = Rational.one(ring);
-        this.minusOne = one.negate();
     }
 
     @Override
@@ -63,8 +58,18 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
+    public Rational<E> addMutable(Rational<E> a, Rational<E> b) {
+        return a.addMutable(b);
+    }
+
+    @Override
     public Rational<E> subtract(Rational<E> a, Rational<E> b) {
         return a.subtract(b);
+    }
+
+    @Override
+    public Rational<E> subtractMutable(Rational<E> a, Rational<E> b) {
+        return a.subtractMutable(b);
     }
 
     @Override
@@ -73,8 +78,18 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
+    public Rational<E> multiplyMutable(Rational<E> a, Rational<E> b) {
+        return a.multiplyMutable(b);
+    }
+
+    @Override
     public Rational<E> negate(Rational<E> element) {
         return element.negate();
+    }
+
+    @Override
+    public Rational<E> negateMutable(Rational<E> element) {
+        return element.negateMutable();
     }
 
     @Override
@@ -85,7 +100,12 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     @Override
     @SuppressWarnings("unchecked")
     public Rational<E>[] divideAndRemainder(Rational<E> dividend, Rational<E> divider) {
-        return new Rational[]{dividend.divide(divider), zero};
+        return new Rational[]{dividend.divide(divider), Rational.zero(ring)};
+    }
+
+    @Override
+    public Rational<E> divideExactMutable(Rational<E> dividend, Rational<E> divider) {
+        return dividend.divideMutable(divider);
     }
 
     @Override
@@ -95,17 +115,37 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> gcd(Rational<E> a, Rational<E> b) {
-        return one;
+        return Rational.one(ring);
+    }
+
+    @Override
+    public FactorDecomposition<Rational<E>> factorSquareFree(Rational<E> element) {
+        FactorDecomposition<Rational<E>> numFactors = ring.factorSquareFree(element.numerator)
+                .mapTo(this, p -> new Rational<>(ring, p));
+        FactorDecomposition<Rational<E>> denFactors = ring.factorSquareFree(element.denominator)
+                .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
+
+        return numFactors.addAll(denFactors);
+    }
+
+    @Override
+    public FactorDecomposition<Rational<E>> factor(Rational<E> element) {
+        FactorDecomposition<Rational<E>> numFactors = ring.factor(element.numerator)
+                .mapTo(this, p -> new Rational<>(ring, p));
+        FactorDecomposition<Rational<E>> denFactors = ring.factor(element.denominator)
+                .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
+
+        return numFactors.addAll(denFactors);
     }
 
     @Override
     public Rational<E> getZero() {
-        return zero;
+        return Rational.zero(ring);
     }
 
     @Override
     public Rational<E> getOne() {
-        return one;
+        return Rational.one(ring);
     }
 
     @Override
@@ -135,7 +175,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> copy(Rational<E> element) {
-        return element;
+        return new Rational<>(true, ring, ring.copy(element.numerator), ring.copy(element.denominator));
     }
 
     @Override
@@ -164,7 +204,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> getNegativeOne() {
-        return minusOne;
+        return Rational.one(ring).negateMutable();
     }
 
     @Override
