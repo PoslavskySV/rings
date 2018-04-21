@@ -1,12 +1,18 @@
 package cc.redberry.rings.parser;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
+ * Simple math expression tokenizer
  */
 public final class Tokenizer {
     private final CharacterStream stream;
 
-    private Tokenizer(CharacterStream stream) {
+    /**
+     * Create tokenizer of a given char stream
+     */
+    public Tokenizer(CharacterStream stream) {
         this.stream = stream;
     }
 
@@ -187,7 +193,7 @@ public final class Tokenizer {
         public final TokenType tokenType;
         public final String content;
 
-        public Token(TokenType tokenType, String content) {
+        Token(TokenType tokenType, String content) {
             this.tokenType = tokenType;
             this.content = content;
         }
@@ -198,24 +204,101 @@ public final class Tokenizer {
         }
     }
 
+    /** Stream of chars. Implementations are not synchronized and doesn't support concurrent iteration. */
     public interface CharacterStream {
+        /** next char available in this stream */
         boolean hasNext();
 
+        /** next char from this stream */
         char next();
 
+        /** string containing current char */
         String currentString();
 
+        /** index of char in string */
         int indexInCurrentString();
+
+        /**
+         * skip all chars preceding the specified char and place caret to the first char after the specified one
+         *
+         * @return false if stream finished without specified char and true otherwise
+         */
+        default boolean seek(char c) {
+            while (hasNext()) {
+                char n = next();
+                if (n == c)
+                    return true;
+            }
+            return false;
+        }
     }
 
-    public static CharacterStream mkCharacterStream(String string) {
+    private static final class ConcatStreams implements CharacterStream {
+        final List<CharacterStream> streams;
+        int currentStream;
+
+        ConcatStreams(List<CharacterStream> streams) {
+            this(streams, 0);
+        }
+
+        ConcatStreams(List<CharacterStream> streams, int currentStream) {
+            this.streams = streams;
+            this.currentStream = currentStream;
+        }
+
+        @Override
+        public boolean hasNext() {
+            int cs = currentStream;
+            for (; cs < streams.size(); ++cs)
+                if (streams.get(cs).hasNext())
+                    return true;
+            return false;
+        }
+
+        @Override
+        public char next() {
+            int cs = currentStream;
+            for (; cs < streams.size(); ++cs)
+                if (streams.get(cs).hasNext()) {
+                    currentStream = cs;
+                    return streams.get(cs).next();
+                }
+            throw new IllegalArgumentException("no more elements in this stream");
+        }
+
+        @Override
+        public String currentString() {
+            return streams.get(currentStream).currentString();
+        }
+
+        @Override
+        public int indexInCurrentString() {
+            return streams.get(currentStream).indexInCurrentString();
+        }
+    }
+
+    /** Concat char streams */
+    public static CharacterStream concat(CharacterStream a, CharacterStream b) {
+        List<CharacterStream> streams = new ArrayList<>();
+        streams.add(a);
+        streams.add(b);
+        return new ConcatStreams(streams);
+    }
+
+    /**
+     * Create character stream from string
+     *
+     * @param terminateChar if a non-null value specified, stream will terminate on the last char preceding the {@code terminateChar}
+     */
+    public static CharacterStream mkCharacterStream(String string, Character terminateChar) {
         return new CharacterStream() {
             int index = 0;
             int currentIndex = 0;
 
             @Override
             public boolean hasNext() {
-                return index < string.length();
+                return index < string.length()
+                        && (terminateChar == null || string.charAt(index) != terminateChar);
             }
 
             @Override
@@ -236,7 +319,19 @@ public final class Tokenizer {
         };
     }
 
+    /**
+     * Create string tokenizer
+     *
+     * @param terminateChar if a non-null value specified, stream will terminate on the last char preceding the {@code terminateChar}
+     */
+    public static Tokenizer mkTokenizer(String string, Character terminateChar) {
+        return new Tokenizer(mkCharacterStream(string, terminateChar));
+    }
+
+    /**
+     * Create string tokenizer
+     */
     public static Tokenizer mkTokenizer(String string) {
-        return new Tokenizer(mkCharacterStream(string));
+        return new Tokenizer(mkCharacterStream(string, null));
     }
 }

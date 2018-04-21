@@ -5,6 +5,7 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 
 import java.util.Arrays;
 
@@ -426,5 +427,10 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
     @Override
     public String coefficientRingToString() {
         return "Z";
+    }
+
+    @Override
+    public AMultivariatePolynomial asMultivariate() {
+        throw new UnsupportedOperationException();
     }
 }

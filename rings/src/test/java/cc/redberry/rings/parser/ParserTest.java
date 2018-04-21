@@ -4,8 +4,13 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rationals;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.FiniteField;
+import cc.redberry.rings.poly.IPolynomial;
+import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -18,6 +23,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static cc.redberry.rings.Rings.UnivariateRing;
+import static cc.redberry.rings.Rings.Z;
+import static cc.redberry.rings.parser.Parser.mkParser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -26,7 +34,7 @@ public class ParserTest extends AbstractTest {
     @Test
     public void test0_performance() {
         String[] vars = {"x", "y", "z", "x1", "x2", "x3", "x4"};
-        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(7, Rings.Z);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(7, Z);
         HashMap<String, MultivariatePolynomial<BigInteger>> pVars = new HashMap<>();
         for (int i = 0; i < vars.length; ++i)
             pVars.put(vars[i], polyRing.variable(i));
@@ -35,10 +43,10 @@ public class ParserTest extends AbstractTest {
         HashMap<String, MultivariatePolynomial<BigInteger>> eVars = pVars;
 
         Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                notOptimizedParser = new Parser<>(baseRing, eVars, null, null, null);
+                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
 
         Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = new Parser<>(baseRing, eVars, polyRing, pVars, Function.identity());
+                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, Function.identity());
 
         MultivariatePolynomial<BigInteger> p = polyRing.parse("x*x2*x4 + 2 + z - y*z*x^2 + x1*x2*x3*x4*x*y*z");
         String expression = polyRing.pow(p, 30).toString(vars);
@@ -68,7 +76,7 @@ public class ParserTest extends AbstractTest {
     @Test
     public void test1() {
         String[] vars = new String[]{"x", "y", "z"};
-        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Rings.Z);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Z);
         HashMap<String, MultivariatePolynomial<BigInteger>> pVars = new HashMap<>();
         for (int i = 0; i < vars.length; i++)
             pVars.put(vars[i], polyRing.variable(i));
@@ -77,10 +85,10 @@ public class ParserTest extends AbstractTest {
         HashMap<String, MultivariatePolynomial<BigInteger>> eVars = pVars;
 
         Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                notOptimizedParser = new Parser<>(baseRing, eVars, null, null, null);
+                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
 
         Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = new Parser<>(baseRing, eVars, polyRing, pVars, Function.identity());
+                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, Function.identity());
 
         String expressionStr = "x + y + z*x - z*y";
 
@@ -92,7 +100,7 @@ public class ParserTest extends AbstractTest {
     @Test
     public void test2() {
         String[] vars = new String[]{"x", "y", "z"};
-        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Rings.Z);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Z);
         HashMap<String, MultivariatePolynomial<BigInteger>> pVars = new HashMap<>();
         for (int i = 0; i < vars.length; i++)
             pVars.put(vars[i], polyRing.variable(i));
@@ -101,10 +109,10 @@ public class ParserTest extends AbstractTest {
         HashMap<String, MultivariatePolynomial<BigInteger>> eVars = pVars;
 
         Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                notOptimizedParser = new Parser<>(baseRing, eVars, null, null, null);
+                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
 
         Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = new Parser<>(baseRing, eVars, polyRing, pVars, Function.identity());
+                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, Function.identity());
 
         String expressionStr = "-x^2*y^2*z^3 + x*y^2 + z^2*x - z*y*x";
 
@@ -116,7 +124,7 @@ public class ParserTest extends AbstractTest {
     @Test
     public void test3() {
         String[] vars = new String[]{"x", "y", "z"};
-        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Rings.Z);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Z);
         HashMap<String, MultivariatePolynomial<BigInteger>> pVars = new HashMap<>();
         for (int i = 0; i < vars.length; i++)
             pVars.put(vars[i], polyRing.variable(i));
@@ -126,10 +134,10 @@ public class ParserTest extends AbstractTest {
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
         Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                notOptimizedParser = new Parser<>(baseRing, eVars, null, null, null);
+                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
 
         Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                optimizedParser = new Parser<>(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         String expressionStr = "z - y/2 + z*y/(3 + 4)";
 
@@ -142,7 +150,7 @@ public class ParserTest extends AbstractTest {
     @Test
     public void test4() {
         String[] vars = new String[]{"x", "y", "z"};
-        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Rings.Z);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Z);
         HashMap<String, MultivariatePolynomial<BigInteger>> pVars = new HashMap<>();
         for (int i = 0; i < vars.length; i++)
             pVars.put(vars[i], polyRing.variable(i));
@@ -152,10 +160,10 @@ public class ParserTest extends AbstractTest {
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
         Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                notOptimizedParser = new Parser<>(baseRing, eVars, null, null, null);
+                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
 
         Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                optimizedParser = new Parser<>(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         String expressionStr = "(-5942283839318488889)*x^4*y^4";
 
@@ -169,7 +177,7 @@ public class ParserTest extends AbstractTest {
         RandomGenerator rnd = getRandom();
         rnd.setSeed(1);
         String[] vars = new String[]{"x", "y", "z", "p", "q"};
-        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Rings.Z);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Z);
 
         HashMap<String, MultivariatePolynomial<BigInteger>> pVars = new HashMap<>();
         for (int i = 0; i < vars.length; i++)
@@ -180,10 +188,10 @@ public class ParserTest extends AbstractTest {
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
         Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                notOptimizedParser = new Parser<>(baseRing, eVars, null, null, null);
+                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
 
         Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                optimizedParser = new Parser<>(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         DescriptiveStatistics
                 notOpt = new DescriptiveStatistics(),
@@ -230,10 +238,10 @@ public class ParserTest extends AbstractTest {
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
         Parser<Rational<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?>
-                notOptimizedParser = new Parser<>(baseRing, eVars, null, null, null);
+                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
 
         Parser<Rational<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?>
-                optimizedParser = new Parser<>(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         DescriptiveStatistics
                 notOpt = new DescriptiveStatistics(),
@@ -262,5 +270,34 @@ public class ParserTest extends AbstractTest {
 
         System.out.println(TimeUnits.statisticsNanotime(notOpt));
         System.out.println(TimeUnits.statisticsNanotime(opt));
+    }
+
+    @Test
+    public void test7() {
+        Parser<UnivariatePolynomial<BigInteger>, ?, ?> parser = Parser.mkUnivariateParser(UnivariateRing(Z), "x");
+        UnivariatePolynomial<BigInteger> poly = parser.parse(Tokenizer.mkTokenizer("x + (x^2 + 123*x^3 - 1)^2"));
+        assertEquals("1+x-2*x^2-246*x^3+x^4+246*x^5+15129*x^6", poly.toString());
+    }
+
+    @Test
+    public void test8() {
+        FiniteField<UnivariatePolynomialZp64> gf = Rings.GF(17, 3);
+        Parser<UnivariatePolynomialZp64, ?, ?> gfParser = Parser.mkUnivariateParser(gf, mkVars(gf, "t"));
+
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> polyRing = Rings.MultivariateRing(3, gf);
+        Parser<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Parser.mkMultivariateParser(polyRing, gfParser, "x", "y", "z");
+
+        Rationals<MultivariatePolynomial<UnivariatePolynomialZp64>> fracRing = Rings.Frac(polyRing);
+        Parser<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fracParser = Parser.mkNestedParser(fracRing, new HashMap<>(), polyParser, p -> new Rational<>(polyRing, p));
+
+        Rational<MultivariatePolynomial<UnivariatePolynomialZp64>> rat = fracParser.parse(Tokenizer.mkTokenizer("x*(t + 1 - 1/t^99) + t/y"));
+        System.out.println(rat);
+    }
+
+    private static <P extends IPolynomial<P>> Map<String, P> mkVars(IPolynomialRing<P> ring, String... vars) {
+        Map<String, P> map = new HashMap<>();
+        for (int i = 0; i < vars.length; i++)
+            map.put(vars[i], ring.variable(i));
+        return map;
     }
 }

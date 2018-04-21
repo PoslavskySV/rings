@@ -1983,7 +1983,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
-    public String toString(String[] vars) {
+    public String toString(String... vars) {
         return toString(ring, vars);
     }
 

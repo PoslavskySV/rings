@@ -3,6 +3,8 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
+import cc.redberry.rings.poly.multivar.MonomialOrder;
+import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 
 import java.util.*;
@@ -1141,6 +1143,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     /** internal API */
     public E[] getDataReferenceUnsafe() {return data;}
+
+    @Override
+    public MultivariatePolynomial<E> asMultivariate() {
+        return MultivariatePolynomial.asMultivariate(this, 1, 0, MonomialOrder.DEFAULT);
+    }
 
     @Override
     public int compareTo(UnivariatePolynomial<E> o) {

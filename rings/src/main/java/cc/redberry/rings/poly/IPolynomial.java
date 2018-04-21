@@ -478,5 +478,5 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     String coefficientRingToString();
 
     @Override
-    String toString(String[] variables);
+    String toString(String... variables);
 }

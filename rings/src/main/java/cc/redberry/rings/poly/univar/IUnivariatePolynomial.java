@@ -1,6 +1,7 @@
 package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.poly.IPolynomial;
+import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import gnu.trove.set.hash.TIntHashSet;
 
 /**
@@ -150,6 +151,11 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      * @return composition {@code this(oth)}
      */
     Poly composition(Poly value);
+
+    /**
+     * Convert to multivariate polynomial
+     */
+    AMultivariatePolynomial asMultivariate();
 
     /** ensures that internal storage has enough size to store {@code desiredCapacity} elements */
     void ensureInternalCapacity(int desiredCapacity);

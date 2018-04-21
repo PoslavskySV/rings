@@ -5,15 +5,18 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.parser.Tokenizer.Token;
 import cc.redberry.rings.parser.Tokenizer.TokenType;
+import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.multivar.AMonomial;
-import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
-import cc.redberry.rings.poly.multivar.IMonomialAlgebra;
+import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.multivar.*;
+import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static cc.redberry.rings.parser.Tokenizer.END;
 import static cc.redberry.rings.parser.Tokenizer.TokenType.T_BRACKET_OPEN;
@@ -21,7 +24,7 @@ import static cc.redberry.rings.parser.Tokenizer.TokenType.T_VARIABLE;
 
 
 /**
- * High-level parser of ring elements
+ * High-level parser of ring elements. Uses simple shunting-yard algorithm.
  *
  * @param <Element> type of resulting elements
  * @param <Term>    underlying polynomial terms
@@ -42,6 +45,23 @@ public final class Parser<
     /** convert polynomial to base ring elements */
     private final Function<Poly, Element> polyToElement;
 
+    private Parser(Ring<Element> baseRing,
+                   Map<String, Element> eVariables,
+                   MultivariateRing<Poly> polyRing,
+                   Map<String, Integer> pVariables,
+                   Function<Poly, Element> polyToElement) {
+        this.baseRing = baseRing;
+        this.eVariables = eVariables;
+        this.polyRing = polyRing;
+        this.pVariables = pVariables;
+        this.polyToElement = polyToElement;
+        // make sure that eVariables contain all pVariables
+        if (pVariables != null)
+            pVariables.forEach((k, v) -> eVariables.computeIfAbsent(k, __ -> polyToElement.apply(polyRing.variable(v))));
+    }
+
+    ////////////////////////////////////////////////////Factory////////////////////////////////////////////////////////
+
     /**
      * @param baseRing      the base ring
      * @param eVariables    variables bindings (variableString -> base ring element)
@@ -49,28 +69,155 @@ public final class Parser<
      * @param pVariables    polynomial variables bindings (variableString -> polyRing variable index)
      * @param polyToElement convert from auxiliary polynomials to basering
      */
-    public Parser(Ring<Element> baseRing,
-                  Map<String, Element> eVariables,
-                  MultivariateRing<Poly> polyRing,
-                  Map<String, Poly> pVariables,
-                  Function<Poly, Element> polyToElement) {
-        this.baseRing = baseRing;
-        this.polyToElement = polyToElement;
-        this.polyRing = polyRing;
-        this.pVariables = new HashMap<>();
-        this.eVariables = eVariables;
+    public static <
+            Element,
+            Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>> Parser<Element, Term, Poly>
+    mkParser(Ring<Element> baseRing,
+             Map<String, Element> eVariables,
+             MultivariateRing<Poly> polyRing,
+             Map<String, Poly> pVariables,
+             Function<Poly, Element> polyToElement) {
+        Map<String, Integer> iVariables = new HashMap<>();
         if (pVariables != null)
-            for (Map.Entry<String, Poly> v : pVariables.entrySet())
-                this.pVariables.put(v.getKey(), v.getValue().univariateVariable());
+            for (Map.Entry<String, Poly> v : pVariables.entrySet()) {
+                Poly p = v.getValue();
+                if (p.isEffectiveUnivariate() && !p.isConstant() && p.degreeSum() == 1)
+                    iVariables.put(v.getKey(), v.getValue().univariateVariable());
+                else
+                    eVariables.put(v.getKey(), polyToElement.apply(p));
+            }
+        return new Parser<>(baseRing, eVariables, polyRing, iVariables, polyToElement);
     }
 
     /**
-     * @param baseRing   the base ring
-     * @param eVariables variables bindings (variableString -> base ring element)
+     * Create parser for generic rings
      */
-    public Parser(Ring<Element> baseRing,
-                  Map<String, Element> eVariables) {
-        this(baseRing, eVariables, null, null, null);
+    public static <E> Parser<E, ?, ?> mkGenericParser(Ring<E> baseRing,
+                                                      Map<String, E> eVariables) {
+        return new Parser<>(baseRing, eVariables, null, null, null);
+    }
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Parser<Poly, Term, Poly> mkMultivariateParser(MultivariateRing<Poly> baseRing,
+                                                  Map<String, Poly> eVariables) {
+        return mkParser(baseRing, eVariables, baseRing, eVariables, Function.identity());
+    }
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Parser<Poly, Term, Poly> mkMultivariateParser(MultivariateRing<Poly> baseRing,
+                                                  String... variables) {
+        Map<String, Poly> pVariables = new HashMap<>();
+        for (int i = 0; i < variables.length; ++i)
+            pVariables.put(variables[i], baseRing.variable(i));
+        return mkMultivariateParser(baseRing, pVariables);
+    }
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    public static <E> Parser<MultivariatePolynomial<E>, Monomial<E>, MultivariatePolynomial<E>>
+    mkMultivariateParser(MultivariateRing<MultivariatePolynomial<E>> baseRing,
+                         Map<String, MultivariatePolynomial<E>> eVariables,
+                         Parser<E, ?, ?> elementParser) {
+        elementParser.eVariables.forEach((k, v) -> eVariables.put(k, baseRing.factory().createConstant(v)));
+        return mkMultivariateParser(baseRing, eVariables);
+    }
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    public static <E> Parser<MultivariatePolynomial<E>, Monomial<E>, MultivariatePolynomial<E>>
+    mkMultivariateParser(MultivariateRing<MultivariatePolynomial<E>> baseRing,
+                         Parser<E, ?, ?> elementParser,
+                         String... variables) {
+        Map<String, MultivariatePolynomial<E>> eVariables = new HashMap<>();
+        for (int i = 0; i < variables.length; ++i)
+            eVariables.put(variables[i], baseRing.variable(i));
+        return mkMultivariateParser(baseRing, eVariables, elementParser);
+    }
+
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IUnivariatePolynomial<Poly>>
+    Parser<Poly, ?, ?> mkUnivariateParser(IPolynomialRing<Poly> baseRing,
+                                          Map<String, Poly> eVariables) {
+        MultivariateRing mRing = Rings.MultivariateRing(baseRing.factory().asMultivariate());
+        Map<String, AMultivariatePolynomial> pVariables = eVariables.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().asMultivariate()));
+        return mkParser(baseRing, eVariables, mRing, pVariables, p -> (Poly) p.asUnivariate());
+    }
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IUnivariatePolynomial<Poly>>
+    Parser<Poly, ?, ?> mkUnivariateParser(UnivariateRing<Poly> baseRing,
+                                          String variable) {
+        return mkUnivariateParser(baseRing, new HashMap<String, Poly>() {{put(variable, baseRing.variable(0));}});
+    }
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    public static <E> Parser<UnivariatePolynomial<E>, ?, ?>
+    mkUnivariateParser(IPolynomialRing<UnivariatePolynomial<E>> baseRing,
+                       Map<String, UnivariatePolynomial<E>> eVariables,
+                       Parser<E, ?, ?> elementParser) {
+        elementParser.eVariables.forEach((k, v) -> eVariables.put(k, baseRing.factory().createConstant(v)));
+        return mkUnivariateParser(baseRing, eVariables);
+    }
+
+    /**
+     * Create parser for multivariate polynomials rings
+     */
+    public static <E> Parser<UnivariatePolynomial<E>, ?, ?>
+    mkUnivariateParser(IPolynomialRing<UnivariatePolynomial<E>> baseRing,
+                       Parser<E, ?, ?> elementParser,
+                       String variable) {
+        HashMap<String, UnivariatePolynomial<E>> eVariables = new HashMap<>();
+        eVariables.put(variable, baseRing.variable(0));
+        return mkUnivariateParser(baseRing, eVariables, elementParser);
+    }
+
+    /**
+     * Create parser for nested rings (e.g. fractions over polynomials etc)
+     */
+    @SuppressWarnings("unchecked")
+    public static <E, I>
+    Parser<E, ?, ?> mkNestedParser(Ring<E> baseRing,
+                                   Map<String, E> eVariables,
+                                   Parser<I, ?, ?> innerParser,
+                                   Function<I, E> imageFunc) {
+        if (baseRing instanceof MultivariateRing && ((MultivariateRing) baseRing).factory() instanceof MultivariatePolynomial)
+            return mkMultivariateParser((MultivariateRing) baseRing, (Map) eVariables, innerParser);
+        else if (baseRing instanceof UnivariateRing && ((UnivariateRing) baseRing).factory() instanceof UnivariatePolynomial)
+            return mkUnivariateParser((UnivariateRing) baseRing, (Map) eVariables, innerParser);
+
+        innerParser.eVariables.forEach((k, v) -> eVariables.put(k, imageFunc.apply(v)));
+        return new Parser(
+                baseRing,
+                eVariables,
+                innerParser.polyRing,
+                innerParser.pVariables,
+                innerParser.polyToElement.andThen(imageFunc));
+    }
+
+    ///////////////////////////////////////////////////Implementation///////////////////////////////////////////////////
+
+    /** Parse string */
+    public Element parse(String string) {
+        return parse(Tokenizer.mkTokenizer(string));
     }
 
     /**
@@ -191,7 +338,7 @@ public final class Parser<
         exprStack.push(result);
     }
 
-    //////////////////////////////////////////////Operands//////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////Operands//////////////////////////////////////////////////////
 
     /** optimized operations with operands */
     private interface IOperand<P, E> {
@@ -430,7 +577,7 @@ public final class Parser<
         }
     }
 
-    //////////////////////////////////////////////Operators/////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////Operators//////////////////////////////////////////////////////
 
     private enum Associativity {
         LeftToRight,
