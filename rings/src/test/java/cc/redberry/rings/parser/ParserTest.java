@@ -8,6 +8,7 @@ import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.multivar.Monomial;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
@@ -23,8 +24,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static cc.redberry.rings.Rings.UnivariateRing;
-import static cc.redberry.rings.Rings.Z;
+import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.parser.Parser.mkMultivariateParser;
 import static cc.redberry.rings.parser.Parser.mkParser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -288,10 +289,40 @@ public class ParserTest extends AbstractTest {
         Parser<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Parser.mkMultivariateParser(polyRing, gfParser, "x", "y", "z");
 
         Rationals<MultivariatePolynomial<UnivariatePolynomialZp64>> fracRing = Rings.Frac(polyRing);
-        Parser<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fracParser = Parser.mkNestedParser(fracRing, new HashMap<>(), polyParser, p -> new Rational<>(polyRing, p));
+        Parser<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fracParser =
+                Parser.mkNestedParser(
+                        fracRing,
+                        new HashMap<>(),
+                        polyParser,
+                        p -> new Rational<>(polyRing, p));
 
         Rational<MultivariatePolynomial<UnivariatePolynomialZp64>> rat = fracParser.parse(Tokenizer.mkTokenizer("x*(t + 1 - 1/t^99) + t/y"));
         System.out.println(rat);
+    }
+
+    @Test
+    public void test9() {
+        String[] vars = new String[]{"a", "b", "c"};
+        MultivariateRing<MultivariatePolynomial<BigInteger>> polyRing = Rings.MultivariateRing(vars.length, Z);
+        HashMap<String, MultivariatePolynomial<BigInteger>> pVars = new HashMap<>();
+        for (int i = 0; i < vars.length; i++)
+            pVars.put(vars[i], polyRing.variable(i));
+
+
+        Parser<MultivariatePolynomial<BigInteger>, Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> parser = mkMultivariateParser(polyRing, vars);
+        System.out.println(parser.parse("-5*a^22*c*3^13 + 5*a^32*b^24*c*3 + a^31*c*3^42 + c^66").toString(vars));
+    }
+
+    @Test
+    public void test10() {
+        Parser<Rational<BigInteger>, ?, ?> p = Parser.mkParser(Q);
+        assertEquals(p.parse("1/2*3"), new Rational<>(Z, Z.valueOf(3), Z.valueOf(2)));
+    }
+
+    @Test
+    public void test11() {
+        Parser<Rational<BigInteger>, ?, ?> p = Parser.mkParser(Q);
+        assertEquals(p.parse("-1/2*3/5*9*9/3^2/4/6*7 + 1^2/3 - 3 - 2*3*5/8*9/6*9/3^2/4*7*6^2"), new Rational<>(Z, Z.valueOf(-85879), Z.valueOf(240)));
     }
 
     private static <P extends IPolynomial<P>> Map<String, P> mkVars(IPolynomialRing<P> ring, String... vars) {

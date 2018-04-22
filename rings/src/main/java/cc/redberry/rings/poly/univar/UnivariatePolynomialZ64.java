@@ -43,7 +43,7 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
      * Parse string into polynomial
      */
     public static UnivariatePolynomialZ64 parse(String string) {
-        return UnivariatePolynomial.asOverZ64(Parser.parse(Rings.Z, Rings.Z, string));
+        return UnivariatePolynomial.asOverZ64(UnivariatePolynomial.parse(string, Rings.Z));
     }
 
     /**

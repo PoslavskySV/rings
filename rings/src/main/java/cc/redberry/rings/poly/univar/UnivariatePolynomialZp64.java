@@ -5,7 +5,6 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
-import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
 
 import java.util.Arrays;
@@ -41,16 +40,29 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
 
     /**
      * Parse string into polynomial
+     *
+     * @deprecated use {@link #parse(String, IntegersZp64, String)}
      */
+    @Deprecated
     public static UnivariatePolynomialZp64 parse(String string, long modulus) {
         return parse(string, new IntegersZp64(modulus));
     }
 
     /**
      * Parse string into polynomial
+     *
+     * @deprecated use {@link #parse(String, IntegersZp64, String)}
      */
+    @Deprecated
     public static UnivariatePolynomialZp64 parse(String string, IntegersZp64 modulus) {
         return UnivariatePolynomial.asOverZp64(UnivariatePolynomial.parse(string, modulus.asGenericRing()));
+    }
+
+    /**
+     * Parse string into polynomial
+     */
+    public static UnivariatePolynomialZp64 parse(String string, IntegersZp64 modulus, String variable) {
+        return UnivariatePolynomial.asOverZp64(UnivariatePolynomial.parse(string, modulus.asGenericRing(), variable));
     }
 
     /**

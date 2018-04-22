@@ -20,7 +20,7 @@ public interface Ring<E> extends
                          Comparator<E>,
                          Iterable<E>,
                          ToStringSupport<E>,
-                         ElementParser<E>,
+                         IParser<E>,
                          java.io.Serializable {
     /**
      * Returns whether this ring is a field

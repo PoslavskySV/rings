@@ -18,43 +18,46 @@ public class ParserTest extends AUnivariateTest {
     public void test1() throws Exception {
         assertEquals(
                 UnivariatePolynomial.create(3),
-                Parser.parse(Rings.Z, "3"));
+                UnivariatePolynomial.parse("3", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(3, 0, 0, 1, 0, 4),
-                Parser.parse(Rings.Z, "3 + x^3 + 4*x^5"));
+                UnivariatePolynomial.parse("3 + x^3 + 4*x^5", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, 1, 0, 4),
-                Parser.parse(Rings.Z, "x^3 + 4*x^5"));
+                UnivariatePolynomial.parse("x^3 + 4*x^5", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, 1, 0, 4),
-                Parser.parse(Rings.Z, "0*x + x^3 + 4*x^5"));
+                UnivariatePolynomial.parse("0*x + x^3 + 4*x^5", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Rings.Z, "0*x - x^3 + 4*x^5"));
+                UnivariatePolynomial.parse("0*x - x^3 + 4*x^5", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Rings.Z, "0*x + - x^3 + 4*x^5"));
+                UnivariatePolynomial.parse("0*x + - x^3 + 4*x^5", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Rings.Z, "0*x - + x^3 + 4*x^5"));
+                UnivariatePolynomial.parse("0*x - + x^3 + 4*x^5", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, 4),
-                Parser.parse(Rings.Z, "-x^3 + 4*x^5"));
+                UnivariatePolynomial.parse("-x^3 + 4*x^5", Rings.Z));
         assertEquals(
                 UnivariatePolynomial.create(0, 0, 0, -1, 0, -4),
-                Parser.parse(Rings.Z, "-x^3 - 4*x^5"));
+                UnivariatePolynomial.parse("-x^3 - 4*x^5", Rings.Z));
+        assertEquals(
+                UnivariatePolynomial.create(0, 0, 0, +1, 0, -4),
+                UnivariatePolynomial.parse("----x^3 - - - 4*x^5", Rings.Z));
     }
 
     @Test
     public void test2() throws Exception {
         UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.create(20, 4, 48, 86, -25, 93, 91, 93, -3, 3, 38, 20, 38, 40, 7);
-        assertEquals(poly, Parser.parse(Rings.Z, poly.toString()));
+        assertEquals(poly, UnivariatePolynomial.parse(poly.toString(), Rings.Z));
     }
 
     @Test
     public void test3() throws Exception {
         UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.create(1, 97, -92, 43);
-        UnivariatePolynomial<BigInteger> r = Parser.parse(Rings.Z, poly.toString());
+        UnivariatePolynomial<BigInteger> r = UnivariatePolynomial.parse(poly.toString(), Rings.Z);
         assertEquals(poly, r);
     }
 
@@ -67,7 +70,7 @@ public class ParserTest extends AUnivariateTest {
             UnivariatePolynomial<BigInteger> bPoly = lPoly.toBigPoly();
 
             for (String str : new String[]{lPoly.toString(), bPoly.toString()})
-                assertEquals(bPoly, Parser.parse(Rings.Z, str));
+                assertEquals(bPoly, UnivariatePolynomial.parse(str, Rings.Z));
         }
     }
 
@@ -77,7 +80,7 @@ public class ParserTest extends AUnivariateTest {
         RandomDataGenerator rndd = getRandomData();
         for (int i = 0; i < its(100, 1000); i++) {
             UnivariatePolynomial<UnivariatePolynomialZp64> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), FiniteField.GF17p5, rnd);
-            assertEquals(poly, Parser.parse(poly.ring, poly.toString()));
+            assertEquals(poly, UnivariatePolynomial.parse(poly.toString(), poly.ring));
         }
     }
 
@@ -91,7 +94,7 @@ public class ParserTest extends AUnivariateTest {
 
         UnivariatePolynomial<UnivariatePolynomialZp64> poly =
                 UnivariatePolynomial.create(FiniteField.GF17p5, c0, c1, c2, c3);
-        assertEquals(poly, Parser.parse(poly.ring, poly.toString()));
+        assertEquals(poly, UnivariatePolynomial.parse(poly.toString(), poly.ring));
     }
 
     @Test

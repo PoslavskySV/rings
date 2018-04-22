@@ -1,7 +1,5 @@
 package cc.redberry.rings;
 
-import cc.redberry.rings.poly.IPolynomial;
-
 /**
  * @since 1.0
  */

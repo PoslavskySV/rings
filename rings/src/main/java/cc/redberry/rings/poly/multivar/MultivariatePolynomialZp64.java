@@ -141,6 +141,19 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     /**
      * Parse multivariate polynomial from string.
      *
+     * @param string the string
+     * @param ring   the ring
+     * @return multivariate polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static MultivariatePolynomialZp64 parse(String string, IntegersZp64 ring) {
+        return parse(string, ring, MonomialOrder.DEFAULT);
+    }
+
+    /**
+     * Parse multivariate polynomial from string.
+     *
      * @param string    the string
      * @param ring      the ring
      * @param ordering  monomial order
@@ -151,7 +164,22 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      */
     public static MultivariatePolynomialZp64 parse(String string, IntegersZp64 ring, Comparator<DegreeVector> ordering, String... variables) {
         IntegersZp lDomain = ring.asGenericRing();
-        return MultivariatePolynomial.asOverZp64(Parser.parse(string, lDomain, lDomain, ordering, variables));
+        return MultivariatePolynomial.asOverZp64(MultivariatePolynomial.parse(string, lDomain, ordering, variables));
+    }
+
+    /**
+     * Parse multivariate polynomial from string.
+     *
+     * @param string   the string
+     * @param ring     the ring
+     * @param ordering monomial order
+     * @return multivariate polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static MultivariatePolynomialZp64 parse(String string, IntegersZp64 ring, Comparator<DegreeVector> ordering) {
+        IntegersZp lDomain = ring.asGenericRing();
+        return MultivariatePolynomial.asOverZp64(MultivariatePolynomial.parse(string, lDomain, ordering));
     }
 
     /**

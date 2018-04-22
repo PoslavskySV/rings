@@ -15,7 +15,7 @@ import scala.language.{existentials, implicitConversions, postfixOps}
   **/
 sealed class Ring[E](val theRing: rings.Ring[E])
   extends ToStringSupport[E]
-    with ElementParser[E]
+    with IParser[E]
     with RingSupport[E]
     with Serializable {
 

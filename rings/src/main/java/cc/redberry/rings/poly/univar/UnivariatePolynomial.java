@@ -3,12 +3,15 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
+import cc.redberry.rings.parser.Parser;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -45,9 +48,37 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     /**
      * Parse string into polynomial
+     *
+     * @param string string expression
+     * @param ring   the ring
+     * @param var    variable string
      */
+    public static <E> UnivariatePolynomial<E> parse(String string, Ring<E> ring, String var) {
+        return Parser.mkUnivariateParser(Rings.UnivariateRing(ring), var).parse(string);
+    }
+
+    /**
+     * Parse string into polynomial
+     *
+     * @deprecated use {@link #parse(String, Ring, String)}
+     */
+    @Deprecated
     public static <E> UnivariatePolynomial<E> parse(String string, Ring<E> ring) {
-        return Parser.parse(ring, ring, string);
+        return Parser.mkUnivariateParser(Rings.UnivariateRing(ring), getVariable(string)).parse(string);
+    }
+
+    private static String getVariable(String string) {
+        Matcher matcher = Pattern.compile("[a-zA-Z]+[0-9]*").matcher(string);
+        List<String> variables = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        while (matcher.find()) {
+            String var = matcher.group();
+            if (seen.contains(var))
+                continue;
+            seen.add(var);
+            variables.add(var);
+        }
+        return variables.size() == 0 ? "x" : variables.get(0);
     }
 
     /**
@@ -1013,10 +1044,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public UnivariatePolynomial<E> parsePoly(String string) {
         return parse(string, ring);
-    }
-
-    public UnivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String variable) {
-        return Parser.parse(ring, eParser, string);
     }
 
     @Override

@@ -5,7 +5,7 @@ package cc.redberry.rings;
  *
  * @since 1.0
  */
-public interface ElementParser<E> {
+public interface IParser<E> {
     /**
      * Parse string into {@code E}
      */

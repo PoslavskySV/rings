@@ -227,7 +227,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return new Rational<>(ring, ring.randomElement(rnd), den);
     }
 
-    public Rational<E> parse(ElementParser<E> parser, String string) {
+    public Rational<E> parse(IParser<E> parser, String string) {
         int level = 0;
         int indexOfDiv = -1;
         for (int i = 0; i < string.length(); i++) {

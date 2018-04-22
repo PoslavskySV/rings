@@ -2,6 +2,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.parser.Parser;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
@@ -19,6 +20,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.DEFAULT_POWERS_CACHE_SIZE;
@@ -118,7 +121,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate Z[X] polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, String... variables) {
-        return Parser.parse(string, MonomialOrder.DEFAULT, variables);
+        return parse(string, Rings.Z, variables);
+    }
+
+
+    /**
+     * Parse multivariate Z[X] polynomial from string.
+     *
+     * @param string the string
+     * @return multivariate Z[X] polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static MultivariatePolynomial<BigInteger> parse(String string) {
+        return parse(string, getVariables(string));
     }
 
     /**
@@ -132,7 +148,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, String... variables) {
-        return Parser.parse(string, ring, ring, MonomialOrder.DEFAULT, variables);
+        return parse(string, ring, MonomialOrder.DEFAULT, variables);
+    }
+
+    /**
+     * Parse multivariate polynomial from string.
+     *
+     * @param string the string
+     * @param ring   the ring
+     * @return multivariate polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring) {
+        return parse(string, ring, getVariables(string));
     }
 
     /**
@@ -146,7 +175,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return Z[X] multivariate polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, Comparator<DegreeVector> ordering, String... variables) {
-        return Parser.parse(string, ordering, variables);
+        return parse(string, Rings.Z, ordering, variables);
+    }
+
+    /**
+     * Parse multivariate Z[X] polynomial from string.
+     *
+     * @param string   the string
+     * @param ordering monomial order
+     * @return Z[X] multivariate polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static MultivariatePolynomial<BigInteger> parse(String string, Comparator<DegreeVector> ordering) {
+        return parse(string, Rings.Z, ordering, getVariables(string));
     }
 
     /**
@@ -161,18 +203,35 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, Comparator<DegreeVector> ordering, String... variables) {
-        return Parser.parse(string, ring, ring, ordering, variables);
+        return Parser.mkMultivariateParser(Rings.MultivariateRing(variables.length, ring, ordering), variables).parse(string);
     }
 
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string the string
-     * @param ring   the ring
-     * @return multivariate polynomial
+     * @param string   the string
+     * @param ring     the ring
+     * @param ordering monomial order
+     * @deprecated use #parse(string, ring, ordering, variables)
      */
-    public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring) {
-        return Parser.parse(string, ring, ring);
+    @Deprecated
+    public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, Comparator<DegreeVector> ordering) {
+        return parse(string, ring, ordering, getVariables(string));
+    }
+
+    private static String[] getVariables(String string) {
+        Matcher matcher = Pattern.compile("[a-zA-Z]+[0-9]*").matcher(string);
+        List<String> variables = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        while (matcher.find()) {
+            String var = matcher.group();
+            if (seen.contains(var))
+                continue;
+            seen.add(var);
+            variables.add(var);
+        }
+        variables.sort(String::compareTo);
+        return variables.toArray(new String[variables.size()]);
     }
 
     /**
@@ -1960,13 +2019,6 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public MultivariatePolynomial<E> parsePoly(String string, String[] variables) {
         MultivariatePolynomial<E> r = parse(string, ring, ordering, variables);
-        if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field: " + string);
-        return r;
-    }
-
-    public MultivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String[] variables) {
-        MultivariatePolynomial<E> r = Parser.parse(string, ring, eParser, ordering, variables);
         if (r.nVariables != nVariables)
             throw new IllegalArgumentException("not from this field: " + string);
         return r;
