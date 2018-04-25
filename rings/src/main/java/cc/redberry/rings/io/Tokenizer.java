@@ -1,4 +1,4 @@
-package cc.redberry.rings.parser;
+package cc.redberry.rings.io;
 
 import java.util.ArrayList;
 import java.util.List;

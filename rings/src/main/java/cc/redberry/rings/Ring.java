@@ -1,6 +1,8 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IParser;
+import cc.redberry.rings.io.IStringifier;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
@@ -847,6 +849,10 @@ public interface Ring<E> extends
 
     @Override
     default String toString(E element) {
+        return element.toString();
+    }
+
+    default String toString(E element, IStringifier<E> stringifier) {
         return element.toString();
     }
 

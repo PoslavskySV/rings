@@ -1,6 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IParser;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Iterator;

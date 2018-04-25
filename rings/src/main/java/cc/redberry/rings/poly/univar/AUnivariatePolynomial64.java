@@ -4,6 +4,7 @@ import cc.redberry.libdivide4j.FastDivision.Magic;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.util.ArraysUtil;
 
@@ -633,6 +634,41 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
     }
 
     @Override
+    public String toString(IStringifier<lPoly> stringifier) {
+        if (isConstant())
+            return Long.toString(cc());
+
+        String varString = stringifier.getBindings().get(createMonomial(1));
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < data.length; i++) {
+            long el = data[i];
+            if (el == 0)
+                continue;
+
+            String cfString;
+            if (el != 1)
+                cfString = Long.toString(el);
+            else
+                cfString = "";
+
+            if (sb.length() != 0 && !cfString.startsWith("-"))
+                sb.append("+");
+
+            sb.append(cfString);
+            if (i == 0)
+                continue;
+
+            if (!cfString.isEmpty())
+                sb.append("*");
+
+            sb.append(varString);
+            if (i > 1)
+                sb.append("^").append(i);
+        }
+        return sb.toString();
+    }
+
+    @Override
     public String toString() {
         return toString(WithVariables.defaultVars(1));
     }
@@ -650,6 +686,7 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
         }
         return sb.toString();
     }
+
 
     private String termToString(int i, String var) {
         long el = data[i];

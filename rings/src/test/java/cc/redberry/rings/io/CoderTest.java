@@ -1,4 +1,4 @@
-package cc.redberry.rings.parser;
+package cc.redberry.rings.io;
 
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rationals;
@@ -25,12 +25,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static cc.redberry.rings.Rings.*;
-import static cc.redberry.rings.parser.Parser.mkMultivariateParser;
-import static cc.redberry.rings.parser.Parser.mkParser;
+import static cc.redberry.rings.io.Coder.mkMultivariateCoder;
+import static cc.redberry.rings.io.Coder.mkCoder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ParserTest extends AbstractTest {
+public class CoderTest extends AbstractTest {
     @Ignore
     @Test
     public void test0_performance() {
@@ -43,11 +43,11 @@ public class ParserTest extends AbstractTest {
         MultivariateRing<MultivariatePolynomial<BigInteger>> baseRing = polyRing;
         HashMap<String, MultivariatePolynomial<BigInteger>> eVars = pVars;
 
-        Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?>
+                notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
-        Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, Function.identity());
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?>
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, Function.identity());
 
         MultivariatePolynomial<BigInteger> p = polyRing.parse("x*x2*x4 + 2 + z - y*z*x^2 + x1*x2*x3*x4*x*y*z");
         String expression = polyRing.pow(p, 30).toString(vars);
@@ -85,11 +85,11 @@ public class ParserTest extends AbstractTest {
         MultivariateRing<MultivariatePolynomial<BigInteger>> baseRing = polyRing;
         HashMap<String, MultivariatePolynomial<BigInteger>> eVars = pVars;
 
-        Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?>
+                notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
-        Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, Function.identity());
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?>
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, Function.identity());
 
         String expressionStr = "x + y + z*x - z*y";
 
@@ -109,11 +109,11 @@ public class ParserTest extends AbstractTest {
         MultivariateRing<MultivariatePolynomial<BigInteger>> baseRing = polyRing;
         HashMap<String, MultivariatePolynomial<BigInteger>> eVars = pVars;
 
-        Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?>
+                notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
-        Parser<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, Function.identity());
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?>
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, Function.identity());
 
         String expressionStr = "-x^2*y^2*z^3 + x*y^2 + z^2*x - z*y*x";
 
@@ -134,11 +134,11 @@ public class ParserTest extends AbstractTest {
         Map<String, Rational<MultivariatePolynomial<BigInteger>>> eVars = pVars.entrySet()
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
-        Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
+                notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
-        Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         String expressionStr = "z - y/2 + z*y/(3 + 4)";
 
@@ -160,11 +160,11 @@ public class ParserTest extends AbstractTest {
         Map<String, Rational<MultivariatePolynomial<BigInteger>>> eVars = pVars.entrySet()
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
-        Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
+                notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
-        Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         String expressionStr = "(-5942283839318488889)*x^4*y^4";
 
@@ -188,11 +188,11 @@ public class ParserTest extends AbstractTest {
         Map<String, Rational<MultivariatePolynomial<BigInteger>>> eVars = pVars.entrySet()
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
-        Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
+                notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
-        Parser<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
-                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?>
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         DescriptiveStatistics
                 notOpt = new DescriptiveStatistics(),
@@ -238,11 +238,11 @@ public class ParserTest extends AbstractTest {
         Map<String, Rational<MultivariatePolynomial<Rational<BigInteger>>>> eVars = pVars.entrySet()
                 .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new Rational<>(polyRing, e.getValue())));
 
-        Parser<Rational<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?>
-                notOptimizedParser = mkParser(baseRing, eVars, null, null, null);
+        Coder<Rational<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?>
+                notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
-        Parser<Rational<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?>
-                optimizedParser = mkParser(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
+        Coder<Rational<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?>
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, p -> new Rational<>(polyRing, p));
 
         DescriptiveStatistics
                 notOpt = new DescriptiveStatistics(),
@@ -275,7 +275,7 @@ public class ParserTest extends AbstractTest {
 
     @Test
     public void test7() {
-        Parser<UnivariatePolynomial<BigInteger>, ?, ?> parser = Parser.mkUnivariateParser(UnivariateRing(Z), "x");
+        Coder<UnivariatePolynomial<BigInteger>, ?, ?> parser = Coder.mkUnivariateCoder(UnivariateRing(Z), "x");
         UnivariatePolynomial<BigInteger> poly = parser.parse(Tokenizer.mkTokenizer("x + (x^2 + 123*x^3 - 1)^2"));
         assertEquals("1+x-2*x^2-246*x^3+x^4+246*x^5+15129*x^6", poly.toString());
     }
@@ -283,14 +283,14 @@ public class ParserTest extends AbstractTest {
     @Test
     public void test8() {
         FiniteField<UnivariatePolynomialZp64> gf = Rings.GF(17, 3);
-        Parser<UnivariatePolynomialZp64, ?, ?> gfParser = Parser.mkUnivariateParser(gf, mkVars(gf, "t"));
+        Coder<UnivariatePolynomialZp64, ?, ?> gfParser = Coder.mkUnivariateCoder(gf, mkVars(gf, "t"));
 
         MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> polyRing = Rings.MultivariateRing(3, gf);
-        Parser<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Parser.mkMultivariateParser(polyRing, gfParser, "x", "y", "z");
+        Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Coder.mkMultivariateCoder(polyRing, gfParser, "x", "y", "z");
 
         Rationals<MultivariatePolynomial<UnivariatePolynomialZp64>> fracRing = Rings.Frac(polyRing);
-        Parser<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fracParser =
-                Parser.mkNestedParser(
+        Coder<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fracParser =
+                Coder.mkNestedCoder(
                         fracRing,
                         new HashMap<>(),
                         polyParser,
@@ -309,19 +309,19 @@ public class ParserTest extends AbstractTest {
             pVars.put(vars[i], polyRing.variable(i));
 
 
-        Parser<MultivariatePolynomial<BigInteger>, Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> parser = mkMultivariateParser(polyRing, vars);
+        Coder<MultivariatePolynomial<BigInteger>, Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> parser = Coder.mkMultivariateCoder(polyRing, vars);
         System.out.println(parser.parse("-5*a^22*c*3^13 + 5*a^32*b^24*c*3 + a^31*c*3^42 + c^66").toString(vars));
     }
 
     @Test
     public void test10() {
-        Parser<Rational<BigInteger>, ?, ?> p = Parser.mkParser(Q);
+        Coder<Rational<BigInteger>, ?, ?> p = Coder.mkCoder(Q);
         assertEquals(p.parse("1/2*3"), new Rational<>(Z, Z.valueOf(3), Z.valueOf(2)));
     }
 
     @Test
     public void test11() {
-        Parser<Rational<BigInteger>, ?, ?> p = Parser.mkParser(Q);
+        Coder<Rational<BigInteger>, ?, ?> p = Coder.mkCoder(Q);
         assertEquals(p.parse("-1/2*3/5*9*9/3^2/4/6*7 + 1^2/3 - 3 - 2*3*5/8*9/6*9/3^2/4*7*6^2"), new Rational<>(Z, Z.valueOf(-85879), Z.valueOf(240)));
     }
 

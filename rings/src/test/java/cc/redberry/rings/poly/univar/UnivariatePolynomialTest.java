@@ -4,7 +4,7 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.parser.Parser;
+import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
@@ -66,8 +66,8 @@ public class UnivariatePolynomialTest extends AUnivariateTest {
     public void test5() throws Exception {
         IntegersZp64 lDomain = new IntegersZp64(11);
         MultivariateRing<MultivariatePolynomialZp64> domain = new MultivariateRing<>(MultivariatePolynomialZp64.zero(4, lDomain, MonomialOrder.LEX));
-        Parser<MultivariatePolynomialZp64, ?, ?> mParser = Parser.mkPolynomialParser(domain, "x1", "x2", "x3", "x4");
-        Parser<UnivariatePolynomial<MultivariatePolynomialZp64>, ?, ?> parser = Parser.mkUnivariateParser(Rings.UnivariateRing(domain), mParser, "x");
+        Coder<MultivariatePolynomialZp64, ?, ?> mParser = Coder.mkPolynomialParser(domain, "x1", "x2", "x3", "x4");
+        Coder<UnivariatePolynomial<MultivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), mParser, "x");
         UnivariatePolynomial<MultivariatePolynomialZp64> poly = parser.parse("(6*x3)+(10*x2*x3^2*x4^2)*x^3");
         for (int i = 0; i < 1000; i++)
             Assert.assertFalse(poly.content().isZero());

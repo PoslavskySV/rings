@@ -4,7 +4,7 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.parser.Parser;
+import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.FactorDecompositionTest;
 import cc.redberry.rings.poly.FiniteField;
@@ -393,8 +393,8 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 irreducible = UnivariatePolynomialZ64.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
 
-        Parser<UnivariatePolynomialZp64, ?, ?> ffParser = Parser.mkPolynomialParser(domain, "t");
-        Parser<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Parser.mkUnivariateParser(Rings.UnivariateRing(domain), ffParser, "x");
+        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialParser(domain, "t");
+        Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), ffParser, "x");
 
         UnivariatePolynomial<UnivariatePolynomialZp64> input = parser.parse("(1+t+t^2)+(1+t+t^2)*x+(1+t+t^3)*x^4+x^6");
         PrivateRandom.getRandom().setSeed(1);
@@ -408,8 +408,8 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 irreducible = UnivariatePolynomialZ64.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
 
-        Parser<UnivariatePolynomialZp64, ?, ?> ffParser = Parser.mkPolynomialParser(domain, "t");
-        Parser<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Parser.mkUnivariateParser(Rings.UnivariateRing(domain), ffParser, "x");
+        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialParser(domain, "t");
+        Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), ffParser, "x");
 
         UnivariatePolynomial<UnivariatePolynomialZp64> input = parser.parse("(1+t+t^2)+(1+t+t^2)*x+(1+t+t^3)*x^4+x^6");
         PrivateRandom.getRandom().setSeed(43);
@@ -423,8 +423,8 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 irreducible = UnivariatePolynomialZ64.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
         
-        Parser<UnivariatePolynomialZp64, ?, ?> ffParser = Parser.mkPolynomialParser(domain, "t");
-        Parser<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Parser.mkUnivariateParser(Rings.UnivariateRing(domain), ffParser, "x");
+        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialParser(domain, "t");
+        Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), ffParser, "x");
 
         UnivariatePolynomial<UnivariatePolynomialZp64> input = parser.parse("(1+t+t^2)+(1+t+t^2)*x+(1+t+t^3)*x^4+x^6");
         for (int i = 0; i < its(10, 10); i++) {

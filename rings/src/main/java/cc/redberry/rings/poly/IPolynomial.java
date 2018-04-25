@@ -2,6 +2,7 @@ package cc.redberry.rings.poly;
 
 import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Stringifiable;
 
 /**
  * Parent interface for all polynomials. All polynomial instances are mutable, so all structural operations except those
@@ -15,7 +16,7 @@ import cc.redberry.rings.bigint.BigInteger;
  * @since 1.0
  */
 public interface IPolynomial<Poly extends IPolynomial<Poly>>
-        extends Comparable<Poly>, WithVariables, java.io.Serializable {
+        extends Comparable<Poly>, Stringifiable<Poly>, WithVariables, java.io.Serializable {
     /**
      * Returns whether {@code oth} and {@code this} have the same coefficient ring
      *

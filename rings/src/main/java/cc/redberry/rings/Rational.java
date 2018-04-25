@@ -1,9 +1,13 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Stringifiable;
+import cc.redberry.rings.io.IStringifier;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static cc.redberry.rings.io.IStringifier.encloseMathParenthesisIfNeeded;
 
 /**
  * Rational expression with numerator and denominator from the ring. Objects of this class are immutable.
@@ -13,6 +17,7 @@ import java.util.stream.Stream;
  */
 public final class Rational<E>
         implements Comparable<Rational<E>>,
+                   Stringifiable<Rational<E>>,
                    java.io.Serializable {
     private static final long serialVersionUID = 1L;
     /** The ring. */
@@ -475,6 +480,18 @@ public final class Rational<E>
         int result = numerator.hashCode();
         result = 31 * result + denominator.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString(IStringifier<Rational<E>> stringifier) {
+        IStringifier<E> eStringifier = stringifier.substringifier(ring);
+        if (isIntegral())
+            return ring.toString(numerator, eStringifier);
+
+        String num = encloseMathParenthesisIfNeeded(ring.toString(numerator, eStringifier)),
+                den = encloseMathParenthesisIfNeeded(ring.toString(denominator, eStringifier));
+
+        return num + "/" + den;
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.Objects
 
 import cc.redberry.rings
 import cc.redberry.rings._
+import cc.redberry.rings.io.IParser
 import cc.redberry.rings.poly.multivar.MonomialOrder
 
 import scala.language.{existentials, implicitConversions, postfixOps}

@@ -2,7 +2,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.parser.Parser;
+import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -1423,11 +1423,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testArrayGCD2() throws Exception {
         // very tricky example with recursive finite fields modulo 2
         FiniteField<UnivariatePolynomialZp64> minorDomain = new FiniteField<>(UnivariatePolynomialZ64.create(1, 0, 1, 1).modulus(2));
-        Parser<UnivariatePolynomialZp64, ?, ?> yParser = Parser.mkPolynomialParser(minorDomain, "y");
-        Parser<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> xyParser = Parser.mkUnivariateParser(Rings.UnivariateRing(minorDomain), yParser, "x");
+        Coder<UnivariatePolynomialZp64, ?, ?> yParser = Coder.mkPolynomialParser(minorDomain, "y");
+        Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> xyParser = Coder.mkUnivariateCoder(Rings.UnivariateRing(minorDomain), yParser, "x");
 
         FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(xyParser.parse("(1+y^2)+(y^2)*x+(y+y^2)*x^2+x^3"));
-        Parser<MultivariatePolynomial<UnivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> parser = Parser.mkMultivariateParser(Rings.MultivariateRing(2, domain), xyParser, "a", "b");
+        Coder<MultivariatePolynomial<UnivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> parser = Coder.mkMultivariateCoder(Rings.MultivariateRing(2, domain), xyParser, "a", "b");
         MultivariatePolynomial<UnivariatePolynomialZp64>
                 arr[] = new MultivariatePolynomial[]{
                 parser.parse("((y)*x^0)*b+((y+y^2)*x^0)*b^2+b^3+((1+y)*x^0)*b^4"),
@@ -1455,11 +1455,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testArrayGCD3() throws Exception {
         // very tricky example with recursive finite fields modulo 2
         FiniteField<UnivariatePolynomialZp64> minorDomain = new FiniteField<>(UnivariatePolynomialZ64.create(1, 0, 1, 1).modulus(2));
-        Parser<UnivariatePolynomialZp64, ?, ?> yParser = Parser.mkPolynomialParser(minorDomain, "y");
-        Parser<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> xyParser = Parser.mkUnivariateParser(Rings.UnivariateRing(minorDomain), yParser, "x");
+        Coder<UnivariatePolynomialZp64, ?, ?> yParser = Coder.mkPolynomialParser(minorDomain, "y");
+        Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> xyParser = Coder.mkUnivariateCoder(Rings.UnivariateRing(minorDomain), yParser, "x");
 
         FiniteField<UnivariatePolynomial<UnivariatePolynomialZp64>> domain = new FiniteField<>(xyParser.parse("(1+y^2)+(y^2)*x+(y+y^2)*x^2+x^3"));
-        Parser<MultivariatePolynomial<UnivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> parser = Parser.mkMultivariateParser(Rings.MultivariateRing(2, domain), xyParser, "a", "b");
+        Coder<MultivariatePolynomial<UnivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> parser = Coder.mkMultivariateCoder(Rings.MultivariateRing(2, domain), xyParser, "a", "b");
         MultivariatePolynomial<UnivariatePolynomialZp64>
                 arr[] = new MultivariatePolynomial[]{
                 parser.parse("(x)*b+(x+x^2)*b^2+b^3+(1+x)*b^4"),

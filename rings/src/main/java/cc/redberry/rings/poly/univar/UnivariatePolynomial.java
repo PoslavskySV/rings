@@ -3,7 +3,8 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
-import cc.redberry.rings.parser.Parser;
+import cc.redberry.rings.io.Coder;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
@@ -54,7 +55,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @param var    variable string
      */
     public static <E> UnivariatePolynomial<E> parse(String string, Ring<E> ring, String var) {
-        return Parser.mkUnivariateParser(Rings.UnivariateRing(ring), var).parse(string);
+        return Coder.mkUnivariateCoder(Rings.UnivariateRing(ring), var).parse(string);
     }
 
     /**
@@ -64,10 +65,10 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      */
     @Deprecated
     public static <E> UnivariatePolynomial<E> parse(String string, Ring<E> ring) {
-        return Parser.mkUnivariateParser(Rings.UnivariateRing(ring), getVariable(string)).parse(string);
+        return Coder.mkUnivariateCoder(Rings.UnivariateRing(ring), guessVariableString(string)).parse(string);
     }
 
-    private static String getVariable(String string) {
+    private static String guessVariableString(String string) {
         Matcher matcher = Pattern.compile("[a-zA-Z]+[0-9]*").matcher(string);
         List<String> variables = new ArrayList<>();
         Set<String> seen = new HashSet<>();
@@ -1197,6 +1198,45 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     public String toString() {
         return toString(WithVariables.defaultVars(1));
+    }
+
+    @Override
+    public String toString(IStringifier<UnivariatePolynomial<E>> stringifier) {
+        IStringifier<E> cfStringifier = stringifier.substringifier(ring);
+        if (isConstant())
+            return ring.toString(cc(), cfStringifier);
+
+        String varString = stringifier.getBindings().getOrDefault(createMonomial(1), "x");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= degree; i++) {
+            E el = data[i];
+            if (ring.isZero(el))
+                continue;
+
+            String cfString;
+            if (!ring.isOne(el))
+                cfString = ring.toString(el, cfStringifier);
+            else
+                cfString = "";
+
+            if (i != 0 && IStringifier.needParenthesis(cfString))
+                cfString = "(" + cfString + ")";
+
+            if (sb.length() != 0 && !cfString.startsWith("-"))
+                sb.append("+");
+
+            sb.append(cfString);
+            if (i == 0)
+                continue;
+
+            if (!cfString.isEmpty())
+                sb.append("*");
+
+            sb.append(varString);
+            if (i > 1)
+                sb.append("^").append(i);
+        }
+        return sb.toString();
     }
 
     @Override

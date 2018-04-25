@@ -3,6 +3,7 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.libdivide4j.FastDivision;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
@@ -1884,6 +1885,48 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         if (r.nVariables != nVariables)
             throw new IllegalArgumentException("not from this field: " + string);
         return r;
+    }
+
+    @Override
+    public String toString(IStringifier<MultivariatePolynomialZp64> stringifier) {
+        if (isConstant())
+            return Long.toString(cc());
+
+        String[] varStrings = new String[nVariables];
+        for (int i = 0; i < nVariables; ++i)
+            varStrings[i] = stringifier.getBindings().getOrDefault(createMonomial(i, 1), "x" + i);
+
+        StringBuilder sb = new StringBuilder();
+        for (MonomialZp64 term : terms) {
+            long cf = term.coefficient;
+            String cfString;
+            if (cf != 1)
+                cfString = Long.toString(cf);
+            else
+                cfString = "";
+
+            if (sb.length() != 0 && !cfString.startsWith("-"))
+                sb.append("+");
+
+            StringBuilder cfBuilder = new StringBuilder();
+            cfBuilder.append(cfString);
+
+            for (int i = 0; i < nVariables; ++i) {
+                if (term.exponents[i] == 0)
+                    continue;
+
+                if (cfBuilder.length() > 0)
+                    cfBuilder.append("*");
+
+                sb.append(varStrings[i]);
+
+                if (term.exponents[i] > 1)
+                    sb.append("^").append(term.exponents[i]);
+            }
+
+            sb.append(cfBuilder);
+        }
+        return sb.toString();
     }
 
     @Override

@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @since 1.0
  */
-public class ParserTest extends AUnivariateTest {
+public class CoderTest extends AUnivariateTest {
     @Test
     public void test1() throws Exception {
         assertEquals(

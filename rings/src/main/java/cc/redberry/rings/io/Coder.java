@@ -1,11 +1,10 @@
-package cc.redberry.rings.parser;
+package cc.redberry.rings.io;
 
-import cc.redberry.rings.IParser;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.parser.Tokenizer.Token;
-import cc.redberry.rings.parser.Tokenizer.TokenType;
+import cc.redberry.rings.io.Tokenizer.Token;
+import cc.redberry.rings.io.Tokenizer.TokenType;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.MultivariateRing;
@@ -20,20 +19,22 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static cc.redberry.rings.parser.Tokenizer.END;
-import static cc.redberry.rings.parser.Tokenizer.TokenType.*;
+import static cc.redberry.rings.io.Tokenizer.END;
+import static cc.redberry.rings.io.Tokenizer.TokenType.*;
 
 /**
- * High-level parser of ring elements. Uses simple shunting-yard algorithm.
+ * High-level parser and stringifier of ring elements. Uses shunting-yard algorithm for parsing.
  *
  * @param <Element> type of resulting elements
  * @param <Term>    underlying polynomial terms
  * @param <Poly>    underlying multivariate polynomials
  */
-public final class Parser<
+public class Coder<
         Element,
         Term extends AMonomial<Term>,
-        Poly extends AMultivariatePolynomial<Term, Poly>> implements IParser<Element> {
+        Poly extends AMultivariatePolynomial<Term, Poly>>
+        implements IParser<Element>, IStringifier<Element> {
+    // parser stuff
     /** the base ring */
     private final Ring<Element> baseRing;
     /** map variableName -> Element (if it is a polynomial variable) */
@@ -45,11 +46,17 @@ public final class Parser<
     /** convert polynomial to base ring elements */
     private final Function<Poly, Element> polyToElement;
 
-    private Parser(Ring<Element> baseRing,
-                   Map<String, Element> eVariables,
-                   MultivariateRing<Poly> polyRing,
-                   Map<String, Integer> pVariables,
-                   Function<Poly, Element> polyToElement) {
+    // stringifier stuff
+    /** toString bindings */
+    private final Map<Element, String> bindings;
+    /** inner coders */
+    private final Map<Ring<?>, Coder<?, ?, ?>> subcoders;
+
+    private Coder(Ring<Element> baseRing,
+                  Map<String, Element> eVariables,
+                  MultivariateRing<Poly> polyRing,
+                  Map<String, Integer> pVariables,
+                  Function<Poly, Element> polyToElement) {
         this.baseRing = baseRing;
         this.eVariables = eVariables;
         this.polyRing = polyRing;
@@ -58,12 +65,52 @@ public final class Parser<
         // make sure that eVariables contain all pVariables
         if (pVariables != null)
             pVariables.forEach((k, v) -> eVariables.computeIfAbsent(k, __ -> polyToElement.apply(polyRing.variable(v))));
+
+        this.bindings = eVariables.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+        this.subcoders = new HashMap<>();
     }
 
     /** Add string -> element mapping */
-    public Parser<Element, Term, Poly> bind(String var, Element el) {
+    public Coder<Element, Term, Poly> bind(String var, Element el) {
+        bindings.put(el, var);
         eVariables.put(var, el);
         return this;
+    }
+
+    /** Add stringifier of inner elements */
+    public Coder<Element, Term, Poly> withEncoder(Coder<?, ?, ?> subencoder) {
+        subcoders.put(subencoder.baseRing, subencoder);
+        return this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <K> IStringifier<K> substringifier(Ring<K> ring) {
+        return (IStringifier<K>) subcoders.get(ring);
+    }
+
+    @Override
+    public Map<Element, String> getBindings() {
+        return bindings;
+    }
+
+    /**
+     * Decode element from its string representation (#parse)
+     */
+    public Element decode(String string) {
+        return parse(string);
+    }
+
+    /**
+     * Encode element to its string representation (#stringify)
+     */
+    @SuppressWarnings("unchecked")
+    public String encode(Element element) {
+        if (!(element instanceof Stringifiable))
+            return element.toString();
+        return stringify((Stringifiable) element);
     }
 
     ////////////////////////////////////////////////////Factory////////////////////////////////////////////////////////
@@ -78,12 +125,12 @@ public final class Parser<
     public static <
             Element,
             Term extends AMonomial<Term>,
-            Poly extends AMultivariatePolynomial<Term, Poly>> Parser<Element, Term, Poly>
-    mkParser(Ring<Element> baseRing,
-             Map<String, Element> eVariables,
-             MultivariateRing<Poly> polyRing,
-             Map<String, Poly> pVariables,
-             Function<Poly, Element> polyToElement) {
+            Poly extends AMultivariatePolynomial<Term, Poly>> Coder<Element, Term, Poly>
+    mkCoder(Ring<Element> baseRing,
+            Map<String, Element> eVariables,
+            MultivariateRing<Poly> polyRing,
+            Map<String, Poly> pVariables,
+            Function<Poly, Element> polyToElement) {
         Map<String, Integer> iVariables = new HashMap<>();
         if (pVariables != null)
             for (Map.Entry<String, Poly> v : pVariables.entrySet()) {
@@ -93,191 +140,191 @@ public final class Parser<
                 else
                     eVariables.put(v.getKey(), polyToElement.apply(p));
             }
-        return new Parser<>(baseRing, eVariables, polyRing, iVariables, polyToElement);
+        return new Coder<>(baseRing, eVariables, polyRing, iVariables, polyToElement);
     }
 
     /**
-     * Create parser for generic ring
+     * Create coder for generic ring
      *
      * @param ring the ring
      */
-    public static <E> Parser<E, ?, ?> mkParser(Ring<E> ring) {
-        return mkParser(ring, new HashMap<>());
+    public static <E> Coder<E, ?, ?> mkCoder(Ring<E> ring) {
+        return mkCoder(ring, new HashMap<>());
     }
 
     /**
-     * Create parser for generic rings
+     * Create coder for generic rings
      *
      * @param ring      the ring
      * @param variables map string_variable -> ring_element
      */
     @SuppressWarnings("unchecked")
-    public static <E> Parser<E, ?, ?> mkParser(Ring<E> ring,
-                                               Map<String, E> variables) {
+    public static <E> Coder<E, ?, ?> mkCoder(Ring<E> ring,
+                                             Map<String, E> variables) {
         if (ring instanceof MultivariateRing)
-            return mkMultivariateParser((MultivariateRing) ring, (Map) variables);
+            return mkMultivariateCoder((MultivariateRing) ring, (Map) variables);
 
         if (ring instanceof IPolynomialRing && ((IPolynomialRing) ring).nVariables() == 1)
-            return mkUnivariateParser((IPolynomialRing) ring, (Map) variables);
+            return mkUnivariateCoder((IPolynomialRing) ring, (Map) variables);
 
-        return new Parser<>(ring, variables, null, null, null);
+        return new Coder<>(ring, variables, null, null, null);
     }
 
     /**
-     * Create parser for multivariate polynomial rings
+     * Create coder for multivariate polynomial rings
      *
      * @param ring      the ring
      * @param variables map string_variable -> ring_element
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Parser<Poly, Term, Poly> mkMultivariateParser(MultivariateRing<Poly> ring,
-                                                  Map<String, Poly> variables) {
-        return mkParser(ring, variables, ring, variables, Function.identity());
+    Coder<Poly, Term, Poly> mkMultivariateCoder(MultivariateRing<Poly> ring,
+                                                Map<String, Poly> variables) {
+        return mkCoder(ring, variables, ring, variables, Function.identity());
     }
 
     /**
-     * Create parser for multivariate polynomial rings
+     * Create coder for multivariate polynomial rings
      *
      * @param ring      the ring
      * @param variables polynomial variables
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    Parser<Poly, Term, Poly> mkMultivariateParser(MultivariateRing<Poly> ring,
-                                                  String... variables) {
+    Coder<Poly, Term, Poly> mkMultivariateCoder(MultivariateRing<Poly> ring,
+                                                String... variables) {
         Map<String, Poly> pVariables = new HashMap<>();
         for (int i = 0; i < variables.length; ++i)
             pVariables.put(variables[i], ring.variable(i));
-        return mkMultivariateParser(ring, pVariables);
+        return mkMultivariateCoder(ring, pVariables);
     }
 
     /**
-     * Create parser for multivariate polynomial rings
+     * Create coder for multivariate polynomial rings
      *
      * @param ring      the ring
-     * @param cfParser  parser for coefficient ring elements
+     * @param cfCoder   coder for coefficient ring elements
      * @param variables map string_variable -> ring_element
      */
-    public static <E> Parser<MultivariatePolynomial<E>, Monomial<E>, MultivariatePolynomial<E>>
-    mkMultivariateParser(MultivariateRing<MultivariatePolynomial<E>> ring,
-                         Parser<E, ?, ?> cfParser,
-                         Map<String, MultivariatePolynomial<E>> variables) {
-        cfParser.eVariables.forEach((k, v) -> variables.put(k, ring.factory().createConstant(v)));
-        return mkMultivariateParser(ring, variables);
+    public static <E> Coder<MultivariatePolynomial<E>, Monomial<E>, MultivariatePolynomial<E>>
+    mkMultivariateCoder(MultivariateRing<MultivariatePolynomial<E>> ring,
+                        Coder<E, ?, ?> cfCoder,
+                        Map<String, MultivariatePolynomial<E>> variables) {
+        cfCoder.eVariables.forEach((k, v) -> variables.put(k, ring.factory().createConstant(v)));
+        return mkMultivariateCoder(ring, variables).withEncoder(cfCoder);
     }
 
     /**
      * Create parser for multivariate polynomial rings
      *
      * @param ring      the ring
-     * @param cfParser  parser of coefficient ring elements
+     * @param cfCoder   coder of coefficient ring elements
      * @param variables polynomial variables
      */
-    public static <E> Parser<MultivariatePolynomial<E>, Monomial<E>, MultivariatePolynomial<E>>
-    mkMultivariateParser(MultivariateRing<MultivariatePolynomial<E>> ring,
-                         Parser<E, ?, ?> cfParser,
-                         String... variables) {
+    public static <E> Coder<MultivariatePolynomial<E>, Monomial<E>, MultivariatePolynomial<E>>
+    mkMultivariateCoder(MultivariateRing<MultivariatePolynomial<E>> ring,
+                        Coder<E, ?, ?> cfCoder,
+                        String... variables) {
         Map<String, MultivariatePolynomial<E>> eVariables = new HashMap<>();
         for (int i = 0; i < variables.length; ++i)
             eVariables.put(variables[i], ring.variable(i));
-        return mkMultivariateParser(ring, cfParser, eVariables);
+        return mkMultivariateCoder(ring, cfCoder, eVariables);
     }
 
 
     /**
-     * Create parser for univariate polynomial rings
+     * Create coder for univariate polynomial rings
      *
      * @param ring      the ring
      * @param variables map string_variable -> ring_element
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends IUnivariatePolynomial<Poly>>
-    Parser<Poly, ?, ?> mkUnivariateParser(IPolynomialRing<Poly> ring,
-                                          Map<String, Poly> variables) {
+    Coder<Poly, ?, ?> mkUnivariateCoder(IPolynomialRing<Poly> ring,
+                                        Map<String, Poly> variables) {
         MultivariateRing mRing = Rings.MultivariateRing(ring.factory().asMultivariate());
         Map<String, AMultivariatePolynomial> pVariables = variables.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().asMultivariate()));
-        return mkParser(ring, variables, mRing, pVariables, p -> (Poly) p.asUnivariate());
+        return mkCoder(ring, variables, mRing, pVariables, p -> (Poly) p.asUnivariate());
     }
 
     /**
-     * Create parser for univariate polynomial rings
+     * Create coder for univariate polynomial rings
      *
      * @param ring     the ring
      * @param variable variable string
      */
     public static <Poly extends IUnivariatePolynomial<Poly>>
-    Parser<Poly, ?, ?> mkUnivariateParser(IPolynomialRing<Poly> ring,
-                                          String variable) {
-        return mkUnivariateParser(ring, new HashMap<String, Poly>() {{put(variable, ring.variable(0));}});
+    Coder<Poly, ?, ?> mkUnivariateCoder(IPolynomialRing<Poly> ring,
+                                        String variable) {
+        return mkUnivariateCoder(ring, new HashMap<String, Poly>() {{put(variable, ring.variable(0));}});
     }
 
     /**
-     * Create parser for univariate polynomial rings
+     * Create coder for univariate polynomial rings
      *
      * @param ring      the ring
-     * @param cfParser  parser of coefficient ring elements
+     * @param cfCoder   coder of coefficient ring elements
      * @param variables map string_variable -> ring_element
      */
-    public static <E> Parser<UnivariatePolynomial<E>, ?, ?>
-    mkUnivariateParser(IPolynomialRing<UnivariatePolynomial<E>> ring,
-                       Parser<E, ?, ?> cfParser,
-                       Map<String, UnivariatePolynomial<E>> variables) {
-        cfParser.eVariables.forEach((k, v) -> variables.put(k, ring.factory().createConstant(v)));
-        return mkUnivariateParser(ring, variables);
+    public static <E> Coder<UnivariatePolynomial<E>, ?, ?>
+    mkUnivariateCoder(IPolynomialRing<UnivariatePolynomial<E>> ring,
+                      Coder<E, ?, ?> cfCoder,
+                      Map<String, UnivariatePolynomial<E>> variables) {
+        cfCoder.eVariables.forEach((k, v) -> variables.put(k, ring.factory().createConstant(v)));
+        return mkUnivariateCoder(ring, variables).withEncoder(cfCoder);
     }
 
     /**
-     * Create parser for univariate polynomial rings
+     * Create coder for univariate polynomial rings
      *
      * @param ring     the ring
-     * @param cfParser parser of coefficient ring elements
+     * @param cfCoder  coder of coefficient ring elements
      * @param variable string variable
      */
-    public static <E> Parser<UnivariatePolynomial<E>, ?, ?>
-    mkUnivariateParser(IPolynomialRing<UnivariatePolynomial<E>> ring,
-                       Parser<E, ?, ?> cfParser,
-                       String variable) {
+    public static <E> Coder<UnivariatePolynomial<E>, ?, ?>
+    mkUnivariateCoder(IPolynomialRing<UnivariatePolynomial<E>> ring,
+                      Coder<E, ?, ?> cfCoder,
+                      String variable) {
         HashMap<String, UnivariatePolynomial<E>> eVariables = new HashMap<>();
         eVariables.put(variable, ring.variable(0));
-        return mkUnivariateParser(ring, cfParser, eVariables);
+        return mkUnivariateCoder(ring, cfCoder, eVariables);
     }
 
     /**
-     * Create parser for polynomial ring
+     * Create coder for polynomial ring
      *
      * @param ring      the ring
      * @param variables string variables
      */
     @SuppressWarnings("unchecked")
-    public static <Poly extends IPolynomial<Poly>> Parser<Poly, ?, ?>
+    public static <Poly extends IPolynomial<Poly>> Coder<Poly, ?, ?>
     mkPolynomialParser(IPolynomialRing<Poly> ring,
                        String... variables) {
         if (ring instanceof MultivariateRing)
-            return mkMultivariateParser((MultivariateRing) ring, variables);
+            return mkMultivariateCoder((MultivariateRing) ring, variables);
         else
-            return mkUnivariateParser((IPolynomialRing) ring, variables[0]);
+            return mkUnivariateCoder((IPolynomialRing) ring, variables[0]);
     }
 
     /**
-     * Create parser for nested rings (e.g. fractions over polynomials etc).
+     * Create coder for nested rings (e.g. fractions over polynomials etc).
      *
      * <p>Example:
      * <pre><code>
      * // GF(17, 3) as polynomials over "t"
      * FiniteField<UnivariatePolynomialZp64> gf = Rings.GF(17, 3);
      * // parser of univariate polynomials over "t" from GF(17, 3)
-     * Parser<UnivariatePolynomialZp64, ?, ?> gfParser = Parser.mkUnivariateParser(gf, mkVars(gf, "t"));
+     * Coder<UnivariatePolynomialZp64, ?, ?> gfParser = Coder.mkUnivariateCoder(gf, mkVars(gf, "t"));
      *
      * // ring GF(17, 3)[x, y, z]
      * MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> polyRing = Rings.MultivariateRing(3, gf);
      * // parser of multivariate polynomials over GF(17, 3)
-     * Parser<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Parser.mkMultivariateParser(polyRing, gfParser, "x", "y", "z");
+     * Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Coder.mkMultivariateCoder(polyRing, gfParser, "x", "y", "z");
      *
      * // field Frac(GF(17, 3)[x, y, z])
      * Rationals<MultivariatePolynomial<UnivariatePolynomialZp64>> fracRing = Rings.Frac(polyRing);
      * // parser of elements in Frac(GF(17, 3)[x, y, z])
-     * Parser<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fracParser =
-     *              Parser.mkNestedParser(
+     * Coder<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fracParser =
+     *              Coder.mkNestedCoder(
      *                   fracRing,                        // the frac field
      *                   new HashMap<>(),                 // variables (no any)
      *                   polyParser,                      // parser of multivariate polynomials
@@ -285,29 +332,30 @@ public final class Parser<
      *              );
      * </code></pre>
      *
-     * @param ring        the ring
-     * @param variables   map string_variable -> ring_element
-     * @param innerParser parser for underlying ring elements
-     * @param imageFunc   mapping from @{code I} to @{code E}
+     * @param ring       the ring
+     * @param variables  map string_variable -> ring_element
+     * @param innerCoder coder for underlying ring elements
+     * @param imageFunc  mapping from @{code I} to @{code E}
      */
     @SuppressWarnings("unchecked")
     public static <E, I>
-    Parser<E, ?, ?> mkNestedParser(Ring<E> ring,
-                                   Map<String, E> variables,
-                                   Parser<I, ?, ?> innerParser,
-                                   Function<I, E> imageFunc) {
+    Coder<E, ?, ?> mkNestedCoder(Ring<E> ring,
+                                 Map<String, E> variables,
+                                 Coder<I, ?, ?> innerCoder,
+                                 Function<I, E> imageFunc) {
         if (ring instanceof MultivariateRing && ((MultivariateRing) ring).factory() instanceof MultivariatePolynomial)
-            return mkMultivariateParser((MultivariateRing) ring, innerParser, (Map) variables);
+            return mkMultivariateCoder((MultivariateRing) ring, innerCoder, (Map) variables);
         else if (ring instanceof UnivariateRing && ((UnivariateRing) ring).factory() instanceof UnivariatePolynomial)
-            return mkUnivariateParser((UnivariateRing) ring, innerParser, (Map) variables);
+            return mkUnivariateCoder((UnivariateRing) ring, innerCoder, (Map) variables);
 
-        innerParser.eVariables.forEach((k, v) -> variables.put(k, imageFunc.apply(v)));
-        return new Parser(
+        innerCoder.eVariables.forEach((k, v) -> variables.put(k, imageFunc.apply(v)));
+        return new Coder(
                 ring,
                 variables,
-                innerParser.polyRing,
-                innerParser.pVariables,
-                innerParser.polyToElement.andThen(imageFunc));
+                innerCoder.polyRing,
+                innerCoder.pVariables,
+                innerCoder.polyToElement.andThen(imageFunc))
+                .withEncoder(innerCoder);
     }
 
     ///////////////////////////////////////////////////Implementation///////////////////////////////////////////////////
@@ -437,7 +485,7 @@ public final class Parser<
                 result = left.divide(right);
                 break;
             case POWER:
-                if (!(right instanceof Parser.NumberOperand))
+                if (!(right instanceof Coder.NumberOperand))
                     throw new IllegalArgumentException("Exponents must be positive integers, but got " + right.toElement());
                 result = left.pow(((NumberOperand) right).number);
                 break;
@@ -459,7 +507,7 @@ public final class Parser<
 
         /** whether this operand is already converted to a base ring element */
         default boolean inBaseRing() {
-            return this instanceof Parser.ElementOperand;
+            return this instanceof Coder.ElementOperand;
         }
 
         IOperand<P, E> plus(IOperand<P, E> oth);
@@ -539,7 +587,7 @@ public final class Parser<
 
         @Override
         public IOperand<Poly, Element> plus(IOperand<Poly, Element> oth) {
-            if (oth instanceof Parser.NumberOperand) {
+            if (oth instanceof Coder.NumberOperand) {
                 return new NumberOperand(number.add(((NumberOperand) oth).number));
             } else
                 return super.plus(oth);
@@ -547,7 +595,7 @@ public final class Parser<
 
         @Override
         public IOperand<Poly, Element> minus(IOperand<Poly, Element> oth) {
-            if (oth instanceof Parser.NumberOperand) {
+            if (oth instanceof Coder.NumberOperand) {
                 return new NumberOperand(number.subtract(((NumberOperand) oth).number));
             } else
                 return super.minus(oth);
@@ -555,7 +603,7 @@ public final class Parser<
 
         @Override
         public IOperand<Poly, Element> multiply(IOperand<Poly, Element> oth) {
-            if (oth instanceof Parser.NumberOperand) {
+            if (oth instanceof Coder.NumberOperand) {
                 return new NumberOperand(number.multiply(((NumberOperand) oth).number));
             } else
                 return oth.multiply(this);
@@ -563,7 +611,7 @@ public final class Parser<
 
         @Override
         public IOperand<Poly, Element> divide(IOperand<Poly, Element> oth) {
-            if (oth instanceof Parser.NumberOperand) {
+            if (oth instanceof Coder.NumberOperand) {
                 BigInteger[] divRem = this.number.divideAndRemainder(((NumberOperand) oth).number);
                 if (divRem[1].isZero())
                     return new NumberOperand(divRem[0]);
@@ -590,9 +638,9 @@ public final class Parser<
 
         @Override
         public IOperand<Poly, Element> multiply(IOperand<Poly, Element> oth) {
-            if (oth instanceof Parser.NumberOperand) {
+            if (oth instanceof Coder.NumberOperand) {
                 return new MonomialOperand(polyRing.multiplyMutable(toPoly(), oth.toPoly()).lt());
-            } else if (oth instanceof Parser.VarOperand) {
+            } else if (oth instanceof Coder.VarOperand) {
                 int[] exponents = new int[polyRing.nVariables()];
                 exponents[variable] += 1;
                 exponents[((VarOperand) oth).variable] += 1;
@@ -627,13 +675,13 @@ public final class Parser<
         @Override
         public IOperand<Poly, Element> multiply(IOperand<Poly, Element> oth) {
             IMonomialAlgebra<Term> monomialAlgebra = polyRing.monomialAlgebra();
-            if (oth instanceof Parser.NumberOperand) {
+            if (oth instanceof Coder.NumberOperand) {
                 return new MonomialOperand(monomialAlgebra.multiply(term, ((NumberOperand) oth).number));
-            } else if (oth instanceof Parser.VarOperand) {
+            } else if (oth instanceof Coder.VarOperand) {
                 int[] exponents = term.exponents;
                 exponents[((VarOperand) oth).variable] += 1;
                 return new MonomialOperand(term.forceSetDegreeVector(exponents, term.totalDegree + 1));
-            } else if (oth instanceof Parser.MonomialOperand) {
+            } else if (oth instanceof Coder.MonomialOperand) {
                 Term othTerm = ((MonomialOperand) oth).term;
                 if (((long) othTerm.totalDegree) + term.totalDegree > Short.MAX_VALUE)
                     return super.multiply(oth);
