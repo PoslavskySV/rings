@@ -2039,7 +2039,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             else
                 cfString = "";
 
-            if (term.totalDegree != 0 && IStringifier.needParenthesis(cfString))
+            if (term.totalDegree != 0 && IStringifier.needParenthesisInSum(cfString))
                 cfString = "(" + cfString + ")";
 
             if (sb.length() != 0 && !cfString.startsWith("-"))

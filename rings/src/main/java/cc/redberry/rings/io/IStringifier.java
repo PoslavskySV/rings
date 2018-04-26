@@ -125,8 +125,8 @@ public interface IStringifier<Element> {
     /**
      * Enclose with math parenthesis if needed (e.g. a+b in (a+b)*c should be enclosed)
      */
-    static String encloseMathParenthesisIfNeeded(String cf) {
-        if (needParenthesis(cf))
+    static String encloseMathParenthesisInSumIfNeeded(String cf) {
+        if (needParenthesisInSum(cf))
             return "(" + cf + ")";
         else
             return cf;
@@ -135,7 +135,7 @@ public interface IStringifier<Element> {
     /**
      * If required to enclose with math parenthesis (e.g. a+b in (a+b)*c should be enclosed)
      */
-    static boolean needParenthesis(String cf) {
+    static boolean needParenthesisInSum(String cf) {
         if (cf.startsWith("-") && !hasPlusMinus(1, cf))
             return false;
         return hasPlusMinus(0, cf);
@@ -151,6 +151,21 @@ public interface IStringifier<Element> {
             else if (c == ')')
                 --level;
             else if ((c == '+' || c == '-') && level == 0)
+                return true;
+        }
+        return false;
+    }
+
+    static boolean hasMulDivPlusMinus(int start, String cf) {
+        // has +- on a zero bracket level
+        int level = 0;
+        for (int i = start; i < cf.length(); ++i) {
+            char c = cf.charAt(i);
+            if (c == '(')
+                ++level;
+            else if (c == ')')
+                --level;
+            else if (level == 0 && (c == '+' || c == '-' || c == '*' || c == '/'))
                 return true;
         }
         return false;

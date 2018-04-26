@@ -65,7 +65,7 @@ public final class GroebnerBasis {
         if (Util.isOverRationals(factory))
             return (List<Poly>) GroebnerBasisInQ((List) generators, monomialOrder, null, true);
         else
-            throw new RuntimeException("unsupported");//return HilbertGB(generators, monomialOrder);
+            return BuchbergerGB(generators, monomialOrder);
     }
 
     /**

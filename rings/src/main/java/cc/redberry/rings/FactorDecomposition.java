@@ -234,21 +234,18 @@ public class FactorDecomposition<E>
     @Override
     public String toString(IStringifier<E> stringifier) {
         if (factors.isEmpty())
-            return stringifier.stringify(unit);
+            return "(" + stringifier.stringify(unit) + ")";
         StringBuilder sb = new StringBuilder();
-        if (!ring.isOne(unit)) {
-            sb.append(stringifier.stringify(unit));
-            if (factors.size() > 0)
+        if (!ring.isOne(unit))
+            sb.append("(").append(stringifier.stringify(unit)).append(")");
+        for (int i = 0; i < factors.size(); i++) {
+            if (sb.length() > 0)
                 sb.append("*");
-        }
-        for (int i = 0; ; i++) {
             sb.append("(").append(stringifier.stringify(factors.get(i))).append(")");
             if (exponents.get(i) != 1)
                 sb.append("^").append(exponents.get(i));
-            if (i == factors.size() - 1)
-                return sb.toString();
-            sb.append("*");
         }
+        return sb.toString();
     }
 
     @Override

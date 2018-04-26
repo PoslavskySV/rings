@@ -251,7 +251,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public String toString(IStringifier<Rational<E>> stringifier) {
-        return ring.equals(Rings.Z) ? "Q" : "Frac[" + ring.toString(stringifier.substringifier(ring)) + "]";
+        return ring.equals(Rings.Z) ? "Q" : "Frac(" + ring.toString(stringifier.substringifier(ring)) + ")";
     }
 
     @Override

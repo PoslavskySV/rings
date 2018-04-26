@@ -7,7 +7,7 @@ import cc.redberry.rings.io.Stringifiable;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static cc.redberry.rings.io.IStringifier.encloseMathParenthesisIfNeeded;
+import static cc.redberry.rings.io.IStringifier.encloseMathParenthesisInSumIfNeeded;
 
 /**
  * Rational expression with numerator and denominator from the ring. Objects of this class are immutable.
@@ -487,9 +487,11 @@ public final class Rational<E>
         IStringifier<E> str = stringifier.substringifier(ring);
         if (isIntegral())
             return str.stringify(numerator);
-        return encloseMathParenthesisIfNeeded(str.stringify(numerator))
+        String num = str.stringify(numerator);
+        String den = str.stringify(denominator);
+        return encloseMathParenthesisInSumIfNeeded(num)
                 + "/"
-                + encloseMathParenthesisIfNeeded(str.stringify(denominator));
+                + (IStringifier.hasMulDivPlusMinus(0, den) ? "(" + den + ")" : den);
     }
 
     @Override

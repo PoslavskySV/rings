@@ -2,7 +2,6 @@ package cc.redberry.rings.poly;
 
 import cc.redberry.rings.ARing;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.io.IStringifier;
 
 import java.util.Iterator;
@@ -147,8 +146,11 @@ abstract class APolynomialRing<Poly extends IPolynomial<Poly>> extends ARing<Pol
 
     @Override
     public String toString(IStringifier<Poly> stringifier) {
+        String cfRing = factory.coefficientRingToString(stringifier);
+        if (cfRing.length() > 2)
+            cfRing = "(" + cfRing + ")";
         StringBuilder sb = new StringBuilder();
-        sb.append(factory.coefficientRingToString(stringifier));
+        sb.append(cfRing);
         sb.append("[");
         int nVars = nVariables();
         for (int i = 0; ; ++i) {

@@ -6,7 +6,9 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.UnivariateQuotientRing;
 import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.multivar.Ideal;
 import cc.redberry.rings.poly.multivar.Monomial;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -18,7 +20,9 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -390,6 +394,80 @@ public class CoderTest extends AbstractTest {
         RandomGenerator rnd = getRandom();
         for (int i = 0; i < its(100, 100); ++i)
             assertDecode(mCoder, mRing.randomElementTree(rnd));
+    }
+
+    @Test
+    public void test15_entities() {
+        // complicated ring
+
+        UnivariatePolynomialZp64 gen = Coder
+                .mkPolynomialCoder(Rings.UnivariateRingZp64(17), "t")
+                .parse("6+7*t+14*t^2+t^3");
+
+        // Gf(17, 3) as polys over "t"
+        FiniteField<UnivariatePolynomialZp64> gf17p3 = Rings.GF(gen);
+        Coder<UnivariatePolynomialZp64, ?, ?> gfCoder = Coder.mkPolynomialCoder(gf17p3, "t");
+        assertEquals("(Z/17)[t]/<6+7*t+14*t^2+t^3>", gf17p3.toString(gfCoder));
+
+        // Gf(17, 3)[x, y, z]
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> mRing = Rings.MultivariateRing(3, gf17p3);
+        Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> mCoder = Coder.mkMultivariateCoder(mRing, gfCoder, "x", "y", "z");
+        assertEquals("((Z/17)[t]/<6+7*t+14*t^2+t^3>)[x, y, z]", mRing.toString(mCoder));
+
+        // Frac(Gf(17, 3)[x, y, z])
+        Rationals<MultivariatePolynomial<UnivariatePolynomialZp64>> fRing = Frac(mRing);
+        Coder<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, mCoder);
+        assertEquals("Frac(((Z/17)[t]/<6+7*t+14*t^2+t^3>)[x, y, z])", fRing.toString(fCoder));
+
+        // Frac(Gf(17, 3)[x, y, z])[W]
+        UnivariateRing<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>> wRing = Rings.UnivariateRing(fRing);
+        Coder<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>, ?, ?> wCoder = Coder.mkUnivariateCoder(wRing, fCoder, "W");
+        assertEquals("(Frac(((Z/17)[t]/<6+7*t+14*t^2+t^3>)[x, y, z]))[W]", wRing.toString(wCoder));
+
+
+        //x,y,z,t,W
+        List<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>> wPolys =
+                Arrays.asList(
+                        wCoder.parse("x + y - z - t"),
+                        wCoder.parse("(x + t * y / z - W)^2"),
+                        wCoder.parse("z + y + W^2 + t^5 / x - x^4"),
+                        wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^5"));
+
+        PolynomialFactorDecomposition<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>
+                wFactors = wRing.factor(wRing.multiply(wPolys));
+        assertEquals(4, wFactors.sumExponents());
+        assertEquals(wFactors.multiply(), wCoder.parse(wFactors.toString(wCoder)));
+
+
+        // Frac(Gf(17, 3)[x, y, z])[W][u,v]
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>> uvRing = Rings.MultivariateRing(2, wRing);
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>, ?, ?> uvCoder = Coder.mkMultivariateCoder(uvRing, wCoder, "u", "v");
+        assertEquals("((Frac(((Z/17)[t]/<6+7*t+14*t^2+t^3>)[x, y, z]))[W])[u, v]", uvRing.toString(uvCoder));
+
+        List<MultivariatePolynomial<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>> uvPolys = Arrays.asList(
+                uvCoder.parse("u^2 + v^2 - 1/z - t"),
+                uvCoder.parse("(u + t * v / z - W)^2"),
+                uvCoder.parse("z + v + W^2 + t^5 / x - W^4"),
+                uvCoder.parse("1 + x / t + u^3 + t * v^2 + t * u^2 + z*W^5"));
+
+        PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>>
+                uvFactors = uvRing.factor(uvRing.multiply(uvPolys));
+        assertEquals(uvFactors.multiply(), uvCoder.parse(uvFactors.toString(uvCoder)));
+
+
+        uvPolys = Arrays.asList(
+                uvCoder.parse("t * u^2 + v^2"),
+                uvCoder.parse("u^2 - t * v^2"));
+        Ideal<Monomial<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>, MultivariatePolynomial<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>>
+                ideal = Ideal.create(uvPolys);
+        assertEquals("<v^2, u^2>", ideal.toString(uvCoder));
+
+        UnivariateQuotientRing<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>
+                wQuot = Rings.UnivariateQuotientRing(wRing, wCoder.parse("1 + W^2 + W^4"));
+
+        assertDecode(wCoder, wQuot.valueOf(wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^116")));
+        assertDecode(wCoder, wQuot.valueOf(wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^1161 + W^22")));
+        assertEquals("(Frac(((Z/17)[t]/<6+7*t+14*t^2+t^3>)[x, y, z]))[W]/<1+W^2+W^4>", wQuot.toString(wCoder));
     }
 
     private static <E> void assertDecode(Coder<E, ?, ?> coder, E element) {

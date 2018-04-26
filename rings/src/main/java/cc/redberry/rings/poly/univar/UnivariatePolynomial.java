@@ -1222,7 +1222,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             else
                 cfString = "";
 
-            if (i != 0 && IStringifier.needParenthesis(cfString))
+            if (i != 0 && IStringifier.needParenthesisInSum(cfString))
                 cfString = "(" + cfString + ")";
 
             if (sb.length() != 0 && !cfString.startsWith("-"))
