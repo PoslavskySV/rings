@@ -393,7 +393,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 irreducible = UnivariatePolynomialZ64.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
 
-        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialParser(domain, "t");
+        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialCoder(domain, "t");
         Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), ffParser, "x");
 
         UnivariatePolynomial<UnivariatePolynomialZp64> input = parser.parse("(1+t+t^2)+(1+t+t^2)*x+(1+t+t^3)*x^4+x^6");
@@ -408,7 +408,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 irreducible = UnivariatePolynomialZ64.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
 
-        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialParser(domain, "t");
+        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialCoder(domain, "t");
         Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), ffParser, "x");
 
         UnivariatePolynomial<UnivariatePolynomialZp64> input = parser.parse("(1+t+t^2)+(1+t+t^2)*x+(1+t+t^3)*x^4+x^6");
@@ -423,7 +423,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomialZp64 irreducible = UnivariatePolynomialZ64.create(1, 1, 1, 1, 1).modulus(2);
         FiniteField<UnivariatePolynomialZp64> domain = new FiniteField<>(irreducible);
         
-        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialParser(domain, "t");
+        Coder<UnivariatePolynomialZp64, ?, ?> ffParser = Coder.mkPolynomialCoder(domain, "t");
         Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), ffParser, "x");
 
         UnivariatePolynomial<UnivariatePolynomialZp64> input = parser.parse("(1+t+t^2)+(1+t+t^2)*x+(1+t+t^3)*x^4+x^6");

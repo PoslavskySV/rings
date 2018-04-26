@@ -1,7 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.io.IParser;
+import cc.redberry.rings.io.IStringifier;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Iterator;
@@ -222,54 +222,11 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return new Rational<>(ring, ring.valueOf(rnd.nextInt()), eden);
     }
 
-    public Rational<E> randomNonTrivialElement(RandomGenerator rnd) {
-        E den;
-        do {den = ring.randomElement(rnd);} while (ring.isZero(den));
-        return new Rational<>(ring, ring.randomElement(rnd), den);
-    }
-
-    public Rational<E> parse(IParser<E> parser, String string) {
-        int level = 0;
-        int indexOfDiv = -1;
-        for (int i = 0; i < string.length(); i++) {
-            char c = string.charAt(i);
-            if (c == '(')
-                ++level;
-            else if (c == ')')
-                --level;
-            if (level == 0 && c == '/')
-                if (indexOfDiv != -1)
-                    throw new IllegalArgumentException("not a valid rational");
-                else indexOfDiv = i;
-        }
-        if (indexOfDiv == -1)
-            return new Rational<>(ring, parser.parse(removeParenthesis(string)));
-        return new Rational<>(ring,
-                parser.parse(removeParenthesis(string.substring(0, indexOfDiv)).trim()),
-                parser.parse(removeParenthesis(string.substring(indexOfDiv + 1)).trim()));
-    }
-
     @Override
-    public Rational<E> parse(String string) {
-        return parse(ring, string);
-    }
-
-    private static String removeParenthesis(String string) {
-        string = string.trim();
-        if (!string.startsWith("(") || !string.endsWith(")"))
-            return string;
-
-        int level = 0;
-        for (int i = 0; i < (string.length() - 1); i++) {
-            char c = string.charAt(i);
-            if (c == '(')
-                ++level;
-            else if (c == ')')
-                --level;
-            if (level == 0)
-                return string;
-        }
-        return string.substring(1, string.length() - 1);
+    public Rational<E> randomElementTree(RandomGenerator rnd) {
+        E den;
+        do {den = ring.randomElementTree(rnd);} while (ring.isZero(den));
+        return new Rational<>(ring, ring.randomElementTree(rnd), den);
     }
 
     @Override
@@ -293,7 +250,12 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
+    public String toString(IStringifier<Rational<E>> stringifier) {
+        return ring.equals(Rings.Z) ? "Q" : "Frac[" + ring.toString(stringifier.substringifier(ring)) + "]";
+    }
+
+    @Override
     public String toString() {
-        return ring.equals(Rings.Z) ? "Q" : "Q[" + ring + "]";
+        return toString(IStringifier.dummy());
     }
 }

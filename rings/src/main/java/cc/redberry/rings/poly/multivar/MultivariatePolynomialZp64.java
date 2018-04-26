@@ -1,7 +1,10 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.libdivide4j.FastDivision;
-import cc.redberry.rings.*;
+import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Ring;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
@@ -1875,15 +1878,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     public MultivariatePolynomialZp64 parsePoly(String string) {
         MultivariatePolynomialZp64 r = parse(string, ring, ordering);
         if (r.nVariables != nVariables)
-            return parsePoly(string, WithVariables.defaultVars(nVariables));
-        return r;
-    }
-
-    @Override
-    public MultivariatePolynomialZp64 parsePoly(String string, String[] variables) {
-        MultivariatePolynomialZp64 r = parse(string, ring, ordering, variables);
-        if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field: " + string);
+            return parse(string, ring, ordering, IStringifier.defaultVars(nVariables));
         return r;
     }
 
@@ -1900,7 +1895,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         for (MonomialZp64 term : terms) {
             long cf = term.coefficient;
             String cfString;
-            if (cf != 1)
+            if (cf != 1 || term.totalDegree == 0)
                 cfString = Long.toString(cf);
             else
                 cfString = "";
@@ -1915,13 +1910,13 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
                 if (term.exponents[i] == 0)
                     continue;
 
-                if (cfBuilder.length() > 0)
+                if (cfBuilder.length() != 0)
                     cfBuilder.append("*");
 
-                sb.append(varStrings[i]);
+                cfBuilder.append(varStrings[i]);
 
                 if (term.exponents[i] > 1)
-                    sb.append("^").append(term.exponents[i]);
+                    cfBuilder.append("^").append(term.exponents[i]);
             }
 
             sb.append(cfBuilder);
@@ -1930,43 +1925,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
-    public String toString(String... vars) {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        for (MonomialZp64 term : terms) {
-            long coeff = term.coefficient;
-            if (coeff == 0)
-                continue;
-            String monomialString = term.dvToString(vars);
-            if (first) {
-                if (coeff != 1 || monomialString.isEmpty()) {
-                    sb.append(coeff);
-                    if (!monomialString.isEmpty())
-                        sb.append("*");
-                }
-                sb.append(monomialString);
-                first = false;
-            } else {
-                if (coeff > 0)
-                    sb.append("+");
-                else {
-                    sb.append("-");
-                    coeff = ring.negate(coeff);
-                }
-
-                if (coeff != 1 || monomialString.isEmpty()) {
-                    sb.append(coeff);
-                    if (!monomialString.isEmpty())
-                        sb.append("*");
-                }
-                sb.append(monomialString);
-            }
-        }
-        return sb.length() == 0 ? "0" : sb.toString();
-    }
-
-    @Override
-    public String coefficientRingToString() {
+    public String coefficientRingToString(IStringifier<MultivariatePolynomialZp64> stringifier) {
         return ring.toString();
     }
 }

@@ -66,7 +66,7 @@ public class UnivariatePolynomialTest extends AUnivariateTest {
     public void test5() throws Exception {
         IntegersZp64 lDomain = new IntegersZp64(11);
         MultivariateRing<MultivariatePolynomialZp64> domain = new MultivariateRing<>(MultivariatePolynomialZp64.zero(4, lDomain, MonomialOrder.LEX));
-        Coder<MultivariatePolynomialZp64, ?, ?> mParser = Coder.mkPolynomialParser(domain, "x1", "x2", "x3", "x4");
+        Coder<MultivariatePolynomialZp64, ?, ?> mParser = Coder.mkPolynomialCoder(domain, "x1", "x2", "x3", "x4");
         Coder<UnivariatePolynomial<MultivariatePolynomialZp64>, ?, ?> parser = Coder.mkUnivariateCoder(Rings.UnivariateRing(domain), mParser, "x");
         UnivariatePolynomial<MultivariatePolynomialZp64> poly = parser.parse("(6*x3)+(10*x2*x3^2*x4^2)*x^3");
         for (int i = 0; i < 1000; i++)

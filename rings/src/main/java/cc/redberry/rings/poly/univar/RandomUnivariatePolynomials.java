@@ -8,10 +8,11 @@ import cc.redberry.rings.util.RandomUtil;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import java.util.function.Function;
+
 /**
  * Methods to generate random polynomials.
  *
-
  * @since 1.0
  */
 public final class RandomUnivariatePolynomials {
@@ -119,6 +120,7 @@ public final class RandomUnivariatePolynomials {
         return UnivariatePolynomial.createUnsafe(Rings.Z, randomBigArray(degree, bound, rnd));
     }
 
+
     /**
      * Creates random polynomial of specified {@code degree} with elements from specified ring
      *
@@ -129,6 +131,19 @@ public final class RandomUnivariatePolynomials {
      */
     public static <E> UnivariatePolynomial<E> randomPoly(int degree, Ring<E> ring, RandomGenerator rnd) {
         return UnivariatePolynomial.createUnsafe(ring, randomArray(degree, ring, rnd));
+    }
+
+    /**
+     * Creates random polynomial of specified {@code degree} with elements from specified ring
+     *
+     * @param degree polynomial degree
+     * @param ring   the ring
+     * @param method method for generating random coefficients
+     * @param rnd    random source
+     * @return random polynomial of specified {@code degree} with elements bounded by {@code bound} (by absolute value)
+     */
+    public static <E> UnivariatePolynomial<E> randomPoly(int degree, Ring<E> ring, Function<RandomGenerator, E> method, RandomGenerator rnd) {
+        return UnivariatePolynomial.createUnsafe(ring, randomArray(degree, ring, method, rnd));
     }
 
     /**
@@ -183,11 +198,24 @@ public final class RandomUnivariatePolynomials {
      * @return array of length {@code degree + 1} with elements from specified ring
      */
     public static <E> E[] randomArray(int degree, Ring<E> ring, RandomGenerator rnd) {
+        return randomArray(degree, ring, ring::randomElement, rnd);
+    }
+
+    /**
+     * Creates random array of length {@code degree + 1} with elements from the specified ring
+     *
+     * @param degree polynomial degree
+     * @param ring   the ring
+     * @param method method for generating random coefficients
+     * @param rnd    random source
+     * @return array of length {@code degree + 1} with elements from specified ring
+     */
+    public static <E> E[] randomArray(int degree, Ring<E> ring, Function<RandomGenerator, E> method, RandomGenerator rnd) {
         E[] data = ring.createArray(degree + 1);
         for (int i = 0; i <= degree; ++i)
-            data[i] = ring.randomElement(rnd);
+            data[i] = method.apply(rnd);
         while (ring.isZero(data[degree]))
-            data[degree] = ring.randomElement(rnd);
+            data[degree] = method.apply(rnd);
         return data;
     }
 }

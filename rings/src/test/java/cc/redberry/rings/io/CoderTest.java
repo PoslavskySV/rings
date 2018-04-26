@@ -4,10 +4,9 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rationals;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.IPolynomial;
-import cc.redberry.rings.poly.IPolynomialRing;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.Monomial;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -25,8 +24,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static cc.redberry.rings.Rings.*;
-import static cc.redberry.rings.io.Coder.mkMultivariateCoder;
-import static cc.redberry.rings.io.Coder.mkCoder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -323,6 +320,82 @@ public class CoderTest extends AbstractTest {
     public void test11() {
         Coder<Rational<BigInteger>, ?, ?> p = Coder.mkCoder(Q);
         assertEquals(p.parse("-1/2*3/5*9*9/3^2/4/6*7 + 1^2/3 - 3 - 2*3*5/8*9/6*9/3^2/4*7*6^2"), new Rational<>(Z, Z.valueOf(-85879), Z.valueOf(240)));
+    }
+
+    @Test
+    public void test12_random() {
+        // complicated ring
+
+        // Gf(17, 3) as polys over "t"
+        FiniteField<UnivariatePolynomialZp64> gf17p3 = Rings.GF(17, 3);
+        Coder<UnivariatePolynomialZp64, ?, ?> gfCoder = Coder.mkPolynomialCoder(gf17p3, "t");
+
+        // Gf(17, 3)[x, y, z]
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> mRing = Rings.MultivariateRing(3, gf17p3);
+        Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> mCoder = Coder.mkMultivariateCoder(mRing, gfCoder, "x", "y", "z");
+        //System.out.println(mRing.randomElementTree().toString(mCoder));
+
+        // Frac(Gf(17, 3)[x, y, z])
+        Rationals<MultivariatePolynomial<UnivariatePolynomialZp64>> fRing = Rings.Frac(mRing);
+        Coder<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, mCoder);
+        //System.out.println(fRing.randomElementTree().toString(fCoder));
+
+        // Frac(Gf(17, 3)[x, y, z])[W]
+        UnivariateRing<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>> uRing = Rings.UnivariateRing(fRing);
+        Coder<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>, ?, ?> wCoder = Coder.mkUnivariateCoder(uRing, fCoder, "W");
+        //System.out.println(uRing.randomElementTree().toString(wCoder));
+
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 100); ++i)
+            assertDecode(wCoder, uRing.randomElementTree(rnd));
+    }
+
+    @Test
+    public void test13_random() {
+        // complicated ring
+
+        MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>> mRing = Rings.MultivariateRing(3, Rings.Q);
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> mCoder = Coder.mkMultivariateCoder(mRing, "x1", "xx1", "xxx123");
+        //System.out.println(mRing.randomElementTree().toString(mCoder));
+
+        Rationals<MultivariatePolynomial<Rational<BigInteger>>> fRing = Rings.Frac(mRing);
+        Coder<Rational<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, mCoder);
+        //System.out.println(fRing.randomElementTree().toString(fCoder));
+
+        UnivariateRing<UnivariatePolynomial<Rational<MultivariatePolynomial<Rational<BigInteger>>>>> uRing = Rings.UnivariateRing(fRing);
+        Coder<UnivariatePolynomial<Rational<MultivariatePolynomial<Rational<BigInteger>>>>, ?, ?> wCoder = Coder.mkUnivariateCoder(uRing, fCoder, "W");
+        //System.out.println(uRing.randomElementTree().toString(wCoder));
+
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(10, 10); ++i)
+            assertDecode(wCoder, uRing.randomElementTree(rnd));
+    }
+
+    @Test
+    public void test14_random() {
+        // complicated ring
+
+        UnivariateRing<UnivariatePolynomial<BigInteger>> uRing = Rings.UnivariateRing(Rings.Z);
+        Coder<UnivariatePolynomial<BigInteger>, ?, ?> uCoder = Coder.mkUnivariateCoder(uRing, "p");
+        //System.out.println(uRing.randomElementTree().toString(uCoder));
+
+        Rationals<UnivariatePolynomial<BigInteger>> fRing = Rings.Frac(uRing);
+        Coder<Rational<UnivariatePolynomial<BigInteger>>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, uCoder);
+        //System.out.println(fRing.randomElementTree().toString(fCoder));
+
+        MultivariateRing<MultivariatePolynomial<Rational<UnivariatePolynomial<BigInteger>>>> mRing = Rings.MultivariateRing(2, fRing);
+        Coder<MultivariatePolynomial<Rational<UnivariatePolynomial<BigInteger>>>, ?, ?> mCoder = Coder.mkMultivariateCoder(mRing, fCoder, "x1", "x2");
+        //System.out.println(mRing.randomElementTree().toString(mCoder));
+
+        RandomGenerator rnd = getRandom();
+        for (int i = 0; i < its(100, 100); ++i)
+            assertDecode(mCoder, mRing.randomElementTree(rnd));
+    }
+
+    private static <E> void assertDecode(Coder<E, ?, ?> coder, E element) {
+        String encoded = coder.encode(element);
+        E decoded = coder.decode(encoded);
+        assertEquals(encoded, element, decoded);
     }
 
     private static <P extends IPolynomial<P>> Map<String, P> mkVars(IPolynomialRing<P> ring, String... vars) {

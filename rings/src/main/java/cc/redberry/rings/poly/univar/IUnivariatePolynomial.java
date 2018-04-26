@@ -159,7 +159,4 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
 
     /** ensures that internal storage has enough size to store {@code desiredCapacity} elements */
     void ensureInternalCapacity(int desiredCapacity);
-
-    @Override
-    default Poly parsePoly(String string, String[] variables) { return parsePoly(string);}
 }

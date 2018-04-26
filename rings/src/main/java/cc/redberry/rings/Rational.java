@@ -1,8 +1,8 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.io.Stringifiable;
 import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.io.Stringifiable;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -484,49 +484,16 @@ public final class Rational<E>
 
     @Override
     public String toString(IStringifier<Rational<E>> stringifier) {
-        IStringifier<E> eStringifier = stringifier.substringifier(ring);
+        IStringifier<E> str = stringifier.substringifier(ring);
         if (isIntegral())
-            return ring.toString(numerator, eStringifier);
-
-        String num = encloseMathParenthesisIfNeeded(ring.toString(numerator, eStringifier)),
-                den = encloseMathParenthesisIfNeeded(ring.toString(denominator, eStringifier));
-
-        return num + "/" + den;
+            return str.stringify(numerator);
+        return encloseMathParenthesisIfNeeded(str.stringify(numerator))
+                + "/"
+                + encloseMathParenthesisIfNeeded(str.stringify(denominator));
     }
 
     @Override
     public String toString() {
-        return toString((ToStringSupport<E>) null);
-    }
-
-    public String toString(ToStringSupport<E> toString) {
-        if (signum() < 0)
-            return "-" + negate().toString(toString);
-        String str;
-        if (ring.isOne(denominator))
-            str = toString(numerator, toString, false);
-        else if (ring.isZero(numerator))
-            str = "0";
-        else
-            str = toString(numerator, toString, true) + "/" + toString(denominator, toString, true);
-        return str;
-    }
-//
-//    @Override
-//    public String toString(String[] variables) {
-//        return toString(numerator instanceof WithVariables
-//                ? (ToStringSupport<E>) (ToStringSupport.withVariables(variables))
-//                : null);
-//    }
-
-    private String toString(E e, ToStringSupport<E> toString, boolean needBrackets) {
-        String str;
-        if (toString != null)
-            str = toString.toString(e);
-        else
-            str = ring.toString(e);
-        if (needBrackets && !(str.matches("[0-9]+") || str.matches("[a-zA-Z]+")))
-            str = "(" + str + ")";
-        return str;
+        return toString(IStringifier.dummy());
     }
 }

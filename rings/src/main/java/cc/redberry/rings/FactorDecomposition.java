@@ -1,5 +1,7 @@
 package cc.redberry.rings;
 
+import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.io.Stringifiable;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
@@ -20,7 +22,8 @@ import java.util.stream.Stream;
  * @author Stanislav Poslavsky
  * @since 2.2
  */
-public class FactorDecomposition<E> implements Iterable<E> {
+public class FactorDecomposition<E>
+        implements Iterable<E>, Stringifiable<E> {
     /** The ring */
     public final Ring<E> ring;
     /** unit coefficient */
@@ -134,6 +137,13 @@ public class FactorDecomposition<E> implements Iterable<E> {
     }
 
     /**
+     * Set all exponents to one
+     */
+    public FactorDecomposition<E> dropExponents(Ring<E> ring) {
+        return new FactorDecomposition<>(ring, unit, factors, new TIntArrayList(ArraysUtil.arrayOf(1, size())));
+    }
+
+    /**
      * Drops constant factor from this (new instance returned)
      */
     public FactorDecomposition<E> dropUnit() {
@@ -222,39 +232,28 @@ public class FactorDecomposition<E> implements Iterable<E> {
     }
 
     @Override
-    public String toString() {
-        return toString(ToStringSupport.plain());
-    }
-
-    /**
-     * @param stringifier custom stringifier
-     */
-    public String toString(ToStringSupport<E> stringifier) {
-        return toString(stringifier, true);
-    }
-
-    /**
-     * @param stringifier   custom stringifier
-     * @param withExponents do stringify exponents
-     */
-    public String toString(ToStringSupport<E> stringifier, boolean withExponents) {
+    public String toString(IStringifier<E> stringifier) {
         if (factors.isEmpty())
-            return stringifier.toString(unit);
-
+            return stringifier.stringify(unit);
         StringBuilder sb = new StringBuilder();
         if (!ring.isOne(unit)) {
-            sb.append(stringifier.toString(unit));
+            sb.append(stringifier.stringify(unit));
             if (factors.size() > 0)
                 sb.append("*");
         }
         for (int i = 0; ; i++) {
-            sb.append("(").append(stringifier.toString(factors.get(i))).append(")");
-            if (withExponents && exponents.get(i) != 1)
+            sb.append("(").append(stringifier.stringify(factors.get(i))).append(")");
+            if (exponents.get(i) != 1)
                 sb.append("^").append(exponents.get(i));
             if (i == factors.size() - 1)
                 return sb.toString();
             sb.append("*");
         }
+    }
+
+    @Override
+    public String toString() {
+        return toString(IStringifier.dummy());
     }
 
     @Override

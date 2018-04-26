@@ -1,7 +1,7 @@
 package cc.redberry.rings.poly;
 
-import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.io.Stringifiable;
 
 /**
@@ -16,7 +16,7 @@ import cc.redberry.rings.io.Stringifiable;
  * @since 1.0
  */
 public interface IPolynomial<Poly extends IPolynomial<Poly>>
-        extends Comparable<Poly>, Stringifiable<Poly>, WithVariables, java.io.Serializable {
+        extends Comparable<Poly>, Stringifiable<Poly>, java.io.Serializable {
     /**
      * Returns whether {@code oth} and {@code this} have the same coefficient ring
      *
@@ -457,27 +457,28 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     }
 
     /**
-     * Parse string representation of polynomial
-     *
-     * @param string string
-     * @return the polynomial corresponding to specified string
+     * String representation of the coefficient ring of this
      */
-    Poly parsePoly(String string);
-
-    /**
-     * Parse string representation of polynomial
-     *
-     * @param string    string
-     * @param variables names of variables
-     * @return the polynomial corresponding to specified string
-     */
-    Poly parsePoly(String string, String[] variables);
+    String coefficientRingToString(IStringifier<Poly> stringifier);
 
     /**
      * String representation of the coefficient ring of this
      */
-    String coefficientRingToString();
+    default String coefficientRingToString() {
+        return coefficientRingToString(IStringifier.dummy());
+    }
 
-    @Override
-    String toString(String... variables);
+    /**
+     * String representation of this polynomial with specified string variables
+     */
+    @SuppressWarnings("unchecked")
+    default String toString(String... variables) {
+        return toString(IStringifier.mkPolyStringifier((Poly) this, variables));
+    }
+
+    /**
+     * @deprecated use {@link cc.redberry.rings.io.Coder} to parse polynomials
+     */
+    @Deprecated
+    Poly parsePoly(String string);
 }

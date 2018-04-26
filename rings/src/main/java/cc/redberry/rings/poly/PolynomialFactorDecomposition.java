@@ -1,8 +1,6 @@
 package cc.redberry.rings.poly;
 
 import cc.redberry.rings.FactorDecomposition;
-import cc.redberry.rings.ToStringSupport;
-import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TObjectIntHashMap;
@@ -24,8 +22,7 @@ import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
  * @since 2.2 FactorDecomposition renamed to PolynomialFactorDecomposition
  */
 public final class PolynomialFactorDecomposition<Poly extends IPolynomial<Poly>>
-        extends FactorDecomposition<Poly>
-        implements WithVariables, java.io.Serializable {
+        extends FactorDecomposition<Poly> implements java.io.Serializable {
     private static final long serialVersionUID = 1L;
 
     private PolynomialFactorDecomposition(Poly unit, List<Poly> factors, TIntArrayList exponents) {
@@ -146,11 +143,6 @@ public final class PolynomialFactorDecomposition<Poly extends IPolynomial<Poly>>
      */
     public PolynomialFactorDecomposition<Poly> reduceUnitContent() {
         return unit.isOverField() ? monic() : primitive();
-    }
-
-    @Override
-    public String toString(String[] variables) {
-        return toString(ToStringSupport.withVariables(variables));
     }
 
     @Override

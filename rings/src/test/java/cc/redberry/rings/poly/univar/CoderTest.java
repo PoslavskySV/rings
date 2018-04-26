@@ -3,6 +3,7 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -78,9 +79,15 @@ public class CoderTest extends AUnivariateTest {
     public void testParseRandom2() throws Exception {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
+        FiniteField<UnivariatePolynomialZp64> cfRing = FiniteField.GF17p5;
+        Coder<UnivariatePolynomialZp64, ?, ?> cfCoder = Coder.mkUnivariateCoder(cfRing, "t");
+        Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> coder = Coder.mkUnivariateCoder(Rings.UnivariateRing(cfRing), cfCoder, "x");
+
         for (int i = 0; i < its(100, 1000); i++) {
-            UnivariatePolynomial<UnivariatePolynomialZp64> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), FiniteField.GF17p5, rnd);
-            assertEquals(poly, UnivariatePolynomial.parse(poly.toString(), poly.ring));
+            UnivariatePolynomial<UnivariatePolynomialZp64> poly = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 20), cfRing, rnd);
+
+            assertEquals(poly, coder.parse(poly.toString(coder)));
+            assertEquals(poly, coder.decode(coder.encode(poly)));
         }
     }
 
@@ -92,9 +99,16 @@ public class CoderTest extends AUnivariateTest {
                 c2 = UnivariatePolynomialZ64.create(0, 2, 3).modulus(17),
                 c3 = UnivariatePolynomialZ64.create(-1, -2, -3).modulus(17);
 
+        FiniteField<UnivariatePolynomialZp64> cfRing = FiniteField.GF17p5;
+
         UnivariatePolynomial<UnivariatePolynomialZp64> poly =
-                UnivariatePolynomial.create(FiniteField.GF17p5, c0, c1, c2, c3);
-        assertEquals(poly, UnivariatePolynomial.parse(poly.toString(), poly.ring));
+                UnivariatePolynomial.create(cfRing, c0, c1, c2, c3);
+
+        Coder<UnivariatePolynomialZp64, ?, ?> cfCoder = Coder.mkUnivariateCoder(cfRing, "t");
+        Coder<UnivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> coder = Coder.mkUnivariateCoder(Rings.UnivariateRing(cfRing), cfCoder, "x");
+
+        assertEquals(poly, coder.parse(poly.toString(coder)));
+        assertEquals(poly, coder.decode(coder.encode(poly)));
     }
 
     @Test

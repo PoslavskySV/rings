@@ -3,6 +3,7 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
@@ -543,7 +544,7 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     }
 
     @Override
-    public String coefficientRingToString() {
+    public String coefficientRingToString(IStringifier<UnivariatePolynomialZp64> stringifier) {
         return ring.toString();
     }
 

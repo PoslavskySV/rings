@@ -1,5 +1,7 @@
 package cc.redberry.rings.io;
 
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Rationals;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
@@ -88,7 +90,11 @@ public class Coder<
     @Override
     @SuppressWarnings("unchecked")
     public <K> IStringifier<K> substringifier(Ring<K> ring) {
-        return (IStringifier<K>) subcoders.get(ring);
+        IStringifier<K> s = (IStringifier<K>) subcoders.get(ring);
+        if (s == null)
+            return IStringifier.dummy();
+        else
+            return s;
     }
 
     @Override
@@ -108,9 +114,7 @@ public class Coder<
      */
     @SuppressWarnings("unchecked")
     public String encode(Element element) {
-        if (!(element instanceof Stringifiable))
-            return element.toString();
-        return stringify((Stringifiable) element);
+        return stringify(element);
     }
 
     ////////////////////////////////////////////////////Factory////////////////////////////////////////////////////////
@@ -297,12 +301,22 @@ public class Coder<
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends IPolynomial<Poly>> Coder<Poly, ?, ?>
-    mkPolynomialParser(IPolynomialRing<Poly> ring,
-                       String... variables) {
+    mkPolynomialCoder(IPolynomialRing<Poly> ring,
+                      String... variables) {
         if (ring instanceof MultivariateRing)
             return mkMultivariateCoder((MultivariateRing) ring, variables);
         else
             return mkUnivariateCoder((IPolynomialRing) ring, variables[0]);
+    }
+
+    /**
+     * Create coder for rational elements
+     */
+    @SuppressWarnings("unchecked")
+    public static <E> Coder<Rational<E>, ?, ?>
+    mkRationalsCoder(Rationals<E> ring,
+                     Coder<E, ?, ?> elementsCoder) {
+        return mkNestedCoder(ring, new HashMap<>(), elementsCoder, e -> new Rational<>(ring.ring, e));
     }
 
     /**

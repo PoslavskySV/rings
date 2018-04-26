@@ -1,8 +1,11 @@
 package cc.redberry.rings.poly;
 
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.poly.multivar.*;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well44497b;
+
+import java.util.function.Function;
 
 /**
  * Ring of multivariate polynomials.
@@ -95,6 +98,27 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
         return (Poly) RandomMultivariatePolynomials.randomPolynomial((AMultivariatePolynomial) factory, degree, size, rnd);
     }
 
+    /**
+     * Generates random multivariate polynomial
+     *
+     * @param degree maximal degree of the result
+     * @param size   number of elements in the result
+     * @param rnd    random source
+     * @return random polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public Poly randomElementTree(int degree, int size, RandomGenerator rnd) {
+        if (factory instanceof MultivariatePolynomial) {
+            MultivariatePolynomial f = (MultivariatePolynomial) this.factory;
+            Ring cfRing = f.ring;
+            Function<RandomGenerator, ?> method = cfRing::randomElementTree;
+            return (Poly) RandomMultivariatePolynomials.randomPolynomial(nVariables(), degree, size, cfRing,
+                    ((MultivariatePolynomial) factory).ordering, method, rnd);
+        } else
+            return randomElement(degree, size, rnd);
+    }
+
+
     private static final RandomGenerator privateRandom = new Well44497b(System.nanoTime());
 
     /**
@@ -120,5 +144,19 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
     @Override
     public Poly randomElement(RandomGenerator rnd) {
         return super.randomElement(rnd);
+    }
+
+    /**
+     * Default degree of polynomial generated with {@link #randomElementTree(RandomGenerator)}
+     */
+    public static final int DEGREE_OF_RANDOM_POLY = 16;
+    /**
+     * Default size of polynomial generated with {@link #randomElementTree(RandomGenerator)}
+     */
+    public static final int SIZE_OF_RANDOM_POLY = 16;
+
+    @Override
+    public Poly randomElementTree(RandomGenerator rnd) {
+        return randomElementTree(DEGREE_OF_RANDOM_POLY, SIZE_OF_RANDOM_POLY, rnd);
     }
 }

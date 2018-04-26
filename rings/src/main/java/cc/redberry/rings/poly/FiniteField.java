@@ -1,8 +1,12 @@
 package cc.redberry.rings.poly;
 
-import cc.redberry.rings.*;
+import cc.redberry.rings.ARing;
+import cc.redberry.rings.FactorDecomposition;
+import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.poly.univar.UnivariateDivision.InverseModMonomial;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -252,12 +256,7 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
 
     @Override
     public Poly parse(String string) {
-        return valueOf(irreducible.parsePoly(string));
-    }
-
-    @Override
-    public Poly parse(String string, String[] variables) {
-        return valueOf(irreducible.parsePoly(string, variables));
+        return valueOf(factory.parsePoly(string));
     }
 
     /**
@@ -377,21 +376,19 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
     }
 
     @Override
-    public String toString(String[] variables) {
-        return toString(irreducible.coefficientRingToString(), variables);
+    public String toString(IStringifier<Poly> stringifier) {
+        String cfrStr = factory.coefficientRingToString(stringifier);
+        String varStr = stringifier.getBinding(factory.createMonomial(1), IStringifier.defaultVar());
+        String irrStr = irreducible.toString(stringifier);
+        return "(" + cfrStr + ")[" + varStr + "]/<" + irrStr + ">";
     }
 
-    @Override
-    public String toString(String coefficientDomain, String[] variables) {
-        return "(" + coefficientDomain + ")[" + variables[0] + "]/<" + irreducible.toString(variables) + ">";
-    }
-
-    public String toString(String coefficientDomain, ToStringSupport<Poly> irreducibleToString, String[] variables) {
-        return "(" + coefficientDomain + ")[" + variables[0] + "]/<" + irreducibleToString.toString(irreducible) + ">";
+    public String toString(String... variables) {
+        return toString(IStringifier.mkPolyStringifier(factory, variables));
     }
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(1));
+        return toString(IStringifier.defaultVars(1));
     }
 }

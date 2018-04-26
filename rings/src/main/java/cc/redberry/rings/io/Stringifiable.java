@@ -5,5 +5,7 @@ package cc.redberry.rings.io;
  */
 public interface Stringifiable<E> {
     /** convert this to string with the use of stringifier */
-    String toString(IStringifier<E> stringifier);
+    default String toString(IStringifier<E> stringifier) {
+        return this.toString();
+    }
 }

@@ -8,6 +8,7 @@ import cc.redberry.rings.util.RandomUtil;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Comparator;
+import java.util.function.Function;
 
 /**
  * Methods to generate random multivariate polynomials.
@@ -63,19 +64,37 @@ public final class RandomMultivariatePolynomials {
      * @param size     number of elements in the result
      * @param ring     the coefficient ring
      * @param ordering monomial order
+     * @param method   method for generating random coefficients
      * @param rnd      random source
      * @return random polynomial
      */
-    public static <E> MultivariatePolynomial<E> randomPolynomial(int nVars, int degree, int size, Ring<E> ring, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+    public static <E> MultivariatePolynomial<E> randomPolynomial(int nVars, int degree, int size, Ring<E> ring,
+                                                                 Comparator<DegreeVector> ordering,
+                                                                 Function<RandomGenerator, E> method, RandomGenerator rnd) {
         int nd = 3 * degree / 2;
         @SuppressWarnings("unchecked")
         Monomial<E>[] terms = new Monomial[size];
         for (int i = 0; i < size; i++) {
-            E cfx = ring.randomElement(rnd);
+            E cfx = method.apply(rnd);
             int[] exponents = RandomUtil.randomIntArray(nVars, 0, nd, rnd);
             terms[i] = new Monomial<>(exponents, cfx);
         }
         return MultivariatePolynomial.create(nVars, ring, ordering, terms);
+    }
+
+    /**
+     * Generates random polynomial
+     *
+     * @param nVars    number of variables
+     * @param degree   maximal degree of the result
+     * @param size     number of elements in the result
+     * @param ring     the coefficient ring
+     * @param ordering monomial order
+     * @param rnd      random source
+     * @return random polynomial
+     */
+    public static <E> MultivariatePolynomial<E> randomPolynomial(int nVars, int degree, int size, Ring<E> ring, Comparator<DegreeVector> ordering, RandomGenerator rnd) {
+        return randomPolynomial(nVars, degree, size, ring, ordering, ring::randomElement, rnd);
     }
 
     /**
