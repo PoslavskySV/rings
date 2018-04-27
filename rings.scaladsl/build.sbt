@@ -4,7 +4,7 @@ organization := "cc.redberry"
 
 name := "rings.scaladsl"
 
-version := "2.3.2"
+version := "2.4"
 
 scalaVersion := "2.12.3"
 
@@ -15,7 +15,7 @@ moduleName := name.value
 resolvers += Resolver.mavenLocal
 
 libraryDependencies ++= Seq(
-  "cc.redberry" % "rings" % "2.3.2",
+  "cc.redberry" % "rings" % "2.4",
   "junit" % "junit" % "4.12" % Test,
   "com.novocode" % "junit-interface" % "0.11" % Test exclude("junit", "junit-dep")
 )
