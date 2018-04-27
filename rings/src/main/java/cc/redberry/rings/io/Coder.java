@@ -368,7 +368,7 @@ public class Coder<
                 variables,
                 innerCoder.polyRing,
                 innerCoder.pVariables,
-                innerCoder.polyToElement.andThen(imageFunc))
+                innerCoder.polyToElement == null ? null : innerCoder.polyToElement.andThen(imageFunc))
                 .withEncoder(innerCoder);
     }
 

@@ -25,6 +25,7 @@ public final class Tokenizer {
         T_DIVIDE,
         T_EXPONENT,
         T_SPACE,
+        T_NEWLINE,
         T_BRACKET_OPEN,
         T_BRACKET_CLOSE,
         T_END
@@ -172,6 +173,8 @@ public final class Tokenizer {
             case '^': return EXPONENT;
             case '(': return BRACKET_OPEN;
             case ')': return BRACKET_CLOSE;
+            case '\t':
+            case '\n':
             case ' ': return SPACE;
             default: return null;
         }

@@ -51,9 +51,9 @@ class Examples {
     println(poly1)
     // specify which variable names use for printing
     // the result will be "x*y + x^2"
-    println(poly1.toString(Array("x", "y")))
+    println(poly1.toString("x", "y"))
     // the result will be "y*x + y^2"
-    println(poly1.toString(Array("y", "x")))
+    println(poly1.toString("y", "x"))
   }
 
   @Test

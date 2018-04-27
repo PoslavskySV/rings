@@ -16,13 +16,13 @@ import scala.util.Random
   */
 private[scaladsl] trait Predef {
 
-  implicit def asBigInteger(v: BigInt): BigInteger = new BigInteger(v.bigInteger)
+  implicit def asBigInteger(v: BigInt): IntZ = new BigInteger(v.bigInteger)
 
-  implicit def asBigInteger(v: java.math.BigInteger): BigInteger = new BigInteger(v)
+  implicit def asBigInteger(v: java.math.BigInteger): IntZ = new BigInteger(v)
 
-  implicit def asBigInteger(v: Int): BigInteger = BigInteger.valueOf(v)
+  implicit def asBigInteger(v: Int): IntZ = BigInteger.valueOf(v)
 
-  implicit def asBigInteger(v: Long): BigInteger = BigInteger.valueOf(v)
+  implicit def asBigInteger(v: Long): IntZ = BigInteger.valueOf(v)
 
   implicit def asRingElement[E](v: Int)(implicit ring: Ring[E]): E = ring.valueOf(v)
 

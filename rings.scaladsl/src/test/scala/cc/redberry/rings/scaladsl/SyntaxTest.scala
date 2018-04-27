@@ -359,7 +359,7 @@ class SyntaxTest {
 
     }
 
-    val cfRing = GF(17, 5, "z")
+    implicit val cfRing = GF(17, 5, "z")
     val irreducible = IrreduciblePolynomials.randomIrreduciblePolynomial(cfRing, 10, new Well44497a())
     implicit val ring = GF(irreducible, "x")
     genericAssertions(ring)
@@ -610,11 +610,11 @@ class SyntaxTest {
 
     // calculate GCD
     val gcd = PolynomialGCD(poly1 * poly3, poly2 * poly4)
-    println(s"gcd : ${ring show gcd }")
+    println(s"gcd : ${ring show gcd}")
 
     // factor some complicated poly
     val factors = Factor(poly1 * poly2 ** 2 * poly3 ** 3 * poly4 ** 4)
-    println(s"factors : ${ring show factors }")
+    println(s"factors : ${ring show factors}")
   }
 
   @Test
@@ -624,19 +624,19 @@ class SyntaxTest {
     val gf0Ring = UnivariateRing(gf0, "y")
     assert(IrreduciblePolynomials.irreducibleQ(gf0.getIrreducible))
 
-    val gf1 = GF(gf0Ring("(1 + x + x^3) + (1 + x^2) * y + y^2 - 6 * y^3 + y^4 - (1 + x + x^3) * y^6 + y^7"), gf0Ring, "y")
+    val gf1 = GF(gf0Ring("(1 + x + x^3) + (1 + x^2) * y + y^2 - 6 * y^3 + y^4 - (1 + x + x^3) * y^6 + y^7"), "y")(gf0Ring.cfRing)
     val gf1Ring = UnivariateRing(gf1, "z")
     assert(IrreduciblePolynomials.irreducibleQ(gf1.getIrreducible))
 
-    val gf2 = GF(gf1Ring("((1 - x) + (1 - x^2) * y^2 + (1 - x^3) * y^3) + ((1 - x) + (1 - x^2) * y^2 + (1 - x^3) * y) * z + z^6"), gf1Ring, "z")
+    val gf2 = GF(gf1Ring("((1 - x) + (1 - x^2) * y^2 + (1 - x^3) * y^3) + ((1 - x) + (1 - x^2) * y^2 + (1 - x^3) * y) * z + z^6"), "z")(gf1Ring.cfRing)
 
     implicit val ring = gf2
 
     println(s"ring: $ring")
-    println(s"ring cardinality: ${ring.cardinality() }")
-    println(s"ring characteristic: ${ring.characteristic() }")
-    println(s"ring pp base: ${ring.perfectPowerBase() }")
-    println(s"ring pp exponent: ${ring.perfectPowerExponent() }")
+    println(s"ring cardinality: ${ring.cardinality()}")
+    println(s"ring characteristic: ${ring.characteristic()}")
+    println(s"ring pp base: ${ring.perfectPowerBase()}")
+    println(s"ring pp exponent: ${ring.perfectPowerExponent()}")
 
     val rndPoly = ring.randomElement(new Well1024a())
     println(ring show rndPoly)
