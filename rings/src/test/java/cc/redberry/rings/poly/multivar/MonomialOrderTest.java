@@ -1,11 +1,16 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.multivar.MonomialOrder.GrevLexWithPermutation;
+import cc.redberry.rings.poly.multivar.MonomialOrder.*;
 import cc.redberry.rings.util.ArraysUtil;
+import cc.redberry.rings.util.ZipUtil;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Arrays;
+
+import static cc.redberry.rings.poly.multivar.MonomialOrder.*;
 
 /**
  *
@@ -31,5 +36,11 @@ public class MonomialOrderTest extends AMultivariateTest {
             Monomial<BigInteger>[] pArray = poly.setOrdering(new GrevLexWithPermutation(permutation)).toArray();
             Assert.assertArrayEquals(pArray, rArray);
         }
+    }
+
+    @Test
+    public void test2() {
+        for (Object o : Arrays.asList(LEX, GRLEX, ALEX, GREVLEX))
+            Assert.assertEquals(o, ZipUtil.uncompress(ZipUtil.compress(o)));
     }
 }
