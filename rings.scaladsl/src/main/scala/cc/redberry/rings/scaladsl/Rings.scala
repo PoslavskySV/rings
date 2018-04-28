@@ -1,9 +1,8 @@
 package cc.redberry.rings.scaladsl
 
-import java.util.Objects
-
 import cc.redberry.rings
 import cc.redberry.rings._
+import cc.redberry.rings.io.{Coder, IParser, IStringifier, Stringifiable}
 import cc.redberry.rings.poly.multivar.MonomialOrder
 
 import scala.language.{existentials, implicitConversions, postfixOps}
@@ -14,8 +13,8 @@ import scala.language.{existentials, implicitConversions, postfixOps}
   * @param theRing the [[Ring]]
   **/
 sealed class Ring[E](val theRing: rings.Ring[E])
-  extends ToStringSupport[E]
-    with ElementParser[E]
+  extends Stringifiable[E]
+    with IParser[E]
     with RingSupport[E]
     with Serializable {
 
@@ -27,14 +26,44 @@ sealed class Ring[E](val theRing: rings.Ring[E])
   final type ElementType = E
 
   /**
-    * @inheritdoc
-    **/
-  override final def toString(element: E): String = _show(element)
+    * String from/to conversion for ring elements
+    */
+  lazy val coder: Coder[ElementType] = Coder.mkCoder(theRing)
+
+  /**
+    * Convert element to string
+    */
+  final def stringify(e: E): String = coder.stringify(e)
+
+  /**
+    * Convert element to string
+    */
+  final def stringify(e: TraversableOnce[E]): String = e.map(stringify).mkString
+
+  /**
+    * Convert element to string
+    */
+  final def stringify(e: Stringifiable[E]): String = e.toString(coder)
+
+  /**
+    * Pretty toString
+    */
+  @deprecated("use stringify")
+  final def show(arg: Any): String =
+    if (isElement(arg))
+      stringify(arg.asInstanceOf[E])
+    else
+      arg.toString
 
   /**
     * @inheritdoc
     **/
-  override def parse(string: String): E = theRing parse string
+  override def toString: String = theRing.toString(coder)
+
+  /**
+    * @inheritdoc
+    **/
+  override def parse(string: String): E = coder parse string
 
   /** Parse */
   final def apply(string: String): E = parse(string)
@@ -47,22 +76,28 @@ sealed class Ring[E](val theRing: rings.Ring[E])
 
   final def apply(e: ElementType): E = theRing.valueOf(e)
 
-  final def apply(a: String, b: String): (E, E) = (parse(a), parse(b))
+
+  final def apply(a: String, b: String): (E, E) = (apply(a), apply(b))
 
   final def apply(a: String, b: String, c: String): (E, E, E)
-  = (parse(a), parse(b), parse(c))
+  = (apply(a), apply(b), apply(c))
 
   final def apply(a: String, b: String, c: String, d: String): (E, E, E, E)
-  = (parse(a), parse(b), parse(c), parse(d))
+  = (apply(a), apply(b), apply(c), apply(d))
 
   final def apply(a: String, b: String, c: String, d: String, e: String): (E, E, E, E, E)
-  = (parse(a), parse(b), parse(c), parse(d), parse(e))
+  = (apply(a), apply(b), apply(c), apply(d), apply(e))
 
-  /**
-    * @inheritdoc
-    **/
-  override def toString: String = Objects.toString(theRing)
+  final def apply(a: Int, b: Int): (E, E) = (apply(a), apply(b))
 
+  final def apply(a: Int, b: Int, c: Int): (E, E, E)
+  = (apply(a), apply(b), apply(c))
+
+  final def apply(a: Int, b: Int, c: Int, d: Int): (E, E, E, E)
+  = (apply(a), apply(b), apply(c), apply(d))
+
+  final def apply(a: Int, b: Int, c: Int, d: Int, e: Int): (E, E, E, E, E)
+  = (apply(a), apply(b), apply(c), apply(d), apply(e))
 
   /** element class  */
   private lazy val eClass: Class[_ <: E] = theRing.getZero.getClass
@@ -76,21 +111,6 @@ sealed class Ring[E](val theRing: rings.Ring[E])
     * Casts e to element of this
     */
   final def element(e: Any): E = e.asInstanceOf[E]
-
-  protected[scaladsl] def _show(obj: Any): String = Objects.toString(obj)
-
-  /**
-    * Pretty toString
-    */
-  final def show(arg: Any): String = arg match {
-    case obj: Array[_] =>
-      obj.map(show).mkString("[", ",", "]")
-    case obj: Product =>
-      obj.productIterator.map(show).mkString("(", ",", ")")
-    case obj: Traversable[_] =>
-      obj.map(show).toString
-    case any@_ => _show(any)
-  }
 }
 
 /**
@@ -99,19 +119,12 @@ sealed class Ring[E](val theRing: rings.Ring[E])
 final case class Frac[E](ring: Ring[E]) extends Ring[Rational[E]](rings.Rings.Frac(scaladsl.ringMethods(ring))) {
   private val rationalsDomain: rings.Rationals[E] = theRing.asInstanceOf[rings.Rationals[E]]
 
-  /**
-    * @inheritdoc
-    **/
-  override def parse(string: String): Rational[E] = rationalsDomain.parse(ring, string)
+  private[scaladsl] val fracRing: rings.Rationals[E] = theRing.asInstanceOf[rings.Rationals[E]]
 
   /**
-    * Pretty toString
+    * String from/to conversion for ring elements
     */
-  override def _show(obj: Any): String = obj match {
-    case rat: Rational[E] =>
-      rat.toString(ring)
-    case element => ring.show(element)
-  }
+  override lazy val coder: Coder[ElementType] = Coder.mkRationalsCoder[E](fracRing, ring.coder)
 
   def apply(a: E): Rational[E] = new Rational[E](rationalsDomain.ring, a)
 
@@ -160,44 +173,6 @@ abstract class IPolynomialRing[Poly <: IPolynomial[Poly], E]
   = super.isElement(e) && e.asInstanceOf[Poly].sameCoefficientRingWith(theRing.getZero)
 
   /**
-    * Parse polynomial
-    */
-  override def parse(string: String): Poly = theRing.parse(string, variables)
-
-  private lazy val toStringSupport: ToStringSupport[Any] = new ToStringSupport[Any] {
-    override def toString(element: Any): String = show(element)
-  }
-
-  /**
-    * To string
-    */
-  override def _show(obj: Any): String = obj match {
-    case el: E if cfRing.isElement(el) => cfRing.show(el)
-    case obj: FactorDecomposition[PolyType] =>
-      obj.toString(toStringSupport.asInstanceOf[ToStringSupport[PolyType]])
-    case wv: WithVariables => show(wv)
-    case _ => super._show(obj)
-  }
-
-  /**
-    * String representation of polynomial from this ring
-    */
-  protected[scaladsl] def show(obj: WithVariables): String = obj match {
-    case fct: FactorDecomposition[Poly] => fct.toString(this)
-    case el if isElement(el) => el.toString(variables)
-    case _ => obj.toString()
-  }
-
-  /**
-    * String representation of a seq of polynomials
-    */
-  final def show(list: Traversable[_]): String
-  = list.map {
-    case wv: WithVariables => show(wv)
-    case p => p.toString
-  }.toString
-
-  /**
     * Index of variable with specified string representation
     */
   final def index(variable: String): Int = variables.indexOf(variable)
@@ -206,11 +181,6 @@ abstract class IPolynomialRing[Poly <: IPolynomial[Poly], E]
     * Index of variable with specified string representation
     */
   final def variable(variable: String): Int = index(variable)
-
-  /**
-    * String representation of this ring
-    */
-  override def toString: String = theRing.toString(variables)
 
   /**
     * The first variable
@@ -295,10 +265,10 @@ abstract class IPolynomialRing[Poly <: IPolynomial[Poly], E]
 
 object PolynomialRing {
   def apply[Poly <: IPolynomial[Poly], E](factory: Poly): IPolynomialRing[Poly, E] = factory match {
-    case p: UnivariatePolynomialZp64 => UnivariateRingZp64(p.ring, WithVariables.defaultVars(1)(0)).asInstanceOf[IPolynomialRing[Poly, E]]
-    case p: UnivariatePolynomial[E forSome {type E}] => UnivariateRing(p.ring, WithVariables.defaultVars(1)(0)).asInstanceOf[IPolynomialRing[Poly, E]]
-    case p: MultivariatePolynomialZp64 => MultivariateRingZp64(p.ring, WithVariables.defaultVars(p.nVariables), p.ordering).asInstanceOf[IPolynomialRing[Poly, E]]
-    case p: MultivariatePolynomial[E forSome {type E}] => MultivariateRing(p.ring, WithVariables.defaultVars(p.nVariables), p.ordering).asInstanceOf[IPolynomialRing[Poly, E]]
+    case p: UnivariatePolynomialZp64 => UnivariateRingZp64(p.ring, IStringifier.defaultVar()).asInstanceOf[IPolynomialRing[Poly, E]]
+    case p: UnivariatePolynomial[E forSome {type E}] => UnivariateRing(p.ring, IStringifier.defaultVar()).asInstanceOf[IPolynomialRing[Poly, E]]
+    case p: MultivariatePolynomialZp64 => MultivariateRingZp64(p.ring, IStringifier.defaultVars(p.nVariables), p.ordering).asInstanceOf[IPolynomialRing[Poly, E]]
+    case p: MultivariatePolynomial[E forSome {type E}] => MultivariateRing(p.ring, IStringifier.defaultVars(p.nVariables), p.ordering).asInstanceOf[IPolynomialRing[Poly, E]]
     case _ => ???
   }
 }
@@ -310,8 +280,8 @@ object PolynomialRing {
   * @param variable the variable
   */
 sealed abstract class IUnivariateRing[Poly <: IUnivariatePolynomial[Poly], E]
-(override val theRing: rings.poly.IPolynomialRing[Poly],
- val variable: String) extends IPolynomialRing[Poly, E](theRing, Array(variable)) {
+(override val theRing: rings.poly.IPolynomialRing[Poly], val variable: String)
+  extends IPolynomialRing[Poly, E](theRing, Array(variable)) {
 
   /** Set names of variables (new ring will be created) */
   override def setVariableNames(newVariables: Array[String]): IUnivariateRing[Poly, E]
@@ -335,6 +305,12 @@ sealed abstract class IUnivariateRing[Poly <: IUnivariatePolynomial[Poly], E]
 private[scaladsl] sealed abstract class AUnivariateRingZp64
 (override val theRing: rings.poly.IPolynomialRing[UnivariatePolynomialZp64], override val variable: String)
   extends IUnivariateRing[UnivariatePolynomialZp64, Long](theRing, variable) {
+
+  /**
+    * String from/to conversion for ring elements
+    */
+  final override lazy val coder: Coder[ElementType] = Coder.mkUnivariateCoder(theRing, variable)
+
   /**
     * Constant polynomial with specified value
     */
@@ -397,38 +373,12 @@ private[scaladsl] sealed abstract class AUnivariateRingZp64
 }
 
 private[scaladsl] sealed abstract class AUnivariateRing[E]
-(override val theRing: rings.poly.IPolynomialRing[UnivariatePolynomial[E]], override val variable: String,
- private val ringOption: Option[UnivariateRing[E]] = None)
+(override val theRing: rings.poly.IPolynomialRing[UnivariatePolynomial[E]], override val variable: String)
   extends IUnivariateRing[UnivariatePolynomial[E], E](theRing, variable) {
-
   /**
-    * @inheritdoc
+    * String from/to conversion for ring elements
     */
-  override def parse(string: String): UnivariatePolynomial[E] = ringOption match {
-    case Some(ring) => theRing.valueOf(theRing.factory().parsePoly(string, ring.cfRing, variable))
-    case None => super.parse(string)
-  }
-
-  /**
-    * @inheritdoc
-    */
-  override def show(obj: WithVariables): String = ringOption match {
-    case Some(ring) =>
-      obj match {
-        case poly: UnivariatePolynomial[E] => poly.toString(ring.cfRing, variable)
-        case cfx if ringOption.isDefined && ringOption.get.isElement(cfx) => ringOption.get.show(cfx)
-        case _ => super.show(obj)
-      }
-    case None => super.show(obj)
-  }
-
-  /**
-    * @inheritdoc
-    */
-  override val toString: String = ringOption match {
-    case Some(ring) => theRing.toString(ring.cfRing.toString, variables)
-    case None => super.toString
-  }
+  final override lazy val coder: Coder[ElementType] = Coder.mkUnivariateCoder(theRing, cfRing.coder, variable)
 
   /**
     * Constant polynomial with specified value
@@ -503,7 +453,6 @@ private[scaladsl] sealed abstract class AUnivariateRing[E]
 final case class GaloisField64
 (override val theRing: rings.poly.FiniteField[UnivariatePolynomialZp64], override val variable: String)
   extends AUnivariateRingZp64(theRing, variable) {
-
   /**
     * The coefficient ring
     */
@@ -520,22 +469,12 @@ final case class GaloisField64
   * @param variable the variable of univariate polynomials representing this Galois field
   */
 final case class GaloisField[E]
-(override val theRing: rings.poly.FiniteField[UnivariatePolynomial[E]], override val variable: String,
- private val ringOption: Option[UnivariateRing[E]] = None)
+(override val theRing: rings.poly.FiniteField[UnivariatePolynomial[E]], override val variable: String, _cfRing: Ring[E] = null)
   extends AUnivariateRing[E](theRing, variable) {
-
   /**
     * The coefficient ring
     */
-  override val cfRing: Ring[E] = theRing.factory().ring
-
-  /**
-    * @inheritdoc
-    */
-  override val toString: String = ringOption match {
-    case Some(ring) => theRing.toString(ring.cfRing.toString, this, variables)
-    case None => theRing.toString(variables)
-  }
+  override val cfRing: Ring[E] = if (_cfRing == null) theRing.factory().ring else _cfRing
 
   /** Set names of variables (new ring will be created) */
   override def setVariableNames(newVariables: Array[String]): GaloisField[E] = copy(variable = newVariables(0))
@@ -567,15 +506,8 @@ object GF {
     * Create Galois field from the specified irreducible polynomial and represented by univariate polynomials with
     * specified variable
     */
-  def apply[E](irreducible: UnivariatePolynomial[E], variable: String)
-  = GaloisField[E](rings.Rings.GF(irreducible), variable)
-
-  /**
-    * Create Galois field from the specified irreducible polynomial and represented by univariate polynomials with
-    * specified variable
-    */
-  def apply[E](irreducible: UnivariatePolynomial[E], univariateRing: UnivariateRing[E], variable: String)
-  = GaloisField[E](rings.Rings.GF(irreducible), variable, Some(univariateRing))
+  def apply[E](irreducible: UnivariatePolynomial[E], variable: String)(implicit cfRing: Ring[E])
+  = GaloisField[E](rings.Rings.GF(irreducible), variable, _cfRing = cfRing)
 }
 
 /**
@@ -611,12 +543,6 @@ object UnivariateRingZp64 {
   */
 final case class UnivariateRing[E](override val cfRing: Ring[E], override val variable: String)
   extends AUnivariateRing[E](rings.Rings.UnivariateRing(cfRing.theRing), variable) {
-
-  /**
-    * @inheritdoc
-    */
-  override val toString: String = theRing.toString(cfRing.toString, variables)
-
   /** Set names of variables (new ring will be created) */
   override def setVariableNames(newVariables: Array[String]): UnivariateRing[E] = copy(variable = newVariables(0))
 }
@@ -627,6 +553,16 @@ final case class UnivariateRing[E](override val cfRing: Ring[E], override val va
 final case class UnivariateQuotientRing[Poly <: IUnivariatePolynomial[Poly], E]
 (baseRing: IUnivariateRing[Poly, E], modulus: Poly)
   extends IUnivariateRing[Poly, E](rings.Rings.UnivariateQuotientRing[Poly](baseRing.theRing, modulus), baseRing.variable) {
+  /**
+    * String from/to conversion for ring elements
+    */
+  override lazy val coder: Coder[ElementType] = baseRing.coder
+
+  /**
+    * @inheritdoc
+    **/
+  override def parse(string: String): Poly = apply(coder.parse(string))
+
   /**
     * The coefficient ring
     */
@@ -702,8 +638,7 @@ final case class UnivariateQuotientRing[Poly <: IUnivariatePolynomial[Poly], E]
   * @param variables the variables
   */
 sealed abstract class IMultivariateRing[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
-(override val theRing: rings.poly.IPolynomialRing[Poly],
- variables: Array[String],
+(override val theRing: rings.poly.IPolynomialRing[Poly], variables: Array[String],
  val ordering: Ordering) extends IPolynomialRing[Poly, E](theRing, variables) {
 
   /** Set names of variables (new ring will be created) */
@@ -735,6 +670,14 @@ final case class MultivariateRingZp64
 (coefficientDomain: IntegersZp64, override val variables: Array[String], override val ordering: Ordering)
   extends IMultivariateRing[MonomialZp64, MultivariatePolynomialZp64, Long](
     rings.Rings.MultivariateRingZp64(variables.length, coefficientDomain, ordering), variables, ordering) {
+
+  private[scaladsl] val multivariateRing: poly.MultivariateRing[PolyType] = theRing.asInstanceOf[rings.poly.MultivariateRing[PolyType]]
+
+  /**
+    * String from/to conversion for ring elements
+    */
+  override lazy val coder: Coder[ElementType] = Coder.mkMultivariateCoder[MonomialType, PolyType](multivariateRing, variables: _*)
+
   /**
     * The coefficient ring
     */
@@ -823,29 +766,17 @@ final case class MultivariateRing[E]
 (coefficientDomain: Ring[E], override val variables: Array[String], override val ordering: Ordering)
   extends IMultivariateRing[Monomial[E], MultivariatePolynomial[E], E](
     rings.Rings.MultivariateRing(variables.length, scaladsl.ringMethods(coefficientDomain), ordering), variables, ordering) {
+  private[scaladsl] val multivariateRing: poly.MultivariateRing[PolyType] = theRing.asInstanceOf[rings.poly.MultivariateRing[PolyType]]
+
+  /**
+    * String from/to conversion for ring elements
+    */
+  override lazy val coder: Coder[ElementType] = Coder.mkMultivariateCoder[E](multivariateRing, cfRing.coder, variables: _*)
+
   /**
     * The coefficient ring
     */
   override val cfRing: Ring[E] = coefficientDomain
-
-  /**
-    * @inheritdoc
-    */
-  override def show(obj: WithVariables): String = obj match {
-    case poly: MultivariatePolynomial[E] => poly.toString(coefficientDomain, variables)
-    case el if coefficientDomain.isElement(el) => coefficientDomain._show(el)
-    case _ => super.show(obj)
-  }
-
-  /**
-    * @inheritdoc
-    */
-  override def parse(string: String): MultivariatePolynomial[E] = theRing.factory().parsePoly(string, coefficientDomain, variables)
-
-  /**
-    * @inheritdoc
-    */
-  override val toString: String = theRing.toString(coefficientDomain.toString, variables)
 
   /**
     * Constant polynomial with specified value
@@ -921,11 +852,11 @@ object MultivariateRing {
   = factory match {
     case _: poly.multivar.MultivariatePolynomialZp64 => {
       val f = factory.asInstanceOf[MultivariatePolynomialZp64]
-      new MultivariateRingZp64(f.ring, WithVariables.defaultVars(f.nVariables), f.ordering).asInstanceOf[IMultivariateRing[Term, Poly, E]]
+      new MultivariateRingZp64(f.ring, IStringifier.defaultVars(f.nVariables), f.ordering).asInstanceOf[IMultivariateRing[Term, Poly, E]]
     }
     case _: poly.multivar.MultivariatePolynomial[_] => {
       val f = factory.asInstanceOf[MultivariatePolynomial[_]]
-      new MultivariateRing[E](asRing(f.ring).asInstanceOf[Ring[E]], WithVariables.defaultVars(f.nVariables), f.ordering).asInstanceOf[IMultivariateRing[Term, Poly, E]]
+      new MultivariateRing[E](asRing(f.ring).asInstanceOf[Ring[E]], IStringifier.defaultVars(f.nVariables), f.ordering).asInstanceOf[IMultivariateRing[Term, Poly, E]]
     }
   }
 }
@@ -1008,7 +939,7 @@ final case class Ideal[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[
     */
   lazy val ltIdeal: Ideal[Term, Poly, E] = Ideal(ring, theIdeal.ltIdeal())
 
-  override def toString = theIdeal.toString(ring.variables)
+  override def toString = theIdeal.toString(ring.coder)
 }
 
 object Ideal {
@@ -1074,6 +1005,16 @@ final case class QuotientRing[Term <: AMonomial[Term], Poly <: AMultivariatePoly
   extends IMultivariateRing[Term, Poly, E](
     rings.Rings.QuotientRing[Term, Poly](baseRing.theRing, ideal.theIdeal),
     baseRing.variables, baseRing.theRing.factory().ordering) {
+  /**
+    * String from/to conversion for ring elements
+    */
+  override lazy val coder: Coder[ElementType] = baseRing.coder
+
+  /**
+    * @inheritdoc
+    **/
+  override def parse(string: String): Poly = apply(coder.parse(string))
+
   /**
     * Evaluate poly for given variable
     */

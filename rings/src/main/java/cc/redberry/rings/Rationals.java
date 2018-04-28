@@ -1,6 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Iterator;
@@ -14,14 +15,9 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     private static final long serialVersionUID = 1L;
     /** Ring that numerator and denominator belongs to */
     public final Ring<E> ring;
-    /** constants */
-    private final Rational<E> zero, one, minusOne;
 
     public Rationals(Ring<E> ring) {
         this.ring = ring;
-        this.zero = Rational.zero(ring);
-        this.one = Rational.one(ring);
-        this.minusOne = one.negate();
     }
 
     @Override
@@ -63,8 +59,18 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
+    public Rational<E> addMutable(Rational<E> a, Rational<E> b) {
+        return a.addMutable(b);
+    }
+
+    @Override
     public Rational<E> subtract(Rational<E> a, Rational<E> b) {
         return a.subtract(b);
+    }
+
+    @Override
+    public Rational<E> subtractMutable(Rational<E> a, Rational<E> b) {
+        return a.subtractMutable(b);
     }
 
     @Override
@@ -73,8 +79,18 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
+    public Rational<E> multiplyMutable(Rational<E> a, Rational<E> b) {
+        return a.multiplyMutable(b);
+    }
+
+    @Override
     public Rational<E> negate(Rational<E> element) {
         return element.negate();
+    }
+
+    @Override
+    public Rational<E> negateMutable(Rational<E> element) {
+        return element.negateMutable();
     }
 
     @Override
@@ -85,7 +101,12 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     @Override
     @SuppressWarnings("unchecked")
     public Rational<E>[] divideAndRemainder(Rational<E> dividend, Rational<E> divider) {
-        return new Rational[]{dividend.divide(divider), zero};
+        return new Rational[]{dividend.divide(divider), Rational.zero(ring)};
+    }
+
+    @Override
+    public Rational<E> divideExactMutable(Rational<E> dividend, Rational<E> divider) {
+        return dividend.divideMutable(divider);
     }
 
     @Override
@@ -95,17 +116,37 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> gcd(Rational<E> a, Rational<E> b) {
-        return one;
+        return Rational.one(ring);
+    }
+
+    @Override
+    public FactorDecomposition<Rational<E>> factorSquareFree(Rational<E> element) {
+        FactorDecomposition<Rational<E>> numFactors = ring.factorSquareFree(element.numerator)
+                .mapTo(this, p -> new Rational<>(ring, p));
+        FactorDecomposition<Rational<E>> denFactors = ring.factorSquareFree(element.denominator)
+                .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
+
+        return numFactors.addAll(denFactors);
+    }
+
+    @Override
+    public FactorDecomposition<Rational<E>> factor(Rational<E> element) {
+        FactorDecomposition<Rational<E>> numFactors = ring.factor(element.numerator)
+                .mapTo(this, p -> new Rational<>(ring, p));
+        FactorDecomposition<Rational<E>> denFactors = ring.factor(element.denominator)
+                .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
+
+        return numFactors.addAll(denFactors);
     }
 
     @Override
     public Rational<E> getZero() {
-        return zero;
+        return Rational.zero(ring);
     }
 
     @Override
     public Rational<E> getOne() {
-        return one;
+        return Rational.one(ring);
     }
 
     @Override
@@ -135,7 +176,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> copy(Rational<E> element) {
-        return element;
+        return new Rational<>(true, ring, ring.copy(element.numerator), ring.copy(element.denominator));
     }
 
     @Override
@@ -164,7 +205,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> getNegativeOne() {
-        return minusOne;
+        return Rational.one(ring).negateMutable();
     }
 
     @Override
@@ -181,54 +222,11 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return new Rational<>(ring, ring.valueOf(rnd.nextInt()), eden);
     }
 
-    public Rational<E> randomNonTrivialElement(RandomGenerator rnd) {
-        E den;
-        do {den = ring.randomElement(rnd);} while (ring.isZero(den));
-        return new Rational<>(ring, ring.randomElement(rnd), den);
-    }
-
-    public Rational<E> parse(ElementParser<E> parser, String string) {
-        int level = 0;
-        int indexOfDiv = -1;
-        for (int i = 0; i < string.length(); i++) {
-            char c = string.charAt(i);
-            if (c == '(')
-                ++level;
-            else if (c == ')')
-                --level;
-            if (level == 0 && c == '/')
-                if (indexOfDiv != -1)
-                    throw new IllegalArgumentException("not a valid rational");
-                else indexOfDiv = i;
-        }
-        if (indexOfDiv == -1)
-            return new Rational<>(ring, parser.parse(removeParenthesis(string)));
-        return new Rational<>(ring,
-                parser.parse(removeParenthesis(string.substring(0, indexOfDiv)).trim()),
-                parser.parse(removeParenthesis(string.substring(indexOfDiv + 1)).trim()));
-    }
-
     @Override
-    public Rational<E> parse(String string) {
-        return parse(ring, string);
-    }
-
-    private static String removeParenthesis(String string) {
-        string = string.trim();
-        if (!string.startsWith("(") || !string.endsWith(")"))
-            return string;
-
-        int level = 0;
-        for (int i = 0; i < (string.length() - 1); i++) {
-            char c = string.charAt(i);
-            if (c == '(')
-                ++level;
-            else if (c == ')')
-                --level;
-            if (level == 0)
-                return string;
-        }
-        return string.substring(1, string.length() - 1);
+    public Rational<E> randomElementTree(RandomGenerator rnd) {
+        E den;
+        do {den = ring.randomElementTree(rnd);} while (ring.isZero(den));
+        return new Rational<>(ring, ring.randomElementTree(rnd), den);
     }
 
     @Override
@@ -252,7 +250,12 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
+    public String toString(IStringifier<Rational<E>> stringifier) {
+        return ring.equals(Rings.Z) ? "Q" : "Frac(" + ring.toString(stringifier.substringifier(ring)) + ")";
+    }
+
+    @Override
     public String toString() {
-        return ring.equals(Rings.Z) ? "Q" : "Q[" + ring + "]";
+        return toString(IStringifier.dummy());
     }
 }

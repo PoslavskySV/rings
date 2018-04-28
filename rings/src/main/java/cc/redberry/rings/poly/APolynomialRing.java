@@ -1,10 +1,9 @@
 package cc.redberry.rings.poly;
 
 import cc.redberry.rings.ARing;
-import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 
-import java.util.Arrays;
 import java.util.Iterator;
 
 /**
@@ -136,34 +135,40 @@ abstract class APolynomialRing<Poly extends IPolynomial<Poly>> extends ARing<Pol
     }
 
     @Override
-    public Poly parse(String string) {
-        return factory.parsePoly(string);
-    }
-
-    @Override
-    public Poly parse(String string, String[] variables) {
-        return factory.parsePoly(string, variables);
-    }
-
-    @Override
     public Iterator<Poly> iterator() {
         throw new UnsupportedOperationException("Ring of infinite cardinality.");
     }
 
     @Override
-    public String toString(String[] variables) {
-        return toString(factory.coefficientRingToString(), variables);
+    public Poly parse(String string) {
+        return factory.parsePoly(string);
     }
 
     @Override
-    public String toString(String coefficientDomain, String[] variables) {
-        if (factory.isOverFiniteField())
-            coefficientDomain = "(" + coefficientDomain + ")";
-        return coefficientDomain + Arrays.toString(Arrays.copyOf(variables, nVariables()));
+    public String toString(IStringifier<Poly> stringifier) {
+        String cfRing = factory.coefficientRingToString(stringifier);
+        if (cfRing.length() > 2)
+            cfRing = "(" + cfRing + ")";
+        StringBuilder sb = new StringBuilder();
+        sb.append(cfRing);
+        sb.append("[");
+        int nVars = nVariables();
+        for (int i = 0; ; ++i) {
+            sb.append(stringifier.getBinding(variable(i), IStringifier.defaultVar(i, nVars)));
+            if (i == nVars - 1)
+                break;
+            sb.append(", ");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    public String toString(String... variables) {
+        return toString(IStringifier.mkPolyStringifier(factory, variables));
     }
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(nVariables()));
+        return toString(IStringifier.defaultVars(nVariables()));
     }
 }

@@ -1,6 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.WithVariables;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.util.ArraysUtil;
 
 import java.util.ArrayList;
@@ -293,7 +293,7 @@ public class DegreeVector implements java.io.Serializable {
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(exponents.length));
+        return toString(IStringifier.defaultVars(exponents.length));
     }
 
     public final String toStringArray() {

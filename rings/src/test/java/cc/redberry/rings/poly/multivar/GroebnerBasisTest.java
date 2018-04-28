@@ -5,6 +5,7 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.test.TimeConsuming;
@@ -1273,6 +1274,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
         setMonomialOrder(ideal, monomialOrder);
 
         Poly factory = ideal.get(0);
+        IPolynomialRing<Poly> ring = Rings.PolynomialRing(factory);
         int nVars = factory.nVariables;
         String[] vars = new String[nVars];
         for (int i = 1; i <= nVars; i++)
@@ -1347,7 +1349,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
             String[] split = singularOut.split("OUTPUTSTARTSHERE")[1].split("TIMESEPARATOR");
             // parse polynomials
-            List<Poly> std = Arrays.stream(split[0].split(",")).map(str -> factory.parsePoly(str, vars)).collect(Collectors.toList());
+            List<Poly> std = Arrays.stream(split[0].split(",")).map(str -> ring.parse(str, vars)).collect(Collectors.toList());
 //            // minimize Groebner basis
 //            minimizeGroebnerBases(std);
 //            // reduce Groebner basis

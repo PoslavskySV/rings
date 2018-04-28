@@ -1,6 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Iterator;
 
@@ -144,5 +145,20 @@ public abstract class AQuotientRing<E> implements Ring<E> {
     @Override
     public int compare(E o1, E o2) {
         return baseRing.compare(o1, o2);
+    }
+
+    @Override
+    public E parse(String string) {
+        return valueOf(baseRing.parse(string));
+    }
+
+    @Override
+    public E randomElement(RandomGenerator rnd) {
+        return valueOf(baseRing.randomElement(rnd));
+    }
+
+    @Override
+    public E randomElementTree(RandomGenerator rnd) {
+        return valueOf(baseRing.randomElementTree(rnd));
     }
 }

@@ -1,7 +1,7 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.bigint.BigIntegerUtil;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
@@ -1452,7 +1452,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
 
     @Override
     public final String toString() {
-        return toString(WithVariables.defaultVars(nVariables));
+        return toString(IStringifier.dummy());
     }
 
     static long[] KroneckerMap(int[] degrees) {

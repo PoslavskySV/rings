@@ -1,7 +1,7 @@
 package cc.redberry.rings.poly;
 
 import cc.redberry.rings.AQuotientRing;
-import cc.redberry.rings.WithVariables;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.multivar.AMonomial;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.multivar.Ideal;
@@ -38,32 +38,18 @@ public class QuotientRing<Term extends AMonomial<Term>, Poly extends AMultivaria
     }
 
     @Override
-    public Poly parse(String string) {
-        return parse(string, WithVariables.defaultVars(nVariables()));
-    }
-
-    @Override
-    public Poly parse(String string, String[] variables) {
-        return valueOf(factory.parsePoly(string, variables));
-    }
-
-    @Override
     public Poly variable(int variable) {
         return factory.createMonomial(variable, 1);
     }
 
-    @Override
-    public String toString(String[] variables) {
-        return toString(factory.coefficientRingToString(), variables);
-    }
 
     @Override
-    public String toString(String coefficientDomain, String[] variables) {
-        return ((IPolynomialRing) baseRing).toString(coefficientDomain, variables) + "/" + ideal.toString(variables) + "";
+    public String toString(IStringifier<Poly> stringifier) {
+        return baseRing.toString(stringifier) + "/<" + ideal.toString(stringifier) + ">";
     }
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(nVariables()));
+        return toString(IStringifier.dummy());
     }
 }

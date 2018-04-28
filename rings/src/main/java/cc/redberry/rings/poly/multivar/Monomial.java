@@ -65,6 +65,11 @@ public class Monomial<E> extends AMonomial<Monomial<E>> {
         return new Monomial<>(exponents, totalDegree, coefficient);
     }
 
+    @Override
+    public Monomial<E> forceSetDegreeVector(int[] exponents, int totalDegree) {
+        return new Monomial<>(exponents, totalDegree, coefficient);
+    }
+
     public Monomial<E> setCoefficient(E c) {
         return new Monomial<>(exponents, totalDegree, c);
     }

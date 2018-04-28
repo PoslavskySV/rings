@@ -983,7 +983,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
                         MultivariatePolynomialZp64.parse("1+2*b*c^3*d*f^3+2*b^2*c^3*d^2*e^2*f^3+2*a*b^3*d*e^2*f^2+2*a^2*b*c^3*d^3*e*f^3", domain, vars),
                         MultivariatePolynomialZp64.parse("1+2*a^2*b^2*d*e^2*f^2+a^3*b^3*c*d^3*f", domain, vars),
                         MultivariatePolynomialZp64.parse("1+a*b^2*c^2*e*f^2+2*a^3*e^2+2*a^3*b*c*d^2*e^2+2*a^3*b^2*c*e", domain, vars),
-                        MultivariatePolynomialZp64.parse("1+b^3*c*d^3*e^3+a*b*c^2*d*e^3*f^3+2*a^2*e^2*f^", domain, vars),
+                        MultivariatePolynomialZp64.parse("1+b^3*c*d^3*e^3+a*b*c^2*d*e^3*f^3+2*a^2*e^2*f", domain, vars),
                 };
 
         MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
@@ -1116,7 +1116,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
     @Test
     public void testMultivariateFactorization25_SmallDomain() throws Exception {
         IntegersZp64 domain = new IntegersZp64(2);
-        String[] vars = {"a", "b", "c", "d", "e"};
+        String[] vars = {"a", "b", "c", "d", "e", "f"};
         MultivariatePolynomialZp64 arr[] = {
                 MultivariatePolynomialZp64.parse("1+b*c*d^3*e^2*f^2+b^2*e+a^2*b*d^2*f", domain, vars),
                 MultivariatePolynomialZp64.parse("1+b^3*c^3*d*e^2+a^2*b^3*c*e^3*f^3", domain, vars),
@@ -1241,7 +1241,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
     @Test
     public void testMultivariateFactorizationRandom4_SmallDomain_c() throws Exception {
         IntegersZp64 domain = new IntegersZp64(5);
-        String[] vars = {"a", "b", "c", "d", "e"};
+        String[] vars = {"a", "b", "c", "d", "e", "f"};
 
         MultivariatePolynomialZp64 arr[] = {
                 MultivariatePolynomialZp64.parse("1+2*c^3*d^2*e*f^2+3*a*b*c*e^3*f^2+4*a^2*d*e+4*a^3*c^3*d^2*e^3", domain, vars),

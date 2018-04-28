@@ -3,7 +3,10 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.multivar.MonomialOrder;
+import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
 
 import java.util.Arrays;
 
@@ -38,16 +41,29 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
 
     /**
      * Parse string into polynomial
+     *
+     * @deprecated use {@link #parse(String, IntegersZp64, String)}
      */
+    @Deprecated
     public static UnivariatePolynomialZp64 parse(String string, long modulus) {
         return parse(string, new IntegersZp64(modulus));
     }
 
     /**
      * Parse string into polynomial
+     *
+     * @deprecated use {@link #parse(String, IntegersZp64, String)}
      */
+    @Deprecated
     public static UnivariatePolynomialZp64 parse(String string, IntegersZp64 modulus) {
         return UnivariatePolynomial.asOverZp64(UnivariatePolynomial.parse(string, modulus.asGenericRing()));
+    }
+
+    /**
+     * Parse string into polynomial
+     */
+    public static UnivariatePolynomialZp64 parse(String string, IntegersZp64 modulus, String variable) {
+        return UnivariatePolynomial.asOverZp64(UnivariatePolynomial.parse(string, modulus.asGenericRing(), variable));
     }
 
     /**
@@ -528,7 +544,12 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     }
 
     @Override
-    public String coefficientRingToString() {
+    public String coefficientRingToString(IStringifier<UnivariatePolynomialZp64> stringifier) {
         return ring.toString();
+    }
+
+    @Override
+    public MultivariatePolynomialZp64 asMultivariate() {
+        return MultivariatePolynomialZp64.asMultivariate(this, 1, 0, MonomialOrder.DEFAULT);
     }
 }

@@ -1,14 +1,14 @@
 package cc.redberry.rings.poly;
 
 import cc.redberry.rings.Ring;
-import cc.redberry.rings.WithVariables;
+import cc.redberry.rings.io.Coder;
 
 /**
  * Polynomial ring.
  *
  * @since 1.0
  */
-public interface IPolynomialRing<Poly extends IPolynomial<Poly>> extends Ring<Poly>, WithVariables {
+public interface IPolynomialRing<Poly extends IPolynomial<Poly>> extends Ring<Poly> {
     /**
      * Number of polynomial variables
      */
@@ -20,23 +20,21 @@ public interface IPolynomialRing<Poly extends IPolynomial<Poly>> extends Ring<Po
     Poly factory();
 
     /**
-     * Parse string into polynomial
-     *
-     * @param string    string
-     * @param variables names of variables
-     */
-    Poly parse(String string, String[] variables);
-
-    /**
-     * Creates monomial corresponding to specified variable
+     * Creates poly representing a single specified variable
      */
     Poly variable(int variable);
 
     /**
-     * String representation of this ring.
-     *
-     * @param coefficientDomain coefficient ring
-     * @param vars              variable names
+     * Parse poly from string using specified variables representation
      */
-    String toString(String coefficientDomain, String[] vars);
+    default Poly parse(String string, String... variables) {
+        return mkCoder(variables).parse(string);
+    }
+
+    /**
+     * Simple coder for this ring
+     */
+    default Coder<Poly, ?, ?> mkCoder(String... variables) {
+        return Coder.mkPolynomialCoder(this, variables);
+    }
 }

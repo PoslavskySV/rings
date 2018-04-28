@@ -2,6 +2,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Ring;
+import cc.redberry.rings.bigint.BigInteger;
 
 import java.io.Serializable;
 
@@ -15,6 +16,11 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
      * Multiplies two terms
      */
     Term multiply(Term a, Term b);
+
+    /**
+     * Multiplies term by a number
+     */
+    Term multiply(Term a, BigInteger b);
 
     /**
      * Gives quotient {@code dividend / divider } or null if exact division is not possible
@@ -98,6 +104,11 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
 
         public MonomialAlgebraZp64(IntegersZp64 ring) {
             this.ring = ring;
+        }
+
+        @Override
+        public MonomialZp64 multiply(MonomialZp64 a, BigInteger b) {
+            return new MonomialZp64(a.exponents, ring.multiply(a.coefficient, ring.modulus(b)));
         }
 
         @Override
@@ -185,6 +196,11 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
         public Monomial<E> multiply(Monomial<E> a, Monomial<E> b) {
             DegreeVector dv = a.dvMultiply(b);
             return new Monomial<>(dv, ring.multiply(a.coefficient, b.coefficient));
+        }
+
+        @Override
+        public Monomial<E> multiply(Monomial<E> a, BigInteger b) {
+            return new Monomial<>(a.exponents, ring.multiply(a.coefficient, ring.valueOfBigInteger(b)));
         }
 
         @Override
