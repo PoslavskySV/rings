@@ -2013,10 +2013,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    @Deprecated
     public MultivariatePolynomial<E> parsePoly(String string) {
         MultivariatePolynomial<E> r = parse(string, ring, ordering);
         if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field: " + string);
+            return parse(string, ring, ordering, IStringifier.defaultVars(nVariables));
         return r;
     }
 

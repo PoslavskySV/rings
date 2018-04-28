@@ -1875,6 +1875,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
+    @Deprecated
     public MultivariatePolynomialZp64 parsePoly(String string) {
         MultivariatePolynomialZp64 r = parse(string, ring, ordering);
         if (r.nVariables != nVariables)
