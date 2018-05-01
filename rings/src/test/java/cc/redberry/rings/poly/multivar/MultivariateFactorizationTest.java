@@ -10,6 +10,7 @@ import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.RandomDataGenerator;
+import cc.redberry.rings.util.RandomUtil;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -18,10 +19,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -2161,6 +2160,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         Assert.assertEquals(3, Factor(poly).size());
     }
 
+
     @Ignore
     @Test
     public void testMultivariateFactorization49() throws Exception {
@@ -2169,7 +2169,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
 
         MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(7, Z);
         Supplier<MultivariatePolynomial<BigInteger>> random
-                = () -> RandomMultivariatePolynomials.randomPolynomial(ring.nVariables(), 0, 15,
+                = () -> randomPolynomial(ring.nVariables(), 0, 15,
                 20, Z, MonomialOrder.GREVLEX, r -> new BigInteger(16, r), rnd);
 
         MultivariatePolynomial<BigInteger> poly = ring.multiply(random.get(), random.get(), random.get());
@@ -2179,6 +2179,25 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
             Assert.assertEquals(poly, factor.multiply());
         }
+
+        // 101s  <- new
+        // 98s  <- new
+
+        // 116s  <- old
+        // 103s  <- old
+    }
+
+    static <E> MultivariatePolynomial<E> randomPolynomial(int nVars, int minDegree, int maxDegree, int size, Ring<E> ring,
+                                                          Comparator<DegreeVector> ordering,
+                                                          Function<RandomGenerator, E> method, RandomGenerator rnd) {
+        @SuppressWarnings("unchecked")
+        Monomial<E>[] terms = new Monomial[size];
+        for (int i = 0; i < size; i++) {
+            E cfx = method.apply(rnd);
+            int[] exponents = RandomUtil.randomIntArray(nVars, minDegree, maxDegree, rnd);
+            terms[i] = new Monomial<>(exponents, cfx);
+        }
+        return MultivariatePolynomial.create(nVars, ring, ordering, terms);
     }
 
     /* ==================================== Test data =============================================== */
