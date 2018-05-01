@@ -1,6 +1,6 @@
 package cc.redberry.rings.scaladsl
 
-import org.junit.Test
+import org.junit.{Ignore, Test}
 
 import scala.concurrent.duration._
 
@@ -9,6 +9,7 @@ import scala.concurrent.duration._
   */
 class FermatTest {
 
+  @Ignore
   @Test
   def test(): Unit = {
     implicit val ring = Frac(MultivariateRing(Z, Array("n1", "n2", "n3", "n4", "n5", "d", "i", "ppp", "qq")))
@@ -3386,7 +3387,7 @@ class FermatTest {
     ring.coder.bind("e7", e7)
 
     println("===> parsed ")
-    for (i <- 1 to 10) {
+    for (i <- 1 to 100) {
       var start = System.nanoTime()
       val p1 = ring(
         """
@@ -3475,8 +3476,12 @@ class FermatTest {
       val timeP4 = System.nanoTime() - start
       println(s"p4: ${timeP4.nanos.toMillis}ms")
 
-      println(s"Total d: ${(timeP1 + timeP3 + timeP4).nanos.toMillis}")
+      println(s"Total time: ${(timeP1 + timeP3 + timeP4).nanos.toMillis}ms")
       println()
+
+      //Total time: 776ms
+      //Total time: 888ms
+      //Total time: 810ms
     }
   }
 }

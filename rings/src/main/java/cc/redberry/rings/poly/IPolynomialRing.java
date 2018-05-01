@@ -24,6 +24,11 @@ public interface IPolynomialRing<Poly extends IPolynomial<Poly>> extends Ring<Po
      */
     Poly variable(int variable);
 
+    @Override
+    default int signum(Poly element) {
+        return element.signumOfLC();
+    }
+
     /**
      * Parse poly from string using specified variables representation
      */

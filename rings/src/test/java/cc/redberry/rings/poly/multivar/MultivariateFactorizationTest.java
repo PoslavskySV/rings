@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -1527,10 +1528,11 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         for (int i = 0; i < its(20, 20); i++) {
-            //long start = System.nanoTime();
+            PrivateRandom.getRandom().setSeed(3);
+            long start = System.nanoTime();
             PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateFactorization.FactorInGF(base);
             Assert.assertEquals(4, decomposition.size());
-            //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println("=> " + i + "  " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }
 
@@ -2157,6 +2159,26 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
 
         MultivariatePolynomial<BigInteger> poly = p1.createOne().multiply(m);
         Assert.assertEquals(3, Factor(poly).size());
+    }
+
+    @Ignore
+    @Test
+    public void testMultivariateFactorization49() throws Exception {
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(1);
+
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(7, Z);
+        Supplier<MultivariatePolynomial<BigInteger>> random
+                = () -> RandomMultivariatePolynomials.randomPolynomial(ring.nVariables(), 0, 15,
+                20, Z, MonomialOrder.GREVLEX, r -> new BigInteger(16, r), rnd);
+
+        MultivariatePolynomial<BigInteger> poly = ring.multiply(random.get(), random.get(), random.get());
+        for (int i = 0; i < 1000; ++i) {
+            long start = System.nanoTime();
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> factor = Factor(poly);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(poly, factor.multiply());
+        }
     }
 
     /* ==================================== Test data =============================================== */

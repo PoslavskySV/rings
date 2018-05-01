@@ -47,7 +47,7 @@ public class Rational<E> implements Comparable<Rational<E>>,
             throw new ArithmeticException("division by zero");
         if (!ring.isZero(numerator)) {
             E gcd = ring.gcd(numerator, denominator);
-            if(!ring.isUnit( gcd)) {
+            if (!ring.isUnit(gcd)) {
                 numerator = ring.divideExact(numerator, gcd);
                 denominator = ring.divideExact(denominator, gcd);
             }
@@ -155,8 +155,13 @@ public class Rational<E> implements Comparable<Rational<E>>,
                 set(ring.getOne());
                 return;
             }
-            if (size() == 1)
+            if (size() == 1) {
+                if (ring.signum(first()) < 0) {
+                    set(0, ring.negate(first()));
+                    add(0, ring.getNegativeOne());
+                }
                 return;
+            }
 
             E unit = ring.getOne(), simple = ring.getOne();
             for (int i = size() - 1; i >= 0; --i)

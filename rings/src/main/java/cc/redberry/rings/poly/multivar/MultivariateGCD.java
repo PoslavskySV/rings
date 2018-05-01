@@ -484,18 +484,36 @@ public final class MultivariateGCD {
         if (b.size() == 1)
             return gcdWithMonomial(b.lt(), a);
         if (a.degree() == 1)
-            if (MultivariateDivision.dividesQ(b, a))
-                return a;
-            else
-                return a.createOne();
+            return gcdWithLinearPoly(b, a);
         if (b.degree() == 1)
-            if (MultivariateDivision.dividesQ(a, b))
-                return b;
-            else
-                return b.createOne();
+            return gcdWithLinearPoly(a, b);
         if (a.equals(b))
             return a.clone();
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly gcdWithLinearPoly(Poly poly, Poly linear) {
+        if (poly.isOverField()) {
+            if (MultivariateDivision.dividesQ(poly, linear))
+                return linear.clone().monic();
+            else
+                return linear.createOne();
+        } else
+            return (Poly) linearGCDe((MultivariatePolynomial) poly, (MultivariatePolynomial) linear);
+    }
+
+    private static <E> MultivariatePolynomial<E> linearGCDe(MultivariatePolynomial<E> poly, MultivariatePolynomial<E> linear) {
+        E lContent = linear.content();
+        E pContent = poly.content();
+        E cGCD = poly.ring.gcd(lContent, pContent);
+
+        linear = linear.clone().divideExact(lContent);
+        if (MultivariateDivision.dividesQ(poly, linear))
+            return linear.multiply(cGCD);
+        else
+            return linear.createConstant(cGCD);
     }
 
     private static int
@@ -715,14 +733,25 @@ public final class MultivariateGCD {
 //                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
 //            }
 
-        boolean isSmallCardinality = a.coefficientRingCardinality().bitLength() <= 10;
         long[] subs = new long[nVariables];
         RandomGenerator rnd = PrivateRandom.getRandom();
-        for (int i = 0; i < nVariables; i++)
-            do {
-                // find non trivial substitution
+        if (a.coefficientRingCardinality().bitLength() <= 10) {
+            // in case of small cardinality we have to do clever
+            int cardinality = a.coefficientRingCardinality().intValue();
+            for (int i = 0; i < nVariables; i++) {
+                TLongHashSet seen = new TLongHashSet();
+                do {
+                    if (seen.size() > cardinality - 2)
+                        return; // nothing can be done
+                    // find non trivial substitution
+                    long rval;
+                    do { rval = a.ring.randomNonZeroElement(rnd); } while (seen.contains(rval));
+                    subs[i] = rval;
+                } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
+            }
+        } else
+            for (int i = 0; i < nVariables; i++)
                 subs[i] = a.ring.randomNonZeroElement(rnd);
-            } while (isSmallCardinality && (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero()));
 
         UnivariatePolynomialZp64[]
                 uaImages = univariateImages(a, subs),
@@ -774,13 +803,25 @@ public final class MultivariateGCD {
 //                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
 //            }
 
-        boolean isSmallCardinality = a.coefficientRingCardinality().bitLength() <= 10;
         E[] subs = a.ring.createArray(nVariables);
         RandomGenerator rnd = PrivateRandom.getRandom();
-        for (int i = 0; i < nVariables; i++)
-            do {
+        if (a.coefficientRingCardinality().bitLength() <= 10) {
+            // in case of small cardinality we have to do clever
+            int cardinality = a.coefficientRingCardinality().intValue();
+            for (int i = 0; i < nVariables; i++) {
+                Set<E> seen = new HashSet<>();
+                do {
+                    if (seen.size() > cardinality - 2)
+                        return; // nothing can be done
+                    // find non trivial substitution
+                    E rval;
+                    do { rval = a.ring.randomNonZeroElement(rnd); } while (seen.contains(rval));
+                    subs[i] = rval;
+                } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
+            }
+        } else
+            for (int i = 0; i < nVariables; i++)
                 subs[i] = a.ring.randomElement(rnd);
-            } while (isSmallCardinality && (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero()));
 
         UnivariatePolynomial<E>[]
                 uaImages = univariateImages(a, subs),
@@ -826,10 +867,16 @@ public final class MultivariateGCD {
     static void adjustDegreeBoundsZ(MultivariatePolynomial<BigInteger> a,
                                     MultivariatePolynomial<BigInteger> b,
                                     int[] gcdDegreeBounds) {
+        // perform some test modulo prime
+        MultivariatePolynomialZp64 aMod, bMod;
+        //do {
         // some random prime number
-        long prime = SmallPrimes.nextPrime((1 << 20) + PrivateRandom.getRandom().nextInt(1 << 6));
-        IntegersZp64 zpRing = Rings.Zp64(prime);
-        adjustDegreeBounds(MultivariatePolynomial.asOverZp64(a, zpRing), MultivariatePolynomial.asOverZp64(b, zpRing), gcdDegreeBounds);
+        IntegersZp64 zpRing = Rings.Zp64(SmallPrimes.nextPrime((1 << 20) + PrivateRandom.getRandom().nextInt(1 << 10)));
+        aMod = MultivariatePolynomial.asOverZp64(a, zpRing);
+        bMod = MultivariatePolynomial.asOverZp64(b, zpRing);
+        //} while (!a.sameSkeletonQ(aMod) || !b.sameSkeletonQ(bMod));
+
+        adjustDegreeBounds(aMod, bMod, gcdDegreeBounds);
         if (ArraysUtil.sum(gcdDegreeBounds) == 0)
             return;
 
@@ -3493,8 +3540,6 @@ public final class MultivariateGCD {
     }
 
 
-    static long MODG = 0;
-
     /**
      * Calculates GCD of two multivariate polynomials over Zp using Zippel's algorithm with sparse interpolation.
      *
@@ -3506,7 +3551,6 @@ public final class MultivariateGCD {
     public static MultivariatePolynomialZp64 ZippelGCD(
             MultivariatePolynomialZp64 a,
             MultivariatePolynomialZp64 b) {
-        long start = System.nanoTime();
         // prepare input and test for early termination
         GCDInput<MonomialZp64, MultivariatePolynomialZp64> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
         if (gcdInput.earlyGCD != null)
@@ -3530,9 +3574,7 @@ public final class MultivariateGCD {
             // ground fill is too small for modular algorithm
             return lKaltofenMonaganSparseModularGCDInGF(gcdInput);
 
-        result = result.multiply(content);
-        MODG += System.nanoTime() - start;
-        return gcdInput.restoreGCD(result);
+        return gcdInput.restoreGCD(result.multiply(content));
     }
 
     @SuppressWarnings("unchecked")
