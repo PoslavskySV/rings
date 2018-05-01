@@ -24,6 +24,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -2257,8 +2258,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
         MultivariateRing<MultivariatePolynomialZp64> R = Rings.MultivariateRingZp64(3, SmallPrimes.nextPrime(1 << 25));
         for (int j = 1; j < 2; ++j) {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-                    MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
-                            "cc/redberry/rings/poly/multivar/HugeGCDinZp.txt.gz"))))) {
+                    new FileInputStream(
+                            "src/test/resources/cc/redberry/rings/poly/multivar/HugeGCDinZp.txt.gz"))))) {
                 String s1 = in.readLine();
                 String s2 = in.readLine();
 
@@ -2284,8 +2285,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
         MultivariateRing<MultivariatePolynomial<BigInteger>> R = Rings.MultivariateRing(3, Rings.Z);
         for (int j = 1; j < 4; ++j) {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-                    MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
-                            "cc/redberry/rings/poly/multivar/HugeGCDinZ.txt.gz"))))) {
+                    new FileInputStream(
+                            "src/test/resources/cc/redberry/rings/poly/multivar/HugeGCDinZ.txt.gz"))))) {
                 String s1 = in.readLine();
                 String s2 = in.readLine();
 
@@ -2310,8 +2311,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
     public void testHugePoly3() throws Exception {
         MultivariateRing<MultivariatePolynomial<BigInteger>> R = Rings.MultivariateRing(7, Rings.Z);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
-                        "cc/redberry/rings/poly/multivar/HugeGCDinZ.LinZip.txt.gz"))))) {
+                new FileInputStream(
+                        "src/test/resources/cc/redberry/rings/poly/multivar/HugeGCDinZ.LinZip.txt.gz"))))) {
             int iProblem = 0;
             String line;
             while ((line = in.readLine()) != null) {
@@ -2365,8 +2366,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 R = Rings.MultivariateRing(3, Rings.Z),
                 modR = Rings.MultivariateRing(3, Rings.Zp(1073741827));
         try (BufferedReader in = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-                MultivariateGCDTest.class.getClassLoader().getResourceAsStream(
-                        "cc/redberry/rings/poly/multivar/HugeHugeGCDinZ.txt.gz"))))) {
+                new FileInputStream(
+                        "src/test/resources/cc/redberry/rings/poly/multivar/HugeHugeGCDinZ.txt.gz"))))) {
             int iProblem = 0;
             String line;
             while ((line = in.readLine()) != null) {
@@ -2423,6 +2424,50 @@ public class MultivariateGCDTest extends AMultivariateTest {
         }
         //2s
         //11s
+    }
+
+    @Test
+    public void testTrivial1() {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(7, Rings.Z);
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(1);
+        MultivariatePolynomial<BigInteger> a =
+                RandomMultivariatePolynomials.randomPolynomial(ring.nVariables(), 15, 20,
+                        2500, Rings.Z, MonomialOrder.GREVLEX, r -> Rings.Z.valueOf(1 + r.nextInt(100)), rnd);
+
+        MultivariatePolynomial<BigInteger> b =
+                RandomMultivariatePolynomials.randomPolynomial(ring.nVariables(), 15, 20,
+                        2, Rings.Z, MonomialOrder.GREVLEX, r -> Rings.Z.valueOf(1 + r.nextInt(100)), rnd);
+
+        for (int i = 0; i < 10; ++i) {
+            long start = System.nanoTime();
+            PolynomialGCD(a, b).size();
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+        // 825us
+        // 1850us
+        // 1911us
+        // 2ms
+        // 2ms
+    }
+
+    @Test
+    public void testTrivial2() {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(7, Rings.Z);
+        MultivariatePolynomial<BigInteger> a = ring.parse("x1*x2^3*x3*x4^3*x5^4-1*x2^5*x3*x4^3*x5^4-1*x1^7*x3^4*x4^3*x5*x6^2*x7^4+x1^6*x2^2*x3^4*x4^3*x5*x6^2*x7^4+x1^7*x3^4*x4^3*x5*x6^4*x7^3+x1^5*x3^2*x4^6*x5^2*x6^6*x7+x1^8*x3*x4^2*x5*x6^7*x7^4+x1^8*x2*x3*x4^3*x6^6*x7^4-1*x1^6*x2^2*x3^4*x4^3*x5*x6^4*x7^3-1*x1^4*x2^2*x3^2*x4^6*x5^2*x6^6*x7-1*x1^5*x3^2*x4^6*x5^2*x6^8-1*x1^7*x2^2*x3*x4^2*x5*x6^7*x7^4-1*x1^9*x3*x4^3*x5*x6^6*x7^4+x1^7*x3*x4^6*x6^6*x7^4-1*x1^7*x2^3*x3*x4^3*x6^6*x7^4-1*x1^8*x3*x4^2*x5*x6^9*x7^3-1*x1^8*x2*x3*x4^3*x6^8*x7^3+x1^4*x2^2*x3^2*x4^6*x5^2*x6^8+x1^8*x2^2*x3*x4^3*x5*x6^6*x7^4+x1^7*x2^2*x3*x4^2*x5*x6^9*x7^3+x1^9*x3*x4^3*x5*x6^8*x7^3-1*x1^7*x3*x4^6*x6^8*x7^3+x1^7*x2^3*x3*x4^3*x6^8*x7^3+x1^4*x2^3*x3^5*x5*x6^6*x7^7-1*x1^8*x2^2*x3*x4^3*x5*x6^8*x7^3-1*x1^3*x2^5*x3^5*x5*x6^6*x7^7-1*x1^4*x2^3*x3^5*x5*x6^8*x7^6+x1^8*x3^5*x4^3*x5^2*x6^5*x7^4+x1^3*x2^5*x3^5*x5*x6^8*x7^6+x1^8*x3^5*x4^4*x5*x6^6*x7^4-1*x1^7*x2^2*x3^5*x4^3*x5^2*x6^5*x7^4-1*x1^8*x3^5*x4^3*x5^2*x6^7*x7^3-1*x1^7*x2^2*x3^5*x4^4*x5*x6^6*x7^4-1*x1^8*x3^5*x4^4*x5*x6^8*x7^3+x1^7*x2^2*x3^5*x4^3*x5^2*x6^7*x7^3-1*x1^8*x2^6*x3^2*x4^3*x5*x6^6*x7^4+x1^7*x2^2*x3^5*x4^4*x5*x6^8*x7^3+x1^7*x2^8*x3^2*x4^3*x5*x6^6*x7^4+x1^8*x2^6*x3^2*x4^3*x5*x6^8*x7^3-1*x1^7*x2^8*x3^2*x4^3*x5*x6^8*x7^3-1*x1^11*x4^3*x5^5*x6^10*x7^4+x1^10*x2^2*x4^3*x5^5*x6^10*x7^4+x1^11*x4^3*x5^5*x6^12*x7^3-1*x1^10*x2^2*x4^3*x5^5*x6^12*x7^3");
+        MultivariatePolynomial<BigInteger> b = ring.parse("-1*x1^8*x3*x4^2*x5*x6^6*x7^4+x1^7*x2^2*x3*x4^2*x5*x6^6*x7^4+x1^8*x3*x4^2*x5*x6^8*x7^3-1*x1^7*x2^2*x3*x4^2*x5*x6^8*x7^3");
+        for (int i = 0; i < 10; ++i) {
+            long start = System.nanoTime();
+            PolynomialGCD(a, b).size();
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
+
+        // 273us
+        // 306us
+        // 882us
+        // 457us
+        // 351us
+        // 276us
     }
 
     /* =============================================== Test data =============================================== */

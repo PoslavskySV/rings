@@ -9,6 +9,7 @@ import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.PrimesIterator;
+import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
@@ -482,10 +483,25 @@ public final class MultivariateGCD {
             return gcdWithMonomial(a.lt(), b);
         if (b.size() == 1)
             return gcdWithMonomial(b.lt(), a);
+        if (a.degree() == 1)
+            if (MultivariateDivision.dividesQ(b, a))
+                return a;
+            else
+                return a.createOne();
+        if (b.degree() == 1)
+            if (MultivariateDivision.dividesQ(a, b))
+                return b;
+            else
+                return b.createOne();
         if (a.equals(b))
             return a.clone();
         return null;
     }
+
+    private static int
+            EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD = 1024,
+            EARLY_ADJUST_POLY_DISBALANCE = 10,
+            EARLY_ADJUST_LARGE_POLY_SIZE_THRESHOLD = EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD * EARLY_ADJUST_POLY_DISBALANCE;
 
     /** prepare input for modular GCD algorithms (Brown, Zippel, LinZip) */
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
@@ -511,16 +527,41 @@ public final class MultivariateGCD {
                 degreeBounds[] = new int[nVariables]; // degree bounds for gcd
 
         // populate initial gcd degree bounds
-        for (int i = 0; i < nVariables; i++)
+        int nUnused = 0;
+        for (int i = 0; i < nVariables; i++) {
             degreeBounds[i] = Math.min(aDegrees[i], bDegrees[i]);
+            if (degreeBounds[i] == 0)
+                ++nUnused;
+        }
+
+        if (nUnused == nVariables)
+            // all variables are unused
+            return new GCDInput<>(a.create(monomialGCD));
+
+        boolean adjusted = false;
+        int
+                maxSize = Math.max(a.size(), b.size()),
+                minSize = Math.min(a.size(), b.size());
+        if (maxSize < EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD
+                || (maxSize < EARLY_ADJUST_LARGE_POLY_SIZE_THRESHOLD
+                && (maxSize / minSize) >= EARLY_ADJUST_POLY_DISBALANCE)) {
+            // adjust degree bounds with randomized substitutions and univariate images (relatively expensive)
+            // do this only if polynomials are relatively small
+            adjustDegreeBounds(a, b, degreeBounds);
+            adjusted = true;
+        }
 
         GCDInput<Term, Poly> earlyGCD;
+        // get rid of variables with degreeBounds[var] == 0
         earlyGCD = getRidOfUnusedVariables(a, b, gcdAlgorithm, monomialGCD, degreeBounds);
         if (earlyGCD != null)
             return earlyGCD;
 
-        adjustDegreeBounds(a, b, degreeBounds);
+        if (!adjusted)
+            // adjust degree bounds with randomized substitutions and univariate images (relatively expensive)
+            adjustDegreeBounds(a, b, degreeBounds);
 
+        // get rid of variables with degreeBounds[var] == 0 if such occured after a call to #adjustDegreeBounds
         earlyGCD = getRidOfUnusedVariables(a, b, gcdAlgorithm, monomialGCD, degreeBounds);
         if (earlyGCD != null)
             return earlyGCD;
@@ -674,28 +715,56 @@ public final class MultivariateGCD {
 //                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
 //            }
 
-        int[] vars = new int[nVariables];
+        boolean isSmallCardinality = a.coefficientRingCardinality().bitLength() <= 10;
         long[] subs = new long[nVariables];
         RandomGenerator rnd = PrivateRandom.getRandom();
-        for (int i = 0; i < nVariables; i++) {
-            vars[i] = i;
+        for (int i = 0; i < nVariables; i++)
             do {
-                subs[i] = a.ring.randomElement(rnd);
-            } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
-        }
+                // find non trivial substitution
+                subs[i] = a.ring.randomNonZeroElement(rnd);
+            } while (isSmallCardinality && (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero()));
+
+        UnivariatePolynomialZp64[]
+                uaImages = univariateImages(a, subs),
+                ubImages = univariateImages(b, subs);
         for (int i = 0; i < nVariables; i++) {
-            UnivariatePolynomialZp64
-                    ua = a.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate(),
-                    ub = b.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate();
+            UnivariatePolynomialZp64 ua = uaImages[i], ub = ubImages[i];
             if (ua.degree() != a.degree(i) || ub.degree() != b.degree(i))
                 continue;
             gcdDegreeBounds[i] = Math.min(gcdDegreeBounds[i], UnivariateGCD.PolynomialGCD(ua, ub).degree());
         }
     }
 
-    private static <E> void adjustDegreeBounds(MultivariatePolynomial<E> a,
-                                               MultivariatePolynomial<E> b,
-                                               int[] gcdDegreeBounds) {
+    /** substitutes {@code values} for {@code variables} */
+    @SuppressWarnings("unchecked")
+    static UnivariatePolynomialZp64[] univariateImages(MultivariatePolynomialZp64 poly, long[] subs) {
+        long[][] univariate = new long[poly.nVariables][];
+        for (int i = 0; i < univariate.length; ++i)
+            univariate[i] = new long[poly.degree(i) + 1];
+
+        long[] tmp = new long[poly.nVariables];
+        MultivariatePolynomialZp64.lPrecomputedPowersHolder powers = poly.mkPrecomputedPowers(subs);
+        for (MonomialZp64 term : poly) {
+            Arrays.fill(tmp, term.coefficient);
+            for (int i = 0; i < poly.nVariables; ++i) {
+                long val = powers.pow(i, term.exponents[i]);
+                for (int j = 0; j < i; ++j)
+                    tmp[j] = poly.ring.multiply(tmp[j], val);
+                for (int j = i + 1; j < poly.nVariables; ++j)
+                    tmp[j] = poly.ring.multiply(tmp[j], val);
+            }
+            for (int i = 0; i < poly.nVariables; ++i)
+                univariate[i][term.exponents[i]] = poly.ring.add(univariate[i][term.exponents[i]], tmp[i]);
+        }
+        UnivariatePolynomialZp64[] result = new UnivariatePolynomialZp64[poly.nVariables];
+        for (int i = 0; i < poly.nVariables; ++i)
+            result[i] = UnivariatePolynomialZp64.createUnsafe(poly.ring, univariate[i]);
+        return result;
+    }
+
+    static <E> void adjustDegreeBounds(MultivariatePolynomial<E> a,
+                                       MultivariatePolynomial<E> b,
+                                       int[] gcdDegreeBounds) {
         int nVariables = a.nVariables;
 //        for (int i = 0; i < nVariables; i++)
 //            if (gcdDegreeBounds[i] == 0) {
@@ -705,29 +774,65 @@ public final class MultivariateGCD {
 //                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
 //            }
 
-        int[] vars = new int[nVariables];
+        boolean isSmallCardinality = a.coefficientRingCardinality().bitLength() <= 10;
         E[] subs = a.ring.createArray(nVariables);
         RandomGenerator rnd = PrivateRandom.getRandom();
-        for (int i = 0; i < nVariables; i++) {
-            vars[i] = i;
+        for (int i = 0; i < nVariables; i++)
             do {
                 subs[i] = a.ring.randomElement(rnd);
-            } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
-        }
+            } while (isSmallCardinality && (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero()));
 
+        UnivariatePolynomial<E>[]
+                uaImages = univariateImages(a, subs),
+                ubImages = univariateImages(b, subs);
         for (int i = 0; i < nVariables; i++) {
-            UnivariatePolynomial<E>
-                    ua = a.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate(),
-                    ub = b.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate();
+            UnivariatePolynomial<E> ua = uaImages[i], ub = ubImages[i];
             if (ua.degree() != a.degree(i) || ub.degree() != b.degree(i))
                 continue;
             gcdDegreeBounds[i] = Math.min(gcdDegreeBounds[i], UnivariateGCD.PolynomialGCD(ua, ub).degree());
         }
     }
 
-    private static void adjustDegreeBoundsZ(MultivariatePolynomial<BigInteger> a,
-                                            MultivariatePolynomial<BigInteger> b,
-                                            int[] gcdDegreeBounds) {
+    /** substitutes {@code values} for {@code variables} */
+    @SuppressWarnings("unchecked")
+    static <E> UnivariatePolynomial<E>[] univariateImages(MultivariatePolynomial<E> poly, E[] subs) {
+        E[][] univariate = poly.ring.createArray2d(poly.nVariables);
+        for (int i = 0; i < univariate.length; ++i)
+            univariate[i] = poly.ring.createZeroesArray(poly.degree(i) + 1);
+
+        E[] tmp = poly.ring.createArray(poly.nVariables);
+        MultivariatePolynomial.PrecomputedPowersHolder<E> powers = poly.mkPrecomputedPowers(subs);
+        for (Monomial<E> term : poly) {
+            Arrays.fill(tmp, term.coefficient);
+            for (int i = 0; i < poly.nVariables; ++i) {
+                E val = powers.pow(i, term.exponents[i]);
+                for (int j = 0; j < i; ++j)
+                    tmp[j] = poly.ring.multiply(tmp[j], val);
+                for (int j = i + 1; j < poly.nVariables; ++j)
+                    tmp[j] = poly.ring.multiply(tmp[j], val);
+            }
+            for (int i = 0; i < poly.nVariables; ++i)
+                univariate[i][term.exponents[i]] = poly.ring.add(univariate[i][term.exponents[i]], tmp[i]);
+        }
+        UnivariatePolynomial<E>[] result = new UnivariatePolynomial[poly.nVariables];
+        for (int i = 0; i < poly.nVariables; ++i) {
+            result[i] = UnivariatePolynomial.createUnsafe(poly.ring, univariate[i]);
+            assert result[i].equals(
+                    poly.evaluate(ArraysUtil.remove(ArraysUtil.sequence(0, poly.nVariables), i), ArraysUtil.remove(subs, i)).asUnivariate());
+        }
+        return result;
+    }
+
+    static void adjustDegreeBoundsZ(MultivariatePolynomial<BigInteger> a,
+                                    MultivariatePolynomial<BigInteger> b,
+                                    int[] gcdDegreeBounds) {
+        // some random prime number
+        long prime = SmallPrimes.nextPrime((1 << 20) + PrivateRandom.getRandom().nextInt(1 << 6));
+        IntegersZp64 zpRing = Rings.Zp64(prime);
+        adjustDegreeBounds(MultivariatePolynomial.asOverZp64(a, zpRing), MultivariatePolynomial.asOverZp64(b, zpRing), gcdDegreeBounds);
+        if (ArraysUtil.sum(gcdDegreeBounds) == 0)
+            return;
+
         int nVariables = a.nVariables;
 //        for (int i = 0; i < nVariables; i++)
 //            if (gcdDegreeBounds[i] == 0) {
@@ -737,21 +842,42 @@ public final class MultivariateGCD {
 //                    b = b.evaluateAtRandomPreservingSkeleton(i, PrivateRandom.getRandom());
 //            }
 
-        int[] vars = new int[nVariables];
-        BigInteger[] subs = a.ring.createArray(nVariables);
-        for (int i = 0; i < subs.length; i++) {
-            vars[i] = i;
-            subs[i] = BigInteger.ONE;
-        }
+        BigInteger[] subs = new BigInteger[a.nVariables];
+        Arrays.fill(subs, BigInteger.ONE);
 
+        UnivariatePolynomial<BigInteger>[]
+                uaImages = univariateImagesZ(a, subs),
+                ubImages = univariateImagesZ(b, subs);
         for (int i = 0; i < nVariables; i++) {
-            UnivariatePolynomial<BigInteger>
-                    ua = a.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate(),
-                    ub = b.evaluate(ArraysUtil.remove(vars, i), ArraysUtil.remove(subs, i)).asUnivariate();
+            UnivariatePolynomial<BigInteger> ua = uaImages[i], ub = ubImages[i];
             if (ua.degree() != a.degree(i) || ub.degree() != b.degree(i))
                 continue;
             gcdDegreeBounds[i] = Math.min(gcdDegreeBounds[i], UnivariateGCD.PolynomialGCD(ua, ub).degree());
         }
+    }
+
+
+    /** substitutes {@code values} for {@code variables} */
+    @SuppressWarnings("unchecked")
+    static UnivariatePolynomial<BigInteger>[] univariateImagesZ(MultivariatePolynomial<BigInteger> poly, BigInteger[] subs) {
+        assert Arrays.stream(subs).allMatch(BigInteger::isOne);
+        BigInteger[][] univariate = new BigInteger[poly.nVariables][];
+        for (int i = 0; i < univariate.length; ++i) {
+            univariate[i] = new BigInteger[poly.degree(i) + 1];
+            Arrays.fill(univariate[i], BigInteger.ZERO);
+        }
+        BigInteger[] tmp = poly.ring.createArray(poly.nVariables);
+        for (Monomial<BigInteger> term : poly) {
+            Arrays.fill(tmp, term.coefficient);
+            for (int i = 0; i < poly.nVariables; ++i)
+                univariate[i][term.exponents[i]] = poly.ring.add(univariate[i][term.exponents[i]], tmp[i]);
+        }
+        UnivariatePolynomial<BigInteger>[] result = new UnivariatePolynomial[poly.nVariables];
+        for (int i = 0; i < poly.nVariables; ++i) {
+            result[i] = UnivariatePolynomial.createUnsafe(poly.ring, univariate[i]);
+            assert (result[i].equals(poly.evaluate(ArraysUtil.remove(ArraysUtil.sequence(0, poly.nVariables), i), ArraysUtil.remove(subs, i)).asUnivariate()));
+        }
+        return result;
     }
 
     /** gcd with monomial */
@@ -3367,6 +3493,8 @@ public final class MultivariateGCD {
     }
 
 
+    static long MODG = 0;
+
     /**
      * Calculates GCD of two multivariate polynomials over Zp using Zippel's algorithm with sparse interpolation.
      *
@@ -3378,7 +3506,7 @@ public final class MultivariateGCD {
     public static MultivariatePolynomialZp64 ZippelGCD(
             MultivariatePolynomialZp64 a,
             MultivariatePolynomialZp64 b) {
-
+        long start = System.nanoTime();
         // prepare input and test for early termination
         GCDInput<MonomialZp64, MultivariatePolynomialZp64> gcdInput = preparedGCDInput(a, b, MultivariateGCD::ZippelGCD);
         if (gcdInput.earlyGCD != null)
@@ -3403,6 +3531,7 @@ public final class MultivariateGCD {
             return lKaltofenMonaganSparseModularGCDInGF(gcdInput);
 
         result = result.multiply(content);
+        MODG += System.nanoTime() - start;
         return gcdInput.restoreGCD(result);
     }
 

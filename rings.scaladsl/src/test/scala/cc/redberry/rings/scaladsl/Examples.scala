@@ -1053,10 +1053,10 @@ class Examples {
     /** Computes partial fraction decomposition of given rational */
     def apart[E](frac: Rational[E]) = {
       implicit val ring: Ring[E] = frac.ring
-      val factors = ring.factor(frac.denominator).map { case (f, exp) => f.pow(exp) }
-      val (gcd, nums) = solveDiophantine(factors.map(frac.denominator / _))
+      val factors = ring.factor(frac.denominator()).map { case (f, exp) => f.pow(exp) }
+      val (gcd, nums) = solveDiophantine(factors.map(frac.denominator() / _))
       val (ints, rats) = (nums zip factors)
-        .map { case (num, den) => Rational(frac.numerator * num, den * gcd) }
+        .map { case (num, den) => Rational(frac.numerator() * num, den * gcd) }
         .flatMap(_.normal) // extract integral parts from fractions
         .partition(_.isIntegral) // separate integrals and fractions
       rats :+ ints.foldLeft(Rational(ring(0)))(_ + _)

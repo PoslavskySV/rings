@@ -76,7 +76,7 @@ public final class MonomialOrder {
     /**
      * Graded reverse lexicographic monomial order
      */
-    public static final Comparator<DegreeVector> GREVLEX = Grlex.instance;
+    public static final Comparator<DegreeVector> GREVLEX = Grevlex.instance;
 
     private static final class Grevlex implements Comparator<DegreeVector>, Serializable {
         private static final Grevlex instance = new Grevlex();

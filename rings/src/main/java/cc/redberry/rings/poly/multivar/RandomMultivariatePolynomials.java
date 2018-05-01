@@ -85,6 +85,32 @@ public final class RandomMultivariatePolynomials {
     /**
      * Generates random polynomial
      *
+     * @param nVars     number of variables
+     * @param minDegree minimal exponent
+     * @param maxDegree maximalexponent
+     * @param size      number of elements in the result
+     * @param ring      the coefficient ring
+     * @param ordering  monomial order
+     * @param method    method for generating random coefficients
+     * @param rnd       random source
+     * @return random polynomial
+     */
+    public static <E> MultivariatePolynomial<E> randomPolynomial(int nVars, int minDegree, int maxDegree, int size, Ring<E> ring,
+                                                                 Comparator<DegreeVector> ordering,
+                                                                 Function<RandomGenerator, E> method, RandomGenerator rnd) {
+        @SuppressWarnings("unchecked")
+        Monomial<E>[] terms = new Monomial[size];
+        for (int i = 0; i < size; i++) {
+            E cfx = method.apply(rnd);
+            int[] exponents = RandomUtil.randomIntArray(nVars, minDegree, maxDegree, rnd);
+            terms[i] = new Monomial<>(exponents, cfx);
+        }
+        return MultivariatePolynomial.create(nVars, ring, ordering, terms);
+    }
+
+    /**
+     * Generates random polynomial
+     *
      * @param nVars    number of variables
      * @param degree   maximal degree of the result
      * @param size     number of elements in the result

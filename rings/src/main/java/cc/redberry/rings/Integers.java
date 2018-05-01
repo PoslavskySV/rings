@@ -31,7 +31,7 @@ public final class Integers extends AIntegers {
     public BigInteger characteristic() {return BigInteger.ZERO;}
 
     @Override
-    public boolean isUnit(BigInteger element) {return isOne(element);}
+    public boolean isUnit(BigInteger element) {return isOne(element) || isMinusOne(element);}
 
     @Override
     public BigInteger add(BigInteger a, BigInteger b) {return a.add(b);}

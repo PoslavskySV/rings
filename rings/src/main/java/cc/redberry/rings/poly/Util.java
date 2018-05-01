@@ -70,7 +70,7 @@ public final class Util {
         if (!(rep instanceof Rational))
             return false;
 
-        return ((Rational) rep).numerator instanceof BigInteger;
+        return ((Rational) rep).numerator() instanceof BigInteger;
     }
 
     public static final class Tuple2<A, B> {
@@ -95,13 +95,13 @@ public final class Util {
         E denominator = integralRing.getOne();
         for (int i = 0; i <= poly.degree(); i++)
             if (!poly.isZeroAt(i))
-                denominator = integralRing.lcm(denominator, poly.get(i).denominator);
+                denominator = integralRing.lcm(denominator, poly.get(i).denominator());
 
         E[] data = integralRing.createArray(poly.degree() + 1);
         for (int i = 0; i <= poly.degree(); i++) {
             Rational<E> cf = poly.get(i).multiply(denominator);
             assert cf.isIntegral();
-            data[i] = cf.numerator;
+            data[i] = cf.numerator();
         }
         return new Tuple2<>(UnivariatePolynomial.createUnsafe(integralRing, data), denominator);
     }
@@ -117,13 +117,13 @@ public final class Util {
         Ring<E> integralRing = field.getOne().ring;
         E denominator = integralRing.getOne();
         for (Rational<E> cf : poly.coefficients())
-            denominator = integralRing.lcm(denominator, cf.denominator);
+            denominator = integralRing.lcm(denominator, cf.denominator());
 
         final E d = denominator;
         MultivariatePolynomial<E> integral = poly.mapCoefficients(integralRing, cf -> {
             Rational<E> r = cf.multiply(d);
-            assert integralRing.isOne(r.denominator);
-            return r.numerator;
+            assert integralRing.isOne(r.denominator());
+            return r.numerator();
         });
         return new Tuple2<>(integral, denominator);
     }
