@@ -741,11 +741,11 @@ public final class MultivariateGCD {
             for (int i = 0; i < nVariables; i++) {
                 TLongHashSet seen = new TLongHashSet();
                 do {
-                    if (seen.size() > cardinality - 2)
+                    if (seen.size() == cardinality)
                         return; // nothing can be done
                     // find non trivial substitution
                     long rval;
-                    do { rval = a.ring.randomNonZeroElement(rnd); } while (seen.contains(rval));
+                    do { rval = a.ring.randomElement(rnd); } while (seen.contains(rval));
                     seen.add(rval);
                     subs[i] = rval;
                 } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
@@ -812,11 +812,11 @@ public final class MultivariateGCD {
             for (int i = 0; i < nVariables; i++) {
                 Set<E> seen = new HashSet<>();
                 do {
-                    if (seen.size() > cardinality - 2)
+                    if (seen.size() == cardinality)
                         return; // nothing can be done
                     // find non trivial substitution
                     E rval;
-                    do { rval = a.ring.randomNonZeroElement(rnd); } while (seen.contains(rval));
+                    do { rval = a.ring.randomElement(rnd); } while (seen.contains(rval));
                     seen.add(rval);
                     subs[i] = rval;
                 } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
