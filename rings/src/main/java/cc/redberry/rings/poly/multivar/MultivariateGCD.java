@@ -746,6 +746,7 @@ public final class MultivariateGCD {
                     // find non trivial substitution
                     long rval;
                     do { rval = a.ring.randomNonZeroElement(rnd); } while (seen.contains(rval));
+                    seen.add(rval);
                     subs[i] = rval;
                 } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
             }
@@ -816,6 +817,7 @@ public final class MultivariateGCD {
                     // find non trivial substitution
                     E rval;
                     do { rval = a.ring.randomNonZeroElement(rnd); } while (seen.contains(rval));
+                    seen.add(rval);
                     subs[i] = rval;
                 } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
             }
