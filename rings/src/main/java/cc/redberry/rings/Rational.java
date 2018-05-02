@@ -459,7 +459,7 @@ public class Rational<E> implements Comparable<Rational<E>>,
         if (ring.isZero(qd[0]) || ring.isZero(qd[1]))
             return new Rational[]{this};
 
-        return new Rational[]{new Rational(ring, qd[0]), new Rational(ring, qd[1], denominator)};
+        return new Rational[]{new Rational(ring, qd[0]), new Rational(ring, qd[1], denominator())};
     }
 
     /**

@@ -1,11 +1,10 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
-import cc.redberry.rings.{Rational, Rings}
 import cc.redberry.rings.linear.LinearSolver
 import cc.redberry.rings.poly.PolynomialMethods
 import cc.redberry.rings.poly.multivar.MonomialOrder.LEX
-import cc.redberry.rings.poly.multivar.{Ideal, MonomialOrder, MultivariatePolynomial}
+import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial}
 import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariatePolynomialArithmetic}
 import cc.redberry.rings.primes.SmallPrimes
 import org.apache.commons.math3.random.Well1024a
@@ -1065,16 +1064,19 @@ class Examples {
     // partial fraction decomposition for rationals
     // gives List(184/479, (-10)/13, 1/8, (-10)/47, 1)
     val qFracs = apart(Q("1234213 / 2341352"))
+    println(qFracs)
 
     // partial fraction decomposition for rational functions
     val ufRing = Frac(UnivariateRingZp64(17, "x"))
     // gives List(4/(16+x), 1/(10+x), 15/(1+x), (14*x)/(15+7*x+x^2))
     val pFracs = apart(ufRing("1 / (3 - 3*x^2 - x^3 + x^5)"))
+    println(pFracs)
 
     // partial fraction decomposition of rational functions
     // in the ring %$\color{commcolor} Frac(\GF(17, 3)[x, y, z])[W]$%
     implicit val uRing = UnivariateRing(ratRing, "W")
     val W = uRing("W")
     val fracs = apart(Rational(W + 1, (rx / ry + W.pow(2)) * (rz / rx + W.pow(3))))
+    println(fracs)
   }
 }
