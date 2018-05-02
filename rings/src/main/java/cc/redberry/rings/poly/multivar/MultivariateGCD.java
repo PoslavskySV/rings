@@ -806,7 +806,8 @@ public final class MultivariateGCD {
 
         E[] subs = a.ring.createArray(nVariables);
         RandomGenerator rnd = PrivateRandom.getRandom();
-        if (a.coefficientRingCardinality().bitLength() <= 10) {
+        if (a.coefficientRingCardinality() != null
+                && a.coefficientRingCardinality().bitLength() <= 10) {
             // in case of small cardinality we have to do clever
             int cardinality = a.coefficientRingCardinality().intValue();
             for (int i = 0; i < nVariables; i++) {
