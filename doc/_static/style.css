@@ -30,3 +30,7 @@
 	/*color: #006633;*/
 	font-style: italic;
 }
+
+.highlight {
+    background: transparent;
+}
