@@ -560,9 +560,10 @@ public final class MultivariateGCD {
         int
                 maxSize = Math.max(a.size(), b.size()),
                 minSize = Math.min(a.size(), b.size());
-        if (maxSize < EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD
-                || (maxSize < EARLY_ADJUST_LARGE_POLY_SIZE_THRESHOLD
-                && (maxSize / minSize) >= EARLY_ADJUST_POLY_DISBALANCE)) {
+        if (1.0 * nUnused / nVariables <= 0.25 && // if there are not much redundant vars
+                (maxSize < EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD
+                        || (maxSize < EARLY_ADJUST_LARGE_POLY_SIZE_THRESHOLD
+                        && (maxSize / minSize) >= EARLY_ADJUST_POLY_DISBALANCE))) {
             // adjust degree bounds with randomized substitutions and univariate images (relatively expensive)
             // do this only if polynomials are relatively small
             adjustDegreeBounds(a, b, degreeBounds);
