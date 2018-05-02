@@ -1024,7 +1024,7 @@ Polynomials
 |Rings| has separate implementation of univariate (dense) and multivariate (sparse) polynomials. Polynomials over :math:`Z_p` with :math:`p < 2^{64}` are also implemented separately and specifically optimized (coefficients are represented as primitive machine integers instead of generic templatized objects and fast modular arithmetic is used, see :ref:`ref-machine-arithmetic`). Below the type hierarchy of polynomial classes is shown:
 
 .. figure:: _static/PolyUML.png
-   :scale: 100%
+   :width: 100%
    :align: center
 
 

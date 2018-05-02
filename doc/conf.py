@@ -335,4 +335,5 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 def setup(app):
+   app.add_stylesheet("https://media.readthedocs.org/css/sphinx_rtd_theme.css")
    app.add_stylesheet("style.css")
