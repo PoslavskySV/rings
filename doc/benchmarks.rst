@@ -9,6 +9,11 @@
 Benchmarks
 ==========
 
+.. warning::
+
+   The actual benchmarks are moved to https://github.com/PoslavskySV/rings.benchmarks. Below information is outdated.
+
+
 All benchmarks presented below were executed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The complete source code of benchmarks can be found at `GitHub <https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks>`_. The following software were used:
 
  - `Mathematica <http://www.wolfram.com/mathematica>`_ (version 11.1.1.0)
