@@ -1,11 +1,10 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings
-import cc.redberry.rings.{Rational, Rings}
 import cc.redberry.rings.linear.LinearSolver
 import cc.redberry.rings.poly.PolynomialMethods
 import cc.redberry.rings.poly.multivar.MonomialOrder.LEX
-import cc.redberry.rings.poly.multivar.{Ideal, MonomialOrder, MultivariatePolynomial}
+import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial}
 import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariatePolynomialArithmetic}
 import cc.redberry.rings.primes.SmallPrimes
 import org.apache.commons.math3.random.Well1024a
@@ -1109,5 +1108,40 @@ class Examples {
     // this is forbidden (IllegalArgumentException will be thrown):
     // (can't use "a" and "b" instead of "x" and "y")
     val polyerr = ring("a^2 + b*c") // <- error!
+  }
+
+  @Test
+  def test38: Unit = {
+
+    {
+      val rational = Q("1/2/3 + (1-3/5)^3 + 1")
+      println(rational)
+    }
+
+    {
+      implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
+      val poly = ring("x^2 + y^2 + z^2")
+
+      println(ring.stringify(poly))
+    }
+
+    {
+
+      val uRing = UnivariateRingZp64(2, "t")
+      val cfRing = Frac(uRing)
+      implicit val ring = MultivariateRing(cfRing, Array("a", "b", "c"))
+
+      // parse some element
+      val el = ring("(1 + t)*a^2 - c^3 + b/t^2 + (a + b)/(1 + t)^3")
+
+      // stringify it with coder
+      println(ring.stringify(el))
+
+      // associate variable "E" with polynomial el in parser
+      ring.coder.bind("E", el)
+
+      // "E" will be replaced with el by the parser
+      val el2 = ring("(a+b) * E^2 + 1")
+    }
   }
 }

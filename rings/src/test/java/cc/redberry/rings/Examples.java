@@ -889,4 +889,48 @@ public class Examples {
         MultivariatePolynomial<BigInteger> pSquared = coder.parse("p^2");
         assert pSquared.equals(p.square());
     }
+
+    @Test
+    public void test44() {
+        // Parser for rationals
+        Coder<Rational<BigInteger>, ?, ?> qCoder = Coder.mkCoder(Q);
+        // parse some rational number
+        Rational<BigInteger> el = qCoder.parse("1/2/3 + (1-3/5)^3 + 1");
+        System.out.println(el);
+    }
+
+    @Test
+    public void test45() {
+        // univariate ring Z/2[t]
+        UnivariateRing<UnivariatePolynomialZp64> uRing = UnivariateRingZp64(2);
+        // coder for polynomials from Z/2[t]
+        Coder<UnivariatePolynomialZp64, ?, ?> uCoder = Coder.mkUnivariateCoder(uRing, "t");
+
+        // rational functions over Z/2[t]
+        Rationals<UnivariatePolynomialZp64> cfRing = Frac(uRing);
+        // coder for rational functions from Frac(Z/2[t])
+        Coder<Rational<UnivariatePolynomialZp64>, ?, ?>
+                cfCoder = Coder.mkRationalsCoder(cfRing, uCoder);
+
+        // ring Frac(Z/2[t])[a,b,c]
+        MultivariateRing<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>>
+                ring = MultivariateRing(3, cfRing);
+        // coder for polynomials from Frac(Z/2[t])[a,b,c]
+        Coder<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>, ?, ?>
+                coder = Coder.mkMultivariateCoder(ring, cfCoder, "a", "b", "c");
+
+        // parse some element
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el = coder.parse("(1 + t)*a^2 - c^3 + b/t^2 + (a + b)/(1 + t)^3");
+
+        System.out.println(coder.stringify(el));
+
+        // associate variable "E" with polynomial el in parser
+        coder.bind("E", el);
+
+        // "E" will be replaced with el by the parser
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el2 = coder.parse("(a+b) * E^2 + 1");
+
+    }
 }

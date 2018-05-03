@@ -1062,47 +1062,186 @@ Input/Output
 ============
 
 Java
-^^^^
+""""
 
-Class ``io.Coder`` gives methods for parsing arbitrary mathematical expressions and helper methods to export them to strings. The convention behind the ``io.Coder`` API is the following: fi
-
-
-
-Mathematical expression parser is implemented by the ``io.Coder`` class. It also used by the ``parse(String)`` method of ``Ring<E>`` interface, but only in a very basic manner. In general, to parse math expression from string one have to supply the base ring (which the expression belongs to) and how string variables are related to particular ring elements. For example, for the ring :math:`Z[x, y, z]` one can do:
+Class ``io.Coder`` provides methods for parsing arbitrary mathematical expressions and helper methods to export them to strings. The simplest example of ``Coder`` usage may be the following:
 
 .. tabs::
 
     .. code-tab:: java
 
-        implicit val ring = UnivariateRing(Zp(3), "x")
-        val (a, b) = ring("1 + 2*x^2", "1 - x")
+        // Parser for rational numbers
+        Coder<Rational<BigInteger>, ?, ?> qCoder = Coder.mkCoder(Q);
+        // parse some rational number
+        Rational<BigInteger> el = qCoder.parse("1/2/3 + (1-3/5)^3 + 1");
+        System.out.println(el);
 
-        // compiles to ring.add(a, b)
-        val add = a + b
-        // compiles to ring.subtract(a, b)
-        val sub = a - b
-        // compiles to ring.multiply(a, b)
-        val mul = a * b
-        // compiles to ring.divideExact(a, b)
-        val div = a / b
-        // compiles to ring.divideAndRemainder(a, b)
-        val divRem = a /% b
-        // compiles to ring.increment(a, b)
-        val inc = a ++
-        // compiles to ring.decrement(a, b)
-        val dec = a --
-        // compiles to ring.negate(a, b)
-        val neg = -a
+
+In fact, method ``parse(string)`` defined in the interface `Ring<E>`_ by default traslates to ``Coder.mkCoder(this).parse(string)``. 
+
+
+To parse mathematical expressions with polynomials, one should supply string names of the variables involved. For example, to parse elements of :math:`Z[x, y, z]` one can do:
+
+.. tabs::
+
+    .. code-tab:: java
+
+        // polynomial ring Z[x,y,z]
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        // Coder for Z[x,y,z]
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?> 
+            coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
+        // parse some element from string
+        MultivariatePolynomial<BigInteger> p = coder.parse("x^2 + y^2 + z^2");
+        // stringify element and print to stdout
+        System.out.println(coder.stringify(p));
+
+Internally, polynomial instances do not store the information about particular string names of variables. Variables are treated just as "the first variable", "the second variable" and so on without specifying particular names. So, in the last line ``Coder`` is used to convert polynomial expression to string (via ``stringify`` method) using "x", "y" and "z" for the first, second and third variable respectively.
+
+
+A more complicated case asrise when multiple polynomial rings involved. Consider e.g. the ring :math:`Frac(Z_2[t])[a, b, c]` with variable "t" corresponding to univariate polynomials from the coefficient ring (which is a field of univariate rational functions over :math:`Z_2`) and "a", "b" and "c" to variables from the base ring:
+
+.. tabs::
+
+    .. code-tab:: java
+
+        // univariate ring Z/2[t]
+        UnivariateRing<UnivariatePolynomialZp64> uRing = UnivariateRingZp64(2);
+        // coder for polynomials from Z/2[t]
+        Coder<UnivariatePolynomialZp64, ?, ?> uCoder = Coder.mkUnivariateCoder(uRing, "t");
+
+        // rational functions over Z/2[t]
+        Rationals<UnivariatePolynomialZp64> cfRing = Frac(uRing);
+        // coder for rational functions from Frac(Z/2[t])
+        Coder<Rational<UnivariatePolynomialZp64>, ?, ?> 
+                cfCoder = Coder.mkRationalsCoder(cfRing, uCoder);
+
+        // ring Frac(Z/2[t])[a,b,c]
+        MultivariateRing<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>>
+                ring = MultivariateRing(3, cfRing);
+        // coder for polynomials from Frac(Z/2[t])[a,b,c]
+        Coder<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>, ?, ?>
+                coder = Coder.mkMultivariateCoder(ring, cfCoder, "a", "b", "c");
+
+        // parse some element
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el = coder.parse("(1 + t)*a^2 - c^3 + b/t^2 + (a + b)/(1 + t)^3");
+
+        // stringify it with coder
+        System.out.println(coder.stringify(el));
+
+
+
+``Coder`` allows to bind particular expressions to string variables. Continue the last example: to use e.g. "E" string for polynomial ``el`` one can do:
+
+.. tabs::
+
+    .. code-tab:: java
+
+        // associate variable "E" with polynomial el in parser
+        coder.bind("E", el);
+
+        // "E" will be replaced with el by the parser
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el2 = coder.parse("(a+b) * E^2 + 1");
+
+
+
+Below is the summary of methods provided by the ``Coder`` class:
+
++---------------------------+-----------------------------------------------+
+| ``Coder`` method          | Description                                   |
++===========================+===============================================+
+| ``parse(string)``         | Parse string into element of ring             |
++---------------------------+-----------------------------------------------+
+| ``stringify(element)``    | Convert ring element to string                |
++---------------------------+-----------------------------------------------+
+| ``bind(string, element)`` | Bind particular expression to string variable |
++---------------------------+-----------------------------------------------+
+
+
+Factory methods for creating coders for different rings are the following:
+
++----------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| Method                                                   | Description                                                                                                      |
++==========================================================+==================================================================================================================+
+| ``mkCoder(ring)``                                        | Creates coder for generic ring                                                                                   |
++----------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| ``mkUnivariateCoder(uRing, variable)``                   | Creates coder for univariate polynomials from ring ``uRing`` using ``variable`` string for polynomial variable   |
++----------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| ``mkUnivariateCoder(uRing, cfCoder, variable)``          | Creates coder for univariate polynomials from ring ``uRing`` using ``cfCoder`` as the                            |
+|                                                          | coder for polynomial coefficients and ``variable`` string for polynomial variable                                |
++----------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| ``mkMultivariateCoder(mRing, var1, var2, ...)``          | Creates coder for multivariate polynomials from ring ``mRing`` using ``var1`` string for the                     |
+|                                                          | first variable, ``var2`` for the seconds and so on                                                               |
++----------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| ``mkMultivariateCoder(mRing, cfCoder, var1, var2, ...)`` | Creates coder for multivariate polynomials from ring ``mRing`` using ``cfCoder`` as the                          |
+|                                                          | coder for polynomial coefficients and ``var1`` string for the first variable, ``var2`` for the seconds and so on |
++----------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| ``mkRationalsCoder(fracField, eCoder)``                  | Creates coder for rational expressions from the field ``fracField`` using ``eCoder`` as the coder for operands   |
++----------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+
 
 Scala
-^^^^^
+"""""
 
-In Scala DSL, to parse any ring element from string, one should use ``ring(string)`` method, and to 
+In Scala DSL, the appropriate instance of ``Coder`` is automatically created and stored by the ``Ring[E]`` instance (the coder may be accessed via ``ring.coder``). To parse ring elements from strings one should use ``ring(string)`` syntax and to convert elements to strings one should use ``ring.stringify(element)``.
+
+Parse rational numbers:
+
+.. tabs::
+
+    .. code-tab:: scala
+
+        val rational = Q("1/2/3 + (1-3/5)^3 + 1")
+        println(rational)
 
 
+Parse and stringify elements of :math:`Z[x, y, z]`:
+
+.. tabs::
+
+    .. code-tab:: scala
+
+        // ring Z[x,y,z]
+        implicit  val ring = MultivariateRing(Z, Array("x", "y", "z"))
+        // parse polynomial
+        val poly = ring("x^2 + y^2 + z^2")
+        // stringify polynomial
+        println(ring.stringify(poly))
 
 
+Parse and stringify elements of :math:`Frac(Z_2[t])[a, b, c]` with variable "t" corresponding to univariate polynomials from the coefficient ring (which is a field of univariate rational functions over :math:`Z_2`) and "a", "b" and "c" to variables from the base ring:
 
+.. tabs::
+
+    .. code-tab:: scala
+
+        // ring Z/2[t]
+        val uRing = UnivariateRingZp64(2, "t")
+        // rational functions over Z/2[t] 
+        val cfRing = Frac(uRing)
+        // ring Frac(Z/2[t])[a,b,c]
+        implicit val ring = MultivariateRing(cfRing, Array("a", "b", "c"))
+
+        // parse some element
+        val el = ring("(1 + t)*a^2 - c^3 + b/t^2 + (a + b)/(1 + t)^3")
+
+        // stringify it
+        println(ring.stringify(el))
+
+
+One can bind particular expressions to string variables. Continue the last example: to use e.g. "E" string for polynomial ``el`` one can do:
+
+.. tabs::
+
+    .. code-tab:: java
+
+        // associate variable "E" with polynomial el in parser
+        ring.coder.bind("E", el)
+
+        // "E" will be replaced with el by the parser
+        val el2 = ring("(a+b) * E^2 + 1")
 
 
 .. _ref-basics-polynomials:
