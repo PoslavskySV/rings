@@ -503,6 +503,117 @@ The common GCD is automatically canceled in the numerator and denominator. Anoth
         System.out.println(field.add(a, b));
 
 
+
+Rational function arithmetic
+""""""""""""""""""""""""""""
+
+Since it is often used in practice, it is worth to put examples with the field of rational functions in a separate section, though this is just a particular case of generic field of fractions. Field of rational functions is defined as :math:`Frac(Z[\vec X])`. The below example llustrates how to parse elements of the field :math:`Frac(Z[x,y,z])` from strings, do basic and advanced math operations in it:
+
+
+.. tabs::
+
+    .. code-tab:: scala
+
+        // Frac(Z[x,y,z])
+        implicit val field = Frac(MultivariateRing(Z, Array("x", "y", "z")))
+
+        // parse some math expression from string
+        // it will be automatically reduced to a common denominator
+        // with the gcd being automatically cancelled
+        val expr1 = field("(x/y/(x - z) + (x + z)/(y - z))^2 - 1")
+
+        // do some math ops programmatically
+        val (x, y, z) = field("x", "y", "z")
+        val expr2 = expr1.pow(2) + x / y - z
+
+        // bind expr1 and expr2 to variables to use them further in parser
+        field.coder.bind("expr1", expr1)
+        field.coder.bind("expr2", expr2)
+
+        // parse some complicated expression from string
+        // it will be automatically reduced to a common denominator
+        // with the gcd being automatically cancelled
+        val expr3 = field(
+          """
+             expr1 / expr2 - (x*y - z)/(x-y)/expr1
+             + x / expr2 - (x*z - y)/(x-y)/expr1/expr2
+             + x^2*y^2 - z^3 * (x - y)^2
+          """)
+
+        // export expression to string
+        println(field.stringify(expr3))
+
+        // take numerator and denominator
+        val num = expr3.numerator()
+        val den = expr3.denominator()
+        // common GCD is always cancelled automatically
+        assert( field.ring.gcd(num, den).isOne )
+
+        // compute unique factor decomposition of expression
+        val factors = field.factor(expr3)
+        println(field.stringify(factors))
+
+    .. code-tab:: java
+
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        Rationals<MultivariatePolynomial<BigInteger>> field = Frac(ring);
+
+        // Parser/stringifier of rational functions
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?> coder
+             = Coder.mkRationalsCoder(
+                    field,
+                    Coder.mkMultivariateCoder(ring, "x", "y", "z"));
+
+        // parse some math expression from string
+        // it will be automatically reduced to a common denominator
+        // with the gcd being automatically cancelled
+        Rational<MultivariatePolynomial<BigInteger>> expr1 = coder.parse("(x/y/(x - z) + (x + z)/(y - z))^2 - 1");
+
+        // do some math ops programmatically
+        Rational<MultivariatePolynomial<BigInteger>>
+        x = new Rational<>(ring, ring.variable(0)),
+        y = new Rational<>(ring, ring.variable(1)),
+        z = new Rational<>(ring, ring.variable(2));
+
+        Rational<MultivariatePolynomial<BigInteger>> expr2 = field.add(
+                field.pow(expr1, 2),
+                field.divideExact(x, y),
+                field.negate(z));
+
+
+        // bind expr1 and expr2 to variables to use them further in parser
+        coder.bind("expr1", expr1);
+        coder.bind("expr2", expr2);
+
+        // parse some complicated expression from string
+        // it will be automatically reduced to a common denominator
+        // with the gcd being automatically cancelled
+        Rational<MultivariatePolynomial<BigInteger>> expr3 = coder.parse(
+                  " expr1 / expr2 - (x*y - z)/(x-y)/expr1"
+                + " + x / expr2 - (x*z - y)/(x-y)/expr1/expr2"
+                + "+ x^2*y^2 - z^3 * (x - y)^2");
+
+        // export expression to string
+        System.out.println(coder.stringify(expr3));
+
+        // take numerator and denominator
+        MultivariatePolynomial<BigInteger> num = expr3.numerator();
+        MultivariatePolynomial<BigInteger> den = expr3.denominator();
+
+        // common GCD is always cancelled automatically
+        assert field.ring.gcd(num, den).isOne();
+
+        // compute unique factor decomposition of expression
+        FactorDecomposition<Rational<MultivariatePolynomial<BigInteger>>> factors = field.factor(expr3);
+        System.out.println(factors.toString(coder));
+
+
+
+.. tip:: 
+
+    One can use both :math:`Frac(Z[\vec X])` and :math:`Frac(Q[\vec X])` to represent field of rational functions. In the latter case, numeric denominators will be absorbed in polynomial coefficients, while in the former the common numeric denominator will be always factored out (so all polynomials will have only integer coefficients). From the mathematical point of view, there is no difference, while from the implementation point of view arithmetic in :math:`Frac(Z[\vec X])` will be always faster since it avoids unnecessary conversions from :math:`Q[\vec X]` to :math:`Z[\vec X]` performed internally in  GCD algorithms.
+
+
 Univariate polynomial rings
 """""""""""""""""""""""""""
 

@@ -1144,4 +1144,50 @@ class Examples {
       val el2 = ring("(a+b) * E^2 + 1")
     }
   }
+
+
+  @Test
+  def test39: Unit = {
+
+    import syntax._
+
+    // Frac(Z[x,y,z])
+    implicit val field = Frac(MultivariateRing(Z, Array("x", "y", "z")))
+
+    // parse some math expression from string
+    // it will be automatically reduced to a common denominator
+    // with the gcd being automatically cancelled
+    val expr1 = field("(x/y/(x - z) + (x + z)/(y - z))^2 - 1")
+
+    // do some math ops programmatically
+    val (x, y, z) = field("x", "y", "z")
+    val expr2 = expr1.pow(2) + x / y - z
+
+    // bind expr1 and expr2 to variables to use them further in parser
+    field.coder.bind("expr1", expr1)
+    field.coder.bind("expr2", expr2)
+
+    // parse some complicated expression from string
+    // it will be automatically reduced to a common denominator
+    // with the gcd being automatically cancelled
+    val expr3 = field(
+      """
+         expr1 / expr2 - (x*y - z)/(x-y)/expr1
+         + x / expr2 - (x*z - y)/(x-y)/expr1/expr2
+         + x^2*y^2 - z^3 * (x - y)^2
+      """)
+
+    // export expression to string
+    println(field.stringify(expr3))
+
+    // take numerator and denominator
+    val num = expr3.numerator
+    val den = expr3.denominator
+    // common GCD is always cancelled automatically
+    assert( field.ring.gcd(num, den).isOne )
+
+    // compute unique factor decomposition of expression
+    val factors = field.factor(expr3)
+    println(field stringify factors)
+  }
 }
