@@ -1077,4 +1077,37 @@ class Examples {
     val W = uRing("W")
     val fracs = apart(Rational(W + 1, (rx / ry + W.pow(2)) * (rz / rx + W.pow(3))))
   }
+
+  @Test
+  def test37: Unit = {
+    import syntax._
+
+    // coefficient ring is GF(17, 3) represented as
+    // univariate polynomials over "t"
+    val cfRing = GF(17, 3, "t")
+
+    // polynomial ring GF(17, 3)[x, y, z]
+    implicit val ring = MultivariateRing(cfRing, Array("x", "y", "z"))
+
+    // one can now parse polynomials from GF(17, 3)[x, y, z]
+    // using "x", "y", "z" for polynomial vars and "t" for
+    // monomial element from GF(17, 3)
+    val poly = ring("t + x*y/t - 3*t*z^2")
+
+    // stringify poly using "x", "y", "z" for polynomial vars
+    // and "t" for monomial in GF(17, 3)
+    println(ring stringify poly)
+
+
+    // one can access underlying coder via .coder
+    // e.g. use string "p" as abbreviation for poly in parser
+    ring.coder.bind("p", poly)
+
+    val poly2 = ring("x - p^2")
+    assert(ring.`x` - poly.pow(2) == poly2)
+
+    // this is forbidden (IllegalArgumentException will be thrown):
+    // (can't use "a" and "b" instead of "x" and "y")
+    val polyerr = ring("a^2 + b*c") // <- error!
+  }
 }

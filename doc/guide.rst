@@ -18,15 +18,13 @@ User guide
 Rings library structure
 =======================
 
-|Rings| library has the following structure:
+|Rings| has the following main components:
 
- - ``rings`` |br| the core of |Rings| library written entirely in Java. It includes:
- 
-    - ``rings.bigint`` |br| arbitrary precision integers (fork of `tbuktu/bigint <https://github.com/tbuktu/bigint>`_)
-    - ``rings.primes`` |br| prime numbers including prime factorization, primality test etc.
-    - ``rings.poly.univar`` |br| univariate polynomials and algorithms with them including GCD and factorization
-    - ``rings.poly.multivar`` |br| multivariate polynomials and algorithms with them including GCD, factorization, |Groebner| basis etc.
- 
+ - ``rings.bigint`` |br| arbitrary precision integers (fork of `tbuktu/bigint <https://github.com/tbuktu/bigint>`_)
+ - ``rings.primes`` |br| prime numbers including prime factorization, primality test etc.
+ - ``rings.poly.univar`` |br| univariate polynomials and algorithms with them including GCD and factorization
+ - ``rings.poly.multivar`` |br| multivariate polynomials and algorithms with them including GCD, factorization, |Groebner| basis etc.
+ - ``rings.io`` |br| methods for parsing/stringifying mathematical expressions
  - ``rings.scaladsl`` |br| Scala wrappers and syntax definitions for |Rings|
 
 
@@ -139,7 +137,7 @@ The following code snippet gives some illustrations:
 Modular arithmetic with machine integers
 """"""""""""""""""""""""""""""""""""""""
 
-There is one special ring --- ring :math:`Z_p` of integers modulo prime number :math:`p < 2^{64}` --- which is used in the basis of many fundamental algorithms. In contrast to :math:`Z_p` with arbitrary large characteristic, for characteristic that fits into 64-bit word one can use machine integers to significantly speed up basic math operations. Operations in :math:`Z_p` require applying ``mod`` operation which in turn implies integer division. Integer division is a very slow CPU instruction; and what is more important is that it breaks CPU pipelining. On the other hand, operations in :math:`Z_p` imply taking ``mod`` with a fixed modulus :math:`p` and one can do some precomputation beforehand and then reduce integer divisions to multiplications that are over a magnitude times faster. The details of this trick can be found in `Hacker's Delight <http://www.hackersdelight.org>`_. |Rings| uses `libdivide4j`_ library for fast integer division with precomputation which is ported from the well known C/C++ `libdivide`_ library. With this precomputation the ``mod`` operation becomes several times faster than the native CPU instruction, which boosts the overall performance of many of |Rings| algorithms in more than 3 times.
+One important implementation aspect concerns arithmetic in the ring :math:`Z_p` with :math:`p < 2^{64}`, that is integer arithmetic modulo some machine number. Though it may be hidden from the user’s eye, arithmetic in this ring actually lies in the basis of the most part of fundamental algorithms and directly affects performance of nearly all computations. In contrast to :math:`Z_p` with arbitrary large characteristic, for characteristic that fits into 64-bit word one can use machine integers to significantly speed up basic math operations. On the CPU level the modulo operation is implemented via DIV instruction (integer division) which is known to be very slow: for example on the recent Intel Skylake architecture DIV has 20-80 times worse throughput than MUL instruction (see `this report <http://www.agner.org/optimize/instruction_tables.pdf>`_). Hopefully, arithmetic operations in :math:`Z_p` are done modulo a fixed modulus :math:`p` which allows to make some preconditioning on :math:`p` and reduce DIV operations to MUL. The idea is the following: given a fixed :math:`p` we compute once the value of :math:`magic = [2^n/p]` with a sufficiently large :math:`n` (so that magic is some non-zero machine number), and then for arbitrary integer :math:`a` we have :math:`[a/p] = (a \times magic)/2^n`, so DIV instruction is replaced with one MUL and one SHIFT (division by a power of two is just a bitwise shift, very fast). The actual implementation in fact requires some more work to do (for details see Chapter 10 in `Hacker's Delight <http://www.hackersdelight.org>`_). |Rings| uses `libdivide4j`_ library for fast integer division with precomputation which is ported from the well known C/C++ `libdivide`_ library. With this precomputation the ``mod`` operation becomes several times faster than the native CPU instruction, which boosts the overall performance of many of |Rings| algorithms in more than 3 times.
 
 .. _libdivide4j: https://github.com/PoslavskySV/libdivide4j/
 
@@ -300,10 +298,52 @@ Each `Ring<E>`_ implementation provides the information about its mathematical n
                UnivariatePolynomialZ64.create(1, 2).modulus(3));
 
 
+
+Finally, each `Ring<E>`_ implementation provides a set of high-level methods for GCDs, factorization etc. Below is the summary of main `Ring<E>`_ methods:
+
++------------------------------+-----------------------------------------------+
+| Method from `Ring<E>`_       | Description                                   |
++==============================+===============================================+
+| ``add(a, b)``                | Ring addition                                 |
++------------------------------+-----------------------------------------------+
+| ``subtract(a, b)``           | Ring subtraction                              |
++------------------------------+-----------------------------------------------+
+| ``multiply(a, b)``           | Ring multiplication                           |
++------------------------------+-----------------------------------------------+
+| ``isEuclideanRing()``        | Whether ring supports division with remainder |
++------------------------------+-----------------------------------------------+
+| ``divideAndRemainder(a, b)`` | Division with remainder (for Euclidean rings) |
++------------------------------+-----------------------------------------------+
+| ``isField()``                | Whether ring is a field                       |
++------------------------------+-----------------------------------------------+
+| ``reciprocal(a)``            | Multiplicative inverse (for fields)           |
++------------------------------+-----------------------------------------------+
+| ``getOne()``                 | Identity element under multiplication         |
++------------------------------+-----------------------------------------------+
+| ``getZero()``                | Identity element under addition               |
++------------------------------+-----------------------------------------------+
+| ``characteristic()``         | Ring characteristic                           |
++------------------------------+-----------------------------------------------+
+| ``cardinality()``            | Ring cardinality                              |
++------------------------------+-----------------------------------------------+
+| ``parse(string)``            | Parse ring element from string                |
++------------------------------+-----------------------------------------------+
+| ``randomElement()``          | Pick some random ring element                 |
++------------------------------+-----------------------------------------------+
+| ``gcd(a, b)``                | Greatest common divisor of two elements       |
++------------------------------+-----------------------------------------------+
+| ``factor(a)``                | Unique factor decomposition of ring element   |
++------------------------------+-----------------------------------------------+
+| ``factorSquareFree(a)``      | Square free decomposition of ring element     |
++------------------------------+-----------------------------------------------+
+
+The full list of `Ring<E>`_ methods can be found in `corresponding Java docs <http://www.javadoc.io/doc/cc.redberry/rings/>`_
+
+
 List of built-in rings
 """"""""""""""""""""""
 
-Some common rings and convenient methods for instantiation of new rings are placed in `Rings`_ class or directly in `scaladsl`_ package object in Scala DSL. Below is the list of what is available by default in |Rings|:
+Basic rings and factory methods for constructing new rings are placed in `Rings`_ class (Java) or directly in `scaladsl`_ package object (Scala). Below is the list of what is available by default in |Rings|:
 
 +----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
 | Ring                                   | Description                                                         | Method in ``Rings`` / ``scaladsl``                                                  |
@@ -941,17 +981,17 @@ Ring methods
 
 Methods added to `Ring[E]`_ interface:
 
-+----------------------+----------------------------------------------------+
-| Scala DSL            | Java equivalent                                    |
-+======================+====================================================+
-| ``ring("string")``   | ``ring.parse(string)``                             |
-+----------------------+----------------------------------------------------+
-| ``ring(integer)``    | ``ring.valueOf(integer)``                          |
-+----------------------+----------------------------------------------------+
-| ``ring show obj``    | gives appropriate string representation of ``obj`` |
-+----------------------+----------------------------------------------------+
-| ``ring.ElementType`` | type of elements of ``ring``                       |
-+----------------------+----------------------------------------------------+
++------------------------+----------------------------------------------------+
+| Scala DSL              | Java equivalent                                    |
++========================+====================================================+
+| ``ring("string")``     | ``ring.parse(string)``                             |
++------------------------+----------------------------------------------------+
+| ``ring(integer)``      | ``ring.valueOf(integer)``                          |
++------------------------+----------------------------------------------------+
+| ``ring stringify obj`` | gives appropriate string representation of ``obj`` |
++------------------------+----------------------------------------------------+
+| ``ring.ElementType``   | type of elements of ``ring``                       |
++------------------------+----------------------------------------------------+
 
 
 Polynomial ring methods
@@ -1015,6 +1055,56 @@ For more details see :ref:`ref-ideals`.
 .. _UnivariateDivision: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java
 
 
+
+.. _ref-io:
+
+Input/Output
+============
+
+Java
+^^^^
+
+Class ``io.Coder`` gives methods for parsing arbitrary mathematical expressions and helper methods to export them to strings. The convention behind the ``io.Coder`` API is the following: fi
+
+
+
+Mathematical expression parser is implemented by the ``io.Coder`` class. It also used by the ``parse(String)`` method of ``Ring<E>`` interface, but only in a very basic manner. In general, to parse math expression from string one have to supply the base ring (which the expression belongs to) and how string variables are related to particular ring elements. For example, for the ring :math:`Z[x, y, z]` one can do:
+
+.. tabs::
+
+    .. code-tab:: java
+
+        implicit val ring = UnivariateRing(Zp(3), "x")
+        val (a, b) = ring("1 + 2*x^2", "1 - x")
+
+        // compiles to ring.add(a, b)
+        val add = a + b
+        // compiles to ring.subtract(a, b)
+        val sub = a - b
+        // compiles to ring.multiply(a, b)
+        val mul = a * b
+        // compiles to ring.divideExact(a, b)
+        val div = a / b
+        // compiles to ring.divideAndRemainder(a, b)
+        val divRem = a /% b
+        // compiles to ring.increment(a, b)
+        val inc = a ++
+        // compiles to ring.decrement(a, b)
+        val dec = a --
+        // compiles to ring.negate(a, b)
+        val neg = -a
+
+Scala
+^^^^^
+
+In Scala DSL, to parse any ring element from string, one should use ``ring(string)`` method, and to 
+
+
+
+
+
+
+
 .. _ref-basics-polynomials:
 
 Polynomials
@@ -1028,10 +1118,10 @@ Polynomials
    :align: center
 
 
-----
+String representation of polynomials
+""""""""""""""""""""""""""""""""""""
 
-The first thing about the internal representation of polynomials is that polynomial instances do not store the information about particular string names of variables. Variables are treated just as "the first variable", "the second variable" and so on without specifying particular names ("x" or "y"). As result string names of variables should be specifically stored somewhere. Some illusrtations:
-
+The first thing about the internal representation of polynomials is that polynomial instances do not store the information about particular string names of variables. Variables are treated just as "the first variable", "the second variable" and so on without specifying particular names ("x" or "y"). As result, if working with polynomials at the low level, one should manually specify which string names of variables used for parsing/stringifying polynomials. Few illusrtations:
 
 .. tabs::
 
@@ -1067,9 +1157,9 @@ The first thing about the internal representation of polynomials is that polynom
         println(poly1)
         // specify which variable names use for printing
         // the result will be "a*b + a^2"
-        println(poly1.toString(Array("a", "b")))
+        println(poly1.toString("a", "b"))
         // the result will be "a*b + b^2"
-        println(poly1.toString(Array("b", "a")))
+        println(poly1.toString("b", "a"))
 
     .. code-tab:: java
 
@@ -1101,31 +1191,55 @@ The first thing about the internal representation of polynomials is that polynom
         System.out.println(poly1);
         // specify which variable names use for printing
         // the result will be "a*b + a^2"
-        System.out.println(poly1.toString(new String[]{"a", "b"}));
+        System.out.println(poly1.toString("a", "b"));
         // the result will be "a*b + b^2"
-        System.out.println(poly1.toString(new String[]{"b", "a"}));
+        System.out.println(poly1.toString("b", "a"));
 
 
-With Scala DSL the information about string names of variables may be stored in the ring instance. In Scala DSL, when parsing polynomial via ``ring(string)`` it is allowed to use only those variables that were specified when instantiating the ring. To get the internally used integer index of variable there is ``ring.index("stringVar")`` method; to print polynomial using the stored strings for variables there is ``ring.show(object)`` method. Illustration:
+In Java, in order to parse/stringify polynomials, especially over complicated coefficient rings, it is always recomended to use :ref:`io.Coder <ref-io>` (see :ref:`Input/Output section <ref-io>`) instead of factory ``MultivariatePolynomial.parse(string)`` methods.
+
+
+In Scala, information about string names of variables is stored by the ring instance automatically at creation, as well as the appropriate instance of :ref:`io.Coder <ref-io>` which is used internally to parse/stringify ring elements. So in Scala one should parse polynomials with ``ring(string)`` and stringify polynomials with ``ring.stringify(poly)``. The following example gives a full illustration:
 
 .. tabs::
 
     .. code-tab:: scala
 
-        // "x" is the first variable "y" is the second
-        val ring = MultivariateRing(Z, Array("x", "y"))
-        assert (ring.index("x") == 0)
-        assert (ring.index("y") == 1)
-        // parse polynomial
-        val poly = ring("x^2 + x*y")
-        // stringify poly using "x" and "y" for variables
-        println(ring show poly)
+        // coefficient ring is GF(17, 3) represented as 
+        // univariate polynomials over "t"
+        val cfRing = GF(17, 3, "t")
 
-        // this is forbidden (IllegalArgumentException will be thrown):
+        // polynomial ring GF(17, 3)[x, y, z]
+        implicit val ring = MultivariateRing(cfRing, Array("x", "y", "z"))
+
+        // using "x", "y", "z" for polynomial vars and "t" for 
+        // element from GF(17, 3) (that is the eighteenth element
+        // of GF(17, 3))
+        val poly = ring("t + x*y - 3*t^9*z^2")
+
+        // stringify poly using "x", "y", "z" for polynomial vars
+        // and "t" for element from GF(17, 3)
+        println(ring stringify poly)
+
+        // one can access underlying coder via `.coder`
+        // e.g. use it to bind string "p" with polynomial `poly`
+        ring.coder.bind("p", poly)
+
+        val poly2 = ring("x - p^2")
+        assert(ring.`x` - poly.pow(2) == poly2)
+
+        // this is forbidden
         // (can't use "a" and "b" instead of "x" and "y")
-        val poly = ring("a^2 + b*c") // <- error!
+        val polyerr = ring("a^2 + b*c") // <- error!
 
-----
+
+.. tip::
+    
+    In Java, in order to parse polynomial from string as well as to obtain string representation of polynomial it is recomended to use :ref:`io.Coder <ref-io>` (see :ref:`Input/Output section <ref-io>`). In Scala one should parse polynomials with ``ring(string)`` and stringify polynomials with ``ring.stringify(poly)``.
+
+
+Polynomial instances and mutability
+"""""""""""""""""""""""""""""""""""
 
 The second important note about internal implementation of polynomials is that polynomial instances are in general mutable. Methods which may modify the instance are available in Java API, while all mathematical operations applied using Scala DSL (with operators ``+``, ``-`` etc.) are not modifier:
 
@@ -1183,11 +1297,11 @@ The parent interface for all polynomials is `IPolynomial<PolyType>`_. The follow
 
         // univariate polynomials over Zp64
         val uRing = UnivariateRingZp64(17, "x")
-        println(uRing show genericFunc(uRing("1 + 2*x + 3*x^2")))
+        println(uRing stringify genericFunc(uRing("1 + 2*x + 3*x^2")))
 
         // multivariate polynomials over Z
         val mRing = MultivariateRing(Z, Array("x", "y", "z"))
-        println(mRing show genericFunc(mRing("1 + x + y + z")))
+        println(mRing stringify genericFunc(mRing("1 + x + y + z")))
 
 
     .. code-tab:: java
@@ -1224,11 +1338,11 @@ Note that there is no any specific polynomial ring used in the ``genericFunc`` a
 
         // univariate polynomials over Zp64
         val uRing = UnivariateRingZp64(17, "x")
-        println(uRing show genericFuncWithRing(uRing("1 + 2*x + 3*x^2"))(uRing))
+        println(uRing stringify genericFuncWithRing(uRing("1 + 2*x + 3*x^2"))(uRing))
 
         // multivariate polynomials over Z
         val mRing = MultivariateRing(Z, Array("x", "y", "z"))
-        println(mRing show genericFuncWithRing(mRing("1 + x + y + z"))(mRing))
+        println(mRing stringify genericFuncWithRing(mRing("1 + x + y + z"))(mRing))
 
 
     .. code-tab:: java
@@ -1532,9 +1646,9 @@ Univariate factorization is supported for polynomials in :math:`F[x]` where :mat
         // some random polynomial composed from some factors
         val polyF = ringF.randomElement() * ringF.randomElement() * ringF.randomElement().pow(10)
         // perform square-free factorization
-        println(ringF show FactorSquareFree(polyF))
+        println(ringF stringify FactorSquareFree(polyF))
         // perform complete factorization
-        println(ringF show Factor(polyF))
+        println(ringF stringify Factor(polyF))
 
 
         // ring Q[x]
@@ -1542,9 +1656,9 @@ Univariate factorization is supported for polynomials in :math:`F[x]` where :mat
         // some random polynomial composed from some factors
         val polyQ = ringQ.randomElement() * ringQ.randomElement() * ringQ.randomElement().pow(10)
         // perform square-free factorization
-        println(ringQ show FactorSquareFree(polyQ))
+        println(ringQ stringify FactorSquareFree(polyQ))
         // perform complete factorization
-        println(ringQ show Factor(polyQ))
+        println(ringQ stringify Factor(polyQ))
 
     .. code-tab:: java
 
@@ -2164,9 +2278,9 @@ Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]`
         // some random polynomial composed from some factors
         val polyF = randomPolyF * randomPolyF * randomPolyF.pow(2)
         // perform square-free factorization
-        println(ringF show FactorSquareFree(polyF))
+        println(ringF stringify FactorSquareFree(polyF))
         // perform complete factorization
-        println(ringF show Factor(polyF))
+        println(ringF stringify Factor(polyF))
 
 
         // ring Q[x, y, z]
@@ -2177,9 +2291,9 @@ Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]`
         // some random polynomial composed from some factors
         val polyQ = randomPolyQ * randomPolyQ * randomPolyQ.pow(2)
         // perform square-free factorization
-        println(ringQ show FactorSquareFree(polyQ))
+        println(ringQ stringify FactorSquareFree(polyQ))
         // perform complete factorization
-        println(ringQ show Factor(polyQ))
+        println(ringQ stringify Factor(polyQ))
 
     .. code-tab:: java
 

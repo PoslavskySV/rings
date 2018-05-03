@@ -1,6 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.QuotientRing;
@@ -69,9 +70,9 @@ public class Examples {
         System.out.println(poly1);
         // specify which variable names use for printing
         // the result will be "x*y + x^2"
-        System.out.println(poly1.toString(new String[]{"x", "y"}));
+        System.out.println(poly1.toString("x", "y"));
         // the result will be "y*x + y^2"
-        System.out.println(poly1.toString(new String[]{"y", "x"}));
+        System.out.println(poly1.toString("y", "x"));
     }
 
     @Test
@@ -868,5 +869,24 @@ public class Examples {
         // But Buchberger algorithm will take several minutes
         List<MultivariatePolynomial<BigInteger>> buch = GroebnerBasis.BuchbergerGB(gens, GREVLEX);
         assert (buch.equals(gb));
+    }
+
+    @Test
+    public void test43() {
+        // polynomial ring Z[x,y,z]
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+
+        // Coder for Z[x,y,z]
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
+
+        // parse some element from string
+        MultivariatePolynomial<BigInteger> p = coder.parse("x^2 + y^2 + z^2");
+
+        // add special string binding
+        coder.bind("p", p);
+
+        // parse another poly
+        MultivariatePolynomial<BigInteger> pSquared = coder.parse("p^2");
+        assert pSquared.equals(p.square());
     }
 }
