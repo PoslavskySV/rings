@@ -1307,11 +1307,11 @@ public final class HenselLifting {
         Poly[] solution = factory.createArray(rSolution.length);
         for (int i = 0; i < rSolution.length; i++) {
             Rational<Poly> r = rSolution[i];
-            if (!r.denominator.isOne()) {
+            if (!r.denominator().isOne()) {
                 // bad luck
                 return null;
             }
-            solution[i] = r.numerator;
+            solution[i] = r.numerator();
         }
 
         BlockSolution<Term, Poly> blockSolution = new BlockSolution<>(unknowns, solution);

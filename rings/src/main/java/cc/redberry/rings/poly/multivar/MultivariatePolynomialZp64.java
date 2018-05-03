@@ -1890,7 +1890,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
 
         String[] varStrings = new String[nVariables];
         for (int i = 0; i < nVariables; ++i)
-            varStrings[i] = stringifier.getBindings().getOrDefault(createMonomial(i, 1), "x" + i);
+            varStrings[i] = stringifier.getBindings().getOrDefault(createMonomial(i, 1), IStringifier.defaultVar(i, nVariables));
 
         StringBuilder sb = new StringBuilder();
         for (MonomialZp64 term : terms) {

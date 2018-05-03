@@ -217,7 +217,7 @@ public class CoderTest extends AbstractTest {
 
             assertEquals(a, b);
             assertTrue(a.isIntegral());
-            assertEquals(poly, a.numerator);
+            assertEquals(poly, a.numerator());
         }
 
         System.out.println(TimeUnits.statisticsNanotime(notOpt));
@@ -267,7 +267,7 @@ public class CoderTest extends AbstractTest {
 
             assertEquals(a, b);
             assertTrue(a.isIntegral());
-            assertEquals(poly, a.numerator);
+            assertEquals(poly, a.numerator());
         }
 
         System.out.println(TimeUnits.statisticsNanotime(notOpt));

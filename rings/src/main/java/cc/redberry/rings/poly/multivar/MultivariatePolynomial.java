@@ -257,6 +257,23 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     /**
+     * Converts multivariate polynomial over BigIntegers to multivariate polynomial over machine modular integers
+     *
+     * @param poly the polynomial
+     * @param ring Zp64 ring
+     * @return multivariate polynomial over machine sized modular integers
+     * @throws IllegalArgumentException if poly.ring is not Zp
+     * @throws ArithmeticException      if some of coefficients will not exactly fit in a {@code long}.
+     */
+    public static MultivariatePolynomialZp64 asOverZp64(MultivariatePolynomial<BigInteger> poly, IntegersZp64 ring) {
+        MonomialSet<MonomialZp64> terms = new MonomialSet<>(poly.ordering);
+        BigInteger modulus = BigInteger.valueOf(ring.modulus);
+        for (Monomial<BigInteger> term : poly.terms)
+            terms.add(new MonomialZp64(term.exponents, term.totalDegree, term.coefficient.mod(modulus).longValueExact()));
+        return MultivariatePolynomialZp64.create(poly.nVariables, ring, poly.ordering, terms);
+    }
+
+    /**
      * Converts univariate polynomial to multivariate.
      *
      * @param poly       univariate polynomial

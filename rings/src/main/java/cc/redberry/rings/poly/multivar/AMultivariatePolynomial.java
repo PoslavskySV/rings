@@ -1020,20 +1020,28 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         if (!ccAsPoly().isZero())
             return monomialAlgebra.getUnitTerm(nVariables);
         int[] exponents = monomial == null ? null : monomial.exponents.clone();
+        int totalDegree = -1;
         for (Term degreeVector : terms)
             if (exponents == null)
                 exponents = degreeVector.exponents.clone();
-            else
-                setMin(degreeVector.exponents, exponents);
+            else {
+                totalDegree = setMin(degreeVector.exponents, exponents);
+                if (totalDegree == 0)
+                    break;
+            }
         if (exponents == null)
             return monomialAlgebra.getUnitTerm(nVariables);
-        return monomialAlgebra.create(exponents);
+        return monomialAlgebra.create(new DegreeVector(exponents, totalDegree));
     }
 
-    static void setMin(int[] dv, int[] exponents) {
-        for (int i = 0; i < exponents.length; ++i)
+    static int setMin(int[] dv, int[] exponents) {
+        int sum = 0;
+        for (int i = 0; i < exponents.length; ++i) {
             if (dv[i] < exponents[i])
                 exponents[i] = dv[i];
+            sum += exponents[i];
+        }
+        return sum;
     }
 
     /**

@@ -58,40 +58,40 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return a.add(b);
     }
 
-    @Override
-    public Rational<E> addMutable(Rational<E> a, Rational<E> b) {
-        return a.addMutable(b);
-    }
+//    @Override
+//    public Rational<E> addMutable(Rational<E> a, Rational<E> b) {
+//        return a.addMutable(b);
+//    }
 
     @Override
     public Rational<E> subtract(Rational<E> a, Rational<E> b) {
         return a.subtract(b);
     }
 
-    @Override
-    public Rational<E> subtractMutable(Rational<E> a, Rational<E> b) {
-        return a.subtractMutable(b);
-    }
+//    @Override
+//    public Rational<E> subtractMutable(Rational<E> a, Rational<E> b) {
+//        return a.subtractMutable(b);
+//    }
 
     @Override
     public Rational<E> multiply(Rational<E> a, Rational<E> b) {
         return a.multiply(b);
     }
 
-    @Override
-    public Rational<E> multiplyMutable(Rational<E> a, Rational<E> b) {
-        return a.multiplyMutable(b);
-    }
+//    @Override
+//    public Rational<E> multiplyMutable(Rational<E> a, Rational<E> b) {
+//        return a.multiplyMutable(b);
+//    }
 
     @Override
     public Rational<E> negate(Rational<E> element) {
         return element.negate();
     }
 
-    @Override
-    public Rational<E> negateMutable(Rational<E> element) {
-        return element.negateMutable();
-    }
+//    @Override
+//    public Rational<E> negateMutable(Rational<E> element) {
+//        return element.negateMutable();
+//    }
 
     @Override
     public int signum(Rational<E> element) {
@@ -104,10 +104,10 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return new Rational[]{dividend.divide(divider), Rational.zero(ring)};
     }
 
-    @Override
-    public Rational<E> divideExactMutable(Rational<E> dividend, Rational<E> divider) {
-        return dividend.divideMutable(divider);
-    }
+//    @Override
+//    public Rational<E> divideExactMutable(Rational<E> dividend, Rational<E> divider) {
+//        return dividend.divideMutable(divider);
+//    }
 
     @Override
     public Rational<E> reciprocal(Rational<E> element) {
@@ -121,20 +121,32 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public FactorDecomposition<Rational<E>> factorSquareFree(Rational<E> element) {
-        FactorDecomposition<Rational<E>> numFactors = ring.factorSquareFree(element.numerator)
-                .mapTo(this, p -> new Rational<>(ring, p));
-        FactorDecomposition<Rational<E>> denFactors = ring.factorSquareFree(element.denominator)
-                .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
+        FactorDecomposition<Rational<E>> numFactors =
+                element.numerator.stream()
+                        .map(ring::factorSquareFree)
+                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
+                        .mapTo(this, p -> new Rational<>(ring, p));
+        FactorDecomposition<Rational<E>> denFactors =
+                element.denominator.stream()
+                        .map(ring::factorSquareFree)
+                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
+                        .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
 
         return numFactors.addAll(denFactors);
     }
 
     @Override
     public FactorDecomposition<Rational<E>> factor(Rational<E> element) {
-        FactorDecomposition<Rational<E>> numFactors = ring.factor(element.numerator)
-                .mapTo(this, p -> new Rational<>(ring, p));
-        FactorDecomposition<Rational<E>> denFactors = ring.factor(element.denominator)
-                .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
+        FactorDecomposition<Rational<E>> numFactors =
+                element.numerator.stream()
+                        .map(ring::factor)
+                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
+                        .mapTo(this, p -> new Rational<>(ring, p));
+        FactorDecomposition<Rational<E>> denFactors =
+                element.denominator.stream()
+                        .map(ring::factor)
+                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
+                        .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
 
         return numFactors.addAll(denFactors);
     }
@@ -176,14 +188,15 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> copy(Rational<E> element) {
-        return new Rational<>(true, ring, ring.copy(element.numerator), ring.copy(element.denominator));
+        return new Rational<>(true, ring, element.numerator.deepCopy(), element.denominator.deepCopy());
     }
 
     @Override
     public Rational<E> valueOf(Rational<E> val) {
         if (val.ring.equals(ring))
             return val;
-        else return new Rational<>(ring, ring.valueOf(val.numerator), ring.valueOf(val.denominator));
+        else
+            return new Rational<>(ring, val.numerator.map(ring::valueOf), val.denominator.map(ring::valueOf));
     }
 
     @Override
@@ -205,7 +218,7 @@ public final class Rationals<E> implements Ring<Rational<E>> {
 
     @Override
     public Rational<E> getNegativeOne() {
-        return Rational.one(ring).negateMutable();
+        return Rational.one(ring).negate();
     }
 
     @Override
