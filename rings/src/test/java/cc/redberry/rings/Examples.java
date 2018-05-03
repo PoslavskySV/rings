@@ -1,6 +1,7 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.QuotientRing;
@@ -69,9 +70,9 @@ public class Examples {
         System.out.println(poly1);
         // specify which variable names use for printing
         // the result will be "x*y + x^2"
-        System.out.println(poly1.toString(new String[]{"x", "y"}));
+        System.out.println(poly1.toString("x", "y"));
         // the result will be "y*x + y^2"
-        System.out.println(poly1.toString(new String[]{"y", "x"}));
+        System.out.println(poly1.toString("y", "x"));
     }
 
     @Test
@@ -868,5 +869,155 @@ public class Examples {
         // But Buchberger algorithm will take several minutes
         List<MultivariatePolynomial<BigInteger>> buch = GroebnerBasis.BuchbergerGB(gens, GREVLEX);
         assert (buch.equals(gb));
+    }
+
+    @Test
+    public void test43() {
+        // polynomial ring Z[x,y,z]
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+
+        // Coder for Z[x,y,z]
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
+
+        // parse some element from string
+        MultivariatePolynomial<BigInteger> p = coder.parse("x^2 + y^2 + z^2");
+
+        // add special string binding
+        coder.bind("p", p);
+
+        // parse another poly
+        MultivariatePolynomial<BigInteger> pSquared = coder.parse("p^2");
+        assert pSquared.equals(p.square());
+    }
+
+    @Test
+    public void test44() {
+        // Parser for rationals
+        Coder<Rational<BigInteger>, ?, ?> qCoder = Coder.mkCoder(Q);
+        // parse some rational number
+        Rational<BigInteger> el = qCoder.parse("1/2/3 + (1-3/5)^3 + 1");
+        System.out.println(el);
+    }
+
+    @Test
+    public void test45() {
+        // univariate ring Z/2[t]
+        UnivariateRing<UnivariatePolynomialZp64> uRing = UnivariateRingZp64(2);
+        // coder for polynomials from Z/2[t]
+        Coder<UnivariatePolynomialZp64, ?, ?> uCoder = Coder.mkUnivariateCoder(uRing, "t");
+
+        // rational functions over Z/2[t]
+        Rationals<UnivariatePolynomialZp64> cfRing = Frac(uRing);
+        // coder for rational functions from Frac(Z/2[t])
+        Coder<Rational<UnivariatePolynomialZp64>, ?, ?>
+                cfCoder = Coder.mkRationalsCoder(cfRing, uCoder);
+
+        // ring Frac(Z/2[t])[a,b,c]
+        MultivariateRing<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>>
+                ring = MultivariateRing(3, cfRing);
+        // coder for polynomials from Frac(Z/2[t])[a,b,c]
+        Coder<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>, ?, ?>
+                coder = Coder.mkMultivariateCoder(ring, cfCoder, "a", "b", "c");
+
+        // parse some element
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el = coder.parse("(1 + t)*a^2 - c^3 + b/t^2 + (a + b)/(1 + t)^3");
+
+        System.out.println(coder.stringify(el));
+
+        // associate variable "E" with polynomial el in parser
+        coder.bind("E", el);
+
+        // "E" will be replaced with el by the parser
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el2 = coder.parse("(a+b) * E^2 + 1");
+
+    }
+
+    @Test
+    public void test46() {
+        // univariate ring Z/2[t]
+        UnivariateRing<UnivariatePolynomialZp64> uRing = UnivariateRingZp64(2);
+        // coder for polynomials from Z/2[t]
+        Coder<UnivariatePolynomialZp64, ?, ?> uCoder = Coder.mkUnivariateCoder(uRing, "t");
+
+        // rational functions over Z/2[t]
+        Rationals<UnivariatePolynomialZp64> cfRing = Frac(uRing);
+        // coder for rational functions from Frac(Z/2[t])
+        Coder<Rational<UnivariatePolynomialZp64>, ?, ?>
+                cfCoder = Coder.mkRationalsCoder(cfRing, uCoder);
+
+        // ring Frac(Z/2[t])[a,b,c]
+        MultivariateRing<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>>
+                ring = MultivariateRing(3, cfRing);
+        // coder for polynomials from Frac(Z/2[t])[a,b,c]
+        Coder<MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>, ?, ?>
+                coder = Coder.mkMultivariateCoder(ring, cfCoder, "a", "b", "c");
+
+        // parse some element
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el = coder.parse("(1 + t)*a^2 - c^3 + b/t^2 + (a + b)/(1 + t)^3");
+
+        System.out.println(coder.stringify(el));
+
+        // associate variable "E" with polynomial el in parser
+        coder.bind("E", el);
+
+        // "E" will be replaced with el by the parser
+        MultivariatePolynomial<Rational<UnivariatePolynomialZp64>>
+                el2 = coder.parse("(a+b) * E^2 + 1");
+    }
+
+    @Test
+    public void test47() {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        Rationals<MultivariatePolynomial<BigInteger>> field = Frac(ring);
+
+        // Parser/stringifier of rational functions
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?> coder = Coder.mkRationalsCoder(field,
+                Coder.mkMultivariateCoder(ring, "x", "y", "z"));
+
+        // parse some math expression from string
+        // it will be automatically reduced to a common denominator
+        // with the gcd being automatically cancelled
+        Rational<MultivariatePolynomial<BigInteger>> expr1 = coder.parse("(x/y/(x - z) + (x + z)/(y - z))^2 - 1");
+
+        // do some math ops programmatically
+        Rational<MultivariatePolynomial<BigInteger>>
+                x = new Rational<>(ring, ring.variable(0)),
+                y = new Rational<>(ring, ring.variable(1)),
+                z = new Rational<>(ring, ring.variable(2));
+
+        Rational<MultivariatePolynomial<BigInteger>> expr2 = field.add(
+                field.pow(expr1, 2),
+                field.divideExact(x, y),
+                field.negate(z));
+
+
+        // bind expr1 and expr2 to variables to use them further in parser
+        coder.bind("expr1", expr1);
+        coder.bind("expr2", expr2);
+
+        // parse some complicated expression from string
+        // it will be automatically reduced to a common denominator
+        // with the gcd being automatically cancelled
+        Rational<MultivariatePolynomial<BigInteger>> expr3 = coder.parse(
+                " expr1 / expr2 - (x*y - z)/(x-y)/expr1"
+                        + " + x / expr2 - (x*z - y)/(x-y)/expr1/expr2"
+                        + "+ x^2*y^2 - z^3 * (x - y)^2");
+
+        // export expression to string
+        System.out.println(coder.stringify(expr3));
+
+        // take numerator and denominator
+        MultivariatePolynomial<BigInteger> num = expr3.numerator;
+        MultivariatePolynomial<BigInteger> den = expr3.denominator;
+
+        // common GCD is always cancelled automatically
+        assert field.ring.gcd(num, den).isOne();
+
+        // compute unique factor decomposition of expression
+        FactorDecomposition<Rational<MultivariatePolynomial<BigInteger>>> factors = field.factor(expr3);
+        System.out.println(factors.toString(coder));
     }
 }

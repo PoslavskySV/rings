@@ -1079,4 +1079,118 @@ class Examples {
     val fracs = apart(Rational(W + 1, (rx / ry + W.pow(2)) * (rz / rx + W.pow(3))))
     println(fracs)
   }
+
+  @Test
+  def test37: Unit = {
+    import syntax._
+
+    // coefficient ring is GF(17, 3) represented as
+    // univariate polynomials over "t"
+    val cfRing = GF(17, 3, "t")
+
+    // polynomial ring GF(17, 3)[x, y, z]
+    implicit val ring = MultivariateRing(cfRing, Array("x", "y", "z"))
+
+    // one can now parse polynomials from GF(17, 3)[x, y, z]
+    // using "x", "y", "z" for polynomial vars and "t" for
+    // monomial element from GF(17, 3)
+    val poly = ring("t + x*y/t - 3*t*z^2")
+
+    // stringify poly using "x", "y", "z" for polynomial vars
+    // and "t" for monomial in GF(17, 3)
+    println(ring stringify poly)
+
+
+    // one can access underlying coder via .coder
+    // e.g. use string "p" as abbreviation for poly in parser
+    ring.coder.bind("p", poly)
+
+    val poly2 = ring("x - p^2")
+    assert(ring.`x` - poly.pow(2) == poly2)
+
+    // this is forbidden (IllegalArgumentException will be thrown):
+    // (can't use "a" and "b" instead of "x" and "y")
+    val polyerr = ring("a^2 + b*c") // <- error!
+  }
+
+  @Test
+  def test38: Unit = {
+
+    {
+      val rational = Q("1/2/3 + (1-3/5)^3 + 1")
+      println(rational)
+    }
+
+    {
+      implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
+      val poly = ring("x^2 + y^2 + z^2")
+
+      println(ring.stringify(poly))
+    }
+
+    {
+
+      val uRing = UnivariateRingZp64(2, "t")
+      val cfRing = Frac(uRing)
+      implicit val ring = MultivariateRing(cfRing, Array("a", "b", "c"))
+
+      // parse some element
+      val el = ring("(1 + t)*a^2 - c^3 + b/t^2 + (a + b)/(1 + t)^3")
+
+      // stringify it with coder
+      println(ring.stringify(el))
+
+      // associate variable "E" with polynomial el in parser
+      ring.coder.bind("E", el)
+
+      // "E" will be replaced with el by the parser
+      val el2 = ring("(a+b) * E^2 + 1")
+    }
+  }
+
+
+  @Test
+  def test39: Unit = {
+
+    import syntax._
+
+    // Frac(Z[x,y,z])
+    implicit val field = Frac(MultivariateRing(Z, Array("x", "y", "z")))
+
+    // parse some math expression from string
+    // it will be automatically reduced to a common denominator
+    // with the gcd being automatically cancelled
+    val expr1 = field("(x/y/(x - z) + (x + z)/(y - z))^2 - 1")
+
+    // do some math ops programmatically
+    val (x, y, z) = field("x", "y", "z")
+    val expr2 = expr1.pow(2) + x / y - z
+
+    // bind expr1 and expr2 to variables to use them further in parser
+    field.coder.bind("expr1", expr1)
+    field.coder.bind("expr2", expr2)
+
+    // parse some complicated expression from string
+    // it will be automatically reduced to a common denominator
+    // with the gcd being automatically cancelled
+    val expr3 = field(
+      """
+         expr1 / expr2 - (x*y - z)/(x-y)/expr1
+         + x / expr2 - (x*z - y)/(x-y)/expr1/expr2
+         + x^2*y^2 - z^3 * (x - y)^2
+      """)
+
+    // export expression to string
+    println(field.stringify(expr3))
+
+    // take numerator and denominator
+    val num = expr3.numerator
+    val den = expr3.denominator
+    // common GCD is always cancelled automatically
+    assert( field.ring.gcd(num, den).isOne )
+
+    // compute unique factor decomposition of expression
+    val factors = field.factor(expr3)
+    println(field stringify factors)
+  }
 }
