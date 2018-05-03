@@ -1110,7 +1110,7 @@ class Examples {
 
     // this is forbidden (IllegalArgumentException will be thrown):
     // (can't use "a" and "b" instead of "x" and "y")
-    val polyerr = ring("a^2 + b*c") // <- error!
+    //val polyerr = ring("a^2 + b*c") // <- error!
   }
 
   @Test
@@ -1148,7 +1148,6 @@ class Examples {
     }
   }
 
-
   @Test
   def test39: Unit = {
 
@@ -1184,8 +1183,8 @@ class Examples {
     println(field.stringify(expr3))
 
     // take numerator and denominator
-    val num = expr3.numerator
-    val den = expr3.denominator
+    val num = expr3.numerator()
+    val den = expr3.denominator()
     // common GCD is always cancelled automatically
     assert( field.ring.gcd(num, den).isOne )
 

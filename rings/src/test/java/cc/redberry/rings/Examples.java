@@ -1010,8 +1010,8 @@ public class Examples {
         System.out.println(coder.stringify(expr3));
 
         // take numerator and denominator
-        MultivariatePolynomial<BigInteger> num = expr3.numerator;
-        MultivariatePolynomial<BigInteger> den = expr3.denominator;
+        MultivariatePolynomial<BigInteger> num = expr3.numerator();
+        MultivariatePolynomial<BigInteger> den = expr3.denominator();
 
         // common GCD is always cancelled automatically
         assert field.ring.gcd(num, den).isOne();
