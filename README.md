@@ -47,7 +47,7 @@ Now run Rings<i>.repl</i>:
 ``` scala
 $ rings.repl
 Loading...
-Rings 2.3.2: efficient Java/Scala library for polynomial rings
+Rings 2.4: efficient Java/Scala library for polynomial rings
 
 @ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -76,7 +76,7 @@ $ rings.repl myRingsScript.sc
 Rings is currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your `build.sbt` file:
 
 ``` scala
-libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.3.2"
+libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.4"
 ```
 
 For using Rings solely in Java there is Maven artifact:
@@ -85,7 +85,7 @@ For using Rings solely in Java there is Maven artifact:
 <dependency>
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.3.2</version>
+    <version>2.4</version>
 </dependency>
 ```
 

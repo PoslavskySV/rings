@@ -41,7 +41,7 @@ Now run |Rings|\ *.repl*:
 
 	$ rings.repl
 	Loading...
-	Rings 2.3: efficient Java/Scala library for polynomial rings
+	Rings 2.4: efficient Java/Scala library for polynomial rings
 
 	@ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 	ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -64,7 +64,7 @@ Java/Scala library
 
 .. code-block:: scala
 
-	libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.3"
+	libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.4"
 
 For using |Rings| solely in Java there is Maven artifact:
 
@@ -73,7 +73,7 @@ For using |Rings| solely in Java there is Maven artifact:
 	<dependency>
 	    <groupId>cc.redberry</groupId>
 	    <artifactId>rings</artifactId>
-	    <version>2.3</version>
+	    <version>2.4</version>
 	</dependency>
 
 
@@ -663,7 +663,6 @@ Rational function arithmetic
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Define a field of rational functions :math:`Frac(Z[x,y,z])` and input some functions:
-
 
 .. tabs::
 
