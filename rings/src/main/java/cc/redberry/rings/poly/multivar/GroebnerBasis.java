@@ -65,7 +65,7 @@ public final class GroebnerBasis {
         if (Util.isOverRationals(factory))
             return (List<Poly>) GroebnerBasisInQ((List) generators, monomialOrder, null, true);
         else
-            throw new RuntimeException("unsupported");//return HilbertGB(generators, monomialOrder);
+            return BuchbergerGB(generators, monomialOrder);
     }
 
     /**
@@ -970,8 +970,8 @@ public final class GroebnerBasis {
                 break;
 
         Rational<BigInteger> delta = currentHPS.initialNumerator.get(currentDegree).subtract(hilbertSeries.initialNumerator.get(currentDegree));
-        assert delta.isIntegral() && delta.numerator.signum() > 0;
-        int hilbertDelta = delta.numerator.intValueExact();
+        assert delta.isIntegral() && delta.numerator().signum() > 0;
+        int hilbertDelta = delta.numerator().intValueExact();
 
         // remove redundant S-pairs
         final int mDegree = currentDegree;
@@ -3370,7 +3370,7 @@ public final class GroebnerBasis {
             if (idealDegree == -1) {
                 Rational<BigInteger> degree = numerator.evaluate(1);
                 assert degree.isIntegral();
-                idealDegree = degree.numerator.intValueExact();
+                idealDegree = degree.numerator().intValueExact();
             }
             return idealDegree;
         }

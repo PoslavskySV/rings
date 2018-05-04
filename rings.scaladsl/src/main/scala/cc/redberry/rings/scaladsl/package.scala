@@ -6,6 +6,7 @@ package cc.redberry.rings
   */
 package object scaladsl extends Predef {
 
+  type Coder[E] = cc.redberry.rings.io.Coder[E, _, _]
   type DegreeVector = poly.multivar.DegreeVector
   type Ordering = java.util.Comparator[DegreeVector]
   type IntZ = bigint.BigInteger

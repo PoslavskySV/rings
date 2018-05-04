@@ -1,12 +1,21 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.*;
+import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Ring;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
+import cc.redberry.rings.io.Coder;
+import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.poly.multivar.MonomialOrder;
+import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -43,9 +52,37 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     /**
      * Parse string into polynomial
+     *
+     * @param string string expression
+     * @param ring   the ring
+     * @param var    variable string
      */
+    public static <E> UnivariatePolynomial<E> parse(String string, Ring<E> ring, String var) {
+        return Coder.mkUnivariateCoder(Rings.UnivariateRing(ring), var).parse(string);
+    }
+
+    /**
+     * Parse string into polynomial
+     *
+     * @deprecated use {@link #parse(String, Ring, String)}
+     */
+    @Deprecated
     public static <E> UnivariatePolynomial<E> parse(String string, Ring<E> ring) {
-        return Parser.parse(ring, ring, string);
+        return Coder.mkUnivariateCoder(Rings.UnivariateRing(ring), guessVariableString(string)).parse(string);
+    }
+
+    private static String guessVariableString(String string) {
+        Matcher matcher = Pattern.compile("[a-zA-Z]+[0-9]*").matcher(string);
+        List<String> variables = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        while (matcher.find()) {
+            String var = matcher.group();
+            if (seen.contains(var))
+                continue;
+            seen.add(var);
+            variables.add(var);
+        }
+        return variables.size() == 0 ? "x" : variables.get(0);
     }
 
     /**
@@ -1013,10 +1050,6 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return parse(string, ring);
     }
 
-    public UnivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String variable) {
-        return Parser.parse(ring, eParser, string);
-    }
-
     @Override
     public Iterator<E> iterator() {
         return new It();
@@ -1143,6 +1176,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public E[] getDataReferenceUnsafe() {return data;}
 
     @Override
+    public MultivariatePolynomial<E> asMultivariate() {
+        return MultivariatePolynomial.asMultivariate(this, 1, 0, MonomialOrder.DEFAULT);
+    }
+
+    @Override
     public int compareTo(UnivariatePolynomial<E> o) {
         int c = Integer.compare(degree, o.degree);
         if (c != 0)
@@ -1156,65 +1194,52 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     @Override
-    public String coefficientRingToString() {
-        return ring.toString();
+    public String coefficientRingToString(IStringifier<UnivariatePolynomial<E>> stringifier) {
+        return ring.toString(stringifier.substringifier(ring));
     }
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(1));
+        return toString(IStringifier.dummy());
     }
 
     @Override
-    public String toString(String[] variables) {
-        return toString(ring, variables[0]);
-    }
+    public String toString(IStringifier<UnivariatePolynomial<E>> stringifier) {
+        IStringifier<E> cfStringifier = stringifier.substringifier(ring);
+        if (isConstant())
+            return cfStringifier.stringify(cc());
 
-    public String toString(ToStringSupport<E> cfxToString, String variable) {
-        if (isZero())
-            return "0";
+        String varString = stringifier.getBindings().getOrDefault(createMonomial(1), IStringifier.defaultVar());
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < data.length; i++) {
-            String str = termToString(cfxToString, i, variable);
-            if (sb.length() == 0 && str.startsWith("+"))
-                str = str.substring(1);
-            sb.append(str);
+        for (int i = 0; i <= degree; i++) {
+            E el = data[i];
+            if (ring.isZero(el))
+                continue;
+
+            String cfString;
+            if (!ring.isOne(el) || i == 0)
+                cfString = cfStringifier.stringify(el);
+            else
+                cfString = "";
+
+            if (i != 0 && IStringifier.needParenthesisInSum(cfString))
+                cfString = "(" + cfString + ")";
+
+            if (sb.length() != 0 && !cfString.startsWith("-"))
+                sb.append("+");
+
+            sb.append(cfString);
+            if (i == 0)
+                continue;
+
+            if (!cfString.isEmpty())
+                sb.append("*");
+
+            sb.append(varString);
+            if (i > 1)
+                sb.append("^").append(i);
         }
         return sb.toString();
-    }
-
-    private String termToString(ToStringSupport<E> cfxToString, int i, String var) {
-        E el = data[i];
-        if (ring.isZero(el))
-            return "";
-        String coefficient;
-        boolean needSeparator;
-        if (ring.isOne(el)) {
-            coefficient = "";
-            needSeparator = false;
-        } else if (!(ring instanceof IntegersZp) && ring.isMinusOne(el)) {
-            coefficient = "-";
-            needSeparator = false;
-        } else {
-            coefficient = cfxToString.toString(el);
-            if (!coefficient.matches("[+\\-]?\\d+"))
-                coefficient = "(" + coefficient + ")";
-            needSeparator = true;
-        }
-
-        if (!coefficient.startsWith("-") && !coefficient.startsWith("+"))
-            coefficient = "+" + coefficient;
-
-        String m;
-        if (i == 0)
-            m = "";
-        else
-            m = ((needSeparator ? "*" : "") + var + (i == 1 ? "" : "^" + i));
-        if (m.isEmpty())
-            if (ring.isOne(el) || (!(ring instanceof IntegersZp) && ring.isMinusOne(el)))
-                coefficient = coefficient + "1";
-
-        return coefficient + m;
     }
 
     String toStringForCopy() {

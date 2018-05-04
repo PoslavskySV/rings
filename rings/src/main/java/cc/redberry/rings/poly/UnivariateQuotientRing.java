@@ -1,7 +1,7 @@
 package cc.redberry.rings.poly;
 
 import cc.redberry.rings.AQuotientRing;
-import cc.redberry.rings.WithVariables;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariateDivision.InverseModMonomial;
@@ -55,16 +55,6 @@ public class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<Poly>>
     }
 
     @Override
-    public Poly parse(String string) {
-        return parse(string, WithVariables.defaultVars(nVariables()));
-    }
-
-    @Override
-    public Poly parse(String string, String[] variables) {
-        return valueOf(factory.parsePoly(string, variables));
-    }
-
-    @Override
     public Poly variable(int variable) {
         if (variable != 0)
             throw new IllegalArgumentException();
@@ -72,17 +62,12 @@ public class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<Poly>>
     }
 
     @Override
-    public String toString(String[] variables) {
-        return toString(factory.coefficientRingToString(), variables);
-    }
-
-    @Override
-    public String toString(String coefficientDomain, String[] variables) {
-        return ((IPolynomialRing) baseRing).toString(coefficientDomain, variables) + "/<" + modulus.toString(variables) + ">";
+    public String toString(IStringifier<Poly> stringifier) {
+        return baseRing.toString(stringifier) + "/<" + stringifier.stringify(modulus) + ">";
     }
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(nVariables()));
+        return toString(IStringifier.dummy());
     }
 }

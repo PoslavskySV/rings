@@ -2,8 +2,8 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.libdivide4j.FastDivision.Magic;
 import cc.redberry.rings.Ring;
-import cc.redberry.rings.WithVariables;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.util.ArraysUtil;
 
@@ -634,53 +634,42 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(1));
+        return toString(IStringifier.dummy());
     }
 
     @Override
-    public String toString(String... variables) {
-        if (isZero())
-            return "0";
+    public String toString(IStringifier<lPoly> stringifier) {
+        if (isConstant())
+            return Long.toString(cc());
+
+        String varString = stringifier.getBindings().getOrDefault(createMonomial(1), IStringifier.defaultVar());
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < data.length; i++) {
-            String str = termToString(i, variables[0]);
-            if (sb.length() == 0 && str.startsWith("+"))
-                str = str.substring(1);
-            sb.append(str);
+        for (int i = 0; i <= degree; i++) {
+            long el = data[i];
+            if (el == 0)
+                continue;
+
+            String cfString;
+            if (el != 1 || i == 0)
+                cfString = Long.toString(el);
+            else
+                cfString = "";
+
+            if (sb.length() != 0 && !cfString.startsWith("-"))
+                sb.append("+");
+
+            sb.append(cfString);
+            if (i == 0)
+                continue;
+
+            if (!cfString.isEmpty())
+                sb.append("*");
+
+            sb.append(varString);
+            if (i > 1)
+                sb.append("^").append(i);
         }
         return sb.toString();
-    }
-
-    private String termToString(int i, String var) {
-        long el = data[i];
-        if (el == 0)
-            return "";
-        String coefficient;
-        boolean needSeparator;
-        if (el == 1) {
-            coefficient = "";
-            needSeparator = false;
-        } else if (el == -1) {
-            coefficient = "-";
-            needSeparator = false;
-        } else {
-            coefficient = Long.toString(el);
-            needSeparator = true;
-        }
-
-        if (!coefficient.startsWith("-") && !coefficient.startsWith("+"))
-            coefficient = "+" + coefficient;
-
-        String m;
-        if (i == 0)
-            m = "";
-        else
-            m = ((needSeparator ? "*" : "") + var + (i == 1 ? "" : "^" + i));
-        if (m.isEmpty())
-            if (el == 1 || el == -1)
-                coefficient = coefficient + "1";
-
-        return coefficient + m;
     }
 
     public String toStringForCopy() {

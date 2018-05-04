@@ -2,7 +2,8 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
-import cc.redberry.rings.WithVariables;
+import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.io.Stringifiable;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
 
@@ -21,7 +22,7 @@ import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
  * @since 2.3
  */
 public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-        implements WithVariables, Serializable {
+        implements Stringifiable<Poly>, Serializable {
     /** list of original generators */
     private final List<Poly> originalGenerators;
     /** monomial order used for standard basis */
@@ -414,13 +415,13 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
     }
 
     @Override
-    public String toString(String[] variables) {
-        return "<" + groebnerBasis.stream().map(p -> p.toString(variables)).collect(Collectors.joining(", ")) + ">";
+    public String toString(IStringifier<Poly> stringifier) {
+        return "<" + groebnerBasis.stream().map(stringifier::stringify).collect(Collectors.joining(", ")) + ">";
     }
 
     @Override
     public String toString() {
-        return toString(WithVariables.defaultVars(factory.nVariables));
+        return toString(IStringifier.dummy());
     }
 
     /**

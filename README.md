@@ -2,8 +2,8 @@
 [![image](https://readthedocs.org/projects/rings/badge/?version=latest)](https://rings.readthedocs.io)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.svg)](http://www.javadoc.io/doc/cc.redberry/rings)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?label=scaladoc)](http://www.javadoc.io/doc/cc.redberry/rings.scaladsl_2.12)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.3.1%7Cjar)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.3.1%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.3.2%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.3.2%7Cjar)
 [![image](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat)](https://opensource.org/licenses/Apache-2.0)
 
 Rings: efficient Java/Scala library for polynomial rings
@@ -20,7 +20,7 @@ The key features of Rings include:
 > -  [Commutative algebra →](http://rings.readthedocs.io/en/latest/guide.html#ref-rings) Arbitrary rings, Galois fields, polynomial ideals etc
 > -  [Ideals and Gröbner bases →](http://rings.readthedocs.io/en/latest/guide.html#ref-ideals) Polynomial ideals and efficient algorithms for Gröbner bases
 > -  [Scala DSL →](http://rings.readthedocs.io/en/latest/guide.html#ref-scala-dsl) Powerful domain specific language in Scala
-> -  [Fast →](http://rings.readthedocs.io/en/latest/benchmarks.html) Really fast library suitable for real-world computational challenges
+> -  [Fast →](https://github.com/PoslavskySV/rings.benchmarks) Really fast library suitable for real-world computational challenges
 
 The full documentation is available at [<http://rings.readthedocs.io>](https://rings.readthedocs.io).
 
@@ -47,7 +47,7 @@ Now run Rings<i>.repl</i>:
 ``` scala
 $ rings.repl
 Loading...
-Rings 2.3.1: efficient Java/Scala library for polynomial rings
+Rings 2.4: efficient Java/Scala library for polynomial rings
 
 @ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -76,7 +76,7 @@ $ rings.repl myRingsScript.sc
 Rings is currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your `build.sbt` file:
 
 ``` scala
-libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.3.1"
+libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.4"
 ```
 
 For using Rings solely in Java there is Maven artifact:
@@ -85,7 +85,7 @@ For using Rings solely in Java there is Maven artifact:
 <dependency>
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.3.1</version>
+    <version>2.4</version>
 </dependency>
 ```
 
@@ -368,6 +368,62 @@ println(Factor(poly))
 ```
 
 
+
+### Rational function arithmetic
+
+Define a field of rational functions *Frac(Z[x,y,z])* and input some functions:
+
+``` scala
+// Frac(Z[x,y,z])
+implicit val field = Frac(MultivariateRing(Z, Array("x", "y", "z")))
+
+// parse some math expression from string
+// it will be automatically reduced to a common denominator
+// with the gcd being automatically cancelled
+val expr1 = field("(x/y/(x - z) + (x + z)/(y - z))^2 - 1")
+
+// do some math ops programmatically
+val (x, y, z) = field("x", "y", "z")
+val expr2 = expr1.pow(2) + x / y - z
+```
+
+Greatest common divisors of numerators and denominators are always cancelled automatically. 
+
+Use ``Coder`` to parse more complicated expressions:
+
+``` scala
+// bind expr1 and expr2 to variables to use them further in parser
+field.coder.bind("expr1", expr1)
+field.coder.bind("expr2", expr2)
+
+// parse some complicated expression from string
+// it will be automatically reduced to a common denominator
+// with the gcd being automatically cancelled
+val expr3 = field(
+  """
+     expr1 / expr2 - (x*y - z)/(x-y)/expr1
+     + x / expr2 - (x*z - y)/(x-y)/expr1/expr2
+     + x^2*y^2 - z^3 * (x - y)^2
+  """)
+
+// export expression to string
+println(field.stringify(expr3))
+
+// take numerator and denominator
+val num = expr3.numerator()
+val den = expr3.denominator()
+// common GCD is always cancelled automatically
+assert( field.ring.gcd(num, den).isOne )
+```
+
+Compute unique factor decomposition of rational function:
+
+``` scala
+// compute unique factor decomposition of expression
+val factors = field.factor(expr3)
+println(field.stringify(factors))
+```
+
 ### Ideals and Groebner bases
 
 Construct some ideal and check its properties:
@@ -526,27 +582,21 @@ assert(data.forall { case (p, v) => poly.eval(p) == v })
 Highlighted benchmarks
 ----------------------
 
-In the following plots performance of Rings is compared to Wolfram Mathematica 11. All tests were performed on MacBook Pro (15-inch, 2017), 3,1 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3. The code of benchmarks can be found at [GitHub](https://github.com/PoslavskySV/rings/tree/develop/rings.benchmarks). In all benchamrks random polynomials were used.
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_nvars.png?raw=true" width="600">
 
-<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_z_5vars_rings_vs_singular.png?raw=true" width="600">
+Dependence of multivariate GCD performance on the number of variables. For details see [benchmarks](https://github.com/PoslavskySV/rings.benchmarks/tree/master/gcd)
 
-Rings vs Singular performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]* each with 40 terms and degree 20 in each variable
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_size.png?raw=true" width="600">
 
-<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/gcd_z_5vars_rings_vs_wolfram.png?raw=true" width="600">
+Dependence of multivariate GCD performance on the size of input polynomials. For details see [benchmarks](https://github.com/PoslavskySV/rings.benchmarks/tree/master/gcd)
 
-Rings vs Mathematica performance of *gcd(a g, b g)* for random polynomials *(a, b, g) \in Z[x_1,x_2,x_3,x_4,x_5]* each with 40 terms and degree 20 in each variable
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor.png?raw=true" width="600">
 
-<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor_z2_7vars_rings_vs_singular.png?raw=true" width="600">
+Dependence of multivariate factorization performance on the number of variables. For details see [benchmarks](https://github.com/PoslavskySV/rings.benchmarks/tree/master/factor)
 
-Rings vs Singular performance of *factor(a b c)* for random polynomials *(a, b, c) \in Z_2[x_1,x_2,x_3,x_4,x_5,x_6,x_7]* each with 20 terms and degree 10 in each variable
+<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor_univar.png?raw=true" width="600">
 
-<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/factor_z_3vars_rings_vs_wolfram.png?raw=true" width="600">
-
-Rings vs Mathematica performance of *factor(a b c)* for random polynomials *(a, b, c) \in Z\[x,y,z\]* each with 20 terms and degree 10 in each variable
-
-<img src="https://github.com/PoslavskySV/rings/blob/develop/doc/_static/bench_fac_uni_Zp_flint_ntl.png?raw=true" width="600">
-
-Univariate factorization performance on polynomials of the form *(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)* in *Z_{17}[x]*. At small degrees the performance is identical, while at large degrees NTL and FLINT have much better asymptotic (probably due to more advanced algorithms for polynomial multiplication).
+Univariate factorization performance on polynomials of the form *(1 + \sum_{i = 1}^{i \leq deg} i \times x^i)* in *Z_{17}[x]*.
 
 
 Index of algorithms implemented in Rings

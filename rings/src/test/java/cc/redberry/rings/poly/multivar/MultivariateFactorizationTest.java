@@ -10,6 +10,7 @@ import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.ArraysUtil;
 import cc.redberry.rings.util.RandomDataGenerator;
+import cc.redberry.rings.util.RandomUtil;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -18,10 +19,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -983,7 +983,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
                         MultivariatePolynomialZp64.parse("1+2*b*c^3*d*f^3+2*b^2*c^3*d^2*e^2*f^3+2*a*b^3*d*e^2*f^2+2*a^2*b*c^3*d^3*e*f^3", domain, vars),
                         MultivariatePolynomialZp64.parse("1+2*a^2*b^2*d*e^2*f^2+a^3*b^3*c*d^3*f", domain, vars),
                         MultivariatePolynomialZp64.parse("1+a*b^2*c^2*e*f^2+2*a^3*e^2+2*a^3*b*c*d^2*e^2+2*a^3*b^2*c*e", domain, vars),
-                        MultivariatePolynomialZp64.parse("1+b^3*c*d^3*e^3+a*b*c^2*d*e^3*f^3+2*a^2*e^2*f^", domain, vars),
+                        MultivariatePolynomialZp64.parse("1+b^3*c*d^3*e^3+a*b*c^2*d*e^3*f^3+2*a^2*e^2*f", domain, vars),
                 };
 
         MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
@@ -1116,7 +1116,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
     @Test
     public void testMultivariateFactorization25_SmallDomain() throws Exception {
         IntegersZp64 domain = new IntegersZp64(2);
-        String[] vars = {"a", "b", "c", "d", "e"};
+        String[] vars = {"a", "b", "c", "d", "e", "f"};
         MultivariatePolynomialZp64 arr[] = {
                 MultivariatePolynomialZp64.parse("1+b*c*d^3*e^2*f^2+b^2*e+a^2*b*d^2*f", domain, vars),
                 MultivariatePolynomialZp64.parse("1+b^3*c^3*d*e^2+a^2*b^3*c*e^3*f^3", domain, vars),
@@ -1241,7 +1241,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
     @Test
     public void testMultivariateFactorizationRandom4_SmallDomain_c() throws Exception {
         IntegersZp64 domain = new IntegersZp64(5);
-        String[] vars = {"a", "b", "c", "d", "e"};
+        String[] vars = {"a", "b", "c", "d", "e", "f"};
 
         MultivariatePolynomialZp64 arr[] = {
                 MultivariatePolynomialZp64.parse("1+2*c^3*d^2*e*f^2+3*a*b*c*e^3*f^2+4*a^2*d*e+4*a^3*c^3*d^2*e^3", domain, vars),
@@ -1527,10 +1527,11 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
         assert MultivariateSquareFreeFactorization.isSquareFree(base);
         for (int i = 0; i < its(20, 20); i++) {
-            //long start = System.nanoTime();
+            PrivateRandom.getRandom().setSeed(3);
+            long start = System.nanoTime();
             PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateFactorization.FactorInGF(base);
             Assert.assertEquals(4, decomposition.size());
-            //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println("=> " + i + "  " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }
 
@@ -2157,6 +2158,46 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
 
         MultivariatePolynomial<BigInteger> poly = p1.createOne().multiply(m);
         Assert.assertEquals(3, Factor(poly).size());
+    }
+
+
+    @Ignore
+    @Test
+    public void testMultivariateFactorization49() throws Exception {
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(1);
+
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(7, Z);
+        Supplier<MultivariatePolynomial<BigInteger>> random
+                = () -> randomPolynomial(ring.nVariables(), 0, 15,
+                20, Z, MonomialOrder.GREVLEX, r -> new BigInteger(16, r), rnd);
+
+        MultivariatePolynomial<BigInteger> poly = ring.multiply(random.get(), random.get(), random.get());
+        for (int i = 0; i < 1000; ++i) {
+            long start = System.nanoTime();
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> factor = Factor(poly);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(poly, factor.multiply());
+        }
+
+        // 101s  <- new
+        // 98s  <- new
+
+        // 116s  <- old
+        // 103s  <- old
+    }
+
+    static <E> MultivariatePolynomial<E> randomPolynomial(int nVars, int minDegree, int maxDegree, int size, Ring<E> ring,
+                                                          Comparator<DegreeVector> ordering,
+                                                          Function<RandomGenerator, E> method, RandomGenerator rnd) {
+        @SuppressWarnings("unchecked")
+        Monomial<E>[] terms = new Monomial[size];
+        for (int i = 0; i < size; i++) {
+            E cfx = method.apply(rnd);
+            int[] exponents = RandomUtil.randomIntArray(nVars, minDegree, maxDegree, rnd);
+            terms[i] = new Monomial<>(exponents, cfx);
+        }
+        return MultivariatePolynomial.create(nVars, ring, ordering, terms);
     }
 
     /* ==================================== Test data =============================================== */

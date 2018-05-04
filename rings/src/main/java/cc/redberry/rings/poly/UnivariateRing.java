@@ -1,7 +1,10 @@
 package cc.redberry.rings.poly;
 
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.poly.univar.*;
 import org.apache.commons.math3.random.RandomGenerator;
+
+import java.util.function.Function;
 
 /**
  * Ring of univariate polynomials.
@@ -100,5 +103,41 @@ public final class UnivariateRing<Poly extends IUnivariatePolynomial<Poly>> exte
     @Override
     public Poly randomElement(RandomGenerator rnd) {
         return randomElement(MIN_DEGREE_OF_RANDOM_POLY, MAX_DEGREE_OF_RANDOM_POLY, rnd);
+    }
+
+    /**
+     * Gives a random univariate polynomial with the degree randomly picked from {@code minDegree} (inclusive) to {@code
+     * maxDegree} (exclusive) and coefficients generated via {@link Ring#randomElementTree(RandomGenerator)} method
+     *
+     * @param minDegree the minimal degree of the result
+     * @param maxDegree the maximal degree of the result
+     * @param rnd       the source of randomness
+     * @return random univariate polynomial with the degree randomly picked from {@code minDegree} (inclusive) to {@code
+     * maxDegree} (exclusive)
+     * @see RandomUnivariatePolynomials
+     */
+    @SuppressWarnings("unchecked")
+    public Poly randomElementTree(int minDegree, int maxDegree, RandomGenerator rnd) {
+        if (factory instanceof UnivariatePolynomial) {
+            UnivariatePolynomial f = (UnivariatePolynomial) this.factory;
+            Ring cfRing = f.ring;
+            Function<RandomGenerator, ?> method = cfRing::randomElementTree;
+            return (Poly) RandomUnivariatePolynomials.randomPoly(minDegree +
+                            (minDegree == maxDegree ? 0 : rnd.nextInt(maxDegree - minDegree)),
+                    cfRing, method, rnd);
+        } else
+            return randomElement(minDegree, maxDegree, rnd);
+    }
+
+    /**
+     * Gives a random univariate polynomial with the degree randomly picked from {@link #MIN_DEGREE_OF_RANDOM_POLY}
+     * (inclusive) to {@link #MAX_DEGREE_OF_RANDOM_POLY} (exclusive)
+     *
+     * @param rnd the source of randomness
+     * @return random univariate polynomial
+     */
+    @Override
+    public Poly randomElementTree(RandomGenerator rnd) {
+        return randomElementTree(MIN_DEGREE_OF_RANDOM_POLY, MAX_DEGREE_OF_RANDOM_POLY, rnd);
     }
 }

@@ -69,6 +69,11 @@ public final class MonomialZp64 extends AMonomial<MonomialZp64> {
         return new MonomialZp64(exponents, totalDegree, coefficient);
     }
 
+    @Override
+    public MonomialZp64 forceSetDegreeVector(int[] exponents, int totalDegree) {
+        return new MonomialZp64(exponents, totalDegree, coefficient);
+    }
+
     public MonomialZp64 setCoefficient(long c) {
         if (coefficient == c)
             return this;

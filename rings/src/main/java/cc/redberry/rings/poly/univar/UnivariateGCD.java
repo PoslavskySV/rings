@@ -1331,7 +1331,7 @@ public final class UnivariateGCD {
             }
         }
 
-        BigInteger content = candidate[0].mapCoefficients(Rings.Z, c -> c.numerator).content();
+        BigInteger content = candidate[0].mapCoefficients(Rings.Z, Rational::numerator).content();
         Rational<BigInteger> corr = new Rational<>(Rings.Z, Rings.Z.getOne(), content);
 
         UnivariatePolynomial<Rational<BigInteger>>

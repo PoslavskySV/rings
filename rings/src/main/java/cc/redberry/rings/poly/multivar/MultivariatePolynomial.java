@@ -1,7 +1,12 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.*;
+import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Ring;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
+import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
@@ -19,6 +24,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.DEFAULT_POWERS_CACHE_SIZE;
@@ -118,7 +125,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate Z[X] polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, String... variables) {
-        return Parser.parse(string, MonomialOrder.DEFAULT, variables);
+        return parse(string, Rings.Z, variables);
+    }
+
+
+    /**
+     * Parse multivariate Z[X] polynomial from string.
+     *
+     * @param string the string
+     * @return multivariate Z[X] polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static MultivariatePolynomial<BigInteger> parse(String string) {
+        return parse(string, guessVariableStrings(string));
     }
 
     /**
@@ -132,7 +152,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, String... variables) {
-        return Parser.parse(string, ring, ring, MonomialOrder.DEFAULT, variables);
+        return parse(string, ring, MonomialOrder.DEFAULT, variables);
+    }
+
+    /**
+     * Parse multivariate polynomial from string.
+     *
+     * @param string the string
+     * @param ring   the ring
+     * @return multivariate polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring) {
+        return parse(string, ring, guessVariableStrings(string));
     }
 
     /**
@@ -146,7 +179,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return Z[X] multivariate polynomial
      */
     public static MultivariatePolynomial<BigInteger> parse(String string, Comparator<DegreeVector> ordering, String... variables) {
-        return Parser.parse(string, ordering, variables);
+        return parse(string, Rings.Z, ordering, variables);
+    }
+
+    /**
+     * Parse multivariate Z[X] polynomial from string.
+     *
+     * @param string   the string
+     * @param ordering monomial order
+     * @return Z[X] multivariate polynomial
+     * @deprecated use #parse(string, ring, ordering, variables)
+     */
+    @Deprecated
+    public static MultivariatePolynomial<BigInteger> parse(String string, Comparator<DegreeVector> ordering) {
+        return parse(string, Rings.Z, ordering, guessVariableStrings(string));
     }
 
     /**
@@ -161,18 +207,35 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return multivariate polynomial
      */
     public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, Comparator<DegreeVector> ordering, String... variables) {
-        return Parser.parse(string, ring, ring, ordering, variables);
+        return Coder.mkMultivariateCoder(Rings.MultivariateRing(variables.length, ring, ordering), variables).parse(string);
     }
 
     /**
      * Parse multivariate polynomial from string.
      *
-     * @param string the string
-     * @param ring   the ring
-     * @return multivariate polynomial
+     * @param string   the string
+     * @param ring     the ring
+     * @param ordering monomial order
+     * @deprecated use #parse(string, ring, ordering, variables)
      */
-    public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring) {
-        return Parser.parse(string, ring, ring);
+    @Deprecated
+    public static <E> MultivariatePolynomial<E> parse(String string, Ring<E> ring, Comparator<DegreeVector> ordering) {
+        return parse(string, ring, ordering, guessVariableStrings(string));
+    }
+
+    private static String[] guessVariableStrings(String string) {
+        Matcher matcher = Pattern.compile("[a-zA-Z]+[0-9]*").matcher(string);
+        List<String> variables = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        while (matcher.find()) {
+            String var = matcher.group();
+            if (seen.contains(var))
+                continue;
+            seen.add(var);
+            variables.add(var);
+        }
+        variables.sort(String::compareTo);
+        return variables.toArray(new String[variables.size()]);
     }
 
     /**
@@ -191,6 +254,23 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         for (Monomial<BigInteger> term : poly.terms)
             terms.add(new MonomialZp64(term.exponents, term.totalDegree, term.coefficient.longValueExact()));
         return MultivariatePolynomialZp64.create(poly.nVariables, ring.asMachineRing(), poly.ordering, terms);
+    }
+
+    /**
+     * Converts multivariate polynomial over BigIntegers to multivariate polynomial over machine modular integers
+     *
+     * @param poly the polynomial
+     * @param ring Zp64 ring
+     * @return multivariate polynomial over machine sized modular integers
+     * @throws IllegalArgumentException if poly.ring is not Zp
+     * @throws ArithmeticException      if some of coefficients will not exactly fit in a {@code long}.
+     */
+    public static MultivariatePolynomialZp64 asOverZp64(MultivariatePolynomial<BigInteger> poly, IntegersZp64 ring) {
+        MonomialSet<MonomialZp64> terms = new MonomialSet<>(poly.ordering);
+        BigInteger modulus = BigInteger.valueOf(ring.modulus);
+        for (Monomial<BigInteger> term : poly.terms)
+            terms.add(new MonomialZp64(term.exponents, term.totalDegree, term.coefficient.mod(modulus).longValueExact()));
+        return MultivariatePolynomialZp64.create(poly.nVariables, ring, poly.ordering, terms);
     }
 
     /**
@@ -874,7 +954,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
                                                                         Comparator<DegreeVector> ordering,
                                                                         int variable) {
         if (variable == 0)
-            return asMultivariate(recForm, nVariables, 0, ordering);
+            return (MultivariatePolynomial<E>) asMultivariate(recForm, nVariables, 0, ordering);
 
         UnivariatePolynomial<UnivariatePolynomial> _recForm = (UnivariatePolynomial<UnivariatePolynomial>) recForm;
         MultivariatePolynomial<E>[] data = new MultivariatePolynomial[_recForm.degree() + 1];
@@ -1377,7 +1457,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         }
 
         @Override
-        public PrecomputedPowersHolder<E> clone(){
+        public PrecomputedPowersHolder<E> clone() {
             return new PrecomputedPowersHolder<>(ring, powers.clone());
         }
     }
@@ -1662,6 +1742,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             return this;
         if (oth.isConstant())
             return multiply(oth.cc());
+        if (oth.size() == 1)
+            return multiply(oth.lt());
 
         if (size() > KRONECKER_THRESHOLD && oth.size() > KRONECKER_THRESHOLD)
             return multiplyKronecker(oth);
@@ -1948,80 +2030,62 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    @Deprecated
     public MultivariatePolynomial<E> parsePoly(String string) {
         MultivariatePolynomial<E> r = parse(string, ring, ordering);
         if (r.nVariables != nVariables)
-            return parsePoly(string, WithVariables.defaultVars(nVariables));
+            return parse(string, ring, ordering, IStringifier.defaultVars(nVariables));
         return r;
     }
 
     @Override
-    public MultivariatePolynomial<E> parsePoly(String string, String[] variables) {
-        MultivariatePolynomial<E> r = parse(string, ring, ordering, variables);
-        if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field: " + string);
-        return r;
-    }
+    public String toString(IStringifier<MultivariatePolynomial<E>> stringifier) {
+        IStringifier<E> cfStringifier = stringifier.substringifier(ring);
+        if (isConstant())
+            return cfStringifier.stringify(cc());
 
-    public MultivariatePolynomial<E> parsePoly(String string, ElementParser<E> eParser, String[] variables) {
-        MultivariatePolynomial<E> r = Parser.parse(string, ring, eParser, ordering, variables);
-        if (r.nVariables != nVariables)
-            throw new IllegalArgumentException("not from this field: " + string);
-        return r;
-    }
+        String[] varStrings = new String[nVariables];
+        for (int i = 0; i < nVariables; ++i)
+            varStrings[i] = stringifier.getBindings().getOrDefault(createMonomial(i, 1), IStringifier.defaultVar(i, nVariables));
 
-    private static <E> String coeffToString(ToStringSupport<E> cfxToString, E coeff) {
-        String cfs = cfxToString.toString(coeff);
-        if (cfs.matches("\\d+"))
-            return cfs;
-        if (cfs.startsWith("(") && cfs.endsWith(")"))
-            return cfs;
-        else
-            return "(" + cfs + ")";
-    }
-
-    @Override
-    public String toString(String[] vars) {
-        return toString(ring, vars);
-    }
-
-    public String toString(ToStringSupport<E> cfxToString, String[] vars) {
         StringBuilder sb = new StringBuilder();
-        boolean first = true;
         for (Monomial<E> term : terms) {
-            E coeff = term.coefficient;
-            if (ring.isZero(coeff))
-                continue;
-            String monomialString = term.dvToString(vars);
-            if (first) {
-                if (!ring.isOne(coeff) || monomialString.isEmpty()) {
-                    sb.append(coeffToString(cfxToString, coeff));
-                    if (!monomialString.isEmpty())
-                        sb.append("*");
-                }
-                sb.append(monomialString);
-                first = false;
-            } else {
-                if (ring.signum(coeff) > 0)
-                    sb.append("+");
-                else {
-                    sb.append("-");
-                    coeff = ring.negate(coeff);
-                }
+            E cf = term.coefficient;
+            String cfString;
+            if (!ring.isOne(cf) || term.totalDegree == 0)
+                cfString = cfStringifier.stringify(cf);
+            else
+                cfString = "";
 
-                if (!ring.isOne(coeff) || monomialString.isEmpty()) {
-                    sb.append(coeffToString(cfxToString, coeff));
-                    if (!monomialString.isEmpty())
-                        sb.append("*");
-                }
-                sb.append(monomialString);
+            if (term.totalDegree != 0 && IStringifier.needParenthesisInSum(cfString))
+                cfString = "(" + cfString + ")";
+
+            if (sb.length() != 0 && !cfString.startsWith("-"))
+                sb.append("+");
+
+            StringBuilder cfBuilder = new StringBuilder();
+            cfBuilder.append(cfString);
+
+            for (int i = 0; i < nVariables; ++i) {
+                if (term.exponents[i] == 0)
+                    continue;
+
+                if (cfBuilder.length() != 0)
+                    cfBuilder.append("*");
+
+                cfBuilder.append(varStrings[i]);
+
+                if (term.exponents[i] > 1)
+                    cfBuilder.append("^").append(term.exponents[i]);
             }
+
+            sb.append(cfBuilder);
         }
-        return sb.length() == 0 ? "0" : sb.toString();
+        return sb.toString();
     }
 
     @Override
-    public String coefficientRingToString() {
-        return ring.toString();
+    public String coefficientRingToString(IStringifier<MultivariatePolynomial<E>> stringifier) {
+        return ring.toString(stringifier.substringifier(ring));
     }
 }

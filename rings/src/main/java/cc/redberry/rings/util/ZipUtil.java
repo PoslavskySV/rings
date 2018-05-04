@@ -14,7 +14,7 @@ public final class ZipUtil {
     /**
      * Compress object to a string
      */
-    public static String compress(Serializable object) {
+    public static String compress(Object object) {
         try (ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
              GZIPOutputStream zipped = new GZIPOutputStream(outBytes);
              ObjectOutputStream outSer = new ObjectOutputStream(zipped)) {
@@ -27,7 +27,7 @@ public final class ZipUtil {
     }
 
     /**
-     * Decompress object from its string code obtained via {@link ZipUtil#compress(Serializable)}
+     * Decompress object from its string code obtained via {@link ZipUtil#compress(Object)}
      */
     @SuppressWarnings("unchecked")
     public static <T> T uncompress(String object) {

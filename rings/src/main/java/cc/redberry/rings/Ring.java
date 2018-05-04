@@ -1,6 +1,9 @@
 package cc.redberry.rings;
 
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
+import cc.redberry.rings.io.IParser;
+import cc.redberry.rings.io.Stringifiable;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.lang.reflect.Array;
@@ -19,8 +22,8 @@ import java.util.Iterator;
 public interface Ring<E> extends
                          Comparator<E>,
                          Iterable<E>,
-                         ToStringSupport<E>,
-                         ElementParser<E>,
+                         IParser<E>,
+                         Stringifiable<E>,
                          java.io.Serializable {
     /**
      * Returns whether this ring is a field
@@ -337,6 +340,11 @@ public interface Ring<E> extends
         return result;
     }
 
+    /** Internal API */
+    default E divideExactMutable(E dividend, E divider) {
+        return divideExact(dividend, divider);
+    }
+
     /**
      * Gives the inverse element {@code element ^ (-1) }
      *
@@ -620,17 +628,6 @@ public interface Ring<E> extends
     }
 
     /**
-     * Parse string into ring element
-     *
-     * @param string string
-     * @return ring element
-     */
-    @Override
-    default E parse(String string) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Creates generic array of ring elements of specified length
      *
      * @param length array length
@@ -827,6 +824,22 @@ public interface Ring<E> extends
     default E randomElement(RandomGenerator rnd) { return valueOf(rnd.nextLong());}
 
     /**
+     * If this ring has a complicated nested structure, this method guaranties that the resulting random element will
+     * reflect ring complicated structure, i.e. the result will be roughly as complicated as the ring is
+     *
+     * @return random element from this ring
+     */
+    default E randomElementTree(RandomGenerator rnd) { return randomElement(rnd);}
+
+    /**
+     * If this ring has a complicated nested structure, this method guaranties that the resulting random element will
+     * reflect ring complicated structure, i.e. the result will be roughly as complicated as the ring is
+     *
+     * @return random element from this ring
+     */
+    default E randomElementTree() { return randomElementTree(Rings.privateRandom);}
+
+    /**
      * Returns a random non zero element from this ring
      *
      * @param rnd the source of randomness
@@ -840,11 +853,17 @@ public interface Ring<E> extends
         return el;
     }
 
+    /**
+     * Parse string into ring element
+     *
+     * @param string string
+     * @return ring element
+     * @see Coder
+     */
     @Override
-    default String toString(E element) {
-        return element.toString();
+    default E parse(String string) {
+        return Coder.mkCoder(this).parse(string);
     }
-
 //    /**
 //     * Returns ring with larger cardinality that contains all elements of this or null if there is no such ring.
 //     *
