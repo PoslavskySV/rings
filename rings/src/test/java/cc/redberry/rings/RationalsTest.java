@@ -121,4 +121,9 @@ public class RationalsTest extends AbstractTest {
             Assert.assertEquals(new Rational<>(polyRing, num, den), coder.parse(numString));
         }
     }
+
+    @Test
+    public void test5() {
+        Assert.assertEquals(2, Q.factor(Q.parse("4/9")).size());
+    }
 }

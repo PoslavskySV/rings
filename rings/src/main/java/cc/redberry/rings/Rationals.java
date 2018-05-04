@@ -5,6 +5,7 @@ import cc.redberry.rings.io.IStringifier;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.Iterator;
+import java.util.function.Function;
 
 /**
  * The ring of rationals (Q).
@@ -119,36 +120,34 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return Rational.one(ring);
     }
 
+    private FactorDecomposition<Rational<E>> factor(Rational<E> element, Function<E, FactorDecomposition<E>> factor) {
+        FactorDecomposition<E> numFactors = element.numerator.stream()
+                .map(factor)
+                .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll);
+        FactorDecomposition<Rational<E>> factors = FactorDecomposition.empty(this);
+
+        for (int i = 0; i < numFactors.size(); i++)
+            factors.addNonUnitFactor(new Rational<>(ring, numFactors.get(i)), numFactors.getExponent(i));
+        factors.addFactor(new Rational<>(ring, numFactors.unit), 1);
+
+        FactorDecomposition<E> denFactors = element.denominator.stream()
+                .map(factor)
+                .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll);
+        for (int i = 0; i < denFactors.size(); i++)
+            factors.addNonUnitFactor(new Rational<>(ring, ring.getOne(), denFactors.get(i)), denFactors.getExponent(i));
+        factors.addFactor(new Rational<>(ring, ring.getOne(), denFactors.unit), 1);
+
+        return factors;
+    }
+
     @Override
     public FactorDecomposition<Rational<E>> factorSquareFree(Rational<E> element) {
-        FactorDecomposition<Rational<E>> numFactors =
-                element.numerator.stream()
-                        .map(ring::factorSquareFree)
-                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
-                        .mapTo(this, p -> new Rational<>(ring, p));
-        FactorDecomposition<Rational<E>> denFactors =
-                element.denominator.stream()
-                        .map(ring::factorSquareFree)
-                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
-                        .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
-
-        return numFactors.addAll(denFactors);
+        return factor(element, ring::factorSquareFree);
     }
 
     @Override
     public FactorDecomposition<Rational<E>> factor(Rational<E> element) {
-        FactorDecomposition<Rational<E>> numFactors =
-                element.numerator.stream()
-                        .map(ring::factor)
-                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
-                        .mapTo(this, p -> new Rational<>(ring, p));
-        FactorDecomposition<Rational<E>> denFactors =
-                element.denominator.stream()
-                        .map(ring::factor)
-                        .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll)
-                        .mapTo(this, p -> new Rational<>(ring, ring.getOne(), p));
-
-        return numFactors.addAll(denFactors);
+        return factor(element, ring::factor);
     }
 
     @Override

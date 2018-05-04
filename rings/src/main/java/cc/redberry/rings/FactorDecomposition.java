@@ -126,6 +126,12 @@ public class FactorDecomposition<E>
         return this;
     }
 
+    FactorDecomposition<E> addNonUnitFactor(E factor, int exponent) {
+        factors.add(factor);
+        exponents.add(exponent);
+        return this;
+    }
+
     /**
      * Raise all factors to its corresponding exponents
      */
