@@ -87,7 +87,7 @@ public class Rational<E> implements Comparable<Rational<E>>,
     private static final double SIMPLE_POLY_SPARSITY2 = 1e-3;
 
     /** integers with bit length smaller than this will be multiplied */
-    private static final int SIMPLE_INTEGER_N_BITS = 16;
+    private static final int SIMPLE_INTEGER_N_BITS = 512;
 
     // criteria singletons
     private static final Predicate<BigInteger> intSimplicityCriteria = p -> p.bitLength() <= SIMPLE_INTEGER_N_BITS;

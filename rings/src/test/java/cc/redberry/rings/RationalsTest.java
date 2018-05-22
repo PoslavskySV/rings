@@ -8,7 +8,10 @@ import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.stream.IntStream;
 
 import static cc.redberry.rings.Rings.*;
 
@@ -125,5 +128,21 @@ public class RationalsTest extends AbstractTest {
     @Test
     public void test5() {
         Assert.assertEquals(2, Q.factor(Q.parse("4/9")).size());
+    }
+
+    @Test
+    @Ignore
+    @SuppressWarnings("unchecked")
+    public void test6() {
+        Rational<BigInteger>[] rats = IntStream
+                .rangeClosed(1, 10000)
+                .mapToObj(i -> new Rational<>(Z, Z.valueOf(1), Z.valueOf(i)))
+                .toArray(Rational[]::new);
+
+        for (int i = 0; i < 100; ++i) {
+            long start = System.nanoTime();
+            Rational<BigInteger> add = Q.add(rats);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+        }
     }
 }

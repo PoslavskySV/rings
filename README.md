@@ -9,7 +9,7 @@
 Rings: efficient Java/Scala library for polynomial rings
 ========================================================
 
-Rings is an efficient implementation of univariate and multivariate polynomial algebra over arbitrary coefficient rings. It makes use of asymptotically fast algorithms for basic algebraic operations as well as for advanced methods like GCDs, factorization and Gröbner bases. Performance achieved in Rings is comparable to well known solutions like Singular/NTL/FLINT/Maple/Mathematica.
+Rings is an efficient lightweight library for commutative algebra. Polynomial arithmetic, GCDs, polynomial factorization and Groebner bases are implemented with the use of modern asymptotically fast algorithms. Rings can be easily interacted or embedded in applications via simple API with fully typed hierarchy of algebraic structures and algorithms for commutative algebra. As well, an interactive REPL is also provided. The use of Scala language brings a quite novel powerful strongly typed functional programming model allowing to write short, expressive and fast code for applications. At the same time Rings shows one of the best or even unmatched in some cases performance among existing software for algebraic calculations.
 
 The key features of Rings include:
 
