@@ -267,7 +267,7 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
     long multiply(long a, long b) {return MachineArithmetic.safeMultiply(a, b);}
 
     @Override
-    long negate(long a) {return -a;}
+    long negate(long a) {return MachineArithmetic.safeNegate(a);}
 
     @Override
     long valueOf(long a) {return a;}
