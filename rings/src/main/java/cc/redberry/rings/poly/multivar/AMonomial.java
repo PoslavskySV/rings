@@ -120,6 +120,9 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
     /** Inserts new variable (with zero exponent) */
     public final Term insert(int variable) {return setDegreeVector(dvInsert(variable));}
 
+    /** Inserts new variables (with zero exponent) */
+    public final Term insert(int variable, int count) {return setDegreeVector(dvInsert(variable, count));}
+
     /**
      * Set's exponent of specified variable to specified value
      *

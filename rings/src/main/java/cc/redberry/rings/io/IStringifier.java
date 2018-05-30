@@ -6,9 +6,11 @@ import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Defines #stringify(Stringifiable) method
@@ -23,6 +25,14 @@ public interface IStringifier<Element> {
             return ((Stringifiable) el).toString(this);
         else
             return el.toString();
+    }
+
+    /**
+     * Stringify stringifiable object
+     */
+    @SuppressWarnings("unchecked")
+    default String stringify(Collection<Element> c) {
+        return c.stream().map(this::stringify).collect(Collectors.joining(","));
     }
 
     /**

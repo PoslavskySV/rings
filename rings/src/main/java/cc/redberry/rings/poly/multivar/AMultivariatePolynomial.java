@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.IPolynomial;
@@ -416,6 +417,19 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         return create(nVariables + 1, newData);
     }
 
+    /**
+     * Makes a copy of this by inserting new variables (the indexes will be shifted)
+     *
+     * @param variable the variable
+     * @param count    length of the insertion
+     */
+    public final Poly insertVariable(int variable, int count) {
+        MonomialSet<Term> newData = new MonomialSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.insert(variable, count));
+        return create(nVariables + 1, newData);
+    }
+
     /** auxiliary method */
     final Poly setNVariables(int newNVariables) {
         if (newNVariables == nVariables)
@@ -489,6 +503,16 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
             cachedDegree = max;
         }
         return cachedDegree;
+    }
+
+    /**
+     * Gives the degree in specified variables
+     */
+    public int degree(int... variables) {
+        int max = 0;
+        for (Term db : terms)
+            max = Math.max(max, db.dvTotalDegree(variables));
+        return max;
     }
 
     /**
@@ -1380,6 +1404,51 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         for (int i = 0; i < nVariables; ++i)
             result[i] = derivative(i);
         return result;
+    }
+
+    /**
+     * Consider coefficients of this as constant polynomials of the same type as a given factory polynomial
+     *
+     * @param factory factory polynomial
+     */
+    public final MultivariatePolynomial<Poly> asOverPoly(Poly factory) {
+        MonomialSet<Monomial<Poly>> newTerms = new MonomialSet<>(ordering);
+        for (Term term : terms)
+            newTerms.add(new Monomial<>(term, factory.create(term).lcAsPoly()));
+        return new MultivariatePolynomial<>(nVariables, Rings.MultivariateRing(factory), ordering, newTerms);
+    }
+
+    /**
+     * Substitutes given polynomials instead of variables of this (that is {@code this(values_1, ..., values_N)})
+     *
+     * @param values polynomial values (may have different nvars from this)
+     */
+    public final Poly composition(Poly... values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+
+        Poly factory = values[0];
+        return asOverPoly(factory).evaluate(values);
+    }
+
+    /**
+     * Substitutes given polynomials instead of variables of this (that is {@code this(values_1, ..., values_N)})
+     *
+     * @param values polynomial values (may have different nvars from this)
+     */
+    public final Poly composition(List<Poly> values) {
+        if (nVariables == 0)
+            return self;
+        return composition(values.toArray(values.get(0).createArray(values.size())));
+    }
+
+    /**
+     * Substitutes given polynomial instead of specified variable (that is {@code this(x_1, ..., value, ..., x_N)},
+     * where value is on the place of specified variable)
+     */
+    public final Poly composition(int variable, Poly value) {
+        assertSameCoefficientRingWith(value);
+        return asUnivariate(variable).evaluate(value);
     }
 
     @Override

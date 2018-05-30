@@ -9,7 +9,7 @@ import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util;
-import cc.redberry.rings.poly.multivar.MonomialOrder.GrevLexWithPermutation;
+import cc.redberry.rings.poly.multivar.MonomialOrder.*;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic;
@@ -32,8 +32,7 @@ import java.util.stream.IntStream;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.linear.LinearSolver.SystemInfo.*;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
-import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
-import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.*;
 
 /**
  * Groebner bases.
@@ -57,6 +56,13 @@ public final class GroebnerBasis {
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> GroebnerBasis(List<Poly> generators,
                              Comparator<DegreeVector> monomialOrder) {
+        if (generators.isEmpty())
+            return Collections.emptyList();
+        if (monomialOrder instanceof GrevLexWithPermutation) {
+            GroebnerAlgorithm<Term, Poly> ga = (p, o, s) -> GBResult.notBuchberger(GroebnerBasis(p, o));
+            return GroebnerBasisRegardingGrevLexWithPermutation(generators, ga, (GrevLexWithPermutation) monomialOrder);
+        }
+
         Poly factory = generators.get(0);
         if (factory.isOverFiniteField())
             return GroebnerBasisInGF(generators, monomialOrder, null);
@@ -1150,27 +1156,49 @@ public final class GroebnerBasis {
     /** computes Groebner basis in GREVLEX with shuffled variables */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Poly> GroebnerBasisWithOptimizedGradedOrder(List<Poly> ideal, GroebnerAlgorithm<Term, Poly> baseAlgorithm) {
-        Poly factory = ideal.get(0);
-        int[] degrees = ideal.stream().map(AMultivariatePolynomial::degrees).reduce(new int[factory.nVariables], ArraysUtil::sum);
-        if (Arrays.stream(degrees).allMatch(i -> i == degrees[0]))
+        Comparator<DegreeVector> ord = optimalOrder(ideal);
+        if (ord == GREVLEX)
             // all variables have the same degree
             return baseAlgorithm.GroebnerBasis(ideal, GREVLEX, null);
 
-        int[] permutation = ArraysUtil.sequence(0, factory.nVariables);
-        ArraysUtil.quickSort(degrees, permutation);
-        int[] inversePermutation = MultivariateGCD.inversePermutation(permutation);
-
         // the ordering for which the Groebner basis will be obtained
-        GrevLexWithPermutation order = new GrevLexWithPermutation(permutation);
+        GrevLexWithPermutation order = (GrevLexWithPermutation) ord;
+        return GroebnerBasisRegardingGrevLexWithPermutation(ideal, baseAlgorithm, order);
+    }
+
+    /** computes Groebner basis in GREVLEX with shuffled variables */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> GroebnerBasisRegardingGrevLexWithPermutation(List<Poly> ideal, GroebnerAlgorithm<Term, Poly> baseAlgorithm, GrevLexWithPermutation order) {
+        int[] inversePermutation = MultivariateGCD.inversePermutation(order.permutation);
         return baseAlgorithm.GroebnerBasis(ideal
                         .stream()
-                        .map(p -> AMultivariatePolynomial.renameVariables(p, permutation))
+                        .map(p -> AMultivariatePolynomial.renameVariables(p, order.permutation))
                         .collect(Collectors.toList()),
                 GREVLEX, null)
                 .stream()
                 .map(p -> AMultivariatePolynomial.renameVariables(p, inversePermutation))
                 .map(p -> p.setOrdering(order))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Deduce the optimal order for GB algorithms
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Comparator<DegreeVector> optimalOrder(List<Poly> ideal) {
+        if (ideal.isEmpty())
+            return GREVLEX;
+        Poly factory = ideal.get(0);
+        int[] degrees = ideal.stream().map(AMultivariatePolynomial::degrees).reduce(new int[factory.nVariables], ArraysUtil::sum);
+        if (Arrays.stream(degrees).allMatch(i -> i == degrees[0]))
+            // all variables have the same degree
+            return GREVLEX;
+
+        int[] permutation = ArraysUtil.sequence(0, factory.nVariables);
+        ArraysUtil.quickSort(degrees, permutation);
+
+        // the ordering for which the Groebner basis will be obtained
+        return new GrevLexWithPermutation(permutation);
     }
 
     /* ************************************************** F4 ******************************************************* */

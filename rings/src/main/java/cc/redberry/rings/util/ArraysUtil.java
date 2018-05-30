@@ -360,6 +360,14 @@ public final class ArraysUtil {
         return newArray;
     }
 
+    public static int[] insert(int[] array, int position, int value, int length) {
+        int[] newArray = new int[array.length + length];
+        System.arraycopy(array, 0, newArray, 0, position);
+        System.arraycopy(array, position, newArray, position + length, array.length - position);
+        Arrays.fill(newArray, position, position + length, value);
+        return newArray;
+    }
+
     public static long[] insert(long[] array, int position, long value) {
         long[] newArray = new long[array.length + 1];
         System.arraycopy(array, 0, newArray, 0, position);

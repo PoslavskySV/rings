@@ -116,7 +116,7 @@ public final class MonomialOrder {
      * Block product of orderings
      */
     public static Comparator<DegreeVector> product(Comparator<DegreeVector> orderings[], int[] nVariables) {
-        return new ProductOrdering(orderings, nVariables);
+        return new ProductOrder(orderings, nVariables);
     }
 
     /**
@@ -124,21 +124,22 @@ public final class MonomialOrder {
      */
     @SuppressWarnings("unchecked")
     public static Comparator<DegreeVector> product(Comparator<DegreeVector> a, int anVariables, Comparator<DegreeVector> b, int bnVariable) {
-        return new ProductOrdering(new Comparator[]{a, b}, new int[]{anVariables, bnVariable});
+        return new ProductOrder(new Comparator[]{a, b}, new int[]{anVariables, bnVariable});
     }
 
     /** whether monomial order is graded */
     public static boolean isGradedOrder(Comparator<DegreeVector> monomialOrder) {
         return monomialOrder == GREVLEX
                 || monomialOrder == GRLEX
-                || monomialOrder instanceof GrevLexWithPermutation;
+                || monomialOrder instanceof GrevLexWithPermutation
+                || (monomialOrder instanceof EliminationOrder && isGradedOrder(((EliminationOrder) monomialOrder).baseOrder));
     }
 
-    static final class ProductOrdering implements Comparator<DegreeVector>, Serializable {
+    static final class ProductOrder implements Comparator<DegreeVector>, Serializable {
         final Comparator<DegreeVector> orderings[];
         final int[] nVariables;
 
-        ProductOrdering(Comparator<DegreeVector>[] orderings, int[] nVariables) {
+        ProductOrder(Comparator<DegreeVector>[] orderings, int[] nVariables) {
             this.orderings = orderings;
             this.nVariables = nVariables;
         }
@@ -166,7 +167,7 @@ public final class MonomialOrder {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ProductOrdering that = (ProductOrdering) o;
+            ProductOrder that = (ProductOrder) o;
 
             // Probably incorrect - comparing Object[] arrays with Arrays.equals
             if (!Arrays.equals(orderings, that.orderings)) return false;
@@ -199,6 +200,37 @@ public final class MonomialOrder {
                     return c;
             }
             return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            GrevLexWithPermutation that = (GrevLexWithPermutation) o;
+            return Arrays.equals(permutation, that.permutation);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(permutation);
+        }
+    }
+
+    public static final class EliminationOrder implements Comparator<DegreeVector>, Serializable {
+        final Comparator<DegreeVector> baseOrder;
+        final int variable;
+
+        public EliminationOrder(Comparator<DegreeVector> baseOrder, int variable) {
+            this.baseOrder = baseOrder;
+            this.variable = variable;
+        }
+
+        @Override
+        public int compare(DegreeVector o1, DegreeVector o2) {
+            int c = Integer.compare(o1.exponents[variable], o2.exponents[variable]);
+            if (c != 0)
+                return c;
+            return baseOrder.compare(o1, o2);
         }
     }
 }

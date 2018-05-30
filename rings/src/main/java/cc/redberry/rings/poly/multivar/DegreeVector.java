@@ -48,6 +48,14 @@ public class DegreeVector implements java.io.Serializable {
         return totalDegree == 0;
     }
 
+    /** Returns the total degree in specified variables */
+    public final int dvTotalDegree(int... variables) {
+        int d = 0;
+        for (int v : variables)
+            d += exponents[v];
+        return d;
+    }
+
     /** Multiplies this by oth */
     public final DegreeVector dvMultiply(DegreeVector oth) {
         if (oth.isZeroVector())
@@ -251,6 +259,11 @@ public class DegreeVector implements java.io.Serializable {
     /** Inserts new variable */
     public final DegreeVector dvInsert(int variable) {
         return new DegreeVector(ArraysUtil.insert(exponents, variable, 0), totalDegree);
+    }
+
+    /** Inserts new variables */
+    public final DegreeVector dvInsert(int variable, int count) {
+        return new DegreeVector(ArraysUtil.insert(exponents, variable, 0, count), totalDegree);
     }
 
     /**
