@@ -5,14 +5,14 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.io.Stringifiable;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import cc.redberry.rings.poly.multivar.GroebnerBases.*;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.GroebnerBasis;
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.GroebnerBasis;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
 

@@ -8,7 +8,7 @@ import cc.redberry.rings.poly.QuotientRing;
 import cc.redberry.rings.poly.UnivariateQuotientRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.*;
-import cc.redberry.rings.poly.multivar.GroebnerBasis.HilbertSeries;
+import cc.redberry.rings.poly.multivar.GroebnerBases.HilbertSeries;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariateInterpolation.InterpolationZp64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -854,20 +854,20 @@ public class Examples {
 
 
         // The default method will use modular algorithm in this case
-        List<MultivariatePolynomial<BigInteger>> gb = GroebnerBasis.GroebnerBasis(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> gb = GroebnerBases.GroebnerBasis(gens, GREVLEX);
         // Groebner bases is very simple: <x, z^2, 1 + 4*y^3>
         System.out.println(gb);
 
         // Modular algorithm will take few milliseconds
-        List<MultivariatePolynomial<BigInteger>> mod = GroebnerBasis.ModularGB(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> mod = GroebnerBases.ModularGB(gens, GREVLEX);
         assert (mod.equals(gb));
 
         // F4 algorithm will also take few milliseconds
-        List<MultivariatePolynomial<BigInteger>> f4 = GroebnerBasis.F4GB(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> f4 = GroebnerBases.F4GB(gens, GREVLEX);
         assert (f4.equals(gb));
 
         // But Buchberger algorithm will take several minutes
-        List<MultivariatePolynomial<BigInteger>> buch = GroebnerBasis.BuchbergerGB(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> buch = GroebnerBases.BuchbergerGB(gens, GREVLEX);
         assert (buch.equals(gb));
     }
 

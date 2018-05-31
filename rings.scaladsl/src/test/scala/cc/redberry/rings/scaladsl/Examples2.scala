@@ -1,6 +1,6 @@
 package cc.redberry.rings.scaladsl
 
-import cc.redberry.rings.poly.multivar.GroebnerBasis.HilbertSeries
+import cc.redberry.rings.poly.multivar.GroebnerBases.HilbertSeries
 import cc.redberry.rings.poly.multivar.MonomialOrder.{GREVLEX, LEX}
 import cc.redberry.rings.primes.BigPrimes
 import org.junit.Test

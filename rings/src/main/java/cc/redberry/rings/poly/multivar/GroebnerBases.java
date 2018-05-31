@@ -39,8 +39,8 @@ import static cc.redberry.rings.poly.multivar.MonomialOrder.*;
  *
  * @since 2.3
  */
-public final class GroebnerBasis {
-    private GroebnerBasis() {}
+public final class GroebnerBases {
+    private GroebnerBases() {}
 
     /**
      * Computes Groebner basis (minimized and reduced) of a given ideal represented by a list of generators.
@@ -807,7 +807,7 @@ public final class GroebnerBasis {
                                       Comparator<DegreeVector> monomialOrder,
                                       HilbertSeries hilbertSeries) {
         if (Util.isOverRationals(generators.get(0)))
-            return (GBResult<Term, Poly>) FracGB((List) generators, monomialOrder, hilbertSeries, GroebnerBasis::BuchbergerGB);
+            return (GBResult<Term, Poly>) FracGB((List) generators, monomialOrder, hilbertSeries, GroebnerBases::BuchbergerGB);
         Comparator<SyzygyPair> strategy = defaultSelectionStrategy(monomialOrder);
         return BuchbergerGB(generators, monomialOrder,
                 hilbertSeries == null
@@ -1234,7 +1234,7 @@ public final class GroebnerBasis {
         if (!isGradedOrder(monomialOrder))
             throw new UnsupportedOperationException("F4 works only with graded orders");
         if (Util.isOverRationals(generators.get(0)))
-            return (GBResult<Term, Poly>) FracGB((List) generators, monomialOrder, hilbertSeries, GroebnerBasis::F4GB);
+            return (GBResult<Term, Poly>) FracGB((List) generators, monomialOrder, hilbertSeries, GroebnerBases::F4GB);
 
         return F4GB(generators,
                 monomialOrder,
@@ -3538,7 +3538,7 @@ public final class GroebnerBasis {
               HilbertSeries hilbertSeries,
               boolean trySparse) {
         return ModularGB(ideal, monomialOrder,
-                GroebnerBasis::GroebnerBasisInGF,
+                GroebnerBases::GroebnerBasisInGF,
                 (p, o, s) -> GroebnerBasisInZ(p, o, s, false),
                 BigInteger.ONE.shiftLeft(59),
                 hilbertSeries, trySparse);

@@ -6,7 +6,7 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.IPolynomialRing;
-import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import cc.redberry.rings.poly.multivar.GroebnerBases.*;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.test.TimeConsuming;
 import cc.redberry.rings.util.ArraysUtil;
@@ -31,8 +31,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static cc.redberry.rings.Rings.*;
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.*;
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.GroebnerBasis;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.GroebnerBasis;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
@@ -47,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @since 1.0
  */
-public class GroebnerBasisTest extends AMultivariateTest {
+public class GroebnerBasesTest extends AMultivariateTest {
     @Before
     public void beforeMethod() throws Exception {
         if (getClass().getMethod(name.getMethodName()).isAnnotationPresent(RequiresSingular.class))
@@ -272,7 +272,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
             System.out.println("Singular: " + nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> f4 = GroebnerBasis.F4GB(ideal, GREVLEX);
+            List<MultivariatePolynomialZp64> f4 = GroebnerBases.F4GB(ideal, GREVLEX);
             System.out.println("F4: " + nanosecondsToString(System.nanoTime() - start));
             assertEquals(expected, f4);
 
@@ -363,11 +363,11 @@ public class GroebnerBasisTest extends AMultivariateTest {
             List<MultivariatePolynomialZp64> ideal = Arrays.asList(asOverZp64(f1), asOverZp64(f2), asOverZp64(f3));
             long start;
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> buch = GroebnerBasis.BuchbergerGB(ideal, GREVLEX);
+            List<MultivariatePolynomialZp64> buch = GroebnerBases.BuchbergerGB(ideal, GREVLEX);
             System.out.println("Buchberger: " + nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
-            List<MultivariatePolynomialZp64> f4 = GroebnerBasis.F4GB(ideal, GREVLEX);
+            List<MultivariatePolynomialZp64> f4 = GroebnerBases.F4GB(ideal, GREVLEX);
             System.out.println("F4: " + nanosecondsToString(System.nanoTime() - start));
 
             Assert.assertEquals(buch, f4);
@@ -385,13 +385,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         for (int i = 0; i < its(1, 1); i++) {
             long start;
-            Comparator<SyzygyPair> strategy = GroebnerBasis.normalSelectionStrategy(GREVLEX);
+            Comparator<SyzygyPair> strategy = GroebnerBases.normalSelectionStrategy(GREVLEX);
 
             start = System.nanoTime();
             List<MultivariatePolynomialZp64> norm = BuchbergerGB(ideal, GREVLEX, strategy);
             System.out.println("Normal strategy: " + nanosecondsToString(System.nanoTime() - start));
 
-            strategy = GroebnerBasis.withSugar(strategy);
+            strategy = GroebnerBases.withSugar(strategy);
             start = System.nanoTime();
             List<MultivariatePolynomialZp64> sugar = BuchbergerGB(ideal, GREVLEX, strategy);
             System.out.println("Sugar strategy:  " + nanosecondsToString(System.nanoTime() - start));
@@ -412,13 +412,13 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         for (int i = 0; i < its(1, 1); i++) {
             long start;
-            Comparator<SyzygyPair> strategy = GroebnerBasis.normalSelectionStrategy(LEX);
+            Comparator<SyzygyPair> strategy = GroebnerBases.normalSelectionStrategy(LEX);
 
             start = System.nanoTime();
             List<MultivariatePolynomialZp64> norm = BuchbergerGB(ideal, LEX, strategy);
             System.out.println("Normal strategy: " + nanosecondsToString(System.nanoTime() - start));
 
-            strategy = GroebnerBasis.withSugar(strategy);
+            strategy = GroebnerBases.withSugar(strategy);
             start = System.nanoTime();
             List<MultivariatePolynomialZp64> sugar = BuchbergerGB(ideal, LEX, strategy);
             System.out.println("Sugar strategy:  " + nanosecondsToString(System.nanoTime() - start));
@@ -640,7 +640,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         List<MultivariatePolynomial<Rational<BigInteger>>> ideal = Arrays.asList(f1, f2);
         List<MultivariatePolynomial<Rational<BigInteger>>> sing = SingularGB(ideal, GREVLEX);
-        List<MultivariatePolynomial<Rational<BigInteger>>> buch = canonicalize(GroebnerBasis.BuchbergerGB(ideal, GREVLEX));
+        List<MultivariatePolynomial<Rational<BigInteger>>> buch = canonicalize(GroebnerBases.BuchbergerGB(ideal, GREVLEX));
         Assert.assertEquals(sing, buch);
     }
 
@@ -655,7 +655,7 @@ public class GroebnerBasisTest extends AMultivariateTest {
 
         List<MultivariatePolynomial<Rational<BigInteger>>> ideal = Arrays.asList(f1, f2, f3);
         List<MultivariatePolynomial<Rational<BigInteger>>> sing = SingularGB(ideal, GREVLEX);
-        List<MultivariatePolynomial<Rational<BigInteger>>> buch = canonicalize(GroebnerBasis.BuchbergerGB(ideal, GREVLEX));
+        List<MultivariatePolynomial<Rational<BigInteger>>> buch = canonicalize(GroebnerBases.BuchbergerGB(ideal, GREVLEX));
         Assert.assertEquals(sing, buch);
     }
 

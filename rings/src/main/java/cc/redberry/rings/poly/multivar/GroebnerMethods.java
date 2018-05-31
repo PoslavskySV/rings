@@ -14,8 +14,8 @@ import java.util.stream.Collectors;
 
 import static cc.redberry.rings.Rings.MultivariateRing;
 import static cc.redberry.rings.Rings.Q;
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.GroebnerBasis;
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.GroebnerBasis;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 
