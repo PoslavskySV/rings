@@ -5,6 +5,7 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.MultivariateRing;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -58,6 +59,7 @@ public class GroebnerMethodsTest {
         assertFalse(probablyAlgebraicallyDependentQ(Arrays.asList(coder.parse("x^2 + x"), coder.parse("x^2 + y"))));
     }
 
+    @Ignore
     @Test
     public void test3() {
         List<MultivariatePolynomial<Rational<BigInteger>>> katsura = GroebnerBasisData.katsura(8);

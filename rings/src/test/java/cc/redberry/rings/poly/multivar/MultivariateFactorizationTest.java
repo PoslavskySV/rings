@@ -2145,7 +2145,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         FactorDecompositionTest.assertFactorization(poly, Factor(poly));
     }
 
-    @Test(timeout = 100_000L)
+    @Test(timeout = 200_000L)
     public void testMultivariateFactorization48() throws Exception {
         MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(5, Z);
 
