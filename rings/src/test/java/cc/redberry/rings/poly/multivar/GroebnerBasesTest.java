@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
-import static cc.redberry.rings.poly.multivar.GroebnerBases.GroebnerBasis;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariatePolynomial.asOverZp64;
@@ -1259,8 +1258,17 @@ public class GroebnerBasesTest extends AMultivariateTest {
         System.out.println(sparseGB);
     }
 
+
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    SingularResult<Term, Poly> SingularGB(List<Poly> ideal, Comparator<DegreeVector> monomialOrder) throws IOException, InterruptedException {
+    SingularResult<Term, Poly> SingularGB(List<Poly> ideal,
+                                          Comparator<DegreeVector> monomialOrder) throws IOException, InterruptedException {
+        return SingularGB(ideal, monomialOrder, null);
+    }
+
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    SingularResult<Term, Poly> SingularGB(List<Poly> ideal,
+                                          Comparator<DegreeVector> monomialOrder,
+                                          int... eliminateVars) throws IOException, InterruptedException {
         if (!isSingularAvailable())
             throw new RuntimeException("no Singular");
         String order;
@@ -1315,7 +1323,10 @@ public class GroebnerBasesTest extends AMultivariateTest {
                 writer.newLine();
                 writer.write("int t = timer;");
                 writer.newLine();
-                writer.write("ideal G = std(I);");
+                if (eliminateVars == null)
+                    writer.write("ideal G = std(I);");
+                else
+                    writer.write("ideal G = std(eliminate(I," + Arrays.stream(eliminateVars).mapToObj(i -> vars[i]).collect(Collectors.joining("*")) + "));");
                 writer.newLine();
                 writer.write("int elapsed = timer-t;");
                 writer.newLine();

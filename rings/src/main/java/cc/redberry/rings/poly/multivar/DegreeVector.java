@@ -328,9 +328,6 @@ public class DegreeVector implements java.io.Serializable {
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(exponents);
-        result = 31 * result + totalDegree;
-        return result;
+        return Arrays.hashCode(exponents);
     }
-
 }

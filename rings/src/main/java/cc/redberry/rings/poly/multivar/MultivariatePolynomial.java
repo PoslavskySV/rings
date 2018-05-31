@@ -46,7 +46,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
 
     /* ============================================ Factory methods ============================================ */
 
-    static <E> void add(MonomialSet<Monomial<E>> polynomial, Monomial<E> term, Ring<E> ring) {
+    static <E> void add(Map<DegreeVector, Monomial<E>> polynomial, Monomial<E> term, Ring<E> ring) {
         if (ring.isZero(term.coefficient))
             return;
         polynomial.merge(term, term, (o, n) -> {
@@ -58,7 +58,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         });
     }
 
-    static <E> void subtract(MonomialSet<Monomial<E>> polynomial, Monomial<E> term, Ring<E> ring) {
+    static <E> void subtract(Map<DegreeVector, Monomial<E>> polynomial, Monomial<E> term, Ring<E> ring) {
         add(polynomial, term.setCoefficient(ring.negate(term.coefficient)), ring);
     }
 

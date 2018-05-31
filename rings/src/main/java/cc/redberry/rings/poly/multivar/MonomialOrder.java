@@ -131,8 +131,7 @@ public final class MonomialOrder {
     public static boolean isGradedOrder(Comparator<DegreeVector> monomialOrder) {
         return monomialOrder == GREVLEX
                 || monomialOrder == GRLEX
-                || monomialOrder instanceof GrevLexWithPermutation
-                || (monomialOrder instanceof EliminationOrder && isGradedOrder(((EliminationOrder) monomialOrder).baseOrder));
+                || monomialOrder instanceof GrevLexWithPermutation;
     }
 
     static final class ProductOrder implements Comparator<DegreeVector>, Serializable {

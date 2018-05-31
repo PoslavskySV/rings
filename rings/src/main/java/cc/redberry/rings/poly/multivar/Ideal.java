@@ -11,7 +11,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static cc.redberry.rings.poly.multivar.GroebnerBases.GroebnerBasis;
 import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
@@ -353,19 +352,12 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         for (Poly gJ : oth.groebnerBasis)
             tGenerators.add(gJ.insertVariable(0).multiply(omt));
 
-        Comparator<DegreeVector> blockOrder = MonomialOrder.product(
-                MonomialOrder.LEX, 1,
-                ordering, factory.nVariables);
-
         // elimination
-        tGenerators = GroebnerBasis(tGenerators, blockOrder);
-        List<Poly> result = tGenerators.stream()
-                .filter(p -> p.degree(0) == 0)
+        List<Poly> result = GroebnerMethods.eliminate(tGenerators, 0).stream()
                 .map(p -> p.dropVariable(0))
                 .map(p -> p.setOrdering(ordering)) // <- restore order!
                 .collect(Collectors.toList());
-        canonicalize(result);
-        return new Ideal<>(result);
+        return create(result, ordering);
     }
 
     /**

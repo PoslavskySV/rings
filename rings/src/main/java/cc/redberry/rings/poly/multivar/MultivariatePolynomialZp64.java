@@ -47,7 +47,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         this.ring = ring;
     }
 
-    private static void add(MonomialSet<MonomialZp64> polynomial, MonomialZp64 term, IntegersZp64 ring) {
+    static void add(Map<DegreeVector, MonomialZp64> polynomial, MonomialZp64 term, IntegersZp64 ring) {
         if (term.coefficient == 0)
             return;
         polynomial.merge(term, term, (o, n) -> {
@@ -59,7 +59,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
         });
     }
 
-    private static void subtract(MonomialSet<MonomialZp64> polynomial, MonomialZp64 term, IntegersZp64 ring) {
+    static void subtract(Map<DegreeVector, MonomialZp64> polynomial, MonomialZp64 term, IntegersZp64 ring) {
         add(polynomial, term.setCoefficient(ring.negate(term.coefficient)), ring);
     }
 

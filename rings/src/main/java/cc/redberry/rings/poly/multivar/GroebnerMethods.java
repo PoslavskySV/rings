@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 import static cc.redberry.rings.Rings.MultivariateRing;
 import static cc.redberry.rings.Rings.Q;
-import static cc.redberry.rings.poly.multivar.GroebnerBases.GroebnerBasis;
 import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
@@ -31,7 +30,7 @@ public final class GroebnerMethods {
      * Eliminates specified variables from the given ideal.
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Poly> eliminate(List<Poly> ideal, int... variables) {
+    List<Poly> eliminate(List<Poly> ideal, int variable) {
         if (ideal.isEmpty())
             return Collections.emptyList();
 
@@ -40,27 +39,36 @@ public final class GroebnerMethods {
 
         List<Poly> eliminationIdeal = ideal;
         if (!(optimalOrder instanceof MonomialOrder.GrevLexWithPermutation))
-            for (int variable : variables)
-                eliminationIdeal = GroebnerBasis(eliminationIdeal,
-                        new MonomialOrder.EliminationOrder(optimalOrder, variable))
-                        .stream()
-                        .filter(p -> p.degree(variable) == 0)
-                        .collect(Collectors.toList());
+            eliminationIdeal = GroebnerBasis(
+                    eliminationIdeal,
+                    new MonomialOrder.EliminationOrder(optimalOrder, variable))
+                    .stream()
+                    .filter(p -> p.degree(variable) == 0)
+                    .collect(Collectors.toList());
         else {
             MonomialOrder.GrevLexWithPermutation order = (MonomialOrder.GrevLexWithPermutation) optimalOrder;
             int[] inversePermutation = MultivariateGCD.inversePermutation(order.permutation);
-            for (int variable : variables)
-                eliminationIdeal = GroebnerBasis(eliminationIdeal
-                        .stream()
-                        .map(p -> AMultivariatePolynomial.renameVariables(p, order.permutation))
-                        .collect(Collectors.toList()), new MonomialOrder.EliminationOrder(GREVLEX, inversePermutation[variable]))
-                        .stream()
-                        .map(p -> AMultivariatePolynomial.renameVariables(p, inversePermutation))
-                        .filter(p -> p.degree(variable) == 0)
-                        .collect(Collectors.toList());
+            eliminationIdeal = GroebnerBasis(eliminationIdeal
+                    .stream()
+                    .map(p -> AMultivariatePolynomial.renameVariables(p, order.permutation))
+                    .collect(Collectors.toList()), new MonomialOrder.EliminationOrder(GREVLEX, inversePermutation[variable]))
+                    .stream()
+                    .map(p -> AMultivariatePolynomial.renameVariables(p, inversePermutation))
+                    .filter(p -> p.degree(variable) == 0)
+                    .collect(Collectors.toList());
         }
 
         return eliminationIdeal.stream().map(p -> p.setOrdering(originalOrder)).collect(Collectors.toList());
+    }
+
+    /**
+     * Eliminates specified variables from the given ideal.
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> eliminate(List<Poly> ideal, int... variables) {
+        for (int variable : variables)
+            ideal = eliminate(ideal, variable);
+        return ideal;
     }
 
     /* ******************************************* Algebraic dependence ******************************************** */
