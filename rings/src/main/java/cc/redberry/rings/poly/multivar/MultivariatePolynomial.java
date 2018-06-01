@@ -611,6 +611,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public MultivariatePolynomial<E> createConstantFromTerm(Monomial<E> monomial) {
+        return createConstant(monomial.coefficient);
+    }
+
+    @Override
     public MultivariatePolynomial<E> createZero() {
         return createConstant(ring.getZero());
     }

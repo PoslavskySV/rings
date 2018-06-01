@@ -121,4 +121,11 @@ public final class Integers extends AIntegers {
     public Iterator<BigInteger> iterator() {
         throw new UnsupportedOperationException("Ring of infinite cardinality.");
     }
+
+    /**
+     * Gives a binomial coefficient C(n, k)
+     */
+    public BigInteger binomial(long n, long k) {
+        return factorial(n).divideExact(factorial(k)).divideExact(factorial(n - k));
+    }
 }

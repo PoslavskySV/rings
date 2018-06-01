@@ -19,9 +19,11 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.multivar.GroebnerBases.GroebnerBasis;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.optimalOrder;
 import static cc.redberry.rings.poly.multivar.GroebnerBasesTest.SingularGB;
 import static cc.redberry.rings.poly.multivar.GroebnerMethods.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
@@ -31,7 +33,7 @@ import static org.junit.Assert.*;
 /**
  *
  */
-public class GroebnerMethodsTest extends MultivariatePolynomialTest {
+public class GroebnerMethodsTest extends AMultivariateTest {
 
     @Test
     public void test1() {
@@ -58,7 +60,6 @@ public class GroebnerMethodsTest extends MultivariatePolynomialTest {
                 new DegreeVector(new int[]{5, 1, 2}));
         assertTrue(algebraicallyDependentMonomialsQ(dvs));
     }
-
 
     @Test
     public void test2() {
@@ -237,6 +238,82 @@ public class GroebnerMethodsTest extends MultivariatePolynomialTest {
         }
     }
 
+    @Test
+    public void testNullstellensatzCertificate1() {
+        MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(3, 17);
+        Coder<MultivariatePolynomialZp64, ?, ?> coder = Coder.mkPolynomialCoder(ring, "x", "y", "z");
+
+        List<MultivariatePolynomialZp64> ideal = Arrays.asList(
+                coder.parse("x^2 + 1"),
+                coder.parse("z + x * y + 2"),
+                coder.parse("z^2 - x * y + 2"),
+                coder.parse("z - x * y + x + y"));
+
+        assertNullstellensatzCertificate(ideal, NullstellensatzCertificate(ideal, true));
+        assertNullstellensatzCertificate(ideal, NullstellensatzCertificate(ideal, false));
+    }
+
+    @Test
+    public void testNullstellensatzCertificate2_random() {
+        RandomGenerator rnd = getRandom();
+
+        testNullstellensatzCertificateRandom(MultivariateRingZp64(3, 17).getOne(), 3, 100, rnd);
+        testNullstellensatzCertificateRandom(MultivariateRingZp64(4, 17).getOne(), 2, 10, rnd);
+
+        // this is too long for now due to expression swell in coefficients; fixme with Bareiss
+        // testNullstellensatzCertificateRandom(MultivariateRing(3, Q).getOne(), 3, 10, rnd);
+        // testNullstellensatzCertificateRandom(MultivariateRing(4, Q).getOne(), 2, 10, rnd);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly toZ(Poly p) {
+        return p.isOverZ()
+                ? (Poly) ((MultivariatePolynomial<Rational<BigInteger>>) p).mapCoefficients(Q, c -> Q.mkNumerator(c.numerator().mod(BigInteger.FIVE)))
+                : p;
+    }
+
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void testNullstellensatzCertificateRandom(Poly factory, int varDegB, int nIterations, RandomGenerator rnd) {
+        DescriptiveStatistics
+                boundDeg = new DescriptiveStatistics(),
+                boundVar = new DescriptiveStatistics(),
+                certBound = new DescriptiveStatistics();
+        for (int iter = 0; iter < nIterations; ++iter) {
+            List<Poly> ideal = new ArrayList<>();
+            for (int i = 0; i < factory.nVariables + 2; ++i) {
+                Poly p = toZ(RandomMultivariatePolynomials.randomPolynomial(factory, varDegB, 1 + rnd.nextInt(5), rnd));
+                ideal.add(p);
+            }
+            Ideal<Term, Poly> gb = Ideal.create(ideal, optimalOrder(ideal));
+            while (!gb.isTrivial()) {
+                Poly p = toZ(RandomMultivariatePolynomials.randomPolynomial(factory, varDegB, 1 + rnd.nextInt(5), rnd));
+                ideal.add(p);
+                gb = gb.union(p);
+            }
+
+            long start;
+
+            start = System.nanoTime();
+            List<Poly> certificateA = NullstellensatzCertificate(ideal, true);
+            assertNullstellensatzCertificate(ideal, certificateA);
+            boundDeg.addValue(System.nanoTime() - start);
+
+            certificateA.forEach(p -> certBound.addValue(p.degree()));
+
+            start = System.nanoTime();
+            List<Poly> certificateB = NullstellensatzCertificate(ideal, false);
+            assertNullstellensatzCertificate(ideal, certificateB);
+            boundVar.addValue(System.nanoTime() - start);
+
+        }
+        System.out.println("Bound total degree: " + TimeUnits.statisticsNanotime(boundDeg));
+        System.out.println("Bound vars degree:  " + TimeUnits.statisticsNanotime(boundVar));
+        System.out.println("Certificate degrees:  " + certBound.getMin() + " <= " + certBound.getMean() + " <= " + certBound.getMax());
+        System.out.println();
+    }
+
+
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     void assertAnnihilators(List<Poly> initialPolys, List<Poly> algebraicRelations) {
         assertTrue(algebraicRelations.stream().map(p -> p.composition(initialPolys)).allMatch(AMultivariatePolynomial::isZero));
@@ -246,5 +323,12 @@ public class GroebnerMethodsTest extends MultivariatePolynomialTest {
     void assertNonEmptyAnnihilators(List<Poly> initialPolys, List<Poly> algebraicRelations) {
         assertFalse(algebraicRelations.isEmpty());
         assertAnnihilators(initialPolys, algebraicRelations);
+    }
+
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    void assertNullstellensatzCertificate(List<Poly> initialPolys, List<Poly> certificate) {
+        assertTrue(IntStream.range(0, initialPolys.size())
+                .mapToObj(i -> initialPolys.get(i).clone().multiply(certificate.get(i)))
+                .reduce(initialPolys.get(0).createZero(), (a, b) -> a.add(b)).isOne());
     }
 }

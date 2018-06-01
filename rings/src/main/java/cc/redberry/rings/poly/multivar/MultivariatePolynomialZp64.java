@@ -551,6 +551,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
+    public MultivariatePolynomialZp64 createConstantFromTerm(MonomialZp64 monomial) {
+        return createConstant(monomial.coefficient);
+    }
+
+    @Override
     public MultivariatePolynomialZp64 createZero() {
         return createConstant(0L);
     }

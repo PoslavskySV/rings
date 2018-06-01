@@ -21,6 +21,16 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         this.ring = ring;
     }
 
+    /** Gives rational with a given numerator and unit denominator */
+    public Rational<E> mkNumerator(E num) {
+        return new Rational<>(ring, num);
+    }
+
+    /** Gives rational with a given denominator and unit numerator */
+    public Rational<E> mkDenominator(E den) {
+        return new Rational<>(ring, ring.getOne(), den);
+    }
+
     @Override
     public boolean isField() {
         return true;

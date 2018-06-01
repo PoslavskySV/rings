@@ -670,10 +670,17 @@ public interface Ring<E> extends
     @SuppressWarnings("unchecked")
     default E[] createZeroesArray(int length) {
         E[] array = createArray(length);
+        fillZeros(array);
+        return array;
+    }
+
+    /**
+     * Fills array with zeros
+     */
+    default void fillZeros(E[] array) {
         for (int i = 0; i < array.length; i++)
             // NOTE: getZero() is invoked each time in a loop in order to fill array with unique elements
             array[i] = getZero();
-        return array;
     }
 
     /**

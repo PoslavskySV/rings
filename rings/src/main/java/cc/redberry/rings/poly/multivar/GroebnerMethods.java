@@ -1,8 +1,12 @@
 package cc.redberry.rings.poly.multivar;
 
+import cc.redberry.combinatorics.Combinatorics;
+import cc.redberry.combinatorics.IntCombinatorialPort;
+import cc.redberry.combinatorics.IntCompositions;
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Ring;
+import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.poly.MultivariateRing;
@@ -11,9 +15,11 @@ import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static cc.redberry.rings.Rings.MultivariateRing;
-import static cc.redberry.rings.Rings.Q;
+import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.linear.LinearSolver.SystemInfo.Consistent;
+import static cc.redberry.rings.linear.LinearSolver.SystemInfo.Inconsistent;
 import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
@@ -135,14 +141,16 @@ public final class GroebnerMethods {
         // try to solve the system
         Rational<BigInteger>[] solution = Q.createZeroesArray(nUnknowns);
         LinearSolver.SystemInfo solveResult = LinearSolver.solve(Q, lhs, rhs, solution);
-        if (solveResult == LinearSolver.SystemInfo.Consistent && Arrays.stream(solution).allMatch(Rational::isZero))
+        if (solveResult == Consistent && Arrays.stream(solution).allMatch(Rational::isZero))
             return false;
         if (solveResult == LinearSolver.SystemInfo.Inconsistent)
             return false;
         return true;
     }
 
-    /** Number of random substitutions for polynomial Jacobian to deduce its rank */
+    /**
+     * Number of random substitutions for polynomial Jacobian to deduce its rank
+     */
     private static final int N_JACOBIAN_EVALUATIONS_TRIES = 2;
 
     /** Probabilistic test for the maximality of the rank of Jacobian matrix */
@@ -221,7 +229,6 @@ public final class GroebnerMethods {
         int[] dropVars = ArraysUtil.sequence(0, nInitialVars);
         return eliminate(helpPolys, dropVars)
                 .stream()
-                .filter(p -> p.degree(dropVars) == 0)
                 .map(p -> p.dropVariables(dropVars))
                 .collect(Collectors.toList());
     }
@@ -239,5 +246,243 @@ public final class GroebnerMethods {
             for (int j = 0; j < sys.size(); ++j)
                 jacobian[i][j] = sys.get(j).derivative(i);
         return jacobian;
+    }
+
+    /* **************************************** Nullstellensatz certificate **************************************** */
+
+    private static final int NULLSTELLENSATZ_LIN_SYS_THRESHOLD = 1 << 16;
+
+    /**
+     * Computes Nullstellensatz certificate for a given list of polynomials assuming that they have no common zeros (or
+     * equivalently assuming that the ideal formed by the list is trivial). The method doesn't perform explicit check
+     * that the {@code polynomials} have no common zero, so if they are the method will fail.
+     *
+     * @param polynomials list of polynomials
+     * @return polynomials {@code S_i} such that {@code S_1 * f_1 + ... + S_n * f_n = 1} or null if no solution with
+     *         moderate degree bounds exist (either since {@code polynomials} have a common root or because the degree
+     *         bound on the solutions is so big that the system is intractable for computer)
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> NullstellensatzCertificate(List<Poly> polynomials) {
+        return NullstellensatzSolver(polynomials, polynomials.get(0).createOne(), true);
+    }
+
+    /**
+     * Computes Nullstellensatz certificate for a given list of polynomials assuming that they have no common zeros (or
+     * equivalently assuming that the ideal formed by the list is trivial). The method doesn't perform explicit check
+     * that the {@code polynomials} have no common zero, so if they are the method will fail.
+     *
+     * @param polynomials list of polynomials
+     * @return polynomials {@code S_i} such that {@code S_1 * f_1 + ... + S_n * f_n = 1} or null if no solution with
+     *         moderate degree bounds exist (either since {@code polynomials} have a common root or because the degree
+     *         bound on the solutions is so big that the system is intractable for computer)
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> NullstellensatzCertificate(List<Poly> polynomials, boolean boundTotalDeg) {
+        return NullstellensatzSolver(polynomials, polynomials.get(0).createOne(), boundTotalDeg);
+    }
+
+    /**
+     * Tries to find solution of the equation {@code S_1 * f_1 + ... + S_n * f_n = g} for given {@code f_i} and {@code
+     * g} and unknown {@code S_i} by transforming to a system of linear equations with unknown coefficients of {@code
+     * S_i}.
+     *
+     * @param polynomials   list of polynomials
+     * @param rhs           right hand side of the equation
+     * @param boundTotalDeg whether to perform evaluations by increasing total degree of unknown polys or by increasing
+     *                      individual degrees of vars
+     * @return polynomials {@code S_i} such that {@code S_1 * f_1 + ... + S_n * f_n = g} or null if no solution with
+     *         moderate degree bounds exists
+     */
+    @SuppressWarnings("unchecked")
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> NullstellensatzSolver(List<Poly> polynomials, Poly rhs, boolean boundTotalDeg) {
+        if (rhs.isOverZ())
+            // fixme: improve when Bareiss will be done
+            // switch to Q and then to Z
+            return NullstellensatzSolverZ((List) polynomials, (MultivariatePolynomial) rhs, boundTotalDeg);
+
+        Poly factory = polynomials.get(0);
+        for (int degreeBound = 1; ; ++degreeBound) {
+            // number of coefficients in a single unknown poly
+            BigInteger _maxCfSize;
+            if (boundTotalDeg)
+                _maxCfSize = IntStream.rangeClosed(0, degreeBound)
+                        .mapToObj(d -> Z.binomial(d + factory.nVariables - 1, factory.nVariables - 1))
+                        .reduce(Z.getZero(), Z::add);
+            else
+                _maxCfSize = Z.pow(Z.valueOf(degreeBound), factory.nVariables);
+            // total number of unknown coefficients
+            BigInteger _nUnknowns = _maxCfSize.multiply(Z.valueOf(polynomials.size()));
+            if (!_nUnknowns.isInt())
+                return null;
+            int nUnknowns = _nUnknowns.intValue();
+            if (nUnknowns > NULLSTELLENSATZ_LIN_SYS_THRESHOLD)
+                return null;
+
+            int maxCfSize = _maxCfSize.intValueExact();
+
+            // factory polynomial and ring for the coefficients R[u1, ..., uM]
+            Poly cfFactory = factory.createZero().setNVariables(nUnknowns);
+            MultivariateRing<Poly> cfRing = MultivariateRing(cfFactory);
+
+            // ring used to build the system R[u1, ..., uM][x1, ..., xN]
+            MultivariateRing<MultivariatePolynomial<Poly>> linSysRing = Rings.MultivariateRing(factory.nVariables, cfRing);
+
+            // initial system as R[u1, ..., uM][x1, ..., xN]
+            List<MultivariatePolynomial<Poly>> convertedPolynomials = polynomials.stream().map(p -> p.asOverPoly(cfFactory)).collect(Collectors.toList());
+
+            // solution
+            List<MultivariatePolynomial<Poly>> certificate = new ArrayList<>();
+
+            // building the lhs of the equation \sum_i C_i * f_i = rhs
+            MultivariatePolynomial<Poly> eq = linSysRing.getZero();
+            for (int i = 0; i < polynomials.size(); ++i) {
+                MultivariatePolynomial<Poly> unknownPoly = generate(cfRing, linSysRing, degreeBound, i * maxCfSize, boundTotalDeg);
+                certificate.add(unknownPoly);
+                eq.add(convertedPolynomials.get(i).multiply(unknownPoly));
+            }
+
+            // if still not compatible
+            if (!eq.getSkeleton().containsAll(rhs.getSkeleton()))
+                continue;
+
+            // solving linear system
+            List<Poly> cert = findCertificateFromLinearSystem(eq, certificate, rhs, nUnknowns);
+            if (cert != null)
+                return cert;
+        }
+    }
+
+    private static List<MultivariatePolynomial<BigInteger>> NullstellensatzSolverZ(List<MultivariatePolynomial<BigInteger>> polynomials,
+                                                                                   MultivariatePolynomial<BigInteger> rhs, boolean boundTotalDeg) {
+        // fixme: a crutch
+        List<MultivariatePolynomial<Rational<BigInteger>>> result = NullstellensatzSolver(
+                polynomials.stream().map(p -> p.mapCoefficients(Q, Q::mkNumerator)).collect(Collectors.toList()),
+                rhs.mapCoefficients(Q, Q::mkNumerator),
+                boundTotalDeg);
+        if (result.stream().anyMatch(p -> !p.stream().allMatch(Rational::isIntegral)))
+            return null;
+        return result.stream().map(p -> p.mapCoefficients(Z, Rational::numerator)).collect(Collectors.toList());
+    }
+
+    /**
+     * @param eq          the equation
+     * @param certificate unknown polynomials (certificate)
+     * @param rhs         rhs poly
+     * @param nUnknowns   number of unknown coefficients
+     */
+    @SuppressWarnings("unchecked")
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> findCertificateFromLinearSystem(MultivariatePolynomial<Poly> eq,
+                                               List<MultivariatePolynomial<Poly>> certificate,
+                                               Poly rhs,
+                                               int nUnknowns) {
+        if (eq.cc() instanceof MultivariatePolynomialZp64)
+            return findCertificateZp64((MultivariatePolynomial) eq, (List) certificate, (MultivariatePolynomialZp64) rhs, nUnknowns);
+        else
+            return findCertificateE((MultivariatePolynomial) eq, (List) certificate, (MultivariatePolynomial) rhs, nUnknowns);
+    }
+
+    /** Solve in Zp64 */
+    private static List<MultivariatePolynomialZp64> findCertificateZp64(
+            MultivariatePolynomial<MultivariatePolynomialZp64> eq,
+            List<MultivariatePolynomial<MultivariatePolynomialZp64>> certificate,
+            MultivariatePolynomialZp64 rhsPoly,
+            int nUnknowns) {
+        long[]
+                // lhs of the system
+                lhs[] = new long[eq.size()][nUnknowns],
+                // rhs of the system
+                rhs = new long[eq.size()];
+
+        int iEq = 0;
+        for (Monomial<MultivariatePolynomialZp64> term : eq) {
+            MonomialZp64 rhsTerm = rhsPoly.terms.get(term);
+            if (rhsTerm != null)
+                rhs[iEq] = rhsTerm.coefficient;
+            else
+                rhs[iEq] = 0;
+
+            for (MonomialZp64 cfTerm : term.coefficient) {
+                assert cfTerm.totalDegree == 1;
+                lhs[iEq][cfTerm.firstNonZeroVariable()] = cfTerm.coefficient;
+            }
+            ++iEq;
+        }
+
+        IntegersZp64 ring = eq.lc().ring;
+        long[] result = new long[nUnknowns];
+        LinearSolver.SystemInfo solve = LinearSolver.solve(ring, lhs, rhs, result, true);
+        if (solve == Inconsistent)
+            return null;
+
+        return certificate
+                .stream()
+                .map(p -> p.mapCoefficients(ring, m -> m.evaluate(result)))
+                .collect(Collectors.toList());
+    }
+
+    /** Solve in genetic ring */
+    private static <E> List<MultivariatePolynomial<E>> findCertificateE(
+            MultivariatePolynomial<MultivariatePolynomial<E>> eq,
+            List<MultivariatePolynomial<MultivariatePolynomial<E>>> certificate,
+            MultivariatePolynomial<E> rhsPoly,
+            int nUnknowns) {
+        Ring<E> ring = eq.lc().ring;
+        E[]
+                // lhs of the system
+                lhs[] = ring.createZeroesArray2d(eq.size(), nUnknowns),
+                // rhs of the system
+                rhs = ring.createZeroesArray(eq.size());
+
+        int iEq = 0;
+        for (Monomial<MultivariatePolynomial<E>> term : eq) {
+            Monomial<E> rhsTerm = rhsPoly.terms.get(term);
+            if (rhsTerm != null)
+                rhs[iEq] = rhsTerm.coefficient;
+            else
+                rhs[iEq] = ring.getZero();
+
+            for (Monomial<E> cfTerm : term.coefficient) {
+                assert cfTerm.totalDegree == 1;
+                lhs[iEq][cfTerm.firstNonZeroVariable()] = cfTerm.coefficient;
+            }
+            ++iEq;
+        }
+
+        E[] result = ring.createArray(nUnknowns);
+        LinearSolver.SystemInfo solve = LinearSolver.solve(ring, lhs, rhs, result, true);
+        if (solve == Inconsistent)
+            return null;
+
+        return certificate
+                .stream()
+                .map(p -> p.mapCoefficients(ring, m -> m.evaluate(result)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Generates a poly of specified degree (in each variable) with unknown coefficients.
+     *
+     * @param cfRing      coefficient ring
+     * @param ring        ring which result belongs to
+     * @param degree      degree bound
+     * @param startingVar the starting coefficient
+     */
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    MultivariatePolynomial<Poly> generate(
+            MultivariateRing<Poly> cfRing,
+            MultivariateRing<MultivariatePolynomial<Poly>> ring,
+            int degree, int startingVar, boolean boundTotalDeg) {
+        MultivariatePolynomial<Poly> result = ring.getZero();
+        if (boundTotalDeg)
+            for (int d = 0; d <= degree; ++d)
+                for (int[] tuple : new IntCombinatorialPort.Iterator(new IntCompositions(d, ring.nVariables())))
+                    result.add(new Monomial<>(tuple, cfRing.variable(startingVar++)));
+        else
+            for (int[] tuple : Combinatorics.tuples(ArraysUtil.arrayOf(degree, ring.nVariables())))
+                result.add(new Monomial<>(tuple, cfRing.variable(startingVar++)));
+        return result;
     }
 }

@@ -254,6 +254,14 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Creates multivariate polynomial over the same ring as this with the single constant element taken from given monomial
+     *
+     * @param term the monomial
+     * @return multivariate polynomial
+     */
+    public abstract Poly createConstantFromTerm(Term term);
+
+    /**
      * Creates multivariate polynomial over the same ring as this with the single monomial
      *
      * @param term the monomial
@@ -1414,7 +1422,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     public final MultivariatePolynomial<Poly> asOverPoly(Poly factory) {
         MonomialSet<Monomial<Poly>> newTerms = new MonomialSet<>(ordering);
         for (Term term : terms)
-            newTerms.add(new Monomial<>(term, factory.create(term).lcAsPoly()));
+            newTerms.add(new Monomial<>(term, factory.createConstantFromTerm(term)));
         return new MultivariatePolynomial<>(nVariables, Rings.MultivariateRing(factory), ordering, newTerms);
     }
 
