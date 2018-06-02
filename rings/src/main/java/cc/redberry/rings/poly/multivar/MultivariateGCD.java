@@ -1832,7 +1832,7 @@ public final class MultivariateGCD {
         throw new RuntimeException("\na: " + a + "\nb: " + b);
     }
 
-    private static final int MAX_OVER_ITERATIONS = 16;
+    private static final int MAX_OVER_ITERATIONS = 18;
 
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     MultivariatePolynomial<uPoly> KaltofenMonaganSparseModularGCDInGF0(

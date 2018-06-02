@@ -160,6 +160,30 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
     }
 
     @Test
+    public void testBivaraiteSmallDomain5Random8a() throws Exception {
+        IntegersZp64 domain = new IntegersZp64(5);
+        String[] vars = {"x", "y"};
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("1+x^3*y+x^6*y^4+2*x^6*y^5+2*x^6*y^6", domain, vars),
+                b = MultivariatePolynomialZp64.parse("x^5+4*y^6+2*x^5*y^2", domain, vars),
+                c = MultivariatePolynomialZp64.parse("1+x^2+4*x^3+3*x^6+4*x^3*y^4+x^4*y^4", domain, vars),
+                d = MultivariatePolynomialZp64.parse("1+2*x^4*y^2+x^3*y^4+2*x^6*y^6", domain, vars),
+                e = MultivariatePolynomialZp64.parse("1+3*x^4*y+3*x^3*y^4+4*x^4*y^5", domain, vars),
+                base = a.clone().multiply(b, c, d, e);
+
+        MultivariatePolynomial<BigInteger> bBase = base.toBigPoly();
+        //System.out.println(base);
+        for (int i = 0; i < its(40, 40); i++) {
+            PrivateRandom.getRandom().setSeed(i);
+            long start = System.nanoTime();
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> decomposition = bivariateDenseFactorSquareFreeInGF(bBase);
+            System.out.println("" + i + "  " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(5, decomposition.size());
+            FactorDecompositionTest.assertFactorization(bBase, decomposition);
+        }
+    }
+
+    @Test
     public void testBivaraiteSmallDomain5Random9() throws Exception {
         lSampleDecompositionSource source = new lSampleDecompositionSource(
                 3, 5,
