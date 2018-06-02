@@ -123,8 +123,8 @@ public class Rational<E> implements Comparable<Rational<E>>,
     }
 
     /**
-     * A single operand (either numerator or denominator) represented by a list of factors.
-     * If there is a unit factor it is always stored in the first position.
+     * A single operand (either numerator or denominator) represented by a list of factors. If there is a unit factor it
+     * is always stored in the first position.
      */
     final class Operand extends ArrayList<E> {
         /** all factors multiplied */
@@ -440,6 +440,20 @@ public class Rational<E> implements Comparable<Rational<E>>,
     /** Denominator of this rational */
     public E denominator() {
         return denominator.expand();
+    }
+
+    /** Factor decomposition of denominator */
+    public FactorDecomposition<E> factorDenominator() {
+        return denominator.stream()
+                .map(ring::factor)
+                .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll);
+    }
+
+    /** Factor decomposition of denominator */
+    public FactorDecomposition<E> factorNumerator() {
+        return numerator.stream()
+                .map(ring::factor)
+                .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll);
     }
 
     /**

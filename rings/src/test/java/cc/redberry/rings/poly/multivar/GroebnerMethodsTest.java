@@ -2,6 +2,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.Rational;
+import cc.redberry.rings.Rationals;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
@@ -263,6 +264,21 @@ public class GroebnerMethodsTest extends AMultivariateTest {
         // this is too long for now due to expression swell in coefficients; fixme with Bareiss
         // testNullstellensatzCertificateRandom(MultivariateRing(3, Q).getOne(), 3, 10, rnd);
         // testNullstellensatzCertificateRandom(MultivariateRing(4, Q).getOne(), 2, 10, rnd);
+    }
+
+
+    @Test
+    public void testLeinartDecoomposition1() {
+        MultivariateRing<MultivariatePolynomialZp64> mRing = MultivariateRingZp64(3, 17);
+        Coder<MultivariatePolynomialZp64, ?, ?> mCoder = Coder.mkPolynomialCoder(mRing, "x", "y", "z");
+        Rationals<MultivariatePolynomialZp64> fRing = Frac(mRing);
+        Coder<Rational<MultivariatePolynomialZp64>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, mCoder);
+
+        Rational<MultivariatePolynomialZp64> f = fCoder.parse("(x + y) / (x^2 + y^2) / (x^3 - x * y - 1) / (x - y)");
+        List<Rational<MultivariatePolynomialZp64>> decomposition = LeinartDecomposition(f);
+
+        System.out.println(decomposition);
+        assertEquals(f, decomposition.stream().reduce(fRing.getZero(), fRing::add));
     }
 
     @SuppressWarnings("unchecked")

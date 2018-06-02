@@ -124,6 +124,14 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
     public final Term insert(int variable, int count) {return setDegreeVector(dvInsert(variable, count));}
 
     /**
+     * Renames old variables to new according to mapping
+     *
+     * @param nVariables new total number of variables
+     * @param mapping    mapping from old variables to new variables
+     */
+    public final Term map(int nVariables, int[] mapping) {return setDegreeVector(dvMap(nVariables, mapping));}
+
+    /**
      * Set's exponent of specified variable to specified value
      *
      * @param variable the variable

@@ -254,7 +254,8 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
-     * Creates multivariate polynomial over the same ring as this with the single constant element taken from given monomial
+     * Creates multivariate polynomial over the same ring as this with the single constant element taken from given
+     * monomial
      *
      * @param term the monomial
      * @return multivariate polynomial
@@ -296,6 +297,12 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         MonomialSet<Term> newData = new MonomialSet<>(newOrdering);
         newData.putAll(terms);
         return create(nVariables, newOrdering, newData);
+    }
+
+    final Poly setOrderingUnsafe(Comparator<DegreeVector> newOrdering) {
+        if (ordering.equals(newOrdering))
+            return self;
+        return setOrdering(newOrdering);
     }
 
     /** release caches */
@@ -446,6 +453,19 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         for (Term term : terms)
             newData.add(term.setNVariables(newNVariables));
         return create(newNVariables, newData);
+    }
+
+    /**
+     * Renames old variables to new according to mapping
+     *
+     * @param mapping mapping from old variables to new variables
+     */
+    public final Poly mapVariables(int[] mapping) {
+        int newNVars = ArraysUtil.max(mapping) + 1;
+        MonomialSet<Term> newData = new MonomialSet<>(ordering);
+        for (Term term : terms)
+            newData.add(term.map(newNVars, mapping));
+        return create(newNVars, newData);
     }
 
     /**
@@ -835,7 +855,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @param variable the variable
      * @return multivariate polynomial with coefficients being univariate polynomials over {@code variable}, the
-     * resulting polynomial have (nVariable - 1) multivariate variables
+     *         resulting polynomial have (nVariable - 1) multivariate variables
      */
     public abstract MultivariatePolynomial<? extends IUnivariatePolynomial> asOverUnivariateEliminate(int variable);
 
@@ -845,7 +865,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @param variables the variables to separate
      * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
-     * variables} that is polynomial in R[variables][other_variables]
+     *         variables} that is polynomial in R[variables][other_variables]
      */
     public abstract MultivariatePolynomial<Poly> asOverMultivariate(int... variables);
 
@@ -855,7 +875,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @param variables the variables to separate
      * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
-     * variables} that is polynomial in R[variables][other_variables]
+     *         variables} that is polynomial in R[variables][other_variables]
      */
     public final MultivariatePolynomial<Poly> asOverMultivariateEliminate(int... variables) {
         return asOverMultivariateEliminate(variables, ordering);
@@ -868,7 +888,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @param variables the variables to separate
      * @param prdering  monomial order to use for result
      * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
-     * variables} that is polynomial in R[variables][other_variables]
+     *         variables} that is polynomial in R[variables][other_variables]
      */
     public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int[] variables, Comparator<DegreeVector> prdering);
 
@@ -1017,6 +1037,15 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      */
     public final Term lt() {
         return size() == 0 ? monomialAlgebra.getZeroTerm(nVariables) : terms.last();
+    }
+
+    /**
+     * Returns the minimal term in this polynomial according to ordering
+     *
+     * @return the minimal term in this polynomial according to ordering
+     */
+    public final Term mt() {
+        return size() == 0 ? monomialAlgebra.getZeroTerm(nVariables) : terms.first();
     }
 
     /**
@@ -1320,7 +1349,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @param oth       other multivariate polynomial
      * @param variables variables to test
      * @return {@code true} if {@code this} and {@code oth} have the same skeleton with respect to specified {@code
-     * variables} and {@code false} otherwise
+     *         variables} and {@code false} otherwise
      */
     public final boolean sameSkeletonQ(AMultivariatePolynomial oth, int... variables) {
         return getSkeleton(variables).equals(oth.getSkeleton(variables));
@@ -1333,7 +1362,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @param oth       other multivariate polynomial
      * @param variables variables to exclude
      * @return {@code true} if {@code this} and {@code oth} have the same skeleton with respect to all except specified
-     * {@code variables} and {@code false} otherwise
+     *         {@code variables} and {@code false} otherwise
      */
     public final boolean sameSkeletonExceptQ(AMultivariatePolynomial oth, int... variables) {
         return getSkeletonExcept(variables).equals(oth.getSkeletonExcept(variables));
@@ -1364,7 +1393,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @param variable the variable
      * @param order    derivative order
      * @return {@code derivative(poly, variable, order) / order! }, where the derivative is formal derivative and
-     * calculated with arithmetic performed in Z ring (to overcome possible zeros in Zp)
+     *         calculated with arithmetic performed in Z ring (to overcome possible zeros in Zp)
      */
     public abstract Poly seriesCoefficient(int variable, int order);
 

@@ -3,14 +3,13 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.combinatorics.Combinatorics;
 import cc.redberry.combinatorics.IntCombinatorialPort;
 import cc.redberry.combinatorics.IntCompositions;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.util.ArraysUtil;
+import gnu.trove.list.array.TIntArrayList;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
@@ -484,5 +483,177 @@ public final class GroebnerMethods {
             for (int[] tuple : Combinatorics.tuples(ArraysUtil.arrayOf(degree, ring.nVariables())))
                 result.add(new Monomial<>(tuple, cfRing.variable(startingVar++)));
         return result;
+    }
+
+    /* **************************************** Partial fractions **************************************** */
+
+
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Rational<Poly>> LeinartDecomposition(Rational<Poly> fraction) {
+        FactorDecomposition<Poly> denDecomposition = fraction.factorDenominator();
+        List<Factor<Term, Poly>> denominator = IntStream.range(0, denDecomposition.size())
+                .mapToObj(i -> new Factor<>(denDecomposition.get(i), denDecomposition.getExponent(i)))
+                .collect(Collectors.toList());
+
+        return NullstellensatzDecomposition(new Fraction<>(fraction.numerator(), denominator, denDecomposition.unit))
+                .stream().flatMap(p -> AlgebraicDecomposition(p).stream())
+                .map(f -> f.toRational(fraction.ring))
+                .collect(Collectors.toList());
+    }
+
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Fraction<Term, Poly>> NullstellensatzDecomposition(Fraction<Term, Poly> fraction) {
+        if (!Ideal.create(fraction.bareDenominatorNoUnits()).isEmpty())
+            return Collections.singletonList(fraction);
+
+        // denominators have not common zeros
+        // apply Nullstellensatz decomposition
+        List<Poly> certificate = NullstellensatzCertificate(fraction.raisedDenominator());
+        return IntStream.range(0, certificate.size())
+                .mapToObj(i -> new Fraction<>(certificate.get(i).multiply(fraction.numerator), remove(fraction.denominator, i), fraction.denominatorConstantFactor))
+                .flatMap(f -> NullstellensatzDecomposition(f).stream())
+                .collect(Collectors.toList());
+    }
+
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Fraction<Term, Poly>> AlgebraicDecomposition(Fraction<Term, Poly> fraction) {
+        if (!probablyAlgebraicallyDependentQ(fraction.bareDenominatorNoUnits()))
+            return Collections.singletonList(fraction);
+
+        TIntArrayList positions = new TIntArrayList();
+        List<Poly> denPolys = new ArrayList<>();
+        List<Poly> raisedDenominator = fraction.raisedDenominator();
+        for (int i = 0; i < raisedDenominator.size(); ++i) {
+            if (raisedDenominator.get(i).isConstant())
+                continue;
+            positions.add(i);
+            denPolys.add(raisedDenominator.get(i));
+        }
+
+        List<Poly> annihilators = algebraicRelations(denPolys);
+        if (annihilators.isEmpty())
+            return Collections.singletonList(fraction);
+
+        int[] varsMapping = positions.toArray();
+        annihilators = annihilators.stream().map(p -> p.mapVariables(varsMapping)).collect(Collectors.toList());
+        // denominators are algebraically dependent
+        // choose the simplest annihilator
+        Poly annihilator = annihilators
+                .stream()
+                .min(Comparator.comparingInt(p -> p.mt().totalDegree)).get()
+                .setOrderingUnsafe(GREVLEX);
+        // choose the simplest monomial in annihilator
+        Term minNormTerm = annihilator.mt();
+        annihilator.subtract(minNormTerm).negate();
+
+        Poly numerator = fraction.numerator;
+        List<Factor<Term, Poly>> denominator = fraction.denominator;
+
+        int[] denominatorExponents = denominator.stream().mapToInt(f -> f.exponent).toArray();
+
+        List<Fraction<Term, Poly>> result = new ArrayList<>();
+        for (Term numFactor : annihilator) {
+            // numFactor / minNormTerm / denominator
+            int[] numExponents = numFactor.exponents;
+            int[] denExponents = ArraysUtil.sum(denominatorExponents, minNormTerm.exponents);
+
+            for (int i = 0; i < numExponents.length; ++i) {
+                if (numExponents[i] >= denExponents[i]) {
+                    numExponents[i] -= denExponents[i];
+                    denExponents[i] = 0;
+                } else {
+                    denExponents[i] -= numExponents[i];
+                    numExponents[i] = 0;
+                }
+            }
+
+            Poly num = IntStream
+                    .range(0, numExponents.length)
+                    .mapToObj(i -> denominator.get(i).setExponent(numExponents[i]).raised)
+                    .reduce(numerator.clone(), (a, b) -> a.multiply(b))
+                    .multiply(numerator.createConstantFromTerm(numFactor));
+
+            List<Factor<Term, Poly>> den = IntStream
+                    .range(0, numExponents.length)
+                    .mapToObj(i -> denominator.get(i).setExponent(denExponents[i]))
+                    .collect(Collectors.toList());
+
+            Poly denConstant = fraction.denominatorConstantFactor.clone()
+                    .multiply(numerator.createConstantFromTerm(minNormTerm));
+
+
+            result.addAll(AlgebraicDecomposition(new Fraction<>(num, den, denConstant)));
+        }
+        return result;
+    }
+
+    private static <E> List<E> remove(List<E> list, int i) {
+        list.remove(i);
+        return list;
+    }
+
+    private static final class Fraction<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
+        final Poly numerator;
+        final List<Factor<Term, Poly>> denominator;
+        final Poly denominatorConstantFactor;
+
+        Fraction(Poly numerator, List<Factor<Term, Poly>> denominator) {
+            this(numerator, denominator, numerator.createOne());
+        }
+
+        Fraction(Poly numerator, List<Factor<Term, Poly>> denominator, Poly denominatorConstantFactor) {
+            Poly cGcd = PolynomialMethods.PolynomialGCD(numerator, denominatorConstantFactor);
+            this.numerator = numerator.divideByLC(cGcd);
+            this.denominator = denominator;
+            this.denominatorConstantFactor = denominatorConstantFactor.divideByLC(cGcd);
+        }
+
+        final List<Poly> raisedDenominator() {
+            return denominator.stream().map(p -> p.raised).collect(Collectors.toList());
+        }
+
+        final List<Poly> bareDenominator() {
+            return denominator.stream().map(p -> p.factor).collect(Collectors.toList());
+        }
+
+        final List<Poly> bareDenominatorNoUnits() {
+            return bareDenominator().stream().filter(p -> !p.isConstant()).collect(Collectors.toList());
+        }
+
+        final Rational<Poly> toRational(Ring<Poly> polyRing) {
+            Rational<Poly> r = new Rational<>(polyRing, numerator);
+            r = r.divide(denominatorConstantFactor);
+            for (Factor<Term, Poly> den : denominator)
+                r = r.divide(den.raised);
+            return r;
+        }
+    }
+
+    private static final class Factor<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
+        final Poly factor;
+        final int exponent;
+        final Poly raised;
+
+        Factor(Poly factor, int exponent, Poly raised) {
+            this.factor = factor;
+            this.exponent = exponent;
+            this.raised = raised;
+        }
+
+        Factor(Poly factor, int exponent) {
+            this.factor = factor;
+            this.exponent = exponent;
+            this.raised = PolynomialMethods.polyPow(factor, exponent, true);
+        }
+
+        Factor<Term, Poly> setExponent(int newExponent) {
+            if (exponent == newExponent)
+                return this;
+            if (exponent == 0)
+                return new Factor<>(factor.createOne(), 0, factor.createOne());
+            if (newExponent % exponent == 0)
+                return new Factor<>(factor, newExponent, PolynomialMethods.polyPow(raised, newExponent / exponent));
+            return new Factor<>(factor, newExponent);
+        }
     }
 }

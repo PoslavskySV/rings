@@ -281,6 +281,19 @@ public class DegreeVector implements java.io.Serializable {
         return new DegreeVector(res, deg);
     }
 
+    /**
+     * Creates degree vector with old variables renamed to specified mapping variables
+     *
+     * @param nVariables new total number of variables
+     * @param mapping  mapping from old variables to new variables
+     */
+    public final DegreeVector dvMap(int nVariables, int[] mapping) {
+        int[] newExponents = new int[nVariables];
+        for (int i = 0; i < exponents.length; ++i)
+            newExponents[mapping[i]] = exponents[i];
+        return new DegreeVector(newExponents, totalDegree);
+    }
+
     final int firstNonZeroVariable() {
         for (int i = 0; i < exponents.length; ++i)
             if (exponents[i] != 0)
