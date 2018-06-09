@@ -552,7 +552,7 @@ final case class UnivariateRing[E](override val cfRing: Ring[E], override val va
   */
 final case class UnivariateQuotientRing[Poly <: IUnivariatePolynomial[Poly], E]
 (baseRing: IUnivariateRing[Poly, E], modulus: Poly)
-  extends IUnivariateRing[Poly, E](rings.Rings.UnivariateQuotientRing[Poly](baseRing.theRing, modulus), baseRing.variable) {
+  extends IUnivariateRing[Poly, E](rings.Rings.UnivariateQuotientRing[Poly](modulus), baseRing.variable) {
   /**
     * String from/to conversion for ring elements
     */

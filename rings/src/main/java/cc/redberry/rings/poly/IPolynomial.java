@@ -87,6 +87,13 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     boolean isUnitCC();
 
     /**
+     * Returns true if constant term is zero
+     *
+     * @return whether constant term is zero
+     */
+    boolean isZeroCC();
+
+    /**
      * Returns {@code true} if this polynomial has only constant term
      *
      * @return whether {@code this} is constant
@@ -122,6 +129,16 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     boolean isOverFiniteField();
 
     /**
+     * Returns whether this polynomial is linear (i.e. of the form {@code a * X + b})
+     */
+    boolean isLinearOrConstant();
+
+    /**
+     * Returns whether this polynomial is linear (i.e. of the form {@code a * X + b} with nonzero {@code a})
+     */
+    boolean isLinearExactly();
+
+    /**
      * Returns cardinality of the coefficient ring of this poly
      *
      * @return cardinality of the coefficient ring
@@ -147,7 +164,7 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      * finite
      *
      * @return {@code base} so that {@code coefficientRingCardinality() == base^exponent} or null if cardinality is not
-     * finite
+     *         finite
      */
     BigInteger coefficientRingPerfectPowerBase();
 
@@ -156,7 +173,7 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      * not finite
      *
      * @return {@code exponent} so that {@code coefficientRingCardinality() == base^exponent} or null if cardinality is
-     * not finite
+     *         not finite
      */
     BigInteger coefficientRingPerfectPowerExponent();
 
@@ -404,7 +421,7 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      *
      * @param other other polynomial
      * @return monic part multiplied by the leading coefficient of {@code other} or null if exact division by the
-     * reduced leading coefficient is not possible
+     *         reduced leading coefficient is not possible
      */
     Poly monicWithLC(Poly other);
 

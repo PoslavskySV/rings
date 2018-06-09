@@ -159,6 +159,16 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         return isMonomialIdeal(groebnerBasis);
     }
 
+    /***
+     * Returns true if this ideal is maximal (that is its affine variety has only one point)
+     */
+    public boolean isMaximal() {
+        return (factory.isOverZ() || factory.isOverField())
+                && dimension() == 0
+                && groebnerBasis.size() == factory.nVariables
+                && groebnerBasis.stream().allMatch(AMultivariatePolynomial::isLinearExactly);
+    }
+
     /**
      * Ideal of leading terms
      */

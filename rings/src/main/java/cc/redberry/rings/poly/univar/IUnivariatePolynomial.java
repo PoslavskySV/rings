@@ -28,6 +28,11 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      */
     boolean isZeroAt(int i);
 
+    @Override
+    default boolean isZeroCC() {
+        return isZeroAt(0);
+    }
+
     /**
      * Fills i-th element with zero
      *
@@ -159,4 +164,14 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
 
     /** ensures that internal storage has enough size to store {@code desiredCapacity} elements */
     void ensureInternalCapacity(int desiredCapacity);
+
+    @Override
+    default boolean isLinearOrConstant() {
+        return degree() <= 1;
+    }
+
+    @Override
+    default boolean isLinearExactly() {
+        return degree() == 1;
+    }
 }

@@ -323,6 +323,35 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     public final boolean isZero() { return terms.isEmpty(); }
 
     @Override
+    public boolean isLinearOrConstant() {
+        if (size() > 2)
+            return false;
+        if (isConstant())
+            return true;
+        if (isZeroCC())
+            return size() == 1;
+        else
+            return size() == 2;
+    }
+
+    @Override
+    public boolean isLinearExactly() {
+        if (size() > 2)
+            return false;
+        if (isConstant())
+            return false;
+        if (isZeroCC())
+            return size() == 1;
+        else
+            return size() == 2;
+    }
+
+    @Override
+    public boolean isZeroCC() {
+        return !terms.containsKey(new DegreeVector(new int[nVariables], 0));
+    }
+
+    @Override
     public final Iterator<Term> iterator() {
         return terms.iterator();
     }

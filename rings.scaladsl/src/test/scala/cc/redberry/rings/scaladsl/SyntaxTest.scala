@@ -622,11 +622,11 @@ class SyntaxTest {
 
     val gf0 = GF(UnivariateRingZp64(17, "x")("1 + 3*x - 2*x^3 + 15*x^4 + x^5"), "x")
     val gf0Ring = UnivariateRing(gf0, "y")
-    assert(IrreduciblePolynomials.irreducibleQ(gf0.getIrreducible))
+    assert(IrreduciblePolynomials.irreducibleQ(gf0.getMinimalPoly))
 
     val gf1 = GF(gf0Ring("(1 + x + x^3) + (1 + x^2) * y + y^2 - 6 * y^3 + y^4 - (1 + x + x^3) * y^6 + y^7"), "y")(gf0Ring.cfRing)
     val gf1Ring = UnivariateRing(gf1, "z")
-    assert(IrreduciblePolynomials.irreducibleQ(gf1.getIrreducible))
+    assert(IrreduciblePolynomials.irreducibleQ(gf1.getMinimalPoly))
 
     val gf2 = GF(gf1Ring("((1 - x) + (1 - x^2) * y^2 + (1 - x^3) * y^3) + ((1 - x) + (1 - x^2) * y^2 + (1 - x^3) * y) * z + z^6"), "z")(gf1Ring.cfRing)
 
