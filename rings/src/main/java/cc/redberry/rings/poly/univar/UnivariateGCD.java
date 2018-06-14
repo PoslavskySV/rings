@@ -13,13 +13,10 @@ import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.multivar.MultivariateGCD;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
 import static cc.redberry.rings.poly.univar.Conversions64bit.asOverZp64;
@@ -58,7 +55,7 @@ public final class UnivariateGCD {
                 T r = tryNested(a, b);
                 if (r != null)
                     return r;
-                return (T) UnivariateResultants.SubresultantPRS((UnivariatePolynomial) a, (UnivariatePolynomial) b).lastRemainder();
+                return (T) UnivariateResultants.SubresultantPRS((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
             }
         } else
             throw new RuntimeException();

@@ -1,11 +1,17 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
+import cc.redberry.rings.*;
+import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.primes.PrimesIterator;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
+
+import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asOverZp64;
+
 
 /**
  * Various algorithms to compute (sub)resultants via Euclidean algorithm. Implementation is based on Gathen & Lücking,
@@ -13,6 +19,116 @@ import java.util.List;
  */
 public final class UnivariateResultants {
     private UnivariateResultants() {}
+
+    /**
+     * Computes resultant of two polynomials
+     */
+    @SuppressWarnings("unckecked")
+    public static <E> E Resultant(UnivariatePolynomial<E> a, UnivariatePolynomial<E> b) {
+        if (a.isOverField())
+            return ClassicalPRS(a, b).resultant();
+        else if (Util.isOverRationals(a))
+            return (E) ResultantInQ((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+
+            //
+            // Modular algorithm is really slow in practice (given no
+            // any special bound) compared to Subresultant/Reduced
+            //
+            // else if (a.isOverZ())
+            //     return (E) ModularResultant((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+
+        else
+            return PrimitiveResultant(a, b, (p, q) -> SubresultantPRS(p, q).resultant());
+    }
+
+    private static <E> Rational<E> ResultantInQ(UnivariatePolynomial<Rational<E>> a,
+                                                UnivariatePolynomial<Rational<E>> b) {
+        Util.Tuple2<UnivariatePolynomial<E>, E>
+                aZ = Util.toCommonDenominator(a),
+                bZ = Util.toCommonDenominator(b);
+
+        Ring<E> ring = aZ._1.ring;
+
+        E resultant = Resultant(aZ._1, bZ._1);
+        E den = ring.multiply(
+                ring.pow(aZ._2, b.degree),
+                ring.pow(bZ._2, a.degree));
+        return new Rational<>(ring, resultant, den);
+    }
+
+    /**
+     * Computes sequence of scalar subresultants.
+     */
+    @SuppressWarnings("unckecked")
+    public static <E> List<E> Subresultants(UnivariatePolynomial<E> a, UnivariatePolynomial<E> b) {
+        if (a.isOverField())
+            return ClassicalPRS(a, b).getSubresultants();
+        else
+            return SubresultantPRS(a, b).getSubresultants();
+    }
+
+    static <E> E PrimitiveResultant(UnivariatePolynomial<E> a,
+                                    UnivariatePolynomial<E> b,
+                                    BiFunction<UnivariatePolynomial<E>, UnivariatePolynomial<E>, E> algorithm) {
+        E ac = a.content(), bc = b.content();
+        a = a.clone().divideExact(ac);
+        b = b.clone().divideExact(bc);
+        E r = algorithm.apply(a, b);
+        Ring<E> ring = a.ring;
+        r = ring.multiply(r, ring.pow(ac, b.degree));
+        r = ring.multiply(r, ring.pow(bc, a.degree));
+        return r;
+    }
+
+    /**
+     * Modular algorithm for computing resultants over Z
+     */
+    public static BigInteger ModularResultant(UnivariatePolynomial<BigInteger> a,
+                                              UnivariatePolynomial<BigInteger> b) {
+        return PrimitiveResultant(a, b, UnivariateResultants::ModularResultant0);
+    }
+
+    private static BigInteger ModularResultant0(UnivariatePolynomial<BigInteger> a,
+                                                UnivariatePolynomial<BigInteger> b) {
+        // bound on the value of resultant
+        BigInteger bound =
+                UnivariatePolynomial.norm2(a).pow(b.degree)
+                        .multiply(UnivariatePolynomial.norm2(b).pow(a.degree))
+                        .shiftLeft(1);
+
+        // aggregated CRT modulus
+        BigInteger bModulus = null;
+        BigInteger resultant = null;
+        PrimesIterator primes = new PrimesIterator(1L << 15);
+        while (true) {
+            long prime = primes.take();
+            BigInteger bPrime = BigInteger.valueOf(prime);
+            IntegersZp zpRing = Rings.Zp(prime);
+            UnivariatePolynomialZp64
+                    aMod = asOverZp64(a.setRing(zpRing)),
+                    bMod = asOverZp64(b.setRing(zpRing));
+
+            if (aMod.degree != a.degree || bMod.degree != b.degree)
+                continue;// unlucky prime
+
+            long resultantMod = ClassicalPRS(aMod, bMod).resultant();
+            BigInteger bResultantMod = BigInteger.valueOf(resultantMod);
+            if (bModulus == null) {
+                bModulus = bPrime;
+                resultant = bResultantMod;
+                continue;
+            }
+
+            if (!resultant.isZero() && resultantMod == 0)
+                continue;// unlucky prime
+
+            resultant = ChineseRemainders.ChineseRemainders(bModulus, bPrime, resultant, bResultantMod);
+            bModulus = bModulus.multiply(BigInteger.valueOf(prime));
+
+            if (bModulus.compareTo(bound) > 0)
+                return Rings.Zp(bModulus).symmetricForm(resultant);
+        }
+    }
 
     /** Computes polynomial remainder sequence using classical division algorithm */
     public static PolynomialRemainderSequenceZp64 ClassicalPRS(UnivariatePolynomialZp64 a, UnivariatePolynomialZp64 b) {

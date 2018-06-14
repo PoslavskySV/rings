@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
+import cc.redberry.rings.Rational;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.util.RandomDataGenerator;
@@ -13,11 +14,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.function.BiFunction;
 
-import static cc.redberry.rings.Rings.Z;
-import static cc.redberry.rings.Rings.Zp;
+import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.univar.RandomUnivariatePolynomials.randomPoly;
 import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asOverZ64;
 import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asOverZp64;
@@ -67,21 +66,29 @@ public class UnivariateResultantsTest extends APolynomialTest {
     @Test
     @RequiresSingular
     public void test3_random() throws Exception {
-        testAlgorithmsRandom(10, getRandom(), 15, 0, true, UnivariateResultants::PseudoPRS);
+        testAlgorithmsRandom(10, getRandom(), 15, 0, true, (p, q) -> PseudoPRS(p, q).resultant());
     }
 
     @Test
     @RequiresSingular
     public void test4_random() throws Exception {
-        for (int characteristic : Arrays.asList(0, 17)) {
-            System.out.println("Characteristic " + characteristic + ":");
-            testAlgorithmsRandom(
-                    its(100, 100), getRandom(),
-                    100, characteristic, true,
-                    UnivariateResultants::PrimitivePRS,
-                    UnivariateResultants::ReducedPRS,
-                    UnivariateResultants::SubresultantPRS);
-        }
+        System.out.println("Characteristic 0:");
+        testAlgorithmsRandom(
+                its(100, 100), getRandom(),
+                100, 0, true,
+                UnivariateResultants::ModularResultant,
+                (p, q) -> PrimitivePRS(p, q).resultant(),
+                (p, q) -> ReducedPRS(p, q).resultant(),
+                (p, q) -> SubresultantPRS(p, q).resultant());
+
+        System.out.println("Characteristic 17:");
+        testAlgorithmsRandom(
+                its(100, 100), getRandom(),
+                100, 17, true,
+                (p, q) -> ClassicalPRS(p, q).resultant(),
+                (p, q) -> PrimitivePRS(p, q).resultant(),
+                (p, q) -> ReducedPRS(p, q).resultant(),
+                (p, q) -> SubresultantPRS(p, q).resultant());
     }
 
     static void testAlgorithmsRandom(int nIterations,
@@ -91,7 +98,19 @@ public class UnivariateResultantsTest extends APolynomialTest {
                                      boolean testZero,
                                      BiFunction<UnivariatePolynomial<BigInteger>,
                                              UnivariatePolynomial<BigInteger>,
-                                             PolynomialRemainderSequence<BigInteger>>... algorithms) throws Exception {
+                                             BigInteger>... algorithms) throws Exception {
+        testAlgorithmsRandom(nIterations, rnd, maxDegree, characteristic, testZero, BigInteger.valueOf(5), algorithms);
+    }
+
+    static void testAlgorithmsRandom(int nIterations,
+                                     RandomGenerator rnd,
+                                     int maxDegree,
+                                     int characteristic,
+                                     boolean testZero,
+                                     BigInteger cfBound,
+                                     BiFunction<UnivariatePolynomial<BigInteger>,
+                                             UnivariatePolynomial<BigInteger>,
+                                             BigInteger>... algorithms) throws Exception {
         RandomDataGenerator rndd = new RandomDataGenerator(rnd);
         DescriptiveStatistics[] stats = new DescriptiveStatistics[algorithms.length];
         for (int i = 0; i < stats.length; ++i)
@@ -103,8 +122,8 @@ public class UnivariateResultantsTest extends APolynomialTest {
                     b = randomPoly(rndd.nextInt(0, maxDegree), rnd).toBigPoly();
 
             if (characteristic == 0) {
-                a = a.setRing(Zp(10)).setRing(Z);
-                b = b.setRing(Zp(10)).setRing(Z);
+                a = a.setRing(Zp(cfBound)).setRing(Z);
+                b = b.setRing(Zp(cfBound)).setRing(Z);
             } else {
                 a = a.setRing(Zp(characteristic));
                 b = b.setRing(Zp(characteristic));
@@ -117,10 +136,10 @@ public class UnivariateResultantsTest extends APolynomialTest {
 
             BigInteger expected = a.ring.valueOf(SingularResultant(characteristic, a, b));
             int c = 0;
-            for (BiFunction<UnivariatePolynomial<BigInteger>, UnivariatePolynomial<BigInteger>, PolynomialRemainderSequence<BigInteger>> algorithm : algorithms) {
+            for (BiFunction<UnivariatePolynomial<BigInteger>, UnivariatePolynomial<BigInteger>, BigInteger> algorithm : algorithms) {
                 long start = System.nanoTime();
                 try {
-                    assertEquals(expected, algorithm.apply(a, b).resultant());
+                    assertEquals(expected, algorithm.apply(a, b));
                 } catch (Throwable t) {
                     System.out.println(asOverZ64(a).toStringForCopy());
                     System.out.println(asOverZ64(b).toStringForCopy());
@@ -138,7 +157,7 @@ public class UnivariateResultantsTest extends APolynomialTest {
                 do {
                     g = randomPoly(rndd.nextInt(1, maxDegree), rnd).toBigPoly();
                     if (characteristic == 0)
-                        g = g.setRing(Zp(10)).setRing(Z);
+                        g = g.setRing(Zp(cfBound)).setRing(Z);
                     else
                         g = g.setRing(Zp(characteristic));
                 } while (g.degree == 0);
@@ -146,9 +165,9 @@ public class UnivariateResultantsTest extends APolynomialTest {
                 b.multiply(g);
                 expected = Z.getZero();
                 c = 0;
-                for (BiFunction<UnivariatePolynomial<BigInteger>, UnivariatePolynomial<BigInteger>, PolynomialRemainderSequence<BigInteger>> algorithm : algorithms) {
+                for (BiFunction<UnivariatePolynomial<BigInteger>, UnivariatePolynomial<BigInteger>, BigInteger> algorithm : algorithms) {
                     long start = System.nanoTime();
-                    assertEquals(expected, algorithm.apply(a, b).resultant());
+                    assertEquals(expected, algorithm.apply(a, b));
                     stats[c].addValue(System.nanoTime() - start);
                 }
             }
@@ -164,6 +183,35 @@ public class UnivariateResultantsTest extends APolynomialTest {
                 a = UnivariatePolynomialZ64.create(9, 0, 0, 9, 1, 6).toBigPoly(),
                 b = UnivariatePolynomialZ64.create(5, 3, 0, 8, 8, 3, 0, 1, 5, 7, 2, 3, 2, 2, 5, 9).toBigPoly();
         assertEquals(Z.parse("-34729627388605877211"), PseudoPRS(a, b).resultant());
+    }
+
+    @Test
+    public void test6() throws Exception {
+        UnivariatePolynomial<BigInteger>
+                a = UnivariatePolynomialZ64.create(9, 0, 123, 0, 9, -1231231431, 6, 5).toBigPoly().square().square(),
+                b = UnivariatePolynomialZ64.create(5, 3, 0, 8, 12123434, 8, 3, 0, 2341, 5, 7, 2, 3, 2, 2, 5, 1234329).toBigPoly().square();
+
+        for (int i = 0; i < 2; ++i) {
+            long start;
+
+            start = System.nanoTime();
+            BigInteger direct = SubresultantPRS(a, b).resultant();
+            System.out.println("Direct: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            BigInteger modular = ModularResultant(a, b);
+            System.out.println("Modular: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertEquals(direct, modular);
+            System.out.println();
+        }
+    }
+
+    @Test
+    public void test7() throws Exception {
+        UnivariatePolynomial<Rational<BigInteger>>
+                a = UnivariatePolynomial.parse("1/22 + 13*x^6 - x^10/91", Q, "x"),
+                b = UnivariatePolynomial.parse("22 - 13*x^3/24 - 23*x^11/91", Q, "x");
+        assertEquals(Q.parse("425247151599448037618564488318977897156050758819345410383614772923/512834526595668226887325363840230565837440811008"), Resultant(a, b));
     }
 
     static BigInteger SingularResultant(int characteristic,
