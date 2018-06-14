@@ -48,7 +48,7 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
         this.minimalPoly = minimalPoly;
         this.factory = minimalPoly.clone();
         this.inverseMod = UnivariateDivision.fastDivisionPreConditioning(minimalPoly);
-        this.cardinality = minimalPoly.coefficientRingCardinality().isZero()
+        this.cardinality = minimalPoly.coefficientRingCardinality() == null
                 ? null
                 : BigIntegerUtil.pow(minimalPoly.coefficientRingCardinality(), minimalPoly.degree());
     }
