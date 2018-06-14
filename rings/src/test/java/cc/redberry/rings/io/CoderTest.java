@@ -463,7 +463,7 @@ public class CoderTest extends AbstractTest {
         assertEquals("<v^2, u^2>", ideal.toString(uvCoder));
 
         UnivariateQuotientRing<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>
-                wQuot = Rings.UnivariateQuotientRing(wRing, wCoder.parse("1 + W^2 + W^4"));
+                wQuot = Rings.UnivariateQuotientRing(wCoder.parse("1 + W^2 + W^4"));
 
         assertDecode(wCoder, wQuot.valueOf(wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^116")));
         assertDecode(wCoder, wQuot.valueOf(wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^1161 + W^22")));

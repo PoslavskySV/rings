@@ -6,7 +6,15 @@ import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.test.TimeConsuming;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @since 1.0
@@ -64,4 +72,24 @@ public class APolynomialTest extends AbstractTest {
             }
         }
     }
+
+    protected static String getSingularPath() {
+        return System.getProperty("singularPath", "/Applications/Singular.app/Contents/bin/Singular");
+    }
+
+    protected static boolean isSingularAvailable() {
+        return new File(getSingularPath()).exists();
+    }
+
+    @Before
+    @Override
+    public void beforeMethod() throws Exception {
+        if (getClass().getMethod(name.getMethodName()).isAnnotationPresent(RequiresSingular.class))
+            Assume.assumeTrue(isSingularAvailable());
+        super.beforeMethod();
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    protected @interface RequiresSingular {}
 }

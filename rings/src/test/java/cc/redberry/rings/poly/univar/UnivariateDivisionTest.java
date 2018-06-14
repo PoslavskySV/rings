@@ -31,7 +31,7 @@ public class UnivariateDivisionTest extends AUnivariateTest {
         UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
         UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
 
-        UnivariateGCD.PolynomialRemainders<UnivariatePolynomialZp64> prs = UnivariateGCD.EuclidRemainders(a, b);
+        UnivariateResultants.APolynomialRemainderSequence<UnivariatePolynomialZp64> prs = UnivariateResultants.ClassicalPRS(a, b);
         UnivariatePolynomialZp64 gcd = prs.gcd();
         assertEquals(3, gcd.degree);
         assertTrue(UnivariateDivision.divideAndRemainder(a, gcd, true)[1].isZero());

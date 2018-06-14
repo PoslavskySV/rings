@@ -9,11 +9,8 @@ import cc.redberry.rings.poly.UnivariateQuotientRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.multivar.GroebnerBases.HilbertSeries;
-import cc.redberry.rings.poly.univar.UnivariateDivision;
+import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.poly.univar.UnivariateInterpolation.InterpolationZp64;
-import cc.redberry.rings.poly.univar.UnivariatePolynomial;
-import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
-import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
 import org.apache.commons.math3.random.Well44497b;
@@ -147,8 +144,8 @@ public class Examples {
                 aXY = ringXY.parse("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2"),
                 bXY = ringXY.parse("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2");
         //    // Subresultant sequence
-        PolynomialRemainders<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
-                subResultants = SubresultantRemainders(aXY, bXY);
+        UnivariateResultants.PolynomialRemainderSequence<UnivariatePolynomial<BigInteger>>
+                subResultants = UnivariateResultants.SubresultantPRS(aXY, bXY);
         // The GCD
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcdXY = subResultants.gcd().primitivePart();
         assert UnivariateDivision.remainder(aXY, gcdXY, true).isZero();
@@ -681,7 +678,7 @@ public class Examples {
 
         UnivariatePolynomial<Rational<BigInteger>> modulus = baseRing.parse("x^2 + 1");
         // quotient ring
-        UnivariateQuotientRing<UnivariatePolynomial<Rational<BigInteger>>> quotRing = UnivariateQuotientRing(baseRing, modulus);
+        UnivariateQuotientRing<UnivariatePolynomial<Rational<BigInteger>>> quotRing = UnivariateQuotientRing(modulus);
         // same poly in quotient ring
         UnivariatePolynomial<Rational<BigInteger>> quotPoly = quotRing.parse("123 * x^31 + 123 * x^2 + (1/2) * x + 1");
 

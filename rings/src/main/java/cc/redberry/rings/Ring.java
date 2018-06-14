@@ -361,12 +361,11 @@ public interface Ring<E> extends
      * @return gcd
      */
     default E gcd(E a, E b) {
-        if (isField())
-            return a;
-        if (!isEuclideanRing())
-            throw new UnsupportedOperationException("GCD is not supported in this ring");
         if (isZero(a)) return b;
         if (isZero(b)) return a;
+        if (isField()) return a;
+        if (!isEuclideanRing())
+            throw new UnsupportedOperationException("GCD is not supported in this ring");
 
         // run Euclidean algorithm by default
         E x = a, y = b, r;
@@ -770,7 +769,7 @@ public interface Ring<E> extends
      */
     default E pow(E base, BigInteger exponent) {
         if (exponent.signum() < 0)
-            throw new IllegalArgumentException();
+            return pow(reciprocal(base), exponent.negate());
 
         if (exponent.isOne())
             return base;
