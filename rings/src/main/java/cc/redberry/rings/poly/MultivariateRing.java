@@ -34,6 +34,10 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
     @Override
     public int nVariables() { return factory.nVariables; }
 
+    public MultivariateRing<Poly> dropVariable() {
+        return new MultivariateRing<>(factory.dropVariable(0));
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Poly[] divideAndRemainder(Poly dividend, Poly divider) {

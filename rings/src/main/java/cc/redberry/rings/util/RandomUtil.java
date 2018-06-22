@@ -30,6 +30,25 @@ public final class RandomUtil {
      * Creates random array of length {@code degree + 1} with elements bounded by {@code bound} (by absolute value).
      *
      * @param length array length
+     * @param total  total
+     * @param rnd    random source
+     * @return array of length {@code length} with elements bounded by {@code bound} (by absolute value)
+     */
+    public static int[] randomSharpIntArray(int length, int total, RandomGenerator rnd) {
+        int[] data = new int[length];
+        for (int i = 0; i < length; ++i) {
+            if (total <= 0)
+                break;
+            data[i] = rnd.nextInt(total);
+            total -= data[i];
+        }
+        return data;
+    }
+
+    /**
+     * Creates random array of length {@code degree + 1} with elements bounded by {@code bound} (by absolute value).
+     *
+     * @param length array length
      * @param min    min value
      * @param max    max value
      * @param rnd    random source

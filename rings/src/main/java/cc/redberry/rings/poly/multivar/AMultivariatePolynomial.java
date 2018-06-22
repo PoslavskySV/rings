@@ -1353,6 +1353,18 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Returns skeleton of this poly with respect to specified {@code variables}
+     *
+     * @param variables the variables
+     * @return skeleton of this poly with respect to specified {@code variables}
+     */
+    public final Set<DegreeVector> getSkeletonDrop(int... variables) {
+        int[] variablesSorted = variables.clone();
+        Arrays.sort(variablesSorted);
+        return terms.keySet().stream().map(dv -> dv.dvDropSelect(variablesSorted)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
+    }
+
+    /**
      * Returns skeleton of this poly with respect to all except specified {@code variables}
      *
      * @param variables the variables to exclude

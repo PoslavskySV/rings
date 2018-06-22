@@ -2,6 +2,9 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
+import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.util.RandomDataGenerator;
 import cc.redberry.rings.util.TimeUnits;
@@ -212,6 +215,34 @@ public class UnivariateResultantsTest extends APolynomialTest {
                 a = UnivariatePolynomial.parse("1/22 + 13*x^6 - x^10/91", Q, "x"),
                 b = UnivariatePolynomial.parse("22 - 13*x^3/24 - 23*x^11/91", Q, "x");
         assertEquals(Q.parse("425247151599448037618564488318977897156050758819345410383614772923/512834526595668226887325363840230565837440811008"), Resultant(a, b));
+    }
+
+    @Test
+    public void test8() {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
+
+        MultivariatePolynomial<BigInteger>
+                a = coder.parse("(2*x + y + z)^11 - 1"),
+                b = coder.parse("(x - 3*y - z)^3 + 1");
+
+        UnivariatePolynomial<MultivariatePolynomial<BigInteger>>
+                ua = a.asUnivariateEliminate(0),
+                ub = b.asUnivariateEliminate(0);
+        for (int i = 0; i < its(2, 2); ++i) {
+            long start;
+
+            start = System.nanoTime();
+            MultivariatePolynomial<BigInteger> sr = SubresultantPRS(ua, ub).resultant();
+            System.out.println("Subresultant PRS: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            MultivariatePolynomial<BigInteger> rr = ReducedPRS(ua, ub).resultant();
+            System.out.println("Reduced      PRS: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            System.out.println();
+
+            assertEquals(sr, rr);
+        }
     }
 
     static BigInteger SingularResultant(int characteristic,

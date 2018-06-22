@@ -21,9 +21,20 @@ public final class UnivariateResultants {
     private UnivariateResultants() {}
 
     /**
+     * Computes resultant of two polynomials and returns the result as a constant poly
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IUnivariatePolynomial<Poly>> Poly ResultantAsPoly(Poly a, Poly b) {
+        if (a instanceof UnivariatePolynomialZp64)
+            return (Poly) ((UnivariatePolynomialZp64) a).createConstant(Resultant((UnivariatePolynomialZp64) a, (UnivariatePolynomialZp64) b));
+        else
+            return (Poly) ((UnivariatePolynomial) a).createConstant(Resultant((UnivariatePolynomial) a, (UnivariatePolynomial) b));
+    }
+
+    /**
      * Computes resultant of two polynomials
      */
-    @SuppressWarnings("unckecked")
+    @SuppressWarnings("unchecked")
     public static <E> E Resultant(UnivariatePolynomial<E> a, UnivariatePolynomial<E> b) {
         if (a.isOverField())
             return ClassicalPRS(a, b).resultant();
@@ -39,6 +50,13 @@ public final class UnivariateResultants {
 
         else
             return PrimitiveResultant(a, b, (p, q) -> SubresultantPRS(p, q).resultant());
+    }
+
+    /**
+     * Computes resultant of two polynomials
+     */
+    public static long Resultant(UnivariatePolynomialZp64 a, UnivariatePolynomialZp64 b) {
+        return ClassicalPRS(a, b).resultant();
     }
 
     private static <E> Rational<E> ResultantInQ(UnivariatePolynomial<Rational<E>> a,
@@ -59,7 +77,6 @@ public final class UnivariateResultants {
     /**
      * Computes sequence of scalar subresultants.
      */
-    @SuppressWarnings("unckecked")
     public static <E> List<E> Subresultants(UnivariatePolynomial<E> a, UnivariatePolynomial<E> b) {
         if (a.isOverField())
             return ClassicalPRS(a, b).getSubresultants();

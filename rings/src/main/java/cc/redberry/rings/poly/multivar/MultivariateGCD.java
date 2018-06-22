@@ -516,7 +516,7 @@ public final class MultivariateGCD {
             return linear.createConstant(cGCD);
     }
 
-    private static int
+    static int
             EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD = 1024,
             EARLY_ADJUST_POLY_DISBALANCE = 10,
             EARLY_ADJUST_LARGE_POLY_SIZE_THRESHOLD = EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD * EARLY_ADJUST_POLY_DISBALANCE;
@@ -941,7 +941,7 @@ public final class MultivariateGCD {
     /**
      * Removes monomial content from a and b and returns monomial gcd
      */
-    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Term reduceMonomialContent(Poly a, Poly b) {
 
         Term aMonomialContent = a.monomialContent();
@@ -2546,7 +2546,7 @@ public final class MultivariateGCD {
 
     static boolean ALWAYS_LINZIP = false;
     /** maximal number of attempts to choose a good evaluation point for sparse interpolation */
-    private static final int MAX_FAILED_SUBSTITUTIONS = 32;
+    static final int MAX_FAILED_SUBSTITUTIONS = 32;
 
     static <E> SparseInterpolation<E> createInterpolation(int variable,
                                                           MultivariatePolynomial<E> a,
@@ -3809,7 +3809,7 @@ public final class MultivariateGCD {
                 evaluationVariables, evaluationPoint, powers, expectedNumberOfEvaluations, rnd);
     }
 
-    private static MultivariatePolynomialZp64.lPrecomputedPowersHolder mkPrecomputedPowers(
+    static MultivariatePolynomialZp64.lPrecomputedPowersHolder mkPrecomputedPowers(
             MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b,
             int[] evaluationVariables, long[] evaluationPoint) {
         int[] degrees = ArraysUtil.max(a.degreesRef(), b.degreesRef());
@@ -3825,7 +3825,7 @@ public final class MultivariateGCD {
      * view multivariate polynomial as a univariate in Zp[x_1, ... x_N][x_0] and return the map (x_0)^exponent ->
      * coefficient in Zp[x_1, ... x_N]
      */
-    private static TIntObjectHashMap<MultivariatePolynomialZp64> getSkeleton(MultivariatePolynomialZp64 poly) {
+    static TIntObjectHashMap<MultivariatePolynomialZp64> getSkeleton(MultivariatePolynomialZp64 poly) {
         TIntObjectHashMap<MultivariatePolynomialZp64> skeleton = new TIntObjectHashMap<>();
         for (MonomialZp64 term : poly) {
             MonomialZp64 newDV = term.setZero(0);
@@ -3946,11 +3946,11 @@ public final class MultivariateGCD {
         abstract MultivariatePolynomialZp64 evaluate0(long newPoint);
     }
 
-    private static ZippelEvaluationsZp64 createEvaluations(MultivariatePolynomialZp64 poly,
-                                                           int[] evaluationVariables,
-                                                           long[] evaluationPoint,
-                                                           MultivariatePolynomialZp64.lPrecomputedPowersHolder basePowers,
-                                                           int expectedNumberOfEvaluations) {
+    static ZippelEvaluationsZp64 createEvaluations(MultivariatePolynomialZp64 poly,
+                                                   int[] evaluationVariables,
+                                                   long[] evaluationPoint,
+                                                   MultivariatePolynomialZp64.lPrecomputedPowersHolder basePowers,
+                                                   int expectedNumberOfEvaluations) {
         if (expectedNumberOfEvaluations > N_EVALUATIONS_RECURSIVE_SWITCH
                 && poly.size() > SIZE_OF_POLY_RECURSIVE_SWITCH)
             return new FastSparseRecursiveEvaluationsZp64(poly, evaluationPoint, evaluationVariables[evaluationVariables.length - 1]);
@@ -3959,13 +3959,13 @@ public final class MultivariateGCD {
     }
 
     /** efficient data structure for repeated evaluations in Zippel method */
-    private interface ZippelEvaluationsZp64 {
+    interface ZippelEvaluationsZp64 {
         /** evaluate underlying polynomial */
         UnivariatePolynomialZp64 evaluate(int raiseFactor, long value);
     }
 
     /** evaluation with plain MultivariatePolynomial#evaluate method (with minor enhancements) */
-    private static final class PlainEvaluationsZp64 implements ZippelEvaluationsZp64 {
+    static final class PlainEvaluationsZp64 implements ZippelEvaluationsZp64 {
         /** initial poly */
         private final MultivariatePolynomialZp64 poly;
         /**
@@ -4021,7 +4021,7 @@ public final class MultivariateGCD {
 
 
     /** fast evaluation of polynomials in Zippel method with the use of sparse recursive form and Horner scheme */
-    private static final class FastSparseRecursiveEvaluationsZp64 implements ZippelEvaluationsZp64 {
+    static final class FastSparseRecursiveEvaluationsZp64 implements ZippelEvaluationsZp64 {
         /** initial poly */
         private final MultivariatePolynomialZp64 poly;
         /** evaluation point */
@@ -4367,7 +4367,7 @@ public final class MultivariateGCD {
         }
     }
 
-    private static abstract class lLinearSystem {
+    static abstract class lLinearSystem {
         final int univarDegree;
         /** the ring */
         final IntegersZp64 ring;
@@ -4408,7 +4408,7 @@ public final class MultivariateGCD {
     }
 
     /** Vandermonde system builder */
-    private static final class lLinZipSystem extends lLinearSystem {
+    static final class lLinZipSystem extends lLinearSystem {
         public lLinZipSystem(int univarDegree, MultivariatePolynomialZp64 skeleton, MultivariatePolynomialZp64.lPrecomputedPowersHolder powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }
@@ -4431,7 +4431,7 @@ public final class MultivariateGCD {
     }
 
     /** Vandermonde system builder */
-    private static final class lVandermondeSystem extends lLinearSystem {
+    static final class lVandermondeSystem extends lLinearSystem {
         public lVandermondeSystem(int univarDegree, MultivariatePolynomialZp64 skeleton, MultivariatePolynomialZp64.lPrecomputedPowersHolder powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }
