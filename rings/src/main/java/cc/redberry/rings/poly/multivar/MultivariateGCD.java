@@ -2633,7 +2633,7 @@ public final class MultivariateGCD {
      * view multivariate polynomial as a univariate in Zp[x_1, ... x_N][x_0] and return the map (x_0)^exponent ->
      * coefficient in Zp[x_1, ... x_N]
      */
-    private static <E> TIntObjectHashMap<MultivariatePolynomial<E>> getSkeleton(MultivariatePolynomial<E> poly) {
+    static <E> TIntObjectHashMap<MultivariatePolynomial<E>> getSkeleton(MultivariatePolynomial<E> poly) {
         TIntObjectHashMap<MultivariatePolynomial<E>> skeleton = new TIntObjectHashMap<>();
         for (Monomial<E> term : poly) {
             Monomial<E> newDV = term.setZero(0);
@@ -2764,7 +2764,7 @@ public final class MultivariateGCD {
      */
     private static final int SIZE_OF_POLY_RECURSIVE_SWITCH = 512;
 
-    private static <E> ZippelEvaluations<E> createEvaluations(MultivariatePolynomial<E> poly,
+    static <E> ZippelEvaluations<E> createEvaluations(MultivariatePolynomial<E> poly,
                                                               int[] evaluationVariables,
                                                               E[] evaluationPoint,
                                                               MultivariatePolynomial.PrecomputedPowersHolder<E> basePowers,
@@ -2777,7 +2777,7 @@ public final class MultivariateGCD {
     }
 
     /** efficient data structure for repeated evaluations in Zippel method */
-    private interface ZippelEvaluations<E> {
+    interface ZippelEvaluations<E> {
         /** evaluate underlying polynomial */
         UnivariatePolynomial<E> evaluate(int raiseFactor, E value);
     }
@@ -3271,7 +3271,7 @@ public final class MultivariateGCD {
     }
 
     /** Vandermonde system builder */
-    private static final class VandermondeSystem<E> extends LinearSystem<E> {
+    static final class VandermondeSystem<E> extends LinearSystem<E> {
         public VandermondeSystem(int univarDegree, MultivariatePolynomial<E> skeleton, MultivariatePolynomial.PrecomputedPowersHolder<E> powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }

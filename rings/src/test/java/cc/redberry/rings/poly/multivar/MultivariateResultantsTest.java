@@ -42,7 +42,7 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         MultivariatePolynomial<BigInteger> a = coder.parse("(2*x + y + z)^3 + 1");
         MultivariatePolynomial<BigInteger> b = coder.parse("(x - 3*y - z)^13 + 1");
         MultivariatePolynomial<BigInteger> expected = coder.parse("343 - 124509*y^3 + 2470629*y^6 - 40353607*y^9 - 160083*y^2*z + 6353046*y^5*z - 155649627*y^8*z - 68607*y*z^2 + 6806835*y^4*z^2 - 266827932*y^7*z^2 - 9801*z^3 + 3889620*y^3*z^3 - 266827932*y^6*z^3 + 1250235*y^2*z^4 - 171532242*y^5*z^4 + 214326*y*z^5 - 73513818*y^4*z^5 + 15309*z^6 - 21003948*y^3*z^6 - 3857868*y^2*z^7 - 413343*y*z^8 - 19683*z^9");
-        assertEquals(expected, PlainResultant(a, b, 0));
+        assertEquals(expected, ClassicalResultant(a, b, 0));
     }
 
     @Test
@@ -274,6 +274,29 @@ public class MultivariateResultantsTest extends AMultivariateTest {
 
         System.out.println("Zippel's " + zippel);
         System.out.println("Brown's " + brown);
+    }
+
+    @Test
+    public void testZippel4_generic() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        IntegersZp64 ring = Zp64(SmallPrimes.nextPrime(1 << 20));
+        int nIterations = its(25, 50);
+        int nVars = 4, degree = 5;
+        for (int i = 0; i < nIterations; ++i) {
+            MultivariatePolynomialZp64
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd);
+            int variable = rnd.nextInt(nVars);
+
+            MultivariatePolynomialZp64 expected = ZippelResultant(a, b, variable);
+
+            MultivariatePolynomial<BigInteger> g;
+            g = BrownResultant(a.toBigPoly(), b.toBigPoly(), variable);
+            assertEquals(expected, MultivariatePolynomial.asOverZp64(g));
+            g = ZippelResultant(a.toBigPoly(), b.toBigPoly(), variable);
+            assertEquals(expected, MultivariatePolynomial.asOverZp64(g));
+        }
     }
 
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
