@@ -6,6 +6,9 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
+import cc.redberry.rings.poly.univar.UnivariateResultants;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -119,6 +122,40 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         }
     }
 
+    @Ignore
+    @Test
+    public void test5_bivariate_performance() throws Exception {
+        IntegersZp64 cfRing = Zp64(1048583);
+        MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(2, cfRing);
+        Coder<MultivariatePolynomialZp64, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y");
+
+        MultivariatePolynomialZp64 a = coder.parse("(2*x + y + 2)^47 + 12 + (x - 1)^46 + (y + 2)^43");
+        MultivariatePolynomialZp64 b = coder.parse("(x - 3*y - 3)^43 + 13 + x^45*y^45");
+        for (int i = 0; i < 100; ++i) {
+            long start;
+
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 br = BrownResultant(a, b, 0);
+            System.out.println("Brown: " + nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 zp = ZippelResultant(a, b, 0);
+            System.out.println("Zippel: " + nanosecondsToString(System.nanoTime() - start));
+            assertEquals(br, zp);
+
+            start = System.nanoTime();
+            UnivariatePolynomial<UnivariatePolynomialZp64>
+                    aUni = a.asUnivariate(0).mapCoefficients(UnivariateRingZp64(cfRing), p -> p.asUnivariate()),
+                    bUni = b.asUnivariate(0).mapCoefficients(UnivariateRingZp64(cfRing), p -> p.asUnivariate());
+            MultivariatePolynomialZp64 uniRes = UnivariateResultants.Resultant(aUni, bUni).asMultivariate().insertVariable(0);
+            assertEquals(br, uniRes);
+            System.out.println("Univar: " + nanosecondsToString(System.nanoTime() - start));
+            System.out.println(br.size() + "   " + br.degree());
+
+            System.out.println();
+        }
+    }
+
     @Test
     public void testSparseInterpolation1() throws IOException, InterruptedException {
         MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(3, Zp64(1048583));
@@ -128,19 +165,115 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         MultivariatePolynomialZp64 expected = SingularResultant(a, b, 0).resultant;
 
         MultivariatePolynomialZp64
-                aEval = a.eliminate(2, 1),
-                bEval = b.eliminate(2, 1),
                 rEval = expected.dropVariable(0).evaluate(1, 1);
 
 
-        MultivariateGCD.lSparseInterpolation interpolation =
+        SparseInterpolationZp64 interpolation =
                 createInterpolation(1,
                         a.asUnivariateEliminate(0),
                         b.asUnivariateEliminate(0),
                         rEval, expected.degree(2), getRandom());
 
-        System.out.println(interpolation.evaluate(2).insertVariable(0));
-        System.out.println(expected.eliminate(2, 2));
+        assertEquals(expected.evaluate(2, 2),
+                interpolation.evaluate(2).insertVariable(0));
+    }
+
+    @Test
+    public void testZippel1_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        IntegersZp64 ring = Zp64(SmallPrimes.nextPrime(1 << 20));
+        DescriptiveStatistics
+                zippel = new DescriptiveStatistics(),
+                brown = new DescriptiveStatistics();
+        int nIterations = its(100, 100);
+        int nVars = 4, degree = 7;
+        for (int i = 0; i < nIterations; ++i) {
+            MultivariatePolynomialZp64
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd);
+            int variable = rnd.nextInt(nVars);
+
+            long start;
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 actual = ZippelResultant(a, b, variable);
+            zippel.addValue(System.nanoTime() - start);
+
+
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 expected = BrownResultant(a, b, variable);
+            brown.addValue(System.nanoTime() - start);
+
+            assertEquals(expected, actual);
+        }
+
+        System.out.println("Zippel's " + zippel);
+        System.out.println("Brown's " + brown);
+    }
+
+    @Test
+    public void testZippel1() {
+        IntegersZp64 cfRing = Zp64(SmallPrimes.nextPrime(1 << 20));
+        MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(4, cfRing);
+        Coder<MultivariatePolynomialZp64, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x1", "x2", "x3", "x4");
+
+        MultivariatePolynomialZp64
+                a = coder.parse("1064*x2^4*x3^2+813059*x2^5*x4+982139*x1*x2^2+772988*x1^2+966476*x1^2*x2*x3^2*x4+207078*x1^3*x3*x4^2+1037301*x1^3*x2^3+1041799*x1^5+37593*x1^6"),
+                b = coder.parse("698234*x3^4*x4^2+847486*x2*x3^2*x4+499885*x2^4*x3+748942*x2^6+537106*x1*x3^5+703951*x1*x2^3*x3+131882*x1*x2^5+87996*x1^2*x3^2*x4+962154*x1^2*x2^3*x3+55977*x1^3*x2*x3^2+16786*x1^4*x3+694160*x1^4*x2^2+554118*x1^5*x3+966084*x1^5*x2");
+        assertEquals(BrownResultant(a, b, 0), ZippelResultant(a, b, 0));
+    }
+
+    @Test
+    public void testZippel2() {
+        IntegersZp64 cfRing = Zp64(SmallPrimes.nextPrime(1 << 20));
+        MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(4, cfRing);
+        Coder<MultivariatePolynomialZp64, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x1", "x2", "x3", "x4");
+
+        MultivariatePolynomialZp64
+                a = coder.parse("512502*x3^5+59504*x3^6+244225*x1*x2^5+530513*x1^2*x2*x3+435564*x1^2*x2^3*x3+546487*x1^3*x2^2*x3+317466*x1^4*x2^2+111459*x1^5*x2+146247*x1^6"),
+                b = coder.parse("681651*x1^2+400314*x1^2*x2^4+481090*x1^4*x2*x3");
+        assertEquals(BrownResultant(a, b, 0), ZippelResultant(a, b, 0));
+    }
+
+    @Test
+    public void testZippel3_random_sparse_vars() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        IntegersZp64 ring = Zp64(SmallPrimes.nextPrime(1 << 20));
+        DescriptiveStatistics
+                zippel = new DescriptiveStatistics(),
+                brown = new DescriptiveStatistics();
+        int nIterations = its(50, 100);
+        int nVars = 100, degree = 7;
+        for (int i = 0; i < nIterations; ++i) {
+            MultivariatePolynomialZp64
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd);
+            while (a.nUsedVariables() >= 5)
+                a = a.evaluate(rnd.nextInt(nVars), 1);
+            while (b.nUsedVariables() >= 5)
+                b = b.evaluate(rnd.nextInt(nVars), 1);
+            int variable;
+            do { variable = rnd.nextInt(nVars);} while (a.degree(variable) == 0 && b.degree(variable) == 0);
+
+            long start;
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 actual = ZippelResultant(a, b, variable);
+            zippel.addValue(System.nanoTime() - start);
+            System.out.println("Zippel: " + nanosecondsToString(System.nanoTime() - start));
+
+
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 expected = BrownResultant(a, b, variable);
+            brown.addValue(System.nanoTime() - start);
+            System.out.println("Brown: " + nanosecondsToString(System.nanoTime() - start));
+
+            assertEquals(expected, actual);
+            System.out.println();
+        }
+
+        System.out.println("Zippel's " + zippel);
+        System.out.println("Brown's " + brown);
     }
 
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
