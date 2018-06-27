@@ -35,11 +35,11 @@ public final class MultivariateResultants {
     private MultivariateResultants() {}
 
     /**
-     * Calculates greatest common divisor of two multivariate polynomials
+     * Calculates polynomial resultant of two given polynomials with respect to specified variable
      *
      * @param a the first poly
      * @param b the second poly
-     * @return the gcd
+     * @return the resultant
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial> Poly Resultant(Poly a, Poly b, int variable) {
@@ -138,7 +138,7 @@ public final class MultivariateResultants {
     }
 
     /**
-     * Computes polynomial resultant of two polynomials over finite field
+     * Computes polynomial resultant of two polynomials over Z
      */
     public static MultivariatePolynomial<BigInteger> ResultantInZ(MultivariatePolynomial<BigInteger> a,
                                                                   MultivariatePolynomial<BigInteger> b,
@@ -616,7 +616,7 @@ public final class MultivariateResultants {
                         continue;
 
                     if (imageTerm.coefficient.isZero()) {
-                        // term is absent in the modularGCD => remove it from the base
+                        // term is absent in the modularResultant => remove it from the base
                         // bBase.subtract(baseTerm);
                         iterator.aIterator.remove();
                         continue;
