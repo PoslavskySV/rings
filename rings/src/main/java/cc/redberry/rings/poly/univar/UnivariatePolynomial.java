@@ -8,7 +8,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.io.IStringifier;
-import cc.redberry.rings.poly.multivar.MonomialOrder;
+import cc.redberry.rings.poly.multivar.DegreeVector;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 
@@ -194,7 +194,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      *
      * @param poly Zp polynomial
      * @return Z[x] version of the poly with coefficients represented in symmetric modular form ({@code -modulus/2 <=
-     * cfx <= modulus/2}).
+     *         cfx <= modulus/2}).
      * @throws IllegalArgumentException is {@code poly.ring} is not a {@link IntegersZp}
      */
     public static UnivariatePolynomial<BigInteger> asPolyZSymmetric(UnivariatePolynomial<BigInteger> poly) {
@@ -1176,8 +1176,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public E[] getDataReferenceUnsafe() {return data;}
 
     @Override
-    public MultivariatePolynomial<E> asMultivariate() {
-        return MultivariatePolynomial.asMultivariate(this, 1, 0, MonomialOrder.DEFAULT);
+    public MultivariatePolynomial<E> asMultivariate(Comparator<DegreeVector> ordering) {
+        return MultivariatePolynomial.asMultivariate(this, 1, 0, ordering);
     }
 
     @Override

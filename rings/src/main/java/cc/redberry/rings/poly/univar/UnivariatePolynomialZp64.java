@@ -5,10 +5,12 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.multivar.DegreeVector;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Univariate polynomial over Zp ring with modulus in the range of {@code [2, 2^62) } (the last value is specified by
@@ -549,7 +551,7 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     }
 
     @Override
-    public MultivariatePolynomialZp64 asMultivariate() {
-        return MultivariatePolynomialZp64.asMultivariate(this, 1, 0, MonomialOrder.DEFAULT);
+    public MultivariatePolynomialZp64 asMultivariate(Comparator<DegreeVector> ordering) {
+        return MultivariatePolynomialZp64.asMultivariate(this, 1, 0, ordering);
     }
 }

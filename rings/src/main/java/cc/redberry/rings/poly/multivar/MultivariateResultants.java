@@ -1,15 +1,16 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.poly.univar.UnivariateResultants;
+import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -22,9 +23,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static cc.redberry.rings.Rings.UnivariateRing;
-import static cc.redberry.rings.Rings.UnivariateRingZp64;
+import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.MachineArithmetic.*;
+import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
 import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
 
 /**
@@ -34,15 +35,134 @@ public final class MultivariateResultants {
     private MultivariateResultants() {}
 
     /**
+     * Calculates greatest common divisor of two multivariate polynomials
+     *
+     * @param a the first poly
+     * @param b the second poly
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial> Poly Resultant(Poly a, Poly b, int variable) {
+        a.assertSameCoefficientRingWith(b);
+        if (a.isOverFiniteField())
+            return ResultantInGF(a, b, variable);
+        if (a.isOverZ())
+            return (Poly) ResultantInZ((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        if (Util.isOverRationals(a))
+            return (Poly) ResultantInQ((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        if (a.isOverField())
+            return (Poly) ZippelResultant((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b, variable);
+        return tryNested(a, b, variable);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Poly extends AMultivariatePolynomial> Poly tryNested(Poly a, Poly b, int variable) {
+        if (isOverUnivariate(a))
+            return (Poly) ResultantOverUnivariate((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        else if (isOverUnivariateZp64(a))
+            return (Poly) ResultantOverUnivariateZp64((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        else if (isOverMultivariate(a))
+            return (Poly) ResultantOverMultivariate((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        else if (isOverMultivariateZp64(a))
+            return (Poly) ResultantOverMultivariateZp64((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+
+        throw new RuntimeException("Multivariate GCD over " + a.coefficientRingToString() + " ring not supported.");
+    }
+
+
+    private static <E> MultivariatePolynomial<UnivariatePolynomial<E>>
+    ResultantOverUnivariate(MultivariatePolynomial<UnivariatePolynomial<E>> a,
+                            MultivariatePolynomial<UnivariatePolynomial<E>> b, int variable) {
+        return Resultant(
+                MultivariatePolynomial.asNormalMultivariate(a, 0),
+                MultivariatePolynomial.asNormalMultivariate(b, 0),
+                variable)
+                .asOverUnivariateEliminate(0);
+    }
+
+    private static <E> MultivariatePolynomial<MultivariatePolynomial<E>>
+    ResultantOverMultivariate(MultivariatePolynomial<MultivariatePolynomial<E>> a,
+                              MultivariatePolynomial<MultivariatePolynomial<E>> b, int variable) {
+        int[] cfVars = ArraysUtil.sequence(a.lc().nVariables);
+        int[] mainVars = ArraysUtil.sequence(a.lc().nVariables, a.lc().nVariables + a.nVariables);
+        return Resultant(
+                MultivariatePolynomial.asNormalMultivariate(a, cfVars, mainVars),
+                MultivariatePolynomial.asNormalMultivariate(b, cfVars, mainVars),
+                variable)
+                .asOverMultivariateEliminate(cfVars);
+    }
+
+    private static MultivariatePolynomial<UnivariatePolynomialZp64>
+    ResultantOverUnivariateZp64(MultivariatePolynomial<UnivariatePolynomialZp64> a,
+                                MultivariatePolynomial<UnivariatePolynomialZp64> b,
+                                int variable) {
+        return Resultant(
+                MultivariatePolynomialZp64.asNormalMultivariate(a, 0),
+                MultivariatePolynomialZp64.asNormalMultivariate(b, 0),
+                variable).asOverUnivariateEliminate(0);
+    }
+
+    private static MultivariatePolynomial<MultivariatePolynomialZp64>
+    ResultantOverMultivariateZp64(MultivariatePolynomial<MultivariatePolynomialZp64> a,
+                                  MultivariatePolynomial<MultivariatePolynomialZp64> b,
+                                  int variable) {
+        int[] cfVars = ArraysUtil.sequence(a.lc().nVariables);
+        int[] mainVars = ArraysUtil.sequence(a.lc().nVariables, a.lc().nVariables + a.nVariables);
+        return Resultant(
+                MultivariatePolynomialZp64.asNormalMultivariate(a, cfVars, mainVars),
+                MultivariatePolynomialZp64.asNormalMultivariate(b, cfVars, mainVars),
+                variable).asOverMultivariateEliminate(cfVars);
+    }
+
+    static <E> MultivariatePolynomial<Rational<E>> ResultantInQ(
+            MultivariatePolynomial<Rational<E>> a,
+            MultivariatePolynomial<Rational<E>> b,
+            int variable) {
+        Util.Tuple2<MultivariatePolynomial<E>, E> aRat = Util.toCommonDenominator(a);
+        Util.Tuple2<MultivariatePolynomial<E>, E> bRat = Util.toCommonDenominator(b);
+
+        Ring<E> ring = aRat._1.ring;
+        E correction = ring.multiply(
+                ring.pow(aRat._2, b.degree(variable)),
+                ring.pow(bRat._2, a.degree(variable)));
+        return Util.asOverRationals(a.ring, Resultant(aRat._1, bRat._1, variable)).divideExact(new Rational<>(ring, correction));
+    }
+
+    /**
+     * Computes polynomial resultant of two polynomials over finite field
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial>
+    Poly ResultantInGF(Poly a, Poly b, int variable) {
+        return (Poly) ZippelResultant(a, b, variable);
+    }
+
+    /**
+     * Computes polynomial resultant of two polynomials over finite field
+     */
+    public static MultivariatePolynomial<BigInteger> ResultantInZ(MultivariatePolynomial<BigInteger> a,
+                                                                  MultivariatePolynomial<BigInteger> b,
+                                                                  int variable) {
+        return ModularResultantInZ(a, b, variable);
+    }
+
+    /**
      * Computes resultant via subresultant sequences
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly ClassicalResultant(Poly a, Poly b, int variable) {
+        if (canConvertToZp64(a))
+            return convertFromZp64(ClassicalResultant(asOverZp64(a), asOverZp64(b), variable));
         return UnivariateResultants.Resultant(a.asUnivariateEliminate(variable), b.asUnivariateEliminate(variable)).insertVariable(variable);
     }
 
+
+    /* ============================================== Auxiliary methods ============================================= */
+
     /** structure with required input for resultant algorithms */
     static final class ResultantInput<Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>> {
+        /** input polynomials (with variables renamed and main variable dropped) */
+        final Poly aReduced0, bReduced0;
         /** input polynomials (with variables renamed and main variable dropped) */
         final UnivariatePolynomial<Poly> aReduced, bReduced;
         /** earlyResultant if possible (in trivial cases) */
@@ -63,6 +183,7 @@ public final class MultivariateResultants {
 
         ResultantInput(Poly earlyResultant) {
             this.earlyResultant = earlyResultant;
+            aReduced0 = bReduced0 = null;
             aReduced = bReduced = null;
             degreeBounds = mapping = null;
             lastPresentVariable = evaluationStackLimit = -1;
@@ -70,15 +191,16 @@ public final class MultivariateResultants {
             finiteExtensionDegree = -1;
         }
 
-        ResultantInput(UnivariatePolynomial<Poly> aReduced,
-                       UnivariatePolynomial<Poly> bReduced,
+        ResultantInput(Poly aReduced0, Poly bReduced0,
                        Poly monomialResultant,
                        int evaluationStackLimit,
                        int[] degreeBounds, int[] mapping, int lastPresentVariable,
                        int finiteExtensionDegree) {
             //assert monomialGCD == null || aReduced.ring.isOne(monomialGCD.coefficient);
-            this.aReduced = aReduced;
-            this.bReduced = bReduced;
+            this.aReduced0 = aReduced0;
+            this.bReduced0 = bReduced0;
+            this.aReduced = aReduced0.asUnivariateEliminate(0);
+            this.bReduced = bReduced0.asUnivariateEliminate(0);
             this.monomialResultant = monomialResultant;
             this.earlyResultant = null;
             this.evaluationStackLimit = evaluationStackLimit;
@@ -187,7 +309,7 @@ public final class MultivariateResultants {
                 tmp = tmp * ds;
         }
 
-        return new ResultantInput<>(a.asUnivariateEliminate(0), b.asUnivariateEliminate(0),
+        return new ResultantInput<>(a, b,
                 monomialResultant, evaluationStackLimit, degreeBounds, variables, lastResVariable, finiteExtensionDegree);
     }
 
@@ -331,7 +453,7 @@ public final class MultivariateResultants {
         UnivariatePolynomial<UnivariatePolynomialZp64>
                 aUni = a.mapCoefficients(uRing, MultivariatePolynomialZp64::asUnivariate),
                 bUni = b.mapCoefficients(uRing, MultivariatePolynomialZp64::asUnivariate);
-        return UnivariateResultants.Resultant(aUni, bUni).asMultivariate().setNVariables(factory.nVariables);
+        return UnivariateResultants.Resultant(aUni, bUni).asMultivariate(factory.ordering).setNVariables(factory.nVariables);
     }
 
     /**
@@ -345,7 +467,7 @@ public final class MultivariateResultants {
         UnivariatePolynomial<UnivariatePolynomial<E>>
                 aUni = a.mapCoefficients(uRing, MultivariatePolynomial::asUnivariate),
                 bUni = b.mapCoefficients(uRing, MultivariatePolynomial::asUnivariate);
-        return UnivariateResultants.Resultant(aUni, bUni).asMultivariate().setNVariables(factory.nVariables);
+        return UnivariateResultants.Resultant(aUni, bUni).asMultivariate(factory.ordering).setNVariables(factory.nVariables);
     }
 
     /**
@@ -360,6 +482,189 @@ public final class MultivariateResultants {
         else
             return (Poly) bivariateResultantE((UnivariatePolynomial) a, (UnivariatePolynomial) b);
     }
+
+    /* =========================================== In small characteristic ========================================== */
+
+    /**
+     * Resultant in small characteristic
+     */
+    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly ResultantInSmallCharacteristic(Poly a, Poly b, int variable) {
+        // use "naive" algorithm for now.
+        return ClassicalResultant(a, b, variable);
+    }
+
+    /**
+     * Resultant in small characteristic
+     */
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly ResultantInSmallCharacteristic(UnivariatePolynomial<Poly> a, UnivariatePolynomial<Poly> b) {
+        // use "naive" algorithm for now.
+        return UnivariateResultants.Resultant(a, b);
+    }
+
+
+    /* ============================================== Modular resultant ============================================= */
+
+    /**
+     * Modular algorithm with Zippel sparse interpolation for resultant over Z
+     */
+    public static MultivariatePolynomial<BigInteger> ModularResultantInZ(MultivariatePolynomial<BigInteger> a,
+                                                                         MultivariatePolynomial<BigInteger> b,
+                                                                         int variable) {
+
+        ResultantInput<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> resInput = preparedResultantInput(a, b, variable);
+        if (resInput.earlyResultant != null)
+            return resInput.earlyResultant;
+
+        return resInput.restoreResultant(ModularResultantInZ0(resInput.aReduced0, resInput.bReduced0));
+    }
+
+    /**
+     * Number of updates in modular algorithm which doesn't change the result so we consider the obtained answer as the
+     * correct one
+     */
+    private static final int N_UNCHANGED_INTERPOLATIONS = 5;
+
+    /**
+     * Modular algorithm with Zippel sparse interpolation for resultant over Z
+     */
+    static MultivariatePolynomial<BigInteger> ModularResultantInZ0(MultivariatePolynomial<BigInteger> a,
+                                                                   MultivariatePolynomial<BigInteger> b) {
+
+        // coefficient bound
+        BigInteger aMax = a.maxAbsCoefficient(), bMax = b.maxAbsCoefficient();
+        BigInteger bound2 = aMax.pow(b.degree()).multiply(bMax.pow(a.degree())).shiftLeft(1);
+
+        // choose better prime for start
+        long startingPrime;
+        if (Math.max(aMax.bitLength(), bMax.bitLength()) < 128)
+            startingPrime = 1L << 30;
+        else
+            startingPrime = 1L << 60;
+
+        PrimesIterator primesLoop = new PrimesIterator(startingPrime - (1 << 12));
+        RandomGenerator random = PrivateRandom.getRandom();
+        main_loop:
+        while (true) {
+            // prepare the skeleton
+            long basePrime = primesLoop.take();
+            assert basePrime != -1 : "long overflow";
+
+            IntegersZp64 ring = Zp64(basePrime);
+            // reduce Z -> Zp
+            MultivariatePolynomialZp64
+                    aMod = a.mapCoefficients(ring, c -> c.mod(basePrime).longValue()),
+                    bMod = b.mapCoefficients(ring, c -> c.mod(basePrime).longValue());
+            if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                continue;
+
+            // the base image
+            // accumulator to update coefficients via Chineese remainding
+            MultivariatePolynomialZp64 base = ResultantInGF(aMod, bMod, 0).dropVariable(0);
+            MultivariatePolynomialZp64 skeleton = base;
+            MultivariatePolynomial<BigInteger> bBase = base.toBigPoly();
+
+            // cache the previous base
+            MultivariatePolynomial<BigInteger> previousBase = null;
+            // number of times interpolation did not change the result
+            int nUnchangedInterpolations = 0;
+
+            BigInteger bBasePrime = Z.valueOf(basePrime);
+            // over all primes
+            while (true) {
+                long prime = primesLoop.take();
+                BigInteger bPrime = Z.valueOf(prime);
+                ring = Zp64(prime);
+
+                // reduce Z -> Zp
+                aMod = a.mapCoefficients(ring, c -> c.mod(prime).longValue());
+                bMod = b.mapCoefficients(ring, c -> c.mod(prime).longValue());
+                if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                    continue;
+
+                // calculate new resultant using previously calculated skeleton via sparse interpolation
+                MultivariatePolynomialZp64 modularResultant = interpolateResultant(aMod, bMod, skeleton, random);
+                if (modularResultant == null) {
+                    // interpolation failed => assumed form is wrong => start over
+                    continue main_loop;
+                }
+
+                // something wrong, start over
+                if (!modularResultant.sameSkeletonQ(bBase)) {
+                    base = modularResultant;
+                    skeleton = base;
+                    bBase = modularResultant.toBigPoly();
+                    bBasePrime = bPrime;
+                    previousBase = null;
+                    nUnchangedInterpolations = 0;
+                    continue;
+                }
+
+                //lifting
+                BigInteger newBasePrime = bBasePrime.multiply(bPrime);
+                PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator = new PairedIterator<>(bBase, modularResultant.toBigPoly());
+                while (iterator.hasNext()) {
+                    iterator.advance();
+
+                    Monomial<BigInteger>
+                            baseTerm = iterator.aTerm,
+                            imageTerm = iterator.bTerm;
+
+                    if (baseTerm.coefficient.isZero())
+                        // term is absent in the base
+                        continue;
+
+                    if (imageTerm.coefficient.isZero()) {
+                        // term is absent in the modularGCD => remove it from the base
+                        // bBase.subtract(baseTerm);
+                        iterator.aIterator.remove();
+                        continue;
+                    }
+
+                    long oth = imageTerm.coefficient.longValueExact();
+
+                    // update base term
+                    BigInteger newCoeff = ChineseRemainders.ChineseRemainders(bBasePrime, bPrime, baseTerm.coefficient, BigInteger.valueOf(oth));
+                    bBase.put(baseTerm.setCoefficient(newCoeff));
+                }
+
+                bBase = bBase.setRingUnsafe(new IntegersZp(newBasePrime));
+                bBasePrime = newBasePrime;
+
+                // two trials didn't change the result, probably we are done
+                MultivariatePolynomial<BigInteger> candidate = MultivariatePolynomial.asPolyZSymmetric(bBase);
+                if (previousBase != null && candidate.equals(previousBase))
+                    ++nUnchangedInterpolations;
+                else
+                    nUnchangedInterpolations = 0;
+
+                if (nUnchangedInterpolations >= N_UNCHANGED_INTERPOLATIONS || bBasePrime.compareTo(bound2) > 0)
+                    return candidate;
+
+                previousBase = candidate;
+            }
+        }
+    }
+
+    static MultivariatePolynomialZp64 interpolateResultant(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b, MultivariatePolynomialZp64 skeleton, RandomGenerator rnd) {
+        a.assertSameCoefficientRingWith(b);
+        skeleton = skeleton.setRingUnsafe(a.ring);
+
+        SparseInterpolationZp64 interpolation = createInterpolation(-1,
+                a.asUnivariateEliminate(0),
+                b.asUnivariateEliminate(0),
+                skeleton, 1, rnd);
+        if (interpolation == null)
+            return null;
+        MultivariatePolynomialZp64 res = interpolation.evaluate();
+        if (res == null)
+            return null;
+
+        return res;
+    }
+
+    /* ============================================== Brown algorithm ============================================= */
 
     /**
      * Brown's algorithm for resultant with dense interpolation
@@ -382,13 +687,13 @@ public final class MultivariateResultants {
             return resInput.earlyResultant;
 
         if (resInput.finiteExtensionDegree > 1)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         MultivariatePolynomialZp64 result = BrownResultantZp64(
                 resInput.aReduced, resInput.bReduced,
                 resInput.degreeBounds, resInput.lastPresentVariable);
         if (result == null)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         return resInput.restoreResultant(result);
     }
@@ -450,18 +755,21 @@ public final class MultivariateResultants {
      * Brown's algorithm for resultant with dense interpolation
      */
     public static <E> MultivariatePolynomial<E> BrownResultant(MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, int variable) {
+        if (canConvertToZp64(a))
+            return convertFromZp64(BrownResultant(asOverZp64(a), asOverZp64(b), variable));
+
         ResultantInput<Monomial<E>, MultivariatePolynomial<E>> resInput = preparedResultantInput(a, b, variable);
         if (resInput.earlyResultant != null)
             return resInput.earlyResultant;
 
         if (resInput.finiteExtensionDegree > 1)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         MultivariatePolynomial<E> result = BrownResultantE(
                 resInput.aReduced, resInput.bReduced,
                 resInput.degreeBounds, resInput.lastPresentVariable);
         if (result == null)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         return resInput.restoreResultant(result);
     }
@@ -519,6 +827,8 @@ public final class MultivariateResultants {
         }
     }
 
+    /* ============================================== Zippel algorithm ============================================= */
+
     /**
      * Brown's algorithm for resultant with dense interpolation
      */
@@ -540,13 +850,13 @@ public final class MultivariateResultants {
             return resInput.earlyResultant;
 
         if (resInput.finiteExtensionDegree > 1)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         MultivariatePolynomialZp64 result = ZippelResultantZp64(
                 resInput.aReduced, resInput.bReduced,
                 resInput.degreeBounds, resInput.lastPresentVariable);
         if (result == null)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         return resInput.restoreResultant(result);
     }
@@ -640,18 +950,21 @@ public final class MultivariateResultants {
      * Zippel's algorithm for resultant with sparse interpolation
      */
     public static <E> MultivariatePolynomial<E> ZippelResultant(MultivariatePolynomial<E> a, MultivariatePolynomial<E> b, int variable) {
+        if (canConvertToZp64(a))
+            return convertFromZp64(ZippelResultant(asOverZp64(a), asOverZp64(b), variable));
+
         ResultantInput<Monomial<E>, MultivariatePolynomial<E>> resInput = preparedResultantInput(a, b, variable);
         if (resInput.earlyResultant != null)
             return resInput.earlyResultant;
 
         if (resInput.finiteExtensionDegree > 1)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         MultivariatePolynomial<E> result = ZippelResultantE(
                 resInput.aReduced, resInput.bReduced,
                 resInput.degreeBounds, resInput.lastPresentVariable);
         if (result == null)
-            return null;
+            return resInput.restoreResultant(ResultantInSmallCharacteristic(resInput.aReduced, resInput.bReduced));
 
         return resInput.restoreResultant(result);
     }

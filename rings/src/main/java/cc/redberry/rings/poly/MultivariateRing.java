@@ -5,6 +5,7 @@ import cc.redberry.rings.poly.multivar.*;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.random.Well44497b;
 
+import java.util.Comparator;
 import java.util.function.Function;
 
 /**
@@ -33,6 +34,8 @@ public final class MultivariateRing<Poly extends AMultivariatePolynomial<?, Poly
 
     @Override
     public int nVariables() { return factory.nVariables; }
+
+    public Comparator<DegreeVector> ordering() { return factory.ordering; }
 
     public MultivariateRing<Poly> dropVariable() {
         return new MultivariateRing<>(factory.dropVariable(0));

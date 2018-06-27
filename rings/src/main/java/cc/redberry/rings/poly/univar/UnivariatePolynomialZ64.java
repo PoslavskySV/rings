@@ -7,8 +7,10 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.DegreeVector;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
@@ -431,7 +433,7 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
     }
 
     @Override
-    public AMultivariatePolynomial asMultivariate() {
+    public AMultivariatePolynomial asMultivariate(Comparator<DegreeVector> ordering) {
         throw new UnsupportedOperationException();
     }
 }

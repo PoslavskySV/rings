@@ -1,6 +1,7 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
@@ -25,6 +26,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.LEX;
 import static cc.redberry.rings.poly.multivar.MultivariateResultants.*;
 import static cc.redberry.rings.util.TimeUnits.nanosecondsToString;
 import static cc.redberry.rings.util.TimeUnits.statisticsNanotime;
@@ -40,7 +42,7 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         Coder<MultivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
 
         MultivariatePolynomial<BigInteger> a = coder.parse("(2*x + y + z)^3 + 1");
-        MultivariatePolynomial<BigInteger> b = coder.parse("(x - 3*y - z)^13 + 1");
+        MultivariatePolynomial<BigInteger> b = coder.parse("(x - 3*y - z)^3 + 1");
         MultivariatePolynomial<BigInteger> expected = coder.parse("343 - 124509*y^3 + 2470629*y^6 - 40353607*y^9 - 160083*y^2*z + 6353046*y^5*z - 155649627*y^8*z - 68607*y*z^2 + 6806835*y^4*z^2 - 266827932*y^7*z^2 - 9801*z^3 + 3889620*y^3*z^3 - 266827932*y^6*z^3 + 1250235*y^2*z^4 - 171532242*y^5*z^4 + 214326*y*z^5 - 73513818*y^4*z^5 + 15309*z^6 - 21003948*y^3*z^6 - 3857868*y^2*z^7 - 413343*y*z^8 - 19683*z^9");
         assertEquals(expected, ClassicalResultant(a, b, 0));
     }
@@ -58,8 +60,8 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         int nVars = 4, degree = 7;
         for (int i = 0; i < nIterations; ++i) {
             MultivariatePolynomialZp64
-                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd),
-                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd);
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd);
             int variable = rnd.nextInt(nVars);
 
             long start = System.nanoTime();
@@ -147,7 +149,7 @@ public class MultivariateResultantsTest extends AMultivariateTest {
             UnivariatePolynomial<UnivariatePolynomialZp64>
                     aUni = a.asUnivariate(0).mapCoefficients(UnivariateRingZp64(cfRing), p -> p.asUnivariate()),
                     bUni = b.asUnivariate(0).mapCoefficients(UnivariateRingZp64(cfRing), p -> p.asUnivariate());
-            MultivariatePolynomialZp64 uniRes = UnivariateResultants.Resultant(aUni, bUni).asMultivariate().insertVariable(0);
+            MultivariatePolynomialZp64 uniRes = UnivariateResultants.Resultant(aUni, bUni).asMultivariate(ring.ordering()).insertVariable(0);
             assertEquals(br, uniRes);
             System.out.println("Univar: " + nanosecondsToString(System.nanoTime() - start));
             System.out.println(br.size() + "   " + br.degree());
@@ -190,8 +192,8 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         int nVars = 4, degree = 7;
         for (int i = 0; i < nIterations; ++i) {
             MultivariatePolynomialZp64
-                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd),
-                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd);
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd);
             int variable = rnd.nextInt(nVars);
 
             long start;
@@ -247,8 +249,8 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         int nVars = 100, degree = 7;
         for (int i = 0; i < nIterations; ++i) {
             MultivariatePolynomialZp64
-                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd),
-                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd);
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd);
             while (a.nUsedVariables() >= 5)
                 a = a.evaluate(rnd.nextInt(nVars), 1);
             while (b.nUsedVariables() >= 5)
@@ -285,8 +287,8 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         int nVars = 4, degree = 5;
         for (int i = 0; i < nIterations; ++i) {
             MultivariatePolynomialZp64
-                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd),
-                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, MonomialOrder.LEX, rnd);
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), ring, LEX, rnd);
             int variable = rnd.nextInt(nVars);
 
             MultivariatePolynomialZp64 expected = ZippelResultant(a, b, variable);
@@ -297,6 +299,122 @@ public class MultivariateResultantsTest extends AMultivariateTest {
             g = ZippelResultant(a.toBigPoly(), b.toBigPoly(), variable);
             assertEquals(expected, MultivariatePolynomial.asOverZp64(g));
         }
+    }
+
+    @Ignore
+    @Test
+    public void testZippel5_dense() throws Exception {
+        IntegersZp64 cfRing = Zp64(1048583);
+        MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(4, cfRing);
+        Coder<MultivariatePolynomialZp64, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x1", "x2", "x3", "x4");
+
+        RandomGenerator rnd = getRandom();
+        rnd.setSeed(1);
+
+        MultivariatePolynomialZp64
+                a = ring.getOne(), b = ring.getOne();
+        for (int i = 0; i < 1; ++i) {
+            a.multiply(RandomMultivariatePolynomials.randomPolynomial(ring.nVariables(), 5, 100 * 5 * 5 * 5 * 5 * 5, cfRing, LEX, rnd));
+            b.multiply(RandomMultivariatePolynomials.randomPolynomial(ring.nVariables(), 5, 100 * 5 * 5 * 5 * 5 * 5, cfRing, LEX, rnd));
+        }
+
+        System.out.println(a.sparsity());
+        System.out.println(b.sparsity());
+
+        for (int i = 0; i < 1000; ++i) {
+            long start;
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 actual = ZippelResultant(a, b, 0);
+            System.out.println("Zippel: " + nanosecondsToString(System.nanoTime() - start));
+
+
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 expected = BrownResultant(a, b, 0);
+            System.out.println("Brown: " + nanosecondsToString(System.nanoTime() - start));
+
+            assertEquals(expected, actual);
+
+            start = System.nanoTime();
+            MultivariatePolynomialZp64 classic = ClassicalResultant(a, b, 0);
+            System.out.println("Classical: " + nanosecondsToString(System.nanoTime() - start));
+
+            System.out.println();
+        }
+    }
+
+
+    @Test
+    public void testModular1() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(3, Z);
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
+
+        MultivariatePolynomial<BigInteger> a = coder.parse("(2*x + y + z)^13 + 1");
+        MultivariatePolynomial<BigInteger> b = coder.parse("(x - 3*y - z)^3 + 1");
+        assertEquals(ClassicalResultant(a, b, 0), ModularResultantInZ(a, b, 0));
+    }
+
+    @Test
+    @RequiresSingular
+    public void testModular2_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        int nIterations = its(25, 100);
+        int nVars = 4, degree = 7;
+        DescriptiveStatistics
+                modular = new DescriptiveStatistics(),
+                singular = new DescriptiveStatistics();
+        int cfBound = 10_000;
+        for (int i = 0; i < nIterations; ++i) {
+            MultivariatePolynomial<BigInteger>
+                    a = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), Zp64(cfBound), LEX, rnd).toBigPoly().setRing(Z),
+                    b = RandomMultivariatePolynomials.randomSharpPolynomial(nVars, degree, rndd.nextInt(1, 20), Zp64(cfBound), LEX, rnd).toBigPoly().setRing(Z);
+            int variable = rnd.nextInt(nVars);
+
+            try {
+                SingularResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> si = SingularResultant(a, b, variable);
+                MultivariatePolynomial<BigInteger> expected = si.resultant;
+                singular.addValue(si.nanotime);
+
+                long start;
+                start = System.nanoTime();
+                MultivariatePolynomial<BigInteger> actual = ModularResultantInZ(a, b, variable);
+                modular.addValue(System.nanoTime() - start);
+                assertEquals(expected, actual);
+            } catch (Throwable e) {
+                System.out.println(a);
+                System.out.println(b);
+                System.out.println(variable);
+                throw new RuntimeException(e);
+            }
+        }
+
+        System.out.println("Modular's " + modular);
+        System.out.println("Singulars's " + singular);
+    }
+
+    @Test
+    public void testModular3() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(4, Z, LEX);
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x1", "x2", "x3", "x4");
+
+        MultivariatePolynomial<BigInteger> a = coder.parse("94*x2*x4^2+56*x2*x3*x4^2+27*x2^3*x4+27*x1*x2+54*x1*x2*x3^2+60*x1^2*x3*x4+36*x1^2*x2^2");
+        MultivariatePolynomial<BigInteger> b = coder.parse("49*x3^3+43*x1*x4+63*x1*x3*x4+14*x1*x2+9*x1*x2*x3^2+44*x1*x2^2+3*x1^2*x3^2+77*x1^3+56*x1^3*x4+83*x1^3*x3+95*x1^3*x2+94*x1^4");
+
+        int variable = 1;
+        MultivariatePolynomial<BigInteger> ord = ClassicalResultant(a, b, variable);
+        MultivariatePolynomial<BigInteger> mod = ModularResultantInZ(a, b, variable);
+        assertEquals(ord, mod);
+    }
+
+    @Test
+    public void testInQ1() throws Exception {
+        MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>> ring = MultivariateRing(3, Q);
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
+
+        MultivariatePolynomial<Rational<BigInteger>> a = coder.parse("(2*x/3 + y/4 + z)^3 + 1/5");
+        MultivariatePolynomial<Rational<BigInteger>> b = coder.parse("(x - 3*y/7 - z)^3 + 1/2");
+        MultivariatePolynomial<Rational<BigInteger>> expected = coder.parse("-343/2460375 - (24545*y^3)/197568 - (253125*y^6)/68841472 - (38443359375*y^9)/10578455953408 - (24545*y^2*z)/21168 - (84375*y^5*z)/1229312 - (38443359375*y^8*z)/377801998336 - (24545*y*z^2)/6804 - (46875*y^4*z^2)/87808 - (4271484375*y^7*z^2)/3373232128 - (24545*z^3)/6561 - (15625*y^3*z^3)/7056 - (158203125*y^6*z^3)/17210368 - (15625*y^2*z^4)/3024 - (52734375*y^5*z^4)/1229312 - (3125*y*z^5)/486 - (5859375*y^4*z^5)/43904 - (21875*z^6)/6561 - (1953125*y^3*z^6)/7056 - (1953125*y^2*z^7)/5292 - (1953125*y*z^8)/6804 - (1953125*z^9)/19683");
+        assertEquals(expected, ResultantInQ(a, b, 0));
     }
 
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>

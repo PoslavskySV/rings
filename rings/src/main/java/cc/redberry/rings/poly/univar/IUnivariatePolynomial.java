@@ -2,7 +2,11 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.DegreeVector;
+import cc.redberry.rings.poly.multivar.MonomialOrder;
 import gnu.trove.set.hash.TIntHashSet;
+
+import java.util.Comparator;
 
 /**
  * Parent interface for univariate polynomials. Dense representation (array of coefficients) is used to hold univariate
@@ -160,7 +164,14 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     /**
      * Convert to multivariate polynomial
      */
-    AMultivariatePolynomial asMultivariate();
+    AMultivariatePolynomial asMultivariate(Comparator<DegreeVector> ordering);
+
+    /**
+     * Convert to multivariate polynomial
+     */
+    default AMultivariatePolynomial asMultivariate(){
+        return asMultivariate(MonomialOrder.DEFAULT);
+    }
 
     /** ensures that internal storage has enough size to store {@code desiredCapacity} elements */
     void ensureInternalCapacity(int desiredCapacity);

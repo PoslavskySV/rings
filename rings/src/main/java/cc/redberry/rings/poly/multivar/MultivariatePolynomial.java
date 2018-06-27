@@ -471,7 +471,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      *
      * @param poly Zp polynomial
      * @return Z[x] version of the poly with coefficients represented in symmetric modular form ({@code -modulus/2 <=
-     * cfx <= modulus/2}).
+     *         cfx <= modulus/2}).
      * @throws IllegalArgumentException is {@code poly.ring} is not a {@link IntegersZp}
      */
     public static MultivariatePolynomial<BigInteger> asPolyZSymmetric(MultivariatePolynomial<BigInteger> poly) {
@@ -671,6 +671,13 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     @Override
     public boolean isConstant() {
         return size() == 0 || (size() == 1 && terms.first().isZeroVector());
+    }
+
+    /**
+     * Returns max absolute coefficient
+     */
+    public E maxAbsCoefficient() {
+        return stream().map(ring::abs).max(ring).orElseGet(ring::getZero);
     }
 
     /**
@@ -1181,8 +1188,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param variable the variable
      * @param value    the value
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, Object)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, Object)})
      * @see #eliminate(int, Object)
      */
     public MultivariatePolynomial<E> evaluate(int variable, E value) {
@@ -1198,8 +1205,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      *
      * @param variable the variable
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, long)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, long)})
      */
     MultivariatePolynomial<E> evaluate(int variable, PrecomputedPowers<E> powers) {
         if (degree(variable) == 0)
@@ -1245,8 +1252,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param variables the variables
      * @param values    the values
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, Object)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, Object)})
      * @see #eliminate(int, Object)
      */
     @SuppressWarnings("unchecked")
@@ -1289,8 +1296,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param variable the variable
      * @param value    the value
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, long)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, long)})
      * @see #eliminate(int, long)
      */
     public MultivariatePolynomial<E> evaluate(int variable, long value) {
@@ -1304,7 +1311,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param variable the variable
      * @param value    the value
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} and  {@code nVariables
-     * = nVariables - 1})
+     *         = nVariables - 1})
      * @see #evaluate(int, Object)
      */
     public MultivariatePolynomial<E> eliminate(int variable, E value) {
@@ -1325,7 +1332,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param variable the variable
      * @param value    the value
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} and  {@code nVariables
-     * = nVariables - 1})
+     *         = nVariables - 1})
      * @see #evaluate(int, long)
      */
     public MultivariatePolynomial<E> eliminate(int variable, long value) {
@@ -1339,8 +1346,8 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param variables the variables
      * @param values    the values
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, long)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, long)})
      */
     @SuppressWarnings("unchecked")
     public MultivariatePolynomial<E> eliminate(int[] variables, E[] values) {
