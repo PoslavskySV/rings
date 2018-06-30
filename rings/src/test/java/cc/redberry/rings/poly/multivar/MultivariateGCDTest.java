@@ -31,6 +31,8 @@ import java.util.BitSet;
 import java.util.function.BiFunction;
 import java.util.zip.GZIPInputStream;
 
+import static cc.redberry.rings.Rings.AlgebraicExtension;
+import static cc.redberry.rings.Rings.Q;
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.AMultivariatePolynomial.renameVariables;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.divideExact;
@@ -2483,6 +2485,21 @@ public class MultivariateGCDTest extends AMultivariateTest {
         // 457us
         // 351us
         // 276us
+    }
+
+    @Test
+    public void testAlgExt1() {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> mRing = Rings.MultivariateRing(3, field);
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkMultivariateCoder(mRing, cfCoder, "x", "y", "z");
+
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + s*x^5 - s*y + z) * ( 1 + s*x^2 + 12*x^5)");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + s*x^5 - s*y + z) * ( 14 - s*x + 2*x^17)");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> gcd = PolynomialGCD(a, b);
+        assertTrue(dividesQ(a, gcd));
+        assertTrue(dividesQ(b, gcd));
     }
 
     /* =============================================== Test data =============================================== */

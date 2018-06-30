@@ -33,4 +33,29 @@ public final class FiniteField<Poly extends IUnivariatePolynomial<Poly>>
         if (!irreducible.isOverFiniteField())
             throw new IllegalArgumentException("Irreducible poly must be over finite field.");
     }
+
+    @Override
+    public boolean isField() {
+        return true;
+    }
+
+    @Override
+    public boolean isUnit(Poly element) {
+        return !element.isZero();
+    }
+
+    @Override
+    public Poly gcd(Poly a, Poly b) {
+        return a;
+    }
+
+    @Override
+    public Poly[] divideAndRemainder(Poly a, Poly b) {
+        return a.createArray(multiply(a, reciprocal(b)), getZero());
+    }
+
+    @Override
+    public Poly remainder(Poly dividend, Poly divider) {
+        return getZero();
+    }
 }

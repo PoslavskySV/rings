@@ -41,9 +41,8 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
      * @param minimalPoly minimal polynomial
      */
     public UnivariateQuotientRing(Poly minimalPoly) {
-        if (!minimalPoly.isOverField())
-            throw new IllegalArgumentException("Coefficient ring of Irreducible must be a field");
-        if (!minimalPoly.isMonic())
+        minimalPoly = minimalPoly.monic();
+        if (minimalPoly == null)
             throw new IllegalArgumentException("Irreducible polynomial must be monic");
         this.minimalPoly = minimalPoly;
         this.factory = minimalPoly.clone();
@@ -67,9 +66,6 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
 
     @Override
     public Poly factory() {return factory;}
-
-    @Override
-    public boolean isField() {return true;}
 
     @Override
     public boolean isEuclideanRing() {return true;}
@@ -123,44 +119,17 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
     }
 
     @Override
-    public Poly[] divideAndRemainder(Poly a, Poly b) {
-        return a.createArray(multiply(a, reciprocal(b)), getZero());
-    }
-
-    @Override
-    public Poly remainder(Poly dividend, Poly divider) {
-        return getZero();
-    }
-
-    @Override
     public Poly reciprocal(Poly element) {
         if (element.isZero())
             throw new ArithmeticException("divide by zero");
-        Poly
-                t = getZero(),
-                newt = getOne(),
-                r = minimalPoly.clone(),
-                newr = element.clone();
-        Poly tmp;
-        while (!newr.isZero()) {
-            Poly quotient = UnivariateDivision.quotient(r, newr, true);
+        if (isOne(element))
+            return element;
+        if (isMinusOne(element))
+            return element;
 
-            tmp = r;
-            r = newr;
-            newr = tmp.clone().subtract(quotient.clone().multiply(newr));
-
-            tmp = t;
-            t = newt;
-            newt = tmp.clone().subtract(quotient.clone().multiply(newt));
-        }
-        if (r.degree() > 0)
-            throw new IllegalArgumentException("Either p is not minimalPoly or a is a multiple of p, p =  " + minimalPoly + ", a = " + element);
-        return t.divideByLC(r);
-    }
-
-    @Override
-    public Poly gcd(Poly a, Poly b) {
-        return a;
+        Poly[] xgcd = UnivariateGCD.PolynomialExtendedGCD(element, minimalPoly);
+        assert xgcd[0].isConstant();
+        return xgcd[1].divideByLC(xgcd[0]);
     }
 
     @Override
@@ -186,11 +155,6 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
     @Override
     public boolean isOne(Poly element) {
         return element.isOne();
-    }
-
-    @Override
-    public boolean isUnit(Poly element) {
-        return !isZero(element);
     }
 
     @Override

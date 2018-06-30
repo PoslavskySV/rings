@@ -21,6 +21,37 @@ public final class UnivariateResultants {
     private UnivariateResultants() {}
 
     /**
+     * Computes discriminant of polynomial and returns the result as a constant poly
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IUnivariatePolynomial<Poly>> Poly DiscriminantAsPoly(Poly a) {
+        if (a instanceof UnivariatePolynomialZp64)
+            return (Poly) ((UnivariatePolynomialZp64) a).createConstant(Discriminant((UnivariatePolynomialZp64) a));
+        else
+            return (Poly) ((UnivariatePolynomial) a).createConstant(Discriminant((UnivariatePolynomial) a));
+    }
+
+    /**
+     * Computes discriminant of polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public static <E> E Discriminant(UnivariatePolynomial<E> a) {
+        Ring<E> ring = a.ring;
+        E disc = ring.divideExact(Resultant(a, a.derivative()), a.lc());
+        return ((a.degree * (a.degree - 1) / 2) % 2 == 1) ? ring.negate(disc) : disc;
+    }
+
+    /**
+     * Computes discriminant of polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public static long Discriminant(UnivariatePolynomialZp64 a) {
+        IntegersZp64 ring = a.ring;
+        long disc = ring.divide(Resultant(a, a.derivative()), a.lc());
+        return ((a.degree * (a.degree - 1) / 2) % 2 == 1) ? ring.negate(disc) : disc;
+    }
+
+    /**
      * Computes resultant of two polynomials and returns the result as a constant poly
      */
     @SuppressWarnings("unchecked")

@@ -363,6 +363,8 @@ public interface Ring<E> extends
     default E gcd(E a, E b) {
         if (isZero(a)) return b;
         if (isZero(b)) return a;
+        if (isUnit(a)) return a;
+        if (isUnit(b)) return b;
         if (isField()) return a;
         if (!isEuclideanRing())
             throw new UnsupportedOperationException("GCD is not supported in this ring");

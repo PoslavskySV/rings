@@ -4,10 +4,11 @@ import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.MachineArithmetic;
-import cc.redberry.rings.poly.univar.UnivariateGCD.*;
-import cc.redberry.rings.poly.univar.UnivariateResultants.APolynomialRemainderSequence;
-import cc.redberry.rings.poly.univar.UnivariateResultants.PolynomialRemainderSequence;
+import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.univar.UnivariateResultants.*;
 import cc.redberry.rings.test.Benchmark;
 import cc.redberry.rings.util.RandomDataGenerator;
 import cc.redberry.rings.util.TimeUnits;
@@ -18,13 +19,14 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.univar.RandomUnivariatePolynomials.randomPoly;
-import static cc.redberry.rings.poly.univar.UnivariateDivision.divideAndRemainder;
-import static cc.redberry.rings.poly.univar.UnivariateGCD.*;
+import static cc.redberry.rings.poly.univar.UnivariateDivision.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.*;
 import static cc.redberry.rings.poly.univar.UnivariateResultants.*;
+import static cc.redberry.rings.util.TimeUnits.nanosecondsToString;
 import static org.junit.Assert.*;
 
 /**
@@ -143,7 +145,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
             assertEquals(2, prs.remainders.size());
             assertEquals(divider, prs.gcd());
 
-            prs = prim ? PrimitivePRS(divider, dividend) : PseudoPRS( divider,dividend);
+            prs = prim ? PrimitivePRS(divider, dividend) : PseudoPRS(divider, dividend);
             assertEquals(2, prs.remainders.size());
             assertEquals(divider, prs.gcd());
         }
@@ -741,7 +743,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
     public void test33() throws Exception {
         UnivariatePolynomial<Rational<BigInteger>> a = UnivariatePolynomial.parse("1 + 23123*x^7 + 2344*x^15", Rings.Q);
         UnivariatePolynomial<Rational<BigInteger>> b = UnivariatePolynomial.parse("1 + 23*x - 23454*x^4", Rings.Q);
-        UnivariatePolynomial<Rational<BigInteger>>[] xgcd = ModularExtendedGCD(a, b);
+        UnivariatePolynomial<Rational<BigInteger>>[] xgcd = ModularExtendedRationalGCD(a, b);
         assertExtendedGCD(xgcd, a, b);
     }
 
@@ -753,8 +755,8 @@ public class UnivariateGCDTest extends AUnivariateTest {
         a.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(32)));
         b.multiply(new Rational<>(Rings.Z, BigInteger.valueOf(123), BigInteger.valueOf(12332)));
 
-        assertExtendedGCD(ModularExtendedGCD(a, b), a, b);
-        assertExtendedGCD(ModularExtendedGCD(b, a), b, a);
+        assertExtendedGCD(ModularExtendedRationalGCD(a, b), a, b);
+        assertExtendedGCD(ModularExtendedRationalGCD(b, a), b, a);
     }
 
     @Test
@@ -769,8 +771,8 @@ public class UnivariateGCDTest extends AUnivariateTest {
         a.multiply(g);
         b.multiply(g);
 
-        assertExtendedGCD(ModularExtendedGCD(a, b), a, b);
-        assertExtendedGCD(ModularExtendedGCD(b, a), b, a);
+        assertExtendedGCD(ModularExtendedRationalGCD(a, b), a, b);
+        assertExtendedGCD(ModularExtendedRationalGCD(b, a), b, a);
     }
 
     @Test
@@ -790,9 +792,9 @@ public class UnivariateGCDTest extends AUnivariateTest {
         System.out.println(b);
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
-            assertExtendedGCD(ModularExtendedGCD(a, b), a, b);
-            assertExtendedGCD(ModularExtendedGCD(b, a), b, a);
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertExtendedGCD(ModularExtendedRationalGCD(a, b), a, b);
+            assertExtendedGCD(ModularExtendedRationalGCD(b, a), b, a);
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
         }
     }
 
@@ -804,14 +806,17 @@ public class UnivariateGCDTest extends AUnivariateTest {
 
         for (int i = 0; i < 1000; i++) {
             long start = System.nanoTime();
-            UnivariatePolynomial<Rational<BigInteger>>[] r = ModularExtendedGCD(a, b);
-            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            UnivariatePolynomial<Rational<BigInteger>>[] r = ModularExtendedRationalGCD(a, b);
+            System.out.println(nanosecondsToString(System.nanoTime() - start));
             assertExtendedGCD(r, a, b);
         }
     }
 
     @Test
     public void test36_modularExtendedGCDRandom() throws Exception {
+        DescriptiveStatistics
+                ratRec = new DescriptiveStatistics(),
+                resultant = new DescriptiveStatistics();
         int nIterations = its(100, 300);
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
@@ -820,9 +825,9 @@ public class UnivariateGCDTest extends AUnivariateTest {
             if (i % 50 == 0)
                 System.out.println("=> " + i);
             UnivariatePolynomial<BigInteger>
-                    a = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(5, 15), bound, rnd),
-                    b = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(5, 15), bound, rnd),
-                    g = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(1, 15), bound, rnd);
+                    a = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(0, 15), bound, rnd),
+                    b = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(0, 15), bound, rnd),
+                    g = RandomUnivariatePolynomials.randomPoly(rndd.nextInt(0, 15), bound, rnd);
 
             UnivariatePolynomial<Rational<BigInteger>> ar = a.mapCoefficients(Rings.Q, c -> new Rational<>(Rings.Z, c, BigInteger.valueOf(rndd.nextInt(2, 10))));
             UnivariatePolynomial<Rational<BigInteger>> br = b.mapCoefficients(Rings.Q, c -> new Rational<>(Rings.Z, c, BigInteger.valueOf(rndd.nextInt(2, 10))));
@@ -831,10 +836,26 @@ public class UnivariateGCDTest extends AUnivariateTest {
             ar.multiply(gr);
             br.multiply(gr);
 
-            UnivariatePolynomial<Rational<BigInteger>>[] xgcd = assertExtendedGCD(ar, br);
-            assertTrue(g.degree <= xgcd[0].degree);
+            long start = System.nanoTime();
+            UnivariatePolynomial<Rational<BigInteger>>[] xgcd1 = ModularExtendedRationalGCD(ar, br);
+            ratRec.addValue(System.nanoTime() - start);
+            assertExtendedGCD(xgcd1, ar, br);
+
+            start = System.nanoTime();
+            UnivariatePolynomial<Rational<BigInteger>>[] xgcd2 = ModularExtendedResultantGCDInQ(ar, br);
+            resultant.addValue(System.nanoTime() - start);
+            assertExtendedGCD(xgcd2, ar, br);
+
+            normalizeExtendedGCD(xgcd1);
+            normalizeExtendedGCD(xgcd2);
+            assertArrayEquals(xgcd1, xgcd2);
+
+            assertTrue(g.degree <= xgcd1[0].degree);
             assertExtendedGCD(ar.increment(), br);
         }
+
+        System.out.println("Rational reconstruction: " + ratRec);
+        System.out.println("Resultant: " + resultant);
     }
 
     private static void testExtendedHalfGCDRandom(int minimalDegree, int maximalDegree, int nIterations) throws Exception {
@@ -879,6 +900,205 @@ public class UnivariateGCDTest extends AUnivariateTest {
         System.out.println("Non-trivial gcds: " + nonTrivGCD);
         System.out.println("Euclid:  " + TimeUnits.statisticsNanotime(euclid));
         System.out.println("HalfGCD: " + TimeUnits.statisticsNanotime(half));
+    }
+
+    @Test
+    public void test37_algext() {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + s*x^5) * ( 1 + s*x^2 + 12*x^5)");
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + s*x^5) * ( 14 - s*x + 2*x^17)");
+        assertEquals(coder.parse("-1+1/2*s+x^5"), UnivariateGCD.HalfGCD(a, b));
+    }
+
+    @Test
+    public void test38_algext() {
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicExtension(UnivariatePolynomial.create(Z, Z.valueOf(-2), Z.valueOf(0), Z.valueOf(1)));
+        Coder<UnivariatePolynomial<BigInteger>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>> uRing = UnivariateRing(field);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> a = coder.parse("(1 - s + x^5) * ( 1 + s*x^2 + 12*x^5)");
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> b = coder.parse("(1 - s + x^5) * ( 14 - s*x + 2*x^17)");
+
+        assertEquals(coder.parse("1 - s + x^5"), UnivariateGCD.primitiveGcdInAlgExt0(a, b));
+    }
+
+    @Test
+    public void test39_algext() {
+        UnivariatePolynomial<BigInteger> minimalPoly = UnivariatePolynomial.create(-2, 0, 0, 0, 0, 0, 1);
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicExtension(minimalPoly);
+        Coder<UnivariatePolynomial<BigInteger>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>> uRing = UnivariateRing(field);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> a = coder.parse("(1 - s + (12 - 3*s^5) * x^5) * ( 1 + s*x^2 + 12*x^5)");
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> b = coder.parse("(1 - s + (12 - 3*s^5) * x^5) * ( 14 - s*x + 2*s*x^17)");
+
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcd = UnivariateGCD.gcdAssociate0(a, b);
+
+        assertTrue(pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
+        assertTrue(pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
+    }
+
+    @Test
+    @Benchmark
+    public void test40_algext() {
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = UnivariatePolynomial.create(-2, 0, 0, 0, 0, 0, 1).mapCoefficients(Q, Q::valueOfBigInteger);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + (12133  - 3*s^5) * x^5) * ( 143 + s*x^2 + 12*s^6*x^5)");
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + (12133- 3*s^5) * x^5) * ( 14 - s*x + 2213*s*x^17)^2");
+
+        for (int i = 0; i < 1; ++i) {
+            long start;
+            start = System.nanoTime();
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInAlgebraicExtension(a, b);
+            System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> half = UnivariateGCD.HalfGCD(a, b);
+            System.out.println("Half GCD: " + nanosecondsToString(System.nanoTime() - start));
+
+            assertEquals(mod, half);
+            System.out.println();
+        }
+    }
+
+    @Test
+    public void test41algext() {
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly =
+                UnivariatePolynomial.create(2, 0, 0, 0, 0, 0, 5).mapCoefficients(Q, Q::valueOfBigInteger);
+
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + (1 - 3*s^5) * x^5) * ( 3 + s*x^2 + 12*s^6*x^5)");
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + (1 - 3*s^5) * x^5) * ( 14 - s*x + 2*s*x^17)^2");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> gcd = UnivariateGCD.PolynomialGCDInAlgebraicExtension(a, b);
+        assertGCD(a, b, gcd);
+    }
+
+    @Test
+    @Benchmark
+    public void test42_algext() {
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = UnivariatePolynomial.create(-2, 0, 0, 0, 0, 0, 5).mapCoefficients(Q, Q::valueOfBigInteger);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + (12133  - 3*s^5) * x^5) * ( 143 + s*x^2 + 12*s^6*x^5)");
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + (12133- 3*s^5) * x^5) * ( 14 - s*x + 2213*s*x^17)^2");
+
+        for (int i = 0; i < 1; ++i) {
+            long start;
+            start = System.nanoTime();
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInAlgebraicExtension(a, b);
+            System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> half = UnivariateGCD.HalfGCD(a, b);
+            System.out.println("Half GCD: " + nanosecondsToString(System.nanoTime() - start));
+
+            assertEquals(mod, half);
+            System.out.println();
+        }
+    }
+
+    @Test
+    public void test43_algext_random() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        for (int i = 0; i < its(30, 100); i++) {
+            UnivariatePolynomial<Rational<BigInteger>> minimalPoly =
+                    IrreduciblePolynomials.randomIrreduciblePolynomialOverZ(rndd.nextInt(1, 5), rnd)
+                            .mapCoefficients(Q, Q::valueOfBigInteger);
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = new AlgebraicNumberField<>(minimalPoly);
+
+//            Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+//            UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
+//            Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+            for (int j = 0; j < 3; ++j) {
+                UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                        a = randomPolyOverAlgExt(field, 10, 30, rndd),
+                        b = randomPolyOverAlgExt(field, 10, 30, rndd),
+                        gcd = randomPolyOverAlgExt(field, 10, 30, rndd);
+
+                a = a.multiply(gcd);
+                b = b.multiply(gcd);
+
+                long start = System.nanoTime();
+                UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mgcd = PolynomialGCDInAlgebraicExtension(a, b);
+                System.out.print(i + ": " + nanosecondsToString(System.nanoTime() - start) + "      ");
+
+                UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>[] qr = UnivariateDivision.divideAndRemainder(mgcd, gcd, true);
+                assertNotNull(qr);
+                assertTrue(qr[1].isZero());
+                assertGCD(a, b, mgcd);
+            }
+            System.out.println();
+        }
+    }
+
+    @Test
+    @Benchmark
+    public void test44_algext_performance() {
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly =
+                UnivariatePolynomial.create(31229703,
+                        31584466, 9500649, 9480702,
+                        23265262, 5568454, 3392530,
+                        30401154, 15298203, 25411939,
+                        30401154, 15298203, 25411939,
+                        31584466, 9500649, 9480702,
+                        30401154, 15298203, 25411939,
+                        30401154, 15298203, 25411939, 1).mapCoefficients(Q, Q::valueOfBigInteger);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(uRing, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("-2629984078 - 2747848492*s - 826556509*s^2 - 824821066*s^3 - 2024077758*s^4 - 484455432*s^5 - 295150100*s^6 - 2644900377*s^7 - 1330943630*s^8 - 2210838750*s^9 + (-2539295050 - 2653095078*s - 798054533*s^2 - 796378949*s^3 - 1954282008*s^4 - 467750096*s^5 - 284972456*s^6 - 2553696896*s^7 - 1285048960*s^8 - 2134602853*s^9)*x + (2750903023 + 2874186377*s + 864559081*s^2 + 862743871*s^3 + 2117138752*s^4 + 506729319*s^5 + 308720296*s^6 + 2766505047*s^7 + 1392136388*s^8 + 2312486542*s^9)*x^2 + (-2902051419 - 3032108714*s - 912062266*s^2 - 910147339*s^3 - 2233465130*s^4 - 534571658*s^5 - 325682847*s^6 - 2918510751*s^7 - 1468627461*s^8 - 2439546109*s^9)*x^3 + (-2025390071 - 2116159152*s - 636543408*s^2 - 635207023*s^3 - 1558772527*s^4 - 373086362*s^5 - 227299470*s^6 - 2036877303*s^7 - 1024979692*s^8 - 1702599819*s^9)*x^4 + (-2962510945 - 3095277661*s - 931063590*s^2 - 929108773*s^3 - 2279995709*s^4 - 545708558*s^5 - 332467948*s^6 - 2979313000*s^7 - 1499223872*s^8 - 2490370012*s^9)*x^5 + (-1934700903 - 2021405804*s - 608041537*s^2 - 606764926*s^3 - 1488976751*s^4 - 356381007*s^5 - 217121886*s^6 - 1945673813*s^7 - 979084946*s^8 - 1626364082*s^9)*x^6 + (-997580106 - 1042287350*s - 313521458*s^2 - 312863069*s^3 - 767753632*s^4 - 183758950*s^5 - 111953411*s^6 - 1003238154*s^7 - 504840626*s^8 - 838594076*s^9)*x^7 + (-1178958351 - 1231794140*s - 370525402*s^2 - 369747315*s^3 - 907345216*s^4 - 217169661*s^5 - 132308571*s^6 - 1185645024*s^7 - 596629988*s^8 - 991065545*s^9)*x^8 + (-2025390077 - 2116159255*s - 636543412*s^2 - 635207025*s^3 - 1558772532*s^4 - 373086332*s^5 - 227299454*s^6 - 2036877243*s^7 - 1024979650*s^8 - 1702599890*s^9)*x^9 + (1118499087 + 1168625309*s + 351524046*s^2 + 350785991*s^3 + 860814787*s^4 + 206032829*s^5 + 125523644*s^6 + 1124842769*s^7 + 566033562*s^8 + 940241738*s^9)*x^10 + (-2267227821 - 2368834898*s - 712548607*s^2 - 711052633*s^3 - 1744894553*s^4 - 417633996*s^5 - 254439748*s^6 - 2280086614*s^7 - 1147365191*s^8 - 1905895490*s^9)*x^11 + (1239417854 + 1294963126*s + 389526531*s^2 + 388708754*s^3 + 953875698*s^4 + 228306652*s^5 + 139093768*s^6 + 1246447343*s^7 + 627226377*s^8 + 1041889549*s^9)*x^12 + (-906891056 - 947533928*s - 285019558*s^2 - 284421059*s^3 - 697957802*s^4 - 167053574*s^5 - 101775989*s^6 - 912034527*s^7 - 458946168*s^8 - 762358095*s^9)*x^13 + (-1844011957 - 1926652508*s - 579539643*s^2 - 578322774*s^3 - 1419181047*s^4 - 339675694*s^5 - 206944325*s^6 - 1854470337*s^7 - 933190317*s^8 - 1550128270*s^9)*x^14 + (1602174351 + 1673976642*s + 503534338*s^2 + 502477269*s^3 + 1233058976*s^4 + 295128130*s^5 + 179804110*s^6 + 1611261193*s^7 + 810804831*s^8 + 1346832799*s^9)*x^15 + (-453445531 - 473766944*s - 142509715*s^2 - 142210541*s^3 - 348978962*s^4 - 83526711*s^5 - 50887854*s^6 - 456017293*s^7 - 229473009*s^8 - 381179039*s^9)*x^16 + (-2509065293 - 2621510610*s - 788553921*s^2 - 786898292*s^3 - 1931016741*s^4 - 462181736*s^5 - 281579982*s^6 - 2523295772*s^7 - 1269750839*s^8 - 2109190927*s^9)*x^17 + (-1964930601 - 2052990286*s - 617542158*s^2 - 616245716*s^3 - 1512241977*s^4 - 361949565*s^5 - 220514529*s^6 - 1976074947*s^7 - 994383246*s^8 - 1651775975*s^9)*x^18 + (2327687048 + 2432003909*s + 731549963*s^2 + 730014071*s^3 + 1791425258*s^4 + 428771016*s^5 + 261224799*s^6 + 2340888912*s^7 + 1177961640*s^8 + 1956719266*s^9)*x^19");
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("-2297457369 - 2400419408*s - 722049354*s^2 - 720533283*s^3 - 1768159825*s^4 - 423202465*s^5 - 257832326*s^6 - 2310487767*s^7 - 1162663504*s^8 - 1931307309*s^9 + (-1118498918 - 1168625170*s - 351523998*s^2 - 350785953*s^3 - 860814620*s^4 - 206032844*s^5 - 125523543*s^6 - 1124842734*s^7 - 566033484*s^8 - 940241840*s^9)*x + (-634823841 - 663273730*s - 199513585*s^2 - 199094740*s^3 - 488570500*s^4 - 116937491*s^5 - 71243056*s^6 - 638424217*s^7 - 321262269*s^8 - 533650647*s^9)*x^2 + (-120918804 - 126337886*s - 38002569*s^2 - 37922791*s^3 - 93061011*s^4 - 22273824*s^5 - 13570040*s^6 - 121604571*s^7 - 61192741*s^8 - 101647722*s^9)*x^3 + (-2629984238 - 2747848535*s - 826556405*s^2 - 824821002*s^3 - 2024077765*s^4 - 484455463*s^5 - 295150103*s^6 - 2644900316*s^7 - 1330943621*s^8 - 2210838616*s^9)*x^4 + (60459502 + 63168844*s + 19001371*s^2 + 18961478*s^3 + 46530559*s^4 + 11136967*s^5 + 6785128*s^6 + 60802294*s^7 + 30596476*s^8 + 50823949*s^9)*x^5 + (-2599754450 - 2716264170*s - 817055796*s^2 - 815340331*s^3 - 2000812621*s^4 - 478886953*s^5 - 291757547*s^6 - 2614499288*s^7 - 1315645534*s^8 - 2185426692*s^9)*x^6 + (-1964930626 - 2052990342*s - 617542144*s^2 - 616245697*s^3 - 1512242053*s^4 - 361949415*s^5 - 220514397*s^6 - 1976074963*s^7 - 994383244*s^8 - 1651775954*s^9)*x^7 + (-1571944495 - 1642392288*s - 494033670*s^2 - 492996488*s^3 - 1209793576*s^4 - 289559689*s^5 - 176411479*s^6 - 1580860073*s^7 - 795506501*s^8 - 1321420729*s^9)*x^8 + (2811362414 + 2937355383*s + 883560380*s^2 + 881705200*s^3 + 2163669280*s^4 + 517866158*s^5 + 315505366*s^6 + 2827307413*s^7 + 1422732958*s^8 + 2363310334*s^9)*x^9 + (2116079261 + 2210912639*s + 665045462*s^2 + 663649187*s^3 + 1628568308*s^4 + 389791803*s^5 + 237477108*s^6 + 2128080876*s^7 + 1070874245*s^8 + 1778835730*s^9)*x^10 + (-2236998012 - 2337250400*s - 703047951*s^2 - 701571937*s^3 - 1721629439*s^4 - 412065534*s^5 - 251047253*s^6 - 2249685310*s^7 - 1132067031*s^8 - 1880483482*s^9)*x^11 + (-2629984108 - 2747848541*s - 826556482*s^2 - 824821041*s^3 - 2024077781*s^4 - 484455457*s^5 - 295150030*s^6 - 2644900382*s^7 - 1330943563*s^8 - 2210838627*s^9)*x^12");
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> g = coder.parse("-2811362312 - 2937355319*s - 883560337*s^2 - 881705356*s^3 - 2163669316*s^4 - 517866198*s^5 - 315505348*s^6 - 2827307397*s^7 - 1422732833*s^8 - 2363310305*s^9 + (-1027809863 - 1073871832*s - 323021979*s^2 - 322343852*s^3 - 791018874*s^4 - 189327442*s^5 - 115345990*s^6 - 1033639203*s^7 - 520138994*s^8 - 864005935*s^9)*x + (755742670 + 789611730*s + 237516324*s^2 + 237017568*s^3 + 581631609*s^4 + 139211399*s^5 + 84813301*s^6 + 760028909*s^7 + 382455125*s^8 + 635298486*s^9)*x^2 + (-2569524725 - 2684679604*s - 807555125*s^2 - 805859617*s^3 - 1977547175*s^4 - 473318570*s^5 - 288364973*s^6 - 2584098178*s^7 - 1300347246*s^8 - 2160014731*s^9)*x^3 + (-90689044 - 94753334*s - 28502018*s^2 - 28442203*s^3 - 69795734*s^4 - 16705297*s^5 - 10177621*s^6 - 91203421*s^7 - 45894548*s^8 - 76235851*s^9)*x^4 + (-60459337 - 63168954*s - 19001279*s^2 - 18961469*s^3 - 46530495*s^4 - 11136820*s^5 - 6785055*s^6 - 60802219*s^7 - 30596432*s^8 - 50823814*s^9)*x^5 + (-2206768278 - 2305665984*s - 693547285*s^2 - 692091191*s^3 - 1698364119*s^4 - 406497048*s^5 - 247654596*s^6 - 2219284280*s^7 - 1116768829*s^8 - 1855071634*s^9)*x^6 + (-2992740680 - 3126862134*s - 940564345*s^2 - 938589464*s^3 - 2303260921*s^4 - 551276902*s^5 - 335860390*s^6 - 3009714187*s^7 - 1514522192*s^8 - 2515781892*s^9)*x^7 + (-937120739 - 979118398*s - 294520061*s^2 - 293901791*s^3 - 721223167*s^4 - 172622016*s^5 - 105168421*s^6 - 942435722*s^7 - 474244292*s^8 - 787770068*s^9)*x^8 + (-2569524839 - 2684679579*s - 807555086*s^2 - 805859625*s^3 - 1977547366*s^4 - 473318589*s^5 - 288365123*s^6 - 2584098088*s^7 - 1300347180*s^8 - 2160014805*s^9)*x^9 + (-302297052 - 315844685*s - 95006420*s^2 - 94806952*s^3 - 232652706*s^4 - 55684503*s^5 - 33925202*s^6 - 304011605*s^7 - 152982033*s^8 - 254119332*s^9)*x^10 + (362756428 + 379013624*s + 114007873*s^2 + 113768522*s^3 + 279183228*s^4 + 66821400*s^5 + 40710454*s^6 + 364813756*s^7 + 183578437*s^8 + 304943317*s^9)*x^11 + (-2327687116 - 2432003792*s - 731549932*s^2 - 730014098*s^3 - 1791425234*s^4 - 428770976*s^5 - 261224810*s^6 - 2340888824*s^7 - 1177961606*s^8 - 1956719264*s^9)*x^12 + (-2962510886 - 3095277709*s - 931063515*s^2 - 929108855*s^3 - 2279995592*s^4 - 545708444*s^5 - 332467892*s^6 - 2979313007*s^7 - 1499223814*s^8 - 2490369949*s^9)*x^13 + (1904471341 + 1989821396*s + 598540924*s^2 + 597284317*s^3 + 1465711520*s^4 + 350812607*s^5 + 213729418*s^6 + 1915272618*s^7 + 963786874*s^8 + 1600952190*s^9)*x^14 + (1420796032 + 1484469924*s + 446530582*s^2 + 445593084*s^3 + 1093467219*s^4 + 261717435*s^5 + 159448870*s^6 + 1428854284*s^7 + 719015466*s^8 + 1194361180*s^9)*x^15 + (-2327687165 - 2432003807*s - 731549938*s^2 - 730013976*s^3 - 1791425083*s^4 - 428770908*s^5 - 261224823*s^6 - 2340888813*s^7 - 1177961603*s^8 - 1956719254*s^9)*x^16 + (1390566435 + 1452885413*s + 437029859*s^2 + 436112351*s^3 + 1070202123*s^4 + 256148955*s^5 + 156056436*s^6 + 1398453101*s^7 + 703717376*s^8 + 1168949284*s^9)*x^17 + (-272067241 - 284260115*s - 85505836*s^2 - 85326368*s^3 - 209387338*s^4 - 50116022*s^5 - 30532678*s^6 - 273610327*s^7 - 137683742*s^8 - 228707356*s^9)*x^18 + (-1027809875 - 1073871903*s - 323021967*s^2 - 322343855*s^3 - 791018854*s^4 - 189327350*s^5 - 115345977*s^6 - 1033639175*s^7 - 520138874*s^8 - 864005908*s^9)*x^19 + (-2055619749 - 2147743611*s - 646044049*s^2 - 644687698*s^3 - 1582037829*s^4 - 378654787*s^5 - 230691998*s^6 - 2067278570*s^7 - 1040277772*s^8 - 1728011857*s^9)*x^20 + (-1783552468 - 1863483492*s - 560538209*s^2 - 559361408*s^3 - 1372650543*s^4 - 328538714*s^5 - 200159198*s^6 - 1793668083*s^7 - 902593935*s^8 - 1499304498*s^9)*x^21 + (-876661420 - 915949489*s - 275518819*s^2 - 274940409*s^3 - 674692521*s^4 - 161485158*s^5 - 98383273*s^6 - 881633387*s^7 - 443647831*s^8 - 736946230*s^9)*x^22 + (-2116079189 - 2210912556*s - 665045429*s^2 - 663649110*s^3 - 1628568244*s^4 - 389791730*s^5 - 237477099*s^6 - 2128080829*s^7 - 1070874203*s^8 - 1778835671*s^9)*x^23 + (-1239417745 - 1294963053*s - 389526527*s^2 - 388708825*s^3 - 953875650*s^4 - 228306522*s^5 - 139093680*s^6 - 1246447329*s^7 - 627226263*s^8 - 1041889490*s^9)*x^24 + (-2509065417 - 2621510653*s - 788553920*s^2 - 786898228*s^3 - 1931016745*s^4 - 462181615*s^5 - 281579891*s^6 - 2523295782*s^7 - 1269750822*s^8 - 2109190863*s^9)*x^25");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                ag = a.clone().multiply(g).multiply(a.clone().decrement()),
+                bg = b.clone().multiply(g).multiply(b.clone().decrement());
+        for (int i = 0; i < 2; ++i) {
+            long start;
+            start = System.nanoTime();
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInAlgebraicExtension(ag, bg);
+            System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
+            assertTrue(remainder(mod, g, true).isZero());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    randomPolyOverAlgExt(AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field,
+                         int minDeg, int maxDeg,
+                         RandomDataGenerator rndd) {
+        return UnivariatePolynomial.create(field, IntStream.rangeClosed(0, rndd.nextInt(minDeg, maxDeg))
+                .mapToObj(__ -> RandomUnivariatePolynomials.randomPoly(field.getMinimalPoly().degree, 100, rndd.getRandomGenerator()).toBigPoly()
+                        .mapCoefficients(Q, Q::valueOfBigInteger)).toArray(UnivariatePolynomial[]::new));
     }
 
     static <T extends IUnivariatePolynomial<T>> void assertExtendedEuclidGCD(T a, T b) {

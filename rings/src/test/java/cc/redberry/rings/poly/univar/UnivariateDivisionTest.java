@@ -144,6 +144,21 @@ public class UnivariateDivisionTest extends AUnivariateTest {
     }
 
     @Test
+    public void test5_SmallPolynomialsRandom_d() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        for (int i = 0; i < its(1000, 10_000); i++) {
+            UnivariatePolynomial<BigInteger> dividend = randomPoly(15, 1000, rnd).toBigPoly();
+            UnivariatePolynomial<BigInteger> divider = randomPoly(rndd.nextInt(1, 10), 1000, rnd).toBigPoly();
+            UnivariatePolynomial<BigInteger>[] qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(dividend, divider, true);
+            assertPseudoQuotientRemainder(dividend, divider, qr);
+            qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(dividend.clone(), divider, false);
+            assertPseudoQuotientRemainder(dividend, divider, qr);
+        }
+    }
+
+
+    @Test
     public void test5_SmallPolynomialsRandom_a() throws Exception {
         UnivariatePolynomialZ64 dividend = UnivariatePolynomialZ64.create(1, 4, -5, -2, 9, 4, -5, 7, 5, -5, 6, 3, 9, 8, 9, -8);
         UnivariatePolynomialZ64 divider = UnivariatePolynomialZ64.create(7, 6, -1, 5, 0, 1, 0, 0, 8, 3, 7);

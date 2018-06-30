@@ -438,7 +438,7 @@ public class Coder<
         if (operands.size() > 1 || operators.size() > 1)
             throw new IllegalArgumentException("Can't parse");
 
-        return operands.pop().toElement();
+        return baseRing.valueOf(operands.pop().toElement());
     }
 
     /** parse operand token */

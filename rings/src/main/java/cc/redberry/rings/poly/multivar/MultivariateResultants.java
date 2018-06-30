@@ -35,6 +35,15 @@ public final class MultivariateResultants {
     private MultivariateResultants() {}
 
     /**
+     * Computes discriminant of polynomial
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial> Poly Discriminant(Poly a, int variable) {
+        Poly disc = (Poly) MultivariateDivision.divideExact(Resultant(a, a.derivative(variable), variable), a.lc(variable));
+        return ((a.degree(variable) * (a.degree(variable) - 1) / 2) % 2 == 1) ? ((Poly) disc.negate()) : disc;
+    }
+
+    /**
      * Calculates polynomial resultant of two given polynomials with respect to specified variable
      *
      * @param a the first poly

@@ -44,6 +44,14 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      */
     Poly setCoefficientRingFrom(Poly poly);
 
+    @SuppressWarnings("unchecked")
+    default Poly setCoefficientRingFromOptional(Poly poly) {
+        if (sameCoefficientRingWith(poly))
+            return (Poly) this;
+        else
+            return setCoefficientRingFrom(poly);
+    }
+
     /**
      * Returns the degree of this polynomial
      *
@@ -216,6 +224,15 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      * @return signum of the leading coefficient
      */
     int signumOfLC();
+
+    /**
+     * If signum of leading coefficient is minus one, negate this
+     */
+    default Poly toPositiveLC() {
+        if (signumOfLC() < 0)
+            return negate();
+        return (Poly) this;
+    }
 
     /**
      * Sets this to zero

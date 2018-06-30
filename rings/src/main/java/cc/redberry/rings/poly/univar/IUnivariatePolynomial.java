@@ -25,6 +25,17 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     default int size() {return degree() + 1;}
 
     /**
+     * Returns the number of non zero terms in this poly
+     */
+    default int nNonZeroTerms() {
+        int c = 0;
+        for (int i = degree(); i >= 0; --i)
+            if (!isZeroAt(i))
+                ++c;
+        return c;
+    }
+
+    /**
      * Returns whether i-th coefficient of this is zero
      *
      * @param i the position
@@ -169,7 +180,7 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     /**
      * Convert to multivariate polynomial
      */
-    default AMultivariatePolynomial asMultivariate(){
+    default AMultivariatePolynomial asMultivariate() {
         return asMultivariate(MonomialOrder.DEFAULT);
     }
 

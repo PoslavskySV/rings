@@ -725,6 +725,22 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         return result;
     }
 
+    /** Replaces x -> scale * x and returns a copy */
+    public UnivariatePolynomial<E> scale(E scaling) {
+        if (ring.isOne(scaling))
+            return this.clone();
+        if (ring.isZero(scaling))
+            return ccAsPoly();
+
+        E factor = ring.getOne();
+        E[] result = ring.createArray(degree + 1);
+        for (int i = 0; i <= degree; ++i) {
+            result[i] = ring.multiply(data[i], factor);
+            factor = ring.multiply(factor, scaling);
+        }
+        return createUnsafe(ring, result);
+    }
+
     /**
      * Shifts variable x -> x + value and returns the result (new instance)
      *

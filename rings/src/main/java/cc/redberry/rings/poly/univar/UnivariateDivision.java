@@ -611,6 +611,175 @@ public final class UnivariateDivision {
     }
 
 
+    /**
+     * Returns quotient and remainder using adaptive pseudo division.
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @param copy     whether to clone {@code dividend}; if not, the remainder will be placed directly to {@code
+     *                 dividend} and {@code dividend} data will be lost
+     * @return {quotient, remainder}
+     */
+    @SuppressWarnings("unchecked")
+    static <E> UnivariatePolynomial<E>[] pseudoDivideAndRemainderAdaptive(final UnivariatePolynomial<E> dividend,
+                                                                          final UnivariatePolynomial<E> divider,
+                                                                          final boolean copy) {
+        checkZeroDivider(divider);
+        if (dividend.isZero())
+            return new UnivariatePolynomial[]{UnivariatePolynomial.zero(dividend.ring), UnivariatePolynomial.zero(dividend.ring)};
+        if (dividend.degree < divider.degree)
+            return new UnivariatePolynomial[]{UnivariatePolynomial.zero(dividend.ring), copy ? dividend.clone() : dividend};
+        if (divider.degree == 0)
+            return new UnivariatePolynomial[]{copy ? dividend.clone() : dividend, UnivariatePolynomial.zero(dividend.ring)};
+        if (divider.degree == 1)
+            return pseudoDivideAndRemainderLinearDividerAdaptive(dividend, divider, copy);
+        return pseudoDivideAndRemainderAdaptive0(dividend, divider, copy);
+    }
+
+    /** general implementation */
+    @SuppressWarnings("unchecked")
+    static <E> UnivariatePolynomial<E>[] pseudoDivideAndRemainderAdaptive0(final UnivariatePolynomial<E> dividend,
+                                                                           final UnivariatePolynomial<E> divider,
+                                                                           final boolean copy) {
+        assert dividend.degree >= divider.degree;
+
+        Ring<E> ring = dividend.ring;
+        UnivariatePolynomial<E> remainder = copy ? dividend.clone() : dividend;
+        E[] quotient = ring.createArray(dividend.degree - divider.degree + 1);
+
+        E dlc = divider.lc();
+        for (int i = dividend.degree - divider.degree; i >= 0; --i) {
+            if (remainder.degree == divider.degree + i) {
+                E quot = ring.divideOrNull(remainder.lc(), dlc);
+                if (quot == null) {
+                    E gcd = ring.gcd(remainder.lc(), divider.lc());
+                    E factor = ring.divideExact(divider.lc(), gcd);
+                    remainder.multiply(factor);
+                    for (int j = i + 1; j < quotient.length; ++j)
+                        quotient[j] = ring.multiply(quotient[j], factor);
+                    quot = ring.divideExact(remainder.lc(), dlc);
+                }
+
+                quotient[i] = quot;
+                remainder.subtract(divider, quotient[i], i);
+
+            } else quotient[i] = ring.getZero();
+        }
+
+        return new UnivariatePolynomial[]{UnivariatePolynomial.create(ring, quotient), remainder};
+    }
+
+    /** Fast division with remainder for divider of the form f(x) = x - u **/
+    @SuppressWarnings("unchecked")
+    static <E> UnivariatePolynomial<E>[] pseudoDivideAndRemainderLinearDividerAdaptive(UnivariatePolynomial<E> dividend, UnivariatePolynomial<E> divider, boolean copy) {
+        assert divider.degree == 1;
+
+        //apply Horner's method
+        Ring<E> ring = dividend.ring;
+        E cc = ring.negate(divider.cc()), lc = divider.lc(), factor = ring.getOne();
+        E[] quotient = copy ? ring.createArray(dividend.degree) : dividend.data;
+        E res = ring.getZero();
+        for (int i = dividend.degree; ; --i) {
+            E tmp = dividend.data[i];
+            if (i != dividend.degree)
+                quotient[i] = res;
+            res = ring.add(ring.multiply(res, cc), ring.multiply(factor, tmp));
+            if (i == 0) break;
+            E quot = ring.divideOrNull(res, lc);
+            if (quot == null) {
+                E gcd = ring.gcd(res, lc), f = ring.divideExact(lc, gcd);
+                factor = ring.multiply(factor, f);
+                res = ring.multiply(res, f);
+                if (i != dividend.degree)
+                    for (int j = quotient.length - 1; j >= i; --j)
+                        quotient[j] = ring.multiply(quotient[j], f);
+                quot = ring.divideExact(res, lc);
+            }
+            res = quot;
+        }
+        if (!copy) quotient[dividend.degree] = ring.getZero();
+        return new UnivariatePolynomial[]{UnivariatePolynomial.create(ring, quotient), UnivariatePolynomial.create(ring, res)};
+    }
+
+    /**
+     * Returns quotient and remainder using adaptive pseudo division.
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @param copy     whether to clone {@code dividend}; if not, the remainder will be placed directly to {@code
+     *                 dividend} and {@code dividend} data will be lost
+     * @return {quotient, remainder}
+     */
+    @SuppressWarnings("unchecked")
+    static <E> UnivariatePolynomial<E> pseudoRemainderAdaptive(final UnivariatePolynomial<E> dividend,
+                                                                          final UnivariatePolynomial<E> divider,
+                                                                          final boolean copy) {
+        checkZeroDivider(divider);
+        if (dividend.isZero())
+            return  UnivariatePolynomial.zero(dividend.ring);
+        if (dividend.degree < divider.degree)
+            return  copy ? dividend.clone() : dividend;
+        if (divider.degree == 0)
+            return  UnivariatePolynomial.zero(dividend.ring);
+        if (divider.degree == 1)
+            return pseudoRemainderLinearDividerAdaptive(dividend, divider, copy);
+        return pseudoRemainderAdaptive0(dividend, divider, copy);
+    }
+
+    /** general implementation */
+    @SuppressWarnings("unchecked")
+    static <E> UnivariatePolynomial<E> pseudoRemainderAdaptive0(final UnivariatePolynomial<E> dividend,
+                                                                final UnivariatePolynomial<E> divider,
+                                                                final boolean copy) {
+        assert dividend.degree >= divider.degree;
+
+        Ring<E> ring = dividend.ring;
+        UnivariatePolynomial<E> remainder = copy ? dividend.clone() : dividend;
+
+        E dlc = divider.lc();
+        for (int i = dividend.degree - divider.degree; i >= 0; --i) {
+            if (remainder.degree == divider.degree + i) {
+                E quot = ring.divideOrNull(remainder.lc(), dlc);
+                if (quot == null) {
+                    E gcd = ring.gcd(remainder.lc(), divider.lc());
+                    E factor = ring.divideExact(divider.lc(), gcd);
+                    remainder.multiply(factor);
+                    quot = ring.divideExact(remainder.lc(), dlc);
+                }
+
+                remainder.subtract(divider, quot, i);
+
+            }
+        }
+
+        return remainder;
+    }
+
+    /** Fast division with remainder for divider of the form f(x) = x - u **/
+    @SuppressWarnings("unchecked")
+    static <E> UnivariatePolynomial<E> pseudoRemainderLinearDividerAdaptive(UnivariatePolynomial<E> dividend, UnivariatePolynomial<E> divider, boolean copy) {
+        assert divider.degree == 1;
+
+        //apply Horner's method
+        Ring<E> ring = dividend.ring;
+        E cc = ring.negate(divider.cc()), lc = divider.lc(), factor = ring.getOne();
+        E res = ring.getZero();
+        for (int i = dividend.degree; ; --i) {
+            E tmp = dividend.data[i];
+            res = ring.add(ring.multiply(res, cc), ring.multiply(factor, tmp));
+            if (i == 0) break;
+            E quot = ring.divideOrNull(res, lc);
+            if (quot == null) {
+                E gcd = ring.gcd(res, lc), f = ring.divideExact(lc, gcd);
+                factor = ring.multiply(factor, f);
+                res = ring.multiply(res, f);
+                quot = ring.divideExact(res, lc);
+            }
+            res = quot;
+        }
+        return UnivariatePolynomial.create(ring, res);
+    }
+
     /* ********************************** Fast division algorithm ********************************** */
 
     /* that is [log2] */
