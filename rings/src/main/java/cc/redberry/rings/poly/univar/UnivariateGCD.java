@@ -54,18 +54,20 @@ public final class UnivariateGCD {
             Ring ring = ((UnivariatePolynomial) a).ring;
             if (ring.equals(Z))
                 return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-            else if (ring instanceof AlgebraicNumberField) {
+
+            if (ring instanceof AlgebraicNumberField) {
                 Ring cfRing = ((UnivariatePolynomial) ((AlgebraicNumberField) ring).getMinimalPoly()).ring;
                 if (cfRing.equals(Z))
                     return (T) PolynomialGCDInAlgebraicExtensionZ((UnivariatePolynomial) a, (UnivariatePolynomial) b);
                 else if (cfRing.equals(Q))
                     return (T) PolynomialGCDInAlgebraicExtension((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-            } else {
-                T r = tryNested(a, b);
-                if (r != null)
-                    return r;
-                return (T) UnivariateResultants.SubresultantPRS((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+
             }
+
+            T r = tryNested(a, b);
+            if (r != null)
+                return r;
+            return (T) UnivariateResultants.SubresultantPRS((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
         } else
             throw new RuntimeException();
     }
