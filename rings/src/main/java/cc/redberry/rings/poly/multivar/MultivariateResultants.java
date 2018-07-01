@@ -535,15 +535,30 @@ public final class MultivariateResultants {
      */
     private static final int N_UNCHANGED_INTERPOLATIONS = 5;
 
+    private static BigInteger centralMultinomialCoefficient(int n, int d) {
+        int q = n / d, r = n % d;
+        return Z.factorial(n)
+                .divideExact(Z.factorial(q).pow(d - r))
+                .divideExact(Z.factorial(q + 1).pow(r));
+    }
+
     /**
      * Modular algorithm with Zippel sparse interpolation for resultant over Z
      */
     static MultivariatePolynomial<BigInteger> ModularResultantInZ0(MultivariatePolynomial<BigInteger> a,
                                                                    MultivariatePolynomial<BigInteger> b) {
 
-        // coefficient bound
-        BigInteger aMax = a.maxAbsCoefficient(), bMax = b.maxAbsCoefficient();
-        BigInteger bound2 = aMax.pow(b.degree()).multiply(bMax.pow(a.degree())).shiftLeft(1);
+        // coefficient bound (not quite optimistic:)
+        BigInteger
+                aMax = a.maxAbsCoefficient(),
+                bMax = b.maxAbsCoefficient();
+        BigInteger bound2 = Z.getOne()
+                .multiply(aMax.pow(b.degree()))                                // a coefficients
+                .multiply(centralMultinomialCoefficient(a.size(), b.degree())) // a multiplication
+                .multiply(bMax.pow(a.degree()))                                // b coefficients
+                .multiply(centralMultinomialCoefficient(b.size(), a.degree())) // b multiplication
+                .multiply(Z.factorial(a.degree() + b.degree()))          // overall determinant (Leibniz formula)
+                .shiftLeft(1);                                                 // symmetric Zp form
 
         // choose better prime for start
         long startingPrime;

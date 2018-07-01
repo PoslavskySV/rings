@@ -372,14 +372,21 @@ public class MultivariateResultantsTest extends AMultivariateTest {
 
             try {
                 SingularResult<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> si = SingularResultant(a, b, variable);
-                MultivariatePolynomial<BigInteger> expected = si.resultant;
-                singular.addValue(si.nanotime);
+                MultivariatePolynomial<BigInteger> expected = null;
+                if (si != null) {
+                    expected = si.resultant;
+                    singular.addValue(si.nanotime);
+                    System.out.println("si: " + nanosecondsToString(si.nanotime));
+                }
 
                 long start;
                 start = System.nanoTime();
                 MultivariatePolynomial<BigInteger> actual = ModularResultantInZ(a, b, variable);
                 modular.addValue(System.nanoTime() - start);
-                assertEquals(expected, actual);
+                System.out.println("ri: " + nanosecondsToString(System.nanoTime() - start));
+                System.out.println();
+                if (expected != null)
+                    assertEquals(expected, actual);
             } catch (Throwable e) {
                 System.out.println(a);
                 System.out.println(b);
@@ -404,6 +411,21 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         MultivariatePolynomial<BigInteger> ord = ClassicalResultant(a, b, variable);
         MultivariatePolynomial<BigInteger> mod = ModularResultantInZ(a, b, variable);
         assertEquals(ord, mod);
+    }
+
+    @Test
+    @RequiresSingular
+    public void testModular4() throws Exception {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = MultivariateRing(4, Z, LEX);
+        Coder<MultivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x1", "x2", "x3", "x4");
+
+        MultivariatePolynomial<BigInteger> a = coder.parse("9789*x1^3*x3*x4+5618*x1^4*x4+5574*x1^4*x2*x3+9813*x1^6");
+        MultivariatePolynomial<BigInteger> b = coder.parse("3425*x2^2*x4+2575*x2^3*x3^2+1157*x2^4*x3+6413*x1*x4^4+6401*x1*x2^2*x3^2+296*x1^2+42*x1^2*x2*x4^3+3941*x1^2*x2*x3+3918*x1^3*x3^3+5245*x1^3*x2*x3^2+1114*x1^4*x3^2+8801*x1^4*x2+773*x1^4*x2^2+2744*x1^5*x3+7473*x1^5*x2+7395*x1^6");
+
+        int variable = 0;
+        MultivariatePolynomial<BigInteger> sin = SingularResultant(a, b, variable).resultant;
+        MultivariatePolynomial<BigInteger> mod = ModularResultantInZ(a, b, variable);
+        assertEquals(sin, mod);
     }
 
     @Test
