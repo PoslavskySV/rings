@@ -2536,7 +2536,6 @@ public class MultivariateGCDTest extends AMultivariateTest {
     }
 
     @Test
-    @Ignore
     public void testZippelModularAlgExt1_random() {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
@@ -2549,16 +2548,18 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 continue;
             }
             UnivariatePolynomial<Rational<BigInteger>> minimalPoly = minimalPolyZ.mapCoefficients(Q, Q::mkNumerator);
-            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> algExt = new AlgebraicNumberField<>(minimalPoly);
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField = new AlgebraicNumberField<>(minimalPoly);
 
             GCDSampleDataGeneric<UnivariatePolynomial<Rational<BigInteger>>> source
-                    = new GCDSampleDataGeneric<>(algExt, 3, 6, 10, 20, 10, 50, rnd);
+                    = new GCDSampleDataGeneric<>(numberField, 3, 6, 10, 20, 10, 30, rnd);
 
-            source.rndCoefficients = rand -> algExt.valueOf(RandomUnivariatePolynomials.
+            source.rndCoefficients = rand -> numberField.valueOf(RandomUnivariatePolynomials.
                     randomPoly(minimalPoly.degree(), Q, __ -> Q.mk(rand.nextInt(100), 1 + rand.nextInt(10)), rand));
-            System.out.println(minimalPoly);
-            System.out.println("----\n");
-            testGCDAlgorithms(source, 10, GCDAlgorithm.named("Zippel", MultivariateGCD::ZippelGCDInNumberFieldViaRationalReconstruction));
+            System.out.println("\n\n");
+            System.out.println("Ring: " + numberField);
+            testGCDAlgorithms(source, its(10, 30),
+                    GCDAlgorithm.named("Rational reconstruction", MultivariateGCD::ZippelGCDInNumberFieldViaRationalReconstruction),
+                    GCDAlgorithm.named("Langemyr & McCallum", MultivariateGCD::ZippelGCDInNumberFieldViaLangemyrMcCallum));
         }
     }
 
