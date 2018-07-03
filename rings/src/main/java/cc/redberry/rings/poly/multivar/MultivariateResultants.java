@@ -1,6 +1,10 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.*;
+import cc.redberry.rings.ChineseRemainders.ChineseRemaindersMagic;
+import cc.redberry.rings.IntegersZp;
+import cc.redberry.rings.IntegersZp64;
+import cc.redberry.rings.Rational;
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.poly.MultivariateRing;
@@ -23,6 +27,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
+import static cc.redberry.rings.ChineseRemainders.createMagic;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.MachineArithmetic.*;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
@@ -627,29 +633,32 @@ public final class MultivariateResultants {
 
                 //lifting
                 BigInteger newBasePrime = bBasePrime.multiply(bPrime);
-                PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator = new PairedIterator<>(bBase, modularResultant.toBigPoly());
+                PairedIterator<
+                        Monomial<BigInteger>, MultivariatePolynomial<BigInteger>,
+                        MonomialZp64, MultivariatePolynomialZp64
+                        > iterator = new PairedIterator<>(bBase, modularResultant);
+                ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, bBasePrime, bPrime);
                 while (iterator.hasNext()) {
                     iterator.advance();
 
-                    Monomial<BigInteger>
-                            baseTerm = iterator.aTerm,
-                            imageTerm = iterator.bTerm;
+                    Monomial<BigInteger> baseTerm = iterator.aTerm;
+                    MonomialZp64 imageTerm = iterator.bTerm;
 
                     if (baseTerm.coefficient.isZero())
                         // term is absent in the base
                         continue;
 
-                    if (imageTerm.coefficient.isZero()) {
+                    if (imageTerm.coefficient == 0) {
                         // term is absent in the modularResultant => remove it from the base
                         // bBase.subtract(baseTerm);
                         iterator.aIterator.remove();
                         continue;
                     }
 
-                    long oth = imageTerm.coefficient.longValueExact();
+                    long oth = imageTerm.coefficient;
 
                     // update base term
-                    BigInteger newCoeff = ChineseRemainders.ChineseRemainders(bBasePrime, bPrime, baseTerm.coefficient, BigInteger.valueOf(oth));
+                    BigInteger newCoeff = ChineseRemainders(Z, magic, baseTerm.coefficient, BigInteger.valueOf(oth));
                     bBase.put(baseTerm.setCoefficient(newCoeff));
                 }
 

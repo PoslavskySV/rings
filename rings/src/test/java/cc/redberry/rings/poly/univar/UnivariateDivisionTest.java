@@ -7,7 +7,7 @@ import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.test.Benchmark;
-import org.apache.commons.math3.random.RandomDataGenerator;
+import cc.redberry.rings.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;

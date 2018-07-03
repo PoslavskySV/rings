@@ -926,7 +926,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> a = coder.parse("(1 - s + x^5) * ( 1 + s*x^2 + 12*x^5)");
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> b = coder.parse("(1 - s + x^5) * ( 14 - s*x + 2*x^17)");
 
-        assertEquals(coder.parse("1 - s + x^5"), UnivariateGCD.primitiveGcdInAlgExt0(a, b));
+        assertEquals(coder.parse("1 - s + x^5"), UnivariateGCD.gcdAssociateInNumberField0(a, b));
     }
 
     @Test
@@ -941,7 +941,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> a = coder.parse("(1 - s + (12 - 3*s^5) * x^5) * ( 1 + s*x^2 + 12*x^5)");
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> b = coder.parse("(1 - s + (12 - 3*s^5) * x^5) * ( 14 - s*x + 2*s*x^17)");
 
-        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcd = UnivariateGCD.gcdAssociate0(a, b);
+        UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcd = UnivariateGCD.gcdAssociateInNumberField(a, b);
 
         assertTrue(pseudoDivideAndRemainder(a, gcd, true)[1].isZero());
         assertTrue(pseudoDivideAndRemainder(b, gcd, true)[1].isZero());
@@ -963,7 +963,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
         for (int i = 0; i < 1; ++i) {
             long start;
             start = System.nanoTime();
-            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInAlgebraicExtension(a, b);
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInNumberField(a, b);
             System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
@@ -989,7 +989,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
         UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + (1 - 3*s^5) * x^5) * ( 3 + s*x^2 + 12*s^6*x^5)");
         UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + (1 - 3*s^5) * x^5) * ( 14 - s*x + 2*s*x^17)^2");
 
-        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> gcd = UnivariateGCD.PolynomialGCDInAlgebraicExtension(a, b);
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> gcd = UnivariateGCD.PolynomialGCDInNumberField(a, b);
         assertGCD(a, b, gcd);
     }
 
@@ -1009,7 +1009,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
         for (int i = 0; i < 1; ++i) {
             long start;
             start = System.nanoTime();
-            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInAlgebraicExtension(a, b);
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInNumberField(a, b);
             System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
 
             start = System.nanoTime();
@@ -1045,7 +1045,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
                 b = b.multiply(gcd);
 
                 long start = System.nanoTime();
-                UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mgcd = PolynomialGCDInAlgebraicExtension(a, b);
+                UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mgcd = PolynomialGCDInNumberField(a, b);
                 System.out.print(i + ": " + nanosecondsToString(System.nanoTime() - start) + "      ");
 
                 UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>[] qr = UnivariateDivision.divideAndRemainder(mgcd, gcd, true);
@@ -1085,10 +1085,13 @@ public class UnivariateGCDTest extends AUnivariateTest {
         for (int i = 0; i < 2; ++i) {
             long start;
             start = System.nanoTime();
-            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInAlgebraicExtension(ag, bg);
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod = UnivariateGCD.PolynomialGCDInNumberField(ag, bg);
             System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
             assertTrue(remainder(mod, g, true).isZero());
         }
+
+        // Modular: 7s
+        // Modular: 5s
     }
 
     @SuppressWarnings("unchecked")

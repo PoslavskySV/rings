@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
+import cc.redberry.rings.ChineseRemainders.ChineseRemaindersMagic;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
@@ -9,7 +10,7 @@ import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util;
-import cc.redberry.rings.poly.multivar.MonomialOrder.*;
+import cc.redberry.rings.poly.multivar.MonomialOrder.GrevLexWithPermutation;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic;
@@ -29,10 +30,13 @@ import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
+import static cc.redberry.rings.ChineseRemainders.createMagic;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.linear.LinearSolver.SystemInfo.*;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
-import static cc.redberry.rings.poly.multivar.MonomialOrder.*;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
 
 /**
  * Groebner bases.
@@ -3709,18 +3713,21 @@ public final class GroebnerBases {
                 continue;
 
             ++nModIterations;
+            ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, basePrime, prime);
             // prime is probably lucky, we can do Chinese Remainders
             for (int iGenerator = 0; iGenerator < baseBasis.size(); ++iGenerator) {
                 MultivariatePolynomial<BigInteger> baseGenerator = baseBasis.get(iGenerator);
-                PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator
-                        = new PairedIterator<>(baseGenerator, bModBasis.get(iGenerator));
+                PairedIterator<
+                        Monomial<BigInteger>, MultivariatePolynomial<BigInteger>,
+                        Monomial<BigInteger>, MultivariatePolynomial<BigInteger>
+                        > iterator = new PairedIterator<>(baseGenerator, bModBasis.get(iGenerator));
 
                 baseGenerator = baseGenerator.createZero();
                 while (iterator.hasNext()) {
                     iterator.advance();
 
                     Monomial<BigInteger> baseTerm = iterator.aTerm;
-                    BigInteger crt = ChineseRemainders.ChineseRemainders(basePrime, prime, baseTerm.coefficient, iterator.bTerm.coefficient);
+                    BigInteger crt = ChineseRemainders(Z, magic, baseTerm.coefficient, iterator.bTerm.coefficient);
                     baseGenerator.add(baseTerm.setCoefficient(crt));
                 }
 

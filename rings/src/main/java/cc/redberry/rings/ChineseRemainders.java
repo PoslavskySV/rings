@@ -1,7 +1,6 @@
 package cc.redberry.rings;
 
 import cc.redberry.libdivide4j.FastDivision;
-import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 
 import static java.lang.Math.*;
@@ -53,14 +52,7 @@ public final class ChineseRemainders {
         if (prime1.signum() <= 0 || prime2.signum() <= 0)
             throw new RuntimeException("Negative CRT input: " + prime1 + " " + prime2);
 
-        BigInteger modulus = prime1.multiply(prime2);
-        BigInteger result = BigInteger.ZERO;
-
-        //(result + (prime2 * ((bezout0(prime2, prime1) * remainder1) % prime1)) ) % modulus
-        result = result.add(prime2.multiply(bezout0(prime2, prime1).multiply(remainder1).mod(prime1))).mod(modulus);
-        result = result.add(prime1.multiply(bezout0(prime1, prime2).multiply(remainder2).mod(prime2))).mod(modulus);
-
-        return result;
+        return ChineseRemainders(Rings.Z, prime1, prime2, remainder1, remainder2);
     }
 
     /**
@@ -86,16 +78,59 @@ public final class ChineseRemainders {
         return result;
     }
 
-
     /**
-     * Runs Chinese Remainders algorithm
+     * Runs Chinese Remainders algorithm using the precomputed magic (speed's up computation when several invocations
+     * with the same {@code magic} performed)
      *
-     * @param magic      magic structure for fast modular arithmetics ({@link #createMagic(long, long)}
+     * @param ring       the ring
+     * @param magic      magic (create by {@link #createMagic(Ring, Object, Object)})
      * @param remainder1 #1 remainder
      * @param remainder2 #2 remainder
      * @return the result
      */
-    public static long ChineseRemainders(ChineseRemaindersMagic magic,
+    public static <E> E ChineseRemainders(Ring<E> ring,
+                                          ChineseRemaindersMagic<E> magic,
+                                          E remainder1, E remainder2) {
+        E result = ring.getZero();
+
+        //(result + (prime2 * ((bezout0(prime2, prime1) * remainder1) % prime1)) ) % modulus
+        result = ring.remainder(ring.add(result, ring.multiply(magic.prime2, ring.remainder(ring.multiply(magic.bezout0_prime2_prime1, remainder1), magic.prime1))), magic.mulPrimes);
+        result = ring.remainder(ring.add(result, ring.multiply(magic.prime1, ring.remainder(ring.multiply(magic.bezout0_prime1_prime2, remainder2), magic.prime2))), magic.mulPrimes);
+
+        return result;
+    }
+
+    /**
+     * Magic data to make CRT faster via precomputing Bezout coefficients
+     */
+    public static class ChineseRemaindersMagic<E> {
+        final E prime1, prime2, mulPrimes;
+        final E bezout0_prime2_prime1, bezout0_prime1_prime2;
+
+        private ChineseRemaindersMagic(Ring<E> ring, E prime1, E prime2) {
+            this.prime1 = prime1;
+            this.prime2 = prime2;
+            this.mulPrimes = ring.multiply(prime1, prime2);
+            this.bezout0_prime1_prime2 = bezout0(ring, prime1, prime2);
+            this.bezout0_prime2_prime1 = bezout0(ring, prime2, prime1);
+        }
+    }
+
+    /** Magic for fast repeated Chinese Remainders */
+    public static <E> ChineseRemaindersMagic<E> createMagic(Ring<E> ring, E prime1, E prime2) {
+        return new ChineseRemaindersMagic<>(ring, prime1, prime2);
+    }
+
+    /**
+     * Runs Chinese Remainders algorithm using the precomputed magic (speed's up computation when several invocations
+     * with the same {@code magic} performed)
+     *
+     * @param magic      magic structure for fast modular arithmetic ({@link #createMagic(long, long)}
+     * @param remainder1 #1 remainder
+     * @param remainder2 #2 remainder
+     * @return the result
+     */
+    public static long ChineseRemainders(ChineseRemaindersMagicZp64 magic,
                                          long remainder1, long remainder2) {
         long result;
 
@@ -108,9 +143,9 @@ public final class ChineseRemainders {
     }
 
     /** Magic for fast repeated Chinese Remainders */
-    public static ChineseRemaindersMagic createMagic(long prime1, long prime2) {
+    public static ChineseRemaindersMagicZp64 createMagic(long prime1, long prime2) {
         long modulus = multiplyExact(prime1, prime2);
-        return new ChineseRemaindersMagic(
+        return new ChineseRemaindersMagicZp64(
                 prime1, prime2, modulus,
                 FastDivision.magicUnsigned(prime1), FastDivision.magicUnsigned(prime2), FastDivision.magicUnsigned(modulus),
                 prime1 <= Integer.MAX_VALUE, prime2 <= Integer.MAX_VALUE, modulus <= Integer.MAX_VALUE,
@@ -118,14 +153,14 @@ public final class ChineseRemainders {
         );
     }
 
-    public static class ChineseRemaindersMagic {
+    public static class ChineseRemaindersMagicZp64 {
         final long prime1, prime2, modulus;
         final FastDivision.Magic magic1, magic2, magicModulus;
         final boolean prime1IsInt, prime2IsInt, modulusIsInt;
         final FastDivision.Magic magic32Prime1, magic32Prime2, magic32Modulus;
         final long bezoutPrime1Prime2, bezoutPrime2Prime1;
 
-        ChineseRemaindersMagic(long prime1, long prime2, long modulus, FastDivision.Magic magic1, FastDivision.Magic magic2, FastDivision.Magic magicModulus, boolean prime1IsInt, boolean prime2IsInt, boolean modulusIsInt, long bezoutPrime1Prime2, long bezoutPrime2Prime1) {
+        ChineseRemaindersMagicZp64(long prime1, long prime2, long modulus, FastDivision.Magic magic1, FastDivision.Magic magic2, FastDivision.Magic magicModulus, boolean prime1IsInt, boolean prime2IsInt, boolean modulusIsInt, long bezoutPrime1Prime2, long bezoutPrime2Prime1) {
             this.prime1 = prime1;
             this.prime2 = prime2;
             this.modulus = modulus;
@@ -210,7 +245,7 @@ public final class ChineseRemainders {
         BigInteger result = BigInteger.ZERO;
         for (int i = 0; i < primes.length; i++) {
             BigInteger iModulus = modulus.divide(primes[i]);
-            BigInteger bezout = bezout0(iModulus, primes[i]);
+            BigInteger bezout = bezout0(Rings.Z, iModulus, primes[i]);
             result = result.add(iModulus.multiply(bezout.multiply(remainders[i]).mod(primes[i]))).mod(modulus);
         }
         return result;
@@ -265,47 +300,12 @@ public final class ChineseRemainders {
         return old_s;
     }
 
-    private static BigInteger bezout0(BigInteger a, BigInteger b) {
-        BigInteger s = BigInteger.ZERO, old_s = BigInteger.ONE;
-        BigInteger r = b, old_r = a;
-
-        BigInteger q;
-        BigInteger tmp;
-        while (!r.isZero()) {
-            q = old_r.divide(r);
-
-            tmp = old_r;
-            old_r = r;
-            r = tmp.subtract(q.multiply(r));
-
-            tmp = old_s;
-            old_s = s;
-            s = tmp.subtract(q.multiply(s));
-        }
-        assert old_r.isOne();
-        return old_s;
-    }
-
     private static <E> E bezout0(Ring<E> ring, E a, E b) {
-        E s = ring.getZero(), old_s = ring.getOne();
-        E r = b, old_r = a;
-
-        E q;
-        E tmp;
-        while (!ring.isZero(r)) {
-            q = ring.quotient(old_r, r);
-
-            tmp = old_r;
-            old_r = r;
-            r = ring.subtract(tmp, ring.multiply(q, r));
-
-            tmp = old_s;
-            old_s = s;
-            s = ring.subtract(tmp, ring.multiply(q, s));
-        }
-        assert ring.isUnit(old_r) : old_r;
-        if (!ring.isOne(old_r))
-            old_s = ring.divideExact(old_s, old_r);
-        return old_s;
+        E[] rs = ring.firstBezoutCoefficient(a, b);
+        E r = rs[0], s = rs[1];
+        assert ring.isUnit(r) : r;
+        if (!ring.isOne(r))
+            s = ring.divideExact(s, r);
+        return s;
     }
 }

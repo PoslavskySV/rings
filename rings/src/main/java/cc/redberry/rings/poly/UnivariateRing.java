@@ -41,6 +41,11 @@ public final class UnivariateRing<Poly extends IUnivariatePolynomial<Poly>> exte
     }
 
     @Override
+    public Poly[] firstBezoutCoefficient(Poly a, Poly b) {
+        return UnivariateGCD.PolynomialFirstBezoutCoefficient(a, b);
+    }
+
+    @Override
     public PolynomialFactorDecomposition<Poly> factorSquareFree(Poly element) {
         return UnivariateSquareFreeFactorization.SquareFreeFactorization(element);
     }
@@ -65,7 +70,7 @@ public final class UnivariateRing<Poly extends IUnivariatePolynomial<Poly>> exte
      * @param maxDegree the maximal degree of the result
      * @param rnd       the source of randomness
      * @return random univariate polynomial with the degree randomly picked from {@code minDegree} (inclusive) to {@code
-     * maxDegree} (exclusive)
+     *         maxDegree} (exclusive)
      * @see RandomUnivariatePolynomials
      */
     public Poly randomElement(int minDegree, int maxDegree, RandomGenerator rnd) {
@@ -113,7 +118,7 @@ public final class UnivariateRing<Poly extends IUnivariatePolynomial<Poly>> exte
      * @param maxDegree the maximal degree of the result
      * @param rnd       the source of randomness
      * @return random univariate polynomial with the degree randomly picked from {@code minDegree} (inclusive) to {@code
-     * maxDegree} (exclusive)
+     *         maxDegree} (exclusive)
      * @see RandomUnivariatePolynomials
      */
     @SuppressWarnings("unchecked")

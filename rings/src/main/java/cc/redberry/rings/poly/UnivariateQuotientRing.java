@@ -52,6 +52,23 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
                 : BigIntegerUtil.pow(minimalPoly.coefficientRingCardinality(), minimalPoly.degree());
     }
 
+    /** empiric to switch between fast and plain division */
+    protected boolean reduceFast(int dividendDegree) {
+        int mDeg = minimalPoly.degree();
+        if (dividendDegree < mDeg)
+            return false;
+        if (isFiniteField()) {
+            if (mDeg < 8)
+                return false;
+            int defect = dividendDegree / mDeg;
+            if (mDeg <= 20)
+                return defect <= 16;
+            else
+                return defect <= 30;
+        } else
+            return false;
+    }
+
     /**
      * Returns the irreducible polynomial that generates this finite field
      *
@@ -80,42 +97,58 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
 
     @Override
     public Poly add(Poly a, Poly b) {
-        return UnivariatePolynomialArithmetic.polyAddMod(a, b, minimalPoly, inverseMod, true);
+        return reduceFast(Math.max(a.degree(), b.degree()))
+                ? UnivariatePolynomialArithmetic.polyAddMod(a, b, minimalPoly, inverseMod, true)
+                : UnivariatePolynomialArithmetic.polyAddMod(a, b, minimalPoly, true);
     }
 
     @Override
     public Poly subtract(Poly a, Poly b) {
-        return UnivariatePolynomialArithmetic.polySubtractMod(a, b, minimalPoly, inverseMod, true);
+        return reduceFast(Math.max(a.degree(), b.degree()))
+                ? UnivariatePolynomialArithmetic.polySubtractMod(a, b, minimalPoly, inverseMod, true)
+                : UnivariatePolynomialArithmetic.polySubtractMod(a, b, minimalPoly, true);
     }
 
     @Override
     public Poly multiply(Poly a, Poly b) {
-        return UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, minimalPoly, inverseMod, true);
+        return reduceFast(a.degree() + b.degree())
+                ? UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, minimalPoly, inverseMod, true)
+                : UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, minimalPoly, true);
     }
 
     @Override
     public Poly negate(Poly element) {
-        return UnivariatePolynomialArithmetic.polyNegateMod(element, minimalPoly, inverseMod, true);
+        return reduceFast(element.degree())
+                ? UnivariatePolynomialArithmetic.polyNegateMod(element, minimalPoly, inverseMod, true)
+                : UnivariatePolynomialArithmetic.polyNegateMod(element, minimalPoly, true);
     }
 
     @Override
     public Poly addMutable(Poly a, Poly b) {
-        return UnivariatePolynomialArithmetic.polyAddMod(a, b, minimalPoly, inverseMod, false);
+        return reduceFast(Math.max(a.degree(), b.degree()))
+                ? UnivariatePolynomialArithmetic.polyAddMod(a, b, minimalPoly, inverseMod, false)
+                : UnivariatePolynomialArithmetic.polyAddMod(a, b, minimalPoly, false);
     }
 
     @Override
     public Poly subtractMutable(Poly a, Poly b) {
-        return UnivariatePolynomialArithmetic.polySubtractMod(a, b, minimalPoly, inverseMod, false);
+        return reduceFast(Math.max(a.degree(), b.degree()))
+                ? UnivariatePolynomialArithmetic.polySubtractMod(a, b, minimalPoly, inverseMod, false)
+                : UnivariatePolynomialArithmetic.polySubtractMod(a, b, minimalPoly, false);
     }
 
     @Override
     public Poly multiplyMutable(Poly a, Poly b) {
-        return UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, minimalPoly, inverseMod, false);
+        return reduceFast(a.degree() + b.degree())
+                ? UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, minimalPoly, inverseMod, false)
+                : UnivariatePolynomialArithmetic.polyMultiplyMod(a, b, minimalPoly, false);
     }
 
     @Override
     public Poly negateMutable(Poly element) {
-        return UnivariatePolynomialArithmetic.polyNegateMod(element, minimalPoly, inverseMod, false);
+        return reduceFast(element.degree())
+                ? UnivariatePolynomialArithmetic.polyNegateMod(element, minimalPoly, inverseMod, false)
+                : UnivariatePolynomialArithmetic.polyNegateMod(element, minimalPoly, false);
     }
 
     @Override
@@ -127,7 +160,7 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
         if (isMinusOne(element))
             return element;
 
-        Poly[] xgcd = UnivariateGCD.PolynomialExtendedGCD(element, minimalPoly);
+        Poly[] xgcd = UnivariateGCD.PolynomialFirstBezoutCoefficient(element, minimalPoly);
         assert xgcd[0].isConstant();
         return xgcd[1].divideByLC(xgcd[0]);
     }
@@ -169,7 +202,9 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
 
     @Override
     public Poly valueOf(Poly val) {
-        return UnivariatePolynomialArithmetic.polyMod(val.setCoefficientRingFrom(factory), minimalPoly, inverseMod, false);
+        return reduceFast(val.degree())
+                ? UnivariatePolynomialArithmetic.polyMod(val.setCoefficientRingFrom(factory), minimalPoly, inverseMod, false)
+                : UnivariatePolynomialArithmetic.polyMod(val.setCoefficientRingFrom(factory), minimalPoly, false);
     }
 
     @Override

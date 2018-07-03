@@ -1,9 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.Coder;
@@ -186,6 +183,40 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         for (int i = 0; i < data.length; i++)
             data[i] = ((BigInteger) poly.data[i]).longValueExact();
         return UnivariatePolynomialZp64.create(((IntegersZp) poly.ring).modulus.longValueExact(), data);
+    }
+
+    /**
+     * Converts Zp[x] poly over BigIntegers to machine-sized polynomial in Zp
+     *
+     * @param poly the polynomial over BigIntegers
+     * @param ring Zp64 ring
+     * @return machine-sized polynomial in Z/p
+     * @throws IllegalArgumentException if {@code poly.ring} is not {@link IntegersZp}
+     * @throws ArithmeticException      if some of {@code poly} elements is out of long range
+     */
+    public static UnivariatePolynomialZp64 asOverZp64(UnivariatePolynomial<BigInteger> poly, IntegersZp64 ring) {
+        long modulus = ring.modulus;
+        long[] data = new long[poly.degree + 1];
+        for (int i = 0; i < data.length; i++)
+            data[i] = poly.data[i].mod(modulus).longValueExact();
+        return UnivariatePolynomialZp64.create(ring, data);
+    }
+
+    /**
+     * Converts Zp[x] poly over rationals to machine-sized polynomial in Zp
+     *
+     * @param poly the polynomial over rationals
+     * @param ring Zp64 ring
+     * @return machine-sized polynomial in Z/p
+     * @throws IllegalArgumentException if {@code poly.ring} is not {@link IntegersZp}
+     * @throws ArithmeticException      if some of {@code poly} elements is out of long range
+     */
+    public static UnivariatePolynomialZp64 asOverZp64Q(UnivariatePolynomial<Rational<BigInteger>> poly, IntegersZp64 ring) {
+        long modulus = ring.modulus;
+        long[] data = new long[poly.degree + 1];
+        for (int i = 0; i < data.length; i++)
+            data[i] = ring.divide(poly.data[i].numerator().mod(modulus).longValueExact(), poly.data[i].denominator().mod(modulus).longValueExact());
+        return UnivariatePolynomialZp64.create(ring, data);
     }
 
     /**

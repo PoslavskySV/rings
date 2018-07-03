@@ -26,9 +26,29 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return new Rational<>(ring, num);
     }
 
+    /** Gives rational with a given numerator and unit denominator */
+    public Rational<E> mkNumerator(long num) {
+        return mkNumerator(ring.valueOf(num));
+    }
+
     /** Gives rational with a given denominator and unit numerator */
     public Rational<E> mkDenominator(E den) {
         return new Rational<>(ring, ring.getOne(), den);
+    }
+
+    /** Gives rational with a given denominator and unit numerator */
+    public Rational<E> mkDenominator(long den) {
+        return mkDenominator(ring.valueOf(den));
+    }
+
+    /** Gives rational with a given numerator and denominator */
+    public Rational<E> mk(E num, E den) {
+        return new Rational<>(ring, num, den);
+    }
+
+    /** Gives rational with a given numerator and denominator */
+    public Rational<E> mk(long num, long den) {
+        return new Rational<>(ring, ring.valueOf(num), ring.valueOf(den));
     }
 
     @Override

@@ -42,10 +42,21 @@ public final class IrreduciblePolynomials {
      * @return whether {@code poly} is an irreducible polynomial
      */
     public static <Poly extends IUnivariatePolynomial<Poly>> boolean finiteFieldIrreducibleQ(Poly poly) {
+        return finiteFieldIrreducibleBenOr(poly);
+    }
+
+    /**
+     * Tests whether {@code poly} is irreducible over the finite field
+     *
+     * @param poly the polynomial over finite field
+     * @return whether {@code poly} is an irreducible polynomial
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> boolean
+    finiteFieldIrreducibleViaModularComposition(Poly poly) {
         Util.ensureOverFiniteField(poly);
 
         if (canConvertToZp64(poly))
-            return finiteFieldIrreducibleQ(asOverZp64(poly));
+            return finiteFieldIrreducibleViaModularComposition(asOverZp64(poly));
 
         if (poly.degree() <= 1)
             return true;
@@ -82,6 +93,60 @@ public final class IrreduciblePolynomials {
         return true;
     }
 
+    /* fives xq^exponent using repeated compositions */
+    static <Poly extends IUnivariatePolynomial<Poly>> Poly composition(
+            Poly xq, int exponent,
+            Poly poly, UnivariateDivision.InverseModMonomial<Poly> invMod,
+            TIntObjectMap<Poly> cache) {
+        assert exponent > 0;
+
+        Poly cached = cache.get(exponent);
+        if (cached != null)
+            return cached;
+
+        Poly result = xq.createMonomial(1);
+        Poly k2p = xq;
+        int rExp = 0, kExp = 1;
+        for (; ; ) {
+            if ((exponent & 1) != 0)
+                cache.put(rExp += kExp, result = ModularComposition.composition(k2p, result, poly, invMod));
+            exponent = exponent >> 1;
+            if (exponent == 0) {
+                cache.put(rExp, result);
+                return result;
+            }
+            cache.put(kExp *= 2, k2p = ModularComposition.composition(k2p, k2p, poly, invMod));
+        }
+    }
+    
+    /**
+     * Tests whether {@code poly} is irreducible over the finite field
+     *
+     * @param poly the polynomial over finite field
+     * @return whether {@code poly} is an irreducible polynomial
+     */
+    public static <Poly extends IUnivariatePolynomial<Poly>> boolean
+    finiteFieldIrreducibleBenOr(Poly poly) {
+        Util.ensureOverFiniteField(poly);
+
+        if (canConvertToZp64(poly))
+            return finiteFieldIrreducibleBenOr(asOverZp64(poly));
+
+        UnivariateDivision.InverseModMonomial<Poly> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
+        // x^q
+        Poly xq = UnivariatePolynomialArithmetic.createMonomialMod(poly.coefficientRingCardinality(), poly, invMod);
+        // x
+        Poly xMonomial = poly.createMonomial(1);
+        // primes factors of poly.degree
+        for (int i = 1; i <= (poly.degree() / 2); ++i) {
+            // x^(q^i)
+            xq = UnivariatePolynomialArithmetic.polyPowMod(xq, poly.coefficientRingCardinality(), poly, invMod, false);
+            if (!UnivariateGCD.PolynomialGCD(xq.clone().subtract(xMonomial), poly).isOne())
+                return false;
+        }
+        return true;
+    }
+
     /**
      * Generated random irreducible Zp polynomial of degree {@code degree}
      *
@@ -91,13 +156,9 @@ public final class IrreduciblePolynomials {
      * @return irreducible polynomial
      */
     public static UnivariatePolynomialZp64 randomIrreduciblePolynomial(long modulus, int degree, RandomGenerator rnd) {
-        UnivariatePolynomialZp64 poly;
-        do {
-            poly = RandomUnivariatePolynomials.randomMonicPoly(degree, modulus, rnd);
-        } while (!irreducibleQ(poly));
-        assert poly.degree == degree;
-        return poly;
+        return randomIrreduciblePolynomial(UnivariatePolynomialZp64.zero(modulus), degree, rnd);
     }
+
 
     /**
      * Generated random irreducible polynomial over specified ring of degree {@code degree}
@@ -127,7 +188,7 @@ public final class IrreduciblePolynomials {
      */
     public static UnivariatePolynomial<BigInteger> randomIrreduciblePolynomialOverZ(int degree, RandomGenerator rnd) {
         // some prime number
-        long modulus = 33554467;
+        long modulus = SmallPrimes.nextPrime(1 << 25);
         return randomIrreduciblePolynomial(modulus, degree, rnd).toBigPoly().setRing(Rings.Z);
     }
 
@@ -146,31 +207,5 @@ public final class IrreduciblePolynomials {
         } while (!irreducibleQ(poly));
         assert poly.degree() == degree;
         return poly;
-    }
-
-    /* fives xq^exponent using repeated compositions */
-    static <Poly extends IUnivariatePolynomial<Poly>> Poly composition(
-            Poly xq, int exponent,
-            Poly poly, UnivariateDivision.InverseModMonomial<Poly> invMod,
-            TIntObjectMap<Poly> cache) {
-        assert exponent > 0;
-
-        Poly cached = cache.get(exponent);
-        if (cached != null)
-            return cached;
-
-        Poly result = xq.createMonomial(1);
-        Poly k2p = xq;
-        int rExp = 0, kExp = 1;
-        for (; ; ) {
-            if ((exponent & 1) != 0)
-                cache.put(rExp += kExp, result = ModularComposition.composition(k2p, result, poly, invMod));
-            exponent = exponent >> 1;
-            if (exponent == 0) {
-                cache.put(rExp, result);
-                return result;
-            }
-            cache.put(kExp *= 2, k2p = ModularComposition.composition(k2p, k2p, poly, invMod));
-        }
     }
 }

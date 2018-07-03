@@ -437,6 +437,13 @@ public class Rational<E> implements Comparable<Rational<E>>,
         return numerator.expand();
     }
 
+    /** Numerator of this rational */
+    public E numeratorExact() {
+        if (!isIntegral())
+            throw new IllegalArgumentException("not integral fraction");
+        return numerator();
+    }
+
     /** Denominator of this rational */
     public E denominator() {
         return denominator.expand();
