@@ -118,7 +118,7 @@ public final class IrreduciblePolynomials {
             cache.put(kExp *= 2, k2p = ModularComposition.composition(k2p, k2p, poly, invMod));
         }
     }
-    
+
     /**
      * Tests whether {@code poly} is irreducible over the finite field
      *
@@ -132,11 +132,14 @@ public final class IrreduciblePolynomials {
         if (canConvertToZp64(poly))
             return finiteFieldIrreducibleBenOr(asOverZp64(poly));
 
+        if (!poly.isMonic())
+            poly = poly.clone().monic();
+
         UnivariateDivision.InverseModMonomial<Poly> invMod = UnivariateDivision.fastDivisionPreConditioning(poly);
-        // x^q
-        Poly xq = UnivariatePolynomialArithmetic.createMonomialMod(poly.coefficientRingCardinality(), poly, invMod);
         // x
         Poly xMonomial = poly.createMonomial(1);
+        // x^q
+        Poly xq = xMonomial.clone();
         // primes factors of poly.degree
         for (int i = 1; i <= (poly.degree() / 2); ++i) {
             // x^(q^i)

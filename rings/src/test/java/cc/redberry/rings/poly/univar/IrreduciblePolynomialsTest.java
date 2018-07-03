@@ -11,9 +11,10 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.randomIrreduciblePolynomial;
+import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.*;
 import static cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic.createMonomialMod;
 import static cc.redberry.rings.util.TimeUnits.nanosecondsToString;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @since 1.0
@@ -49,7 +50,7 @@ public class IrreduciblePolynomialsTest extends AUnivariateTest {
     @Test
     public void test2() throws Exception {
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(42, 73, 0, 79, 47, 1).modulus(89);
-        Assert.assertTrue(UnivariateFactorization.Factor(poly).toString(), IrreduciblePolynomials.irreducibleQ(poly));
+        assertTrue(UnivariateFactorization.Factor(poly).toString(), IrreduciblePolynomials.irreducibleQ(poly));
     }
 
     @Test
@@ -90,9 +91,9 @@ public class IrreduciblePolynomialsTest extends AUnivariateTest {
             System.out.println("Test (bo): " + nanosecondsToString(System.nanoTime() - start));
             System.out.println();
 
-            Assert.assertTrue(test1);
-            Assert.assertTrue(test2);
-            Assert.assertTrue(factors.isTrivial());
+            assertTrue(test1);
+            assertTrue(test2);
+            assertTrue(factors.isTrivial());
         }
     }
 
@@ -136,6 +137,30 @@ public class IrreduciblePolynomialsTest extends AUnivariateTest {
                 if (ci <= 64)
                     Assert.assertEquals(msg, createMonomialMod(Rings.Z.pow(poly.coefficientRingCardinality(), ci), poly, invMod), cache.get(ci));
             }
+        }
+    }
+
+    @Test
+    public void test5() {
+        UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(1, 1, 1).modulus(17);
+        assertTrue(UnivariateFactorization.Factor(poly).isTrivial());
+        assertTrue(finiteFieldIrreducibleViaModularComposition(poly));
+        assertTrue(finiteFieldIrreducibleBenOr(poly));
+    }
+
+    @Test
+    public void test6() {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        int prime = 17;
+        for (int i = 0; i < its(1000, 1000); ++i) {
+            UnivariatePolynomialZp64 poly = randomIrreduciblePolynomial(UnivariatePolynomialZp64.zero(prime), rndd.nextInt(2, 32), rnd);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.Factor(poly);
+            boolean test1 = IrreduciblePolynomials.finiteFieldIrreducibleViaModularComposition(poly);
+            boolean test2 = IrreduciblePolynomials.finiteFieldIrreducibleBenOr(poly);
+            assertTrue(test1);
+            assertTrue(test2);
+            assertTrue(factors.isTrivial());
         }
     }
 }
