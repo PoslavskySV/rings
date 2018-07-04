@@ -7,12 +7,12 @@ import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.IrreduciblePolynomials;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.RandomDataGenerator;
-import com.sun.tools.javac.jvm.Code;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.Rings.UnivariateRing;
 
 /**
  *
