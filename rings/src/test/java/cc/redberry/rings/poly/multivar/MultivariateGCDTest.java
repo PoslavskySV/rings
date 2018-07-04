@@ -2558,8 +2558,11 @@ public class MultivariateGCDTest extends AMultivariateTest {
             System.out.println("\n\n");
             System.out.println("Ring: " + numberField);
             testGCDAlgorithms(source, its(10, 30),
-                    GCDAlgorithm.named("Rational reconstruction", MultivariateGCD::ZippelGCDInNumberFieldViaRationalReconstruction),
-                    GCDAlgorithm.named("Langemyr & McCallum", MultivariateGCD::ZippelGCDInNumberFieldViaLangemyrMcCallum));
+                    GCDAlgorithm.named("Zippel with rational reconstruction", MultivariateGCD::ZippelGCDInNumberFieldViaRationalReconstruction),
+                    GCDAlgorithm.named("Zippel with Langemyr & McCallum", MultivariateGCD::ZippelGCDInNumberFieldViaLangemyrMcCallum),
+                    GCDAlgorithm.named("Modular with rational reconstruction", (a, b) -> ModularGCDInNumberFieldViaRationalReconstruction(a, b, MultivariateGCD::PolynomialGCD)),
+                    GCDAlgorithm.named("Modular with Langemyr & McCallum", (a, b) -> ModularGCDInNumberFieldViaLangemyrMcCallum(a, b, MultivariateGCD::PolynomialGCD))
+            );
         }
     }
 

@@ -58,7 +58,7 @@ public final class Util {
 
     /** Whether coefficient domain is Q(alpha) */
     @SuppressWarnings("unchecked")
-    public static <T extends IPolynomial<T>> boolean isOverSimpleAlgebraicExtension(T poly) {
+    public static <T extends IPolynomial<T>> boolean isOverSimpleNumberField(T poly) {
         if (poly instanceof UnivariatePolynomial
                 && ((UnivariatePolynomial) poly).ring instanceof AlgebraicNumberField
                 && isOverQ(((AlgebraicNumberField) ((UnivariatePolynomial) poly).ring).getMinimalPoly()))

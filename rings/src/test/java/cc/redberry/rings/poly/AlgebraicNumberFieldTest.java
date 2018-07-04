@@ -70,6 +70,5 @@ public class AlgebraicNumberFieldTest extends APolynomialTest {
                 Assert.assertTrue(expected.isConstant());
             }
         }
-
     }
 }
