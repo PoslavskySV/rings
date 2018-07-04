@@ -3,6 +3,7 @@ package cc.redberry.rings.poly;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariateGCD;
+import cc.redberry.rings.poly.univar.UnivariateResultants;
 
 /**
  * Algebraic number field.
@@ -38,7 +39,15 @@ public class AlgebraicNumberField<Poly extends IUnivariatePolynomial<Poly>>
 
     @Override
     public Poly gcd(Poly a, Poly b) {
+        // NOTE: don't change this
         return isField() ? a : UnivariateGCD.PolynomialGCD(a, b);
+    }
+
+    /**
+     * Gives a norm of element
+     */
+    public Poly norm(Poly element) {
+        return UnivariateResultants.ResultantAsPoly(minimalPoly, element);
     }
 
     @Override

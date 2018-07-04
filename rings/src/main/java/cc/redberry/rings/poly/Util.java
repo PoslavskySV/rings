@@ -71,6 +71,21 @@ public final class Util {
             return false;
     }
 
+    /** Whether coefficient domain is Q(alpha) */
+    @SuppressWarnings("unchecked")
+    public static <T extends IPolynomial<T>> boolean isOverRingOfIntegersOfSimpleNumberField(T poly) {
+        if (poly instanceof UnivariatePolynomial
+                && ((UnivariatePolynomial) poly).ring instanceof AlgebraicNumberField
+                && isOverZ(((AlgebraicNumberField) ((UnivariatePolynomial) poly).ring).getMinimalPoly()))
+            return true;
+        else if (poly instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) poly).ring instanceof AlgebraicNumberField
+                && isOverZ(((AlgebraicNumberField) ((MultivariatePolynomial) poly).ring).getMinimalPoly()))
+            return true;
+        else
+            return false;
+    }
+
     /** Whether coefficient domain is Q */
     public static <T extends IPolynomial<T>> boolean isOverQ(T poly) {
         Object rep;
@@ -86,6 +101,11 @@ public final class Util {
             return false;
 
         return ((Rational) rep).numerator() instanceof BigInteger;
+    }
+
+    /** Whether coefficient domain is Z */
+    public static <T extends IPolynomial<T>> boolean isOverZ(T poly) {
+        return poly.isOverZ();
     }
 
     public static final class Tuple2<A, B> {

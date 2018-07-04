@@ -64,7 +64,6 @@ public final class UnivariateGCD {
                     return (T) PolynomialGCDInRingOfIntegersOfNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
                 else if (cfRing.equals(Q))
                     return (T) PolynomialGCDInNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-
             }
 
             T r = tryNested(a, b);
@@ -1418,9 +1417,10 @@ public final class UnivariateGCD {
         assert a.lc().isConstant();
     }
 
-    private static void removeDenominators(UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a) {
-        BigInteger aDen = Z.lcm(a.stream().map(p -> toCommonDenominator(p)._2).collect(Collectors.toList()));
-        a.multiply(a.ring.valueOfBigInteger(aDen));
+    static BigInteger removeDenominators(UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a) {
+        BigInteger denominator = Z.lcm(a.stream().map(p -> toCommonDenominator(p)._2).collect(Collectors.toList()));
+        a.multiply(a.ring.valueOfBigInteger(denominator));
+        return denominator;
     }
 
     /** Computes some GCD associate via Langemyr & Mccallum modular algorithm over algebraic integers */
@@ -1473,9 +1473,10 @@ public final class UnivariateGCD {
         return gcdAssociateInNumberField0(a, b);
     }
 
-    static void integerPrimitivePart(UnivariatePolynomial<UnivariatePolynomial<BigInteger>> p) {
+    static BigInteger integerPrimitivePart(UnivariatePolynomial<UnivariatePolynomial<BigInteger>> p) {
         BigInteger gcd = Z.gcd(p.stream().flatMap(UnivariatePolynomial::stream).sorted().collect(Collectors.toList()));
         p.stream().forEach(cf -> cf.divideExact(gcd));
+        return gcd;
     }
 
     /** Langemyr & McCallum modular algorithm for primitive polynomials with integer lead coefficients */

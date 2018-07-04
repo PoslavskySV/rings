@@ -269,6 +269,8 @@ public final class MultivariateGCD {
             return (Poly) ZippelGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
         if (Util.isOverSimpleNumberField(a))
             return (Poly) PolynomialGCDinNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
+            return (Poly) PolynomialGCDinNumberFieldZ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         return tryNested(a, b);
     }
 

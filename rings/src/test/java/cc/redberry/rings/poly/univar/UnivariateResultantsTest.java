@@ -3,7 +3,9 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.Rational;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.util.RandomDataGenerator;
@@ -18,6 +20,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.univar.RandomUnivariatePolynomials.randomPoly;
@@ -194,6 +197,8 @@ public class UnivariateResultantsTest extends APolynomialTest {
                 a = UnivariatePolynomialZ64.create(9, 0, 123, 0, 9, -1231231431, 6, 5).toBigPoly().square().square(),
                 b = UnivariatePolynomialZ64.create(5, 3, 0, 8, 12123434, 8, 3, 0, 2341, 5, 7, 2, 3, 2, 2, 5, 1234329).toBigPoly().square();
 
+        a.square();
+        b.square();
         for (int i = 0; i < 2; ++i) {
             long start;
 
@@ -243,6 +248,99 @@ public class UnivariateResultantsTest extends APolynomialTest {
 
             assertEquals(sr, rr);
         }
+    }
+
+    @Test
+    public void test9() throws Exception {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> cfRing = new AlgebraicNumberField<>(Coder.mkUnivariateCoder(UnivariateRing(Q), "x").parse("-2 + x^2"));
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(cfRing, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> ring = UnivariateRing(cfRing);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(ring, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                a = coder.parse("s + x^2*s/3"),
+                b = coder.parse("s + x*s/3 + x^3");
+        assertEquals(SubresultantPRS(a, b).resultant(), ModularResultantInNumberField(a, b));
+
+        a = a.clone().multiply(b.clone().increment()).increment();
+        b = b.clone().multiply(a.clone().increment()).decrement();
+        assertEquals(SubresultantPRS(a, b).resultant(), ModularResultantInNumberField(a, b));
+    }
+
+    @Test
+    public void test10() throws Exception {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> cfRing
+                = new AlgebraicNumberField<>(Coder.mkUnivariateCoder(UnivariateRing(Q), "x").parse("-2 + 17*x^2"));
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(cfRing, "s");
+
+        UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> ring = UnivariateRing(cfRing);
+        Coder<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkUnivariateCoder(ring, cfCoder, "x");
+
+        UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                a = coder.parse("s + x^2*s/3"),
+                b = coder.parse("s + x*s/3 + x^3");
+        assertEquals(SubresultantPRS(a, b).resultant(), ModularResultantInNumberField(a, b));
+
+        a = a.clone().multiply(b.clone().increment()).increment();
+        b = b.clone().multiply(a.clone().increment()).decrement();
+        assertEquals(SubresultantPRS(a, b).resultant(), ModularResultantInNumberField(a, b));
+    }
+
+    @Test
+    public void test11_random_in_number_field() {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        DescriptiveStatistics
+                subresultant = new DescriptiveStatistics(),
+                modular = new DescriptiveStatistics();
+
+        for (int i = 0; i < 10; ++i) {
+            UnivariatePolynomial<Rational<BigInteger>> minimalPoly = IrreduciblePolynomials
+                    .randomIrreduciblePolynomialOverZ(rndd.nextInt(2, 5), rnd)
+                    .mapCoefficients(Q, Q::mkNumerator);
+
+            minimalPoly.setLC(Q.mkNumerator(rndd.nextInt(1, 10)));
+            if (!IrreduciblePolynomials.irreducibleQ(minimalPoly)) {
+                --i;
+                continue;
+            }
+
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = new AlgebraicNumberField<>(minimalPoly);
+            System.out.println("Field        : " + field);
+            Supplier<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> rndPoly = () ->
+                    RandomUnivariatePolynomials.randomPoly(
+                            rndd.nextInt(2, 8),
+                            field,
+                            __ -> RandomUnivariatePolynomials.randomPoly(minimalPoly.degree, Q, ___ -> Q.mk(rnd.nextInt(10), 1 + rnd.nextInt(10)), rnd),
+                            rnd);
+
+            for (int j = 0; j < 5; ++j) {
+
+                UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                        a = rndPoly.get(),
+                        b = rndPoly.get();
+
+                long start, elapsed;
+
+                start = System.nanoTime();
+                UnivariatePolynomial<Rational<BigInteger>> expected = SubresultantPRS(a, b).resultant();
+                elapsed = System.nanoTime() - start;
+                subresultant.addValue(elapsed);
+                System.out.println("Subresultant : " + TimeUnits.nanosecondsToString(elapsed));
+
+                start = System.nanoTime();
+                UnivariatePolynomial<Rational<BigInteger>> actual = ModularResultantInNumberField(a, b);
+                elapsed = System.nanoTime() - start;
+                modular.addValue(elapsed);
+                assertEquals(expected, actual);
+                System.out.println("Modular      : " + TimeUnits.nanosecondsToString(elapsed));
+                System.out.println();
+
+            }
+        }
+        System.out.println("Subresultant : " + TimeUnits.statisticsNanotime(subresultant));
+        System.out.println("Modular      : " + TimeUnits.statisticsNanotime(modular));
     }
 
     static BigInteger SingularResultant(int characteristic,

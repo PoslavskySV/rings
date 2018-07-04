@@ -712,15 +712,15 @@ public final class UnivariateDivision {
      */
     @SuppressWarnings("unchecked")
     static <E> UnivariatePolynomial<E> pseudoRemainderAdaptive(final UnivariatePolynomial<E> dividend,
-                                                                          final UnivariatePolynomial<E> divider,
-                                                                          final boolean copy) {
+                                                               final UnivariatePolynomial<E> divider,
+                                                               final boolean copy) {
         checkZeroDivider(divider);
         if (dividend.isZero())
-            return  UnivariatePolynomial.zero(dividend.ring);
+            return UnivariatePolynomial.zero(dividend.ring);
         if (dividend.degree < divider.degree)
-            return  copy ? dividend.clone() : dividend;
+            return copy ? dividend.clone() : dividend;
         if (divider.degree == 0)
-            return  UnivariatePolynomial.zero(dividend.ring);
+            return UnivariatePolynomial.zero(dividend.ring);
         if (divider.degree == 1)
             return pseudoRemainderLinearDividerAdaptive(dividend, divider, copy);
         return pseudoRemainderAdaptive0(dividend, divider, copy);
@@ -1437,5 +1437,23 @@ public final class UnivariateDivision {
             return (Poly) remainderFast((UnivariatePolynomial) dividend, (UnivariatePolynomial) divider, (InverseModMonomial) invMod, copy);
         else
             throw new RuntimeException(dividend.getClass().toString());
+    }
+
+    /**
+     * Gives an upper bound on the coefficients of remainder of division of {@code dividend} by {@code divider}
+     *
+     * @param dividend the dividend
+     * @param divider  the divider
+     * @return upper bound on the coefficients of remainder
+     */
+    public static <E> E remainderCoefficientBound(UnivariatePolynomial<E> dividend,
+                                                  UnivariatePolynomial<E> divider) {
+        if (divider.degree < dividend.degree)
+            return dividend.maxAbsCoefficient();
+        Ring<E> ring = dividend.ring;
+        // see e.g. http://www.csd.uwo.ca/~moreno//AM583/Lectures/Newton2Hensel.html/node13.html
+        return ring.multiply(dividend.maxAbsCoefficient(),
+                ring.pow(ring.increment(ring.quotient(divider.maxAbsCoefficient(), divider.lc())),
+                        dividend.degree - divider.degree + 1));
     }
 }

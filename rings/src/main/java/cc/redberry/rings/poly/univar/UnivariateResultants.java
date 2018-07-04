@@ -2,6 +2,8 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.poly.AlgebraicNumberField;
+import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.primes.PrimesIterator;
 import gnu.trove.list.array.TLongArrayList;
@@ -10,6 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import static cc.redberry.rings.Rings.Q;
+import static cc.redberry.rings.Rings.Z;
+import static cc.redberry.rings.poly.Util.toCommonDenominator;
+import static cc.redberry.rings.poly.univar.UnivariateGCD.removeDenominators;
 import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asOverZp64;
 
 
@@ -71,14 +77,12 @@ public final class UnivariateResultants {
             return ClassicalPRS(a, b).resultant();
         else if (Util.isOverRationals(a))
             return (E) ResultantInQ((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-
-            //
-            // Modular algorithm is really slow in practice (given no
-            // any special bound) compared to Subresultant/Reduced
-            //
-            // else if (a.isOverZ())
-            //     return (E) ModularResultant((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-
+        else if (a.isOverZ())
+            return (E) ModularResultant((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        else if (Util.isOverSimpleNumberField(a))
+            return (E) ModularResultantInNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        else if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
+            return (E) ModularResultantInRingOfIntegersOfNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
         else
             return PrimitiveResultant(a, b, (p, q) -> SubresultantPRS(p, q).resultant());
     }
@@ -147,7 +151,7 @@ public final class UnivariateResultants {
         // aggregated CRT modulus
         BigInteger bModulus = null;
         BigInteger resultant = null;
-        PrimesIterator primes = new PrimesIterator(1L << 15);
+        PrimesIterator primes = new PrimesIterator(1L << 25);
         while (true) {
             long prime = primes.take();
             BigInteger bPrime = BigInteger.valueOf(prime);
@@ -175,6 +179,126 @@ public final class UnivariateResultants {
 
             if (bModulus.compareTo(bound) > 0)
                 return Rings.Zp(bModulus).symmetricForm(resultant);
+        }
+    }
+
+    /**
+     * Modular resultant in simple number field
+     */
+    public static UnivariatePolynomial<Rational<BigInteger>> ModularResultantInNumberField(
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b) {
+
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPoly();
+
+        assert numberField.isField();
+
+        a = a.clone();
+        b = b.clone();
+
+        // reduce problem to the case with integer monic minimal polynomial
+        if (minimalPoly.stream().allMatch(Rational::isIntegral)) {
+            // minimal poly is already monic & integer
+
+            UnivariatePolynomial<BigInteger> minimalPolyZ = minimalPoly.mapCoefficients(Z, Rational::numerator);
+            AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberFieldZ = new AlgebraicNumberField<>(minimalPolyZ);
+
+            BigInteger
+                    aDen = removeDenominators(a),
+                    bDen = removeDenominators(b),
+                    den = aDen.pow(b.degree).multiply(bDen.pow(a.degree));
+
+            assert a.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral));
+            assert b.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral));
+
+            return ModularResultantInRingOfIntegersOfNumberField(
+                    a.mapCoefficients(numberFieldZ, cf -> cf.mapCoefficients(Z, Rational::numerator)),
+                    b.mapCoefficients(numberFieldZ, cf -> cf.mapCoefficients(Z, Rational::numerator)))
+                    .mapCoefficients(Q, cf -> Q.mk(cf, den));
+        } else {
+            // replace s -> s / lc(minPoly)
+            BigInteger minPolyLeadCoeff = toCommonDenominator(minimalPoly)._1.lc();
+            Rational<BigInteger>
+                    scale = new Rational<>(Z, Z.getOne(), minPolyLeadCoeff),
+                    scaleReciprocal = scale.reciprocal();
+
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>
+                    scaledNumberField = new AlgebraicNumberField<>(minimalPoly.scale(scale).monic());
+            return ModularResultantInNumberField(
+                    a.mapCoefficients(scaledNumberField, cf -> cf.scale(scale)),
+                    b.mapCoefficients(scaledNumberField, cf -> cf.scale(scale)))
+                    .scale(scaleReciprocal);
+        }
+
+    }
+
+    private static BigInteger polyPowNumFieldCfBound(BigInteger maxCf, BigInteger maxMinPolyCf, int minPolyDeg, int exponent) {
+        return BigInteger.valueOf(minPolyDeg).pow(exponent - 1)
+                .multiply(maxCf.pow(exponent))
+                .multiply(maxMinPolyCf.increment().pow((exponent - 1) * (minPolyDeg + 1)));
+    }
+
+    /**
+     * Modular resultant in the ring of integers of number field
+     */
+    public static UnivariatePolynomial<BigInteger> ModularResultantInRingOfIntegersOfNumberField(
+            UnivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+            UnivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+        return PrimitiveResultant(a, b, UnivariateResultants::ModularResultantInRingOfIntegersOfNumberField0);
+    }
+
+    private static UnivariatePolynomial<BigInteger> ModularResultantInRingOfIntegersOfNumberField0(
+            UnivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+            UnivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberField = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPoly();
+
+
+        BigInteger
+                aMax = a.stream().flatMap(UnivariatePolynomial::stream).map(Rings.Z::abs).max(Rings.Z).orElse(BigInteger.ZERO),
+                bMax = b.stream().flatMap(UnivariatePolynomial::stream).map(Rings.Z::abs).max(Rings.Z).orElse(BigInteger.ZERO),
+                mMax = minimalPoly.maxAbsCoefficient();
+
+        // bound on the value of resultant coefficients
+        BigInteger bound =
+                polyPowNumFieldCfBound(aMax, mMax, minimalPoly.degree, b.degree)
+                        .multiply(polyPowNumFieldCfBound(bMax, mMax, minimalPoly.degree, a.degree));
+
+        // aggregated CRT modulus
+        BigInteger bModulus = null;
+        UnivariatePolynomial<BigInteger> resultant = null;
+        PrimesIterator primes = new PrimesIterator(1L << 25);
+        while (true) {
+            long prime = primes.take();
+            IntegersZp64 zpRing = Rings.Zp64(prime);
+
+            UnivariatePolynomialZp64 minimalPolyMod = asOverZp64(minimalPoly, zpRing);
+            FiniteField<UnivariatePolynomialZp64> numberFieldMod = new FiniteField<>(minimalPolyMod);
+
+            UnivariatePolynomial<UnivariatePolynomialZp64>
+                    aMod = a.mapCoefficients(numberFieldMod, cf -> asOverZp64(cf, zpRing)),
+                    bMod = b.mapCoefficients(numberFieldMod, cf -> asOverZp64(cf, zpRing));
+
+            if (aMod.degree != a.degree || bMod.degree != b.degree)
+                continue;// unlucky prime
+
+            UnivariatePolynomialZp64 resultantMod = ClassicalPRS(aMod, bMod).resultant();
+            if (bModulus == null) {
+                bModulus = BigInteger.valueOf(prime);
+                resultant = resultantMod.toBigPoly();
+                continue;
+            }
+
+            if (!resultant.isZero() && resultantMod.isZero())
+                continue;// unlucky prime
+
+            UnivariateGCD.updateCRT(ChineseRemainders.createMagic(Rings.Z, bModulus, BigInteger.valueOf(prime)), resultant, resultantMod);
+            bModulus = bModulus.multiply(BigInteger.valueOf(prime));
+
+            if (bModulus.compareTo(bound) > 0)
+                return UnivariatePolynomial.asPolyZSymmetric(resultant.setRingUnsafe(Rings.Zp(bModulus)));
         }
     }
 

@@ -7,6 +7,7 @@ import cc.redberry.rings.poly.test.APolynomialTest;
 import cc.redberry.rings.poly.univar.IrreduciblePolynomials;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.util.RandomDataGenerator;
+import com.sun.tools.javac.jvm.Code;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -70,5 +71,24 @@ public class AlgebraicNumberFieldTest extends APolynomialTest {
                 Assert.assertTrue(expected.isConstant());
             }
         }
+    }
+
+    @Test
+    public void test4() {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field
+                = new AlgebraicNumberField<>(UnivariatePolynomial.create(-2, 0, 1).mapCoefficients(Q, Q::mkNumerator));
+
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkUnivariateCoder(field, "s");
+        Assert.assertEquals(coder.parse("-1"), field.norm(coder.parse("1 + s")));
+        Assert.assertEquals(coder.parse("-14"), field.norm(coder.parse("-2 + 3*s")));
+    }
+
+    @Test
+    public void test5() {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field
+                = new AlgebraicNumberField<>(Coder.mkUnivariateCoder(UnivariateRing(Q), "x").parse("-12 -x + 13*x^2 - 11*x^3 + x^7"));
+
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkUnivariateCoder(field, "s");
+        Assert.assertEquals(coder.parse("2077536306"), field.norm(coder.parse("-2 - 2*s + 3*s^5")));
     }
 }
