@@ -230,10 +230,9 @@ public final class UnivariateResultants {
                     b.mapCoefficients(scaledNumberField, cf -> cf.scale(scale)))
                     .scale(scaleReciprocal);
         }
-
     }
 
-    private static BigInteger polyPowNumFieldCfBound(BigInteger maxCf, BigInteger maxMinPolyCf, int minPolyDeg, int exponent) {
+    public static BigInteger polyPowNumFieldCfBound(BigInteger maxCf, BigInteger maxMinPolyCf, int minPolyDeg, int exponent) {
         return BigInteger.valueOf(minPolyDeg).pow(exponent - 1)
                 .multiply(maxCf.pow(exponent))
                 .multiply(maxMinPolyCf.increment().pow((exponent - 1) * (minPolyDeg + 1)));

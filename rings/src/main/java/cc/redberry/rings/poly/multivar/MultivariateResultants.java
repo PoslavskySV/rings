@@ -1,16 +1,13 @@
 package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.ChineseRemainders.ChineseRemaindersMagic;
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Ring;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.poly.UnivariateRing;
-import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.univar.UnivariateGCD;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.poly.univar.UnivariateResultants;
@@ -31,6 +28,7 @@ import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
 import static cc.redberry.rings.ChineseRemainders.createMagic;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.MachineArithmetic.*;
+import static cc.redberry.rings.poly.Util.commonDenominator;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
 import static cc.redberry.rings.poly.multivar.MultivariateGCD.*;
 
@@ -67,6 +65,10 @@ public final class MultivariateResultants {
             return (Poly) ResultantInQ((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
         if (a.isOverField())
             return (Poly) ZippelResultant((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b, variable);
+        if (Util.isOverSimpleNumberField(a))
+            return (Poly) ModularResultantInNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
+            return (Poly) ModularResultantInRingOfIntegersOfNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
         return tryNested(a, b, variable);
     }
 
@@ -80,10 +82,8 @@ public final class MultivariateResultants {
             return (Poly) ResultantOverMultivariate((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
         else if (isOverMultivariateZp64(a))
             return (Poly) ResultantOverMultivariateZp64((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
-
-        throw new RuntimeException("Multivariate GCD over " + a.coefficientRingToString() + " ring not supported.");
+        return (Poly) ClassicalResultant(a, b, variable);
     }
-
 
     private static <E> MultivariatePolynomial<UnivariatePolynomial<E>>
     ResultantOverUnivariate(MultivariatePolynomial<UnivariatePolynomial<E>> a,
@@ -558,6 +558,7 @@ public final class MultivariateResultants {
         BigInteger
                 aMax = a.maxAbsCoefficient(),
                 bMax = b.maxAbsCoefficient();
+        assert a.degree() == a.degree(0) && b.degree() == b.degree(0);
         BigInteger bound2 = Z.getOne()
                 .multiply(aMax.pow(b.degree()))                                // a coefficients
                 .multiply(centralMultinomialCoefficient(a.size(), b.degree())) // a multiplication
@@ -691,6 +692,257 @@ public final class MultivariateResultants {
         if (interpolation == null)
             return null;
         MultivariatePolynomialZp64 res = interpolation.evaluate();
+        if (res == null)
+            return null;
+
+        return res;
+    }
+
+    /* ================================== Modular resultant in simple number fields ================================ */
+
+
+    /**
+     * Modular resultant in simple number field
+     */
+    public static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> ModularResultantInNumberField(
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b,
+            int variable) {
+
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPoly();
+
+        assert numberField.isField();
+
+        a = a.clone();
+        b = b.clone();
+
+        // reduce problem to the case with integer monic minimal polynomial
+        if (minimalPoly.stream().allMatch(Rational::isIntegral)) {
+            // minimal poly is already monic & integer
+
+            UnivariatePolynomial<BigInteger> minimalPolyZ = minimalPoly.mapCoefficients(Z, Rational::numerator);
+            AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberFieldZ = new AlgebraicNumberField<>(minimalPolyZ);
+
+            BigInteger
+                    aDen = removeDenominators(a),
+                    bDen = removeDenominators(b),
+                    den = aDen.pow(b.degree(variable)).multiply(bDen.pow(a.degree(variable)));
+
+            assert a.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral));
+            assert b.stream().allMatch(p -> p.stream().allMatch(Rational::isIntegral));
+
+            return ModularResultantInRingOfIntegersOfNumberField(
+                    a.mapCoefficients(numberFieldZ, cf -> cf.mapCoefficients(Z, Rational::numerator)),
+                    b.mapCoefficients(numberFieldZ, cf -> cf.mapCoefficients(Z, Rational::numerator)),
+                    variable)
+                    .mapCoefficients(numberField, cf -> cf.mapCoefficients(Q, r -> Q.mk(r, den)));
+        } else {
+            // replace s -> s / lc(minPoly)
+            BigInteger minPolyLeadCoeff = commonDenominator(minimalPoly);
+            Rational<BigInteger>
+                    scale = new Rational<>(Z, Z.getOne(), minPolyLeadCoeff),
+                    scaleReciprocal = scale.reciprocal();
+
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>
+                    scaledNumberField = new AlgebraicNumberField<>(minimalPoly.scale(scale).monic());
+            return ModularResultantInNumberField(
+                    a.mapCoefficients(scaledNumberField, cf -> cf.scale(scale)),
+                    b.mapCoefficients(scaledNumberField, cf -> cf.scale(scale)),
+                    variable)
+                    .mapCoefficients(numberField, cf -> cf.scale(scaleReciprocal));
+        }
+    }
+
+    static BigInteger removeDenominators(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a) {
+        BigInteger denominator = Z.lcm(() -> a.stream().map(Util::commonDenominator).iterator());
+        a.multiply(a.ring.valueOfBigInteger(denominator));
+        return denominator;
+    }
+
+    /**
+     * Modular algorithm with Zippel sparse interpolation for resultant over rings of integers
+     */
+    public static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    ModularResultantInRingOfIntegersOfNumberField(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+                                                  MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b,
+                                                  int variable) {
+
+        ResultantInput<Monomial<UnivariatePolynomial<BigInteger>>, MultivariatePolynomial<UnivariatePolynomial<BigInteger>>> resInput = preparedResultantInput(a, b, variable);
+        if (resInput.earlyResultant != null)
+            return resInput.earlyResultant;
+
+        return resInput.restoreResultant(ModularResultantInRingOfIntegersOfNumberField0(resInput.aReduced0, resInput.bReduced0));
+    }
+
+    /**
+     * Modular algorithm with Zippel sparse interpolation for resultant over rings of integers
+     */
+    private static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    ModularResultantInRingOfIntegersOfNumberField0(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+                                                   MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberField = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPoly();
+
+        BigInteger
+                aMax = a.stream().map(UnivariatePolynomial::maxAbsCoefficient).max(Rings.Z).orElse(BigInteger.ONE),
+                bMax = b.stream().map(UnivariatePolynomial::maxAbsCoefficient).max(Rings.Z).orElse(BigInteger.ONE),
+                mMax = minimalPoly.maxAbsCoefficient();
+
+//        // bound on the value of resultant coefficients
+//        assert a.degree() == a.degree(0) && b.degree() == b.degree(0);
+//        BigInteger bound2 = Z.getOne()
+//                .multiply(UnivariateResultants.polyPowNumFieldCfBound(aMax, mMax, minimalPoly.degree(), b.degree()))  // a coefficients
+//                .multiply(centralMultinomialCoefficient(a.size(), b.degree())) // a multiplication
+//                .multiply(UnivariateResultants.polyPowNumFieldCfBound(bMax, mMax, minimalPoly.degree(), a.degree()))  // b coefficients
+//                .multiply(centralMultinomialCoefficient(b.size(), a.degree())) // b multiplication
+//                .multiply(Z.factorial(a.degree() + b.degree()))          // overall determinant (Leibniz formula)
+//                .shiftLeft(1);                                                // symmetric Zp form
+
+        // choose better prime for start
+        long startingPrime;
+        if (Math.max(aMax.bitLength(), bMax.bitLength()) < 128)
+            startingPrime = 1L << 30;
+        else
+            startingPrime = 1L << 60;
+
+        UnivariateRing<UnivariatePolynomial<BigInteger>> auxRing = UnivariateRing(Z);
+
+        PrimesIterator primesLoop = new PrimesIterator(startingPrime - (1 << 12));
+        RandomGenerator random = PrivateRandom.getRandom();
+        main_loop:
+        while (true) {
+            // prepare the skeleton
+            long basePrime = primesLoop.take();
+            assert basePrime != -1 : "long overflow";
+
+            final IntegersZp64 baseRing = Zp64(basePrime);
+
+            UnivariatePolynomialZp64 minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, baseRing);
+            FiniteField<UnivariatePolynomialZp64> numberFieldMod = new FiniteField<>(minimalPolyMod);
+
+            // reduce Z -> Zp
+            MultivariatePolynomial<UnivariatePolynomialZp64>
+                    aMod = a.mapCoefficients(numberFieldMod, c -> UnivariatePolynomial.asOverZp64(c, baseRing)),
+                    bMod = b.mapCoefficients(numberFieldMod, c -> UnivariatePolynomial.asOverZp64(c, baseRing));
+            if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                continue;
+
+            // the base image
+            // accumulator to update coefficients via Chineese remainding
+            MultivariatePolynomial<UnivariatePolynomialZp64> base;
+            try {
+                base = ResultantInGF(aMod, bMod, 0).dropVariable(0);
+            } catch (Throwable t) {continue;}// bad base prime
+
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> bBase = base.mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+
+            // cache the previous base
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> previousBase = null;
+            // number of times interpolation did not change the result
+            int nUnchangedInterpolations = 0;
+
+            BigInteger bBasePrime = Z.valueOf(basePrime);
+            // over all primes
+            while (true) {
+                long prime = primesLoop.take();
+                BigInteger bPrime = Z.valueOf(prime);
+                IntegersZp64 ring = Zp64(prime);
+
+                minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, ring);
+                numberFieldMod = new FiniteField<>(minimalPolyMod);
+
+                // reduce Z -> Zp
+                aMod = a.mapCoefficients(numberFieldMod, c -> UnivariatePolynomial.asOverZp64(c, ring));
+                bMod = b.mapCoefficients(numberFieldMod, c -> UnivariatePolynomial.asOverZp64(c, ring));
+                if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                    continue;
+
+                // calculate new resultant using previously calculated skeleton via sparse interpolation
+                MultivariatePolynomial<UnivariatePolynomialZp64> modularResultant;
+                try {
+                    modularResultant = interpolateResultant(aMod, bMod, base.mapCoefficients(numberFieldMod, cf -> cf.setModulusUnsafe(ring)), random);
+                } catch (Throwable t) {
+                    continue;
+                }
+
+                if (modularResultant == null) {
+                    // interpolation failed => assumed form is wrong => start over
+                    continue;
+                }
+
+                // something wrong, start over
+                if (!modularResultant.sameSkeletonQ(bBase)) {
+                    base = modularResultant;
+                    bBase = modularResultant.mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+                    bBasePrime = bPrime;
+                    previousBase = null;
+                    nUnchangedInterpolations = 0;
+                    continue;
+                }
+
+                //lifting
+                BigInteger newBasePrime = bBasePrime.multiply(bPrime);
+                PairedIterator<
+                        Monomial<UnivariatePolynomial<BigInteger>>, MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                        Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>
+                        > iterator = new PairedIterator<>(bBase, modularResultant);
+                ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, bBasePrime, bPrime);
+                while (iterator.hasNext()) {
+                    iterator.advance();
+
+                    Monomial<UnivariatePolynomial<BigInteger>> baseTerm = iterator.aTerm;
+                    Monomial<UnivariatePolynomialZp64> imageTerm = iterator.bTerm;
+
+                    if (baseTerm.coefficient.isZero())
+                        // term is absent in the base
+                        continue;
+
+                    if (imageTerm.coefficient.isZero()) {
+                        // term is absent in the modularResultant => remove it from the base
+                        // bBase.subtract(baseTerm);
+                        iterator.aIterator.remove();
+                        continue;
+                    }
+
+                    UnivariateGCD.updateCRT(magic, baseTerm.coefficient, imageTerm.coefficient);
+                }
+
+                bBasePrime = newBasePrime;
+
+                IntegersZp crtRing = Zp(bBasePrime);
+                // two trials didn't change the result, probably we are done
+                MultivariatePolynomial<UnivariatePolynomial<BigInteger>> candidate
+                        = bBase.mapCoefficients(numberField, cf -> UnivariatePolynomial.asPolyZSymmetric(cf.setRingUnsafe(crtRing)));
+                if (previousBase != null && candidate.equals(previousBase))
+                    ++nUnchangedInterpolations;
+                else
+                    nUnchangedInterpolations = 0;
+
+                if (nUnchangedInterpolations >= N_UNCHANGED_INTERPOLATIONS /* || bBasePrime.compareTo(bound2) > 0 */)
+                    return candidate;
+
+                previousBase = candidate;
+            }
+        }
+    }
+
+    static MultivariatePolynomial<UnivariatePolynomialZp64>
+    interpolateResultant(MultivariatePolynomial<UnivariatePolynomialZp64> a,
+                         MultivariatePolynomial<UnivariatePolynomialZp64> b,
+                         MultivariatePolynomial<UnivariatePolynomialZp64> skeleton,
+                         RandomGenerator rnd) {
+        a.assertSameCoefficientRingWith(b);
+        skeleton = skeleton.setRingUnsafe(a.ring);
+
+        SparseInterpolationE<UnivariatePolynomialZp64> interpolation = createInterpolation(-1,
+                a.asUnivariateEliminate(0),
+                b.asUnivariateEliminate(0),
+                skeleton, 1, rnd);
+        if (interpolation == null)
+            return null;
+        MultivariatePolynomial<UnivariatePolynomialZp64> res = interpolation.evaluate();
         if (res == null)
             return null;
 
@@ -832,7 +1084,7 @@ public final class MultivariateResultants {
                 return null;
 
             E v;
-            do { v = ring.randomElement(rnd); }
+            do { v = randomElement(ring, rnd); }
             while (evaluationStack.contains(v));
             final E randomPoint = v;
             evaluationStack.add(randomPoint);
@@ -1030,7 +1282,7 @@ public final class MultivariateResultants {
                 return null;
 
             E v;
-            do { v = ring.randomElement(rnd); }
+            do { v = randomElement(ring, rnd); }
             while (globalEvaluationStack.contains(v));
             final E seedRandomPoint = v;
             globalEvaluationStack.add(seedRandomPoint);
@@ -1069,7 +1321,7 @@ public final class MultivariateResultants {
                     // all elements of the ring are tried
                     continue main;
 
-                do { v = ring.randomElement(rnd); }
+                do { v = randomElement(ring, rnd); }
                 while (localEvaluationStack.contains(v));
                 final E randomPoint = v;
                 localEvaluationStack.add(randomPoint);
@@ -1360,7 +1612,7 @@ public final class MultivariateResultants {
             //avoid zero evaluation points
             for (int i = lastVariable - 1; i >= 0; --i)
                 do {
-                    evaluationPoint[i] = ring.randomElement(rnd);
+                    evaluationPoint[i] = randomElement(ring, rnd);
                 } while (ring.isZero(evaluationPoint[i]));
 
             powers = mkPrecomputedPowers(a, b, evaluationVariables, evaluationPoint);
@@ -1498,9 +1750,6 @@ public final class MultivariateResultants {
          * @return resultant at {@code variable = newPoint}
          */
         public final MultivariatePolynomial<E> evaluate(E newPoint) {
-            // constant is constant
-            if (globalSkeleton.size() == 1)
-                return factory.create(((MonomialZp64) globalSkeleton.iterator().next()).setCoefficient(1));
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
             powers.set(evaluationVariables[evaluationVariables.length - 1], newPoint);

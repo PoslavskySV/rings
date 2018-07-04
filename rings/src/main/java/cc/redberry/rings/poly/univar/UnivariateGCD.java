@@ -23,6 +23,7 @@ import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
 import static cc.redberry.rings.ChineseRemainders.createMagic;
 import static cc.redberry.rings.Rings.Q;
 import static cc.redberry.rings.Rings.Z;
+import static cc.redberry.rings.poly.Util.commonDenominator;
 import static cc.redberry.rings.poly.Util.toCommonDenominator;
 import static cc.redberry.rings.poly.univar.Conversions64bit.asOverZp64;
 import static cc.redberry.rings.poly.univar.Conversions64bit.canConvertToZp64;
@@ -1397,7 +1398,7 @@ public final class UnivariateGCD {
                     .monic();
         } else {
             // replace s -> s / lc(minPoly)
-            BigInteger minPolyLeadCoeff = toCommonDenominator(minimalPoly)._1.lc();
+            BigInteger minPolyLeadCoeff = commonDenominator(minimalPoly);
             Rational<BigInteger>
                     scale = new Rational<>(Z, Z.getOne(), minPolyLeadCoeff),
                     scaleReciprocal = scale.reciprocal();
@@ -1418,7 +1419,7 @@ public final class UnivariateGCD {
     }
 
     static BigInteger removeDenominators(UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a) {
-        BigInteger denominator = Z.lcm(a.stream().map(p -> toCommonDenominator(p)._2).collect(Collectors.toList()));
+        BigInteger denominator = Z.lcm(() -> a.stream().map(Util::commonDenominator).iterator());
         a.multiply(a.ring.valueOfBigInteger(denominator));
         return denominator;
     }

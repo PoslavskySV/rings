@@ -183,6 +183,31 @@ public final class RandomMultivariatePolynomials {
     }
 
     /**
+     * Generates random Zp[X] polynomial over machine integers
+     *
+     * @param nVars    number of variables
+     * @param degree   maximal degree of the result
+     * @param size     number of elements in the result
+     * @param ring     the coefficient ring
+     * @param ordering monomial order
+     * @param rnd      random source
+     * @return random polynomial
+     */
+    public static <E> MultivariatePolynomial<E> randomSharpPolynomial(int nVars, int degree, int size, Ring<E> ring,
+                                                                      Comparator<DegreeVector> ordering,
+                                                                      Function<RandomGenerator, E> rndCoefficients,
+                                                                      RandomGenerator rnd) {
+        @SuppressWarnings("unchecked")
+        Monomial<E>[] terms = new Monomial[size];
+        for (int i = 0; i < size; i++) {
+            E cfx = rndCoefficients.apply(rnd);
+            int[] exponents = RandomUtil.randomSharpIntArray(nVars, degree, rnd);
+            terms[i] = new Monomial<>(exponents, cfx);
+        }
+        return MultivariatePolynomial.create(nVars, ring, ordering, terms);
+    }
+
+    /**
      * Generates random multivariate polynomial
      *
      * @param factory factory polynomial

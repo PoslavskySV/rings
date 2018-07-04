@@ -142,6 +142,31 @@ public final class Util {
     }
 
     /**
+     * Returns a common denominator of given poly
+     */
+    public static <E> E commonDenominator(UnivariatePolynomial<Rational<E>> poly) {
+        Ring<Rational<E>> field = poly.ring;
+        Ring<E> integralRing = field.getOne().ring;
+        E denominator = integralRing.getOne();
+        for (int i = 0; i <= poly.degree(); i++)
+            if (!poly.isZeroAt(i))
+                denominator = integralRing.lcm(denominator, poly.get(i).denominator());
+        return denominator;
+    }
+
+    /**
+     * Returns a common denominator of given poly
+     */
+    public static <E> E commonDenominator(MultivariatePolynomial<Rational<E>> poly) {
+        Ring<Rational<E>> field = poly.ring;
+        Ring<E> integralRing = field.getOne().ring;
+        E denominator = integralRing.getOne();
+        for (Rational<E> cf : poly.coefficients())
+            denominator = integralRing.lcm(denominator, cf.denominator());
+        return denominator;
+    }
+
+    /**
      * Brings polynomial with rational coefficients to common denominator
      *
      * @param poly the polynomial

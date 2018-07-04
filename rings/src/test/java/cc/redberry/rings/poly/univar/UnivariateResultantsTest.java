@@ -316,7 +316,6 @@ public class UnivariateResultantsTest extends APolynomialTest {
                             rnd);
 
             for (int j = 0; j < 5; ++j) {
-
                 UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
                         a = rndPoly.get(),
                         b = rndPoly.get();

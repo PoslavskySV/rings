@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
 import static cc.redberry.rings.ChineseRemainders.createMagic;
 import static cc.redberry.rings.Rings.*;
-import static cc.redberry.rings.poly.Util.toCommonDenominator;
+import static cc.redberry.rings.poly.Util.commonDenominator;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.pseudoRemainder;
 
@@ -270,7 +270,7 @@ public final class MultivariateGCD {
         if (Util.isOverSimpleNumberField(a))
             return (Poly) PolynomialGCDinNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
-            return (Poly) PolynomialGCDinNumberFieldZ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+            return (Poly) PolynomialGCDinRingOfIntegersOfNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         return tryNested(a, b);
     }
 
@@ -351,8 +351,8 @@ public final class MultivariateGCD {
      */
     @SuppressWarnings("unchecked")
     public static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
-    PolynomialGCDinNumberFieldZ(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
-                                MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+    PolynomialGCDinRingOfIntegersOfNumberField(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+                                               MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
         a.assertSameCoefficientRingWith(b);
         if (!a.lc().isConstant() || !b.lc().isConstant())
             throw new IllegalArgumentException("lc must be constant");
@@ -1160,7 +1160,7 @@ public final class MultivariateGCD {
     }
 
     /** simple random elements */
-    private static <E> E randomElement(Ring<E> ring, RandomGenerator rnd) {
+    static <E> E randomElement(Ring<E> ring, RandomGenerator rnd) {
         if (ring.isFiniteField() && ring.characteristic().bitLength() > 16)
             return ring.valueOf(rnd.nextLong());
         else if (ring == Q || ring == Z || (ring instanceof AlgebraicNumberField))
@@ -1749,7 +1749,7 @@ public final class MultivariateGCD {
             // scaling of minimal poly is practically faster than working with rationals
 
             // replace s -> s / lc(minPoly)
-            BigInteger minPolyLeadCoeff = toCommonDenominator(minimalPoly)._1.lc();
+            BigInteger minPolyLeadCoeff = commonDenominator(minimalPoly);
             Rational<BigInteger>
                     scale = new Rational<>(Z, Z.getOne(), minPolyLeadCoeff),
                     scaleReciprocal = scale.reciprocal();

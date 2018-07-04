@@ -201,7 +201,12 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
 
     /** does not copy the data and does not reduce the data with new modulus */
     public UnivariatePolynomialZp64 setModulusUnsafe(long newModulus) {
-        return new UnivariatePolynomialZp64(new IntegersZp64(newModulus), data, degree);
+        return setModulusUnsafe(new IntegersZp64(newModulus));
+    }
+
+    /** does not copy the data and does not reduce the data with new modulus */
+    public UnivariatePolynomialZp64 setModulusUnsafe(IntegersZp64 newModulus) {
+        return new UnivariatePolynomialZp64(newModulus, data, degree);
     }
 
     /**
