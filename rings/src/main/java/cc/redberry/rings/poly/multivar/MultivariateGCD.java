@@ -265,13 +265,16 @@ public final class MultivariateGCD {
             return (Poly) PolynomialGCDinZ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         if (Util.isOverRationals(a))
             return (Poly) PolynomialGCDInQ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
-        if (a.isOverField())
-            return (Poly) ZippelGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
         if (Util.isOverSimpleNumberField(a))
             return (Poly) PolynomialGCDinNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
             return (Poly) PolynomialGCDinRingOfIntegersOfNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
-        return tryNested(a, b);
+        Poly r = tryNested(a, b);
+        if (r != null)
+            return r;
+        if (a.isOverField())
+            return (Poly) ZippelGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
+        throw new RuntimeException();
     }
 
     /**
