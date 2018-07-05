@@ -48,31 +48,26 @@ public final class UnivariateGCD {
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T a, T b) {
         a.assertSameCoefficientRingWith(b);
-        if (a.isOverField()) {
-            if (Util.isOverRationals(a))
-                return (T) PolynomialGCDInQ((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        if (a.isOverFiniteField())
             return HalfGCD(a, b);
-        } else if (a instanceof UnivariatePolynomialZ64)
+        if (a instanceof UnivariatePolynomialZ64)
             return (T) ModularGCD((UnivariatePolynomialZ64) a, (UnivariatePolynomialZ64) b);
-        else if (a instanceof UnivariatePolynomial) {
-            Ring ring = ((UnivariatePolynomial) a).ring;
-            if (ring.equals(Z))
-                return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-
-            if (ring instanceof AlgebraicNumberField) {
-                Ring cfRing = ((UnivariatePolynomial) ((AlgebraicNumberField) ring).getMinimalPoly()).ring;
-                if (cfRing.equals(Z))
-                    return (T) PolynomialGCDInRingOfIntegersOfNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-                else if (cfRing.equals(Q))
-                    return (T) PolynomialGCDInNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
-            }
-
-            T r = tryNested(a, b);
-            if (r != null)
-                return r;
-            return (T) UnivariateResultants.SubresultantPRS((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
-        } else
-            throw new RuntimeException();
+        if (a.isOverZ())
+            return (T) ModularGCD((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        if (Util.isOverRationals(a))
+            return (T) PolynomialGCDInQ((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
+            return (T) PolynomialGCDInRingOfIntegersOfNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        if (Util.isOverSimpleNumberField(a))
+            return (T) PolynomialGCDInNumberField((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        if (a.isOverField())
+            return HalfGCD(a, b);
+        T r = tryNested(a, b);
+        if (r != null)
+            return r;
+        if (a.isOverField())
+            return HalfGCD(a, b);
+        return (T) UnivariateResultants.SubresultantPRS((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
     }
 
     @SuppressWarnings("unchecked")

@@ -558,7 +558,6 @@ public final class MultivariateResultants {
         BigInteger
                 aMax = a.maxAbsCoefficient(),
                 bMax = b.maxAbsCoefficient();
-        assert a.degree() == a.degree(0) && b.degree() == b.degree(0);
         BigInteger bound2 = Z.getOne()
                 .multiply(aMax.pow(b.degree()))                                // a coefficients
                 .multiply(centralMultinomialCoefficient(a.size(), b.degree())) // a multiplication
@@ -684,7 +683,11 @@ public final class MultivariateResultants {
     static MultivariatePolynomialZp64 interpolateResultant(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b, MultivariatePolynomialZp64 skeleton, RandomGenerator rnd) {
         a.assertSameCoefficientRingWith(b);
         skeleton = skeleton.setRingUnsafe(a.ring);
-
+        if (a.nVariables == 2) {
+            return bivariateResultant(
+                    a.asUnivariateEliminate(0),
+                    b.asUnivariateEliminate(0));
+        }
         SparseInterpolationZp64 interpolation = createInterpolation(-1,
                 a.asUnivariateEliminate(0),
                 b.asUnivariateEliminate(0),
@@ -934,8 +937,13 @@ public final class MultivariateResultants {
                          MultivariatePolynomial<UnivariatePolynomialZp64> skeleton,
                          RandomGenerator rnd) {
         a.assertSameCoefficientRingWith(b);
-        skeleton = skeleton.setRingUnsafe(a.ring);
+        if (a.nVariables == 2) {
+            return bivariateResultant(
+                    a.asUnivariateEliminate(0),
+                    b.asUnivariateEliminate(0));
+        }
 
+        skeleton = skeleton.setRingUnsafe(a.ring);
         SparseInterpolationE<UnivariatePolynomialZp64> interpolation = createInterpolation(-1,
                 a.asUnivariateEliminate(0),
                 b.asUnivariateEliminate(0),

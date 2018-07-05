@@ -475,7 +475,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /** auxiliary method */
-    final Poly setNVariables(int newNVariables) {
+    public final Poly setNVariables(int newNVariables) {
         if (newNVariables == nVariables)
             return self;
         MonomialSet<Term> newData = new MonomialSet<>(ordering);

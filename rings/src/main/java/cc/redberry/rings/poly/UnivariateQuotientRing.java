@@ -7,6 +7,7 @@ import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.poly.univar.UnivariateDivision.InverseModMonomial;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -76,6 +77,81 @@ public abstract class UnivariateQuotientRing<Poly extends IUnivariatePolynomial<
      */
     public Poly getMinimalPoly() {
         return minimalPoly.clone();
+    }
+
+    public Poly element(){
+        return minimalPoly.createMonomial(1);
+    }
+    /**
+     * Gives a norm of element of this field (returned as a constant poly)
+     */
+    public Poly norm(Poly element) {
+        return UnivariateResultants.ResultantAsPoly(minimalPoly, element);
+    }
+
+    /**
+     * Gives a norm of univariate polynomial over this field
+     */
+    @SuppressWarnings("unchecked")
+    public Poly polynomialNorm(UnivariatePolynomial<Poly> poly) {
+        if (!poly.ring.equals(this))
+            throw new IllegalArgumentException();
+        if (minimalPoly instanceof UnivariatePolynomial)
+            return (Poly) polynomialNormE((UnivariateQuotientRing) this, (UnivariatePolynomial) poly);
+        if (minimalPoly instanceof UnivariatePolynomialZp64)
+            return (Poly) polynomialNormZp64((UnivariateQuotientRing) this, (UnivariatePolynomial) poly);
+        throw new RuntimeException();
+    }
+
+    private static <E> UnivariatePolynomial<E>
+    polynomialNormE(UnivariateQuotientRing<UnivariatePolynomial<E>> ring,
+                    UnivariatePolynomial<UnivariatePolynomial<E>> poly) {
+        return MultivariateResultants.Resultant(
+                ring.minimalPoly.asMultivariate(MonomialOrder.DEFAULT).setNVariables(2), // to bivariate
+                MultivariatePolynomial.asNormalMultivariate(poly.asMultivariate(), 0),
+                0).asUnivariate();
+    }
+
+    private static UnivariatePolynomialZp64
+    polynomialNormZp64(UnivariateQuotientRing<UnivariatePolynomialZp64> ring,
+                       UnivariatePolynomial<UnivariatePolynomialZp64> poly) {
+        return MultivariateResultants.Resultant(
+                ring.minimalPoly.asMultivariate(MonomialOrder.DEFAULT).setNVariables(2),
+                MultivariatePolynomialZp64.asNormalMultivariate(poly.asMultivariate(), 0),
+                0).asUnivariate();
+    }
+
+    /**
+     * Gives a norm of multivariate polynomial over this field
+     */
+    @SuppressWarnings("unchecked")
+    public <MPoly extends AMultivariatePolynomial>
+    MPoly polynomialNorm(MultivariatePolynomial<Poly> poly) {
+        if (!poly.ring.equals(this))
+            throw new IllegalArgumentException();
+        if (minimalPoly instanceof UnivariatePolynomial)
+            return (MPoly) polynomialNormE((UnivariateQuotientRing) this, (MultivariatePolynomial) poly);
+        if (minimalPoly instanceof UnivariatePolynomialZp64)
+            return (MPoly) polynomialNormZp64((UnivariateQuotientRing) this, (MultivariatePolynomial) poly);
+        throw new RuntimeException();
+    }
+
+    private static <E> MultivariatePolynomial<E>
+    polynomialNormE(UnivariateQuotientRing<UnivariatePolynomial<E>> ring,
+                    MultivariatePolynomial<UnivariatePolynomial<E>> poly) {
+        return MultivariateResultants.Resultant(
+                ring.minimalPoly.asMultivariate(MonomialOrder.DEFAULT).setNVariables(poly.nVariables + 1),
+                MultivariatePolynomial.asNormalMultivariate(poly, 0),
+                0).dropVariable(0);
+    }
+
+    private static MultivariatePolynomialZp64
+    polynomialNormZp64(UnivariateQuotientRing<UnivariatePolynomialZp64> ring,
+                       MultivariatePolynomial<UnivariatePolynomialZp64> poly) {
+        return MultivariateResultants.Resultant(
+                ring.minimalPoly.asMultivariate(MonomialOrder.DEFAULT).setNVariables(poly.nVariables + 1),
+                MultivariatePolynomialZp64.asNormalMultivariate(poly, 0),
+                0).dropVariable(0);
     }
 
     @Override

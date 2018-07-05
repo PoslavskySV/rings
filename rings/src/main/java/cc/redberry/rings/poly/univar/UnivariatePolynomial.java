@@ -6,6 +6,7 @@ import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.multivar.DegreeVector;
+import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
 
@@ -749,6 +750,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             return this.clone();
         if (value.isZero())
             return ccAsPoly();
+        if (value.degree == 1 && value.isMonomial() && ring.isOne(value.lc()))
+            return clone();
 
         UnivariatePolynomial<E> result = createZero();
         for (int i = degree; i >= 0; --i)
@@ -1221,6 +1224,11 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     /** internal API */
     public E[] getDataReferenceUnsafe() {return data;}
+
+    @Override
+    public MultivariatePolynomial<E> asMultivariate() {
+        return asMultivariate(MonomialOrder.DEFAULT);
+    }
 
     @Override
     public MultivariatePolynomial<E> asMultivariate(Comparator<DegreeVector> ordering) {
