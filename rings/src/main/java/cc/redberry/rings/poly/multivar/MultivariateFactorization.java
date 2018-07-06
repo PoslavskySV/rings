@@ -2749,11 +2749,11 @@ public final class MultivariateFactorization {
                     backSubstitution = null;
                     sPoly = poly;
                 } else {
-                    sPoly = poly.composition(variable, poly.createMonomial(variable, 1).subtract(numberField.element().multiply(s)));
-                    backSubstitution = poly.createMonomial(variable, 1).add(numberField.element().multiply(s));
+                    sPoly = poly.composition(variable, poly.createMonomial(variable, 1).subtract(numberField.generator().multiply(s)));
+                    backSubstitution = poly.createMonomial(variable, 1).add(numberField.generator().multiply(s));
                 }
 
-                MultivariatePolynomial<Rational<BigInteger>> sPolyNorm = numberField.polynomialNorm(sPoly);
+                MultivariatePolynomial<Rational<BigInteger>> sPolyNorm = numberField.normOfPolynomial(sPoly);
                 if (!MultivariateSquareFreeFactorization.isSquareFree(sPolyNorm))
                     continue;
 

@@ -182,15 +182,33 @@ public final class UnivariateResultants {
         }
     }
 
+    private static <E> UnivariatePolynomial<E>
+    TrivialResultantInNumberField(UnivariatePolynomial<UnivariatePolynomial<E>> a, UnivariatePolynomial<UnivariatePolynomial<E>> b) {
+        AlgebraicNumberField<UnivariatePolynomial<E>> ring
+                = (AlgebraicNumberField<UnivariatePolynomial<E>>) a.ring;
+
+        if (!a.stream().allMatch(ring::isInTheBaseField)
+                || !b.stream().allMatch(ring::isInTheBaseField))
+            return null;
+
+        UnivariatePolynomial<E>
+                ar = a.mapCoefficients(ring.getMinimalPolynomial().ring, UnivariatePolynomial::cc),
+                br = b.mapCoefficients(ring.getMinimalPolynomial().ring, UnivariatePolynomial::cc);
+        return UnivariatePolynomial.constant(ring.getMinimalPolynomial().ring, Resultant(ar, br));
+    }
+
     /**
      * Modular resultant in simple number field
      */
     public static UnivariatePolynomial<Rational<BigInteger>> ModularResultantInNumberField(
             UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
             UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b) {
+        UnivariatePolynomial<Rational<BigInteger>> r = TrivialResultantInNumberField(a, b);
+        if (r != null)
+            return r;
 
         AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
-        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPoly();
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPolynomial();
 
         assert numberField.isField();
 
@@ -250,9 +268,12 @@ public final class UnivariateResultants {
     private static UnivariatePolynomial<BigInteger> ModularResultantInRingOfIntegersOfNumberField0(
             UnivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
             UnivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+        UnivariatePolynomial<BigInteger> r = TrivialResultantInNumberField(a, b);
+        if (r != null)
+            return r;
 
         AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberField = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
-        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPoly();
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPolynomial();
 
 
         BigInteger

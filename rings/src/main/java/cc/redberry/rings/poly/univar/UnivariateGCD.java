@@ -1342,14 +1342,14 @@ public final class UnivariateGCD {
         AlgebraicNumberField<UnivariatePolynomial<E>> ring
                 = (AlgebraicNumberField<UnivariatePolynomial<E>>) a.ring;
 
-        if (!a.stream().allMatch(ring::isSimpleNumber)
-                || !b.stream().allMatch(ring::isSimpleNumber))
+        if (!a.stream().allMatch(ring::isInTheBaseField)
+                || !b.stream().allMatch(ring::isInTheBaseField))
             return null;
 
         UnivariatePolynomial<E>
-                ar = a.mapCoefficients(ring.getMinimalPoly().ring, UnivariatePolynomial::cc),
-                br = b.mapCoefficients(ring.getMinimalPoly().ring, UnivariatePolynomial::cc);
-        return PolynomialGCD(ar, br).mapCoefficients(ring, cf -> UnivariatePolynomial.constant(ring.getMinimalPoly().ring, cf));
+                ar = a.mapCoefficients(ring.getMinimalPolynomial().ring, UnivariatePolynomial::cc),
+                br = b.mapCoefficients(ring.getMinimalPolynomial().ring, UnivariatePolynomial::cc);
+        return PolynomialGCD(ar, br).mapCoefficients(ring, cf -> UnivariatePolynomial.constant(ring.getMinimalPolynomial().ring, cf));
     }
 
     /** Computes GCD via Langemyr & Mccallum modular algorithm over algebraic number field */
@@ -1363,7 +1363,7 @@ public final class UnivariateGCD {
 
         AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>
                 numberField = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
-        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPoly();
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPolynomial();
 
         assert numberField.isField();
 
@@ -1453,10 +1453,10 @@ public final class UnivariateGCD {
         integerPrimitivePart(b);
 
         if (!a.lc().isConstant())
-            a.multiply(numberField.cancellingMultiplier(a.lc()));
+            a.multiply(numberField.normalizer(a.lc()));
 
         if (!b.lc().isConstant())
-            b.multiply(numberField.cancellingMultiplier(b.lc()));
+            b.multiply(numberField.normalizer(b.lc()));
 
         integerPrimitivePart(a);
         integerPrimitivePart(b);
@@ -1490,7 +1490,7 @@ public final class UnivariateGCD {
         UnivariateRing<UnivariatePolynomial<BigInteger>> auxRing
                 = Rings.UnivariateRing(Z);
 
-        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPoly();
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPolynomial();
 
         // Weinberger & Rothschild (1976) correction denominator
         BigInteger

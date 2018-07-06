@@ -703,6 +703,25 @@ public final class MultivariateResultants {
 
     /* ================================== Modular resultant in simple number fields ================================ */
 
+    /** if all coefficients are simple numbers */
+    private static <E> MultivariatePolynomial<UnivariatePolynomial<E>>
+    TrivialResultantInExtension(MultivariatePolynomial<UnivariatePolynomial<E>> a,
+                                MultivariatePolynomial<UnivariatePolynomial<E>> b,
+                                int variable) {
+        AlgebraicNumberField<UnivariatePolynomial<E>> ring
+                = (AlgebraicNumberField<UnivariatePolynomial<E>>) a.ring;
+
+        if (!a.stream().allMatch(ring::isInTheBaseField)
+                || !b.stream().allMatch(ring::isInTheBaseField))
+            return null;
+
+        Ring<E> cfRing = ring.getMinimalPolynomial().ring;
+        MultivariatePolynomial<E>
+                ar = a.mapCoefficients(cfRing, UnivariatePolynomial::cc),
+                br = b.mapCoefficients(cfRing, UnivariatePolynomial::cc);
+        return Resultant(ar, br, variable)
+                .mapCoefficients(ring, cf -> UnivariatePolynomial.constant(cfRing, cf));
+    }
 
     /**
      * Modular resultant in simple number field
@@ -712,8 +731,12 @@ public final class MultivariateResultants {
             MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b,
             int variable) {
 
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> res = TrivialResultantInExtension(a, b, variable);
+        if (res != null)
+            return res;
+
         AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
-        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPoly();
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPolynomial();
 
         assert numberField.isField();
 
@@ -785,8 +808,12 @@ public final class MultivariateResultants {
     ModularResultantInRingOfIntegersOfNumberField0(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
                                                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
 
+        MultivariatePolynomial<UnivariatePolynomial<BigInteger>> r = TrivialResultantInExtension(a, b, 0);
+        if (r != null)
+            return r;
+
         AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberField = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
-        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPoly();
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPolynomial();
 
         BigInteger
                 aMax = a.stream().map(UnivariatePolynomial::maxAbsCoefficient).max(Rings.Z).orElse(BigInteger.ONE),

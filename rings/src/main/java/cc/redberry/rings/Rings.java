@@ -114,7 +114,7 @@ public final class Rings {
      */
     @Deprecated
     public static <uPoly extends IUnivariatePolynomial<uPoly>>
-    UnivariateQuotientRing<uPoly>
+    SimpleFieldExtension<uPoly>
     UnivariateQuotientRing(uPoly modulus) {
         return modulus.isOverFiniteField() ? GF(modulus) : AlgebraicExtension(modulus);
     }

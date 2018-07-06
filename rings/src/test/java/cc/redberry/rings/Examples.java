@@ -5,7 +5,7 @@ import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.QuotientRing;
-import cc.redberry.rings.poly.UnivariateQuotientRing;
+import cc.redberry.rings.poly.SimpleFieldExtension;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.multivar.GroebnerBases.HilbertSeries;
@@ -678,7 +678,7 @@ public class Examples {
 
         UnivariatePolynomial<Rational<BigInteger>> modulus = baseRing.parse("x^2 + 1");
         // quotient ring
-        UnivariateQuotientRing<UnivariatePolynomial<Rational<BigInteger>>> quotRing = UnivariateQuotientRing(modulus);
+        SimpleFieldExtension<UnivariatePolynomial<Rational<BigInteger>>> quotRing = UnivariateQuotientRing(modulus);
         // same poly in quotient ring
         UnivariatePolynomial<Rational<BigInteger>> quotPoly = quotRing.parse("123 * x^31 + 123 * x^2 + (1/2) * x + 1");
 

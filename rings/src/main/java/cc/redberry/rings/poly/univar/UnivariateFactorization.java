@@ -625,11 +625,11 @@ public final class UnivariateFactorization {
                 backSubstitution = null;
                 sPoly = poly;
             } else {
-                sPoly = poly.composition(poly.createMonomial(1).subtract(numberField.element().multiply(s)));
-                backSubstitution = poly.createMonomial(1).add(numberField.element().multiply(s));
+                sPoly = poly.composition(poly.createMonomial(1).subtract(numberField.generator().multiply(s)));
+                backSubstitution = poly.createMonomial(1).add(numberField.generator().multiply(s));
             }
 
-            UnivariatePolynomial<Rational<BigInteger>> sPolyNorm = numberField.polynomialNorm(sPoly);
+            UnivariatePolynomial<Rational<BigInteger>> sPolyNorm = numberField.normOfPolynomial(sPoly);
             if (!UnivariateSquareFreeFactorization.isSquareFree(sPolyNorm))
                 continue;
 

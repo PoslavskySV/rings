@@ -1100,7 +1100,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
                          int minDeg, int maxDeg,
                          RandomDataGenerator rndd) {
         return UnivariatePolynomial.create(field, IntStream.rangeClosed(0, rndd.nextInt(minDeg, maxDeg))
-                .mapToObj(__ -> RandomUnivariatePolynomials.randomPoly(field.getMinimalPoly().degree, 100, rndd.getRandomGenerator()).toBigPoly()
+                .mapToObj(__ -> RandomUnivariatePolynomials.randomPoly(field.getMinimalPolynomial().degree, 100, rndd.getRandomGenerator()).toBigPoly()
                         .mapCoefficients(Q, Q::valueOfBigInteger)).toArray(UnivariatePolynomial[]::new));
     }
 

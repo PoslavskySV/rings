@@ -6,7 +6,7 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.UnivariateQuotientRing;
+import cc.redberry.rings.poly.SimpleFieldExtension;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.multivar.Ideal;
 import cc.redberry.rings.poly.multivar.Monomial;
@@ -462,7 +462,7 @@ public class CoderTest extends AbstractTest {
                 ideal = Ideal.create(uvPolys);
         assertEquals("<v^2, u^2>", ideal.toString(uvCoder));
 
-        UnivariateQuotientRing<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>
+        SimpleFieldExtension<UnivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>
                 wQuot = Rings.UnivariateQuotientRing(wCoder.parse("1 + W^2 + W^4"));
 
         assertDecode(wCoder, wQuot.valueOf(wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^116")));

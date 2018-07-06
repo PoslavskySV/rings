@@ -61,11 +61,11 @@ public final class Util {
     public static <T extends IPolynomial<T>> boolean isOverSimpleNumberField(T poly) {
         if (poly instanceof UnivariatePolynomial
                 && ((UnivariatePolynomial) poly).ring instanceof AlgebraicNumberField
-                && isOverQ(((AlgebraicNumberField) ((UnivariatePolynomial) poly).ring).getMinimalPoly()))
+                && isOverQ(((AlgebraicNumberField) ((UnivariatePolynomial) poly).ring).getMinimalPolynomial()))
             return true;
         else if (poly instanceof MultivariatePolynomial
                 && ((MultivariatePolynomial) poly).ring instanceof AlgebraicNumberField
-                && isOverQ(((AlgebraicNumberField) ((MultivariatePolynomial) poly).ring).getMinimalPoly()))
+                && isOverQ(((AlgebraicNumberField) ((MultivariatePolynomial) poly).ring).getMinimalPolynomial()))
             return true;
         else
             return false;
@@ -76,11 +76,11 @@ public final class Util {
     public static <T extends IPolynomial<T>> boolean isOverRingOfIntegersOfSimpleNumberField(T poly) {
         if (poly instanceof UnivariatePolynomial
                 && ((UnivariatePolynomial) poly).ring instanceof AlgebraicNumberField
-                && isOverZ(((AlgebraicNumberField) ((UnivariatePolynomial) poly).ring).getMinimalPoly()))
+                && isOverZ(((AlgebraicNumberField) ((UnivariatePolynomial) poly).ring).getMinimalPolynomial()))
             return true;
         else if (poly instanceof MultivariatePolynomial
                 && ((MultivariatePolynomial) poly).ring instanceof AlgebraicNumberField
-                && isOverZ(((AlgebraicNumberField) ((MultivariatePolynomial) poly).ring).getMinimalPoly()))
+                && isOverZ(((AlgebraicNumberField) ((MultivariatePolynomial) poly).ring).getMinimalPolynomial()))
             return true;
         else
             return false;
