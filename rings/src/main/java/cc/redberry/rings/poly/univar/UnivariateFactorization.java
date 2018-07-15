@@ -44,6 +44,10 @@ public final class UnivariateFactorization {
             return FactorInZ(poly);
         else if (Util.isOverRationals(poly))
             return FactorInQ((UnivariatePolynomial) poly);
+        else if (Util.isOverSimpleNumberField(poly))
+            return (PolynomialFactorDecomposition<Poly>) FactorInNumberField((UnivariatePolynomial) poly);
+        else if (Util.isOverMultipleFieldExtension(poly))
+            return (PolynomialFactorDecomposition<Poly>) FactorInMultipleFieldExtension((UnivariatePolynomial) poly);
         else if (isOverMultivariate(poly))
             return (PolynomialFactorDecomposition<Poly>) FactorOverMultivariate((UnivariatePolynomial) poly, MultivariateFactorization::Factor);
         else if (isOverUnivariate(poly))
@@ -59,7 +63,8 @@ public final class UnivariateFactorization {
 
     @SuppressWarnings("unchecked")
     static <T extends IUnivariatePolynomial<T>> boolean isOverUnivariate(T poly) {
-        return (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring instanceof UnivariateRing);
+        return (poly instanceof UnivariatePolynomial
+                && ((UnivariatePolynomial) poly).ring instanceof UnivariateRing);
     }
 
     static <Term extends AMonomial<Term>,
@@ -92,6 +97,18 @@ public final class UnivariateFactorization {
         return Factor(integral)
                 .mapTo(p -> Util.asOverRationals(poly.ring, p))
                 .addUnit(poly.createConstant(new Rational<>(integral.ring, integral.ring.getOne(), denominator)));
+    }
+
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > PolynomialFactorDecomposition<UnivariatePolynomial<mPoly>>
+    FactorInMultipleFieldExtension(UnivariatePolynomial<mPoly> poly) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) poly.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return Factor(poly.mapCoefficients(simpleExtension, ring::inverse))
+                .mapTo(p -> p.mapCoefficients(ring, ring::image));
     }
 
     /** x^n * poly */
@@ -594,7 +611,11 @@ public final class UnivariateFactorization {
 
         PolynomialFactorDecomposition<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
                 result = PolynomialFactorDecomposition.empty(poly);
+
         FactorInNumberField(poly, result);
+
+        if (result.isTrivial())
+            return PolynomialFactorDecomposition.of(poly);
         // correct l.c.
         AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField
                 = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) poly.ring;

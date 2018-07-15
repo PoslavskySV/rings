@@ -47,6 +47,8 @@ public final class MultivariateFactorization {
             return (PolynomialFactorDecomposition<Poly>) FactorInQ((MultivariatePolynomial) poly);
         else if (Util.isOverSimpleNumberField(poly))
             return (PolynomialFactorDecomposition<Poly>) FactorInNumberField((MultivariatePolynomial) poly);
+        else if (Util.isOverMultipleFieldExtension(poly))
+            return (PolynomialFactorDecomposition<Poly>) FactorInMultipleFieldExtension((MultivariatePolynomial) poly);
         else {
             PolynomialFactorDecomposition<Poly> factors = tryNested(poly, MultivariateFactorization::Factor);
             if (factors != null)
@@ -54,6 +56,17 @@ public final class MultivariateFactorization {
             throw new RuntimeException("Unsupported ring: " + poly.coefficientRingToString());
         }
     }
+
+    @SuppressWarnings("unchecked")
+    static boolean isOverMultivariate(AMultivariatePolynomial poly) {
+        return (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring instanceof MultivariateRing);
+    }
+
+    @SuppressWarnings("unchecked")
+    static boolean isOverUnivariate(AMultivariatePolynomial poly) {
+        return (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring instanceof UnivariateRing);
+    }
+
 
     @SuppressWarnings("unchecked")
     static <Poly extends AMultivariatePolynomial<?, Poly>>
@@ -118,6 +131,18 @@ public final class MultivariateFactorization {
         return Factor(integral)
                 .mapTo(p -> Util.asOverRationals(polynomial.ring, p))
                 .addUnit(polynomial.createConstant(new Rational<>(integral.ring, integral.ring.getOne(), denominator)));
+    }
+
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > PolynomialFactorDecomposition<MultivariatePolynomial<mPoly>>
+    FactorInMultipleFieldExtension(MultivariatePolynomial<mPoly> poly) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) poly.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return Factor(poly.mapCoefficients(simpleExtension, ring::inverse))
+                .mapTo(p -> p.mapCoefficients(ring, ring::image));
     }
 
     /**
@@ -2774,12 +2799,11 @@ public final class MultivariateFactorization {
                     result.addFactor(factor, 1);
                 }
 
-                UnivariatePolynomial<Rational<BigInteger>> unit = result.unit.lc();
-                for (int i = 0; i < result.size(); i++)
-                    unit = numberField.multiply(unit, numberField.pow(result.get(i).lc(), result.getExponent(i)));
+                if (result.isTrivial())
+                    return PolynomialFactorDecomposition.of(poly);
 
-                unit = numberField.divideExact(poly.lc(), unit);
-                result.addUnit(poly.createConstant(unit));
+                // correct unit
+                result.setLcFrom(poly);
                 return result;
             }
         }

@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 /**
- *
+ * A ring obtained via isomorphism specified by {@link #image(Object)} and {@link #inverse(Object)} functions.
  */
 public class ImageRing<F, I> implements Ring<I> {
     /** the ring */
@@ -252,7 +252,7 @@ public class ImageRing<F, I> implements Ring<I> {
 
     @Override
     public I pow(I base, BigInteger exponent) {
-        return null;
+        return image(ring.pow(inverse(base), exponent));
     }
 
     @Override

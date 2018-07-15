@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.univar;
 
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.multivar.DegreeVector;
@@ -7,6 +8,8 @@ import cc.redberry.rings.poly.multivar.MonomialOrder;
 import gnu.trove.set.hash.TIntHashSet;
 
 import java.util.Comparator;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Parent interface for univariate polynomials. Dense representation (array of coefficients) is used to hold univariate
@@ -171,6 +174,20 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      * @return composition {@code this(oth)}
      */
     Poly composition(Poly value);
+
+    Stream<Poly> streamAsPolys();
+
+    default <E> UnivariatePolynomial<E> mapCoefficientsAsPolys(Ring<E> ring, Function<Poly, E> mapper) {
+        return streamAsPolys().map(mapper).collect(new UnivariatePolynomial.PolynomialCollector<>(ring));
+    }
+
+    /**
+     * Calculates the composition of this(oth)
+     *
+     * @param value polynomial
+     * @return composition {@code this(oth)}
+     */
+    AMultivariatePolynomial composition(AMultivariatePolynomial value);
 
     /**
      * Convert to multivariate polynomial

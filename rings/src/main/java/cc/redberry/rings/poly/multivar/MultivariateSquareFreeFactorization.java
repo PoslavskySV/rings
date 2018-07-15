@@ -28,14 +28,13 @@ public final class MultivariateSquareFreeFactorization {
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
-        if (poly instanceof MultivariatePolynomial
-                && ((MultivariatePolynomial) poly).ring.getZero() instanceof IPolynomial) {
-            PolynomialFactorDecomposition<Poly> factors = MultivariateFactorization.tryNested(poly,
-                    MultivariateSquareFreeFactorization::SquareFreeFactorization);
-            if (factors != null)
-                return factors;
-        }
-        if (poly.coefficientRingCharacteristic().isZero())
+        if (poly.isOverFiniteField())
+            return SquareFreeFactorizationMusser(poly);
+        else if (MultivariateGCD.isOverMultivariate(poly))
+            return MultivariateFactorization.tryNested(poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
+        else if (MultivariateGCD.isOverUnivariate(poly))
+            return MultivariateFactorization.tryNested(poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
+        else if (poly.coefficientRingCharacteristic().isZero())
             return SquareFreeFactorizationYunZeroCharacteristics(poly);
         else
             return SquareFreeFactorizationMusser(poly);
@@ -118,6 +117,10 @@ public final class MultivariateSquareFreeFactorization {
         PolynomialFactorDecomposition<Poly> decomposition = PolynomialFactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationYun0(poly, decomposition);
+        if (poly.isOverField()) {
+            // lc correction (needed for number fields)
+            decomposition.setLcFrom(poly);
+        }
         return decomposition;
     }
 

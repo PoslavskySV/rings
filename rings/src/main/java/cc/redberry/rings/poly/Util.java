@@ -2,6 +2,7 @@ package cc.redberry.rings.poly;
 
 import cc.redberry.rings.IntegersZp;
 import cc.redberry.rings.Rational;
+import cc.redberry.rings.Rationals;
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
@@ -48,9 +49,35 @@ public final class Util {
 
     /** Whether coefficient domain is rationals */
     public static <T extends IPolynomial<T>> boolean isOverRationals(T poly) {
-        if (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring.getOne() instanceof Rational)
+        if (poly instanceof UnivariatePolynomial && ((UnivariatePolynomial) poly).ring instanceof Rationals)
             return true;
-        else if (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring.getOne() instanceof Rational)
+        else if (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring instanceof Rationals)
+            return true;
+        else
+            return false;
+    }
+
+    /** Whether coefficient domain is F(alpha) */
+    @SuppressWarnings("unchecked")
+    public static <T extends IPolynomial<T>> boolean isOverSimpleFieldExtension(T poly) {
+        if (poly instanceof UnivariatePolynomial
+                && ((UnivariatePolynomial) poly).ring instanceof SimpleFieldExtension)
+            return true;
+        else if (poly instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) poly).ring instanceof SimpleFieldExtension)
+            return true;
+        else
+            return false;
+    }
+
+    /** Whether coefficient domain is F(alpha1, alpha2, ...) */
+    @SuppressWarnings("unchecked")
+    public static <T extends IPolynomial<T>> boolean isOverMultipleFieldExtension(T poly) {
+        if (poly instanceof UnivariatePolynomial
+                && ((UnivariatePolynomial) poly).ring instanceof MultipleFieldExtension)
+            return true;
+        else if (poly instanceof MultivariatePolynomial
+                && ((MultivariatePolynomial) poly).ring instanceof MultipleFieldExtension)
             return true;
         else
             return false;

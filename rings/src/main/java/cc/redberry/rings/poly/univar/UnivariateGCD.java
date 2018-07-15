@@ -48,6 +48,8 @@ public final class UnivariateGCD {
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> T PolynomialGCD(T a, T b) {
         a.assertSameCoefficientRingWith(b);
+        if (Util.isOverMultipleFieldExtension(a))
+            return (T) PolynomialGCDInMultipleFieldExtension((UnivariatePolynomial) a, (UnivariatePolynomial) b);
         if (a.isOverFiniteField())
             return HalfGCD(a, b);
         if (a instanceof UnivariatePolynomialZ64)
@@ -95,6 +97,20 @@ public final class UnivariateGCD {
         Tuple2<UnivariatePolynomial<E>, E> bRat = toCommonDenominator(b);
 
         return Util.asOverRationals(a.ring, PolynomialGCD(aRat._1, bRat._1)).monic();
+    }
+
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > UnivariatePolynomial<mPoly>
+    PolynomialGCDInMultipleFieldExtension(UnivariatePolynomial<mPoly> a, UnivariatePolynomial<mPoly> b) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) a.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return PolynomialGCD(
+                a.mapCoefficients(simpleExtension, ring::inverse),
+                b.mapCoefficients(simpleExtension, ring::inverse))
+                .mapCoefficients(ring, ring::image);
     }
 
     /**
@@ -179,6 +195,15 @@ public final class UnivariateGCD {
 
     /* ========================================== implementation ==================================================== */
 
+    private static <T extends IUnivariatePolynomial<T>> T TrivialGCD(final T a, final T b) {
+        if (a.isZero()) return normalizeGCD(b.clone());
+        if (b.isZero()) return normalizeGCD(a.clone());
+        if (a.isOne()) return a.clone();
+        if (b.isOne()) return b.clone();
+        if (a == b) return normalizeGCD(a.clone());
+        return null;
+    }
+
     /**
      * Returns the GCD calculated with Euclidean algorithm. If coefficient ring of the input is not a field (and thus
      * polynomials does not form an integral ring), {@code ArithmeticException} may be thrown in case when some exact
@@ -190,14 +215,16 @@ public final class UnivariateGCD {
      */
     public static <T extends IUnivariatePolynomial<T>> T EuclidGCD(final T a, final T b) {
         a.assertSameCoefficientRingWith(b);
+
+        T trivialGCD = TrivialGCD(a, b);
+        if (trivialGCD != null)
+            return trivialGCD;
+
         if (canConvertToZp64(a))
             return Conversions64bit.convert(EuclidGCD(asOverZp64(a), asOverZp64(b)));
 
         if (a.degree() < b.degree())
             return EuclidGCD(b, a);
-
-        if (a.isZero()) return normalizeGCD(b.clone());
-        if (b.isZero()) return normalizeGCD(a.clone());
 
         T x = a, y = b, r;
         while (true) {
@@ -333,6 +360,11 @@ public final class UnivariateGCD {
      */
     public static <T extends IUnivariatePolynomial<T>> T HalfGCD(T a, T b) {
         a.assertSameCoefficientRingWith(b);
+
+        T trivialGCD = TrivialGCD(a, b);
+        if (trivialGCD != null)
+            return trivialGCD;
+
         if (canConvertToZp64(a))
             return Conversions64bit.convert(HalfGCD(asOverZp64(a), asOverZp64(b)));
 
@@ -627,10 +659,9 @@ public final class UnivariateGCD {
      * @return GCD of two polynomials
      */
     public static UnivariatePolynomialZ64 ModularGCD(UnivariatePolynomialZ64 a, UnivariatePolynomialZ64 b) {
-        if (a == b)
-            return a.clone();
-        if (a.isZero()) return b.clone();
-        if (b.isZero()) return a.clone();
+        UnivariatePolynomialZ64 trivialGCD = TrivialGCD(a, b);
+        if (trivialGCD != null)
+            return trivialGCD;
 
         if (a.degree < b.degree)
             return ModularGCD(b, a);
@@ -734,10 +765,9 @@ public final class UnivariateGCD {
                                                               UnivariatePolynomial<BigInteger> b) {
         if (!a.ring.equals(Z))
             throw new IllegalArgumentException("Only polynomials over integers ring are allowed; " + a.ring);
-        if (a == b)
-            return a.clone();
-        if (a.isZero()) return b.clone();
-        if (b.isZero()) return a.clone();
+        UnivariatePolynomial<BigInteger> trivialGCD = TrivialGCD(a, b);
+        if (trivialGCD != null)
+            return trivialGCD;
 
         if (a.degree < b.degree)
             return ModularGCD(b, a);
@@ -1339,6 +1369,10 @@ public final class UnivariateGCD {
 
     private static <E> UnivariatePolynomial<UnivariatePolynomial<E>>
     TrivialGCDInNumberField(UnivariatePolynomial<UnivariatePolynomial<E>> a, UnivariatePolynomial<UnivariatePolynomial<E>> b) {
+        UnivariatePolynomial<UnivariatePolynomial<E>> trivialGCD = TrivialGCD(a, b);
+        if (trivialGCD != null)
+            return trivialGCD;
+
         AlgebraicNumberField<UnivariatePolynomial<E>> ring
                 = (AlgebraicNumberField<UnivariatePolynomial<E>>) a.ring;
 

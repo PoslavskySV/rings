@@ -7,10 +7,7 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Tokenizer.Token;
 import cc.redberry.rings.io.Tokenizer.TokenType;
-import cc.redberry.rings.poly.IPolynomial;
-import cc.redberry.rings.poly.IPolynomialRing;
-import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
@@ -30,6 +27,7 @@ import static cc.redberry.rings.io.Tokenizer.TokenType.*;
  * @param <Element> type of resulting elements
  * @param <Term>    underlying polynomial terms
  * @param <Poly>    underlying multivariate polynomials
+ * @since 2.4
  */
 public class Coder<
         Element,
@@ -38,21 +36,21 @@ public class Coder<
         implements IParser<Element>, IStringifier<Element> {
     // parser stuff
     /** the base ring */
-    private final Ring<Element> baseRing;
+    protected final Ring<Element> baseRing;
     /** map variableName -> Element (if it is a polynomial variable) */
-    private final Map<String, Element> eVariables;
+    protected final Map<String, Element> eVariables;
     /** auxiliary polynomial ring */
-    private final MultivariateRing<Poly> polyRing;
+    protected final MultivariateRing<Poly> polyRing;
     /** map variableName -> variableIndex (if it is a polynomial variable) */
-    private final Map<String, Integer> pVariables;
+    protected final Map<String, Integer> pVariables;
     /** convert polynomial to base ring elements */
-    private final Function<Poly, Element> polyToElement;
+    protected final Function<Poly, Element> polyToElement;
 
     // stringifier stuff
     /** toString bindings */
-    private final Map<Element, String> bindings;
+    protected final Map<Element, String> bindings;
     /** inner coders */
-    private final Map<Ring<?>, Coder<?, ?, ?>> subcoders;
+    protected final Map<Ring<?>, Coder<?, ?, ?>> subcoders;
 
     private Coder(Ring<Element> baseRing,
                   Map<String, Element> eVariables,
@@ -117,6 +115,33 @@ public class Coder<
         return stringify(element);
     }
 
+    /**
+     * Maps this coder to a given type via mapper {@code func} which just applies to each parsed element as well as to
+     * bindings (for {@link #stringify(Object)}).
+     */
+    public <Oth> Coder<Oth, ?, ?> map(Ring<Oth> ring, Function<Element, Oth> func) {
+        Map<String, Oth> _eVariables = eVariables
+                .entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> func.apply(e.getValue())));
+
+        Map<Oth, String> _bindings = bindings
+                .entrySet().stream()
+                .collect(Collectors.toMap(e -> func.apply(e.getKey()), Map.Entry::getValue));
+
+        Coder<Element, Term, Poly> _this = this;
+        return new Coder<Oth, Term, Poly>(ring, _eVariables, null, null, null) {
+            {
+                this.subcoders.putAll(_this.subcoders);
+                this.bindings.putAll(_bindings);
+            }
+
+            @Override
+            public Oth parse(Tokenizer tokenizer) {
+                return func.apply(_this.parse(tokenizer));
+            }
+        };
+    }
+
     ////////////////////////////////////////////////////Factory////////////////////////////////////////////////////////
 
     /**
@@ -171,7 +196,69 @@ public class Coder<
         if (ring instanceof IPolynomialRing && ((IPolynomialRing) ring).nVariables() == 1)
             return mkUnivariateCoder((IPolynomialRing) ring, (Map) variables);
 
+        if (ring instanceof MultipleFieldExtension)
+            return mkMultipleExtensionCoder((MultipleFieldExtension) ring, (Map) variables);
+
         return new Coder<>(ring, variables, null, null, null);
+    }
+
+    /**
+     * Create coder for generic polynomial rings
+     *
+     * @param ring      the ring
+     * @param variables variables
+     */
+    @SuppressWarnings("unchecked")
+    public static <Poly extends IPolynomial<Poly>> Coder<Poly, ?, ?>
+    mkPolynomialCoder(IPolynomialRing<Poly> ring, String... variables) {
+        return mkCoder(ring, mkVarsMap(ring, variables));
+    }
+
+    /**
+     * Create coder for multiple field extension
+     *
+     * @param field     multiple field extension
+     * @param variables string representation of generators
+     */
+    public static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > Coder<mPoly, ?, ?>
+    mkMultipleExtensionCoder(MultipleFieldExtension<Term, mPoly, sPoly> field,
+                             String... variables) {
+        return mkMultipleExtensionCoder(field, mkVarsMap(field, variables));
+    }
+
+    private static <E extends IPolynomial<E>> Map<String, E>
+    mkVarsMap(IPolynomialRing<E> ring, String... variables) {
+        Map<String, E> pVariables = new HashMap<>();
+        for (int i = 0; i < variables.length; ++i)
+            pVariables.put(variables[i], ring.variable(i));
+        return pVariables;
+    }
+
+    /**
+     * Create coder for multiple field extension
+     *
+     * @param field     multiple field extension
+     * @param variables map generator_string -> generator_as_ring_element
+     */
+    public static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > Coder<mPoly, ?, ?>
+    mkMultipleExtensionCoder(MultipleFieldExtension<Term, mPoly, sPoly> field,
+                             Map<String, mPoly> variables) {
+        Map<String, sPoly> sVars = new HashMap<>();
+        for (Map.Entry<String, mPoly> v : variables.entrySet())
+            sVars.put(v.getKey(), field.inverse(v.getValue()));
+        Coder<mPoly, ?, ?> coder = mkUnivariateCoder(field.getSimpleExtension(), sVars).map(field, field.imageFunc);
+        coder.bindings.putAll(variables.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
+        return coder;
     }
 
     /**
@@ -294,22 +381,6 @@ public class Coder<
     }
 
     /**
-     * Create coder for polynomial ring
-     *
-     * @param ring      the ring
-     * @param variables string variables
-     */
-    @SuppressWarnings("unchecked")
-    public static <Poly extends IPolynomial<Poly>> Coder<Poly, ?, ?>
-    mkPolynomialCoder(IPolynomialRing<Poly> ring,
-                      String... variables) {
-        if (ring instanceof MultivariateRing)
-            return mkMultivariateCoder((MultivariateRing) ring, variables);
-        else
-            return mkUnivariateCoder((IPolynomialRing) ring, variables[0]);
-    }
-
-    /**
      * Create coder for rational elements
      */
     @SuppressWarnings("unchecked")
@@ -332,7 +403,8 @@ public class Coder<
      * // ring GF(17, 3)[x, y, z]
      * MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> polyRing = Rings.MultivariateRing(3, gf);
      * // parser of multivariate polynomials over GF(17, 3)
-     * Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Coder.mkMultivariateCoder(polyRing, gfParser, "x", "y", "z");
+     * Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> polyParser = Coder.mkMultivariateCoder(polyRing,
+     * gfParser, "x", "y", "z");
      *
      * // field Frac(GF(17, 3)[x, y, z])
      * Rationals<MultivariatePolynomial<UnivariatePolynomialZp64>> fracRing = Rings.Frac(polyRing);
@@ -450,7 +522,7 @@ public class Coder<
             throw new RuntimeException("illegal operand: " + operand);
 
         // if polynomial
-        Integer iVar = pVariables.get(operand.content);
+        Integer iVar = pVariables == null ? null : pVariables.get(operand.content);
         if (iVar != null)
             return new VarOperand(pVariables.get(operand.content));
 

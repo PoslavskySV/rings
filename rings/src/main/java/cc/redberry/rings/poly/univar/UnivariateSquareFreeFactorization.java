@@ -2,8 +2,8 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.Ring;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.PolynomialFactorDecomposition;
 import cc.redberry.rings.poly.multivar.MultivariateSquareFreeFactorization;
 
 import java.util.Arrays;
@@ -38,7 +38,9 @@ public final class UnivariateSquareFreeFactorization {
      */
     @SuppressWarnings("unchecked")
     public static <T extends IUnivariatePolynomial<T>> PolynomialFactorDecomposition<T> SquareFreeFactorization(T poly) {
-        if (UnivariateFactorization.isOverMultivariate(poly))
+        if (poly.isOverFiniteField())
+            return SquareFreeFactorizationMusser(poly);
+        else if (UnivariateFactorization.isOverMultivariate(poly))
             return (PolynomialFactorDecomposition<T>) UnivariateFactorization.FactorOverMultivariate((UnivariatePolynomial) poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
         else if (UnivariateFactorization.isOverUnivariate(poly))
             return (PolynomialFactorDecomposition<T>) UnivariateFactorization.FactorOverUnivariate((UnivariatePolynomial) poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);

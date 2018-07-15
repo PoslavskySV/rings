@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.IStringifier;
@@ -1507,6 +1508,37 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
 
         Poly factory = values[0];
         return asOverPoly(factory).evaluate(values);
+    }
+
+    /**
+     * Substitutes given polynomials instead of variables of this (that is {@code this(values_1, ..., values_N)})
+     *
+     * @param values polynomial values (may have different nvars from this)
+     */
+    @SuppressWarnings("unchecked")
+    public final <sPoly extends IUnivariatePolynomial<sPoly>> sPoly composition(sPoly... values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+
+        return composition(Rings.UnivariateRing(values[0]), values);
+    }
+
+    /**
+     * Substitutes given polynomials instead of variables of this (that is {@code this(values_1, ..., values_N)})
+     *
+     * @param uRing  ring of univariate polynomials
+     * @param values polynomial values (may have different nvars from this)
+     */
+    @SuppressWarnings("unchecked")
+    public final <sPoly extends IUnivariatePolynomial<sPoly>> sPoly composition(Ring<sPoly> uRing, sPoly... values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+
+        sPoly factory = values[0];
+        if (this instanceof MultivariatePolynomialZp64)
+            return ((MultivariatePolynomialZp64) this).mapCoefficients(uRing, uRing::valueOf).evaluate(values);
+        else
+            return (sPoly) ((MultivariatePolynomial) this).mapCoefficients(uRing, cf -> ((UnivariatePolynomial) factory).createConstant(cf)).evaluate(values);
     }
 
     /**

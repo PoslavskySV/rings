@@ -240,7 +240,7 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
      * -modulus/2 <= cfx <= modulus/2}).
      *
      * @return Z[x] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <=
-     * modulus/2}).
+     *         modulus/2}).
      */
     @SuppressWarnings("unchecked")
     public UnivariatePolynomialZ64 asPolyZSymmetric() {
@@ -336,6 +336,11 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     @Override
     public BigInteger coefficientRingPerfectPowerExponent() {
         return BigInteger.valueOf(ring.perfectPowerExponent());
+    }
+
+    @Override
+    public long content() {
+        return lc();
     }
 
     @Override
@@ -557,7 +562,22 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     }
 
     @Override
-    public MultivariatePolynomialZp64  asMultivariate() {
+    public MultivariatePolynomialZp64 composition(AMultivariatePolynomial value) {
+        if (!(value instanceof MultivariatePolynomialZp64))
+            throw new IllegalArgumentException();
+        if (value.isOne())
+            return asMultivariate();
+        if (value.isZero())
+            return ccAsPoly().asMultivariate();
+
+        MultivariatePolynomialZp64 result = (MultivariatePolynomialZp64) value.createZero();
+        for (int i = degree; i >= 0; --i)
+            result = result.multiply((MultivariatePolynomialZp64) value).add(data[i]);
+        return result;
+    }
+
+    @Override
+    public MultivariatePolynomialZp64 asMultivariate() {
         return asMultivariate(MonomialOrder.DEFAULT);
     }
 

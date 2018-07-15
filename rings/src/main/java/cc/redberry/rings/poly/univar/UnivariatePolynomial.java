@@ -5,6 +5,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.multivar.DegreeVector;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
@@ -16,7 +17,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static cc.redberry.rings.bigint.BigInteger.ONE;
 import static cc.redberry.rings.bigint.BigInteger.ZERO;
@@ -677,7 +677,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public E content() {
         if (degree == 0)
             return data[0];
-        return ring.gcd(this);
+        return isOverField() ? lc() : ring.gcd(this);
 //        E gcd = data[degree];
 //        for (int i = degree - 1; i >= 0; --i)
 //            gcd = ring.gcd(gcd, data[i]);
@@ -756,6 +756,24 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
         UnivariatePolynomial<E> result = createZero();
         for (int i = degree; i >= 0; --i)
             result = result.multiply(value).add(data[i]);
+        return result;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E> composition(AMultivariatePolynomial value) {
+        if (!(value instanceof MultivariatePolynomial))
+            throw new IllegalArgumentException();
+        if (!((MultivariatePolynomial) value).ring.equals(ring))
+            throw new IllegalArgumentException();
+        if (value.isOne())
+            return asMultivariate();
+        if (value.isZero())
+            return ccAsPoly().asMultivariate();
+
+        MultivariatePolynomial<E> result = (MultivariatePolynomial<E>) value.createZero();
+        for (int i = degree; i >= 0; --i)
+            result = result.multiply((MultivariatePolynomial<E>) value).add(data[i]);
         return result;
     }
 
@@ -1111,7 +1129,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return a sequential {@code Stream} over the coefficients in this polynomial
      */
     public Stream<E> stream() {
-        return StreamSupport.stream(spliterator(), false);
+        return Arrays.stream(data, 0, degree + 1);
+    }
+
+    @Override
+    public Stream<UnivariatePolynomial<E>> streamAsPolys() {
+        return stream().map(this::createConstant);
     }
 
     @Override

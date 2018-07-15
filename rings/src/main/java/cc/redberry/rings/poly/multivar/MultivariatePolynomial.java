@@ -729,7 +729,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @return content of this polynomial
      */
     public E content() {
-        return ring.gcd(coefficients());
+        return isOverField() ? lc() : ring.gcd(coefficients());
     }
 
     /**

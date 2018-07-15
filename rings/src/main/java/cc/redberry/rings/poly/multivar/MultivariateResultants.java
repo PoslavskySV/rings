@@ -7,10 +7,7 @@ import cc.redberry.rings.linear.LinearSolver;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
-import cc.redberry.rings.poly.univar.UnivariateGCD;
-import cc.redberry.rings.poly.univar.UnivariatePolynomial;
-import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
-import cc.redberry.rings.poly.univar.UnivariateResultants;
+import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.PrimesIterator;
 import cc.redberry.rings.util.ArraysUtil;
 import gnu.trove.iterator.TIntObjectIterator;
@@ -63,12 +60,14 @@ public final class MultivariateResultants {
             return (Poly) ResultantInZ((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
         if (Util.isOverRationals(a))
             return (Poly) ResultantInQ((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
-        if (a.isOverField())
-            return (Poly) ZippelResultant((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b, variable);
         if (Util.isOverSimpleNumberField(a))
             return (Poly) ModularResultantInNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
         if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
             return (Poly) ModularResultantInRingOfIntegersOfNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        if (Util.isOverMultipleFieldExtension(a))
+            return (Poly) ResultantInMultipleFieldExtension((MultivariatePolynomial) a, (MultivariatePolynomial) b, variable);
+        if (a.isOverField())
+            return (Poly) ZippelResultant((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b, variable);
         return tryNested(a, b, variable);
     }
 
@@ -141,6 +140,21 @@ public final class MultivariateResultants {
                 ring.pow(aRat._2, b.degree(variable)),
                 ring.pow(bRat._2, a.degree(variable)));
         return Util.asOverRationals(a.ring, Resultant(aRat._1, bRat._1, variable)).divideExact(new Rational<>(ring, correction));
+    }
+
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > MultivariatePolynomial<mPoly>
+    ResultantInMultipleFieldExtension(MultivariatePolynomial<mPoly> a, MultivariatePolynomial<mPoly> b, int variable) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) a.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return Resultant(
+                a.mapCoefficients(simpleExtension, ring::inverse),
+                b.mapCoefficients(simpleExtension, ring::inverse),
+                variable)
+                .mapCoefficients(ring, ring::image);
     }
 
     /**

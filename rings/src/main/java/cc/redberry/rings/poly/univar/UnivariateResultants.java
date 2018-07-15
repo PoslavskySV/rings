@@ -2,9 +2,9 @@ package cc.redberry.rings.poly.univar;
 
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.AlgebraicNumberField;
-import cc.redberry.rings.poly.FiniteField;
-import cc.redberry.rings.poly.Util;
+import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.multivar.AMonomial;
+import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.primes.PrimesIterator;
 import gnu.trove.list.array.TLongArrayList;
 
@@ -22,6 +22,8 @@ import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asOverZp64;
 /**
  * Various algorithms to compute (sub)resultants via Euclidean algorithm. Implementation is based on Gathen & Lücking,
  * "Subresultants revisited", https://doi.org/10.1016/S0304-3975(02)00639-4
+ *
+ * @since 2.5
  */
 public final class UnivariateResultants {
     private UnivariateResultants() {}
@@ -73,7 +75,9 @@ public final class UnivariateResultants {
      */
     @SuppressWarnings("unchecked")
     public static <E> E Resultant(UnivariatePolynomial<E> a, UnivariatePolynomial<E> b) {
-        if (a.isOverField())
+        if (Util.isOverMultipleFieldExtension(a))
+            return (E) ResultantInMultipleFieldExtension((UnivariatePolynomial) a, (UnivariatePolynomial) b);
+        else if (a.isOverFiniteField())
             return ClassicalPRS(a, b).resultant();
         else if (Util.isOverRationals(a))
             return (E) ResultantInQ((UnivariatePolynomial) a, (UnivariatePolynomial) b);
@@ -107,6 +111,19 @@ public final class UnivariateResultants {
                 ring.pow(aZ._2, b.degree),
                 ring.pow(bZ._2, a.degree));
         return new Rational<>(ring, resultant, den);
+    }
+
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > mPoly
+    ResultantInMultipleFieldExtension(UnivariatePolynomial<mPoly> a, UnivariatePolynomial<mPoly> b) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) a.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return ring.image(Resultant(
+                a.mapCoefficients(simpleExtension, ring::inverse),
+                b.mapCoefficients(simpleExtension, ring::inverse)));
     }
 
     /**

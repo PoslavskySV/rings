@@ -259,6 +259,18 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
         return null;
     }
 
+    /**
+     * Returns the content of this poly (gcd of its coefficients)
+     *
+     * @return polynomial content
+     */
+    @Override
+    public long content() {
+        if (degree == 0)
+            return data[0];
+        return MachineArithmetic.gcd(data, 0, degree + 1);
+    }
+
     @Override
     long add(long a, long b) {return MachineArithmetic.safeAdd(a, b);}
 
@@ -430,6 +442,11 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
     @Override
     public String coefficientRingToString(IStringifier<UnivariatePolynomialZ64> stringifier) {
         return "Z";
+    }
+
+    @Override
+    public AMultivariatePolynomial composition(AMultivariatePolynomial value) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -13,6 +13,7 @@ import java.util.Iterator;
  *
  * @see SimpleFieldExtension
  * @see FiniteField
+ * @since 2.5
  */
 public class AlgebraicNumberField<E extends IUnivariatePolynomial<E>>
         extends SimpleFieldExtension<E> {

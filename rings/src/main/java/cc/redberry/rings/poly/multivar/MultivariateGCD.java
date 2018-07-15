@@ -269,6 +269,8 @@ public final class MultivariateGCD {
             return (Poly) PolynomialGCDinNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
             return (Poly) PolynomialGCDinRingOfIntegersOfNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        if (Util.isOverMultipleFieldExtension(a))
+            return (Poly) PolynomialGCDinMultipleFieldExtension((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         Poly r = tryNested(a, b);
         if (r != null)
             return r;
@@ -400,8 +402,7 @@ public final class MultivariateGCD {
     static <Poly extends AMultivariatePolynomial>
     boolean isOverUnivariate(Poly p) {
         return p instanceof MultivariatePolynomial
-                && ((MultivariatePolynomial) p).ring instanceof UnivariateRing
-                && ((MultivariatePolynomial) p).lc() instanceof UnivariatePolynomial;
+                && ((MultivariatePolynomial) p).ring instanceof UnivariateRing;
     }
 
     private static <E> MultivariatePolynomial<UnivariatePolynomial<E>>
@@ -416,8 +417,7 @@ public final class MultivariateGCD {
     static <Poly extends AMultivariatePolynomial>
     boolean isOverMultivariate(Poly p) {
         return p instanceof MultivariatePolynomial
-                && ((MultivariatePolynomial) p).ring instanceof MultivariateRing
-                && ((MultivariatePolynomial) p).lc() instanceof MultivariatePolynomial;
+                && ((MultivariatePolynomial) p).ring instanceof MultivariateRing;
     }
 
     private static <E> MultivariatePolynomial<MultivariatePolynomial<E>>
@@ -470,6 +470,20 @@ public final class MultivariateGCD {
         Tuple2<MultivariatePolynomial<E>, E> bRat = Util.toCommonDenominator(b);
 
         return Util.asOverRationals(a.ring, PolynomialGCD(aRat._1, bRat._1));
+    }
+
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > MultivariatePolynomial<mPoly>
+    PolynomialGCDinMultipleFieldExtension(MultivariatePolynomial<mPoly> a, MultivariatePolynomial<mPoly> b) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) a.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return PolynomialGCD(
+                a.mapCoefficients(simpleExtension, ring::inverse),
+                b.mapCoefficients(simpleExtension, ring::inverse))
+                .mapCoefficients(ring, ring::image);
     }
 
     /* ============================================== Auxiliary methods ============================================= */
@@ -1801,7 +1815,9 @@ public final class MultivariateGCD {
         if (!pContentGCD.isConstant()) {
             a = MultivariateDivision.divideExact(a, pContentGCD);
             b = MultivariateDivision.divideExact(b, pContentGCD);
-            return gcdInput.restoreGCD(PolynomialGCDAssociateInRingOfIntegerOfNumberField(a, b, algorithmForGcdAssociate).multiply(pContentGCD));
+            return gcdInput.restoreGCD(
+                    PolynomialGCDInNumberFieldSwitchToRingOfInteger(a, b,
+                            (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r, algorithmForGcdAssociate).multiply(pContentGCD)));
         }
 
         AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField

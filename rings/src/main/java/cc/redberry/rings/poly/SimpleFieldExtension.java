@@ -22,6 +22,7 @@ import static cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic.*;
  *
  * @see FiniteField
  * @see AlgebraicNumberField
+ * @since 2.5
  */
 public abstract class SimpleFieldExtension<E extends IUnivariatePolynomial<E>>
         extends ARing<E> implements IPolynomialRing<E> {

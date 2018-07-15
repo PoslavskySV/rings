@@ -667,14 +667,15 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return content of this polynomial
      */
     public long content() {
-        long gcd = -1;
-        for (MonomialZp64 term : terms) {
-            if (gcd == -1)
-                gcd = term.coefficient;
-            else
-                gcd = MachineArithmetic.gcd(gcd, term.coefficient);
-        }
-        return gcd;
+        return lc();
+//        long gcd = -1;
+//        for (MonomialZp64 term : terms) {
+//            if (gcd == -1)
+//                gcd = term.coefficient;
+//            else
+//                gcd = MachineArithmetic.gcd(gcd, term.coefficient);
+//        }
+//        return gcd;
     }
 
     /**
