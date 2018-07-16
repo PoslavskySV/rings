@@ -4,15 +4,15 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
-import cc.redberry.rings.poly.multivar.Monomial;
-import cc.redberry.rings.poly.multivar.MultivariateFactorization;
-import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.UnivariateFactorization;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
+import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.util.TimeUnits;
 import org.junit.Test;
 
-import static cc.redberry.rings.Rings.Q;
+import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.Rings.UnivariateRing;
 import static org.junit.Assert.assertEquals;
 
@@ -162,5 +162,25 @@ public class MultipleFieldExtensionTest {
         assertEquals(coder.parse("-5/2"), coder.parse("s1 * s2 * s3"));
         assertEquals(coder.parse("2"), coder.parse("s1 * s2  +  s1 * s3 + s2 * s3"));
         assertEquals(coder.parse("3/2"), coder.parse("s1 + s2 + s3"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void test6a() {
+        UnivariateRing<UnivariatePolynomialZp64> auxRing = UnivariateRingZp64(SmallPrimes.nextPrime(1 << 12));
+        Coder<UnivariatePolynomialZp64, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
+
+        UnivariatePolynomialZp64 poly = auxCoder.parse("17*x^3 - 14*x^2 + 25*x +  15");
+        MultipleFieldExtension<
+                MonomialZp64,
+                MultivariatePolynomialZp64,
+                UnivariatePolynomialZp64
+                > splittingField = MultipleFieldExtension.mkSplittingField(poly);
+        assertEquals(3, splittingField.getSimpleExtension().degree());
+
+        Coder<MultivariatePolynomialZp64, ?, ?> coder = Coder.mkPolynomialCoder(splittingField, "s1", "s2", "s3");
+        assertEquals(coder.parse("-15/17"), coder.parse("s1 * s2 * s3"));
+        assertEquals(coder.parse("25/17"), coder.parse("s1 * s2  +  s1 * s3 + s2 * s3"));
+        assertEquals(coder.parse("14/17"), coder.parse("s1 + s2 + s3"));
     }
 }

@@ -362,7 +362,7 @@ public class MultipleFieldExtension<
             sPoly extends IUnivariatePolynomial<sPoly>
             > MultipleFieldExtension<Term, mPoly, sPoly>
     mkMultipleExtension(sPoly a) {
-        return new MultipleFieldExtension<>(a.createArray(a),
+        return new MultipleFieldExtension<>(new IUnivariatePolynomial[]{a},
                 (mPoly) a.asMultivariate().createMonomial(0, 1),
                 a.createArray(a.createMonomial(1)),
                 Rings.mkSimpleExtension(a));
@@ -640,14 +640,17 @@ public class MultipleFieldExtension<
             factor = UnivariateDivision.divideExact(factor,
                     UnivariatePolynomial.create(nextExt, nextExt.negate(nextExt.variable(nextExt.nVariables() - 1)), nextExt.getOne()),
                     false);
-            PolynomialFactorDecomposition<UnivariatePolynomial<mPoly>> factors = UnivariateFactorization.Factor(factor);
-            for (UnivariatePolynomial<mPoly> f : factors) {
+            List<UnivariatePolynomial<mPoly>> factors = UnivariateFactorization.Factor(factor).factors;
+            for (int i = 0; i < factors.size(); i++) {
+                UnivariatePolynomial<mPoly> f = factors.get(i);
                 if (f.degree() > 1)
                     nonLinearFactors.add(f);
-                else
+                else {
                     nextExt = nextExt.adjoinRedundantElement(nextExt.negate(nextExt.divideExact(f.cc(), f.lc())));
+                    for (int j = i + 1; j < factors.size(); ++j)
+                        factors.set(j, factors.get(j).mapCoefficients(nextExt, AMultivariatePolynomial::joinNewVariable));
+                }
             }
-
 
             extension = nextExt;
         }
