@@ -175,6 +175,27 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
      */
     Poly composition(Poly value);
 
+    /**
+     * Calculates the composition of this(oth) (new instance, so the content of this is not changed))
+     *
+     * @param value polynomial
+     * @return composition {@code this(oth)}
+     */
+    default Poly composition(Ring<Poly> ring, Poly value) {
+        if (value.isOne())
+            return ring.valueOf(this.clone());
+        if (value.isZero())
+            return ccAsPoly();
+
+        Poly result = ring.getZero();
+        for (int i = degree(); i >= 0; --i)
+            result = ring.add(ring.multiply(result, value), getAsPoly(i));
+        return result;
+    }
+
+    /**
+     * Stream polynomial coefficients as constant polynomials
+     */
     Stream<Poly> streamAsPolys();
 
     default <E> UnivariatePolynomial<E> mapCoefficientsAsPolys(Ring<E> ring, Function<Poly, E> mapper) {

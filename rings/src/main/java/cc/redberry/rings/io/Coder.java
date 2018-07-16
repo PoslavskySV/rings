@@ -193,7 +193,7 @@ public class Coder<
         if (ring instanceof MultivariateRing)
             return mkMultivariateCoder((MultivariateRing) ring, (Map) variables);
 
-        if (ring instanceof IPolynomialRing && ((IPolynomialRing) ring).nVariables() == 1)
+        if (ring instanceof IPolynomialRing && ((IPolynomialRing) ring).factory() instanceof IUnivariatePolynomial)
             return mkUnivariateCoder((IPolynomialRing) ring, (Map) variables);
 
         if (ring instanceof MultipleFieldExtension)

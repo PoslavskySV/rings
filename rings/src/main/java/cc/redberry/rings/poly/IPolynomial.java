@@ -474,6 +474,13 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     Poly[][] createArray2d(int length1, int length2);
 
     /** overcome Java generics... */
+    default Poly[] createArray(Poly a) {
+        Poly[] r = createArray(1);
+        r[0] = a;
+        return r;
+    }
+
+    /** overcome Java generics... */
     default Poly[] createArray(Poly a, Poly b) {
         Poly[] r = createArray(2);
         r[0] = a;

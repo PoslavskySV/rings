@@ -1852,6 +1852,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     @Override
+    public <E> MultivariatePolynomial<E> mapCoefficientsAsPolys(Ring<E> ring, Function<MultivariatePolynomialZp64, E> mapper) {
+        return mapCoefficients(ring, cf -> mapper.apply(createConstant(cf)));
+    }
+
+    @Override
     public int compareTo(MultivariatePolynomialZp64 oth) {
         int c = Integer.compare(size(), oth.size());
         if (c != 0)

@@ -2013,6 +2013,11 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     }
 
     @Override
+    public <T> MultivariatePolynomial<T> mapCoefficientsAsPolys(Ring<T> ring, Function<MultivariatePolynomial<E>, T> mapper) {
+        return mapCoefficients(ring, cf -> mapper.apply(createConstant(cf)));
+    }
+
+    @Override
     public int compareTo(MultivariatePolynomial<E> oth) {
         int c = Integer.compare(size(), oth.size());
         if (c != 0)

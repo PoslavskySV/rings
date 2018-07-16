@@ -123,4 +123,44 @@ public class MultipleFieldExtensionTest {
         assertEquals(6, factors.sumExponents());
         assertEquals(poly, factors.multiply());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void test5() {
+        UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> auxRing = UnivariateRing(Q);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
+
+        UnivariatePolynomial<Rational<BigInteger>> poly = auxCoder.parse("2*x^3 - 5");
+        MultipleFieldExtension<
+                Monomial<Rational<BigInteger>>,
+                MultivariatePolynomial<Rational<BigInteger>>,
+                UnivariatePolynomial<Rational<BigInteger>>
+                > splittingField = MultipleFieldExtension.mkSplittingField(poly);
+        assertEquals(6, splittingField.getSimpleExtension().degree());
+
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkPolynomialCoder(splittingField, "s1", "s2", "s3");
+        assertEquals(coder.parse("5/2"), coder.parse("s1 * s2 * s3"));
+        assertEquals(coder.parse("0"), coder.parse("s1 * s2  +  s1 * s3 + s2 * s3"));
+        assertEquals(coder.parse("0"), coder.parse("s1 + s2 + s3"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void test6() {
+        UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> auxRing = UnivariateRing(Q);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
+
+        UnivariatePolynomial<Rational<BigInteger>> poly = auxCoder.parse("2*x^3 - 3*x^2 + 4*x +  5");
+        MultipleFieldExtension<
+                Monomial<Rational<BigInteger>>,
+                MultivariatePolynomial<Rational<BigInteger>>,
+                UnivariatePolynomial<Rational<BigInteger>>
+                > splittingField = MultipleFieldExtension.mkSplittingField(poly);
+        assertEquals(6, splittingField.getSimpleExtension().degree());
+
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkPolynomialCoder(splittingField, "s1", "s2", "s3");
+        assertEquals(coder.parse("-5/2"), coder.parse("s1 * s2 * s3"));
+        assertEquals(coder.parse("2"), coder.parse("s1 * s2  +  s1 * s3 + s2 * s3"));
+        assertEquals(coder.parse("3/2"), coder.parse("s1 + s2 + s3"));
+    }
 }

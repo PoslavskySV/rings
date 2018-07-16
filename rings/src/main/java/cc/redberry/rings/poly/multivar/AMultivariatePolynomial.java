@@ -472,7 +472,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
             newData.add(term.insert(variable, count));
-        return create(nVariables + 1, newData);
+        return create(nVariables + count, newData);
     }
 
     /** auxiliary method */
@@ -1592,6 +1592,8 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * of the original {@code poly} with respect to all except {@code variable} variables
      */
     public abstract Poly evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd);
+
+    public abstract <E> MultivariatePolynomial<E> mapCoefficientsAsPolys(Ring<E> ring, Function<Poly, E> mapper);
 
     /**
      * Collector which collects stream of element to a UnivariatePolynomial
