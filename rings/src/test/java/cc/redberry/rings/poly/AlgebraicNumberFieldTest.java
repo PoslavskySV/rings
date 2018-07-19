@@ -12,8 +12,9 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.Rings.AlgebraicNumberField;
 import static cc.redberry.rings.Rings.MultivariateRing;
+import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.Rings.UnivariateRing;
 
 /**
@@ -22,7 +23,7 @@ import static cc.redberry.rings.Rings.UnivariateRing;
 public class AlgebraicNumberFieldTest extends APolynomialTest {
     @Test
     public void test1() {
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkUnivariateCoder(field, "s");
         Assert.assertEquals(coder.parse("2"), coder.parse("s^2"));
         Assert.assertEquals(coder.parse("s/2"), coder.parse("1/s"));
@@ -33,7 +34,7 @@ public class AlgebraicNumberFieldTest extends APolynomialTest {
     @Test
     public void test2() {
         UnivariatePolynomial<BigInteger> mp = UnivariatePolynomial.create(-22, 12, 13, -112343242, 3, 1, 0, 0, 0, 123, 1234134, 324, 123423442, 0, 1).square().increment();
-        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicExtension(mp);
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicNumberField(mp);
         Coder<UnivariatePolynomial<BigInteger>, ?, ?> coder = Coder.mkUnivariateCoder(field, "s");
         UnivariatePolynomial<BigInteger> element = coder.parse("- 2 + 13*s + s^2 - 13*s^4");
         UnivariatePolynomial<BigInteger>[] ann = field.normalizer2(element);
@@ -55,7 +56,7 @@ public class AlgebraicNumberFieldTest extends APolynomialTest {
                 continue;
             }
 
-            AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicExtension(minPoly);
+            AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicNumberField(minPoly);
             for (int j = 0; j < 10; ++j) {
                 UnivariatePolynomial<BigInteger> element = field.randomElement(rnd);
                 element = element.setRing(Zp(100)).setRingUnsafe(Z);

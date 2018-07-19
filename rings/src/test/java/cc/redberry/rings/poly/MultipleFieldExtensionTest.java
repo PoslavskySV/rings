@@ -125,7 +125,6 @@ public class MultipleFieldExtensionTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void test5() {
         UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> auxRing = UnivariateRing(Q);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
@@ -145,27 +144,32 @@ public class MultipleFieldExtensionTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void test6() {
         UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> auxRing = UnivariateRing(Q);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
 
-        UnivariatePolynomial<Rational<BigInteger>> poly = auxCoder.parse("2*x^3 - 3*x^2 + 4*x +  5");
+        UnivariatePolynomial<Rational<BigInteger>> poly = auxCoder.parse("2*x^3 - 3*x^2 + 4*x + 5");
         MultipleFieldExtension<
                 Monomial<Rational<BigInteger>>,
                 MultivariatePolynomial<Rational<BigInteger>>,
                 UnivariatePolynomial<Rational<BigInteger>>
-                > splittingField = MultipleFieldExtension.mkSplittingField(poly);
+                >
+                splittingField = MultipleFieldExtension.mkSplittingField(poly);
         assertEquals(6, splittingField.getSimpleExtension().degree());
 
         Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkPolynomialCoder(splittingField, "s1", "s2", "s3");
         assertEquals(coder.parse("-5/2"), coder.parse("s1 * s2 * s3"));
         assertEquals(coder.parse("2"), coder.parse("s1 * s2  +  s1 * s3 + s2 * s3"));
         assertEquals(coder.parse("3/2"), coder.parse("s1 + s2 + s3"));
+
+        UnivariateRing<UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>> pRing = UnivariateRing(splittingField);
+        Coder<UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?> pCoder = Coder.mkUnivariateCoder(pRing, coder, "x");
+
+        UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> p = pCoder.parse("2*x^3 - 3*x^2 + 4*x + 5");
+        assertEquals(3, UnivariateFactorization.Factor(p).size());
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void test6a() {
         UnivariateRing<UnivariatePolynomialZp64> auxRing = UnivariateRingZp64(SmallPrimes.nextPrime(1 << 12));
         Coder<UnivariatePolynomialZp64, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");

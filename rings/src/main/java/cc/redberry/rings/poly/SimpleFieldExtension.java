@@ -18,7 +18,8 @@ import static cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic.*;
  * A simple field extension {@code F(α)} represented as a univariate quotient ring {@code F[x]/<m(x)>} where {@code
  * m(x)} is the minimal polynomial of {@code α}. Elements of extension field are represented as univariate polynomials
  * in {@code α}. To create simple field extensions one should use either {@link FiniteField} for extensions of finite
- * fields, or {@link AlgebraicNumberField} for extensions of rationals.
+ * fields or {@link AlgebraicNumberField} for extensions of rationals. See {@link MultipleFieldExtension} for
+ * implementation of multiple extensions.
  *
  * @see FiniteField
  * @see AlgebraicNumberField
@@ -65,7 +66,7 @@ public abstract class SimpleFieldExtension<E extends IUnivariatePolynomial<E>>
     }
 
     /**
-     * Returns the generator element {@code alpha} of this field extension {@code F(alpha)}
+     * Returns the generator element {@code α} of this field extension {@code F(α)}
      */
     public E generator() {
         return minimalPoly.createMonomial(1);
@@ -80,7 +81,7 @@ public abstract class SimpleFieldExtension<E extends IUnivariatePolynomial<E>>
 
     /**
      * Returns the minimal polynomial of the generator (that is the "modulo" polynomial {@code p(x)} of this field
-     * viewed as {@code F[x]/<p(x)>})
+     * viewed as quotient field {@code F[x]/<p(x)>})
      */
     public E getMinimalPolynomial() {
         return minimalPoly.clone();
@@ -92,7 +93,7 @@ public abstract class SimpleFieldExtension<E extends IUnivariatePolynomial<E>>
     }
 
     /**
-     * Gives the  norm of field extension element (it is always belongs to the base field)
+     * Gives the norm of field extension element (it is always belongs to the base field)
      */
     public E norm(E element) {
         return UnivariateResultants.ResultantAsPoly(minimalPoly, element);
@@ -185,10 +186,18 @@ public abstract class SimpleFieldExtension<E extends IUnivariatePolynomial<E>>
      * Computes minimal polynomial of a given algebraic element
      */
     public E minimalPolynomial(E element) {
-        if (element.equals(getOne()))
-            return getMinimalPolynomial();
+        //if (element.equals(getOne()))
+        //    return getMinimalPolynomial();
         UnivariatePolynomial<E> es = UnivariatePolynomial.create(this, createArray(negate(element), getOne()));
         return UnivariateSquareFreeFactorization.SquareFreePart(normOfPolynomial(es));
+    }
+
+    /**
+     * Returns a view of this as a multiple field extension
+     */
+    public <Term extends AMonomial<Term>, mPoly extends AMultivariatePolynomial<Term, mPoly>>
+    MultipleFieldExtension<Term, mPoly, E> asMultipleExtension() {
+        return MultipleFieldExtension.mkMultipleExtension(this);
     }
 
     @Override

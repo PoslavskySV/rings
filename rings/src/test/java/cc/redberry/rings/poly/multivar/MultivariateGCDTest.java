@@ -2491,7 +2491,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
 
     @Test
     public void testAlgExt1() {
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> mRing = Rings.MultivariateRing(3, field);
@@ -2507,7 +2507,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
     @Test
     public void testAlgExt2() {
         AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field
-                = AlgebraicExtension(UnivariatePolynomial.create(13, 0, 1, 2, 3, 4, 15, 19).mapCoefficients(Q, Q::mkNumerator));
+                = AlgebraicNumberField(UnivariatePolynomial.create(13, 0, 1, 2, 3, 4, 15, 19).mapCoefficients(Q, Q::mkNumerator));
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> mRing = Rings.MultivariateRing(3, field);
@@ -2579,7 +2579,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                         30401154, 15298203, 25411939,
                         30401154, 15298203, 25411939, 1)
                         .mapCoefficients(Q, Q::valueOfBigInteger);
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(minimalPoly);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = MultivariateRing(5, field);

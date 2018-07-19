@@ -904,7 +904,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
 
     @Test
     public void test37_algext() {
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
@@ -917,7 +917,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
 
     @Test
     public void test38_algext() {
-        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicExtension(UnivariatePolynomial.create(Z, Z.valueOf(-2), Z.valueOf(0), Z.valueOf(1)));
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicNumberField(UnivariatePolynomial.create(Z, Z.valueOf(-2), Z.valueOf(0), Z.valueOf(1)));
         Coder<UnivariatePolynomial<BigInteger>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>> uRing = UnivariateRing(field);
@@ -932,7 +932,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
     @Test
     public void test39_algext() {
         UnivariatePolynomial<BigInteger> minimalPoly = UnivariatePolynomial.create(-2, 0, 0, 0, 0, 0, 1);
-        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicExtension(minimalPoly);
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> field = AlgebraicNumberField(minimalPoly);
         Coder<UnivariatePolynomial<BigInteger>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>> uRing = UnivariateRing(field);
@@ -951,7 +951,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
     @Benchmark
     public void test40_algext() {
         UnivariatePolynomial<Rational<BigInteger>> minimalPoly = UnivariatePolynomial.create(-2, 0, 0, 0, 0, 0, 1).mapCoefficients(Q, Q::valueOfBigInteger);
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(minimalPoly);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
@@ -980,7 +980,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
         UnivariatePolynomial<Rational<BigInteger>> minimalPoly =
                 UnivariatePolynomial.create(2, 0, 0, 0, 0, 0, 5).mapCoefficients(Q, Q::valueOfBigInteger);
 
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(minimalPoly);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
@@ -997,7 +997,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
     @Benchmark
     public void test42_algext() {
         UnivariatePolynomial<Rational<BigInteger>> minimalPoly = UnivariatePolynomial.create(-2, 0, 0, 0, 0, 0, 5).mapCoefficients(Q, Q::valueOfBigInteger);
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(minimalPoly);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);
@@ -1069,7 +1069,7 @@ public class UnivariateGCDTest extends AUnivariateTest {
                         31584466, 9500649, 9480702,
                         30401154, 15298203, 25411939,
                         30401154, 15298203, 25411939, 1).mapCoefficients(Q, Q::valueOfBigInteger);
-        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicExtension(minimalPoly);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(minimalPoly);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
 
         UnivariateRing<UnivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = UnivariateRing(field);

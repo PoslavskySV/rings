@@ -172,7 +172,7 @@ class Examples2 {
     val modulus = x.pow(2) + 1
     // poly in a quotient ring
     val quotPoly = {
-      implicit val ring = UnivariateQuotientRing(baseRing, modulus)
+      implicit val ring = AlgebraicNumberField(modulus, "t")
       123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
     }
 

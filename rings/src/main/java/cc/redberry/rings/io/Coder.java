@@ -68,7 +68,7 @@ public class Coder<
 
         this.bindings = eVariables.entrySet()
                 .stream()
-                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (prev, n) -> n));
         this.subcoders = new HashMap<>();
     }
 
@@ -257,7 +257,7 @@ public class Coder<
         Coder<mPoly, ?, ?> coder = mkUnivariateCoder(field.getSimpleExtension(), sVars).map(field, field.imageFunc);
         coder.bindings.putAll(variables.entrySet()
                 .stream()
-                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey)));
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (prev, n) -> n)));
         return coder;
     }
 
