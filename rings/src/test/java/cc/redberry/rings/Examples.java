@@ -4,6 +4,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.MultipleFieldExtension;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.QuotientRing;
 import cc.redberry.rings.poly.SimpleFieldExtension;
@@ -1067,5 +1068,104 @@ public class Examples {
         // factorize multivariate polynomial over algebraic number field
         PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> factors = Factor(poly);
         System.out.println(factors);
+    }
+
+    @Test
+    public void numField2() {
+        // the first algebraic element is given by its minimal polynomial in Q[x]
+        UnivariatePolynomial<Rational<BigInteger>> minPoly1 =
+                UnivariatePolynomial
+                        .create(3, 0, 0, 1)
+                        .mapCoefficients(Q, Q::mkNumerator);
+        // create initial field extension Q(alpha1)
+        MultipleFieldExtension<
+                Monomial<Rational<BigInteger>>,
+                MultivariatePolynomial<Rational<BigInteger>>,
+                UnivariatePolynomial<Rational<BigInteger>>
+                > field = MultipleFieldExtension.mkMultipleExtension(minPoly1);
+
+        MultivariatePolynomial<Rational<BigInteger>> alpha1, alpha2, alpha3;
+        alpha1 = field.variable(0);
+        // create minimal polynomial for second algebraic number
+        // it may have coefficients from algebraic number field Q(alpha1)
+        UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> minPoly2 =
+                UnivariatePolynomial.create(field, alpha1, field.valueOf(3), field.pow(alpha1, 2));
+
+        // assert that minimal polynomial is irreducible
+        assert IrreduciblePolynomials.irreducibleQ(minPoly2);
+
+        // join alpha2 to field extension
+        // that is field is now Q(alpha1, alpha2)
+        field = field.joinAlgebraicElement(minPoly2);
+        alpha1 = field.variable(0);
+        alpha2 = field.variable(1);
+
+        // create minimal polynomial for third algebraic number
+        // it may have coefficients from algebraic number field Q(alpha1, alpha2)
+        UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> minPoly3 =
+                UnivariatePolynomial.create(field, field.valueOf(2), field.add(alpha1, alpha2), field.valueOf(4), field.valueOf(1));
+        // assert that minimal polynomial is irreducible
+        assert IrreduciblePolynomials.irreducibleQ(minPoly3);
+
+        // join alpha3 to field extension
+        // that is field is now Q(alpha1, alpha2, alpha3)
+        field = field.joinAlgebraicElement(minPoly3);
+        alpha1 = field.variable(0); // cast alpha1 to updated field
+        alpha2 = field.variable(1); // cast alpha2 to updated field
+        alpha3 = field.variable(2);
+
+
+        // field has three "variables": alpha1, alpha2, alpha3
+        assert field.nVariables() == 3;
+        // check the degree of obtained field extension:
+        System.out.println(field.degree());
+
+        // do some arithmetic in multiple extension (this is typically
+        // quite slow and expressions are quire large)
+        MultivariatePolynomial<Rational<BigInteger>> el1 = field.subtract(
+                field.pow(field.add(alpha1, alpha2, field.negate(field.divideExact(alpha3, field.valueOf(17L)))), 2),
+                field.reciprocal(alpha2));
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkMultipleExtensionCoder(field, "alpha1", "alpha2", "alpha3");
+        // parse from string
+        MultivariatePolynomial<Rational<BigInteger>> el2 = coder.parse("(-alpha1 - alpha2 + alpha3/17)^2 - 1/alpha2");
+        assert field.subtract(el1, el2).isZero();
+
+
+        // create multivariate polynomial ring over multiple field extension
+        // Q(alpha1, alpha2, alpha3)[x,y,z] and perform some arithmetic
+        // this will will be typically quite slow
+        MultivariateRing<MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>> pmRing = MultivariateRing(3, field);
+        Coder<MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?> pmCoder =
+                Coder.mkMultivariateCoder(pmRing, coder, "x", "y", "z");
+        long t1 = System.currentTimeMillis();
+        MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> thePoly1 = pmCoder.parse("((x - alpha1 - alpha2) * (y - alpha1 - alpha3) * (z - alpha2 - alpha3))^2 - 1");
+        t1 = System.currentTimeMillis() - t1;
+
+        // create the same multivariate ring, but using the isomorphic
+        // simple field extension Q(gamma) = Q(alpha1, alpha2, alpha3)
+        SimpleFieldExtension<UnivariatePolynomial<Rational<BigInteger>>> simpleCfField = field.getSimpleExtension();
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> simpleCoder = Coder.mkUnivariateCoder(simpleCfField, "gamma");
+        simpleCoder.bindAlias("alpha1", field.getGeneratorRep(0));
+        simpleCoder.bindAlias("alpha2", field.getGeneratorRep(1));
+        simpleCoder.bindAlias("alpha3", field.getGeneratorRep(2));
+        //  multivariate ring Q(gamma)[x,y,z]
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> psRing = MultivariateRing(3, simpleCfField);
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> psCoder = Coder.mkMultivariateCoder(psRing, simpleCoder, "x", "y", "z");
+
+        final MultipleFieldExtension<Monomial<Rational<BigInteger>>, MultivariatePolynomial<Rational<BigInteger>>, UnivariatePolynomial<Rational<BigInteger>>> f = field;
+        long t2 = System.currentTimeMillis();
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> thePoly2_ = psCoder
+                .parse("((x - alpha1 - alpha2) * (y - alpha1 - alpha3) * (z - alpha2 - alpha3))^2 - 1");
+        t2 = System.currentTimeMillis() - t2;
+        // convert polynomial Q(gamma)[x,y,z] to Q(alpha1, alpha2, alpha3)[x,y,z]
+        // by substituting gamma = primitive_element (combination of alpha's)
+        MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> thePoly2 = thePoly2_
+                .mapCoefficients(field, p -> f.valueOf(p.composition(f.getPrimitiveElement())));
+
+        // polynomials are equal, however arithmetic in simple
+        // extension is orders of magnitude faster
+        assert thePoly2.equals(thePoly1);
+        System.out.println("Arithmetic in multiple extension: " + t1 + "ms");
+        System.out.println("Arithmetic in simple extension: " + t2 + "ms");
     }
 }

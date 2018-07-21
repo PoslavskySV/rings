@@ -379,8 +379,12 @@ public abstract class SimpleFieldExtension<E extends IUnivariatePolynomial<E>>
     @Override
     public E randomElement(RandomGenerator rnd) {
         E r = RandomUnivariatePolynomials.randomPoly(minimalPoly, rnd.nextInt(minimalPoly.degree()), rnd);
-        if (r.isOverFiniteField())
-            r.multiply(rnd.nextLong());
+        if (r.isOverFiniteField()) {
+            if (r instanceof UnivariatePolynomial)
+                ((UnivariatePolynomial) r).multiply(((UnivariatePolynomial) r).ring.randomElement(rnd));
+            else
+                r.multiply(rnd.nextLong());
+        }
         return r;
     }
 
