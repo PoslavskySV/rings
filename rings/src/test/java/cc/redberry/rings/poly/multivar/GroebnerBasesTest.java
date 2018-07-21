@@ -20,10 +20,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -47,21 +43,6 @@ import static org.junit.Assert.assertTrue;
  * @since 1.0
  */
 public class GroebnerBasesTest extends AMultivariateTest {
-    @Before
-    public void beforeMethod() throws Exception {
-        if (getClass().getMethod(name.getMethodName()).isAnnotationPresent(RequiresSingular.class))
-            Assume.assumeTrue(isSingularAvailable());
-        super.beforeMethod();
-    }
-
-    private static String getSingularPath() {
-        return System.getProperty("singularPath", "/Applications/Singular.app/Contents/bin/Singular");
-    }
-
-    private static boolean isSingularAvailable() {
-        return new File(getSingularPath()).exists();
-    }
-
     @Test
     public void test1() throws Exception {
         String[] vars = {"u0", "u1", "u2", "u3"};
@@ -1413,8 +1394,4 @@ public class GroebnerBasesTest extends AMultivariateTest {
             }
         return newList;
     }
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface RequiresSingular {}
 }

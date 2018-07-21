@@ -37,6 +37,7 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
     /**
      * Drop the coefficient
      */
+    @Override
     public final DegreeVector dv() {
         return new DegreeVector(exponents, totalDegree);
     }

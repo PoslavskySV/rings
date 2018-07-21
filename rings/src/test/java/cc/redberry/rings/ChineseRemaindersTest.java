@@ -131,7 +131,7 @@ public class ChineseRemaindersTest extends AbstractTest {
 
 
             long start = System.nanoTime();
-            ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(prime1, prime2);
+            ChineseRemainders.ChineseRemaindersMagicZp64 magic = ChineseRemainders.createMagic(prime1, prime2);
             fast.addValue(System.nanoTime() - start);
             for (int j = 0; j < nSmallIterations; j++) {
                 long remainder1 = rndd.nextLong(1, prime1 - 1);
@@ -159,7 +159,7 @@ public class ChineseRemaindersTest extends AbstractTest {
     @Test
     public void test5() throws Exception {
         long prime1 = 30223, prime2 = 30241, remainder1 = 21175, remainder2 = 29739;
-        ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(prime1, prime2);
+        ChineseRemainders.ChineseRemaindersMagicZp64 magic = ChineseRemainders.createMagic(prime1, prime2);
         Assert.assertEquals(
                 ChineseRemainders.ChineseRemainders(prime1, prime2, remainder1, remainder2),
                 ChineseRemainders.ChineseRemainders(magic, remainder1, remainder2));

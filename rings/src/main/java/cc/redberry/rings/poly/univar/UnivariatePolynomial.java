@@ -1,13 +1,12 @@
 package cc.redberry.rings.poly.univar;
 
-import cc.redberry.rings.IntegersZp;
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Ring;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.DegreeVector;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.util.ArraysUtil;
@@ -18,7 +17,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static cc.redberry.rings.bigint.BigInteger.ONE;
 import static cc.redberry.rings.bigint.BigInteger.ZERO;
@@ -189,12 +187,46 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     /**
+     * Converts Zp[x] poly over BigIntegers to machine-sized polynomial in Zp
+     *
+     * @param poly the polynomial over BigIntegers
+     * @param ring Zp64 ring
+     * @return machine-sized polynomial in Z/p
+     * @throws IllegalArgumentException if {@code poly.ring} is not {@link IntegersZp}
+     * @throws ArithmeticException      if some of {@code poly} elements is out of long range
+     */
+    public static UnivariatePolynomialZp64 asOverZp64(UnivariatePolynomial<BigInteger> poly, IntegersZp64 ring) {
+        long modulus = ring.modulus;
+        long[] data = new long[poly.degree + 1];
+        for (int i = 0; i < data.length; i++)
+            data[i] = poly.data[i].mod(modulus).longValueExact();
+        return UnivariatePolynomialZp64.create(ring, data);
+    }
+
+    /**
+     * Converts Zp[x] poly over rationals to machine-sized polynomial in Zp
+     *
+     * @param poly the polynomial over rationals
+     * @param ring Zp64 ring
+     * @return machine-sized polynomial in Z/p
+     * @throws IllegalArgumentException if {@code poly.ring} is not {@link IntegersZp}
+     * @throws ArithmeticException      if some of {@code poly} elements is out of long range
+     */
+    public static UnivariatePolynomialZp64 asOverZp64Q(UnivariatePolynomial<Rational<BigInteger>> poly, IntegersZp64 ring) {
+        long modulus = ring.modulus;
+        long[] data = new long[poly.degree + 1];
+        for (int i = 0; i < data.length; i++)
+            data[i] = ring.divide(poly.data[i].numerator().mod(modulus).longValueExact(), poly.data[i].denominator().mod(modulus).longValueExact());
+        return UnivariatePolynomialZp64.create(ring, data);
+    }
+
+    /**
      * Converts Zp[x] polynomial to Z[x] polynomial formed from the coefficients of this represented in symmetric
      * modular form ({@code -modulus/2 <= cfx <= modulus/2}).
      *
      * @param poly Zp polynomial
      * @return Z[x] version of the poly with coefficients represented in symmetric modular form ({@code -modulus/2 <=
-     * cfx <= modulus/2}).
+     *         cfx <= modulus/2}).
      * @throws IllegalArgumentException is {@code poly.ring} is not a {@link IntegersZp}
      */
     public static UnivariatePolynomial<BigInteger> asPolyZSymmetric(UnivariatePolynomial<BigInteger> poly) {
@@ -645,7 +677,7 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     public E content() {
         if (degree == 0)
             return data[0];
-        return ring.gcd(this);
+        return isOverField() ? lc() : ring.gcd(this);
 //        E gcd = data[degree];
 //        for (int i = degree - 1; i >= 0; --i)
 //            gcd = ring.gcd(gcd, data[i]);
@@ -718,11 +750,47 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
             return this.clone();
         if (value.isZero())
             return ccAsPoly();
+        if (value.degree == 1 && value.isMonomial() && ring.isOne(value.lc()))
+            return clone();
 
         UnivariatePolynomial<E> result = createZero();
         for (int i = degree; i >= 0; --i)
             result = result.multiply(value).add(data[i]);
         return result;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public MultivariatePolynomial<E> composition(AMultivariatePolynomial value) {
+        if (!(value instanceof MultivariatePolynomial))
+            throw new IllegalArgumentException();
+        if (!((MultivariatePolynomial) value).ring.equals(ring))
+            throw new IllegalArgumentException();
+        if (value.isOne())
+            return asMultivariate();
+        if (value.isZero())
+            return ccAsPoly().asMultivariate();
+
+        MultivariatePolynomial<E> result = (MultivariatePolynomial<E>) value.createZero();
+        for (int i = degree; i >= 0; --i)
+            result = result.multiply((MultivariatePolynomial<E>) value).add(data[i]);
+        return result;
+    }
+
+    /** Replaces x -> scale * x and returns a copy */
+    public UnivariatePolynomial<E> scale(E scaling) {
+        if (ring.isOne(scaling))
+            return this.clone();
+        if (ring.isZero(scaling))
+            return ccAsPoly();
+
+        E factor = ring.getOne();
+        E[] result = ring.createArray(degree + 1);
+        for (int i = 0; i <= degree; ++i) {
+            result[i] = ring.multiply(data[i], factor);
+            factor = ring.multiply(factor, scaling);
+        }
+        return createUnsafe(ring, result);
     }
 
     /**
@@ -1061,7 +1129,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return a sequential {@code Stream} over the coefficients in this polynomial
      */
     public Stream<E> stream() {
-        return StreamSupport.stream(spliterator(), false);
+        return Arrays.stream(data, 0, degree + 1);
+    }
+
+    @Override
+    public Stream<UnivariatePolynomial<E>> streamAsPolys() {
+        return stream().map(this::createConstant);
     }
 
     @Override
@@ -1177,7 +1250,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public MultivariatePolynomial<E> asMultivariate() {
-        return MultivariatePolynomial.asMultivariate(this, 1, 0, MonomialOrder.DEFAULT);
+        return asMultivariate(MonomialOrder.DEFAULT);
+    }
+
+    @Override
+    public MultivariatePolynomial<E> asMultivariate(Comparator<DegreeVector> ordering) {
+        return MultivariatePolynomial.asMultivariate(this, 1, 0, ordering);
     }
 
     @Override

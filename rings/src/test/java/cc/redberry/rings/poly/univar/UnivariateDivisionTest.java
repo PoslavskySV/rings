@@ -7,7 +7,7 @@ import cc.redberry.rings.poly.FiniteField;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.test.Benchmark;
-import org.apache.commons.math3.random.RandomDataGenerator;
+import cc.redberry.rings.util.RandomDataGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public class UnivariateDivisionTest extends AUnivariateTest {
         UnivariatePolynomialZp64 a = UnivariatePolynomialZ64.create(3480, 8088, 8742, 13810, 12402, 10418, 8966, 4450, 950).modulus(modulus);
         UnivariatePolynomialZp64 b = UnivariatePolynomialZ64.create(2204, 2698, 3694, 3518, 5034, 5214, 5462, 4290, 1216).modulus(modulus);
 
-        UnivariateGCD.PolynomialRemainders<UnivariatePolynomialZp64> prs = UnivariateGCD.EuclidRemainders(a, b);
+        UnivariateResultants.APolynomialRemainderSequence<UnivariatePolynomialZp64> prs = UnivariateResultants.ClassicalPRS(a, b);
         UnivariatePolynomialZp64 gcd = prs.gcd();
         assertEquals(3, gcd.degree);
         assertTrue(UnivariateDivision.divideAndRemainder(a, gcd, true)[1].isZero());
@@ -142,6 +142,21 @@ public class UnivariateDivisionTest extends AUnivariateTest {
         System.out.println(passed);
         System.out.println(wins);
     }
+
+    @Test
+    public void test5_SmallPolynomialsRandom_d() throws Exception {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        for (int i = 0; i < its(1000, 10_000); i++) {
+            UnivariatePolynomial<BigInteger> dividend = randomPoly(15, 1000, rnd).toBigPoly();
+            UnivariatePolynomial<BigInteger> divider = randomPoly(rndd.nextInt(1, 10), 1000, rnd).toBigPoly();
+            UnivariatePolynomial<BigInteger>[] qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(dividend, divider, true);
+            assertPseudoQuotientRemainder(dividend, divider, qr);
+            qr = UnivariateDivision.pseudoDivideAndRemainderAdaptive(dividend.clone(), divider, false);
+            assertPseudoQuotientRemainder(dividend, divider, qr);
+        }
+    }
+
 
     @Test
     public void test5_SmallPolynomialsRandom_a() throws Exception {

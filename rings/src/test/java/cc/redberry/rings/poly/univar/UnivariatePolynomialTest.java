@@ -73,6 +73,13 @@ public class UnivariatePolynomialTest extends AUnivariateTest {
             Assert.assertFalse(poly.content().isZero());
     }
 
+    @Test
+    public void test6() {
+        Assert.assertEquals(
+                UnivariatePolynomial.create(1, 2 * 2, 2 * 2 * 3, 2 * 2 * 2 * 4, 2 * 2 * 2 * 2 * 5),
+                UnivariatePolynomial.create(1, 2, 3, 4, 5).scale(BigInteger.valueOf(2)));
+    }
+
     //
 //    @Test
 //    public void test3() throws Exception {

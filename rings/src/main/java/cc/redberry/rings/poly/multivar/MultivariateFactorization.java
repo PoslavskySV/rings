@@ -45,6 +45,10 @@ public final class MultivariateFactorization {
             return FactorInZ((MultivariatePolynomial) poly);
         else if (Util.isOverRationals(poly))
             return (PolynomialFactorDecomposition<Poly>) FactorInQ((MultivariatePolynomial) poly);
+        else if (Util.isOverSimpleNumberField(poly))
+            return (PolynomialFactorDecomposition<Poly>) FactorInNumberField((MultivariatePolynomial) poly);
+        else if (Util.isOverMultipleFieldExtension(poly))
+            return (PolynomialFactorDecomposition<Poly>) FactorInMultipleFieldExtension((MultivariatePolynomial) poly);
         else {
             PolynomialFactorDecomposition<Poly> factors = tryNested(poly, MultivariateFactorization::Factor);
             if (factors != null)
@@ -52,6 +56,17 @@ public final class MultivariateFactorization {
             throw new RuntimeException("Unsupported ring: " + poly.coefficientRingToString());
         }
     }
+
+    @SuppressWarnings("unchecked")
+    static boolean isOverMultivariate(AMultivariatePolynomial poly) {
+        return (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring instanceof MultivariateRing);
+    }
+
+    @SuppressWarnings("unchecked")
+    static boolean isOverUnivariate(AMultivariatePolynomial poly) {
+        return (poly instanceof MultivariatePolynomial && ((MultivariatePolynomial) poly).ring instanceof UnivariateRing);
+    }
+
 
     @SuppressWarnings("unchecked")
     static <Poly extends AMultivariatePolynomial<?, Poly>>
@@ -118,6 +133,18 @@ public final class MultivariateFactorization {
                 .addUnit(polynomial.createConstant(new Rational<>(integral.ring, integral.ring.getOne(), denominator)));
     }
 
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > PolynomialFactorDecomposition<MultivariatePolynomial<mPoly>>
+    FactorInMultipleFieldExtension(MultivariatePolynomial<mPoly> poly) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) poly.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return Factor(poly.mapCoefficients(simpleExtension, ring::inverse))
+                .mapTo(p -> p.mapCoefficients(ring, ring::image));
+    }
+
     /**
      * Factors multivariate polynomial over Z
      *
@@ -127,6 +154,18 @@ public final class MultivariateFactorization {
     @SuppressWarnings("unchecked")
     public static PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> FactorInZ(final MultivariatePolynomial<BigInteger> polynomial) {
         return Factor(polynomial, MultivariateFactorization::factorPrimitiveInZ);
+    }
+
+    /**
+     * Factors multivariate polynomial over simple number field via Trager's algorithm
+     *
+     * @param polynomial the polynomial
+     * @return factor decomposition
+     */
+    @SuppressWarnings("unchecked")
+    public static PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
+    FactorInNumberField(final MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> polynomial) {
+        return Factor(polynomial, MultivariateFactorization::factorPrimitiveInNumberField);
     }
 
     /**
@@ -2711,5 +2750,68 @@ public final class MultivariateFactorization {
         if (lcs != null)
             for (MultivariatePolynomial<BigInteger> factor : lcs)
                 factor.multiply(constant);
+    }
+
+
+    /* =========================== Multivariate factorization over simple number fields ============================ */
+
+    /** Factors polynomial in Q(alpha)[x1,..,xN] via Trager's algorithm */
+    public static PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
+    factorPrimitiveInNumberField(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> poly) {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField
+                = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) poly.ring;
+        int[] variables = ArraysUtil.sequence(0, poly.nVariables);
+        ArraysUtil.quickSort(poly.degrees(), variables);
+
+        for (int s = 0; ; ++s) {
+            for (int variable : variables) {
+                if (poly.degree(variable) == 0)
+                    continue;
+                // choose a substitution f(z) -> f(z - s*alpha) so that norm is square-free
+                MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                        backSubstitution, sPoly;
+                if (s == 0) {
+                    backSubstitution = null;
+                    sPoly = poly;
+                } else {
+                    sPoly = poly.composition(variable, poly.createMonomial(variable, 1).subtract(numberField.generator().multiply(s)));
+                    backSubstitution = poly.createMonomial(variable, 1).add(numberField.generator().multiply(s));
+                }
+
+                MultivariatePolynomial<Rational<BigInteger>> sPolyNorm = numberField.normOfPolynomial(sPoly);
+                if (!MultivariateSquareFreeFactorization.isSquareFree(sPolyNorm))
+                    continue;
+
+                // factorize norm
+                PolynomialFactorDecomposition<MultivariatePolynomial<Rational<BigInteger>>> normFactors = Factor(sPolyNorm);
+                if (normFactors.isTrivial())
+                    return PolynomialFactorDecomposition.of(poly);
+
+                PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
+                        result = PolynomialFactorDecomposition.empty(poly);
+
+                for (int i = 0; i < normFactors.size(); i++) {
+                    assert normFactors.getExponent(i) == 1;
+                    MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> factor =
+                            MultivariateGCD.PolynomialGCD(sPoly, toNumberField(numberField, normFactors.get(i)));
+                    if (backSubstitution != null)
+                        factor = factor.composition(variable, backSubstitution);
+                    result.addFactor(factor, 1);
+                }
+
+                if (result.isTrivial())
+                    return PolynomialFactorDecomposition.of(poly);
+
+                // correct unit
+                result.setLcFrom(poly);
+                return result;
+            }
+        }
+    }
+
+    private static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    toNumberField(AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField,
+                  MultivariatePolynomial<Rational<BigInteger>> poly) {
+        return poly.mapCoefficients(numberField, cf -> UnivariatePolynomial.constant(Rings.Q, cf));
     }
 }

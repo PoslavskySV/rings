@@ -7,8 +7,10 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.DegreeVector;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
@@ -257,6 +259,18 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
         return null;
     }
 
+    /**
+     * Returns the content of this poly (gcd of its coefficients)
+     *
+     * @return polynomial content
+     */
+    @Override
+    public long content() {
+        if (degree == 0)
+            return data[0];
+        return MachineArithmetic.gcd(data, 0, degree + 1);
+    }
+
     @Override
     long add(long a, long b) {return MachineArithmetic.safeAdd(a, b);}
 
@@ -431,7 +445,12 @@ public final class UnivariatePolynomialZ64 extends AUnivariatePolynomial64<Univa
     }
 
     @Override
-    public AMultivariatePolynomial asMultivariate() {
+    public AMultivariatePolynomial composition(AMultivariatePolynomial value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AMultivariatePolynomial asMultivariate(Comparator<DegreeVector> ordering) {
         throw new UnsupportedOperationException();
     }
 }

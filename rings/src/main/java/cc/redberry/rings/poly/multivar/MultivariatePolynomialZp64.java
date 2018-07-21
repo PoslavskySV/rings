@@ -667,14 +667,15 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @return content of this polynomial
      */
     public long content() {
-        long gcd = -1;
-        for (MonomialZp64 term : terms) {
-            if (gcd == -1)
-                gcd = term.coefficient;
-            else
-                gcd = MachineArithmetic.gcd(gcd, term.coefficient);
-        }
-        return gcd;
+        return lc();
+//        long gcd = -1;
+//        for (MonomialZp64 term : terms) {
+//            if (gcd == -1)
+//                gcd = term.coefficient;
+//            else
+//                gcd = MachineArithmetic.gcd(gcd, term.coefficient);
+//        }
+//        return gcd;
     }
 
     /**
@@ -1848,6 +1849,11 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      */
     public <T> MultivariatePolynomial<T> mapCoefficients(Ring<T> newRing, LongFunction<T> mapper) {
         return mapTerms(newRing, t -> new Monomial<>(t.exponents, t.totalDegree, mapper.apply(t.coefficient)));
+    }
+
+    @Override
+    public <E> MultivariatePolynomial<E> mapCoefficientsAsPolys(Ring<E> ring, Function<MultivariatePolynomialZp64, E> mapper) {
+        return mapCoefficients(ring, cf -> mapper.apply(createConstant(cf)));
     }
 
     @Override

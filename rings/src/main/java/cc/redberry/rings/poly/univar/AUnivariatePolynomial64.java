@@ -10,6 +10,7 @@ import cc.redberry.rings.util.ArraysUtil;
 import java.util.Arrays;
 import java.util.function.LongFunction;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static cc.redberry.libdivide4j.FastDivision.divideSignedFast;
 import static cc.redberry.libdivide4j.FastDivision.magicSigned;
@@ -342,11 +343,7 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
      *
      * @return polynomial content
      */
-    public final long content() {
-        if (degree == 0)
-            return data[0];
-        return MachineArithmetic.gcd(data, 0, degree + 1);
-    }
+    public abstract long content();
 
     @Override
     public final lPoly contentAsPoly() {
@@ -675,6 +672,11 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
     public String toStringForCopy() {
         String s = ArraysUtil.toString(data, 0, degree + 1);
         return "of(" + s.substring(1, s.length() - 1) + ")";
+    }
+
+    @Override
+    public Stream<lPoly> streamAsPolys() {
+        return stream().mapToObj(this::createConstant);
     }
 
     /**

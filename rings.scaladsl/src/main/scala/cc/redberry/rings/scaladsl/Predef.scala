@@ -139,6 +139,59 @@ private[scaladsl] trait Predef {
     */
   def Zp(modulus: BigInt): Ring[BigInteger] = Zp(new BigInteger(modulus.bigInteger))
 
+  /**
+    * Gaussian numbers for a given ring (that is ring adjoined with imaginary unit)
+    */
+  def GaussianNumbers[E](ring: Ring[E], imaginaryUnit: String = "i")
+  : AlgebraicNumberField[E] = AlgebraicNumberField(rings.Rings.GaussianNumbers(ring), imaginaryUnit)
+
+  /**
+    * Ring of Gaussian integers (integer complex numbers).
+    */
+  lazy val GaussianIntegers: AlgebraicNumberField[IntZ] = GaussianIntegers("i")
+
+  /**
+    * Ring of Gaussian integers (integer complex numbers).
+    */
+  def GaussianIntegers(imaginaryUnit: String = "i")
+  : AlgebraicNumberField[IntZ] = AlgebraicNumberField(rings.Rings.GaussianIntegers, imaginaryUnit)
+
+  /**
+    * Field of Gaussian rationals (rational complex numbers).
+    */
+  lazy val GaussianRationals: AlgebraicNumberField[Rational[IntZ]] = GaussianRationals("i")
+
+  /**
+    * Field of Gaussian rationals (rational complex numbers).
+    */
+  def GaussianRationals(imaginaryUnit: String)
+  : AlgebraicNumberField[Rational[IntZ]] = AlgebraicNumberField(rings.Rings.GaussianRationals, imaginaryUnit)
+
+  /**
+    * Splitting field of a given polynomial.
+    */
+  def SplittingField[
+  Term <: AMonomial[Term],
+  mPoly <: AMultivariatePolynomial[Term, mPoly],
+  sPoly <: IUnivariatePolynomial[sPoly],
+  E](poly: sPoly, variables: Array[String])
+  : MultipleFieldExtension[Term, mPoly, sPoly, E]
+  = MultipleFieldExtension(rings.Rings.SplittingField(poly), variables)
+
+  /**
+    * Splitting field of a given polynomial.
+    */
+  def SplittingField[E](poly: UnivariatePolynomial[E], variables: Array[String])
+  : MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E]
+  = MultipleFieldExtension(rings.Rings.SplittingField[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]](poly), variables)
+
+  /**
+    * Splitting field of a given polynomial.
+    */
+  def SplittingFieldZp64(poly: UnivariatePolynomialZp64, variables: Array[String])
+  : MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long]
+  = MultipleFieldExtension(rings.Rings.SplittingField[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64](poly), variables)
+
   object UnivariatePolynomial {
     def apply[I, E](cfs: I*)(implicit ring: Ring[E]): UnivariatePolynomial[E] = cfs.headOption match {
       case None => rings.poly.univar.UnivariatePolynomial.zero[E](ring)

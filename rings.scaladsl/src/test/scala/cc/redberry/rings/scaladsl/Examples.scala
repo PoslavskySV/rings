@@ -5,7 +5,7 @@ import cc.redberry.rings.linear.LinearSolver
 import cc.redberry.rings.poly.PolynomialMethods
 import cc.redberry.rings.poly.multivar.MonomialOrder.LEX
 import cc.redberry.rings.poly.multivar.{MonomialOrder, MultivariatePolynomial}
-import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariatePolynomialArithmetic}
+import cc.redberry.rings.poly.univar.{IrreduciblePolynomials, UnivariatePolynomialArithmetic, UnivariateResultants}
 import cc.redberry.rings.primes.SmallPrimes
 import org.apache.commons.math3.random.Well1024a
 import org.junit.{Ignore, Test}
@@ -161,6 +161,7 @@ class Examples {
   @Test
   def test8: Unit = {
     import rings.poly.univar.UnivariateGCD._
+    import rings.poly.univar.UnivariateResultants._
     import syntax._
 
     // Polynomials over field
@@ -193,7 +194,7 @@ class Examples {
     val aXY = ringXY("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2")
     val bXY = ringXY("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2")
     // Subresultant sequence
-    val subResultants = SubresultantRemainders(aXY, bXY)
+    val subResultants = UnivariateResultants.SubresultantPRS(aXY, bXY)
     // The GCD
     val gcdXY = subResultants.gcd.primitivePart
     assert(aXY % gcdXY === 0 && bXY % gcdXY === 0)

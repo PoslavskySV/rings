@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 
 /**
  * Defines #stringify(Stringifiable) method
+ *
+ * @since 2.4
  */
 public interface IStringifier<Element> {
     /**
@@ -36,8 +38,8 @@ public interface IStringifier<Element> {
     }
 
     /**
-     * Get stringifier for the specified ring of some underlying elements,
-     * should never give null (use dummy() for absent stringifier)
+     * Get stringifier for the specified ring of some underlying elements, should never give null (use dummy() for
+     * absent stringifier)
      */
     <UnderlyingElement>
     IStringifier<UnderlyingElement> substringifier(Ring<UnderlyingElement> ring);

@@ -2,6 +2,7 @@ package cc.redberry.rings.poly.multivar;
 
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
+import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
@@ -29,8 +30,9 @@ import java.util.stream.Stream;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.PolynomialMethods.Factor;
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
-import static cc.redberry.rings.poly.multivar.MultivariateFactorization.bivariateDenseFactorSquareFreeInGF;
-import static cc.redberry.rings.poly.multivar.MultivariateFactorization.factorPrimitiveInGF;
+import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
+import static cc.redberry.rings.poly.multivar.MultivariateFactorization.*;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @since 1.0
@@ -2223,6 +2225,81 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         }
         return MultivariatePolynomial.create(nVars, ring, ordering, terms);
     }
+
+    @Test
+    public void testNumberField1() {
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> pCoder = Coder.mkUnivariateCoder(UnivariateRing(Q), "x");
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field
+                = new AlgebraicNumberField<>(pCoder.parse("1 + x^2"));
+
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder
+                = Coder.mkMultivariateCoder(MultivariateRing(3, field), cfCoder, "x", "y", "z");
+
+
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> poly = coder.parse("1 + x^2*y^2*z^2");
+        for (int i = 0; i < 100; ++i) {
+            long start = System.nanoTime();
+            PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> factors = FactorInNumberField(poly);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            assertTrue(factors.size() == 2);
+            FactorDecompositionTest.assertFactorization(poly, factors);
+        }
+    }
+
+    @Test
+    public void testNumberField3_random() {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+
+        int nVars = 3, degree = 4;
+        for (int i = 0; i < its(10, 10); ++i) {
+            UnivariatePolynomial<Rational<BigInteger>> minimalPoly = RandomUnivariatePolynomials
+                    .randomPoly(rndd.nextInt(2, 5), rnd)
+                    .toBigPoly()
+                    .mapCoefficients(Q, cf -> Q.mkNumerator(cf.mod(10)));
+
+            minimalPoly.setLC(Q.mkNumerator(rndd.nextInt(1, 10)));
+            if (!IrreduciblePolynomials.irreducibleQ(minimalPoly)) {
+                --i;
+                continue;
+            }
+
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = new AlgebraicNumberField<>(minimalPoly);
+
+            System.out.println("Field        : " + field);
+            Supplier<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> rndPoly = () ->
+                    RandomMultivariatePolynomials.randomSharpPolynomial(
+                            nVars,
+                            rndd.nextInt(degree / 2, degree),
+                            rndd.nextInt(4, 9),
+                            field,
+                            GREVLEX,
+                            __ -> RandomUnivariatePolynomials.randomPoly(minimalPoly.degree(), Q, ___ -> Q.mk(rnd.nextInt(10), 1 + rnd.nextInt(10)), rnd),
+                            rnd);
+
+            Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+            Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder =
+                    Coder.mkMultivariateCoder(MultivariateRing(nVars, field), cfCoder, "x1", "x2", "x3");
+
+            for (int j = 0; j < 2; ++j) {
+                MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                        a = rndPoly.get(),
+                        b = rndPoly.get(),
+                        c = rndPoly.get(),
+                        poly = a.clone().multiply(b, c);
+
+                long start, elapsed;
+
+                start = System.nanoTime();
+                PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> factors = FactorInNumberField(poly);
+                elapsed = System.nanoTime() - start;
+                FactorDecompositionTest.assertFactorization(poly, factors);
+                System.out.println("Elapsed : " + TimeUnits.nanosecondsToString(elapsed));
+            }
+        }
+    }
+
 
     /* ==================================== Test data =============================================== */
 

@@ -14,10 +14,8 @@ import java.util.stream.Stream;
 
 /**
  * Factor decomposition of element. Unit coefficient of decomposition is stored in {@link #unit}, factors returned by
- * {@link #get(int)} are non-units. This class is mutable.
- * <p>
- * <p><i>Iterable</i> specification provides iterator over non-unit factors only; to iterate over all factors including
- * the constant factor use {@link #iterableWithUnit()}
+ * {@link #get(int)} are non-units. This class is mutable. <p> <p><i>Iterable</i> specification provides iterator over
+ * non-unit factors only; to iterate over all factors including the constant factor use {@link #iterableWithUnit()}
  *
  * @author Stanislav Poslavsky
  * @since 2.2
@@ -105,6 +103,8 @@ public class FactorDecomposition<E>
     public FactorDecomposition<E> addUnit(E unit, int exponent) {
         if (!isUnit(unit))
             throw new IllegalArgumentException("not a unit: " + unit);
+        if (ring.isOne(unit))
+            return this;
         this.unit = ring.multiply(this.unit, ring.pow(unit, exponent));
         return this;
     }

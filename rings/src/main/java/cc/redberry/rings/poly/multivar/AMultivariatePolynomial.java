@@ -1,5 +1,6 @@
 package cc.redberry.rings.poly.multivar;
 
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.io.IStringifier;
@@ -323,6 +324,35 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     public final boolean isZero() { return terms.isEmpty(); }
 
     @Override
+    public boolean isLinearOrConstant() {
+        if (size() > 2)
+            return false;
+        if (isConstant())
+            return true;
+        if (isZeroCC())
+            return size() == 1;
+        else
+            return size() == 2;
+    }
+
+    @Override
+    public boolean isLinearExactly() {
+        if (size() > 2)
+            return false;
+        if (isConstant())
+            return false;
+        if (isZeroCC())
+            return size() == 1;
+        else
+            return size() == 2;
+    }
+
+    @Override
+    public boolean isZeroCC() {
+        return !terms.containsKey(new DegreeVector(new int[nVariables], 0));
+    }
+
+    @Override
     public final Iterator<Term> iterator() {
         return terms.iterator();
     }
@@ -442,11 +472,11 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
         for (Term term : terms)
             newData.add(term.insert(variable, count));
-        return create(nVariables + 1, newData);
+        return create(nVariables + count, newData);
     }
 
     /** auxiliary method */
-    final Poly setNVariables(int newNVariables) {
+    public final Poly setNVariables(int newNVariables) {
         if (newNVariables == nVariables)
             return self;
         MonomialSet<Term> newData = new MonomialSet<>(ordering);
@@ -1324,6 +1354,18 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Returns skeleton of this poly with respect to specified {@code variables}
+     *
+     * @param variables the variables
+     * @return skeleton of this poly with respect to specified {@code variables}
+     */
+    public final Set<DegreeVector> getSkeletonDrop(int... variables) {
+        int[] variablesSorted = variables.clone();
+        Arrays.sort(variablesSorted);
+        return terms.keySet().stream().map(dv -> dv.dvDropSelect(variablesSorted)).collect(Collectors.toCollection(() -> new TreeSet<>(ordering)));
+    }
+
+    /**
      * Returns skeleton of this poly with respect to all except specified {@code variables}
      *
      * @param variables the variables to exclude
@@ -1473,6 +1515,37 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      *
      * @param values polynomial values (may have different nvars from this)
      */
+    @SuppressWarnings("unchecked")
+    public final <sPoly extends IUnivariatePolynomial<sPoly>> sPoly composition(sPoly... values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+
+        return composition(Rings.UnivariateRing(values[0]), values);
+    }
+
+    /**
+     * Substitutes given polynomials instead of variables of this (that is {@code this(values_1, ..., values_N)})
+     *
+     * @param uRing  ring of univariate polynomials
+     * @param values polynomial values (may have different nvars from this)
+     */
+    @SuppressWarnings("unchecked")
+    public final <sPoly extends IUnivariatePolynomial<sPoly>> sPoly composition(Ring<sPoly> uRing, sPoly... values) {
+        if (values.length != nVariables)
+            throw new IllegalArgumentException();
+
+        sPoly factory = values[0];
+        if (this instanceof MultivariatePolynomialZp64)
+            return ((MultivariatePolynomialZp64) this).mapCoefficients(uRing, uRing::valueOf).evaluate(values);
+        else
+            return (sPoly) ((MultivariatePolynomial) this).mapCoefficients(uRing, cf -> ((UnivariatePolynomial) factory).createConstant(cf)).evaluate(values);
+    }
+
+    /**
+     * Substitutes given polynomials instead of variables of this (that is {@code this(values_1, ..., values_N)})
+     *
+     * @param values polynomial values (may have different nvars from this)
+     */
     public final Poly composition(List<Poly> values) {
         if (nVariables == 0)
             return self;
@@ -1519,6 +1592,8 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * of the original {@code poly} with respect to all except {@code variable} variables
      */
     public abstract Poly evaluateAtRandomPreservingSkeleton(int variable, RandomGenerator rnd);
+
+    public abstract <E> MultivariatePolynomial<E> mapCoefficientsAsPolys(Ring<E> ring, Function<Poly, E> mapper);
 
     /**
      * Collector which collects stream of element to a UnivariatePolynomial

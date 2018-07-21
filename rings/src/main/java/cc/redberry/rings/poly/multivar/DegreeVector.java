@@ -48,6 +48,10 @@ public class DegreeVector implements java.io.Serializable {
         return totalDegree == 0;
     }
 
+    public DegreeVector dv() {
+        return this;
+    }
+
     /** Returns the total degree in specified variables */
     public final int dvTotalDegree(int... variables) {
         int d = 0;
