@@ -15,6 +15,7 @@ import org.junit.Test;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.Rings.UnivariateRing;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -167,6 +168,10 @@ public class MultipleFieldExtensionTest {
 
         UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> p = pCoder.parse("2*x^3 - 3*x^2 + 4*x + 5");
         assertEquals(3, UnivariateFactorization.Factor(p).size());
+
+        MultivariatePolynomial<Rational<BigInteger>> el = splittingField.variable(0);
+        System.out.println(splittingField.subtract(splittingField.image(splittingField.inverse(el)), el));
+        assertTrue(splittingField.subtract(splittingField.image(splittingField.inverse(el)), el).isZero());
     }
 
     @Test
@@ -186,5 +191,22 @@ public class MultipleFieldExtensionTest {
         assertEquals(coder.parse("-15/17"), coder.parse("s1 * s2 * s3"));
         assertEquals(coder.parse("25/17"), coder.parse("s1 * s2  +  s1 * s3 + s2 * s3"));
         assertEquals(coder.parse("14/17"), coder.parse("s1 + s2 + s3"));
+    }
+
+    @Test
+    public void test7() {
+        UnivariatePolynomial<Rational<BigInteger>> minPoly1 = UnivariatePolynomial.create(3, 0, 0, 1).mapCoefficients(Q, Q::mkNumerator);
+        MultipleFieldExtension<
+                Monomial<Rational<BigInteger>>,
+                MultivariatePolynomial<Rational<BigInteger>>,
+                UnivariatePolynomial<Rational<BigInteger>>
+                > field = MultipleFieldExtension.mkMultipleExtension(minPoly1);
+
+        MultivariatePolynomial<Rational<BigInteger>> alpha1 = field.variable(0);
+        UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> minPoly2 = UnivariatePolynomial.create(field, alpha1, field.valueOf(3), field.pow(alpha1, 2));
+
+        field = field.joinAlgebraicElement(minPoly2);
+        MultivariatePolynomial<Rational<BigInteger>> el = field.variable(0);
+        assertTrue(field.inverse(field.subtract(field.image(field.inverse(el)), el)).isZero());
     }
 }

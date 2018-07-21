@@ -79,6 +79,12 @@ public class Coder<
         return this;
     }
 
+    /** Add string -> element mapping */
+    public Coder<Element, Term, Poly> bindAlias(String var, Element el) {
+        eVariables.put(var, el);
+        return this;
+    }
+
     /** Add stringifier of inner elements */
     public Coder<Element, Term, Poly> withEncoder(Coder<?, ?, ?> subencoder) {
         subcoders.put(subencoder.baseRing, subencoder);

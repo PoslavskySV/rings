@@ -4,6 +4,7 @@ import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
@@ -2535,7 +2536,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         //Modular: 168ms
     }
 
-    @Test
+    @Test // elapsed 230s
     public void testZippelModularAlgExt1_random() {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();

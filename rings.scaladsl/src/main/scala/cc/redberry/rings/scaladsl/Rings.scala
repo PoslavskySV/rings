@@ -1078,8 +1078,14 @@ E](override val theRing: rings.poly.MultipleFieldExtension[Term, mPoly, sPoly],
   /**
     * Returns the isomorphic simple field extension
     */
-  def getSimpleExtension(variable: String = "alpha")
-  : SimpleFieldExtension[sPoly, E] = SimpleFieldExtension(theRing.getSimpleExtension, variable)
+  def getSimpleExtension(variable: String = "gamma")
+  : SimpleFieldExtension[sPoly, E] = {
+    val r: SimpleFieldExtension[sPoly, E] = SimpleFieldExtension(theRing.getSimpleExtension, variable)
+    for (i <- 0 until theRing.nVariables()) {
+      r.coder.bindAlias(variableString(i), theRing.getGeneratorRep(i))
+    }
+    r
+  }
 
   /**
     * Adds algebraic element given by its minimal polynomial (not checked that it is irreducible) to this.
@@ -1088,6 +1094,7 @@ E](override val theRing: rings.poly.MultipleFieldExtension[Term, mPoly, sPoly],
   : MultipleFieldExtension[Term, mPoly, sPoly, E] = {
     val r: MultipleFieldExtension[Term, mPoly, sPoly, E] = MultipleFieldExtension(theRing.joinAlgebraicElement(algebraicElement), variables :+ variable)
     r.coder.withEncoder(this.coder)
+    //r.coder.getBindings.putAll(this.coder.getBindings)
     r
   }
 
@@ -1098,6 +1105,7 @@ E](override val theRing: rings.poly.MultipleFieldExtension[Term, mPoly, sPoly],
   : MultipleFieldExtension[Term, mPoly, sPoly, E] = {
     val r: MultipleFieldExtension[Term, mPoly, sPoly, E] = MultipleFieldExtension(theRing.joinAlgebraicElement(algebraicElement), variables :+ variable)
     r.coder.withEncoder(this.coder)
+    //r.coder.getBindings.putAll(this.coder.getBindings)
     r
   }
 
@@ -1151,6 +1159,16 @@ object MultipleFieldExtension {
   def apply(generators: Array[UnivariatePolynomialZp64],
             variables: Array[String]): MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long] =
     MultipleFieldExtension(rings.Rings.MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64](generators: _*), variables)
+
+  def apply[E](generator: UnivariatePolynomial[E],
+               variable: String):
+  MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E] =
+    MultipleFieldExtension(rings.Rings.MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]](generator), Array(variable))
+
+  def apply(generator: UnivariatePolynomialZp64,
+            variable: String): MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long] =
+    MultipleFieldExtension(rings.Rings.MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64](generator), Array(variable))
+
 
   implicit def implicitConversions[
   Term <: AMonomial[Term],
