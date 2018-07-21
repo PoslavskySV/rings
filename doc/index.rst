@@ -23,15 +23,13 @@ Rings: efficient Java/Scala library for polynomial rings
 
 The key features of |Rings| include:
 
- * :ref:`Polynomials → <ref-basics-polynomials>` |br| :feature:`Univariate and multivariate polynomials over arbitrary coefficient rings`
+ * :ref:`Rings → <ref-rings>` |br| :feature:`integers, fractions, finite and algebraic fields, multiple field extensions, polynomial rings and more`
 
- * :ref:`Polynomial GCD → <ref-polynomial-methods>` |br| :feature:`Polynomial GCD over arbitrary coefficient domains`
+ * :ref:`Polynomials → <ref-basics-polynomials>` |br| :feature:`Efficient univariate and multivariate polynomials over arbitrary coefficient rings`
 
- * :ref:`Univariate factorization → <ref-univariate-factorization>` |br| :feature:`Univariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q` etc
-   
- * :ref:`Multivariate factorization → <ref-multivariate-factorization>` |br| :feature:`Multivariate polynomial factorization over arbitrary finite fields,` :math:`Z` :feature:`and` :math:`Q` etc
- 
- * :ref:`Commutative algebra → <ref-rings>` |br| :feature:`Arbitrary rings, Galois fields, polynomial ideals etc`
+ * :ref:`Polynomial GCD → <ref-polynomial-methods>` |br| :feature:`Highly performant polynomial GCD over arbitrary coefficient domains`
+
+ * :ref:`Univariate and multivariate polynomial factorization → <ref-univariate-factorization>` |br| :feature:`Highly performant polynomial factorization over almost arbitrary rings`
 
  * :ref:`Ideals and Gröbner bases → <ref-ideals>` |br| :feature:`Polynomial ideals and efficient algorithms for Gröbner bases`
 

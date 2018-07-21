@@ -33,6 +33,7 @@ import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.irreducibleQ;
 import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.*;
 import static cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization.SquareFreeFactorization;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Stanislav Poslavsky
@@ -1167,5 +1168,30 @@ public class Examples {
         assert thePoly2.equals(thePoly1);
         System.out.println("Arithmetic in multiple extension: " + t1 + "ms");
         System.out.println("Arithmetic in simple extension: " + t2 + "ms");
+    }
+
+    @Test
+    public void numField3() {
+        UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> auxRing = UnivariateRing(Q);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
+
+        // some irreducible polynomial
+        UnivariatePolynomial<Rational<BigInteger>> poly = auxCoder.parse("17*x^3 - 14*x^2 + 25*x +  15");
+        // create splitting field as multiple field extension
+        // s1,s2,s3 are roots of specified poly
+        MultipleFieldExtension<
+                Monomial<Rational<BigInteger>>,
+                MultivariatePolynomial<Rational<BigInteger>>,
+                UnivariatePolynomial<Rational<BigInteger>>
+                >
+                splittingField = MultipleFieldExtension.mkSplittingField(poly);
+        // check the degree of this extension (6 = 3!)
+        assertEquals(6, splittingField.getSimpleExtension().degree());
+
+        // assert Vieta's identities
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkPolynomialCoder(splittingField, "s1", "s2", "s3");
+        assert coder.parse("s1 * s2 * s3").equals(coder.parse("-15/17"));
+        assert coder.parse("s1 * s2  +  s1 * s3 + s2 * s3").equals(coder.parse("25/17"));
+        assert coder.parse("s1 + s2 + s3").equals(coder.parse("14/17"));
     }
 }

@@ -198,4 +198,22 @@ class Examples3 {
     println(s"Arithmetic in multiple extension: $t1")
     println(s"Arithmetic in simple extension: $t2")
   }
+
+  @Test
+  def testSplittingField(): Unit = {
+    import syntax._
+    // some irreducible polynomial
+    val poly = UnivariateRing(Q, "x")("17*x^3 - 14*x^2 + 25*x +  15")
+    // create splitting field as multiple field extension
+    // s1,s2,s3 are roots of specified poly
+    implicit val field = SplittingField(poly, Array("s1", "s2", "s3"))
+    // check the degree of this extension (6 = 3!)
+    assert(6 == field.getSimpleExtension().degree())
+
+    // assert Vieta's identities
+    val (s1, s2, s3) = field("s1", "s2", "s3")
+    assert(s1 * s2 * s3 == field("-15/17"))
+    assert(s1 * s2 + s1 * s3 + s2 * s3 == field("25/17"))
+    assert(s1 + s2 + s3 == field("14/17"))
+  }
 }

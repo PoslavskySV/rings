@@ -149,15 +149,21 @@ public class MultipleFieldExtensionTest {
         UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> auxRing = UnivariateRing(Q);
         Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
 
+
+        // some irreducible polynomial
         UnivariatePolynomial<Rational<BigInteger>> poly = auxCoder.parse("2*x^3 - 3*x^2 + 4*x + 5");
+        // create splitting field as multiple field extension
+        // s1,s2,s3 are roots of specified poly
         MultipleFieldExtension<
                 Monomial<Rational<BigInteger>>,
                 MultivariatePolynomial<Rational<BigInteger>>,
                 UnivariatePolynomial<Rational<BigInteger>>
                 >
                 splittingField = MultipleFieldExtension.mkSplittingField(poly);
+        // check the degree of this extension (6 = 3!)
         assertEquals(6, splittingField.getSimpleExtension().degree());
 
+        // assert Vieta's identities
         Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkPolynomialCoder(splittingField, "s1", "s2", "s3");
         assertEquals(coder.parse("-5/2"), coder.parse("s1 * s2 * s3"));
         assertEquals(coder.parse("2"), coder.parse("s1 * s2  +  s1 * s3 + s2 * s3"));

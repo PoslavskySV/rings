@@ -30,7 +30,7 @@ import static cc.redberry.rings.poly.univar.Conversions64bit.canConvertToZp64;
 import static cc.redberry.rings.poly.univar.UnivariatePolynomial.asOverZp64;
 
 /**
- * Univariate polynomial GCD and sub-resultant sequences.
+ * Univariate polynomial GCD.
  *
  * @since 1.0
  */

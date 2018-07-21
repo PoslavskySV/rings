@@ -180,10 +180,7 @@ It is worst to mention, that multiplication defined in `IntegersZp64`_ is especi
         assert field64.multiply(0x0bcdef1234567890L, 0x0234567890abcdefL) == 0xf667077306fd7a8L;
 
 
-.. note::
-    
-    `IntegersZp64`_ is used in order to achieve the best possible performance of many fundamental algorithms which underlie in the basis of many high-level features such as GCD and factorization in arbitrary polynomial rings. Since `IntegersZp64`_ operates with primitive ``longs`` and Java doesn't support generics with primitives, `IntegersZp64`_ stands separately from the elegant type hierarchy of generic rings implemented in |Rings| (see :ref:`ref-rings`). For the same reason some of the algorithms have two implementations: one for rings over generic elements and one for `IntegersZp64`_. This internal complication is hidden from the user, and the switch between generic and primitive types is done automatically in the internals of |Rings| when it can really make gain in the performance.
-
+c
 
 .. _IntegersZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/IntegersZp64.java
 .. _IntegersZp: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/IntegersZp.java
@@ -345,37 +342,44 @@ List of built-in rings
 
 Basic rings and factory methods for constructing new rings are placed in `Rings`_ class (Java) or directly in `scaladsl`_ package object (Scala). Below is the list of what is available by default in |Rings|:
 
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| Ring                                   | Description                                                         | Method in ``Rings`` / ``scaladsl``                                                  |
-+========================================+=====================================================================+=====================================================================================+
-| :math:`Z`                              | Ring of integers                                                    | ``Z``                                                                               |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`Q`                              | Field of rationals                                                  | ``Q``                                                                               |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`Z_p`                            | Integers modulo :math:`p`                                           | ``Zp(p)``                                                                           |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`Z_p` with :math:`p < 2^{64}`    | Integers modulo :math:`p < 2^{64}`                                  | ``Zp64(p)`` [*]_                                                                    |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`GF(p^q)`                        | Galois field with cardinality :math:`p^q`                           | ``GF(p, q)`` and ``GF(irred)`` or ``GF(p, q, var)`` and ``GF(irred, var)`` in Scala |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`Frac(R)`                        | Field of fractions of an integral domain :math:`R`                  | ``Frac(R)``                                                                         |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`R[x]`                           | Univariate polynomial ring over                                     | ``UnivariateRing(R)`` or ``UnivariateRing(R, var)`` in Scala                        |
-|                                        | coefficient ring :math:`R`                                          |                                                                                     |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`Z_p[x]` with :math:`p < 2^{64}` | Univariate polynomial ring over                                     | ``UnivariateRingZp64(p)`` or ``UnivariateRingZp64(p, var)`` in Scala                |
-|                                        | coefficient ring :math:`Z_p` with :math:`p < 2^{64}`                |                                                                                     |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`R[x_1, \dots, x_N]`             | Multivariate polynomial ring with exactly :math:`N`                 | ``MultivariateRing(N, R)`` or ``MultivariateRing(R, vars)`` in Scala                |
-|                                        | variables over coefficient ring :math:`R`                           |                                                                                     |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`Z_p[x_1, \dots, x_N]`           | Multivariate polynomial ring with exactly :math:`N`                 | ``MultivariateRingZp64(N, p)`` or ``MultivariateRingZp64(p, vars)`` in Scala        |
-| with :math:`p < 2^{64}`                | variables over coefficient ring :math:`Z_p` with :math:`p < 2^{64}` |                                                                                     |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`R[x]/\langle p(x) \rangle`      | Univariate quotient ring                                            | ``UnivariateQuotientRing(baseRing, poly)``                                          |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
-| :math:`R[x_1, \dots, x_N]/I`           | Multivariate quotient ring                                          | ``QuotientRing(baseRing, ideal)``                                                   |
-+----------------------------------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| Ring                                   | Description                                                         | Method in ``Rings`` / ``scaladsl``                                                    |
++========================================+=====================================================================+=======================================================================================+
+| :math:`Z`                              | Ring of integers                                                    | ``Z``                                                                                 |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Q`                              | Field of rationals                                                  | ``Q``                                                                                 |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Z(i)`                           | Ring of complex integers                                            | ``GaussianIntegers``                                                                  |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Q(i)`                           | Field of complex rationals                                          | ``GaussianRationals``                                                                 |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Z_p`                            | Integers modulo :math:`p`                                           | ``Zp(p)``                                                                             |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Z_p` with :math:`p < 2^{64}`    | Integers modulo :math:`p < 2^{64}`                                  | ``Zp64(p)`` [*]_                                                                      |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`GF(p^q)`                        | Galois field with cardinality :math:`p^q`                           | ``GF(p, q)`` and ``GF(irred)`` or ``GF(p, q, var)`` and ``GF(irred, var)`` in Scala   |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`F(\alpha)`                      | Algebraic number field as simple field extension                    | ``AlgebraicNumberField(minPoly)`` and ``AlgebraicNumberField(minPoly, var)`` in Scala |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`F(\alpha_1, \dots, \alpha_s)`   | Algebraic number field as multilpe field extension                  | ``MultipleFieldExtension(generators)``                                                |
+|                                        |                                                                     | and ``MultipleFieldExtension(generators, vars)`` in Scala                             |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Frac(R)`                        | Field of fractions of an integral domain :math:`R`                  | ``Frac(R)``                                                                           |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`R[x]`                           | Univariate polynomial ring over                                     | ``UnivariateRing(R)`` or ``UnivariateRing(R, var)`` in Scala                          |
+|                                        | coefficient ring :math:`R`                                          |                                                                                       |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Z_p[x]` with :math:`p < 2^{64}` | Univariate polynomial ring over                                     | ``UnivariateRingZp64(p)`` or ``UnivariateRingZp64(p, var)`` in Scala                  |
+|                                        | coefficient ring :math:`Z_p` with :math:`p < 2^{64}`                |                                                                                       |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`R[x_1, \dots, x_N]`             | Multivariate polynomial ring with exactly :math:`N`                 | ``MultivariateRing(N, R)`` or ``MultivariateRing(R, vars)`` in Scala                  |
+|                                        | variables over coefficient ring :math:`R`                           |                                                                                       |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`Z_p[x_1, \dots, x_N]`           | Multivariate polynomial ring with exactly :math:`N`                 | ``MultivariateRingZp64(N, p)`` or ``MultivariateRingZp64(p, vars)`` in Scala          |
+| with :math:`p < 2^{64}`                | variables over coefficient ring :math:`Z_p` with :math:`p < 2^{64}` |                                                                                       |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
+| :math:`R[x_1, \dots, x_N]/I`           | Multivariate quotient ring                                          | ``QuotientRing(baseRing, ideal)``                                                     |
++----------------------------------------+---------------------------------------------------------------------+---------------------------------------------------------------------------------------+
 
 
 .. [*] Class `IntegersZp64`_ which represents :math:`Z_p` with :math:`p < 2^{64}` does not inherit `Ring<E>`_ interface (see :ref:`ref-machine-arithmetic`)
@@ -389,7 +393,7 @@ Basic rings and factory methods for constructing new rings are placed in `Rings`
 Galois fields
 """""""""""""
 
-Galois field :math:`GF(p^q)` with prime characteristic :math:`p` and cardinality :math:`p^q` can be created by specifying :math:`p` and :math:`q` in which case the irreducible polynomial will be generated automatically or by explicitly specifying the irreducible:
+Galois fields :math:`GF(p^q)` with prime characteristic :math:`p` and cardinality :math:`p^q` are implemented as simple field extensions (that is univariate quotient rings :math:`Z_p[x]/\langle m(x) \rangle` where :math:`m(x)` is irreducible minimal polynomial of degree :math:`q`). One can create Galois field by specifying :math:`p` and :math:`q` in which case the minimal polynomial will be generated automatically or by explicitly specifying it:
 
 .. tabs::
 
@@ -445,6 +449,424 @@ Galois fields with arbitrary large characteristic are available:
 
 
 Implementation of Galois fields uses assymptotically fast algorithm for polynomial division with precomputed inverses via Newton iterations (see :ref:`ref-univariate-divison`).
+
+Galois fields are implemented as simple field extensions, some corresponding methods may be of practical use (see the table in the next section).
+
+
+Algebraic number fields and field extensions
+""""""""""""""""""""""""""""""""""""""""""""
+
+There are two types of algebraic number fields implemented in |Rings|: simple extensions :math:`Q(\alpha)` and multiple extensions :math:`Q(\alpha_1, \dots, \alpha_s)`. Arithmetic in simple extensions is always faster and multiple extensions can be always reduces to simple.
+
+
+Simple field extensions
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. _SimpleFieldExtension: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/SimpleFieldExtension.java
+.. _AlgebraicNumberField: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/AlgebraicNumberField.java
+.. _FiniteField: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/FiniteField.java
+
+The base class for all simple field extensions is `SimpleFieldExtension`_. In fact, both Galois fields (instances of `FiniteField`_) and algebraic number fields (instances of `AlgebraicNumberField`_) are derived from `SimpleFieldExtension`_. Simple algebraic number field can be created by providing the minimal polynomial. Some examples with number fields:
+
+.. tabs::
+
+   .. code-tab:: scala
+
+        // parse some minimal polynomial from string
+        val minimalPoly = UnivariateRing(Q, "x")("x^3 - 5")
+
+        // create algebraic number field generated by specified polynomial
+        // variable "r" represents the root of minimal polynomial
+        implicit val field = AlgebraicNumberField(minimalPoly, "r")
+        // just a shortcut for type of field elements
+        type Number = field.ElementType
+        val r = field("r")
+
+        // do some arithmetic in number field
+        val arith1 = (2 + r.pow(19) / 3).pow(3) - 1
+        // parse number elements
+        val arith2 = field("1 + r/(3 - r^7)^8 + r")
+        // assert that r is the root of X^3 - 5
+        assert(r.pow(3) == field(5))
+
+        // compute Norm of some algebraic number
+        val norm1 = field.norm(arith1)
+        // assert that norm is free of radicals
+        assert(field.isInTheBaseField(norm1))
+
+        // compute minimal polynomial of some other algebraic number
+        val mp = field.minimalPolynomial(arith2)
+        // assert that its degree the same
+        assert(mp.degree() == minimalPoly.degree())
+
+        // declare polynomial ring over algebraic numbers
+        implicit val ring = MultivariateRing(field, Array("x", "y", "z"))
+        val (x, y, z) = ring("x", "y", "z")
+
+        // create some polynomial over algebraic numbers
+        val poly: MultivariatePolynomial[Number] = ((x - r) * (y - r) * (z - r)).pow(2) - 1
+        // compute norm of poly, its coefficient ring is the base ring of algebraic extension
+        type BaseNumber = field.CoefficientType
+        val polyNorm: MultivariatePolynomial[BaseNumber] = field.normOfPolynomial(poly)
+
+        // factorize multivariate polynomial over algebraic number field
+        val factors = Factor(poly)
+        println(ring stringify factors)
+
+
+   .. code-tab:: java
+
+        // parse some minimal polynomial from string
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = UnivariatePolynomial.parse("x^3 - 5", Q, "x");
+
+        // create algebraic number field generated by specified polynomial
+        // variable "r" represents the root of minimal polynomial
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(minimalPoly);
+        UnivariatePolynomial<Rational<BigInteger>> r = field.generator();
+
+        // do some arithmetic in number field
+        UnivariatePolynomial<Rational<BigInteger>> arith1 = field.subtract(
+                field.pow(field.add(field.valueOf(2),
+                        field.divideExact(field.pow(r, 19), field.valueOf(3))), 3),
+                field.valueOf(1));
+        // parse number elements
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkUnivariateCoder(field, "r");
+        UnivariatePolynomial<Rational<BigInteger>> arith2 = coder.parse("1 + r/(3 - r^7)^8 + r");
+        // assert that r is the root of X^3 - 5
+        assert field.pow(r, 3).equals(field.valueOf(5));
+
+        // compute Norm of some algebraic number
+        UnivariatePolynomial<Rational<BigInteger>> norm1 = field.norm(arith1);
+        // assert that norm is free of radicals
+        assert field.isInTheBaseField(norm1);
+
+        // compute minimal polynomial of some other algebraic number
+        UnivariatePolynomial<Rational<BigInteger>> mp = field.minimalPolynomial(arith2);
+        // assert that its degree the same
+        assert mp.degree() == minimalPoly.degree();
+
+        // declare polynomial ring over algebraic numbers
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> ring = MultivariateRing(3, field);
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                x = ring.variable(0),
+                y = ring.variable(1),
+                z = ring.variable(2);
+
+        // create some polynomial over algebraic numbers
+        // (note: polynomials x,y,z will be modified)
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> poly = ring.pow(
+                ((x.subtract(r)).multiply(y.subtract(r)).multiply(z.subtract(r))), 2).decrement();
+        // compute norm of poly, its coefficient ring is the base ring of algebraic extension
+        MultivariatePolynomial<Rational<BigInteger>> polyNorm = field.normOfPolynomial(poly);
+
+        // factorize multivariate polynomial over algebraic number field
+        PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> factors = Factor(poly);
+        System.out.println(factors);
+
+
+The following table lists some important methods defined by `SimpleFieldExtension`_:
+
+
++----------------------------+------------------------------------------------------------------------------------+
+| Method                     | Description                                                                        |
++============================+====================================================================================+
+| ``generator()``            | Gives element :math:`\alpha` that generate this field :math:`F(\alpha)`            |
++----------------------------+------------------------------------------------------------------------------------+
+| ``isInThebaseField(el)``   | Whether a given element belongs to the field :math:`F`                             |
++----------------------------+------------------------------------------------------------------------------------+
+| ``getMinimalPolynomial()`` | Returns minimal polynomial that generates field extension                          |
++----------------------------+------------------------------------------------------------------------------------+
+| ``norm(el)``               | Computes the norm of element                                                       |
++----------------------------+------------------------------------------------------------------------------------+
+| ``conjugatesProduct(el)``  | Computes the product of all conjugates of given element (excluding element itself) |
++----------------------------+------------------------------------------------------------------------------------+
+| ``trace(el)``              | Computes the trace of algebraic number                                             |
++----------------------------+------------------------------------------------------------------------------------+
+| ``normOfPolynomial(poly)`` | Computes the norm of given polynomial over this field                              |
++----------------------------+------------------------------------------------------------------------------------+
+| ``minimalPolynomial(el)``  | Computes the minimal polynomial of given element                                   |
++----------------------------+------------------------------------------------------------------------------------+
+| ``asMultipleExtension()``  | Transforms this extension to an instance of multiple field extension               |
++----------------------------+------------------------------------------------------------------------------------+
+
+
+The are special shortcuts for complex numbers:
+
+.. tabs::
+
+   .. code-tab:: scala
+
+        // Gaussian integers (not a field)
+        val integers = GaussianIntegers
+
+        // Gaussian rationals
+        val rationals = GaussianRationals
+
+        // by default "i" is used for imaginary unit
+        // another symbol may be used as well
+        val otherSymbols : AlgebraicNumberField[Rational[IntZ]] = GaussianRationals("ImaginaryUnit")
+
+
+Multiple field extensions
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. _MultipleFieldExtension: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/SimpleFieldExtension.java
+
+Elements of multiple field extension :math:`F(\alpha_1, \dots, \alpha_s)` are represented as multivariate polynomials in :math:`\alpha_1, \dots, \alpha_s`. Arithmetic in multiple field extensions is performed by switching to isomorphic simple field extension :math:`F(\gamma)`, where :math:`\gamma` is a primitive element of field extension (some linear combination :math:`\gamma = \sum c_i \alpha_i`). Primitive element and expressions for generators :math:`\alpha_1, \dots, \alpha_s` in terms of primitive element are always computed automatically in |Rings|. 
+
+The standard way for creating multiple field extensions is to start with the first algebraic element :math:`\alpha_1` and then sequentially add element by element:
+
+.. tabs::
+
+   .. code-tab:: scala
+
+        import syntax._
+        // the first algebraic element is given by its minimal polynomial in Q[x]
+        val minPoly1 = UnivariatePolynomial(3, 0, 0, 1)(Q)
+        // create initial field extension Q(alpha1)
+        implicit var field = MultipleFieldExtension(minPoly1, "alpha1")
+        var alpha1 = field("alpha1")
+
+        // create minimal polynomial for second algebraic number
+        // it may have coefficients from algebraic number field Q(alpha1)
+        val minPoly2 = UnivariatePolynomial(alpha1, field(3), alpha1.pow(2))
+        // assert that minimal polynomial is irreducible
+        assert(Factor(minPoly2).isTrivial)
+
+        // join alpha2 to field extension
+        // that is field is now Q(alpha1, alpha2)
+        field = field.joinAlgebraicElement(minPoly2, "alpha2")
+        alpha1 = field("alpha1") // cast alpha1 to updated field
+        var alpha2 = field("alpha2")
+
+        // create minimal polynomial for third algebraic number
+        // it may have coefficients from algebraic number field Q(alpha1, alpha2)
+        val minPoly3 = UnivariatePolynomial(field(2), alpha1 + alpha2, field(4), field(1))
+        // assert that minimal polynomial is irreducible
+        assert(Factor(minPoly3).isTrivial)
+
+        // join alpha3 to field extension
+        // that is field is now Q(alpha1, alpha2, alpha3)
+        field = field.joinAlgebraicElement(minPoly3, "alpha3")
+        alpha1 = field("alpha1") // cast alpha1 to updated field
+        alpha2 = field("alpha2") // cast alpha2 to updated field
+        var alpha3 = field("alpha3")
+
+        // field has three "variables": alpha1, alpha2, alpha3
+        assert(field.nVariables() == 3)
+
+        // check the degree of obtained field extension:
+        println(field.degree())
+
+        // do some arithmetic in multiple extension (this is typically
+        // quite slow and expressions are quire large)
+        val el1 = (alpha1 + alpha2 - alpha3 / 17).pow(2) - 1 / alpha2
+        // parse from string
+        val el2 = field("(-alpha1 - alpha2 + alpha3/17)^2 - 1/alpha2")
+        assert(el1 - el2 == field(0))
+
+   .. code-tab:: java
+
+        // the first algebraic element is given by its minimal polynomial in Q[x]
+        UnivariatePolynomial<Rational<BigInteger>> minPoly1 =
+            UnivariatePolynomial
+                    .create(3, 0, 0, 1)
+                    .mapCoefficients(Q, Q::mkNumerator);
+        // create initial field extension Q(alpha1)
+        MultipleFieldExtension<
+            Monomial<Rational<BigInteger>>,
+            MultivariatePolynomial<Rational<BigInteger>>,
+            UnivariatePolynomial<Rational<BigInteger>>
+            > field = MultipleFieldExtension.mkMultipleExtension(minPoly1);
+
+        MultivariatePolynomial<Rational<BigInteger>> alpha1, alpha2, alpha3;
+        alpha1 = field.variable(0);
+        // create minimal polynomial for second algebraic number
+        // it may have coefficients from algebraic number field Q(alpha1)
+        UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> minPoly2 =
+            UnivariatePolynomial.create(field, alpha1, field.valueOf(3), field.pow(alpha1, 2));
+
+        // assert that minimal polynomial is irreducible
+        assert IrreduciblePolynomials.irreducibleQ(minPoly2);
+
+        // join alpha2 to field extension
+        // that is field is now Q(alpha1, alpha2)
+        field = field.joinAlgebraicElement(minPoly2);
+        alpha1 = field.variable(0);
+        alpha2 = field.variable(1);
+
+        // create minimal polynomial for third algebraic number
+        // it may have coefficients from algebraic number field Q(alpha1, alpha2)
+        UnivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> minPoly3 =
+            UnivariatePolynomial.create(field, field.valueOf(2), field.add(alpha1, alpha2), field.valueOf(4), field.valueOf(1));
+        // assert that minimal polynomial is irreducible
+        assert IrreduciblePolynomials.irreducibleQ(minPoly3);
+
+        // join alpha3 to field extension
+        // that is field is now Q(alpha1, alpha2, alpha3)
+        field = field.joinAlgebraicElement(minPoly3);
+        alpha1 = field.variable(0); // cast alpha1 to updated field
+        alpha2 = field.variable(1); // cast alpha2 to updated field
+        alpha3 = field.variable(2);
+
+
+        // field has three "variables": alpha1, alpha2, alpha3
+        assert field.nVariables() == 3;
+        // check the degree of obtained field extension:
+        System.out.println(field.degree());
+
+        // do some arithmetic in multiple extension (this is typically
+        // quite slow and expressions are quire large)
+        MultivariatePolynomial<Rational<BigInteger>> el1 = field.subtract(
+            field.pow(field.add(alpha1, alpha2, field.negate(field.divideExact(alpha3, field.valueOf(17L)))), 2),
+            field.reciprocal(alpha2));
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkMultipleExtensionCoder(field, "alpha1", "alpha2", "alpha3");
+        // parse from string
+        MultivariatePolynomial<Rational<BigInteger>> el2 = coder.parse("(-alpha1 - alpha2 + alpha3/17)^2 - 1/alpha2");
+        assert field.subtract(el1, el2).isZero();
+
+
+Arithmetic performed directly in multiple field extension may be quite slow since it implies lots of conversions to and conversions back (both quite costly) from equivalent simple field extension generated by primitive element. So, in practice it is always better to perform all arithmetic in the equivalent simple field extension, and convert to multiple only the very final result:
+
+.. tabs::
+
+   .. code-tab:: scala
+
+        // create multivariate polynomial ring over multiple field extension
+        // Q(alpha1, alpha2, alpha3)[x,y,z] and perform some arithmetic
+        // this will will be typically quite slow
+        val pmRing = MultivariateRing(field, Array("x", "y", "z"))
+        val (t1, thePoly1) = timing { pmRing("((x - alpha1 - alpha2) * (y - alpha1 - alpha3) * (z - alpha2 - alpha3))^2 - 1") }
+
+
+        // create the same multivariate ring, but using the isomorphic
+        // simple field extension Q(gamma) = Q(alpha1, alpha2, alpha3)
+        val simpleCfField = field.getSimpleExtension("gamma")
+        //  multivariate ring Q(gamma)[x,y,z]
+        val psRing = MultivariateRing(simpleCfField, Array("x", "y", "z"))
+        val (t2, thePoly2_) = timing { psRing("((x - alpha1 - alpha2) * (y - alpha1 - alpha3) * (z - alpha2 - alpha3))^2 - 1") }
+        // convert polynomial Q(gamma)[x,y,z] to Q(alpha1, alpha2, alpha3)[x,y,z]
+        // by substituting gamma = primitive_element (combination of alpha's)
+        val thePoly2 = thePoly2_.mapCoefficients(field, p => field.valueOf(p.composition(field.getPrimitiveElement)))
+
+        // polynomials are equal, however arithmetic in simple
+        // extension is orders of magnitude faster
+        assert(thePoly2 == thePoly1)
+        println(s"Arithmetic in multiple extension: $t1")
+        println(s"Arithmetic in simple extension: $t2")
+
+   .. code-tab:: java
+
+        // create multivariate polynomial ring over multiple field extension
+        // Q(alpha1, alpha2, alpha3)[x,y,z] and perform some arithmetic
+        // this will will be typically quite slow
+        MultivariateRing<MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>> pmRing = MultivariateRing(3, field);
+        Coder<MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?> pmCoder =
+            Coder.mkMultivariateCoder(pmRing, coder, "x", "y", "z");
+        long t1 = System.currentTimeMillis();
+        MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> thePoly1 = pmCoder.parse("((x - alpha1 - alpha2) * (y - alpha1 - alpha3) * (z - alpha2 - alpha3))^2 - 1");
+        t1 = System.currentTimeMillis() - t1;
+
+        // create the same multivariate ring, but using the isomorphic
+        // simple field extension Q(gamma) = Q(alpha1, alpha2, alpha3)
+        SimpleFieldExtension<UnivariatePolynomial<Rational<BigInteger>>> simpleCfField = field.getSimpleExtension();
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> simpleCoder = Coder.mkUnivariateCoder(simpleCfField, "gamma");
+        simpleCoder.bindAlias("alpha1", field.getGeneratorRep(0));
+        simpleCoder.bindAlias("alpha2", field.getGeneratorRep(1));
+        simpleCoder.bindAlias("alpha3", field.getGeneratorRep(2));
+        //  multivariate ring Q(gamma)[x,y,z]
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> psRing = MultivariateRing(3, simpleCfField);
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> psCoder = Coder.mkMultivariateCoder(psRing, simpleCoder, "x", "y", "z");
+
+        final MultipleFieldExtension<Monomial<Rational<BigInteger>>, MultivariatePolynomial<Rational<BigInteger>>, UnivariatePolynomial<Rational<BigInteger>>> f = field;
+        long t2 = System.currentTimeMillis();
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> thePoly2_ = psCoder
+            .parse("((x - alpha1 - alpha2) * (y - alpha1 - alpha3) * (z - alpha2 - alpha3))^2 - 1");
+        t2 = System.currentTimeMillis() - t2;
+        // convert polynomial Q(gamma)[x,y,z] to Q(alpha1, alpha2, alpha3)[x,y,z]
+        // by substituting gamma = primitive_element (combination of alpha's)
+        MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> thePoly2 = thePoly2_
+            .mapCoefficients(field, p -> f.valueOf(p.composition(f.getPrimitiveElement())));
+
+        // polynomials are equal, however arithmetic in simple
+        // extension is orders of magnitude faster
+        assert thePoly2.equals(thePoly1);
+        System.out.println("Arithmetic in multiple extension: " + t1 + "ms");
+        System.out.println("Arithmetic in simple extension: " + t2 + "ms");
+
+
+
+The following table lists some important methods defined by `MultipleFieldExtension`_:
+
+
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| Method                         | Description                                                                                                           |
++================================+=======================================================================================================================+
+| ``variable(i)``                | Gives i-th generating algebraic number represented as element of this                                                 |
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| ``degree()``                   | Gives the degree of this finite extension                                                                             |
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| ``getPrimitiveElement()``      | Returns the primitive element represented as a linear combination of generators                                       |
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| ``getSimpleExtension()``       | Gives the isomorphic simple field extension generated by primitive element                                            |
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| ``getGeneratorMinimalPoly(i)`` | Returns minimal polynomial of i-th element represented as polynomial over i-th extension field in extension tower     |
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| ``getGeneratorRep(i)``         | Gives representation of i-th generator as element of equivalent simple field extension generated by primitive element |
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+| ``joinAlgebraicElement(poly)`` | Joins algebraic element represented by given minimal poly and returns the result                                      |
++--------------------------------+-----------------------------------------------------------------------------------------------------------------------+
+
+
+A special type of multiple field extenions is splitting fields. |Rings| implements method for creating splitting fields:
+
+.. tabs::
+
+   .. code-tab:: scala
+
+        // some irreducible polynomial
+        val poly = UnivariateRing(Q, "x")("17*x^3 - 14*x^2 + 25*x +  15")
+        // create splitting field as multiple field extension
+        // s1,s2,s3 are roots of specified poly
+        implicit val field = SplittingField(poly, Array("s1", "s2", "s3"))
+        // check the degree of this extension (6 = 3!)
+        assert(6 == field.getSimpleExtension().degree())
+
+        // assert Vieta's identities
+        val (s1, s2, s3) = field("s1", "s2", "s3")
+        assert(s1 * s2 * s3 == field("-15/17"))
+        assert(s1 * s2 + s1 * s3 + s2 * s3 == field("25/17"))
+        assert(s1 + s2 + s3 == field("14/17"))
+
+   .. code-tab:: java
+
+        UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> auxRing = UnivariateRing(Q);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> auxCoder = Coder.mkPolynomialCoder(auxRing, "x");
+
+        // some irreducible polynomial
+        UnivariatePolynomial<Rational<BigInteger>> poly = auxCoder.parse("17*x^3 - 14*x^2 + 25*x +  15");
+        // create splitting field as multiple field extension
+        // s1,s2,s3 are roots of specified poly
+        MultipleFieldExtension<
+            Monomial<Rational<BigInteger>>,
+            MultivariatePolynomial<Rational<BigInteger>>,
+            UnivariatePolynomial<Rational<BigInteger>>
+            >
+            splittingField = MultipleFieldExtension.mkSplittingField(poly);
+        // check the degree of this extension (6 = 3!)
+        assertEquals(6, splittingField.getSimpleExtension().degree());
+
+        // assert Vieta's identities
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkPolynomialCoder(splittingField, "s1", "s2", "s3");
+        assert coder.parse("s1 * s2 * s3").equals(coder.parse("-15/17"));
+        assert coder.parse("s1 * s2  +  s1 * s3 + s2 * s3").equals(coder.parse("25/17"));
+        assert coder.parse("s1 + s2 + s3").equals(coder.parse("14/17")); 
+
+
+.. important::
+    
+     Arithmetic performed directly in multiple field extension may be quite slow since it implies lots of conversions to and conversions back (both quite costly) from equivalent simple field extension generated by primitive element. So, in practice it is always better to perform all arithmetic in the equivalent simple field extension (via ``getSimpleExtension()``), and convert to multiple only the very final result (via ``getPrimitiveElement()``).
+
 
 
 Fields of fractions
@@ -771,60 +1193,7 @@ Further details about multivariate polynomials are in :ref:`ref-multivariate-pol
 Quotient rings
 """"""""""""""
 
-There are two types of quotient rings available in |Rings|:
-
- - Univariate quotient rings :math:`R[x] / \langle p(x) \rangle`
- - Multivariate quotient rings :math:`R[x_1, \dots, x_N]/I`, where :math:`I` is some :ref:`ideal <ref-ideals>` in :math:`R[x_1, \dots, x_N]`
-
-Operations in a univariate quotient ring :math:`R[x] / \langle p(x) \rangle` translate to operations in :math:`R[x]` with the result reduced modulo :math:`p(x)`:
-
-.. tabs::
-    .. code-tab:: scala
-        
-        // base ring Q[x]
-        val baseRing = UnivariateRing(Q, "x")
-        val x = baseRing("x")
-
-        // poly in a base ring
-        val basePoly = {
-          implicit val ring = baseRing
-          123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
-        }
-
-        val modulus = x.pow(2) + 1
-        // poly in a quotient ring Q[x]/<x^2 + 1>
-        val quotPoly = {
-          implicit val ring = UnivariateQuotientRing(baseRing, modulus)
-          123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
-        }
-
-        assert(basePoly.degree() == 31)
-        assert(quotPoly.degree() == 1)
-        assert(quotPoly == basePoly % modulus)
-
-    .. code-tab:: java
-        
-        // base ring
-        UnivariateRing<UnivariatePolynomial<Rational<BigInteger>>> baseRing = UnivariateRing(Q);
-        // poly in base ring
-        UnivariatePolynomial<Rational<BigInteger>> basePoly = baseRing.parse("123 * x^31 + 123 * x^2 + (1/2) * x + 1");
-
-        UnivariatePolynomial<Rational<BigInteger>> modulus = baseRing.parse("x^2 + 1");
-        // quotient ring
-        UnivariateQuotientRing<UnivariatePolynomial<Rational<BigInteger>>> quotRing = UnivariateQuotientRing(baseRing, modulus);
-        // same poly in quotient ring
-        UnivariatePolynomial<Rational<BigInteger>> quotPoly = quotRing.parse("123 * x^31 + 123 * x^2 + (1/2) * x + 1");
-
-        assert basePoly.degree() == 31;
-        assert quotPoly.degree() == 1;
-        assert quotPoly.equals(remainder(basePoly, modulus));
-
-.. important::
-
-    If the base ring :math:`R[x]` is not a Euclidean domain, than :ref:`pseudo division <ref-univariate-divison>` is used to obtain the unique remainder.
-
-
-Operations in a multivariate quotient ring :math:`R[x_1, \dots, x_N] / I` translate to operations in :math:`R[x_1, \dots, x_N]` with the result uniquely reduced modulo ideal :math:`I` (i.e. taking a remainder of :ref:`multivariate division <ref-multivariate-division-with-remainder>` of polynomial by a |Groebner| basis of the ideal, which is always unique):
+Operations in a multivariate quotient ring math:`R[x_1, \dots, x_N]/I`, where :math:`I` is some :ref:`ideal <ref-ideals>` in :math:`R[x_1, \dots, x_N]` translate to operations in :math:`R[x_1, \dots, x_N]` with the result uniquely reduced modulo ideal :math:`I` (i.e. taking a remainder of :ref:`multivariate division <ref-multivariate-division-with-remainder>` of polynomial by a |Groebner| basis of the ideal, which is always unique):
 
 .. tabs::
     .. code-tab:: scala
@@ -1784,6 +2153,18 @@ The upper-level method ``UnivariateDivision.divideAndRemainder`` switches betwee
 Details of implementation can be found in `UnivariateDivision`_.
 
 
+Univariate resultants and subresultants
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+|Rings| have several algorithms for computing resultants and subresultant sequences implemented in ``UnivariateResultants`` class:
+
+ - ``ClassicalPRS``, ``PrimitivePRS``, ``PseudoPRS`` and ``SubresultantPRS`` |br| different methods for computing polynomial remainder sequences (PRS) along with corresponding subresultants (including scalar), resultant and polynomial GCD (see [GaLu03]_)  
+ - ``ModularResultant`` |br| modular algorithm for computing resultans for polynomials over :math:`Z` and :math:`Q`
+ - ``ModularResultantInNumberField`` |br| modular algorithm for computing resultans for polynomials over algebraic number fields
+ - ``Resultant`` |br| upper level method which switches between methods listed above depending on the coefficient ring
+ - ``Discriminant`` |br| computes discriminant of univariate polynomial
+
+
 Univariate GCD
 ^^^^^^^^^^^^^^
 
@@ -1793,8 +2174,9 @@ Univariate GCD
  - ``UnivariateGCD.HalfGCD`` and ``UnivariateGCD.ExtedndedHalfGCD`` |br|  Half-GCD (and its extended version) (Sec. 11 [GaGe03]_)
  - ``UnivariateGCD.SubresultantRemainders`` |br|  Subresultant sequences (Sec. 7.3 in [GeCL92]_)
  - ``UnivariateGCD.ModularGCD`` and ``UnivariateGCD.ModularExtendedGCD`` |br|  Modular GCD (Sec. 6.7 in [GaGe03]_, small primes version) and modular extended GCD with rational reconstruction (Sec. 6.11 in [GaGe03]_)
+ - ``UnivariateGCD.PolynomialGCDInNumberField`` and ``UnivariateGCD.PolynomialGCDInRingOfIntegersOfNumberField`` |br| Modular GCD algrorithms for polynomials over algebraic number fields ([LaMc89]_, [Enca95]_)
 
-The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidean algorithm and Half-GCD for polynomials in :math:`F[x]` where :math:`F` is a finite field. For polynomials in :math:`Z[x]` and :math:`Q[x]` the modular algorithm is used (small primes version). In other cases algorithm with subresultant sequences is used. Examples:
+The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidean algorithm and Half-GCD for polynomials in :math:`F[x]` where :math:`F` is a finite field. For polynomials in :math:`Z[x]`, :math:`Q[x]` and :math:`Q(\alpha)[x]` the modular algorithm is used (small primes version). In other cases algorithm with subresultant sequences is used. Examples:
 
 .. tabs::
 
@@ -1883,9 +2265,9 @@ Implementation of univariate factorization in |Rings| is distributed over severa
  - ``UnivariateSquareFreeFactorization`` |br| Square-free factorization of univariate polynomials. In the case of zero characteristic Yun's algorithm is used (Sec. 14.6 in [GaGe03]_), otherwise Musser's algorithm is used (Sec. 8.3 in [GeCL92]_, [Muss71]_).
  - ``DistinctDegreeFactorization`` |br| Distinct-degree factorization. Internally there are several algorithms: plain (Sec. 14.2 in [GaGe03]_), adapted version with precomputed :math:`x`-powers, and Victor Shoup's baby-step giant-step algorithm [Shou95]_. The upper-level method swithces between these algorithms depending on the input.
  - ``EqualDegreeFactorization`` |br| Equal-degree factorization using Cantor-Zassenhaus algorithm in both odd and even characteristic (Sec. 14.3 in [GaGe03]_).
- - ``UnivariateFactorization`` |br| Defines upper-level methods and implements factorization over :math:`Z`. In the latter case Hensel lifting (combined linear/quadratic) is used to lift factorization modulo some 32-bit prime number to actual factorization over :math:`Z` and naive recombination to reconstruct correct factors. Examples:
+ - ``UnivariateFactorization`` |br| Defines upper-level methods and implements factorization over :math:`Z`, :math:`Q` and :math:`Q(\alpha)`. In case of :math:`Z[x]` Hensel lifting (combined linear/quadratic) is used to lift factorization modulo some 32-bit prime number to actual factorization over :math:`Z` and naive recombination to reconstruct correct factors. For polynomials over algebraic extensions Trager's algorithm [Trag76]_  is used.
    
-Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field, :math:`Z`,  :math:`Q` or other polynomial ring. Examples:
+Univariate factorization is supported for polynomials in :math:`F[x]` where :math:`F` is either finite field, :math:`Z`, :math:`Q`, :math:`Q(\alpha_1, \dots, \alpha_r)` or other polynomial ring. Examples:
 
 .. tabs::
 
@@ -2212,6 +2594,7 @@ Monomial order
  - ``ALEX`` |br| Antilexicographic monomial order.
  - ``GRLEX`` |br| Graded lexicographic monomial order.
  - ``GREVLEX`` |br| Graded reverse lexicographic monomial order.
+ - ``EliminationOrder(baseOrder, i)`` |br| i-th elimination order.
  
 By default |Rings| uses ``GREVLEX`` order though the monomial order can be changed in many ways. Examples:
 
@@ -2357,8 +2740,11 @@ Multivariate GCD
  - ``KaltofenMonaganEEZModularGCDInGF`` |br| Kaltofen's & Monagan's generic modular GCD (see [KalM99]_) for multivariate polynomials over finite fields with very small cardinality with EEZ-GCD used for modular images
  - ``EZGCD`` |br| Extended Zassenhaus GCD (EZ-GCD) for multivariate polynomials over finite fields (see Sec. 7.6 in [GeCL92]_ and [MosY73]_).
  - ``EEZGCD`` |br| Enhanced Extended Zassenhaus GCD (EEZ-GCD) for multivariate polynomials over finite fields (see [Wang80]_).
+ - ``ZippelGCDInNumberFieldViaRationalReconstruction`` and ``ZippelGCDInNumberFieldViaLangemyrMcCallum`` |br| modular algorithms for computing GCD over polynomials over algebraic number fields: the first one uses rational reconstruction approach [Enca95]_, the second one relies on the strict coefficient bounds obtaines from resultant theory [LaMc89]_
+ - ``ModularGCDInNumberFieldViaRationalReconstruction`` and ``ModularGCDInNumberFieldViaLangemyrMcCallum`` |br| sparse Zippel-like interpolation-based modular algorithms for computing GCD over polynomials over algebraic number fields: the first one uses rational reconstruction approach [Enca95]_, the second one relies on the strict coefficient bounds obtaines from resultant theory [LaMc89]_
+ 
 
-The upper-level method ``MultivariateGCD.PolynomialGCD`` switches between Zippel-like algorithms and EEZ-GCD based algorithms. The latter are used only on a very dense problems (which occur rarely), while the former are actually used in most cases. In case of finite fields of very small cardinality Kaltofen's & Monagan's algorithm is used. Examples:
+The upper-level method ``MultivariateGCD.PolynomialGCD`` switches between Zippel-like algorithms and EEZ-GCD based algorithms. The latter are used only on a very dense problems (which occur rarely), while the former are actually used in most cases. In case of finite fields of very small cardinality Kaltofen's & Monagan's algorithm is used. For algebraic number fields modular (with sparse/dense switch) approach with rational reconstruction is used. Examples:
 
 .. tabs::
 
@@ -2504,6 +2890,19 @@ Details of implementation can be found in `MultivariateGCD`_.
 .. _MultivariateGCD: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java
 
 
+
+Multivariate resultants
+^^^^^^^^^^^^^^^^^^^^^^^
+
+|Rings| have several algorithms for computing resultants of multivariate polynomials implemented in ``MultivariateResultants`` class:
+
+ - ``BrownResultant`` |br| a modification of Brown's multivariate GCD algorithm for computing resultatns
+ - ``ZippelResultant`` |br| a modification of Zippel's sparse multivariate GCD algorithm for computing resultatns
+ - ``ModularResultantInZ`` |br| modular algorithm for computing resultans for polynomials over :math:`Z` and :math:`Q`
+ - ``ModularResultantInNumberField`` |br| modular algorithm for computing resultans for polynomials over algebraic number fields
+ - ``Resultant`` |br| upper level method which switches between methods listed above depending on the coefficient ring
+ - ``Discriminant`` |br| computes discriminant of multivariate polynomial
+
 .. _ref-multivariate-factorization:
 
 Multivariate factorization
@@ -2512,7 +2911,7 @@ Multivariate factorization
 Implementation of multivariate factorization in |Rings| is distributed over two classes:
 
  - ``MultivariateSquareFreeFactorization`` |br| Square-free factorization of multivariate polynomials. In the case of zero characteristic Yun's algorithm is used (Sec. 14.6 in [GaGe03]_), otherwise Musser's algorithm is used (Sec. 8.3 in [GeCL92]_, [Muss71]_).
- - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z` and :math:`Q`. In the case of bivariate polynomials |Rings| uses fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Both sparse lifting and fast quasi-dense algorithm due to Bernardin (see [Bern99]_ and [LeeM13]_) are used. 
+ - ``MultivariateFactorization`` |br| Implementation of complete factoring algorithms for polynomials over finite fields, :math:`Z`, :math:`Q` and :math:`Q(\alpha)`. In the case of bivariate polynomials |Rings| uses fast dense bivariate factorization with naive recombination (see [Bern99]_, [LeeM13]_) (fast irreducibility tests based on Newton polygons are also performed). Factorization algorithm in case of more than two variables is inspired by Kaltofen (see [Kalt85]_) and its modified version (see [LeeM13]_). Both sparse lifting and fast quasi-dense algorithm due to Bernardin (see [Bern99]_ and [LeeM13]_) are used. For polynomials over algebraic number fields Trager’s algorithm [Trag76]_ is used.
    
 Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]` where :math:`F` is either finite field, :math:`Z`, :math:`Q` or other polynomial ring. Examples:
 
@@ -2997,7 +3396,7 @@ Hilbert-Poincare series of ideal is computed with algorithm describerd in [Trav9
 
 There is no any general way to select the best algorithm *a priori*, so the default choise of the algorithm may not be optimal. For example, in some cases for polynomials over :math:`Q` Buchberger or F4 algorithms may be tremendously slow, while modular algorithm is very fast, while in other, no more rare cases, modular algorithm may be dramatically slower than plain Buchberger. So, the general advice for complicated ideals is to try different algorithms when the default method is slow.
 
-All algorithms are available from `GroebnerBasis`_ class:
+All algorithms are available from `GroebnerBases`_ class:
 
 .. tabs::
 
@@ -3014,25 +3413,25 @@ All algorithms are available from `GroebnerBasis`_ class:
 
 
         // The default method will use modular algorithm in this case
-        List<MultivariatePolynomial<BigInteger>> gb = GroebnerBasis.GroebnerBasis(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> gb = GroebnerBases.GroebnerBasis(gens, GREVLEX);
         // Groebner bases is very simple: <x, z^2, 1 + 4*y^3>
         System.out.println(gb);
 
         // Modular algorithm will take few milliseconds
-        List<MultivariatePolynomial<BigInteger>> mod = GroebnerBasis.ModularGB(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> mod = GroebnerBases.ModularGB(gens, GREVLEX);
         assert mod.equals(gb);
 
         // F4 algorithm will also take few milliseconds
-        List<MultivariatePolynomial<BigInteger>> f4 = GroebnerBasis.F4GB(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> f4 = GroebnerBases.F4GB(gens, GREVLEX);
         assert f4.equals(gb);
 
         // But Buchberger algorithm will take several minutes
         // because of intermediate expression swell
-        List<MultivariatePolynomial<BigInteger>> buch = GroebnerBasis.BuchbergerGB(gens, GREVLEX);
+        List<MultivariatePolynomial<BigInteger>> buch = GroebnerBases.BuchbergerGB(gens, GREVLEX);
         assert buch.equals(gb);
 
 
 
 
-.. _GroebnerBasis: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBasis.java
+.. _GroebnerBases: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBases.java
 
