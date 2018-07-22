@@ -303,6 +303,19 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         }
     }
 
+    @Test
+    public void testZippel4_generic_a() throws Exception {
+        IntegersZp64 ring = Zp64(SmallPrimes.nextPrime(1 << 20));
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("642521*x1*x3+544253*x2", ring, "x1", "x2", "x3", "x4"),
+                b = MultivariatePolynomialZp64.parse("653650*x1^4+667997*x2^4", ring, "x1", "x2", "x3", "x4");
+
+        int variable = 0;
+        MultivariatePolynomialZp64 expected = MultivariatePolynomialZp64.parse("90619*x2^4 + 797965*x2^4*x3^4", ring, "x1", "x2", "x3", "x4");
+        assertEquals(expected, BrownResultant(a, b, variable));
+        assertEquals(expected, ZippelResultant(a, b, variable));
+    }
+
     @Ignore
     @Test
     public void testZippel5_dense() throws Exception {

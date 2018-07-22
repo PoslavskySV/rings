@@ -4,8 +4,11 @@ import cc.redberry.rings.ChineseRemainders.ChineseRemaindersMagic;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.MultipleFieldExtension;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.SimpleFieldExtension;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.PrimesIterator;
@@ -1552,9 +1555,6 @@ public final class MultivariateResultants {
          * @return resultant at {@code variable = newPoint}
          */
         public final MultivariatePolynomialZp64 evaluate(long newPoint) {
-            // constant is constant
-            if (globalSkeleton.size() == 1)
-                return factory.create(((MonomialZp64) globalSkeleton.iterator().next()).setCoefficient(1));
             // variable = newPoint
             evaluationPoint[evaluationPoint.length - 1] = newPoint;
             powers.set(evaluationVariables[evaluationVariables.length - 1], newPoint);

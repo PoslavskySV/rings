@@ -95,10 +95,20 @@ public final class PolynomialFactorDecomposition<Poly extends IPolynomial<Poly>>
      * by appropriate unit
      */
     public PolynomialFactorDecomposition<Poly> setLcFrom(Poly poly) {
-        Poly u = unit.lcAsPoly();
+        Poly u = ring.getOne();
         for (int i = 0; i < size(); i++)
-            u.multiply(PolynomialMethods.polyPow(get(i).lcAsPoly(), getExponent(i)));
-        return addUnit(PolynomialMethods.divideExact(poly.lcAsPoly(), u));
+            u = u.multiply(PolynomialMethods.polyPow(get(i).lcAsPoly(), getExponent(i)));
+        return setUnit(PolynomialMethods.divideExact(poly.lcAsPoly(), u));
+    }
+
+    /**
+     * Resulting lead coefficient
+     */
+    public Poly lc() {
+        Poly u = unit.clone();
+        for (int i = 0; i < size(); i++)
+            u = u.multiply(PolynomialMethods.polyPow(get(i).lcAsPoly(), getExponent(i)));
+        return u;
     }
 
     /**

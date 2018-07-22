@@ -5,6 +5,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.PolynomialFactorDecomposition;
+import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization;
 
@@ -110,14 +111,15 @@ public final class MultivariateSquareFreeFactorization {
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
 
+        Poly original = poly;
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         PolynomialFactorDecomposition<Poly> decomposition = PolynomialFactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationYun0(poly, decomposition);
-        if (poly.isOverField()) {
+        if (Util.isOverSimpleNumberField(poly)) {
             // lc correction (needed for number fields)
-            decomposition.setLcFrom(poly);
+            decomposition.setLcFrom(original);
         }
         return decomposition;
     }

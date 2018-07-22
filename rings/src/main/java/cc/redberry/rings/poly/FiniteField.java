@@ -15,6 +15,8 @@ import java.util.Iterator;
  *
  * @param <E> type of polynomials that represent elements of this Galois field
  * @see AlgebraicNumberField
+ * @see cc.redberry.rings.Rings#GF(IUnivariatePolynomial)
+ * @see cc.redberry.rings.Rings#GF(long, int)
  * @since 1.0
  */
 public final class FiniteField<E extends IUnivariatePolynomial<E>>

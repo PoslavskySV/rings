@@ -267,7 +267,7 @@ public class GroebnerMethodsTest extends AMultivariateTest {
 
 
     @Test
-    public void testLeinartDecoomposition1() {
+    public void testLeinartDecomposition1() {
         MultivariateRing<MultivariatePolynomialZp64> mRing = MultivariateRingZp64(3, 17);
         Coder<MultivariatePolynomialZp64, ?, ?> mCoder = Coder.mkPolynomialCoder(mRing, "x", "y", "z");
         Rationals<MultivariatePolynomialZp64> fRing = Frac(mRing);
@@ -276,8 +276,7 @@ public class GroebnerMethodsTest extends AMultivariateTest {
         Rational<MultivariatePolynomialZp64> f = fCoder.parse("(x + y) / (x^2 + y^2) / (x^3 - x * y - 1) / (x - y)");
         List<Rational<MultivariatePolynomialZp64>> decomposition = LeinartDecomposition(f);
 
-        System.out.println(decomposition);
-        assertEquals(f, decomposition.stream().reduce(fRing.getZero(), fRing::add));
+        assertTrue(f.subtract(decomposition.stream().reduce(fRing.getZero(), fRing::add)).isZero());
     }
 
     @SuppressWarnings("unchecked")

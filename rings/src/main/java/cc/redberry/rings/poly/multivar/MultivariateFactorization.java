@@ -2756,7 +2756,7 @@ public final class MultivariateFactorization {
     /* =========================== Multivariate factorization over simple number fields ============================ */
 
     /** Factors polynomial in Q(alpha)[x1,..,xN] via Trager's algorithm */
-    public static PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
+    static PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
     factorPrimitiveInNumberField(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> poly) {
         AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField
                 = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) poly.ring;
@@ -2803,8 +2803,7 @@ public final class MultivariateFactorization {
                     return PolynomialFactorDecomposition.of(poly);
 
                 // correct unit
-                result.setLcFrom(poly);
-                return result;
+                return result.setLcFrom(poly);
             }
         }
     }
