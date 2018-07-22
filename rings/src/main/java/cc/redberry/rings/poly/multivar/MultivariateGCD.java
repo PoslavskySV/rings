@@ -3407,7 +3407,7 @@ public final class MultivariateGCD {
     }
 
     /** Maximal number of fails before switch to a new homomorphism */
-    private static final int MAX_SPARSE_INTERPOLATION_FAILS_SWITCH_UP = 64, MAX_SPARSE_INTERPOLATION_FAILS = 1000;
+    private static final int MAX_SPARSE_INTERPOLATION_FAILS = 64;
     /** Maximal number of sparse interpolations after interpolation.numberOfPoints() > degreeBounds[variable] */
     private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 64;
 
@@ -3545,7 +3545,7 @@ public final class MultivariateGCD {
                 cVal = sparseInterpolator.evaluate(randomPoint);
                 if (cVal == null) {
                     ++failedSparseInterpolations;
-                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS_SWITCH_UP)
+                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
                         return null; //throw new RuntimeException("Sparse interpolation failed");
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
@@ -4742,7 +4742,7 @@ public final class MultivariateGCD {
                 cVal = sparseInterpolator.evaluate(randomPoint);
                 if (cVal == null) {
                     ++failedSparseInterpolations;
-                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS_SWITCH_UP)
+                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
                         return null; //throw new RuntimeException("Sparse interpolation failed");
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();

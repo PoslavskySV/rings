@@ -58,6 +58,9 @@ Numbers
 
 Integers
 """"""""
+.. _rings.bigint.BigInteger: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/bigint/BigInteger.java
+.. _BigInteger: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/bigint/BigInteger.html
+
 
 There are two basic types of integer numbers that we have to deal with when doing algebra in computer: machine integers and arbitrary-precision integers. For the machine integers the Java's primitive 64-bit ``long`` type is used (since most modern CPUs are 64-bit). Internally |Rings| uses machine numbers for representation of integers modulo prime numbers less than :math:`2^{64}` which is done for performance reasons (see :ref:`ref-machine-arithmetic`). For the arbitrary-precision integers |Rings| uses improved ``BigInteger`` class `github.com/tbuktu/bigint <https://github.com/tbuktu/bigint>`_ (`rings.bigint.BigInteger`_) instead of built-in ``java.math.BigInteger``. The improved `BigInteger`_ has Schönhage-Strassen multiplication and Barrett division algorithms for large integers which is a significant performance improvement in comparison to native Java's implementation.
 
@@ -83,14 +86,19 @@ There are two basic types of integer numbers that we have to deal with when doin
 
     (the type definition ``type IntZ = ring.bigint.BigInteger`` is introduced in Scala DSL)
 
-.. _rings.bigint.BigInteger: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/bigint/BigInteger.java
-.. _BigInteger: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/bigint/BigInteger.java
 
+.. admonition:: Full API documentation
+
+    * API docs for integers: `cc.redberry.rings.bigint.BigInteger <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/bigint/BigInteger.html>`_
 
 .. _ref-primes:
 
 Prime numbers
 """""""""""""
+
+.. _SmallPrimes: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/primes/SmallPrimes.html
+.. _BigPrimes: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/primes/BigPrimes.html
+
 
 In many applications it is necessary to test primality of integer number (``isPrime(number)``) or to generate some prime numbers (``nextPrime(number)``). This is realized in the following two classes:
 
@@ -128,8 +136,13 @@ The following code snippet gives some illustrations:
         List<BigInteger> bigFactors = BigPrimes.primeFactors(bigNumber);
 
 
-.. _SmallPrimes: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/primes/SmallPrimes.java
-.. _BigPrimes: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/primes/BigPrimes.java
+.. admonition:: Full API documentation
+
+    * API docs for ``SmallPrimes``: `cc.redberry.rings.primes.SmallPrimes <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/primes/SmallPrimes.html>`_
+    * API docs for ``BigPrimes``: `cc.redberry.rings.primes.BigPrimes <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/primes/BigPrimes.html>`_
+    * API docs for ``PrimesIterator``: `cc.redberry.rings.primes.PrimesIterator <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/primes/PrimesIterator.html>`_
+    * API docs for ``SieveOfAtkin``: `cc.redberry.rings.primes.SieveOfAtkin <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/primes/SieveOfAtkin.html>`_
+
 
 
 .. _ref-machine-arithmetic:
@@ -180,11 +193,14 @@ It is worst to mention, that multiplication defined in `IntegersZp64`_ is especi
         assert field64.multiply(0x0bcdef1234567890L, 0x0234567890abcdefL) == 0xf667077306fd7a8L;
 
 
-c
+.. _IntegersZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/IntegersZp64.html
+.. _IntegersZp: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/IntegersZp.html
 
-.. _IntegersZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/IntegersZp64.java
-.. _IntegersZp: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/IntegersZp.java
 
+.. admonition:: Full API documentation
+
+    * API docs for ``IntegersZp64``: `cc.redberry.rings.IntegersZp64 <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/IntegersZp64.html>`_
+    * API docs for ``IntegersZp``: `cc.redberry.rings.IntegersZp <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/IntegersZp.html>`_
 
 .. _ref-rings:
 
@@ -334,7 +350,9 @@ Finally, each `Ring<E>`_ implementation provides a set of high-level methods for
 | ``factorSquareFree(a)``      | Square free decomposition of ring element     |
 +------------------------------+-----------------------------------------------+
 
-The full list of `Ring<E>`_ methods can be found in `corresponding Java docs <http://www.javadoc.io/doc/cc.redberry/rings/>`_
+.. admonition:: Full API documentation
+
+    * API docs for ``Ring[E]``: `cc.redberry.rings.Ring <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/Ring.html>`_
 
 
 List of built-in rings
@@ -385,8 +403,12 @@ Basic rings and factory methods for constructing new rings are placed in `Rings`
 .. [*] Class `IntegersZp64`_ which represents :math:`Z_p` with :math:`p < 2^{64}` does not inherit `Ring<E>`_ interface (see :ref:`ref-machine-arithmetic`)
 
 
-.. _Rings: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Rings.java
-.. _scaladsl: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/package.scala
+.. admonition:: Full API documentation
+
+    * API docs for ``Rings``: `cc.redberry.rings.Rings <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/Rings.html>`_
+
+.. _Rings: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/Rings.html
+.. _scaladsl: http://javadoc.io/page/cc.redberry/rings.scaladsl_2.12/latest/cc/redberry/scaladsl/scaladsl.html
 
 
 
@@ -452,6 +474,11 @@ Implementation of Galois fields uses assymptotically fast algorithm for polynomi
 
 Galois fields are implemented as simple field extensions, some corresponding methods may be of practical use (see the table in the next section).
 
+.. admonition:: Full API documentation
+
+    * API docs for ``FiniteField``: `cc.redberry.rings.poly.FiniteField <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/FiniteField.html>`_
+    * API docs for ``SimpleFieldExtension``: `cc.redberry.rings.poly.SimpleFieldExtension <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/SimpleFieldExtension.html>`_
+
 
 Algebraic number fields and field extensions
 """"""""""""""""""""""""""""""""""""""""""""
@@ -462,9 +489,9 @@ There are two types of algebraic number fields implemented in |Rings|: simple ex
 Simple field extensions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _SimpleFieldExtension: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/SimpleFieldExtension.java
-.. _AlgebraicNumberField: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/AlgebraicNumberField.java
-.. _FiniteField: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/FiniteField.java
+.. _SimpleFieldExtension: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/SimpleFieldExtension.html
+.. _AlgebraicNumberField: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/AlgebraicNumberField.html
+.. _FiniteField: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/FiniteField.html
 
 The base class for all simple field extensions is `SimpleFieldExtension`_. In fact, both Galois fields (instances of `FiniteField`_) and algebraic number fields (instances of `AlgebraicNumberField`_) are derived from `SimpleFieldExtension`_. Simple algebraic number field can be created by providing the minimal polynomial. Some examples with number fields:
 
@@ -607,10 +634,17 @@ The are special shortcuts for complex numbers:
         val otherSymbols : AlgebraicNumberField[Rational[IntZ]] = GaussianRationals("ImaginaryUnit")
 
 
+
+.. admonition:: Full API documentation
+
+    * API docs for ``AlgebraicNumberField``: `cc.redberry.rings.poly.AlgebraicNumberField <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/AlgebraicNumberField.html>`_
+    * API docs for ``SimpleFieldExtension``: `cc.redberry.rings.poly.SimpleFieldExtension <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/SimpleFieldExtension.html>`_
+
+
 Multiple field extensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _MultipleFieldExtension: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/SimpleFieldExtension.java
+.. _MultipleFieldExtension: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/MultipleFieldExtension.html
 
 Elements of multiple field extension :math:`F(\alpha_1, \dots, \alpha_s)` are represented as multivariate polynomials in :math:`\alpha_1, \dots, \alpha_s`. Arithmetic in multiple field extensions is performed by switching to isomorphic simple field extension :math:`F(\gamma)`, where :math:`\gamma` is a primitive element of field extension (some linear combination :math:`\gamma = \sum c_i \alpha_i`). Primitive element and expressions for generators :math:`\alpha_1, \dots, \alpha_s` in terms of primitive element are always computed automatically in |Rings|. 
 
@@ -868,6 +902,10 @@ A special type of multiple field extenions is splitting fields. |Rings| implemen
      Arithmetic performed directly in multiple field extension may be quite slow since it implies lots of conversions to and conversions back (both quite costly) from equivalent simple field extension generated by primitive element. So, in practice it is always better to perform all arithmetic in the equivalent simple field extension (via ``getSimpleExtension()``), and convert to multiple only the very final result (via ``getPrimitiveElement()``).
 
 
+.. admonition:: Full API documentation
+
+    * API docs for ``MultipleFieldExtension``: `cc.redberry.rings.poly.MultipleFieldExtension <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/MultipleFieldExtension.html>`_
+
 
 Fields of fractions
 """""""""""""""""""
@@ -925,6 +963,10 @@ The common GCD is automatically canceled in the numerator and denominator. Anoth
         System.out.println(field.add(a, b));
 
 
+.. admonition:: Full API documentation
+
+    * API docs for ``Rational``: `cc.redberry.rings.Rational <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/Rational.html>`_
+    * API docs for ``Rationals``: `cc.redberry.rings.Rationals <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/Rationals.html>`_
 
 Rational function arithmetic
 """"""""""""""""""""""""""""
@@ -1110,6 +1152,10 @@ Illustrations:
 
 Further details about univariate polynomials are in :ref:`ref-univariate-polynomials` section.
 
+.. admonition:: Full API documentation
+
+    * API docs for ``UnivariateRing``: `cc.redberry.rings.poly.UnivariateRing <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/UnivariateRing.html>`_
+
 
 Multivariate polynomial rings
 """""""""""""""""""""""""""""
@@ -1186,6 +1232,10 @@ Illustrations:
 
 
 Further details about multivariate polynomials are in :ref:`ref-multivariate-polynomials` section.
+
+.. admonition:: Full API documentation
+
+    * API docs for ``MultivariateRing``: `cc.redberry.rings.poly.MultivariateRing <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/MultivariateRing.html>`_
 
 
 .. _ref-quotient-rings:
@@ -1279,6 +1329,11 @@ For details on how |Rings| constructs |Groebner| bases of ideals see :ref:`ref-i
 .. note::
 
     The algebraic structure of quotient rings can't be determined algorithmically in a general case. So, the ring methods ``isFied()`` and ``cardinality()`` (and other related methods) are not supported for quotient rings.
+
+
+.. admonition:: Full API documentation
+
+    * API docs for ``QuotientRing``: `cc.redberry.rings.poly.QuotientRing <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/QuotientRing.html>`_
 
 
 .. _ref-scala-dsl:
@@ -1518,21 +1573,20 @@ Methods added to ``Ideal[Term, Poly, E]`` class:
 For more details see :ref:`ref-ideals`.
 
 
-.. _Ring<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Ring.java
 
-.. _Ring[E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
+.. _Ring<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/Ring.html
 
-.. _IPolynomialRing[Poly, E]: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
+.. _Ring[E]: http://javadoc.io/page/cc.redberry/rings.scaladsl_2.12/latest/cc/redberry/rings/scaladsl/Ring.html
 
-.. _Z: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Rings.java#L30
+.. _IPolynomialRing[Poly, E]: http://javadoc.io/page/cc.redberry/rings.scaladsl_2.12/latest/cc/redberry/rings/scaladsl/IPolynomialRing.html
 
-.. _Rings: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/Rings.java
+.. _Z: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/Integers.html
 
 .. _cc.redberry.rings.scaladsl.Rings: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/Rings.scala
 
 .. _cc.redberry.rings.scaladsl: https://github.com/PoslavskySV/rings/blob/develop/rings.scaladsl/src/main/scala/cc/redberry/rings/scaladsl/package.scala
 
-.. _UnivariateDivision: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java
+.. _UnivariateDivision: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateDivision.html
 
 
 
@@ -1723,6 +1777,10 @@ One can bind particular expressions to string variables. Continue the last examp
         // "E" will be replaced with el by the parser
         val el2 = ring("(a+b) * E^2 + 1")
 
+
+.. admonition:: Full API documentation
+
+    * API docs for ``Coder``: `cc.redberry.rings.io.Coder <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/io/Coder.html>`_
 
 .. _ref-basics-polynomials:
 
@@ -2022,6 +2080,11 @@ While in case of ``UnivariateRingZp64`` or ``MultivariateRing`` both ``genericFu
 
 .. _IPolynomial<PolyType>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/IPolynomial.java
 
+
+.. admonition:: Full API documentation
+
+    * API docs for ``IPolynomial``: `cc.redberry.rings.poly.IPolynomial <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/IPolynomial.html>`_
+    
 .. _ref-polynomial-methods:
 
 Polynomial GCD, factorization and division with remainder
@@ -2087,6 +2150,11 @@ Internally both implementations use dense data structure (array of coefficients)
         static <Poly extends IUnivariatePolynomial<Poly>>
         Poly genericFuncWithRing(Poly poly, IPolynomialRing<Poly> ring) { return null; }
 
+.. admonition:: Full API documentation
+
+    * API docs for ``IUnivariatePolynomial``: `cc.redberry.rings.poly.univar.IUnivariatePolynomial <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/IUnivariatePolynomial.html>`_
+    * API docs for ``UnivariatePolynomial``: `cc.redberry.rings.poly.univar.UnivariatePolynomial <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariatePolynomial.html>`_
+    * API docs for ``UnivariatePolynomialZp64``: `cc.redberry.rings.poly.univar.UnivariatePolynomialZp64 <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.html>`_
 
 .. _ref-univariate-divison:
 
@@ -2150,7 +2218,9 @@ The upper-level method ``UnivariateDivision.divideAndRemainder`` switches betwee
         assert Arrays.equals(divRemPlain, divRemFast);
 
 
-Details of implementation can be found in `UnivariateDivision`_.
+.. admonition:: Full API documentation
+
+    * API docs for ``UnivariateDivision``: `cc.redberry.rings.poly.univar.UnivariateDivision <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateDivision.html>`_
 
 
 Univariate resultants and subresultants
@@ -2165,18 +2235,21 @@ Univariate resultants and subresultants
  - ``Discriminant`` |br| computes discriminant of univariate polynomial
 
 
+.. admonition:: Full API documentation
+
+    * API docs for ``UnivariateResultants``: `cc.redberry.rings.poly.univar.UnivariateResultants <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateResultants.html>`_
+
 Univariate GCD
 ^^^^^^^^^^^^^^
 
-|Rings| have several algorithms for univariate GCD:
+|Rings| have several algorithms for univariate GCD available from class ``UnivariateGCD``:
 
- - ``UnivariateGCD.EuclidGCD`` and ``UnivariateGCD.ExtedndedEuclidGCD`` |br|  Euclidean algorithm (and its extended version)
- - ``UnivariateGCD.HalfGCD`` and ``UnivariateGCD.ExtedndedHalfGCD`` |br|  Half-GCD (and its extended version) (Sec. 11 [GaGe03]_)
- - ``UnivariateGCD.SubresultantRemainders`` |br|  Subresultant sequences (Sec. 7.3 in [GeCL92]_)
- - ``UnivariateGCD.ModularGCD`` and ``UnivariateGCD.ModularExtendedGCD`` |br|  Modular GCD (Sec. 6.7 in [GaGe03]_, small primes version) and modular extended GCD with rational reconstruction (Sec. 6.11 in [GaGe03]_)
- - ``UnivariateGCD.PolynomialGCDInNumberField`` and ``UnivariateGCD.PolynomialGCDInRingOfIntegersOfNumberField`` |br| Modular GCD algrorithms for polynomials over algebraic number fields ([LaMc89]_, [Enca95]_)
+ - ``EuclidGCD`` and ``ExtedndedEuclidGCD`` |br|  Euclidean algorithm (and its extended version)
+ - ``HalfGCD`` and ``UnivariateGCD.ExtedndedHalfGCD`` |br|  Half-GCD (and its extended version) (Sec. 11 [GaGe03]_)
+ - ``ModularGCD`` and ``ModularExtendedGCD`` |br|  Modular GCD (Sec. 6.7 in [GaGe03]_, small primes version) and modular extended GCD with rational reconstruction (Sec. 6.11 in [GaGe03]_)
+ - ``PolynomialGCDInNumberField`` and ``PolynomialGCDInRingOfIntegersOfNumberField`` |br| Modular GCD algrorithms for polynomials over algebraic number fields ([LaMc89]_, [Enca95]_)
 
-The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidean algorithm and Half-GCD for polynomials in :math:`F[x]` where :math:`F` is a finite field. For polynomials in :math:`Z[x]`, :math:`Q[x]` and :math:`Q(\alpha)[x]` the modular algorithm is used (small primes version). In other cases algorithm with subresultant sequences is used. Examples:
+The upper-level method ``PolynomialGCD`` switches between Euclidean algorithm and Half-GCD for polynomials in :math:`F[x]` where :math:`F` is a finite field. For polynomials in :math:`Z[x]`, :math:`Q[x]` and :math:`Q(\alpha)[x]` the modular algorithm is used (small primes version). In other cases algorithm with subresultant sequences is used. Examples:
 
 .. tabs::
 
@@ -2252,8 +2325,10 @@ The upper-level method ``UnivariateGCD.PolynomialGCD`` switches between Euclidea
         assert UnivariateDivision.remainder(aXY, gcdXY, true).isZero();
         assert UnivariateDivision.remainder(bXY, gcdXY, true).isZero();
 
-Details of implementation can be found in `UnivariateGCD`_.
 
+.. admonition:: Full API documentation
+
+    * API docs for ``UnivariateGCD``: `cc.redberry.rings.poly.univar.UnivariateGCD <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateGCD.html>`_
 
 .. _ref-univariate-factorization:
 
@@ -2314,13 +2389,12 @@ Univariate factorization is supported for polynomials in :math:`F[x]` where :mat
         // perform complete factorization
         System.out.println(Factor(polyQ));
 
-Details of implementation can be found in `UnivariateSquareFreeFactorization`_, `DistinctDegreeFactorization`_, `EqualDegreeFactorization`_ and `UnivariateFactorization`_.
+.. admonition:: Full API documentation
 
-.. _UnivariateSquareFreeFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.java
-.. _DistinctDegreeFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.java
-.. _EqualDegreeFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/EqualDegreeFactorization.java
-.. _UnivariateFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateFactorization.java
-
+    * API docs for ``UnivariateSquareFreeFactorization``: `cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateSquareFreeFactorization.html>`_
+    * API docs for ``DistinctDegreeFactorization``: `cc.redberry.rings.poly.univar.DistinctDegreeFactorization <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/DistinctDegreeFactorization.html>`_
+    * API docs for ``EqualDegreeFactorization``: `cc.redberry.rings.poly.univar.EqualDegreeFactorization <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/EqualDegreeFactorization.html>`_
+    * API docs for ``UnivariateFactorization``: `cc.redberry.rings.poly.univar.UnivariateFactorization <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateFactorization.html>`_
 
 
 Testing irreducibility
@@ -2381,11 +2455,9 @@ Irreducibility test and generation of random irreducible polynomials are availbl
         assert irreducibleQ(poly4);
 
 
-The details about implementation can be found in  `IrreduciblePolynomials`_.
+.. admonition:: Full API documentation
 
-
-.. _IrreduciblePolynomials: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IrreduciblePolynomials.java
-
+    * API docs for ``IrreduciblePolynomials``: `cc.redberry.rings.poly.univar.IrreduciblePolynomials <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/IrreduciblePolynomials.html>`_
 
 
 Univariate interpolation
@@ -2471,16 +2543,18 @@ With Scala DSL it is quite easy to implement Lagrange interpolation formula:
 
 
 
+.. admonition:: Full API documentation
 
-.. _UnivariatePolynomialZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.java
+    * API docs for ``UnivariateInterpolation``: `cc.redberry.rings.poly.univar.UnivariateInterpolation <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateInterpolation.html>`_
+    
 
-.. _UnivariatePolynomial<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariatePolynomial.java
+.. _UnivariatePolynomialZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariatePolynomialZp64.html
 
-.. _IUnivariatePolynomial: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/IUnivariatePolynomial.java
+.. _UnivariatePolynomial<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariatePolynomial.html
 
-.. _UnivariateDivision: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateDivision.java
+.. _IUnivariatePolynomial: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/IUnivariatePolynomial.html
 
-.. _UnivariateGCD: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/univar/UnivariateGCD.java
+.. _UnivariateGCD: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/univar/UnivariateGCD.html
 
 
 .. _ref-multivariate-polynomials:
@@ -2570,20 +2644,31 @@ The generic parent class for multivariate polynomials is `AMultivariatePolynomia
         genericFuncWithRing(ring.parse("a + b"), ring);     
 
 
-.. _MultivariatePolynomialZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariatePolynomialZp64.java
+.. _MultivariatePolynomialZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomialZp64.java
 
-.. _MultivariatePolynomial<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariatePolynomial.java
+.. _MultivariatePolynomial<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomial.java
 
-.. _AMultivariatePolynomial<MonomialType, PolyType>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/AMultivariatePolynomial.java
+.. _AMultivariatePolynomial<MonomialType, PolyType>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/AMultivariatePolynomial.html
 
-.. _DegreeVector: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/DegreeVector.java
+.. _DegreeVector: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/DegreeVector.java
 
-.. _AMonomial: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/AMonomial.java
+.. _AMonomial: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/AMonomial.java
 
-.. _MonomialZp64: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MonomialZp64.java
+.. _MonomialZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MonomialZp64.java
 
-.. _Monomial<E>: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/Monomial<E>.java
+.. _Monomial<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/Monomial<E>.java
 
+
+.. admonition:: Full API documentation
+
+    * API docs for ``AMultivariatePolynomial``: `cc.redberry.rings.poly.multivar.AMultivariatePolynomial <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/AMultivariatePolynomial.html>`_
+    * API docs for ``MultivariatePolynomial``: `cc.redberry.rings.poly.multivar.MultivariatePolynomial <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomial.html>`_
+    * API docs for ``MultivariatePolynomialZp64``: `cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64 <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomialZp64.html>`_
+    * API docs for ``DegreeVector``: `cc.redberry.rings.poly.multivar.DegreeVector <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/DegreeVector.html>`_
+    * API docs for ``AMonomial``: `cc.redberry.rings.poly.multivar.AMonomial <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/AMonomial.html>`_
+    * API docs for ``Monomial<E>``: `cc.redberry.rings.poly.multivar.Monomial <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/Monomial.html>`_
+    * API docs for ``MonomialZp64``: `cc.redberry.rings.poly.multivar.MonomialZp64 <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MonomialZp64.html>`_
+    
 
 Monomial order
 ^^^^^^^^^^^^^^
@@ -2643,7 +2728,12 @@ By default |Rings| uses ``GREVLEX`` order though the monomial order can be chang
         MultivariatePolynomial<BigInteger> add2 = ring.add(poly2, poly);
         assert add2.ordering == MonomialOrder.LEX;
 
-.. _MonomialOrder: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MonomialOrder.java
+.. _MonomialOrder: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MonomialOrder.html
+
+
+.. admonition:: Full API documentation
+
+    * API docs for ``MonomialOrder``: `cc.redberry.rings.poly.multivar.MonomialOrder <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MonomialOrder.html>`_
 
 
 .. _ref-multivariate-division-with-remainder:
@@ -2722,9 +2812,11 @@ Examples:
 .. important::
     The resulting array of :math:`quotients` and :math:`remainder` depend on the order of dividers in the array and on the used monomial order. To get a unique result, use |Groebner| basis (see :ref:`ref-ideals`).
 
-Details of implementation can be found in `MultivariateDivision`_.
 
-.. _MultivariateDivision: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateDivision.java
+.. admonition:: Full API documentation
+
+    * API docs for ``MultivariateDivision``: `cc.redberry.rings.poly.multivar.MultivariateDivision <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariateDivision.html>`_
+
 
 
 Multivariate GCD
@@ -2885,9 +2977,10 @@ If one need to calculate GCD of more than two polynomials, it is better to do wi
         assert fastGCD.equals(slowGCD);
 
 
-Details of implementation can be found in `MultivariateGCD`_.
+.. admonition:: Full API documentation
 
-.. _MultivariateGCD: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateGCD.java
+    * API docs for ``MultivariateGCD``: `cc.redberry.rings.poly.multivar.MultivariateGCD <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariateGCD.html>`_
+
 
 
 
@@ -2902,6 +2995,12 @@ Multivariate resultants
  - ``ModularResultantInNumberField`` |br| modular algorithm for computing resultans for polynomials over algebraic number fields
  - ``Resultant`` |br| upper level method which switches between methods listed above depending on the coefficient ring
  - ``Discriminant`` |br| computes discriminant of multivariate polynomial
+
+
+.. admonition:: Full API documentation
+
+    * API docs for ``MultivariateResultants``: `cc.redberry.rings.poly.multivar.MultivariateResultants <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariateResultants.html>`_
+
 
 .. _ref-multivariate-factorization:
 
@@ -2979,11 +3078,11 @@ Multivariate factorization is supported for polynomials in :math:`F[\mathbf{X}]`
         System.out.println(Factor(polyQ));
 
 
-Details of implementation can be found in `MultivariateSquareFreeFactorization`_, `HenselLifting`_ and `MultivariateFactorization`_.
+.. admonition:: Full API documentation
 
-.. _MultivariateSquareFreeFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java
-.. _MultivariateFactorization: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java
-.. _HenselLifting: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java
+    * API docs for ``MultivariateSquareFreeFactorization``: `cc.redberry.rings.poly.multivar.MultivariateSquareFreeFactorization <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.html>`_
+    * API docs for ``MultivariateFactorization``: `cc.redberry.rings.poly.multivar.MultivariateFactorization <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariateFactorization.html>`_
+    * API docs for ``HenselLifting``: `cc.redberry.rings.poly.multivar.HenselLifting <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/HenselLifting.html>`_
 
 
 Multivariate Interpolation
@@ -3056,6 +3155,10 @@ Multivariate polynomial interpolation via Newton method can be done in the follo
             .allMatch(i -> result.evaluate(2, points[i]).equals(values[i]));
 
 
+
+.. admonition:: Full API documentation
+
+    * API docs for ``MultivariateInterpolation``: `cc.redberry.rings.poly.multivar.MultivariateInterpolation <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariateInterpolation.html>`_
 
 
 .. _ref-ideals:
@@ -3288,8 +3391,12 @@ The normal form operation is used to contstruct :ref:`qotient rings <ref-quotien
     If the coefficient ring :math:`R` of a base ring is not a field, |Rings| will "effectively" perform all operations with coefficients as in the field of fractions :math:`Frac(R)`. Thus, in |Rings| ideals in :math:`Z[x_1, \dots, x_N]` are actually treated as ideals in :math:`Q[x_1, \dots, x_N]`.
 
 
+.. admonition:: Full API documentation
 
-.. _Ideal: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/Ideal.java
+    * API docs for ``Ideal``: `cc.redberry.rings.poly.multivar.Ideal <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/Ideal.html>`_
+
+
+.. _Ideal: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/Ideal.html
 
 
 .. _ref-hilbert-series:
@@ -3431,7 +3538,12 @@ All algorithms are available from `GroebnerBases`_ class:
         assert buch.equals(gb);
 
 
+.. admonition:: Full API documentation
+
+    * API docs for ``GroebnerBases``: `cc.redberry.rings.poly.multivar.GroebnerBases <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/GroebnerBases.html>`_
 
 
-.. _GroebnerBases: https://github.com/PoslavskySV/rings/blob/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBases.java
+
+
+.. _GroebnerBases: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/GroebnerBases.html
 
