@@ -2615,6 +2615,21 @@ public class MultivariateGCDTest extends AMultivariateTest {
         // Langemyr & McCallum     : 16s
     }
 
+    @Test(timeout = 50000L)
+    public void testZippel22() {
+        FiniteField<UnivariatePolynomialZp64> cfField = Rings.GF(UnivariatePolynomialZ64.create(6, 7, 14, 1).modulus(17));
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> ring = MultivariateRing(4, cfField);
+        Coder<UnivariatePolynomialZp64, ?, ?> cfCoder = Coder.mkUnivariateCoder(cfField, "x");
+        Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> coder = Coder.mkMultivariateCoder(ring, cfCoder, "a", "b", "c", "d");
+        MultivariatePolynomial<UnivariatePolynomialZp64> a = coder.parse("16*x*d+16*a*c+a*b");
+        MultivariatePolynomial<UnivariatePolynomialZp64> b = coder.parse("(12+15*x+4*x^2)*d+16*x*d^2+(10+10*x^2)*a*d+(1+10*x+15*x^2)*a*c+(16+7*x+2*x^2)*a*b+16*x^2*a*d^2+16*a*c*d+16*x*b^2*d+a*b*d+16*x^2*a^2*d+(11+15*x+4*x^2)*a^2*c+(6+2*x+13*x^2)*a^2*b+16*x^2*d^4+(5+2*x+12*x^2)*a*d^3+16*x^2*c^2*d^2+(5+2*x+12*x^2)*a*c^2*d+16*x*a^2*c*d+16*x^2*a*b^2*d+x*a^2*b*d+16*a*b^2*c+16*x*a^3*c+a*b^3+x*a^3*b+(6+8*x+14*x^2)*a*d^4+16*x*a*c*d^3+16*x^2*b^2*d^3+x*a*b*d^3+(6+8*x+14*x^2)*a^2*d^3+16*x*c^3*d^2+(6+8*x+14*x^2)*a*c^2*d^2+(16+6*x+2*x^2)*a^2*c*d^2+(1+11*x+15*x^2)*a^2*b*d^2+15*x*a*c^3*d+16*x^2*b^2*c^2*d+x*a*b*c^2*d+(6+8*x+14*x^2)*a^2*c^2*d+x*b^4*d+(16+6*x+2*x^2)*a^2*c^3+(1+11*x+15*x^2)*a^2*b*c^2+16*x*a^2*b^2*c+x*a^2*b^3+(1+16*x^2)*a^2*c*d^3+(6+8*x+14*x^2)*a*b^2*d^3+(16+x^2)*a^2*b*d^3+16*x^2*a*c^3*d^2+16*x*a*b^2*c*d^2+(1+16*x^2)*a^3*c*d^2+x*a*b^3*d^2+(16+x^2)*a^3*b*d^2+16*a*c^4*d+16*x*b^2*c^3*d+a*b*c^3*d+(1+15*x^2)*a^2*c^3*d+(6+8*x+14*x^2)*a*b^2*c^2*d+(16+x^2)*a^2*b*c^2*d+x^2*a*b^4*d+16*a^2*c^4+16*x*a*b^2*c^3+a^2*b*c^3+(1+16*x^2)*a^3*c^3+x*a*b^3*c^2+(16+x^2)*a^3*b*c^2+a*b^4*c+16*a*b^5+x^2*a*d^6+x^2*a^2*d^5+2*x^2*a*c^2*d^4+2*x^2*a^2*c^2*d^3+x^2*b^4*d^3+x^2*a*c^4*d^2+(1+16*x^2)*a^2*b^2*c*d^2+(16+x^2)*a^2*b^3*d^2+(16*x+x^2)*a^2*c^4*d+16*x^2*a*b^2*c^3*d+x*a^2*b*c^3*d+x^2*b^4*c^2*d+16*a*b^2*c^4+16*x*a^3*c^4+a*b^3*c^3+(1+16*x^2)*a^2*b^2*c^3+x*a^3*b*c^3+(16+x^2)*a^2*b^3*c^2+x*a^2*b^4*c+16*x*a^2*b^5+x*a^2*c*d^5+x^2*a*b^2*d^5+16*x*a^2*b*d^5+x*a*c^3*d^4+x*a^3*c*d^4+16*x*a^3*b*d^4+3*x*a^2*c^3*d^3+2*x^2*a*b^2*c^2*d^3+15*x*a^2*b*c^2*d^3+(11+9*x+3*x^2)*a*b^4*d^3+x*a*c^5*d^2+2*x*a^3*c^3*d^2+15*x*a^3*b*c^2*d^2+x*a*b^4*c*d^2+15*x*a*b^5*d^2+2*x*a^2*c^5*d+x^2*a*b^2*c^4*d+16*x*a^2*b*c^4*d+x*b^4*c^3*d+(11+9*x+3*x^2)*a*b^4*c^2*d+16*x*a^2*b^5*d+x*a^3*c^5+16*x*a^2*b^2*c^4+16*x*a^3*b*c^4+x*a*b^4*c^3+x*a^2*b^3*c^3+16*x*a*b^5*c^2+x*a^2*b^2*c*d^4+16*x*a^2*b^3*d^4+a^2*c^4*d^3+x*a*b^2*c^3*d^3+16*a^2*b*c^3*d^3+a^3*c^4*d^2+2*x*a^2*b^2*c^3*d^2+16*a^3*b*c^3*d^2+15*x*a^2*b^3*c^2*d^2+(16+x^2)*a^2*b^4*c*d^2+(1+15*x^2)*a^2*b^5*d^2+a^2*c^6*d+x*a*b^2*c^5*d+16*a^2*b*c^5*d+x^2*a*b^4*c^3*d+16*a^2*b^5*c*d+16*x*a*b^7*d+a^2*b^6*d+16*x^2*a^3*b^5*d+a^3*c^6+x*a^2*b^2*c^5+16*a^3*b*c^5+a*b^4*c^4+16*x*a^2*b^3*c^4+16*a*b^5*c^3+(16+x^2)*a^2*b^4*c^3+(1+16*x^2)*a^2*b^5*c^2+16*a^3*b^5*c+a^3*b^6+16*x^2*a*b^4*d^5+15*x^2*a*b^4*c^2*d^3+a^2*b^2*c^4*d^2+16*a^2*b^3*c^3*d^2+16*x^2*a*b^4*c^4*d+16*x*a^3*b^5*c*d+16*x^2*a^2*b^7*d+x*a^3*b^6*d+a^2*b^2*c^6+16*a^2*b^3*c^5+x*a^2*b^4*c^4+16*x*a^2*b^5*c^3+16*a^2*b^7*c+16*x*a^4*b^5*c+a^2*b^8+x*a^4*b^6+16*x*a^2*b^4*c*d^4+2*x*a^2*b^5*d^4+16*x*a*b^4*c^3*d^3+x*a^3*b^5*d^3+15*x*a^2*b^4*c^3*d^2+3*x*a^2*b^5*c^2*d^2+16*x*a*b^4*c^5*d+x*a^3*b^5*c^2*d+x*a*b^9*d+16*x*a^2*b^4*c^5+x*a^2*b^5*c^4+16*x*a^3*b^7*c+x*a^3*b^8+a^3*b^5*c*d^3+x*a^2*b^7*d^3+16*a^3*b^6*d^3+16*a^2*b^4*c^4*d^2+a^2*b^5*c^3*d^2+a^4*b^5*c*d^2+16*a^4*b^6*d^2+a^3*b^5*c^3*d+x*a^2*b^7*c^2*d+16*a^3*b^6*c^2*d+x^2*a^2*b^9*d+16*a^2*b^4*c^6+a^2*b^5*c^5+a^4*b^5*c^3+16*a^4*b^6*c^2+a^2*b^9*c+16*a^2*b^10+a^3*b^7*c*d^2+16*a^3*b^8*d^2+a^3*b^7*c^3+16*a^3*b^8*c^2+x*a^3*b^9*c+16*x*a^3*b^10+16*x*a^2*b^9*d^3+16*x*a^2*b^9*c^2*d+16*a^3*b^9*c*d^2+a^3*b^10*d^2+16*a^3*b^9*c^3+a^3*b^10*c^2");
+
+        for (int i = 11; i < 100; ++i) {
+            PrivateRandom.getRandom().setSeed(i);
+            assertNotNull(PolynomialGCD(a, b));
+        }
+    }
+
     /* =============================================== Test data =============================================== */
 
     /** sample data for test of GCD */

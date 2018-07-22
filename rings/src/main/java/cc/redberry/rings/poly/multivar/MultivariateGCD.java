@@ -6,8 +6,11 @@ import cc.redberry.rings.ChineseRemainders.ChineseRemaindersMagic;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.MultipleFieldExtension;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.SimpleFieldExtension;
 import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.poly.univar.*;
@@ -400,9 +403,15 @@ public final class MultivariateGCD {
     }
 
     static <Poly extends AMultivariatePolynomial>
+    boolean isOverPolynomialRing(Poly p) {
+        return isOverUnivariate(p) || isOverUnivariateZp64(p) || isOverMultivariate(p) || isOverMultivariateZp64(p);
+    }
+
+    static <Poly extends AMultivariatePolynomial>
     boolean isOverUnivariate(Poly p) {
         return p instanceof MultivariatePolynomial
-                && ((MultivariatePolynomial) p).ring instanceof UnivariateRing;
+                && ((MultivariatePolynomial) p).ring instanceof UnivariateRing
+                && ((MultivariatePolynomial) p).lc() instanceof UnivariatePolynomial;
     }
 
     private static <E> MultivariatePolynomial<UnivariatePolynomial<E>>
@@ -417,7 +426,8 @@ public final class MultivariateGCD {
     static <Poly extends AMultivariatePolynomial>
     boolean isOverMultivariate(Poly p) {
         return p instanceof MultivariatePolynomial
-                && ((MultivariatePolynomial) p).ring instanceof MultivariateRing;
+                && ((MultivariatePolynomial) p).ring instanceof MultivariateRing
+                && ((MultivariatePolynomial) p).lc() instanceof MultivariatePolynomial;
     }
 
     private static <E> MultivariatePolynomial<MultivariatePolynomial<E>>
@@ -613,6 +623,9 @@ public final class MultivariateGCD {
         b = b.clone(); // prevent rewriting original data
         Term monomialGCD = reduceMonomialContent(a, b);
 
+        trivialGCD = trivialGCD(a, b);
+        if (trivialGCD != null)
+            return new GCDInput<>(trivialGCD.multiply(monomialGCD));
         int
                 nVariables = a.nVariables,
                 aDegrees[] = a.degreesRef(),
@@ -3394,7 +3407,7 @@ public final class MultivariateGCD {
     }
 
     /** Maximal number of fails before switch to a new homomorphism */
-    private static final int MAX_SPARSE_INTERPOLATION_FAILS = 1000;
+    private static final int MAX_SPARSE_INTERPOLATION_FAILS_SWITCH_UP = 64, MAX_SPARSE_INTERPOLATION_FAILS = 1000;
     /** Maximal number of sparse interpolations after interpolation.numberOfPoints() > degreeBounds[variable] */
     private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 64;
 
@@ -3532,8 +3545,8 @@ public final class MultivariateGCD {
                 cVal = sparseInterpolator.evaluate(randomPoint);
                 if (cVal == null) {
                     ++failedSparseInterpolations;
-                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
-                        throw new RuntimeException("Sparse interpolation failed");
+                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS_SWITCH_UP)
+                        return null; //throw new RuntimeException("Sparse interpolation failed");
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
                     continue main;
@@ -4729,8 +4742,8 @@ public final class MultivariateGCD {
                 cVal = sparseInterpolator.evaluate(randomPoint);
                 if (cVal == null) {
                     ++failedSparseInterpolations;
-                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
-                        throw new RuntimeException("Sparse interpolation failed");
+                    if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS_SWITCH_UP)
+                        return null; //throw new RuntimeException("Sparse interpolation failed");
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
                     continue main;

@@ -30,9 +30,7 @@ public final class MultivariateSquareFreeFactorization {
     PolynomialFactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
         if (poly.isOverFiniteField())
             return SquareFreeFactorizationMusser(poly);
-        else if (MultivariateGCD.isOverMultivariate(poly))
-            return MultivariateFactorization.tryNested(poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
-        else if (MultivariateGCD.isOverUnivariate(poly))
+        else if (MultivariateGCD.isOverPolynomialRing(poly))
             return MultivariateFactorization.tryNested(poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
         else if (poly.coefficientRingCharacteristic().isZero())
             return SquareFreeFactorizationYunZeroCharacteristics(poly);
