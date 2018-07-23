@@ -69,7 +69,28 @@ public final class UnivariateGCD {
             return r;
         if (a.isOverField())
             return HalfGCD(a, b);
+        T t = trivialGCD(a, b);
+        if (t != null)
+            return t;
         return (T) UnivariateResultants.SubresultantPRS((UnivariatePolynomial) a, (UnivariatePolynomial) b).gcd();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends IUnivariatePolynomial<T>> T trivialGCD(T a, T b) {
+        if (a.isConstant() || b.isConstant()) {
+            if (a.isOverField())
+                return a.createOne();
+            else if (a instanceof UnivariatePolynomialZ64)
+                return a.createConstant(MachineArithmetic.gcd(
+                        ((UnivariatePolynomialZ64) a).content(),
+                        ((UnivariatePolynomialZ64) b).content()));
+            else if (a instanceof UnivariatePolynomial)
+                return (T) ((UnivariatePolynomial) a).createConstant(
+                        ((UnivariatePolynomial) a).ring.gcd(
+                                ((UnivariatePolynomial) a).content(),
+                                ((UnivariatePolynomial) b).content()));
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")

@@ -2284,7 +2284,7 @@ The upper-level method ``PolynomialGCD`` switches between Euclidean algorithm an
         val aXY = ringXY("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2")
         val bXY = ringXY("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2")
         // Subresultant sequence
-        val subResultants = SubresultantRemainders(aXY, bXY)
+        val subResultants = UnivariateResultants.SubresultantPRS(aXY, bXY)
         // The GCD
         val gcdXY = subResultants.gcd.primitivePart
         assert(aXY % gcdXY === 0 && bXY % gcdXY === 0)
@@ -2317,9 +2317,9 @@ The upper-level method ``PolynomialGCD`` switches between Euclidean algorithm an
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>>
                 aXY = ringXY.parse("(1 + y) + (1 + y^2)*x + (y - y^2)*x^2"),
                 bXY = ringXY.parse("(3 + y) + (3 + 2*y + y^2)*x + (3*y - y^2)*x^2");
-        //// Subresultant sequence
+        // Subresultant sequence
         PolynomialRemainders<UnivariatePolynomial<UnivariatePolynomial<BigInteger>>>
-                subResultants = SubresultantRemainders(aXY, bXY);
+                subResultants = UnivariateResultants.SubresultantPRS(aXY, bXY);
         // The GCD
         UnivariatePolynomial<UnivariatePolynomial<BigInteger>> gcdXY = subResultants.gcd().primitivePart();
         assert UnivariateDivision.remainder(aXY, gcdXY, true).isZero();
