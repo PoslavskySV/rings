@@ -2,10 +2,16 @@ package cc.redberry.rings.poly.multivar;
 
 
 import cc.redberry.rings.*;
+import cc.redberry.rings.ChineseRemainders.ChineseRemaindersMagic;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.bigint.BigIntegerUtil;
 import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.MultipleFieldExtension;
+import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.SimpleFieldExtension;
+import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.Util.Tuple2;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.PrimesIterator;
@@ -22,8 +28,14 @@ import org.apache.commons.math3.random.RandomGenerator;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static cc.redberry.rings.ChineseRemainders.ChineseRemainders;
+import static cc.redberry.rings.ChineseRemainders.createMagic;
+import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.poly.Util.commonDenominator;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
+import static cc.redberry.rings.poly.multivar.MultivariateDivision.pseudoRemainder;
 
 
 /**
@@ -256,9 +268,18 @@ public final class MultivariateGCD {
             return (Poly) PolynomialGCDinZ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         if (Util.isOverRationals(a))
             return (Poly) PolynomialGCDInQ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        if (Util.isOverSimpleNumberField(a))
+            return (Poly) PolynomialGCDinNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        if (Util.isOverRingOfIntegersOfSimpleNumberField(a))
+            return (Poly) PolynomialGCDinRingOfIntegersOfNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        if (Util.isOverMultipleFieldExtension(a))
+            return (Poly) PolynomialGCDinMultipleFieldExtension((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        Poly r = tryNested(a, b);
+        if (r != null)
+            return r;
         if (a.isOverField())
             return (Poly) ZippelGCD((MultivariatePolynomial<BigInteger>) a, (MultivariatePolynomial<BigInteger>) b);
-        return tryNested(a, b);
+        throw new RuntimeException();
     }
 
     /**
@@ -309,6 +330,51 @@ public final class MultivariateGCD {
             return ZippelGCDInZ(a, b);
     }
 
+    /**
+     * Calculates greatest common divisor of two multivariate polynomials over Z
+     *
+     * @param a the first poly
+     * @param b the second poly
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    public static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    PolynomialGCDinNumberField(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+                               MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b) {
+        a.assertSameCoefficientRingWith(b);
+        if (isDenseGCDProblem(a, b))
+            // use EEZGCD with ModularGCD for dense problems
+            return ModularGCDInNumberFieldViaRationalReconstruction(a, b, (u, v) -> EEZGCD(u, v, true));
+        else
+            // use ZippelGCD for sparse problems
+            return ZippelGCDInNumberFieldViaRationalReconstruction(a, b);
+    }
+
+    /**
+     * Calculates greatest common divisor of two multivariate polynomials over Z
+     *
+     * @param a the first poly
+     * @param b the second poly
+     * @return the gcd
+     */
+    @SuppressWarnings("unchecked")
+    public static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    PolynomialGCDinRingOfIntegersOfNumberField(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+                                               MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+        a.assertSameCoefficientRingWith(b);
+        if (!a.lc().isConstant() || !b.lc().isConstant())
+            throw new IllegalArgumentException("lc must be constant");
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> ring = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = new AlgebraicNumberField<>(ring.getMinimalPolynomial().mapCoefficients(Q, Q::mkNumerator));
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> gcd =
+                PolynomialGCDinNumberField(
+                        a.mapCoefficients(field, cf -> cf.mapCoefficients(Q, Q::mkNumerator)),
+                        b.mapCoefficients(field, cf -> cf.mapCoefficients(Q, Q::mkNumerator)));
+        return gcd.multiply(field.valueOfBigInteger(iDenominator(gcd)))
+                .mapCoefficients(ring, cf -> cf.mapCoefficients(Z, Rational::numeratorExact))
+                .primitivePart();
+    }
+
     private static final double SPARSITY_THRESHOLD_NVARS_4 = 0.2;
     private static final double SPARSITY2_THRESHOLD = 0.5;
     private static final int SPARSITY_SIZE_THRESHOLD = 256;
@@ -334,6 +400,11 @@ public final class MultivariateGCD {
             return (Poly) PolynomialGCDOverMultivariateZp64((MultivariatePolynomial) a, (MultivariatePolynomial) b);
 
         throw new RuntimeException("Multivariate GCD over " + a.coefficientRingToString() + " ring not supported.");
+    }
+
+    static <Poly extends AMultivariatePolynomial>
+    boolean isOverPolynomialRing(Poly p) {
+        return isOverUnivariate(p) || isOverUnivariateZp64(p) || isOverMultivariate(p) || isOverMultivariateZp64(p);
     }
 
     static <Poly extends AMultivariatePolynomial>
@@ -409,6 +480,20 @@ public final class MultivariateGCD {
         Tuple2<MultivariatePolynomial<E>, E> bRat = Util.toCommonDenominator(b);
 
         return Util.asOverRationals(a.ring, PolynomialGCD(aRat._1, bRat._1));
+    }
+
+    private static <
+            Term extends AMonomial<Term>,
+            mPoly extends AMultivariatePolynomial<Term, mPoly>,
+            sPoly extends IUnivariatePolynomial<sPoly>
+            > MultivariatePolynomial<mPoly>
+    PolynomialGCDinMultipleFieldExtension(MultivariatePolynomial<mPoly> a, MultivariatePolynomial<mPoly> b) {
+        MultipleFieldExtension<Term, mPoly, sPoly> ring = (MultipleFieldExtension<Term, mPoly, sPoly>) a.ring;
+        SimpleFieldExtension<sPoly> simpleExtension = ring.getSimpleExtension();
+        return PolynomialGCD(
+                a.mapCoefficients(simpleExtension, ring::inverse),
+                b.mapCoefficients(simpleExtension, ring::inverse))
+                .mapCoefficients(ring, ring::image);
     }
 
     /* ============================================== Auxiliary methods ============================================= */
@@ -516,7 +601,7 @@ public final class MultivariateGCD {
             return linear.createConstant(cGCD);
     }
 
-    private static int
+    static int
             EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD = 1024,
             EARLY_ADJUST_POLY_DISBALANCE = 10,
             EARLY_ADJUST_LARGE_POLY_SIZE_THRESHOLD = EARLY_ADJUST_SMALL_POLY_SIZE_THRESHOLD * EARLY_ADJUST_POLY_DISBALANCE;
@@ -538,6 +623,9 @@ public final class MultivariateGCD {
         b = b.clone(); // prevent rewriting original data
         Term monomialGCD = reduceMonomialContent(a, b);
 
+        trivialGCD = trivialGCD(a, b);
+        if (trivialGCD != null)
+            return new GCDInput<>(trivialGCD.multiply(monomialGCD));
         int
                 nVariables = a.nVariables,
                 aDegrees[] = a.degreesRef(),
@@ -718,7 +806,9 @@ public final class MultivariateGCD {
             adjustDegreeBounds((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b, gcdDegreeBounds);
         else if (a.isOverZ())
             adjustDegreeBoundsZ((MultivariatePolynomial) a, (MultivariatePolynomial) b, gcdDegreeBounds);
-        else
+        else if (Util.isOverSimpleNumberField(a))
+            adjustDegreeBoundsNumberField((MultivariatePolynomial) a, (MultivariatePolynomial) b, gcdDegreeBounds);
+        else if (a.isOverFiniteField())
             adjustDegreeBounds((MultivariatePolynomial) a, (MultivariatePolynomial) b, gcdDegreeBounds);
     }
 
@@ -818,14 +908,14 @@ public final class MultivariateGCD {
                         return; // nothing can be done
                     // find non trivial substitution
                     E rval;
-                    do { rval = a.ring.randomElement(rnd); } while (seen.contains(rval));
+                    do { rval = randomElement(a.ring, rnd); } while (seen.contains(rval));
                     seen.add(rval);
                     subs[i] = rval;
                 } while (a.evaluate(i, subs[i]).isZero() || b.evaluate(i, subs[i]).isZero());
             }
         } else
             for (int i = 0; i < nVariables; i++)
-                subs[i] = a.ring.randomElement(rnd);
+                subs[i] = randomElement(a.ring, rnd);
 
         UnivariatePolynomial<E>[]
                 uaImages = univariateImages(a, subs),
@@ -907,6 +997,22 @@ public final class MultivariateGCD {
         }
     }
 
+    static void adjustDegreeBoundsNumberField(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+                                              MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b,
+                                              int[] gcdDegreeBounds) {
+        // perform some test modulo prime
+        MultivariatePolynomial<UnivariatePolynomialZp64> aMod, bMod;
+        //do {
+        // some random prime number
+        IntegersZp64 zpRing = Rings.Zp64(SmallPrimes.nextPrime((1 << 20) + PrivateRandom.getRandom().nextInt(1 << 10)));
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> ring = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
+        FiniteField<UnivariatePolynomialZp64> numberFieldMod = new FiniteField<>(UnivariatePolynomial.asOverZp64Q(ring.getMinimalPolynomial(), zpRing));
+        aMod = a.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64Q(cf, zpRing));
+        bMod = b.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64Q(cf, zpRing));
+        //} while (!a.sameSkeletonQ(aMod) || !b.sameSkeletonQ(bMod));
+
+        adjustDegreeBounds(aMod, bMod, gcdDegreeBounds);
+    }
 
     /** substitutes {@code values} for {@code variables} */
     @SuppressWarnings("unchecked")
@@ -941,7 +1047,7 @@ public final class MultivariateGCD {
     /**
      * Removes monomial content from a and b and returns monomial gcd
      */
-    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Term reduceMonomialContent(Poly a, Poly b) {
 
         Term aMonomialContent = a.monomialContent();
@@ -1081,6 +1187,16 @@ public final class MultivariateGCD {
         assert MultivariateDivision.dividesQ(a, gcd);
         assert MultivariateDivision.dividesQ(b, gcd);
         return gcd;
+    }
+
+    /** simple random elements */
+    static <E> E randomElement(Ring<E> ring, RandomGenerator rnd) {
+        if (ring.isFiniteField() && ring.characteristic().bitLength() > 16)
+            return ring.valueOf(rnd.nextLong());
+        else if (ring == Q || ring == Z || (ring instanceof AlgebraicNumberField))
+            return ring.valueOf(rnd.nextInt(1 << 16));
+        else
+            return ring.randomElement(rnd);
     }
 
     /* =========================================== Multivariate GCD over Z ========================================== */
@@ -1231,8 +1347,11 @@ public final class MultivariateGCD {
                         MachineArithmetic.modInverse(modularGCD.lc(), prime),
                         lcGCD.mod(bPrime).longValueExact());
 
-                ChineseRemainders.ChineseRemaindersMagic magic = ChineseRemainders.createMagic(basePrime, prime);
-                PairedIterator<MonomialZp64, MultivariatePolynomialZp64> iterator = new PairedIterator<>(base, modularGCD);
+                ChineseRemainders.ChineseRemaindersMagicZp64 magic = ChineseRemainders.createMagic(basePrime, prime);
+                PairedIterator<
+                        MonomialZp64, MultivariatePolynomialZp64,
+                        MonomialZp64, MultivariatePolynomialZp64
+                        > iterator = new PairedIterator<>(base, modularGCD);
                 while (iterator.hasNext()) {
                     iterator.advance();
 
@@ -1254,7 +1373,7 @@ public final class MultivariateGCD {
                     long oth = lDomain.multiply(imageTerm.coefficient, monicFactor);
 
                     // update base term
-                    long newCoeff = ChineseRemainders.ChineseRemainders(magic, baseTerm.coefficient, oth);
+                    long newCoeff = ChineseRemainders(magic, baseTerm.coefficient, oth);
                     base.put(baseTerm.setCoefficient(newCoeff));
                 }
 
@@ -1331,29 +1450,32 @@ public final class MultivariateGCD {
                         lDomain.reciprocal(modularGCD.lc()),
                         lcGCD.mod(bPrime).longValueExact());
 
-                PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> iterator = new PairedIterator<>(bBase, modularGCD.toBigPoly());
+                PairedIterator<
+                        Monomial<BigInteger>, MultivariatePolynomial<BigInteger>,
+                        MonomialZp64, MultivariatePolynomialZp64
+                        > iterator = new PairedIterator<>(bBase, modularGCD);
+                ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, bBasePrime, bPrime);
                 while (iterator.hasNext()) {
                     iterator.advance();
 
-                    Monomial<BigInteger>
-                            baseTerm = iterator.aTerm,
-                            imageTerm = iterator.bTerm;
+                    Monomial<BigInteger> baseTerm = iterator.aTerm;
+                    MonomialZp64 imageTerm = iterator.bTerm;
 
                     if (baseTerm.coefficient.isZero())
                         // term is absent in the base
                         continue;
 
-                    if (imageTerm.coefficient.isZero()) {
+                    if (imageTerm.coefficient == 0) {
                         // term is absent in the modularGCD => remove it from the base
                         // bBase.subtract(baseTerm);
                         iterator.aIterator.remove();
                         continue;
                     }
 
-                    long oth = lDomain.multiply(imageTerm.coefficient.longValueExact(), monicFactor);
+                    long oth = lDomain.multiply(imageTerm.coefficient, monicFactor);
 
                     // update base term
-                    BigInteger newCoeff = ChineseRemainders.ChineseRemainders(bBasePrime, bPrime, baseTerm.coefficient, BigInteger.valueOf(oth));
+                    BigInteger newCoeff = ChineseRemainders(Z, magic, baseTerm.coefficient, BigInteger.valueOf(oth));
                     bBase.put(baseTerm.setCoefficient(newCoeff));
                 }
 
@@ -1527,30 +1649,33 @@ public final class MultivariateGCD {
                     pRing.reciprocal(modGCD.lc()),
                     lcGCD.mod(bPrime).longValueExact());
 
-            PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                    iterator = new PairedIterator<>(base, modGCD.toBigPoly());
+
+            PairedIterator<
+                    Monomial<BigInteger>, MultivariatePolynomial<BigInteger>,
+                    MonomialZp64, MultivariatePolynomialZp64
+                    > iterator = new PairedIterator<>(base, modGCD);
+            ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, bBasePrime, bPrime);
             while (iterator.hasNext()) {
                 iterator.advance();
 
-                Monomial<BigInteger>
-                        baseTerm = iterator.aTerm,
-                        imageTerm = iterator.bTerm;
+                Monomial<BigInteger> baseTerm = iterator.aTerm;
+                MonomialZp64 imageTerm = iterator.bTerm;
 
                 if (baseTerm.coefficient.isZero())
                     // term is absent in the base
                     continue;
 
-                if (imageTerm.coefficient.isZero()) {
+                if (imageTerm.coefficient == 0) {
                     // term is absent in the modularGCD => remove it from the base
                     // bBase.subtract(baseTerm);
                     iterator.aIterator.remove();
                     continue;
                 }
 
-                long oth = pRing.multiply(imageTerm.coefficient.longValueExact(), monicFactor);
+                long oth = pRing.multiply(imageTerm.coefficient, monicFactor);
 
                 // update base term
-                BigInteger newCoeff = ChineseRemainders.ChineseRemainders(bBasePrime, bPrime, baseTerm.coefficient, BigInteger.valueOf(oth));
+                BigInteger newCoeff = ChineseRemainders(Z, magic, baseTerm.coefficient, BigInteger.valueOf(oth));
                 base.put(baseTerm.setCoefficient(newCoeff));
             }
 
@@ -1566,6 +1691,902 @@ public final class MultivariateGCD {
             return gcdInput.restoreGCD(candidate);
         }
     }
+
+    /* =============================== Multivariate GCD over algebraic number fields ================================= */
+
+    /** if all coefficients are simple numbers */
+    private static <E> MultivariatePolynomial<UnivariatePolynomial<E>>
+    TrivialGCDInExtension(MultivariatePolynomial<UnivariatePolynomial<E>> a, MultivariatePolynomial<UnivariatePolynomial<E>> b) {
+        AlgebraicNumberField<UnivariatePolynomial<E>> ring
+                = (AlgebraicNumberField<UnivariatePolynomial<E>>) a.ring;
+
+        if (!a.stream().allMatch(ring::isInTheBaseField)
+                || !b.stream().allMatch(ring::isInTheBaseField))
+            return null;
+
+        Ring<E> cfRing = ring.getMinimalPolynomial().ring;
+        MultivariatePolynomial<E>
+                ar = a.mapCoefficients(cfRing, UnivariatePolynomial::cc),
+                br = b.mapCoefficients(cfRing, UnivariatePolynomial::cc);
+        return PolynomialGCD(ar, br)
+                .mapCoefficients(ring, cf -> UnivariatePolynomial.constant(cfRing, cf));
+    }
+
+    /** integer "content" of poly over algebraic extension */
+    static BigInteger iContent(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a) {
+        return Z.gcd(a.stream().flatMap(UnivariatePolynomial::stream).map(Rational::numerator).collect(Collectors.toList()));
+    }
+
+    /** integer "common denominator" of poly over algebraic extension */
+    static BigInteger iDenominator(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a) {
+        return Z.lcm(a.stream().flatMap(UnivariatePolynomial::stream).map(Rational::denominator).collect(Collectors.toList()));
+    }
+
+    /** integer max coefficient of poly over algebraic extension */
+    static BigInteger iMax(MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a) {
+        return a.stream()
+                .flatMap(p -> p.stream().flatMap(cf -> Stream.of(cf.numerator(), cf.denominator())))
+                .map(Z::abs).max(Z).orElse(Z.getZero());
+    }
+
+    /** integer max coefficient of poly over algebraic extension */
+    static BigInteger iMaxZ(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a) {
+        return a.stream()
+                .flatMap(UnivariatePolynomial::stream)
+                .map(Z::abs).max(Z).orElse(Z.getZero());
+    }
+
+    /**
+     * Modular algorithm for polynomials over simple field extensions, which switches to "integer" associates of input
+     * polynomials and number field (by applying substitution to minimal polynomial)
+     *
+     * @param a               first poly
+     * @param b               second poly
+     * @param algorithmInRing the algorithm for ring of integers
+     */
+    private static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    PolynomialGCDInNumberFieldSwitchToRingOfInteger(
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b,
+            BiFunction<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>,
+                    MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>,
+                    MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> algorithmInRing) {
+
+        // if there is a trivial case
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> simpleGCD = TrivialGCDInExtension(a, b);
+        if (simpleGCD != null)
+            return simpleGCD;
+
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField
+                = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly = numberField.getMinimalPolynomial();
+
+        if (minimalPoly.stream().allMatch(Rational::isIntegral)) {
+            // minimal polynomial is integral (monic)
+
+            a = a.clone(); b = b.clone();
+            // remove integer content (to facilitate rational reconstruction)
+            BigInteger aiCont = iContent(a), biCont = iContent(b);
+            a.multiply(UnivariatePolynomial.constant(Q, Q.mkDenominator(aiCont)));
+            b.multiply(UnivariatePolynomial.constant(Q, Q.mkDenominator(biCont)));
+            // to common denominator
+            BigInteger aiDen = iDenominator(a), biDen = iDenominator(b);
+            a.multiply(UnivariatePolynomial.constant(Q, Q.mkNumerator(aiDen)));
+            b.multiply(UnivariatePolynomial.constant(Q, Q.mkNumerator(biDen)));
+
+            return algorithmInRing.apply(a, b);
+        } else {
+            // scaling of minimal poly is practically faster than working with rationals
+
+            // replace s -> s / lc(minPoly)
+            BigInteger minPolyLeadCoeff = commonDenominator(minimalPoly);
+            Rational<BigInteger>
+                    scale = new Rational<>(Z, Z.getOne(), minPolyLeadCoeff),
+                    scaleReciprocal = scale.reciprocal();
+
+            // scaled number field
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>
+                    numberFieldScaled = new AlgebraicNumberField<>(minimalPoly.scale(scale).monic());
+
+            return PolynomialGCDInNumberFieldSwitchToRingOfInteger(
+                    a.mapCoefficients(numberFieldScaled, cf -> cf.scale(scale)),
+                    b.mapCoefficients(numberFieldScaled, cf -> cf.scale(scale)),
+                    algorithmInRing)
+                    .mapCoefficients(numberField, cf -> cf.scale(scaleReciprocal));
+        }
+    }
+
+    /**
+     * Modular interpolation algorithm for polynomials over simple field extensions by integer with integer
+     * coefficients
+     */
+    private static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    PolynomialGCDAssociateInRingOfIntegerOfNumberField(
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b,
+            BiFunction<
+                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+                    > algorithmForGcdAssociate) {
+        assert a.stream().allMatch(cf -> cf.stream().allMatch(Rational::isIntegral));
+        assert b.stream().allMatch(cf -> cf.stream().allMatch(Rational::isIntegral));
+
+        GCDInput<
+                Monomial<UnivariatePolynomial<Rational<BigInteger>>>,
+                MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                > gcdInput = preparedGCDInput(a, b, (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r, algorithmForGcdAssociate));
+        if (gcdInput.earlyGCD != null)
+            return gcdInput.earlyGCD;
+
+        a = gcdInput.aReduced;
+        b = gcdInput.bReduced;
+
+        // remove content (required by Zippel algorithm)
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> pContentGCD =
+                contentGCD(a, b, 0, (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r, algorithmForGcdAssociate));
+        if (!pContentGCD.isConstant()) {
+            a = MultivariateDivision.divideExact(a, pContentGCD);
+            b = MultivariateDivision.divideExact(b, pContentGCD);
+            return gcdInput.restoreGCD(
+                    PolynomialGCDInNumberFieldSwitchToRingOfInteger(a, b,
+                            (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r, algorithmForGcdAssociate).multiply(pContentGCD)));
+        }
+
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField
+                = (AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>) a.ring;
+        UnivariatePolynomial<BigInteger> minimalPolyZ = numberField.getMinimalPolynomial().mapCoefficients(Z, Rational::numeratorExact);
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberRingZ = new AlgebraicNumberField<>(minimalPolyZ);
+
+        return gcdInput.restoreGCD(algorithmForGcdAssociate.apply(
+                a.mapCoefficients(numberRingZ, cf -> cf.mapCoefficients(Z, Rational::numeratorExact)),
+                b.mapCoefficients(numberRingZ, cf -> cf.mapCoefficients(Z, Rational::numeratorExact)))
+                .mapCoefficients(numberField, cf -> cf.mapCoefficients(Q, Q::mkNumerator)));
+    }
+
+    /**
+     * Zippel's sparse modular interpolation algorithm for polynomials over simple field extensions with the use of
+     * rational reconstruction to reconstruct the result
+     */
+    public static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    ZippelGCDInNumberFieldViaRationalReconstruction(
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b) {
+        return PolynomialGCDInNumberFieldSwitchToRingOfInteger(a, b,
+                (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r, MultivariateGCD::ZippelGCDInNumberFieldViaRationalReconstruction0));
+    }
+
+    /**
+     * Zippel's sparse modular interpolation algorithm for computing GCD associate for polynomials over simple field
+     * extensions with the use of rational reconstruction to reconstruct the result
+     */
+    private static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    ZippelGCDInNumberFieldViaRationalReconstruction0(
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+        // choose better prime to start
+        long startingPrime;
+        if (Math.max(iMaxZ(a).bitLength(), iMaxZ(b).bitLength()) < 256)
+            startingPrime = 1L << 30;
+        else
+            startingPrime = 1L << 60;
+
+        // for efficient division test we prepare polynomials with integer coefficients
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>>
+                numberField = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPolynomial();
+
+        // auxiliary ring
+        UnivariateRing<UnivariatePolynomial<BigInteger>> auxRing = UnivariateRing(Z);
+        PrimesIterator primesLoop = new PrimesIterator(startingPrime - (1 << 12));
+        RandomGenerator random = PrivateRandom.getRandom();
+        main_loop:
+        while (true) {
+            long basePrime = primesLoop.take();
+            assert basePrime != -1 : "long overflow";
+
+            IntegersZp64 baseRing = new IntegersZp64(basePrime);
+            UnivariatePolynomialZp64 minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, baseRing);
+            FiniteField<UnivariatePolynomialZp64> numberFieldMod = new FiniteField<>(minimalPolyMod);
+
+            // reduce mod p
+            MultivariatePolynomial<UnivariatePolynomialZp64>
+                    aMod = a.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, baseRing)),
+                    bMod = b.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, baseRing));
+            if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                continue;
+
+            // the base image
+            MultivariatePolynomial<UnivariatePolynomialZp64> baseMod;
+            try {
+                baseMod = PolynomialGCD(aMod, bMod).monic();
+            } catch (Throwable t) { continue; } // bad prime
+
+            // accumulator to update coefficients via Chineese remainding
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> base = baseMod
+                    .mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+
+            if (base.isConstant())
+                return a.createOne();
+
+            // accumulated CRT prime
+            BigInteger crtPrime = Z.valueOf(basePrime);
+            // number of already generated primes
+            int nPrimes = 0;
+            // Fibonacci numbers for testing of rational reconstruction
+            int prevFibonacci = 1, nextFibonacci = 2;
+            // over all primes
+            inner_loop:
+            while (true) {
+                long prime = primesLoop.take();
+                IntegersZp64 ring = new IntegersZp64(prime);
+
+                minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, ring);
+                numberFieldMod = new FiniteField<>(minimalPolyMod);
+                // reduce Z -> Zp
+                aMod = a.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring));
+                bMod = b.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring));
+                if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                    continue;
+
+                // calculate new GCD using previously calculated skeleton via sparse interpolation
+                MultivariatePolynomial<UnivariatePolynomialZp64> modularGCD;
+                try {
+                    modularGCD = interpolateGCD(aMod, bMod, baseMod.mapCoefficients(numberFieldMod, cf -> cf.setModulusUnsafe(prime)), random);
+                } catch (Throwable t) {continue;} // unlucky prime
+
+                if (modularGCD == null) {
+                    // interpolation failed => assumed form is wrong => start over
+                    continue;
+                }
+
+                if (modularGCD.isConstant())
+                    return a.createOne();
+
+                // monicize modular gcd
+                modularGCD.monic();
+
+                assert MultivariateDivision.dividesQ(aMod, modularGCD);
+                assert MultivariateDivision.dividesQ(bMod, modularGCD);
+
+                // better degree bound found -> start over
+                if (modularGCD.degree(0) < base.degree(0)) {
+                    baseMod = modularGCD;
+                    base = baseMod.mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+                    basePrime = prime;
+                    crtPrime = Z.valueOf(basePrime);
+                    continue;
+                }
+
+                //skip unlucky prime
+                if (modularGCD.degree(0) > base.degree(0))
+                    continue;
+
+                // applying CRT
+                PairedIterator<
+                        Monomial<UnivariatePolynomial<BigInteger>>, MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                        Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>
+                        > iterator = new PairedIterator<>(base, modularGCD);
+                ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, crtPrime, Z.valueOf(prime));
+                while (iterator.hasNext()) {
+                    iterator.advance();
+
+                    Monomial<UnivariatePolynomial<BigInteger>> baseTerm = iterator.aTerm;
+                    Monomial<UnivariatePolynomialZp64> imageTerm = iterator.bTerm;
+
+                    if (baseTerm.coefficient.isZero())
+                        // term is absent in the base
+                        continue;
+
+                    if (imageTerm.coefficient.isZero()) {
+                        // term is absent in the modularGCD => remove it from the base
+                        // bBase.subtract(baseTerm);
+                        iterator.aIterator.remove();
+                        continue;
+                    }
+                    UnivariatePolynomial<BigInteger> baseCf = baseTerm.coefficient;
+                    UnivariatePolynomialZp64 imageCf = imageTerm.coefficient;
+
+                    assert baseCf.ring == Z;
+                    UnivariateGCD.updateCRT(magic, baseCf, imageCf);
+                }
+                crtPrime = crtPrime.multiply(Z.valueOf(prime));
+                ++nPrimes;
+
+                // attempt to apply rational reconstruction (quite costly) only for
+                // sufficiently large number of prime homomorphisms,
+                // since we don't know a priori any coefficient bounds
+                //
+                // We use Fibonacci numbers as in van Hoeij & Monagan "A Modular GCD
+                // algorithm over Number Fields presented with Multiple Extensions."
+                if (nPrimes == nextFibonacci) {
+                    int nextNextFibonacci = (prevFibonacci + 1) / 2 + nextFibonacci;
+                    prevFibonacci = nextFibonacci;
+                    nextFibonacci = nextNextFibonacci;
+
+                    // rational reconstruction
+                    BigInteger lcm = Z.getOne();
+                    List<Monomial<UnivariatePolynomial<Rational<BigInteger>>>> candidateTerms = new ArrayList<>();
+                    for (Monomial<UnivariatePolynomial<BigInteger>> term : base.terms) {
+                        UnivariatePolynomial<Rational<BigInteger>> rrCf = rationalReconstruction(term.coefficient, crtPrime);
+                        if (rrCf == null)
+                            continue inner_loop; // rational reconstruction failed
+                        candidateTerms.add(new Monomial<>(term, rrCf));
+                        lcm = Z.lcm(lcm, Z.lcm(rrCf.stream().map(Rational::denominator).collect(Collectors.toList())));
+                    }
+                    final BigInteger lcm0 = lcm;
+                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>> candidate = a.create(candidateTerms
+                            .stream()
+                            .map(m -> new Monomial<>(m, m.coefficient.mapCoefficients(Z, cf -> cf.multiply(lcm0).numeratorExact())))
+                            .collect(Collectors.toList()));
+
+
+                    // test candidate with pseudoD division
+                    if (pseudoRemainder(a, candidate).isZero()
+                            && pseudoRemainder(b, candidate).isZero())
+                        return candidate;
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static UnivariatePolynomial<Rational<BigInteger>>
+    rationalReconstruction(UnivariatePolynomial<BigInteger> base, BigInteger crtPrime) {
+        UnivariatePolynomial<Rational<BigInteger>> candidate = UnivariatePolynomial.zero(Q);
+        for (int j = 0; j <= base.degree(); ++j) {
+            BigInteger[] numDen = RationalReconstruction.reconstructFarey(base.get(j), crtPrime);
+            if (numDen == null)
+                return null;
+            candidate.set(j, new Rational<>(Z, numDen[0], numDen[1]));
+        }
+        return candidate;
+    }
+
+    /**
+     * Zippel's sparse modular interpolation algorithm for computing GCD associate for polynomials over simple field
+     * extensions with the use of Langemyr & McCallum approach to avoid rational reconstruction
+     */
+    public static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    ZippelGCDInNumberFieldViaLangemyrMcCallum(
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b) {
+        return PolynomialGCDInNumberFieldSwitchToRingOfInteger(a, b,
+                (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r,
+                        (u, v) -> PolynomialGCDAssociateInNumberFieldViaLangemyrMcCallum(u, v,
+                                MultivariateGCD::ZippelGCDAssociateInNumberFieldViaLangemyrMcCallum0)));
+    }
+
+    /** Computes some GCD associate via Langemyr & McCallum modular algorithm over algebraic integers */
+    @SuppressWarnings("ConstantConditions")
+    private static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    PolynomialGCDAssociateInNumberFieldViaLangemyrMcCallum(
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b,
+            BiFunction<
+                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                    MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+                    > baseAlgorithm) {
+
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberField
+                = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+
+        integerPrimitivePart(a);
+        integerPrimitivePart(b);
+
+        if (!a.lc().isConstant())
+            a.multiply(numberField.normalizer(a.lc()));
+
+        if (!b.lc().isConstant())
+            b.multiply(numberField.normalizer(b.lc()));
+
+        integerPrimitivePart(a);
+        integerPrimitivePart(b);
+
+        // if all coefficients are simple numbers (no algebraic elements)
+        MultivariatePolynomial<UnivariatePolynomial<BigInteger>> simpleGCD = TrivialGCDInExtension(a, b);
+        if (simpleGCD != null)
+            return simpleGCD;
+
+        return baseAlgorithm.apply(a, b);
+    }
+
+    static void integerPrimitivePart(MultivariatePolynomial<UnivariatePolynomial<BigInteger>> p) {
+        BigInteger gcd = Z.gcd(p.stream().flatMap(UnivariatePolynomial::stream).sorted().collect(Collectors.toList()));
+        p.stream().forEach(cf -> cf.divideExact(gcd));
+    }
+
+    /**
+     * Zippel's sparse modular interpolation algorithm for polynomials over simple field extensions with Langemyr &
+     * McCallum correction for lead coefficients to avoid rational reconstruction
+     */
+    private static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    ZippelGCDAssociateInNumberFieldViaLangemyrMcCallum0(
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b) {
+
+        assert a.lc().isConstant();
+        assert b.lc().isConstant();
+        // choose better prime for start
+        long startingPrime;
+        if (Math.max(iMaxZ(a).bitLength(), iMaxZ(b).bitLength()) < 2 * 256)
+            startingPrime = 1L << 30;
+        else
+            startingPrime = 1L << 60;
+
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberField
+                = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPolynomial();
+
+        // Weinberger & Rothschild (1976) correction denominator
+        BigInteger
+                lcGCD = Z.gcd(a.lc().cc(), b.lc().cc()),
+                disc = UnivariateResultants.Discriminant(minimalPoly),
+                correctionFactor = disc.pow(1).multiply(lcGCD);
+
+        UnivariateRing<UnivariatePolynomial<BigInteger>> auxRing = UnivariateRing(Z);
+        PrimesIterator primesLoop = new PrimesIterator(startingPrime - (1 << 12));
+        RandomGenerator random = PrivateRandom.getRandom();
+        while (true) {
+            // prepare the skeleton
+            long basePrime = primesLoop.take();
+            assert basePrime != -1 : "long overflow";
+
+            IntegersZp64 baseRing = new IntegersZp64(basePrime);
+            UnivariatePolynomialZp64 minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, baseRing);
+            FiniteField<UnivariatePolynomialZp64> numberFieldMod = new FiniteField<>(minimalPolyMod);
+
+            // reduce Z -> Zp
+            MultivariatePolynomial<UnivariatePolynomialZp64>
+                    aMod = a.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, baseRing)),
+                    bMod = b.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, baseRing));
+            if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                continue;
+
+            // the base image
+            MultivariatePolynomial<UnivariatePolynomialZp64> baseMod;
+            try {
+                baseMod = PolynomialGCD(aMod, bMod).monic();
+            } catch (Throwable t) { continue;} // bad prime
+
+            // correction
+            baseMod.monic(numberFieldMod.valueOf(correctionFactor.mod(basePrime).longValueExact()));
+            // accumulator to update coefficients via Chineese remainding
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> base = baseMod
+                    .mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+
+            if (base.isConstant())
+                return a.createOne();
+
+            // accumulated CRT prime
+            BigInteger crtPrime = Z.valueOf(basePrime);
+            // previous candidate to test
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> prevCandidate = null;
+            // over all primes
+            inner_loop:
+            while (true) {
+                long prime = primesLoop.take();
+                IntegersZp64 ring = new IntegersZp64(prime);
+
+                minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, ring);
+                numberFieldMod = new FiniteField<>(minimalPolyMod);
+                // reduce Z -> Zp
+                aMod = a.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring));
+                bMod = b.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring));
+                if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                    continue;
+
+                // calculate new GCD using previously calculated skeleton via sparse interpolation
+                MultivariatePolynomial<UnivariatePolynomialZp64> modularGCD;
+                try {
+                    modularGCD = interpolateGCD(aMod, bMod, baseMod.mapCoefficients(numberFieldMod, cf -> cf.setModulusUnsafe(prime)), random);
+                } catch (Throwable t) {continue;} // unlucky prime
+
+                if (modularGCD == null) {
+                    // interpolation failed => assumed form is wrong => start over
+                    continue;
+                }
+
+                // correction
+                modularGCD.monic(numberFieldMod.valueOf(correctionFactor.mod(prime).longValueExact()));
+
+                assert MultivariateDivision.dividesQ(aMod, modularGCD);
+                assert MultivariateDivision.dividesQ(bMod, modularGCD);
+
+                if (modularGCD.isConstant())
+                    return a.createOne();
+
+                // better degree bound found -> start over
+                if (modularGCD.degree(0) < base.degree(0)) {
+                    baseMod = modularGCD;
+                    prevCandidate = null;
+                    base = baseMod.mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+                    basePrime = prime;
+                    crtPrime = Z.valueOf(basePrime);
+                    continue;
+                }
+
+                //skip unlucky prime
+                if (modularGCD.degree(0) > base.degree(0))
+                    continue;
+
+                ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, crtPrime, Z.valueOf(prime));
+                //lifting
+                PairedIterator<
+                        Monomial<UnivariatePolynomial<BigInteger>>, MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                        Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>
+                        > iterator = new PairedIterator<>(base, modularGCD);
+                while (iterator.hasNext()) {
+                    iterator.advance();
+
+                    Monomial<UnivariatePolynomial<BigInteger>> baseTerm = iterator.aTerm;
+                    Monomial<UnivariatePolynomialZp64> imageTerm = iterator.bTerm;
+
+                    if (baseTerm.coefficient.isZero())
+                        // term is absent in the base
+                        continue;
+
+                    if (imageTerm.coefficient.isZero()) {
+                        // term is absent in the modularGCD => remove it from the base
+                        // bBase.subtract(baseTerm);
+                        iterator.aIterator.remove();
+                        continue;
+                    }
+                    UnivariatePolynomial<BigInteger> baseCf = baseTerm.coefficient;
+                    UnivariatePolynomialZp64 imageCf = imageTerm.coefficient;
+
+                    assert baseCf.ring == Z;
+                    UnivariateGCD.updateCRT(magic, baseCf, imageCf);
+                }
+                crtPrime = crtPrime.multiply(Z.valueOf(prime));
+
+                IntegersZp crtRing = new IntegersZp(crtPrime);
+                MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+                        candidate = base.mapCoefficients(numberField,
+                        cf -> numberField.valueOf(UnivariatePolynomial.asPolyZSymmetric(cf.setRingUnsafe(crtRing))));
+
+                if (prevCandidate == null) {
+                    prevCandidate = candidate;
+                    continue;
+                }
+
+                if (prevCandidate.equals(candidate)) {
+                    // division test
+                    if (pseudoRemainder(a, candidate).isZero() && pseudoRemainder(b, candidate).isZero())
+                        return candidate;
+                }
+                prevCandidate = candidate;
+            }
+        }
+    }
+
+    /**
+     * Modular interpolation algorithm for polynomials over simple field extensions with the use of Langemyr & McCallum
+     * approach to avoid rational reconstruction
+     */
+    public static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    ModularGCDInNumberFieldViaRationalReconstruction(
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b,
+            BiFunction<
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>
+                    > modularAlgorithm) {
+        return PolynomialGCDInNumberFieldSwitchToRingOfInteger(a, b,
+                (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r,
+                        (u, v) -> ModularGCDInNumberFieldViaRationalReconstruction0(u, v, modularAlgorithm)));
+    }
+
+    /**
+     * <=odular interpolation algorithm for polynomials over simple field extensions with the use of rational
+     * reconstruction to reconstruct the result
+     */
+    private static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    ModularGCDInNumberFieldViaRationalReconstruction0(
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b,
+            BiFunction<
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>
+                    > modularAlgorithm) {
+        // choose better prime to start
+        long startingPrime;
+        if (Math.max(iMaxZ(a).bitLength(), iMaxZ(b).bitLength()) < 256)
+            startingPrime = 1L << 30;
+        else
+            startingPrime = 1L << 60;
+
+        // for efficient division test we prepare polynomials with integer coefficients
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>>
+                numberField = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPolynomial();
+
+        // auxiliary ring
+        UnivariateRing<UnivariatePolynomial<BigInteger>> auxRing = UnivariateRing(Z);
+        PrimesIterator primesLoop = new PrimesIterator(startingPrime - (1 << 12));
+
+        // accumulator to update coefficients via Chineese remainding
+        MultivariatePolynomial<UnivariatePolynomial<BigInteger>> base = null;
+        // accumulated CRT prime
+        BigInteger crtPrime = null;
+        // number of already generated primes
+        int nPrimes = 0;
+        // Fibonacci numbers for testing of rational reconstruction
+        int prevFibonacci = 1, nextFibonacci = 2;
+        // over all primes
+        main_loop:
+        while (true) {
+            long prime = primesLoop.take();
+            IntegersZp64 ring = new IntegersZp64(prime);
+            UnivariatePolynomialZp64 minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, ring);
+            FiniteField<UnivariatePolynomialZp64> numberFieldMod = new FiniteField<>(minimalPolyMod);
+
+            // reduce Z -> Zp
+            MultivariatePolynomial<UnivariatePolynomialZp64>
+                    aMod = a.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring)),
+                    bMod = b.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring));
+            if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                continue;
+
+            // calculate new GCD using previously calculated skeleton via sparse interpolation
+            MultivariatePolynomial<UnivariatePolynomialZp64> modularGCD;
+            try {
+                modularGCD = modularAlgorithm.apply(aMod, bMod);
+            } catch (Throwable t) {continue;} // unlucky prime
+
+            if (modularGCD == null) {
+                // interpolation failed => assumed form is wrong => start over
+                continue;
+            }
+
+            if (modularGCD.isConstant())
+                return a.createOne();
+
+            // monicize modular gcd
+            modularGCD.monic();
+
+            assert MultivariateDivision.dividesQ(aMod, modularGCD);
+            assert MultivariateDivision.dividesQ(bMod, modularGCD);
+
+            // better degree bound found -> start over
+            if (base == null || modularGCD.degree(0) < base.degree(0)) {
+                base = modularGCD.mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+                crtPrime = Z.valueOf(prime);
+                continue;
+            }
+
+            //skip unlucky prime
+            if (modularGCD.degree(0) > base.degree(0))
+                continue;
+
+            // applying CRT
+            PairedIterator<
+                    Monomial<UnivariatePolynomial<BigInteger>>, MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                    Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>
+                    > iterator = new PairedIterator<>(base, modularGCD);
+            ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, crtPrime, Z.valueOf(prime));
+            while (iterator.hasNext()) {
+                iterator.advance();
+
+                Monomial<UnivariatePolynomial<BigInteger>> baseTerm = iterator.aTerm;
+                Monomial<UnivariatePolynomialZp64> imageTerm = iterator.bTerm;
+
+                if (baseTerm.coefficient.isZero())
+                    // term is absent in the base
+                    continue;
+
+                if (imageTerm.coefficient.isZero()) {
+                    // term is absent in the modularGCD => remove it from the base
+                    // bBase.subtract(baseTerm);
+                    iterator.aIterator.remove();
+                    continue;
+                }
+                UnivariatePolynomial<BigInteger> baseCf = baseTerm.coefficient;
+                UnivariatePolynomialZp64 imageCf = imageTerm.coefficient;
+
+                assert baseCf.ring == Z;
+                UnivariateGCD.updateCRT(magic, baseCf, imageCf);
+            }
+            crtPrime = crtPrime.multiply(Z.valueOf(prime));
+            ++nPrimes;
+
+            // attempt to apply rational reconstruction (quite costly) only for
+            // sufficiently large number of prime homomorphisms,
+            // since we don't know a priori any coefficient bounds
+            //
+            // We use Fibonacci numbers as in van Hoeij & Monagan "A Modular GCD
+            // algorithm over Number Fields presented with Multiple Extensions."
+            if (nPrimes == nextFibonacci) {
+                int nextNextFibonacci = (prevFibonacci + 1) / 2 + nextFibonacci;
+                prevFibonacci = nextFibonacci;
+                nextFibonacci = nextNextFibonacci;
+
+                // rational reconstruction
+                BigInteger lcm = Z.getOne();
+                List<Monomial<UnivariatePolynomial<Rational<BigInteger>>>> candidateTerms = new ArrayList<>();
+                for (Monomial<UnivariatePolynomial<BigInteger>> term : base.terms) {
+                    UnivariatePolynomial<Rational<BigInteger>> rrCf = rationalReconstruction(term.coefficient, crtPrime);
+                    if (rrCf == null)
+                        continue main_loop; // rational reconstruction failed
+                    candidateTerms.add(new Monomial<>(term, rrCf));
+                    lcm = Z.lcm(lcm, Z.lcm(rrCf.stream().map(Rational::denominator).collect(Collectors.toList())));
+                }
+                final BigInteger lcm0 = lcm;
+                MultivariatePolynomial<UnivariatePolynomial<BigInteger>> candidate = a.create(candidateTerms
+                        .stream()
+                        .map(m -> new Monomial<>(m, m.coefficient.mapCoefficients(Z, cf -> cf.multiply(lcm0).numeratorExact())))
+                        .collect(Collectors.toList()));
+
+
+                // test candidate with pseudoD division
+                if (pseudoRemainder(a, candidate).isZero()
+                        && pseudoRemainder(b, candidate).isZero())
+                    return candidate;
+            }
+        }
+    }
+
+    /**
+     * Zippel's sparse modular interpolation algorithm for polynomials over simple field extensions with the use of
+     * Langemyr & McCallum approach to avoid rational reconstruction
+     */
+    public static MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+    ModularGCDInNumberFieldViaLangemyrMcCallum(
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a,
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b,
+            BiFunction<
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>
+                    > modularAlgorithm) {
+        return PolynomialGCDInNumberFieldSwitchToRingOfInteger(a, b,
+                (l, r) -> PolynomialGCDAssociateInRingOfIntegerOfNumberField(l, r,
+                        (u, v) -> PolynomialGCDAssociateInNumberFieldViaLangemyrMcCallum(u, v,
+                                (s, t) -> ModularGCDAssociateInNumberFieldViaLangemyrMcCallum0(s, t, modularAlgorithm))));
+    }
+
+    /**
+     * Zippel's sparse modular interpolation algorithm for polynomials over simple field extensions with Langemyr &
+     * McCallum correction for lead coefficients to avoid rational reconstruction
+     */
+    private static MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+    ModularGCDAssociateInNumberFieldViaLangemyrMcCallum0(
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> a,
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>> b,
+            BiFunction<
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>,
+                    MultivariatePolynomial<UnivariatePolynomialZp64>
+                    > modularAlgorithm) {
+
+        assert a.lc().isConstant();
+        assert b.lc().isConstant();
+        // choose better prime for start
+        long startingPrime;
+        if (Math.max(iMaxZ(a).bitLength(), iMaxZ(b).bitLength()) < 2 * 256)
+            startingPrime = 1L << 30;
+        else
+            startingPrime = 1L << 60;
+
+        AlgebraicNumberField<UnivariatePolynomial<BigInteger>> numberField
+                = (AlgebraicNumberField<UnivariatePolynomial<BigInteger>>) a.ring;
+        UnivariatePolynomial<BigInteger> minimalPoly = numberField.getMinimalPolynomial();
+
+        // Weinberger & Rothschild (1976) correction denominator
+        BigInteger
+                lcGCD = Z.gcd(a.lc().cc(), b.lc().cc()),
+                disc = UnivariateResultants.Discriminant(minimalPoly),
+                correctionFactor = disc.pow(1).multiply(lcGCD);
+
+        UnivariateRing<UnivariatePolynomial<BigInteger>> auxRing = UnivariateRing(Z);
+        PrimesIterator primesLoop = new PrimesIterator(startingPrime - (1 << 12));
+
+        // accumulator to update coefficients via Chineese remainding
+        MultivariatePolynomial<UnivariatePolynomial<BigInteger>> base = null;
+        // accumulated CRT prime
+        BigInteger crtPrime = null;
+        // previous candidate to test
+        MultivariatePolynomial<UnivariatePolynomial<BigInteger>> prevCandidate = null;
+        // over all primes
+        while (true) {
+            long prime = primesLoop.take();
+            IntegersZp64 ring = new IntegersZp64(prime);
+            UnivariatePolynomialZp64 minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, ring);
+            FiniteField<UnivariatePolynomialZp64> numberFieldMod = new FiniteField<>(minimalPolyMod);
+
+            minimalPolyMod = UnivariatePolynomial.asOverZp64(minimalPoly, ring);
+            numberFieldMod = new FiniteField<>(minimalPolyMod);
+            // reduce Z -> Zp
+            MultivariatePolynomial<UnivariatePolynomialZp64>
+                    aMod = a.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring)),
+                    bMod = b.mapCoefficients(numberFieldMod, cf -> UnivariatePolynomial.asOverZp64(cf, ring));
+            if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
+                continue;
+
+            // calculate new GCD using previously calculated skeleton via sparse interpolation
+            MultivariatePolynomial<UnivariatePolynomialZp64> modularGCD;
+            try {
+                modularGCD = modularAlgorithm.apply(aMod, bMod).monic();
+            } catch (Throwable t) {continue;} // unlucky prime
+
+            if (modularGCD == null) {
+                // interpolation failed => assumed form is wrong => start over
+                continue;
+            }
+
+            // correction
+            modularGCD.monic(numberFieldMod.valueOf(correctionFactor.mod(prime).longValueExact()));
+
+            assert MultivariateDivision.dividesQ(aMod, modularGCD);
+            assert MultivariateDivision.dividesQ(bMod, modularGCD);
+
+            if (modularGCD.isConstant())
+                return a.createOne();
+
+            // better degree bound found -> start over
+            if (base == null || modularGCD.degree(0) < base.degree(0)) {
+                prevCandidate = null;
+                base = modularGCD.mapCoefficients(auxRing, cf -> cf.asPolyZ(false).toBigPoly());
+                crtPrime = Z.valueOf(prime);
+                continue;
+            }
+
+            //skip unlucky prime
+            if (modularGCD.degree(0) > base.degree(0))
+                continue;
+
+            ChineseRemaindersMagic<BigInteger> magic = createMagic(Z, crtPrime, Z.valueOf(prime));
+            //lifting
+            PairedIterator<
+                    Monomial<UnivariatePolynomial<BigInteger>>, MultivariatePolynomial<UnivariatePolynomial<BigInteger>>,
+                    Monomial<UnivariatePolynomialZp64>, MultivariatePolynomial<UnivariatePolynomialZp64>
+                    > iterator = new PairedIterator<>(base, modularGCD);
+            while (iterator.hasNext()) {
+                iterator.advance();
+
+                Monomial<UnivariatePolynomial<BigInteger>> baseTerm = iterator.aTerm;
+                Monomial<UnivariatePolynomialZp64> imageTerm = iterator.bTerm;
+
+                if (baseTerm.coefficient.isZero())
+                    // term is absent in the base
+                    continue;
+
+                if (imageTerm.coefficient.isZero()) {
+                    // term is absent in the modularGCD => remove it from the base
+                    // bBase.subtract(baseTerm);
+                    iterator.aIterator.remove();
+                    continue;
+                }
+                UnivariatePolynomial<BigInteger> baseCf = baseTerm.coefficient;
+                UnivariatePolynomialZp64 imageCf = imageTerm.coefficient;
+
+                assert baseCf.ring == Z;
+                UnivariateGCD.updateCRT(magic, baseCf, imageCf);
+            }
+            crtPrime = crtPrime.multiply(Z.valueOf(prime));
+
+            IntegersZp crtRing = new IntegersZp(crtPrime);
+            MultivariatePolynomial<UnivariatePolynomial<BigInteger>>
+                    candidate = base.mapCoefficients(numberField,
+                    cf -> numberField.valueOf(UnivariatePolynomial.asPolyZSymmetric(cf.setRingUnsafe(crtRing))));
+
+            if (prevCandidate == null) {
+                prevCandidate = candidate;
+                continue;
+            }
+
+            if (prevCandidate.equals(candidate)) {
+                // division test
+                if (pseudoRemainder(a, candidate).isZero() && pseudoRemainder(b, candidate).isZero())
+                    return candidate;
+            }
+            prevCandidate = candidate;
+        }
+    }
+
 
     /* ======================== Multivariate GCD over finite fields with small cardinality ========================== */
 
@@ -1832,7 +2853,7 @@ public final class MultivariateGCD {
         throw new RuntimeException("\na: " + a + "\nb: " + b);
     }
 
-    private static final int MAX_OVER_ITERATIONS = 16;
+    private static final int MAX_OVER_ITERATIONS = 18;
 
     static <uPoly extends IUnivariatePolynomial<uPoly>>
     MultivariatePolynomial<uPoly> KaltofenMonaganSparseModularGCDInGF0(
@@ -1933,7 +2954,11 @@ public final class MultivariateGCD {
                 uPoly newBasePrime = basePrime.clone().multiply(prime);
                 uPoly monicFactor = fField.divideExact(fField.valueOf(lcGCD), modularGCD.lc());
 
-                PairedIterator<Monomial<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairedIterator<>(base, modularGCD);
+                PairedIterator<
+                        Monomial<uPoly>, MultivariatePolynomial<uPoly>,
+                        Monomial<uPoly>, MultivariatePolynomial<uPoly>
+                        > iterator = new PairedIterator<>(base, modularGCD);
+                ChineseRemaindersMagic<uPoly> magic = createMagic(univariateRing, basePrime, prime);
                 while (iterator.hasNext()) {
                     iterator.advance();
 
@@ -1954,7 +2979,7 @@ public final class MultivariateGCD {
                     uPoly oth = fField.multiply(imageTerm.coefficient, monicFactor);
 
                     // update base term
-                    uPoly newCoeff = ChineseRemainders.ChineseRemainders(univariateRing, basePrime, prime, baseTerm.coefficient, oth);
+                    uPoly newCoeff = ChineseRemainders.ChineseRemainders(univariateRing, magic, baseTerm.coefficient, oth);
                     base.put(baseTerm.setCoefficient(newCoeff));
                 }
 
@@ -2038,7 +3063,9 @@ public final class MultivariateGCD {
             uPoly newBasePrime = basePrime.clone().multiply(prime);
             uPoly monicFactor = fField.divideExact(fField.valueOf(lcGCD), modGCD.lc());
 
-            PairedIterator<Monomial<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairedIterator<>(base, modGCD);
+            PairedIterator<Monomial<uPoly>, MultivariatePolynomial<uPoly>,
+                    Monomial<uPoly>, MultivariatePolynomial<uPoly>> iterator = new PairedIterator<>(base, modGCD);
+            ChineseRemaindersMagic<uPoly> magic = createMagic(univariateRing, basePrime, prime);
             while (iterator.hasNext()) {
                 iterator.advance();
 
@@ -2059,7 +3086,7 @@ public final class MultivariateGCD {
                 uPoly oth = fField.multiply(imageTerm.coefficient, monicFactor);
 
                 // update base term
-                uPoly newCoeff = ChineseRemainders.ChineseRemainders(univariateRing, basePrime, prime, baseTerm.coefficient, oth);
+                uPoly newCoeff = ChineseRemainders.ChineseRemainders(univariateRing, magic, baseTerm.coefficient, oth);
                 base.put(baseTerm.setCoefficient(newCoeff));
             }
 
@@ -2217,7 +3244,7 @@ public final class MultivariateGCD {
                 return doDivisionCheck(a, b, contentGCD, interpolation, variable);
 
             //pickup the next random element for variable
-            E randomPoint = ring.randomElement(rnd);
+            E randomPoint = randomElement(ring, rnd);
             if (evaluationStack.contains(randomPoint))
                 continue;
             evaluationStack.add(randomPoint);
@@ -2380,7 +3407,7 @@ public final class MultivariateGCD {
     }
 
     /** Maximal number of fails before switch to a new homomorphism */
-    private static final int MAX_SPARSE_INTERPOLATION_FAILS = 1000;
+    private static final int MAX_SPARSE_INTERPOLATION_FAILS = 64;
     /** Maximal number of sparse interpolations after interpolation.numberOfPoints() > degreeBounds[variable] */
     private static final int ALLOWED_OVER_INTERPOLATED_ATTEMPTS = 64;
 
@@ -2446,7 +3473,7 @@ public final class MultivariateGCD {
             if (evaluationStackLimit == globalEvaluationStack.size())
                 return null;
 
-            E seedPoint = ring.randomElement(rnd);
+            E seedPoint = randomElement(ring, rnd);
             if (globalEvaluationStack.contains(seedPoint))
                 continue;
 
@@ -2506,7 +3533,7 @@ public final class MultivariateGCD {
                     tmpDegreeBounds = degreeBounds.clone();
                     continue main;
                 }
-                E randomPoint = ring.randomElement(rnd);
+                E randomPoint = randomElement(ring, rnd);
                 if (localEvaluationStack.contains(randomPoint))
                     continue;
                 localEvaluationStack.add(randomPoint);
@@ -2519,7 +3546,7 @@ public final class MultivariateGCD {
                 if (cVal == null) {
                     ++failedSparseInterpolations;
                     if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
-                        throw new RuntimeException("Sparse interpolation failed");
+                        return null; //throw new RuntimeException("Sparse interpolation failed");
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
                     continue main;
@@ -2546,7 +3573,7 @@ public final class MultivariateGCD {
 
     static boolean ALWAYS_LINZIP = false;
     /** maximal number of attempts to choose a good evaluation point for sparse interpolation */
-    private static final int MAX_FAILED_SUBSTITUTIONS = 32;
+    static final int MAX_FAILED_SUBSTITUTIONS = 32;
 
     static <E> SparseInterpolation<E> createInterpolation(int variable,
                                                           MultivariatePolynomial<E> a,
@@ -2579,7 +3606,7 @@ public final class MultivariateGCD {
             //avoid zero evaluation points
             for (int i = lastVariable - 1; i >= 0; --i)
                 do {
-                    evaluationPoint[i] = ring.randomElement(rnd);
+                    evaluationPoint[i] = randomElement(ring, rnd);
                 } while (ring.isZero(evaluationPoint[i]));
 
             powers = mkPrecomputedPowers(a, b, evaluationVariables, evaluationPoint);
@@ -2633,7 +3660,7 @@ public final class MultivariateGCD {
      * view multivariate polynomial as a univariate in Zp[x_1, ... x_N][x_0] and return the map (x_0)^exponent ->
      * coefficient in Zp[x_1, ... x_N]
      */
-    private static <E> TIntObjectHashMap<MultivariatePolynomial<E>> getSkeleton(MultivariatePolynomial<E> poly) {
+    static <E> TIntObjectHashMap<MultivariatePolynomial<E>> getSkeleton(MultivariatePolynomial<E> poly) {
         TIntObjectHashMap<MultivariatePolynomial<E>> skeleton = new TIntObjectHashMap<>();
         for (Monomial<E> term : poly) {
             Monomial<E> newDV = term.setZero(0);
@@ -2764,11 +3791,11 @@ public final class MultivariateGCD {
      */
     private static final int SIZE_OF_POLY_RECURSIVE_SWITCH = 512;
 
-    private static <E> ZippelEvaluations<E> createEvaluations(MultivariatePolynomial<E> poly,
-                                                              int[] evaluationVariables,
-                                                              E[] evaluationPoint,
-                                                              MultivariatePolynomial.PrecomputedPowersHolder<E> basePowers,
-                                                              int expectedNumberOfEvaluations) {
+    static <E> ZippelEvaluations<E> createEvaluations(MultivariatePolynomial<E> poly,
+                                                      int[] evaluationVariables,
+                                                      E[] evaluationPoint,
+                                                      MultivariatePolynomial.PrecomputedPowersHolder<E> basePowers,
+                                                      int expectedNumberOfEvaluations) {
         if (expectedNumberOfEvaluations > N_EVALUATIONS_RECURSIVE_SWITCH
                 && poly.size() > SIZE_OF_POLY_RECURSIVE_SWITCH)
             return new FastSparseRecursiveEvaluations<>(poly, evaluationPoint, evaluationVariables[evaluationVariables.length - 1]);
@@ -2777,7 +3804,7 @@ public final class MultivariateGCD {
     }
 
     /** efficient data structure for repeated evaluations in Zippel method */
-    private interface ZippelEvaluations<E> {
+    interface ZippelEvaluations<E> {
         /** evaluate underlying polynomial */
         UnivariatePolynomial<E> evaluate(int raiseFactor, E value);
     }
@@ -3271,7 +4298,7 @@ public final class MultivariateGCD {
     }
 
     /** Vandermonde system builder */
-    private static final class VandermondeSystem<E> extends LinearSystem<E> {
+    static final class VandermondeSystem<E> extends LinearSystem<E> {
         public VandermondeSystem(int univarDegree, MultivariatePolynomial<E> skeleton, MultivariatePolynomial.PrecomputedPowersHolder<E> powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }
@@ -3716,7 +4743,7 @@ public final class MultivariateGCD {
                 if (cVal == null) {
                     ++failedSparseInterpolations;
                     if (failedSparseInterpolations == MAX_SPARSE_INTERPOLATION_FAILS)
-                        throw new RuntimeException("Sparse interpolation failed");
+                        return null; //throw new RuntimeException("Sparse interpolation failed");
                     // restore original degree bounds, since unlucky homomorphism may destruct correct bounds
                     tmpDegreeBounds = degreeBounds.clone();
                     continue main;
@@ -3809,7 +4836,7 @@ public final class MultivariateGCD {
                 evaluationVariables, evaluationPoint, powers, expectedNumberOfEvaluations, rnd);
     }
 
-    private static MultivariatePolynomialZp64.lPrecomputedPowersHolder mkPrecomputedPowers(
+    static MultivariatePolynomialZp64.lPrecomputedPowersHolder mkPrecomputedPowers(
             MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b,
             int[] evaluationVariables, long[] evaluationPoint) {
         int[] degrees = ArraysUtil.max(a.degreesRef(), b.degreesRef());
@@ -3825,7 +4852,7 @@ public final class MultivariateGCD {
      * view multivariate polynomial as a univariate in Zp[x_1, ... x_N][x_0] and return the map (x_0)^exponent ->
      * coefficient in Zp[x_1, ... x_N]
      */
-    private static TIntObjectHashMap<MultivariatePolynomialZp64> getSkeleton(MultivariatePolynomialZp64 poly) {
+    static TIntObjectHashMap<MultivariatePolynomialZp64> getSkeleton(MultivariatePolynomialZp64 poly) {
         TIntObjectHashMap<MultivariatePolynomialZp64> skeleton = new TIntObjectHashMap<>();
         for (MonomialZp64 term : poly) {
             MonomialZp64 newDV = term.setZero(0);
@@ -3946,11 +4973,11 @@ public final class MultivariateGCD {
         abstract MultivariatePolynomialZp64 evaluate0(long newPoint);
     }
 
-    private static ZippelEvaluationsZp64 createEvaluations(MultivariatePolynomialZp64 poly,
-                                                           int[] evaluationVariables,
-                                                           long[] evaluationPoint,
-                                                           MultivariatePolynomialZp64.lPrecomputedPowersHolder basePowers,
-                                                           int expectedNumberOfEvaluations) {
+    static ZippelEvaluationsZp64 createEvaluations(MultivariatePolynomialZp64 poly,
+                                                   int[] evaluationVariables,
+                                                   long[] evaluationPoint,
+                                                   MultivariatePolynomialZp64.lPrecomputedPowersHolder basePowers,
+                                                   int expectedNumberOfEvaluations) {
         if (expectedNumberOfEvaluations > N_EVALUATIONS_RECURSIVE_SWITCH
                 && poly.size() > SIZE_OF_POLY_RECURSIVE_SWITCH)
             return new FastSparseRecursiveEvaluationsZp64(poly, evaluationPoint, evaluationVariables[evaluationVariables.length - 1]);
@@ -3959,13 +4986,13 @@ public final class MultivariateGCD {
     }
 
     /** efficient data structure for repeated evaluations in Zippel method */
-    private interface ZippelEvaluationsZp64 {
+    interface ZippelEvaluationsZp64 {
         /** evaluate underlying polynomial */
         UnivariatePolynomialZp64 evaluate(int raiseFactor, long value);
     }
 
     /** evaluation with plain MultivariatePolynomial#evaluate method (with minor enhancements) */
-    private static final class PlainEvaluationsZp64 implements ZippelEvaluationsZp64 {
+    static final class PlainEvaluationsZp64 implements ZippelEvaluationsZp64 {
         /** initial poly */
         private final MultivariatePolynomialZp64 poly;
         /**
@@ -4021,7 +5048,7 @@ public final class MultivariateGCD {
 
 
     /** fast evaluation of polynomials in Zippel method with the use of sparse recursive form and Horner scheme */
-    private static final class FastSparseRecursiveEvaluationsZp64 implements ZippelEvaluationsZp64 {
+    static final class FastSparseRecursiveEvaluationsZp64 implements ZippelEvaluationsZp64 {
         /** initial poly */
         private final MultivariatePolynomialZp64 poly;
         /** evaluation point */
@@ -4367,7 +5394,7 @@ public final class MultivariateGCD {
         }
     }
 
-    private static abstract class lLinearSystem {
+    static abstract class lLinearSystem {
         final int univarDegree;
         /** the ring */
         final IntegersZp64 ring;
@@ -4408,7 +5435,7 @@ public final class MultivariateGCD {
     }
 
     /** Vandermonde system builder */
-    private static final class lLinZipSystem extends lLinearSystem {
+    static final class lLinZipSystem extends lLinearSystem {
         public lLinZipSystem(int univarDegree, MultivariatePolynomialZp64 skeleton, MultivariatePolynomialZp64.lPrecomputedPowersHolder powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }
@@ -4431,7 +5458,7 @@ public final class MultivariateGCD {
     }
 
     /** Vandermonde system builder */
-    private static final class lVandermondeSystem extends lLinearSystem {
+    static final class lVandermondeSystem extends lLinearSystem {
         public lVandermondeSystem(int univarDegree, MultivariatePolynomialZp64 skeleton, MultivariatePolynomialZp64.lPrecomputedPowersHolder powers, int nVars) {
             super(univarDegree, skeleton, powers, nVars);
         }

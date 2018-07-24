@@ -37,6 +37,7 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
     /**
      * Drop the coefficient
      */
+    @Override
     public final DegreeVector dv() {
         return new DegreeVector(exponents, totalDegree);
     }
@@ -119,6 +120,17 @@ public abstract class AMonomial<Term extends AMonomial<Term>> extends DegreeVect
 
     /** Inserts new variable (with zero exponent) */
     public final Term insert(int variable) {return setDegreeVector(dvInsert(variable));}
+
+    /** Inserts new variables (with zero exponent) */
+    public final Term insert(int variable, int count) {return setDegreeVector(dvInsert(variable, count));}
+
+    /**
+     * Renames old variables to new according to mapping
+     *
+     * @param nVariables new total number of variables
+     * @param mapping    mapping from old variables to new variables
+     */
+    public final Term map(int nVariables, int[] mapping) {return setDegreeVector(dvMap(nVariables, mapping));}
 
     /**
      * Set's exponent of specified variable to specified value

@@ -14,4 +14,9 @@ public class UnivariatePolynomialZ64Test extends AUnivariateTest {
         Assert.assertEquals(0, UnivariatePolynomialZ64.create(1).firstNonZeroCoefficientPosition());
         Assert.assertEquals(1, UnivariatePolynomialZ64.create(0, 1).firstNonZeroCoefficientPosition());
     }
+
+    @Test(expected = ArithmeticException.class)
+    public void test2() {
+        UnivariatePolynomialZ64.create(Long.MIN_VALUE).negate();
+    }
 }

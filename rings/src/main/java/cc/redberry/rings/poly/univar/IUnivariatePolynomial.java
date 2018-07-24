@@ -1,8 +1,15 @@
 package cc.redberry.rings.poly.univar;
 
+import cc.redberry.rings.Ring;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.DegreeVector;
+import cc.redberry.rings.poly.multivar.MonomialOrder;
 import gnu.trove.set.hash.TIntHashSet;
+
+import java.util.Comparator;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Parent interface for univariate polynomials. Dense representation (array of coefficients) is used to hold univariate
@@ -21,12 +28,28 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     default int size() {return degree() + 1;}
 
     /**
+     * Returns the number of non zero terms in this poly
+     */
+    default int nNonZeroTerms() {
+        int c = 0;
+        for (int i = degree(); i >= 0; --i)
+            if (!isZeroAt(i))
+                ++c;
+        return c;
+    }
+
+    /**
      * Returns whether i-th coefficient of this is zero
      *
      * @param i the position
      * @return whether i-th coefficient of this is zero
      */
     boolean isZeroAt(int i);
+
+    @Override
+    default boolean isZeroCC() {
+        return isZeroAt(0);
+    }
 
     /**
      * Fills i-th element with zero
@@ -153,10 +176,62 @@ public interface IUnivariatePolynomial<Poly extends IUnivariatePolynomial<Poly>>
     Poly composition(Poly value);
 
     /**
+     * Calculates the composition of this(oth) (new instance, so the content of this is not changed))
+     *
+     * @param value polynomial
+     * @return composition {@code this(oth)}
+     */
+    default Poly composition(Ring<Poly> ring, Poly value) {
+        if (value.isOne())
+            return ring.valueOf(this.clone());
+        if (value.isZero())
+            return ccAsPoly();
+
+        Poly result = ring.getZero();
+        for (int i = degree(); i >= 0; --i)
+            result = ring.add(ring.multiply(result, value), getAsPoly(i));
+        return result;
+    }
+
+    /**
+     * Stream polynomial coefficients as constant polynomials
+     */
+    Stream<Poly> streamAsPolys();
+
+    default <E> UnivariatePolynomial<E> mapCoefficientsAsPolys(Ring<E> ring, Function<Poly, E> mapper) {
+        return streamAsPolys().map(mapper).collect(new UnivariatePolynomial.PolynomialCollector<>(ring));
+    }
+
+    /**
+     * Calculates the composition of this(oth)
+     *
+     * @param value polynomial
+     * @return composition {@code this(oth)}
+     */
+    AMultivariatePolynomial composition(AMultivariatePolynomial value);
+
+    /**
      * Convert to multivariate polynomial
      */
-    AMultivariatePolynomial asMultivariate();
+    AMultivariatePolynomial asMultivariate(Comparator<DegreeVector> ordering);
+
+    /**
+     * Convert to multivariate polynomial
+     */
+    default AMultivariatePolynomial asMultivariate() {
+        return asMultivariate(MonomialOrder.DEFAULT);
+    }
 
     /** ensures that internal storage has enough size to store {@code desiredCapacity} elements */
     void ensureInternalCapacity(int desiredCapacity);
+
+    @Override
+    default boolean isLinearOrConstant() {
+        return degree() <= 1;
+    }
+
+    @Override
+    default boolean isLinearExactly() {
+        return degree() == 1;
+    }
 }

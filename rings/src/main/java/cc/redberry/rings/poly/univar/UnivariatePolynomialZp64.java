@@ -5,10 +5,13 @@ import cc.redberry.rings.IntegersZp64;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.poly.MachineArithmetic;
+import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
+import cc.redberry.rings.poly.multivar.DegreeVector;
 import cc.redberry.rings.poly.multivar.MonomialOrder;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Univariate polynomial over Zp ring with modulus in the range of {@code [2, 2^62) } (the last value is specified by
@@ -199,7 +202,12 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
 
     /** does not copy the data and does not reduce the data with new modulus */
     public UnivariatePolynomialZp64 setModulusUnsafe(long newModulus) {
-        return new UnivariatePolynomialZp64(new IntegersZp64(newModulus), data, degree);
+        return setModulusUnsafe(new IntegersZp64(newModulus));
+    }
+
+    /** does not copy the data and does not reduce the data with new modulus */
+    public UnivariatePolynomialZp64 setModulusUnsafe(IntegersZp64 newModulus) {
+        return new UnivariatePolynomialZp64(newModulus, data, degree);
     }
 
     /**
@@ -232,7 +240,7 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
      * -modulus/2 <= cfx <= modulus/2}).
      *
      * @return Z[x] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <=
-     * modulus/2}).
+     *         modulus/2}).
      */
     @SuppressWarnings("unchecked")
     public UnivariatePolynomialZ64 asPolyZSymmetric() {
@@ -328,6 +336,11 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     @Override
     public BigInteger coefficientRingPerfectPowerExponent() {
         return BigInteger.valueOf(ring.perfectPowerExponent());
+    }
+
+    @Override
+    public long content() {
+        return lc();
     }
 
     @Override
@@ -549,7 +562,27 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
     }
 
     @Override
+    public MultivariatePolynomialZp64 composition(AMultivariatePolynomial value) {
+        if (!(value instanceof MultivariatePolynomialZp64))
+            throw new IllegalArgumentException();
+        if (value.isOne())
+            return asMultivariate();
+        if (value.isZero())
+            return ccAsPoly().asMultivariate();
+
+        MultivariatePolynomialZp64 result = (MultivariatePolynomialZp64) value.createZero();
+        for (int i = degree; i >= 0; --i)
+            result = result.multiply((MultivariatePolynomialZp64) value).add(data[i]);
+        return result;
+    }
+
+    @Override
     public MultivariatePolynomialZp64 asMultivariate() {
-        return MultivariatePolynomialZp64.asMultivariate(this, 1, 0, MonomialOrder.DEFAULT);
+        return asMultivariate(MonomialOrder.DEFAULT);
+    }
+
+    @Override
+    public MultivariatePolynomialZp64 asMultivariate(Comparator<DegreeVector> ordering) {
+        return MultivariatePolynomialZp64.asMultivariate(this, 1, 0, ordering);
     }
 }

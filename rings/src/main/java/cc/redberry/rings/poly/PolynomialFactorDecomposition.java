@@ -91,6 +91,27 @@ public final class PolynomialFactorDecomposition<Poly extends IPolynomial<Poly>>
     }
 
     /**
+     * Makes the lead coefficient of this factorization equal to the l.c. of specified poly via multiplication of this
+     * by appropriate unit
+     */
+    public PolynomialFactorDecomposition<Poly> setLcFrom(Poly poly) {
+        Poly u = ring.getOne();
+        for (int i = 0; i < size(); i++)
+            u = u.multiply(PolynomialMethods.polyPow(get(i).lcAsPoly(), getExponent(i)));
+        return setUnit(PolynomialMethods.divideExact(poly.lcAsPoly(), u));
+    }
+
+    /**
+     * Resulting lead coefficient
+     */
+    public Poly lc() {
+        Poly u = unit.clone();
+        for (int i = 0; i < size(); i++)
+            u = u.multiply(PolynomialMethods.polyPow(get(i).lcAsPoly(), getExponent(i)));
+        return u;
+    }
+
+    /**
      * Calculates the signum of the polynomial constituted by this decomposition
      *
      * @return the signum of the polynomial constituted by this decomposition

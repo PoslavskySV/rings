@@ -14,10 +14,8 @@ import java.util.stream.Stream;
 
 /**
  * Factor decomposition of element. Unit coefficient of decomposition is stored in {@link #unit}, factors returned by
- * {@link #get(int)} are non-units. This class is mutable.
- *
- * <p><i>Iterable</i> specification provides iterator over non-unit factors only; to iterate over all factors including
- * the constant factor use {@link #iterableWithUnit()}
+ * {@link #get(int)} are non-units. This class is mutable. <p> <p><i>Iterable</i> specification provides iterator over
+ * non-unit factors only; to iterate over all factors including the constant factor use {@link #iterableWithUnit()}
  *
  * @author Stanislav Poslavsky
  * @since 2.2
@@ -105,6 +103,8 @@ public class FactorDecomposition<E>
     public FactorDecomposition<E> addUnit(E unit, int exponent) {
         if (!isUnit(unit))
             throw new IllegalArgumentException("not a unit: " + unit);
+        if (ring.isOne(unit))
+            return this;
         this.unit = ring.multiply(this.unit, ring.pow(unit, exponent));
         return this;
     }
@@ -135,7 +135,7 @@ public class FactorDecomposition<E>
     /**
      * Raise all factors to its corresponding exponents
      */
-    public FactorDecomposition<E> applyExponents(Ring<E> ring) {
+    public FactorDecomposition<E> applyExponents() {
         List<E> newFactors = new ArrayList<>();
         for (int i = 0; i < size(); i++)
             newFactors.add(ring.pow(factors.get(i), exponents.get(i)));
@@ -143,9 +143,21 @@ public class FactorDecomposition<E>
     }
 
     /**
+     * Raise all factors to its corresponding exponents
+     */
+    public FactorDecomposition<E> applyConstantFactor() {
+        List<E> newFactors = factors.stream().map(ring::copy).collect(Collectors.toList());
+        if (newFactors.isEmpty())
+            newFactors.add(ring.copy(unit));
+        else
+            newFactors.set(0, ring.multiplyMutable(newFactors.get(0), ring.copy(unit)));
+        return new FactorDecomposition<>(ring, ring.getOne(), newFactors, new TIntArrayList(exponents));
+    }
+
+    /**
      * Set all exponents to one
      */
-    public FactorDecomposition<E> dropExponents(Ring<E> ring) {
+    public FactorDecomposition<E> dropExponents() {
         return new FactorDecomposition<>(ring, unit, factors, new TIntArrayList(ArraysUtil.arrayOf(1, size())));
     }
 
@@ -154,6 +166,15 @@ public class FactorDecomposition<E>
      */
     public FactorDecomposition<E> dropUnit() {
         this.unit = ring.getOne();
+        return this;
+    }
+
+    /**
+     * Remove specified factor
+     */
+    public FactorDecomposition<E> dropFactor(int i) {
+        exponents.removeAt(i);
+        factors.remove(i);
         return this;
     }
 

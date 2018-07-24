@@ -4,11 +4,12 @@ import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.io.IStringifier;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.UnivariateRing;
 import cc.redberry.rings.poly.test.APolynomialTest;
-import cc.redberry.rings.poly.univar.UnivariatePolynomial;
-import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
-import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
+import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.primes.BigPrimes;
 import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.test.Benchmark;
@@ -29,8 +30,10 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 
+import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.AMultivariatePolynomial.renameVariables;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.divideExact;
@@ -653,8 +656,8 @@ public class MultivariateGCDTest extends AMultivariateTest {
                     a = randomPolynomial(5, 50, 20, rnd),
                     b = randomPolynomial(5, 50, 20, rnd);
 
-            PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                    it = new PairedIterator<>(a, b);
+            PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>, Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> it = new PairedIterator<>(a, b);
+            new PairedIterator<>(a, b);
 
             MultivariatePolynomial<BigInteger> acc = a.createZero();
             while (it.hasNext()) {
@@ -673,8 +676,10 @@ public class MultivariateGCDTest extends AMultivariateTest {
                 a = parse(" y  +   0  +  x*y   + x*y^2 + x*y^3 + x*y^4  +   0    "),
                 b = parse(" 0  +   x  +   0    +   0   +  0    +   0    + x^2*y^2");
 
-        PairedIterator<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>>
-                it = new PairedIterator<>(a, b);
+        PairedIterator<
+                Monomial<BigInteger>, MultivariatePolynomial<BigInteger>,
+                Monomial<BigInteger>, MultivariatePolynomial<BigInteger>
+                > it = new PairedIterator<>(a, b);
 
         MultivariatePolynomial<BigInteger> acc = a.createZero();
         while (it.hasNext()) {
@@ -1400,6 +1405,21 @@ public class MultivariateGCDTest extends AMultivariateTest {
             timestamp();
             assertTrue(PolynomialGCD(a, b).isMonomial());
             timeElapsed();
+        }
+    }
+
+    @Test
+    public void testSmallDomain7() {
+        IntegersZp64 domain = new IntegersZp64(5);
+        MultivariatePolynomialZp64
+                a = MultivariatePolynomialZp64.parse("2*x^5+3*y^6+2*x^6+3*x*y^6+4*x^5*y^2+3*x^6*y+2*x*y^7+4*x^6*y^2+2*x^7*y+3*x^2*y^7+x^6*y^3+3*x^7*y^2+3*x^9+2*x^2*y^8+2*x^4*y^6+4*x^6*y^4+4*x^7*y^3+2*x^9*y+x*y^10+3*x^4*y^7+3*x^9*y^2+4*x^10*y+x^2*y^10+3*x^4*y^8+x^5*y^7+3*x^6*y^6+x^7*y^5+4*x^9*y^3+2*x^10*y^2+4*x^2*y^11+3*x^5*y^8+3*x^7*y^6+x^9*y^4+2*x^10*y^3+2*x^12*y+3*x^4*y^10+x^5*y^9+4*x^9*y^5+4*x^10*y^4+3*x^11*y^3+2*x^12*y^2+x^4*y^11+2*x^6*y^9+3*x^7*y^8+3*x^9*y^6+2*x^10*y^5+3*x^11*y^4+2*x^12*y^3+x^4*y^12+x^5*y^11+2*x^6*y^10+2*x^7*y^9+3*x^9*y^7+x^10*y^6+3*x^11*y^5+3*x^12*y^4+4*x^5*y^12+3*x^6*y^11+x^7*y^10+2*x^9*y^8+3*x^10*y^7+4*x^11*y^6+4*x^12*y^5+4*x^14*y^3+x^4*y^14+2*x^6*y^12+2*x^7*y^11+x^9*y^9+3*x^11*y^7+2*x^12*y^6+x^14*y^4+2*x^16*y^2+2*x^5*y^14+x^6*y^13+x^7*y^12+2*x^9*y^10+3*x^11*y^8+4*x^12*y^7+3*x^14*y^5+x^15*y^4+3*x^16*y^3+x^6*y^14+2*x^7*y^13+2*x^11*y^9+3*x^12*y^8+2*x^15*y^5+2*x^16*y^4+2*x^17*y^3+3*x^6*y^15+2*x^9*y^12+3*x^10*y^11+3*x^15*y^6+4*x^16*y^5+x^17*y^4+4*x^7*y^15+4*x^10*y^12+x^11*y^11+4*x^12*y^10+3*x^14*y^8+x^15*y^7+3*x^16*y^6+4*x^17*y^5+3*x^9*y^14+3*x^10*y^13+3*x^11*y^12+2*x^12*y^11+4*x^14*y^9+2*x^17*y^6+x^9*y^15+2*x^10*y^14+x^11*y^13+3*x^12*y^12+3*x^14*y^10+4*x^16*y^8+4*x^19*y^5+x^20*y^4+2*x^7*y^18+x^9*y^16+4*x^10*y^15+x^14*y^11+2*x^16*y^9+2*x^17*y^8+3*x^19*y^6+3*x^9*y^17+x^11*y^15+4*x^12*y^14+x^15*y^11+2*x^16*y^10+2*x^20*y^6+x^10*y^17+3*x^11*y^16+x^14*y^13+x^15*y^12+4*x^16*y^11+x^17*y^10+4*x^19*y^8+3*x^20*y^7+x^9*y^19+4*x^10*y^18+4*x^11*y^17+3*x^12*y^16+2*x^14*y^14+4*x^16*y^12+4*x^20*y^8+2*x^14*y^15+2*x^15*y^14+2*x^20*y^9+x^10*y^20+2*x^11*y^19+4*x^12*y^18+x^14*y^16+4*x^15*y^15+4*x^17*y^13+x^19*y^11+3*x^20*y^10+2*x^22*y^8+x^12*y^19+x^14*y^17+3*x^15*y^16+2*x^16*y^15+2*x^17*y^14+4*x^20*y^11+3*x^21*y^10+x^22*y^9+4*x^11*y^21+3*x^12*y^20+3*x^14*y^18+3*x^15*y^17+2*x^16*y^16+x^17*y^15+4*x^19*y^13+x^20*y^12+x^21*y^11+3*x^22*y^10+x^12*y^21+4*x^14*y^19+4*x^15*y^18+x^16*y^17+x^19*y^14+4*x^20*y^13+x^21*y^12+4*x^22*y^11+3*x^14*y^20+x^17*y^17+4*x^19*y^15+3*x^20*y^14+3*x^21*y^13+3*x^14*y^21+4*x^15*y^20+4*x^16*y^19+3*x^17*y^18+2*x^19*y^16+4*x^20*y^15+x^21*y^14+4*x^22*y^13+2*x^14*y^22+x^15*y^21+4*x^16*y^20+2*x^19*y^17+4*x^20*y^16+4*x^21*y^15+x^25*y^11+2*x^14*y^23+3*x^15*y^22+3*x^16*y^21+4*x^17*y^20+4*x^19*y^18+3*x^20*y^17+2*x^21*y^16+2*x^25*y^12+2*x^14*y^24+4*x^15*y^23+3*x^19*y^19+3*x^20*y^18+3*x^24*y^14+4*x^25*y^13+3*x^14*y^25+4*x^15*y^24+4*x^16*y^23+2*x^17*y^22+3*x^19*y^20+x^20*y^19+2*x^21*y^18+3*x^22*y^17+x^24*y^15+4*x^25*y^14+4*x^15*y^25+3*x^16*y^24+2*x^17*y^23+3*x^19*y^21+2*x^20*y^20+x^21*y^19+2*x^24*y^16+2*x^25*y^15+x^16*y^25+x^17*y^24+4*x^19*y^22+4*x^20*y^21+3*x^21*y^20+2*x^22*y^19+2*x^24*y^17+x^25*y^16+x^16*y^26+4*x^17*y^25+4*x^20*y^22+3*x^21*y^21+2*x^22*y^20+2*x^24*y^18+2*x^25*y^17+x^17*y^26+4*x^20*y^23+3*x^21*y^22+3*x^22*y^21+2*x^25*y^18+4*x^17*y^27+3*x^22*y^22+2*x^25*y^19+2*x^22*y^23", domain, "x", "y"),
+                b = MultivariatePolynomialZp64.parse("x^5+4*y^6+2*x^5*y^2+x^7+4*x^2*y^6+4*x^8+x^3*y^6+2*x^7*y^2+x^8*y+4*x^3*y^7+3*x^8*y^2+3*x^9*y+2*x^4*y^7+2*x^8*y^3+2*x^9*y^2+x^10*y+3*x^11+3*x^4*y^8+4*x^5*y^7+2*x^6*y^6+3*x^8*y^4+x^9*y^3+2*x^11*y+2*x^3*y^10+3*x^6*y^7+2*x^10*y^3+3*x^11*y^2+2*x^12*y+4*x^4*y^10+3*x^6*y^8+3*x^7*y^7+x^8*y^6+4*x^9*y^5+4*x^10*y^4+4*x^11*y^3+x^12*y^2+x^4*y^11+x^5*y^10+4*x^7*y^8+2*x^9*y^6+x^11*y^4+x^12*y^3+3*x^14*y+3*x^6*y^10+3*x^7*y^9+3*x^10*y^6+4*x^11*y^5+2*x^12*y^4+x^13*y^3+3*x^14*y^2+4*x^15*y+x^6*y^11+4*x^8*y^9+2*x^9*y^8+x^10*y^7+3*x^11*y^6+x^12*y^5+x^13*y^4+3*x^14*y^3+3*x^15*y^2+x^6*y^12+3*x^7*y^11+4*x^8*y^10+3*x^9*y^9+2*x^10*y^8+3*x^11*y^7+3*x^12*y^6+x^13*y^5+2*x^14*y^4+2*x^15*y^3+2*x^7*y^12+x^8*y^11+4*x^9*y^10+x^10*y^9+2*x^11*y^8+4*x^12*y^7+3*x^13*y^6+x^14*y^5+x^15*y^4+4*x^16*y^3+x^6*y^14+4*x^8*y^12+3*x^9*y^11+x^11*y^9+x^13*y^7+3*x^14*y^6+x^16*y^4+4*x^18*y^2+x^7*y^14+2*x^8*y^13+4*x^9*y^12+3*x^10*y^11+2*x^11*y^10+x^13*y^8+x^14*y^7+3*x^15*y^6+3*x^16*y^5+3*x^17*y^4+x^18*y^3+2*x^8*y^14+3*x^9*y^13+2*x^10*y^12+4*x^13*y^9+2*x^14*y^8+2*x^15*y^7+x^17*y^5+4*x^18*y^4+3*x^19*y^3+x^8*y^15+2*x^10*y^13+2*x^11*y^12+4*x^12*y^11+x^15*y^8+4*x^17*y^6+3*x^18*y^5+4*x^19*y^4+x^9*y^15+2*x^12*y^12+2*x^13*y^11+x^14*y^10+4*x^15*y^9+3*x^16*y^8+3*x^17*y^7+x^18*y^6+x^19*y^5+2*x^10*y^15+3*x^11*y^14+4*x^12*y^13+x^13*y^12+3*x^14*y^11+x^15*y^10+4*x^16*y^9+3*x^19*y^6+4*x^10*y^16+x^11*y^15+x^12*y^14+2*x^13*y^13+2*x^14*y^12+2*x^15*y^11+3*x^16*y^10+3*x^18*y^8+4*x^21*y^5+3*x^22*y^4+3*x^9*y^18+4*x^10*y^17+x^11*y^16+2*x^12*y^15+x^16*y^11+4*x^18*y^9+3*x^19*y^8+x^20*y^7+3*x^21*y^6+2*x^10*y^18+3*x^11*y^17+2*x^13*y^15+x^14*y^14+2*x^15*y^13+3*x^17*y^11+4*x^18*y^10+4*x^20*y^8+x^22*y^6+4*x^10*y^19+3*x^12*y^17+x^13*y^16+2*x^15*y^14+x^16*y^13+3*x^17*y^12+3*x^18*y^11+4*x^19*y^10+3*x^20*y^9+4*x^21*y^8+4*x^22*y^7+x^11*y^19+2*x^12*y^18+3*x^13*y^17+2*x^14*y^16+x^15*y^15+2*x^16*y^14+3*x^18*y^12+2*x^22*y^8+3*x^15*y^16+2*x^16*y^15+x^17*y^14+x^22*y^9+3*x^12*y^20+4*x^13*y^19+x^14*y^18+2*x^15*y^17+x^16*y^16+2*x^17*y^15+x^19*y^13+x^21*y^11+4*x^22*y^10+3*x^24*y^8+3*x^25*y^7+4*x^14*y^19+4*x^15*y^18+x^16*y^17+4*x^17*y^16+4*x^18*y^15+3*x^19*y^14+x^20*y^13+2*x^22*y^11+x^23*y^10+4*x^24*y^9+x^25*y^8+3*x^13*y^21+2*x^14*y^20+2*x^15*y^19+3*x^16*y^18+4*x^17*y^17+4*x^18*y^16+4*x^19*y^15+2*x^20*y^14+4*x^21*y^13+3*x^22*y^12+2*x^23*y^11+2*x^24*y^10+2*x^25*y^9+4*x^14*y^21+4*x^15*y^20+4*x^16*y^19+2*x^17*y^18+2*x^18*y^17+x^21*y^14+2*x^22*y^13+2*x^23*y^12+x^24*y^11+2*x^25*y^10+3*x^16*y^20+4*x^19*y^17+2*x^20*y^16+4*x^21*y^15+4*x^22*y^14+x^23*y^13+x^25*y^11+3*x^16*y^21+2*x^17*y^20+3*x^18*y^19+2*x^19*y^18+2*x^21*y^16+2*x^22*y^15+2*x^23*y^14+x^24*y^13+3*x^25*y^12+x^15*y^23+2*x^16*y^22+3*x^17*y^21+3*x^18*y^20+x^20*y^18+2*x^21*y^17+2*x^22*y^16+3*x^23*y^15+x^25*y^13+3*x^27*y^11+x^15*y^24+2*x^16*y^23+4*x^17*y^22+x^18*y^21+x^19*y^20+4*x^21*y^18+4*x^22*y^17+4*x^23*y^16+x^25*y^14+x^27*y^12+2*x^16*y^24+2*x^17*y^23+3*x^20*y^20+3*x^21*y^19+4*x^22*y^18+2*x^25*y^15+3*x^26*y^14+2*x^27*y^13+3*x^16*y^25+2*x^17*y^24+3*x^18*y^23+3*x^19*y^22+4*x^20*y^21+3*x^21*y^20+3*x^22*y^19+4*x^23*y^18+2*x^24*y^17+2*x^25*y^16+x^26*y^15+2*x^27*y^14+2*x^17*y^25+x^18*y^24+3*x^19*y^23+3*x^20*y^22+3*x^21*y^21+x^22*y^20+2*x^23*y^19+4*x^25*y^17+2*x^26*y^16+x^27*y^15+2*x^18*y^25+4*x^19*y^24+3*x^20*y^23+4*x^21*y^22+2*x^22*y^21+x^23*y^20+3*x^24*y^19+4*x^25*y^18+2*x^26*y^17+3*x^27*y^16+2*x^18*y^26+x^19*y^25+2*x^22*y^22+x^23*y^21+3*x^24*y^20+2*x^25*y^19+2*x^26*y^18+x^27*y^17+4*x^19*y^26+2*x^20*y^25+2*x^22*y^23+x^23*y^22+2*x^24*y^21+x^25*y^20+x^27*y^18+x^19*y^27+4*x^20*y^26+2*x^24*y^22+2*x^25*y^21+x^27*y^19+4*x^20*y^27+3*x^24*y^23+2*x^25*y^22+2*x^25*y^23", domain, "x", "y");
+
+        for (int i = 0; i < 50; ++i) {
+            PrivateRandom.getRandom().setSeed(i);
+            MultivariatePolynomialZp64 gcd = MultivariateGCD.KaltofenMonaganSparseModularGCDInGF(a, b);
+            assertTrue(dividesQ(a, gcd));
+            assertTrue(dividesQ(b, gcd));
         }
     }
 
@@ -2470,6 +2490,146 @@ public class MultivariateGCDTest extends AMultivariateTest {
         // 276us
     }
 
+    @Test
+    public void testAlgExt1() {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(UnivariatePolynomial.create(Q, Q.valueOf(-2), Q.valueOf(0), Q.valueOf(1)));
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> mRing = Rings.MultivariateRing(3, field);
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkMultivariateCoder(mRing, cfCoder, "x", "y", "z");
+
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + s*x^5 - s*y + z) * ( 1 + s*x^2 + 12*x^5)");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + s*x^5 - s*y + z) * ( 14 - s*x + 2*x^17)");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> gcd = PolynomialGCD(a, b);
+        assertTrue(dividesQ(a, gcd));
+        assertTrue(dividesQ(b, gcd));
+    }
+
+    @Test
+    public void testAlgExt2() {
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field
+                = AlgebraicNumberField(UnivariatePolynomial.create(13, 0, 1, 2, 3, 4, 15, 19).mapCoefficients(Q, Q::mkNumerator));
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> mRing = Rings.MultivariateRing(3, field);
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkMultivariateCoder(mRing, cfCoder, "x", "y", "z");
+
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("(1 - s + s*x^5 - s*y^5*z + (1 - s^6)*z^3*x) * ( 1 + s*x^2 + 12*x^5 + y)^5");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("(1 - s + s*x^5 - s*y^5*z + (1 - s^6)*z^3*x) * ( 14 - s*x + 2*s*x^17 + y - z)^5");
+
+        for (int i = 1; i < 10; ++i) {
+            long start = System.nanoTime();
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> gcd = ZippelGCDInNumberFieldViaRationalReconstruction(a, b);
+            System.out.println("Modular: " + nanosecondsToString(System.nanoTime() - start));
+            assertTrue(dividesQ(a, gcd));
+            assertTrue(dividesQ(b, gcd));
+        }
+
+        //Modular: 1028ms
+        //Modular: 303ms
+        //Modular: 268ms
+        //Modular: 206ms
+        //Modular: 216ms
+        //Modular: 197ms
+        //Modular: 182ms
+        //Modular: 241ms
+        //Modular: 168ms
+    }
+
+    @Test // elapsed 230s
+    public void testZippelModularAlgExt1_random() {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        for (int i = 0; i < 10; ++i) {
+            UnivariatePolynomial<BigInteger> minimalPolyZ =
+                    IrreduciblePolynomials.randomIrreduciblePolynomialOverZ(rndd.nextInt(2, 5), rnd);
+            minimalPolyZ.setLC(Z.valueOf(rndd.nextInt(1, 50)));
+            if (!IrreduciblePolynomials.irreducibleQ(minimalPolyZ)) {
+                --i;
+                continue;
+            }
+            UnivariatePolynomial<Rational<BigInteger>> minimalPoly = minimalPolyZ.mapCoefficients(Q, Q::mkNumerator);
+            AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> numberField = new AlgebraicNumberField<>(minimalPoly);
+
+            GCDSampleDataGeneric<UnivariatePolynomial<Rational<BigInteger>>> source
+                    = new GCDSampleDataGeneric<>(numberField, 3, 6, 10, 20, 10, 30, rnd);
+
+            source.rndCoefficients = rand -> numberField.valueOf(RandomUnivariatePolynomials.
+                    randomPoly(minimalPoly.degree(), Q, __ -> Q.mk(rand.nextInt(100), 1 + rand.nextInt(10)), rand));
+            System.out.println("\n\n");
+            System.out.println("Ring: " + numberField);
+            testGCDAlgorithms(source, its(10, 10),
+                    GCDAlgorithm.named("Zippel with rational reconstruction", MultivariateGCD::ZippelGCDInNumberFieldViaRationalReconstruction),
+                    GCDAlgorithm.named("Zippel with Langemyr & McCallum", MultivariateGCD::ZippelGCDInNumberFieldViaLangemyrMcCallum),
+                    GCDAlgorithm.named("Modular with rational reconstruction", (a, b) -> ModularGCDInNumberFieldViaRationalReconstruction(a, b, MultivariateGCD::PolynomialGCD)),
+                    GCDAlgorithm.named("Modular with Langemyr & McCallum", (a, b) -> ModularGCDInNumberFieldViaLangemyrMcCallum(a, b, MultivariateGCD::PolynomialGCD))
+            );
+        }
+    }
+
+    @Test
+    @Benchmark(runAnyway = true)
+    public void testZippelModularAlgExt_2() {
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly =
+                UnivariatePolynomial.create(31229703,
+                        31584466, 9500649, 9480702,
+                        23265262, 5568454, 3392530,
+                        30401154, 15298203, 25411939,
+                        30401154, 15298203, 25411939,
+                        31584466, 9500649, 9480702,
+                        30401154, 15298203, 25411939,
+                        30401154, 15298203, 25411939, 1)
+                        .mapCoefficients(Q, Q::valueOfBigInteger);
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>> field = AlgebraicNumberField(minimalPoly);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkUnivariateCoder(field, "s");
+
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> uRing = MultivariateRing(5, field);
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkMultivariateCoder(uRing, cfCoder, "x", "y", "z", "p", "q");
+
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> a = coder.parse("-2629984078 - 2747848492*s - 826556509*s^2 - 824821066*s^3 - 2024077758*s^4 - 484455432*s^5 - 295150100*s^6 - 2644900377*s^7 - 1330943630*s^8 - 2210838750*s^9 + (-2539295050 - 2653095078*s - 798054533*s^2 - 796378949*s^3 - 1954282008*s^4 - 467750096*s^5 - 284972456*s^6 - 2553696896*s^7 - 1285048960*s^8 - 2134602853*s^9)*x*p + (2750903023 + 2874186377*s + 864559081*s^2 + 862743871*s^3 + 2117138752*s^4 + 506729319*s^5 + 308720296*s^6 + 2766505047*s^7 + 1392136388*s^8 + 2312486542*s^9)*x^2*y^3*q + (-2902051419 - 3032108714*s - 912062266*s^2 - 910147339*s^3 - 2233465130*s^4 - 534571658*s^5 - 325682847*s^6 - 2918510751*s^7 - 1468627461*s^8 - 2439546109*s^9)*z^3 + (-2025390071 - 2116159152*s - 636543408*s^2 - 635207023*s^3 - 1558772527*s^4 - 373086362*s^5 - 227299470*s^6 - 2036877303*s^7 - 1024979692*s^8 - 1702599819*s^9)*x*y^4 + (-2962510945 - 3095277661*s - 931063590*s^2 - 929108773*s^3 - 2279995709*s^4 - 545708558*s^5 - 332467948*s^6 - 2979313000*s^7 - 1499223872*s^8 - 2490370012*s^9)*q^5*x + (-1934700903 - 2021405804*s - 608041537*s^2 - 606764926*s^3 - 1488976751*s^4 - 356381007*s^5 - 217121886*s^6 - 1945673813*s^7 - 979084946*s^8 - 1626364082*s^9)*z^6*x*p*y^7*q + (-997580106 - 1042287350*s - 313521458*s^2 - 312863069*s^3 - 767753632*s^4 - 183758950*s^5 - 111953411*s^6 - 1003238154*s^7 - 504840626*s^8 - 838594076*s^9)*z^7 + (-1178958351 - 1231794140*s - 370525402*s^2 - 369747315*s^3 - 907345216*s^4 - 217169661*s^5 - 132308571*s^6 - 1185645024*s^7 - 596629988*s^8 - 991065545*s^9)*p^8*q + (-2025390077 - 2116159255*s - 636543412*s^2 - 635207025*s^3 - 1558772532*s^4 - 373086332*s^5 - 227299454*s^6 - 2036877243*s^7 - 1024979650*s^8 - 1702599890*s^9)*p^9*x^3*z^2 + (1118499087 + 1168625309*s + 351524046*s^2 + 350785991*s^3 + 860814787*s^4 + 206032829*s^5 + 125523644*s^6 + 1124842769*s^7 + 566033562*s^8 + 940241738*s^9)*p^5*y^5");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> b = coder.parse("-2297457369 - 2400419408*s - 722049354*s^2 - 720533283*s^3 - 1768159825*s^4 - 423202465*s^5 - 257832326*s^6 - 2310487767*s^7 - 1162663504*s^8 - 1931307309*s^9 + (-1118498918 - 1168625170*s - 351523998*s^2 - 350785953*s^3 - 860814620*s^4 - 206032844*s^5 - 125523543*s^6 - 1124842734*s^7 - 566033484*s^8 - 940241840*s^9)*p + (-634823841 - 663273730*s - 199513585*s^2 - 199094740*s^3 - 488570500*s^4 - 116937491*s^5 - 71243056*s^6 - 638424217*s^7 - 321262269*s^8 - 533650647*s^9)*y^2*z + (-120918804 - 126337886*s - 38002569*s^2 - 37922791*s^3 - 93061011*s^4 - 22273824*s^5 - 13570040*s^6 - 121604571*s^7 - 61192741*s^8 - 101647722*s^9)*x^3*q^2 + (-2629984238 - 2747848535*s - 826556405*s^2 - 824821002*s^3 - 2024077765*s^4 - 484455463*s^5 - 295150103*s^6 - 2644900316*s^7 - 1330943621*s^8 - 2210838616*s^9)*x^2*y*z*p + (60459502 + 63168844*s + 19001371*s^2 + 18961478*s^3 + 46530559*s^4 + 11136967*s^5 + 6785128*s^6 + 60802294*s^7 + 30596476*s^8 + 50823949*s^9)*x^2*y*z*p^5 + (-2599754450 - 2716264170*s - 817055796*s^2 - 815340331*s^3 - 2000812621*s^4 - 478886953*s^5 - 291757547*s^6 - 2614499288*s^7 - 1315645534*s^8 - 2185426692*s^9)*q*z^6*p + (-1964930626 - 2052990342*s - 617542144*s^2 - 616245697*s^3 - 1512242053*s^4 - 361949415*s^5 - 220514397*s^6 - 1976074963*s^7 - 994383244*s^8 - 1651775954*s^9)*z^7 + (-1571944495 - 1642392288*s - 494033670*s^2 - 492996488*s^3 - 1209793576*s^4 - 289559689*s^5 - 176411479*s^6 - 1580860073*s^7 - 795506501*s^8 - 1321420729*s^9)*y^8 + (2811362414 + 2937355383*s + 883560380*s^2 + 881705200*s^3 + 2163669280*s^4 + 517866158*s^5 + 315505366*s^6 + 2827307413*s^7 + 1422732958*s^8 + 2363310334*s^9)*p^9*x + (2116079261 + 2210912639*s + 665045462*s^2 + 663649187*s^3 + 1628568308*s^4 + 389791803*s^5 + 237477108*s^6 + 2128080876*s^7 + 1070874245*s^8 + 1778835730*s^9)*x^5*z^6 + (-2236998012 - 2337250400*s - 703047951*s^2 - 701571937*s^3 - 1721629439*s^4 - 412065534*s^5 - 251047253*s^6 - 2249685310*s^7 - 1132067031*s^8 - 1880483482*s^9)*q^2*y*z*p");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> g = coder.parse("-2811362312 - 2937355319*s - 883560337*s^2 - 881705356*s^3 - 2163669316*s^4 - 517866198*s^5 - 315505348*s^6 - 2827307397*s^7 - 1422732833*s^8 - 2363310305*s^9 + (-1027809863 - 1073871832*s - 323021979*s^2 - 322343852*s^3 - 791018874*s^4 - 189327442*s^5 - 115345990*s^6 - 1033639203*s^7 - 520138994*s^8 - 864005935*s^9)*x*z + (755742670 + 789611730*s + 237516324*s^2 + 237017568*s^3 + 581631609*s^4 + 139211399*s^5 + 84813301*s^6 + 760028909*s^7 + 382455125*s^8 + 635298486*s^9)*z^2*y^2 + (-2569524725 - 2684679604*s - 807555125*s^2 - 805859617*s^3 - 1977547175*s^4 - 473318570*s^5 - 288364973*s^6 - 2584098178*s^7 - 1300347246*s^8 - 2160014731*s^9)*x^2*y*z*p^5 + (-90689044 - 94753334*s - 28502018*s^2 - 28442203*s^3 - 69795734*s^4 - 16705297*s^5 - 10177621*s^6 - 91203421*s^7 - 45894548*s^8 - 76235851*s^9)*z^4*y^6*q*p + (-60459337 - 63168954*s - 19001279*s^2 - 18961469*s^3 - 46530495*s^4 - 11136820*s^5 - 6785055*s^6 - 60802219*s^7 - 30596432*s^8 - 50823814*s^9)*q^5*y + (-2206768278 - 2305665984*s - 693547285*s^2 - 692091191*s^3 - 1698364119*s^4 - 406497048*s^5 - 247654596*s^6 - 2219284280*s^7 - 1116768829*s^8 - 1855071634*s^9)*x^6*y^3*z^2*p^2*q + (-2992740680 - 3126862134*s - 940564345*s^2 - 938589464*s^3 - 2303260921*s^4 - 551276902*s^5 - 335860390*s^6 - 3009714187*s^7 - 1514522192*s^8 - 2515781892*s^9)*x^2*y*z*p + (-937120739 - 979118398*s - 294520061*s^2 - 293901791*s^3 - 721223167*s^4 - 172622016*s^5 - 105168421*s^6 - 942435722*s^7 - 474244292*s^8 - 787770068*s^9)*q^2*y*z*p + (-2569524839 - 2684679579*s - 807555086*s^2 - 805859625*s^3 - 1977547366*s^4 - 473318589*s^5 - 288365123*s^6 - 2584098088*s^7 - 1300347180*s^8 - 2160014805*s^9)*x^2*y*z*q + (-302297052 - 315844685*s - 95006420*s^2 - 94806952*s^3 - 232652706*s^4 - 55684503*s^5 - 33925202*s^6 - 304011605*s^7 - 152982033*s^8 - 254119332*s^9)*z^10*y + (362756428 + 379013624*s + 114007873*s^2 + 113768522*s^3 + 279183228*s^4 + 66821400*s^5 + 40710454*s^6 + 364813756*s^7 + 183578437*s^8 + 304943317*s^9)*x^5*z^5*q + (-2327687116 - 2432003792*s - 731549932*s^2 - 730014098*s^3 - 1791425234*s^4 - 428770976*s^5 - 261224810*s^6 - 2340888824*s^7 - 1177961606*s^8 - 1956719264*s^9)*x^12 + (-2962510886 - 3095277709*s - 931063515*s^2 - 929108855*s^3 - 2279995592*s^4 - 545708444*s^5 - 332467892*s^6 - 2979313007*s^7 - 1499223814*s^8 - 2490369949*s^9)*p^5*q^5");
+
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>
+                ag = a.clone().multiply(g),//.multiply(a.clone().decrement()),
+                bg = b.clone().multiply(g);//.multiply(b.clone().decrement());
+
+        for (int i = 0; i < 2; ++i) {
+            long start;
+            MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> mod;
+
+            start = System.nanoTime();
+            mod = ZippelGCDInNumberFieldViaRationalReconstruction(ag, bg);
+            System.out.println("Rational reconstruction : " + nanosecondsToString(System.nanoTime() - start));
+            assertTrue(dividesQ(mod, g));
+
+            start = System.nanoTime();
+            mod = ZippelGCDInNumberFieldViaLangemyrMcCallum(ag, bg);
+            System.out.println("Langemyr & McCallum     : " + nanosecondsToString(System.nanoTime() - start));
+            assertTrue(dividesQ(mod, g));
+            System.out.println();
+        }
+        // Rational reconstruction : 5s
+        // Langemyr & McCallum     : 15s
+        // Rational reconstruction : 1868ms
+        // Langemyr & McCallum     : 16s
+    }
+
+    @Test(timeout = 50000L)
+    public void testZippel22() {
+        FiniteField<UnivariatePolynomialZp64> cfField = Rings.GF(UnivariatePolynomialZ64.create(6, 7, 14, 1).modulus(17));
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> ring = MultivariateRing(4, cfField);
+        Coder<UnivariatePolynomialZp64, ?, ?> cfCoder = Coder.mkUnivariateCoder(cfField, "x");
+        Coder<MultivariatePolynomial<UnivariatePolynomialZp64>, ?, ?> coder = Coder.mkMultivariateCoder(ring, cfCoder, "a", "b", "c", "d");
+        MultivariatePolynomial<UnivariatePolynomialZp64> a = coder.parse("16*x*d+16*a*c+a*b");
+        MultivariatePolynomial<UnivariatePolynomialZp64> b = coder.parse("(12+15*x+4*x^2)*d+16*x*d^2+(10+10*x^2)*a*d+(1+10*x+15*x^2)*a*c+(16+7*x+2*x^2)*a*b+16*x^2*a*d^2+16*a*c*d+16*x*b^2*d+a*b*d+16*x^2*a^2*d+(11+15*x+4*x^2)*a^2*c+(6+2*x+13*x^2)*a^2*b+16*x^2*d^4+(5+2*x+12*x^2)*a*d^3+16*x^2*c^2*d^2+(5+2*x+12*x^2)*a*c^2*d+16*x*a^2*c*d+16*x^2*a*b^2*d+x*a^2*b*d+16*a*b^2*c+16*x*a^3*c+a*b^3+x*a^3*b+(6+8*x+14*x^2)*a*d^4+16*x*a*c*d^3+16*x^2*b^2*d^3+x*a*b*d^3+(6+8*x+14*x^2)*a^2*d^3+16*x*c^3*d^2+(6+8*x+14*x^2)*a*c^2*d^2+(16+6*x+2*x^2)*a^2*c*d^2+(1+11*x+15*x^2)*a^2*b*d^2+15*x*a*c^3*d+16*x^2*b^2*c^2*d+x*a*b*c^2*d+(6+8*x+14*x^2)*a^2*c^2*d+x*b^4*d+(16+6*x+2*x^2)*a^2*c^3+(1+11*x+15*x^2)*a^2*b*c^2+16*x*a^2*b^2*c+x*a^2*b^3+(1+16*x^2)*a^2*c*d^3+(6+8*x+14*x^2)*a*b^2*d^3+(16+x^2)*a^2*b*d^3+16*x^2*a*c^3*d^2+16*x*a*b^2*c*d^2+(1+16*x^2)*a^3*c*d^2+x*a*b^3*d^2+(16+x^2)*a^3*b*d^2+16*a*c^4*d+16*x*b^2*c^3*d+a*b*c^3*d+(1+15*x^2)*a^2*c^3*d+(6+8*x+14*x^2)*a*b^2*c^2*d+(16+x^2)*a^2*b*c^2*d+x^2*a*b^4*d+16*a^2*c^4+16*x*a*b^2*c^3+a^2*b*c^3+(1+16*x^2)*a^3*c^3+x*a*b^3*c^2+(16+x^2)*a^3*b*c^2+a*b^4*c+16*a*b^5+x^2*a*d^6+x^2*a^2*d^5+2*x^2*a*c^2*d^4+2*x^2*a^2*c^2*d^3+x^2*b^4*d^3+x^2*a*c^4*d^2+(1+16*x^2)*a^2*b^2*c*d^2+(16+x^2)*a^2*b^3*d^2+(16*x+x^2)*a^2*c^4*d+16*x^2*a*b^2*c^3*d+x*a^2*b*c^3*d+x^2*b^4*c^2*d+16*a*b^2*c^4+16*x*a^3*c^4+a*b^3*c^3+(1+16*x^2)*a^2*b^2*c^3+x*a^3*b*c^3+(16+x^2)*a^2*b^3*c^2+x*a^2*b^4*c+16*x*a^2*b^5+x*a^2*c*d^5+x^2*a*b^2*d^5+16*x*a^2*b*d^5+x*a*c^3*d^4+x*a^3*c*d^4+16*x*a^3*b*d^4+3*x*a^2*c^3*d^3+2*x^2*a*b^2*c^2*d^3+15*x*a^2*b*c^2*d^3+(11+9*x+3*x^2)*a*b^4*d^3+x*a*c^5*d^2+2*x*a^3*c^3*d^2+15*x*a^3*b*c^2*d^2+x*a*b^4*c*d^2+15*x*a*b^5*d^2+2*x*a^2*c^5*d+x^2*a*b^2*c^4*d+16*x*a^2*b*c^4*d+x*b^4*c^3*d+(11+9*x+3*x^2)*a*b^4*c^2*d+16*x*a^2*b^5*d+x*a^3*c^5+16*x*a^2*b^2*c^4+16*x*a^3*b*c^4+x*a*b^4*c^3+x*a^2*b^3*c^3+16*x*a*b^5*c^2+x*a^2*b^2*c*d^4+16*x*a^2*b^3*d^4+a^2*c^4*d^3+x*a*b^2*c^3*d^3+16*a^2*b*c^3*d^3+a^3*c^4*d^2+2*x*a^2*b^2*c^3*d^2+16*a^3*b*c^3*d^2+15*x*a^2*b^3*c^2*d^2+(16+x^2)*a^2*b^4*c*d^2+(1+15*x^2)*a^2*b^5*d^2+a^2*c^6*d+x*a*b^2*c^5*d+16*a^2*b*c^5*d+x^2*a*b^4*c^3*d+16*a^2*b^5*c*d+16*x*a*b^7*d+a^2*b^6*d+16*x^2*a^3*b^5*d+a^3*c^6+x*a^2*b^2*c^5+16*a^3*b*c^5+a*b^4*c^4+16*x*a^2*b^3*c^4+16*a*b^5*c^3+(16+x^2)*a^2*b^4*c^3+(1+16*x^2)*a^2*b^5*c^2+16*a^3*b^5*c+a^3*b^6+16*x^2*a*b^4*d^5+15*x^2*a*b^4*c^2*d^3+a^2*b^2*c^4*d^2+16*a^2*b^3*c^3*d^2+16*x^2*a*b^4*c^4*d+16*x*a^3*b^5*c*d+16*x^2*a^2*b^7*d+x*a^3*b^6*d+a^2*b^2*c^6+16*a^2*b^3*c^5+x*a^2*b^4*c^4+16*x*a^2*b^5*c^3+16*a^2*b^7*c+16*x*a^4*b^5*c+a^2*b^8+x*a^4*b^6+16*x*a^2*b^4*c*d^4+2*x*a^2*b^5*d^4+16*x*a*b^4*c^3*d^3+x*a^3*b^5*d^3+15*x*a^2*b^4*c^3*d^2+3*x*a^2*b^5*c^2*d^2+16*x*a*b^4*c^5*d+x*a^3*b^5*c^2*d+x*a*b^9*d+16*x*a^2*b^4*c^5+x*a^2*b^5*c^4+16*x*a^3*b^7*c+x*a^3*b^8+a^3*b^5*c*d^3+x*a^2*b^7*d^3+16*a^3*b^6*d^3+16*a^2*b^4*c^4*d^2+a^2*b^5*c^3*d^2+a^4*b^5*c*d^2+16*a^4*b^6*d^2+a^3*b^5*c^3*d+x*a^2*b^7*c^2*d+16*a^3*b^6*c^2*d+x^2*a^2*b^9*d+16*a^2*b^4*c^6+a^2*b^5*c^5+a^4*b^5*c^3+16*a^4*b^6*c^2+a^2*b^9*c+16*a^2*b^10+a^3*b^7*c*d^2+16*a^3*b^8*d^2+a^3*b^7*c^3+16*a^3*b^8*c^2+x*a^3*b^9*c+16*x*a^3*b^10+16*x*a^2*b^9*d^3+16*x*a^2*b^9*c^2*d+16*a^3*b^9*c*d^2+a^3*b^10*d^2+16*a^3*b^9*c^3+a^3*b^10*c^2");
+
+        for (int i = 11; i < 100; ++i) {
+            PrivateRandom.getRandom().setSeed(i);
+            assertNotNull(PolynomialGCD(a, b));
+        }
+    }
+
     /* =============================================== Test data =============================================== */
 
     /** sample data for test of GCD */
@@ -2787,7 +2947,10 @@ public class MultivariateGCDTest extends AMultivariateTest {
         public GCDSampleDataGeneric(Ring<E> ring, int nVarsMin, int nVarsMax, int minDegree, int maxDegree, int minSize, int maxSize, RandomGenerator rnd) {
             super(nVarsMin, nVarsMax, minDegree, maxDegree, minSize, maxSize, rnd);
             this.ring = ring;
+            this.rndCoefficients = ring::randomElement;
         }
+
+        public Function<RandomGenerator, E> rndCoefficients;
 
         @Override
         public GCDSample<Monomial<E>, MultivariatePolynomial<E>> nextSample1(boolean primitive, boolean monic) {
@@ -2796,7 +2959,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
             MultivariatePolynomial<E>[] data = new MultivariatePolynomial[3];
             for (int i = 0; i < 3; i++) {
                 MultivariatePolynomial<E>
-                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), ring, MonomialOrder.DEFAULT, rnd);
+                        p = randomPolynomial(nVariables, rndd.nextInt(minDegree, maxDegree), rndd.nextInt(minSize, maxSize), ring, MonomialOrder.DEFAULT, rndCoefficients, rnd);
 
                 if (primitive)
                     p = MultivariatePolynomial.asNormalMultivariate(p.asOverUnivariateEliminate(0).primitivePart(), 0);
@@ -2984,7 +3147,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
         for (Monomial<E> e : poly.terms) {
             E value = e.coefficient;
             assertFalse(ring.isZero(value));
-            assertTrue(value == ring.valueOf(value));
+            assertTrue(value.equals(ring.valueOf(value)));
             if (ring instanceof IntegersZp) {
                 assertTrue(ring.signum(value) > 0);
                 assertTrue(((BigInteger) value).compareTo(((IntegersZp) ring).modulus) <= 0);

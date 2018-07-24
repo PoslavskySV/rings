@@ -1,6 +1,6 @@
 package cc.redberry.rings.scaladsl
 
-import cc.redberry.rings.poly.multivar.GroebnerBasis.HilbertSeries
+import cc.redberry.rings.poly.multivar.GroebnerBases.HilbertSeries
 import cc.redberry.rings.poly.multivar.MonomialOrder.{GREVLEX, LEX}
 import cc.redberry.rings.primes.BigPrimes
 import org.junit.Test
@@ -172,7 +172,7 @@ class Examples2 {
     val modulus = x.pow(2) + 1
     // poly in a quotient ring
     val quotPoly = {
-      implicit val ring = UnivariateQuotientRing(baseRing, modulus)
+      implicit val ring = AlgebraicNumberField(modulus, "t")
       123 * x.pow(31) + 123 * x.pow(2) + x / 2 + 1
     }
 

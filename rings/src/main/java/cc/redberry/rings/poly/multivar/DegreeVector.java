@@ -48,6 +48,18 @@ public class DegreeVector implements java.io.Serializable {
         return totalDegree == 0;
     }
 
+    public DegreeVector dv() {
+        return this;
+    }
+
+    /** Returns the total degree in specified variables */
+    public final int dvTotalDegree(int... variables) {
+        int d = 0;
+        for (int v : variables)
+            d += exponents[v];
+        return d;
+    }
+
     /** Multiplies this by oth */
     public final DegreeVector dvMultiply(DegreeVector oth) {
         if (oth.isZeroVector())
@@ -253,6 +265,11 @@ public class DegreeVector implements java.io.Serializable {
         return new DegreeVector(ArraysUtil.insert(exponents, variable, 0), totalDegree);
     }
 
+    /** Inserts new variables */
+    public final DegreeVector dvInsert(int variable, int count) {
+        return new DegreeVector(ArraysUtil.insert(exponents, variable, 0, count), totalDegree);
+    }
+
     /**
      * Set's exponent of specified variable to specified value
      *
@@ -266,6 +283,19 @@ public class DegreeVector implements java.io.Serializable {
         int[] res = exponents.clone();
         res[variable] = exponent;
         return new DegreeVector(res, deg);
+    }
+
+    /**
+     * Creates degree vector with old variables renamed to specified mapping variables
+     *
+     * @param nVariables new total number of variables
+     * @param mapping  mapping from old variables to new variables
+     */
+    public final DegreeVector dvMap(int nVariables, int[] mapping) {
+        int[] newExponents = new int[nVariables];
+        for (int i = 0; i < exponents.length; ++i)
+            newExponents[mapping[i]] = exponents[i];
+        return new DegreeVector(newExponents, totalDegree);
     }
 
     final int firstNonZeroVariable() {
@@ -315,9 +345,6 @@ public class DegreeVector implements java.io.Serializable {
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(exponents);
-        result = 31 * result + totalDegree;
-        return result;
+        return Arrays.hashCode(exponents);
     }
-
 }

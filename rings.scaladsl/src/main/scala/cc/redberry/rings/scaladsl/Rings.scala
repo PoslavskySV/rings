@@ -183,6 +183,11 @@ abstract class IPolynomialRing[Poly <: IPolynomial[Poly], E]
   final def variable(variable: String): Int = index(variable)
 
   /**
+    * String representation of i-th variable
+    */
+  final def variableString(variable: Int): String = variables(variable)
+
+  /**
     * The first variable
     */
   final lazy val `x`: Poly = theRing.variable(0)
@@ -444,6 +449,21 @@ private[scaladsl] sealed abstract class AUnivariateRing[E]
   override final def create(coefficients: E*): UnivariatePolynomial[E] = theRing.valueOf(UnivariatePolynomial.apply[E, E](coefficients: _*)(cfRing))
 }
 
+sealed trait SimpleFieldExtension[E <: IUnivariatePolynomial[E], C] extends IPolynomialRing[E, C] {
+  def implicitConversions: rings.poly.SimpleFieldExtension[E]
+}
+
+object SimpleFieldExtension {
+  def apply[E <: IUnivariatePolynomial[E], C](field: poly.SimpleFieldExtension[E], variable: String)
+  : SimpleFieldExtension[E, C] = JavaConversions.mkScalaFieldExtension(field, variable)
+
+  def apply[E <: IUnivariatePolynomial[E], C](minimalPoly: E, variable: String)
+  : SimpleFieldExtension[E, C] = apply(rings.Rings.SimpleFieldExtension(minimalPoly), variable)
+
+  implicit def implicitConversions[E <: IUnivariatePolynomial[E], C](ext: SimpleFieldExtension[E, C]): rings.poly.SimpleFieldExtension[E] =
+    ext.implicitConversions
+}
+
 /**
   * Galois field with prime base in a range of `(0, 2^63)`
   *
@@ -452,7 +472,7 @@ private[scaladsl] sealed abstract class AUnivariateRing[E]
   */
 final case class GaloisField64
 (override val theRing: rings.poly.FiniteField[UnivariatePolynomialZp64], override val variable: String)
-  extends AUnivariateRingZp64(theRing, variable) {
+  extends AUnivariateRingZp64(theRing, variable) with SimpleFieldExtension[UnivariatePolynomialZp64, Long] {
   /**
     * The coefficient ring
     */
@@ -460,6 +480,12 @@ final case class GaloisField64
 
   /** Set names of variables (new ring will be created) */
   override def setVariableNames(newVariables: Array[String]): GaloisField64 = copy(variable = newVariables(0))
+
+  override def implicitConversions: poly.SimpleFieldExtension[UnivariatePolynomialZp64] = theRing
+}
+
+object GaloisField64 {
+  implicit def asFiniteField(gf: GaloisField64): rings.poly.FiniteField[UnivariatePolynomialZp64] = gf.theRing
 }
 
 /**
@@ -470,7 +496,7 @@ final case class GaloisField64
   */
 final case class GaloisField[E]
 (override val theRing: rings.poly.FiniteField[UnivariatePolynomial[E]], override val variable: String, _cfRing: Ring[E] = null)
-  extends AUnivariateRing[E](theRing, variable) {
+  extends AUnivariateRing[E](theRing, variable) with SimpleFieldExtension[UnivariatePolynomial[E], E] {
   /**
     * The coefficient ring
     */
@@ -478,6 +504,12 @@ final case class GaloisField[E]
 
   /** Set names of variables (new ring will be created) */
   override def setVariableNames(newVariables: Array[String]): GaloisField[E] = copy(variable = newVariables(0))
+
+  override def implicitConversions: poly.SimpleFieldExtension[UnivariatePolynomial[E]] = theRing
+}
+
+object GaloisField {
+  implicit def asFiniteField[E](gf: GaloisField[E]): rings.poly.FiniteField[UnivariatePolynomial[E]] = gf.theRing
 }
 
 object GF {
@@ -548,87 +580,30 @@ final case class UnivariateRing[E](override val cfRing: Ring[E], override val va
 }
 
 /**
-  * Univariate quotient ring
+  * Algebraic number field represented as simple field extension
+  *
+  * @param theRing  the [[rings.poly.FiniteField]]
+  * @param variable the variable that represent extension generator
   */
-final case class UnivariateQuotientRing[Poly <: IUnivariatePolynomial[Poly], E]
-(baseRing: IUnivariateRing[Poly, E], modulus: Poly)
-  extends IUnivariateRing[Poly, E](rings.Rings.UnivariateQuotientRing[Poly](baseRing.theRing, modulus), baseRing.variable) {
-  /**
-    * String from/to conversion for ring elements
-    */
-  override lazy val coder: Coder[ElementType] = baseRing.coder
-
-  /**
-    * @inheritdoc
-    **/
-  override def parse(string: String): Poly = apply(coder.parse(string))
-
+final case class AlgebraicNumberField[E]
+(override val theRing: rings.poly.AlgebraicNumberField[UnivariatePolynomial[E]], override val variable: String, _cfRing: Ring[E] = null)
+  extends AUnivariateRing[E](theRing, variable) with SimpleFieldExtension[UnivariatePolynomial[E], E] {
   /**
     * The coefficient ring
     */
-  override def cfRing = baseRing.cfRing
-
-  /**
-    * Evaluate poly at a given point
-    */
-  override def eval(poly: Poly, point: E) = baseRing.eval(poly, point)
-
-  /**
-    * Create univariate polynomial from the array of coefficients
-    */
-  override def create(coefficients: E*): Poly = theRing valueOf baseRing.create(coefficients: _*)
-
-  /**
-    * Constant polynomial with specified value
-    */
-  override def getConstant(value: E): Poly = theRing valueOf baseRing.getConstant(value)
-
-  /**
-    * Add coefficient ring element
-    */
-  override def addConstant(poly: Poly, el: E): Poly = theRing valueOf baseRing.addConstant(poly, el)
-
-  /**
-    * Subtract coefficient ring element
-    */
-  override def subtractConstant(poly: Poly, el: E): Poly = theRing valueOf baseRing.subtractConstant(poly, el)
-
-  /**
-    * Multiply by coefficient ring element
-    */
-  override def multiplyConstant(poly: Poly, el: E): Poly = theRing valueOf baseRing.multiplyConstant(poly, el)
-
-  /**
-    * Divide by coefficient ring element
-    */
-  override def divideConstant(poly: Poly, el: E): Poly = theRing valueOf baseRing.divideConstant(poly, el)
-
-  /**
-    * Divide by coefficient ring element
-    */
-  override def divideAndRemainder(poly: Poly, el: E): (Poly, Poly) = {
-    val qd = baseRing.divideAndRemainder(poly, el)
-    (theRing valueOf qd._1, theRing valueOf qd._2)
-  }
-
-  /**
-    * Value of integer in coefficient ring
-    */
-  override def cfValue(i: Int): E = baseRing.cfValue(i)
-
-  /**
-    * Constant coefficient
-    */
-  override def cc(poly: Poly): E = baseRing.cc(poly)
-
-  /**
-    * Leading coefficient
-    */
-  override def lc(poly: Poly): E = baseRing.lc(poly)
+  override val cfRing: Ring[E] = if (_cfRing == null) theRing.factory().ring else _cfRing
 
   /** Set names of variables (new ring will be created) */
-  override def setVariableNames(newVariables: Array[String]): UnivariateQuotientRing[Poly, E]
-  = UnivariateQuotientRing(baseRing.setVariableNames(newVariables), modulus)
+  override def setVariableNames(newVariables: Array[String]): AlgebraicNumberField[E] = copy(variable = newVariables(0))
+
+  override def implicitConversions: poly.SimpleFieldExtension[UnivariatePolynomial[E]] = theRing
+}
+
+object AlgebraicNumberField {
+  def apply[E](minimalPolynomial: UnivariatePolynomial[E], variable: String): AlgebraicNumberField[E]
+  = AlgebraicNumberField(rings.Rings.AlgebraicNumberField(minimalPolynomial), variable)
+
+  implicit def asAlgebraicNumberField[E](field: AlgebraicNumberField[E]): rings.poly.AlgebraicNumberField[UnivariatePolynomial[E]] = field.theRing
 }
 
 /**
@@ -997,14 +972,76 @@ object IdealZp64 {
   }
 }
 
+private[scaladsl]
+abstract class MultivariateRingWrapper[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
+(baseRing: rings.poly.IPolynomialRing[Poly], variables: Array[String])
+  extends IMultivariateRing[Term, Poly, E](baseRing, variables, baseRing.factory().ordering) {
+  protected[scaladsl] lazy val helperRing: IMultivariateRing[Term, Poly, E] = MultivariateRing.apply(baseRing.factory())
+
+  /**
+    * Evaluate poly for given variable
+    */
+  override def eval(poly: Poly, variable: Int, value: E) = helperRing.eval(poly, variable, value)
+
+  /**
+    * The coefficient ring
+    */
+  override def cfRing = helperRing.cfRing
+
+  /**
+    * Constant polynomial with specified value
+    */
+  override def getConstant(value: E) = helperRing.getConstant(value)
+
+  /**
+    * Add coefficient ring element
+    */
+  override def addConstant(poly: Poly, el: E) = helperRing.addConstant(poly, el)
+
+  /**
+    * Subtract coefficient ring element
+    */
+  override def subtractConstant(poly: Poly, el: E) = helperRing.subtractConstant(poly, el)
+
+  /**
+    * Multiply by coefficient ring element
+    */
+  override def multiplyConstant(poly: Poly, el: E) = helperRing.multiplyConstant(poly, el)
+
+  /**
+    * Divide by coefficient ring element
+    */
+  override def divideConstant(poly: Poly, el: E) = helperRing.divideConstant(poly, el)
+
+  /**
+    * Divide by coefficient ring element
+    */
+  override def divideAndRemainder(poly: Poly, el: E) = helperRing.divideAndRemainder(poly, el)
+
+  /**
+    * Value of integer in coefficient ring
+    */
+  override def cfValue(i: Int) = helperRing.cfValue(i)
+
+  /**
+    * Constant coefficient
+    */
+  override def cc(poly: Poly) = helperRing.cc(poly)
+
+  /**
+    * Leading coefficient
+    */
+  override def lc(poly: Poly) = helperRing.lc(poly)
+}
+
 /**
-  * Ideal in multivariate polynomial ring
+  * Multivariate quotient ring
   */
 final case class QuotientRing[Term <: AMonomial[Term], Poly <: AMultivariatePolynomial[Term, Poly], E]
 (baseRing: IMultivariateRing[Term, Poly, E], ideal: Ideal[Term, Poly, E])
-  extends IMultivariateRing[Term, Poly, E](
-    rings.Rings.QuotientRing[Term, Poly](baseRing.theRing, ideal.theIdeal),
-    baseRing.variables, baseRing.theRing.factory().ordering) {
+  extends MultivariateRingWrapper[Term, Poly, E](
+    rings.Rings.QuotientRing[Term, Poly](baseRing.theRing.asInstanceOf[rings.poly.MultivariateRing[Poly]], ideal.theIdeal),
+    baseRing.variables) {
   /**
     * String from/to conversion for ring elements
     */
@@ -1015,62 +1052,128 @@ final case class QuotientRing[Term <: AMonomial[Term], Poly <: AMultivariatePoly
     **/
   override def parse(string: String): Poly = apply(coder.parse(string))
 
-  /**
-    * Evaluate poly for given variable
-    */
-  override def eval(poly: Poly, variable: Int, value: E) = baseRing.eval(poly, variable, value)
-
-  /**
-    * The coefficient ring
-    */
-  override def cfRing = baseRing.cfRing
-
-  /**
-    * Constant polynomial with specified value
-    */
-  override def getConstant(value: E) = baseRing.getConstant(value)
-
-  /**
-    * Add coefficient ring element
-    */
-  override def addConstant(poly: Poly, el: E) = baseRing.addConstant(poly, el)
-
-  /**
-    * Subtract coefficient ring element
-    */
-  override def subtractConstant(poly: Poly, el: E) = baseRing.subtractConstant(poly, el)
-
-  /**
-    * Multiply by coefficient ring element
-    */
-  override def multiplyConstant(poly: Poly, el: E) = baseRing.multiplyConstant(poly, el)
-
-  /**
-    * Divide by coefficient ring element
-    */
-  override def divideConstant(poly: Poly, el: E) = baseRing.divideConstant(poly, el)
-
-  /**
-    * Divide by coefficient ring element
-    */
-  override def divideAndRemainder(poly: Poly, el: E) = baseRing.divideAndRemainder(poly, el)
-
-  /**
-    * Value of integer in coefficient ring
-    */
-  override def cfValue(i: Int) = baseRing.cfValue(i)
-
-  /**
-    * Constant coefficient
-    */
-  override def cc(poly: Poly) = baseRing.cc(poly)
-
-  /**
-    * Leading coefficient
-    */
-  override def lc(poly: Poly) = baseRing.lc(poly)
-
   /** Set names of variables (new ring will be created) */
   override def setVariableNames(newVariables: Array[String]): QuotientRing[Term, Poly, E]
   = copy(baseRing.setVariableNames(newVariables))
+}
+
+final case class MultipleFieldExtension[
+Term <: AMonomial[Term],
+mPoly <: AMultivariatePolynomial[Term, mPoly],
+sPoly <: IUnivariatePolynomial[sPoly],
+E](override val theRing: rings.poly.MultipleFieldExtension[Term, mPoly, sPoly],
+   override val variables: Array[String])
+  extends MultivariateRingWrapper[Term, mPoly, E](theRing, variables) {
+
+  /**
+    * String from/to conversion for ring elements
+    */
+  override lazy val coder: Coder[mPoly] = Coder.mkMultipleExtensionCoder[Term, mPoly, sPoly](theRing, variables: _*)
+
+  /**
+    * @inheritdoc
+    **/
+  override def parse(string: String): mPoly = coder.parse(string)
+
+  /**
+    * Returns the isomorphic simple field extension
+    */
+  def getSimpleExtension(variable: String = "gamma")
+  : SimpleFieldExtension[sPoly, E] = {
+    val r: SimpleFieldExtension[sPoly, E] = SimpleFieldExtension(theRing.getSimpleExtension, variable)
+    for (i <- 0 until theRing.nVariables()) {
+      r.coder.bindAlias(variableString(i), theRing.getGeneratorRep(i))
+    }
+    r
+  }
+
+  /**
+    * Adds algebraic element given by its minimal polynomial (not checked that it is irreducible) to this.
+    */
+  def joinAlgebraicElement(algebraicElement: UnivariatePolynomial[mPoly], variable: String)
+  : MultipleFieldExtension[Term, mPoly, sPoly, E] = {
+    val r: MultipleFieldExtension[Term, mPoly, sPoly, E] = MultipleFieldExtension(theRing.joinAlgebraicElement(algebraicElement), variables :+ variable)
+    r.coder.withEncoder(this.coder)
+    //r.coder.getBindings.putAll(this.coder.getBindings)
+    r
+  }
+
+  /**
+    * Adds algebraic element given by its minimal polynomial (not checked that it is irreducible) to this.
+    */
+  def joinAlgebraicElement(algebraicElement: sPoly, variable: String)
+  : MultipleFieldExtension[Term, mPoly, sPoly, E] = {
+    val r: MultipleFieldExtension[Term, mPoly, sPoly, E] = MultipleFieldExtension(theRing.joinAlgebraicElement(algebraicElement), variables :+ variable)
+    r.coder.withEncoder(this.coder)
+    //r.coder.getBindings.putAll(this.coder.getBindings)
+    r
+  }
+
+  /** Set names of variables (new ring will be created) */
+  override def setVariableNames(newVariables: Array[String])
+  : MultipleFieldExtension[Term, mPoly, sPoly, E] = copy(variables = newVariables)
+}
+
+object MultipleFieldExtension {
+  def fromSimpleExtension[Term <: AMonomial[Term],
+  mPoly <: AMultivariatePolynomial[Term, mPoly],
+  uPoly <: IUnivariatePolynomial[uPoly],
+  E](simpleExt: SimpleFieldExtension[uPoly, E])
+  : MultipleFieldExtension[Term, mPoly, uPoly, E] = JavaConversions.mkSimpleToMultiple(simpleExt)
+
+  def apply(simpleExt: GaloisField64)
+  : MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long] = {
+    val mExt: poly.MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64] =
+      simpleExt
+        .implicitConversions
+        .asMultipleExtension()
+
+    MultipleFieldExtension(mExt, simpleExt.variables)
+  }
+
+  def apply[E](simpleExt: GaloisField[E])
+  : MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E] = {
+    val mExt: poly.MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]] =
+      simpleExt
+        .implicitConversions
+        .asMultipleExtension()
+
+    MultipleFieldExtension(mExt, simpleExt.variables)
+  }
+
+  def apply[E](simpleExt: AlgebraicNumberField[E])
+  : MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E] = {
+    val mExt: poly.MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]] =
+      simpleExt
+        .implicitConversions
+        .asMultipleExtension()
+
+    MultipleFieldExtension(mExt, simpleExt.variables)
+  }
+
+  def apply[E](generators: Array[UnivariatePolynomial[E]],
+               variables: Array[String]):
+  MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E] =
+    MultipleFieldExtension(rings.Rings.MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]](generators: _*), variables)
+
+  def apply(generators: Array[UnivariatePolynomialZp64],
+            variables: Array[String]): MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long] =
+    MultipleFieldExtension(rings.Rings.MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64](generators: _*), variables)
+
+  def apply[E](generator: UnivariatePolynomial[E],
+               variable: String):
+  MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E] =
+    MultipleFieldExtension(rings.Rings.MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]](generator), Array(variable))
+
+  def apply(generator: UnivariatePolynomialZp64,
+            variable: String): MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long] =
+    MultipleFieldExtension(rings.Rings.MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64](generator), Array(variable))
+
+
+  implicit def implicitConversions[
+  Term <: AMonomial[Term],
+  mPoly <: AMultivariatePolynomial[Term, mPoly],
+  uPoly <: IUnivariatePolynomial[uPoly],
+  E](multipleFieldExtension: MultipleFieldExtension[Term, mPoly, uPoly, E])
+  : rings.poly.MultipleFieldExtension[Term, mPoly, uPoly] = multipleFieldExtension.theRing
 }

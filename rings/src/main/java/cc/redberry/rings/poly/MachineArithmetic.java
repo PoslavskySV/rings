@@ -75,6 +75,15 @@ public final class MachineArithmetic {
     }
 
     /**
+     * Delegates to {@link Math#negateExact(long)}
+     *
+     * @throws ArithmeticException if the result overflows a long
+     **/
+    public static long safeNegate(long x) {
+        return Math.negateExact(x);
+    }
+
+    /**
      * Tests whether the multiplication of {@code x*y} will cause long overflow
      */
     public static boolean isOverflowMultiply(long x, long y) {

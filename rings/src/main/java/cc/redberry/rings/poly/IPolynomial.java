@@ -44,6 +44,14 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      */
     Poly setCoefficientRingFrom(Poly poly);
 
+    @SuppressWarnings("unchecked")
+    default Poly setCoefficientRingFromOptional(Poly poly) {
+        if (sameCoefficientRingWith(poly))
+            return (Poly) this;
+        else
+            return setCoefficientRingFrom(poly);
+    }
+
     /**
      * Returns the degree of this polynomial
      *
@@ -87,6 +95,13 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     boolean isUnitCC();
 
     /**
+     * Returns true if constant term is zero
+     *
+     * @return whether constant term is zero
+     */
+    boolean isZeroCC();
+
+    /**
      * Returns {@code true} if this polynomial has only constant term
      *
      * @return whether {@code this} is constant
@@ -122,6 +137,16 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
     boolean isOverFiniteField();
 
     /**
+     * Returns whether this polynomial is linear (i.e. of the form {@code a * X + b})
+     */
+    boolean isLinearOrConstant();
+
+    /**
+     * Returns whether this polynomial is linear (i.e. of the form {@code a * X + b} with nonzero {@code a})
+     */
+    boolean isLinearExactly();
+
+    /**
      * Returns cardinality of the coefficient ring of this poly
      *
      * @return cardinality of the coefficient ring
@@ -147,7 +172,7 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      * finite
      *
      * @return {@code base} so that {@code coefficientRingCardinality() == base^exponent} or null if cardinality is not
-     * finite
+     *         finite
      */
     BigInteger coefficientRingPerfectPowerBase();
 
@@ -156,7 +181,7 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      * not finite
      *
      * @return {@code exponent} so that {@code coefficientRingCardinality() == base^exponent} or null if cardinality is
-     * not finite
+     *         not finite
      */
     BigInteger coefficientRingPerfectPowerExponent();
 
@@ -199,6 +224,15 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      * @return signum of the leading coefficient
      */
     int signumOfLC();
+
+    /**
+     * If signum of leading coefficient is minus one, negate this
+     */
+    default Poly toPositiveLC() {
+        if (signumOfLC() < 0)
+            return negate();
+        return (Poly) this;
+    }
 
     /**
      * Sets this to zero
@@ -404,7 +438,7 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
      *
      * @param other other polynomial
      * @return monic part multiplied by the leading coefficient of {@code other} or null if exact division by the
-     * reduced leading coefficient is not possible
+     *         reduced leading coefficient is not possible
      */
     Poly monicWithLC(Poly other);
 
@@ -438,6 +472,13 @@ public interface IPolynomial<Poly extends IPolynomial<Poly>>
 
     /** overcome Java generics... */
     Poly[][] createArray2d(int length1, int length2);
+
+    /** overcome Java generics... */
+    default Poly[] createArray(Poly a) {
+        Poly[] r = createArray(1);
+        r[0] = a;
+        return r;
+    }
 
     /** overcome Java generics... */
     default Poly[] createArray(Poly a, Poly b) {

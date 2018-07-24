@@ -139,9 +139,9 @@ public final class MultivariateInterpolation {
             for (int i = 1; i < points.size(); ++i) {
                 accumulator = accumulator.add(mixedRadix.get(i).clone().multiply(reciprocal));
                 reciprocal = ring.multiply(reciprocal, ring.subtract(point, points.get(i)));
+                if (ring.isZero(reciprocal))
+                    throw new IllegalArgumentException("Point " + point + " was already used in interpolation.");
             }
-            if (ring.isZero(reciprocal))
-                throw new IllegalArgumentException("Point " + point + " was already used in interpolation.");
             mixedRadix.add(value.clone().subtract(accumulator).multiply(ring.reciprocal(reciprocal)));
 
             lins.multiply(lins.createLinear(variable, ring.negate(points.get(points.size() - 1)), ring.getOne()));

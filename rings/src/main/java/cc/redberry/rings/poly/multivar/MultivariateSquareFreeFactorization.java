@@ -5,6 +5,7 @@ import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MachineArithmetic;
 import cc.redberry.rings.poly.PolynomialFactorDecomposition;
+import cc.redberry.rings.poly.Util;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariateSquareFreeFactorization;
 
@@ -28,14 +29,11 @@ public final class MultivariateSquareFreeFactorization {
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
-        if (poly instanceof MultivariatePolynomial
-                && ((MultivariatePolynomial) poly).ring.getZero() instanceof IPolynomial) {
-            PolynomialFactorDecomposition<Poly> factors = MultivariateFactorization.tryNested(poly,
-                    MultivariateSquareFreeFactorization::SquareFreeFactorization);
-            if (factors != null)
-                return factors;
-        }
-        if (poly.coefficientRingCharacteristic().isZero())
+        if (poly.isOverFiniteField())
+            return SquareFreeFactorizationMusser(poly);
+        else if (MultivariateGCD.isOverPolynomialRing(poly))
+            return MultivariateFactorization.tryNested(poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
+        else if (poly.coefficientRingCharacteristic().isZero())
             return SquareFreeFactorizationYunZeroCharacteristics(poly);
         else
             return SquareFreeFactorizationMusser(poly);
@@ -113,11 +111,16 @@ public final class MultivariateSquareFreeFactorization {
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
 
+        Poly original = poly;
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         PolynomialFactorDecomposition<Poly> decomposition = PolynomialFactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationYun0(poly, decomposition);
+        if (Util.isOverSimpleNumberField(poly)) {
+            // lc correction (needed for number fields)
+            decomposition.setLcFrom(original);
+        }
         return decomposition;
     }
 

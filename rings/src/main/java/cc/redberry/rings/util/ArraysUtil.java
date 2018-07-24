@@ -360,6 +360,16 @@ public final class ArraysUtil {
         return newArray;
     }
 
+    public static int[] insert(int[] array, int position, int value, int length) {
+        if (length == 0)
+            return array.clone();
+        int[] newArray = new int[array.length + length];
+        System.arraycopy(array, 0, newArray, 0, position);
+        System.arraycopy(array, position, newArray, position + length, array.length - position);
+        Arrays.fill(newArray, position, position + length, value);
+        return newArray;
+    }
+
     public static long[] insert(long[] array, int position, long value) {
         long[] newArray = new long[array.length + 1];
         System.arraycopy(array, 0, newArray, 0, position);
@@ -769,7 +779,7 @@ public final class ArraysUtil {
      * @param array1 the first array whose elements are added to the new array, may be {@code null}
      * @param array2 the second array whose elements are added to the new array, may be {@code null}
      * @return The new array, {@code null} if both arrays are {@code null}. The type of the new array is the type of the
-     * first array, unless the first array is null, in which case the type is the same as the second array.
+     *         first array, unless the first array is null, in which case the type is the same as the second array.
      * @throws IllegalArgumentException if the array types are incompatible
      * @since 2.1
      */
@@ -971,9 +981,9 @@ public final class ArraysUtil {
      * @param a   the array to be searched
      * @param key the value to be searched for
      * @return index of the search key, if it is contained in the array; otherwise, <tt><i>insertion point</i></tt>. The
-     * <i>insertion point</i> is defined as the point at which the key would be inserted into the array: the index of
-     * the first element greater than the key, or <tt>a.length</tt> if all elements in the array are less than the
-     * specified key.
+     *         <i>insertion point</i> is defined as the point at which the key would be inserted into the array: the
+     *         index of the first element greater than the key, or <tt>a.length</tt> if all elements in the array are
+     *         less than the specified key.
      */
     public static int binarySearch1(int[] a, int key) {
         return binarySearch1(a, 0, a.length, key);
@@ -989,9 +999,9 @@ public final class ArraysUtil {
      * @param fromIndex the index of the first element (inclusive) to be searched
      * @param toIndex   the index of the last element (exclusive) to be searched
      * @return index of the search key, if it is contained in the array; otherwise, <tt><i>insertion point</i></tt>. The
-     * <i>insertion point</i> is defined as the point at which the key would be inserted into the array: the index of
-     * the first element greater than the key, or <tt>toIndex</tt> if all elements in the array are less than the
-     * specified key.
+     *         <i>insertion point</i> is defined as the point at which the key would be inserted into the array: the
+     *         index of the first element greater than the key, or <tt>toIndex</tt> if all elements in the array are
+     *         less than the specified key.
      */
     public static int binarySearch1(int[] a, int fromIndex, int toIndex,
                                     int key) {

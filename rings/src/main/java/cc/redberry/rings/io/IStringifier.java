@@ -6,12 +6,16 @@ import cc.redberry.rings.poly.IPolynomialRing;
 import cc.redberry.rings.poly.multivar.AMultivariatePolynomial;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Defines #stringify(Stringifiable) method
+ *
+ * @since 2.4
  */
 public interface IStringifier<Element> {
     /**
@@ -26,8 +30,16 @@ public interface IStringifier<Element> {
     }
 
     /**
-     * Get stringifier for the specified ring of some underlying elements,
-     * should never give null (use dummy() for absent stringifier)
+     * Stringify stringifiable object
+     */
+    @SuppressWarnings("unchecked")
+    default String stringify(Collection<Element> c) {
+        return c.stream().map(this::stringify).collect(Collectors.joining(","));
+    }
+
+    /**
+     * Get stringifier for the specified ring of some underlying elements, should never give null (use dummy() for
+     * absent stringifier)
      */
     <UnderlyingElement>
     IStringifier<UnderlyingElement> substringifier(Ring<UnderlyingElement> ring);

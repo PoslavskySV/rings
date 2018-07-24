@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import static cc.redberry.rings.poly.univar.ModularComposition.*;
 import static cc.redberry.rings.poly.univar.UnivariateGCD.PolynomialGCD;
 import static cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic.polyMultiplyMod;
+import static cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic.polyPowMod;
 
 
 /**
@@ -47,7 +48,7 @@ public final class DistinctDegreeFactorization {
         int i = 0;
         while (!base.isConstant()) {
             ++i;
-            exponent = UnivariatePolynomialArithmetic.polyPowMod(exponent, poly.ring.modulus, polyModulus, invMod, false);
+            exponent = polyPowMod(exponent, poly.ring.modulus, polyModulus, invMod, false);
             UnivariatePolynomialZp64 tmpExponent = exponent.clone();
             tmpExponent.ensureCapacity(1);
             tmpExponent.data[1] = base.subtract(tmpExponent.data[1], 1);

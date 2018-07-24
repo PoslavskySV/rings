@@ -74,7 +74,7 @@ public final class RationalReconstruction {
         BigInteger[] v = {modulus, BigInteger.ZERO};
         BigInteger[] w = {n, BigInteger.ONE};
 
-        while (w[0].pow(2).multiply(BigInteger.TWO).increment().compareTo(modulus) > 0) {
+        while (w[0].pow(2).shiftLeft(1).increment().compareTo(modulus) > 0) {
             BigInteger q = v[0].divide(w[0]);
             BigInteger[] z = {v[0].subtract(q.multiply(w[0])), v[1].subtract(q.multiply(w[1]))};
             v = w;

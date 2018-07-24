@@ -10,6 +10,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.stream.StreamSupport;
 
 /**
  * Ring of elements. Mathematical operations defined in {@code Ring} interface include all <i>field</i> operations,
@@ -361,12 +362,13 @@ public interface Ring<E> extends
      * @return gcd
      */
     default E gcd(E a, E b) {
-        if (isField())
-            return a;
-        if (!isEuclideanRing())
-            throw new UnsupportedOperationException("GCD is not supported in this ring");
         if (isZero(a)) return b;
         if (isZero(b)) return a;
+        if (isUnit(a)) return a;
+        if (isUnit(b)) return b;
+        if (isField()) return a;
+        if (!isEuclideanRing())
+            throw new UnsupportedOperationException("GCD is not supported in this ring");
 
         // run Euclidean algorithm by default
         E x = a, y = b, r;
@@ -436,6 +438,38 @@ public interface Ring<E> extends
     }
 
     /**
+     * Returns array of {@code [gcd(a,b), s]} such that {@code s * a + t * b = gcd(a, b)}
+     *
+     * @param a the first ring element (for which the Bezout coefficient is computed)
+     * @param b the second ring element
+     * @return array of {@code [gcd(a,b), s]} such that {@code s * a + t * b = gcd(a, b)}
+     */
+    default E[] firstBezoutCoefficient(E a, E b) {
+        E s = getZero(), old_s = getOne();
+        E r = b, old_r = a;
+
+        E q;
+        E tmp;
+        while (!isZero(r)) {
+            q = quotient(old_r, r);
+            if (q == null)
+                throw new ArithmeticException("Not divisible with remainder: (" + old_r + ") / (" + r + ")");
+
+            tmp = old_r;
+            old_r = r;
+            r = subtract(tmp, multiply(q, r));
+
+            tmp = old_s;
+            old_s = s;
+            s = subtract(tmp, multiply(q, s));
+        }
+        E[] result = createArray(2);
+        result[0] = old_r;
+        result[1] = old_s;
+        return result;
+    }
+
+    /**
      * Returns the least common multiple of two elements
      *
      * @param a the first element
@@ -455,7 +489,12 @@ public interface Ring<E> extends
      * @return lcm
      */
     default E lcm(E... elements) {
-        return divideExact(multiply(elements), gcd(elements));
+        if (elements.length == 1)
+            return elements[0];
+        E lcm = lcm(elements[0], elements[1]);
+        for (int i = 2; i < elements.length; ++i)
+            lcm = lcm(lcm, elements[i]);
+        return lcm;
     }
 
     /**
@@ -465,7 +504,7 @@ public interface Ring<E> extends
      * @return lcm
      */
     default E lcm(Iterable<E> elements) {
-        return divideExact(multiply(elements), gcd(elements));
+        return lcm(StreamSupport.stream(elements.spliterator(), false).toArray(this::createArray));
     }
 
     /**
@@ -670,10 +709,17 @@ public interface Ring<E> extends
     @SuppressWarnings("unchecked")
     default E[] createZeroesArray(int length) {
         E[] array = createArray(length);
+        fillZeros(array);
+        return array;
+    }
+
+    /**
+     * Fills array with zeros
+     */
+    default void fillZeros(E[] array) {
         for (int i = 0; i < array.length; i++)
             // NOTE: getZero() is invoked each time in a loop in order to fill array with unique elements
             array[i] = getZero();
-        return array;
     }
 
     /**
@@ -763,7 +809,7 @@ public interface Ring<E> extends
      */
     default E pow(E base, BigInteger exponent) {
         if (exponent.signum() < 0)
-            throw new IllegalArgumentException();
+            return pow(reciprocal(base), exponent.negate());
 
         if (exponent.isOne())
             return base;

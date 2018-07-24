@@ -5,14 +5,13 @@ import cc.redberry.rings.Rings;
 import cc.redberry.rings.io.IStringifier;
 import cc.redberry.rings.io.Stringifiable;
 import cc.redberry.rings.poly.MultivariateRing;
-import cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import cc.redberry.rings.poly.multivar.GroebnerBases.*;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.GroebnerBasis;
-import static cc.redberry.rings.poly.multivar.GroebnerBasis.*;
+import static cc.redberry.rings.poly.multivar.GroebnerBases.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.isGradedOrder;
 
@@ -158,6 +157,16 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
      */
     public boolean isMonomial() {
         return isMonomialIdeal(groebnerBasis);
+    }
+
+    /***
+     * Returns true if this ideal is maximal (that is its affine variety has only one point)
+     */
+    public boolean isMaximal() {
+        return (factory.isOverZ() || factory.isOverField())
+                && dimension() == 0
+                && groebnerBasis.size() == factory.nVariables
+                && groebnerBasis.stream().allMatch(AMultivariatePolynomial::isLinearExactly);
     }
 
     /**
@@ -353,19 +362,12 @@ public final class Ideal<Term extends AMonomial<Term>, Poly extends AMultivariat
         for (Poly gJ : oth.groebnerBasis)
             tGenerators.add(gJ.insertVariable(0).multiply(omt));
 
-        Comparator<DegreeVector> blockOrder = MonomialOrder.product(
-                MonomialOrder.LEX, 1,
-                ordering, factory.nVariables);
-
         // elimination
-        tGenerators = GroebnerBasis(tGenerators, blockOrder);
-        List<Poly> result = tGenerators.stream()
-                .filter(p -> p.degree(0) == 0)
+        List<Poly> result = GroebnerMethods.eliminate(tGenerators, 0).stream()
                 .map(p -> p.dropVariable(0))
                 .map(p -> p.setOrdering(ordering)) // <- restore order!
                 .collect(Collectors.toList());
-        canonicalize(result);
-        return new Ideal<>(result);
+        return create(result, ordering);
     }
 
     /**

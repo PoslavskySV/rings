@@ -3,6 +3,7 @@ package cc.redberry.rings.poly.univar;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.poly.PolynomialFactorDecomposition;
+import cc.redberry.rings.primes.SmallPrimes;
 import cc.redberry.rings.util.RandomDataGenerator;
 import gnu.trove.map.TIntObjectMap;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -10,7 +11,10 @@ import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static cc.redberry.rings.poly.univar.IrreduciblePolynomials.*;
 import static cc.redberry.rings.poly.univar.UnivariatePolynomialArithmetic.createMonomialMod;
+import static cc.redberry.rings.util.TimeUnits.nanosecondsToString;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @since 1.0
@@ -46,7 +50,7 @@ public class IrreduciblePolynomialsTest extends AUnivariateTest {
     @Test
     public void test2() throws Exception {
         UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(42, 73, 0, 79, 47, 1).modulus(89);
-        Assert.assertTrue(UnivariateFactorization.Factor(poly).toString(), IrreduciblePolynomials.irreducibleQ(poly));
+        assertTrue(UnivariateFactorization.Factor(poly).toString(), IrreduciblePolynomials.irreducibleQ(poly));
     }
 
     @Test
@@ -63,6 +67,34 @@ public class IrreduciblePolynomialsTest extends AUnivariateTest {
         UnivariatePolynomialZp64 expected0 = createMonomialMod(Rings.Z.pow(BigInteger.valueOf(poly.modulus()), exponent), poly, invMod);
         Assert.assertEquals(expected, actual);
         Assert.assertEquals(expected0, actual);
+    }
+
+    @Test
+    public void test4() {
+        RandomGenerator rnd = getRandom();
+        int prime = SmallPrimes.nextPrime(1 << 20);
+        for (int i = 0; i < its(10, 30); ++i) {
+            long start = System.nanoTime();
+            UnivariatePolynomialZp64 poly = randomIrreduciblePolynomial(UnivariatePolynomialZp64.zero(prime), 128, rnd);
+            System.out.println("Generate : " + nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.Factor(poly);
+            System.out.println("Factor   : " + nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            boolean test1 = IrreduciblePolynomials.finiteFieldIrreducibleViaModularComposition(poly);
+            System.out.println("Test (m) : " + nanosecondsToString(System.nanoTime() - start));
+
+            start = System.nanoTime();
+            boolean test2 = IrreduciblePolynomials.finiteFieldIrreducibleBenOr(poly);
+            System.out.println("Test (bo): " + nanosecondsToString(System.nanoTime() - start));
+            System.out.println();
+
+            assertTrue(test1);
+            assertTrue(test2);
+            assertTrue(factors.isTrivial());
+        }
     }
 
     private static UnivariatePolynomialZp64 composition(UnivariatePolynomialZp64 xq, int n, UnivariatePolynomialZp64 poly, UnivariateDivision.InverseModMonomial<UnivariatePolynomialZp64> invMod) {
@@ -105,6 +137,30 @@ public class IrreduciblePolynomialsTest extends AUnivariateTest {
                 if (ci <= 64)
                     Assert.assertEquals(msg, createMonomialMod(Rings.Z.pow(poly.coefficientRingCardinality(), ci), poly, invMod), cache.get(ci));
             }
+        }
+    }
+
+    @Test
+    public void test5() {
+        UnivariatePolynomialZp64 poly = UnivariatePolynomialZ64.create(1, 1, 1).modulus(17);
+        assertTrue(UnivariateFactorization.Factor(poly).isTrivial());
+        assertTrue(finiteFieldIrreducibleViaModularComposition(poly));
+        assertTrue(finiteFieldIrreducibleBenOr(poly));
+    }
+
+    @Test
+    public void test6() {
+        RandomGenerator rnd = getRandom();
+        RandomDataGenerator rndd = getRandomData();
+        int prime = 17;
+        for (int i = 0; i < its(1000, 1000); ++i) {
+            UnivariatePolynomialZp64 poly = randomIrreduciblePolynomial(UnivariatePolynomialZp64.zero(prime), rndd.nextInt(2, 32), rnd);
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> factors = UnivariateFactorization.Factor(poly);
+            boolean test1 = IrreduciblePolynomials.finiteFieldIrreducibleViaModularComposition(poly);
+            boolean test2 = IrreduciblePolynomials.finiteFieldIrreducibleBenOr(poly);
+            assertTrue(test1);
+            assertTrue(test2);
+            assertTrue(factors.isTrivial());
         }
     }
 }

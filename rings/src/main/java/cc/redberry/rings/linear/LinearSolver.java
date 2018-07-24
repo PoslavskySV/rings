@@ -6,6 +6,7 @@ import cc.redberry.rings.poly.univar.UnivariateDivision;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.ArraysUtil;
+import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.list.array.TLongArrayList;
 
 import java.util.ArrayList;
@@ -234,6 +235,21 @@ public final class LinearSolver {
      * @return system information (inconsistent, under-determined or consistent)
      */
     public static <E> SystemInfo solve(Ring<E> ring, E[][] lhs, E[] rhs, E[] result) {
+        return solve(ring, lhs, rhs, result, false);
+    }
+
+    /**
+     * Solves linear system {@code lhs.x = rhs} and reduces the lhs to row echelon form. The result is stored in {@code
+     * result} (which should be of the enough length).
+     *
+     * @param ring                   the ring
+     * @param lhs                    the lhs of the system (will be reduced to row echelon form)
+     * @param rhs                    the rhs of the system
+     * @param result                 where to place the result
+     * @param solveIfUnderDetermined give some solution even if the system is under determined
+     * @return system information (inconsistent, under-determined or consistent)
+     */
+    public static <E> SystemInfo solve(Ring<E> ring, E[][] lhs, E[] rhs, E[] result, boolean solveIfUnderDetermined) {
         if (lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
         if (rhs.length == 0)
@@ -243,23 +259,36 @@ public final class LinearSolver {
                 result[0] = ring.divideExact(rhs[0], lhs[0][0]);
                 return Consistent;
             }
+            if (solveIfUnderDetermined) {
+                ring.fillZeros(result);
+                if (ring.isZero(rhs[0]))
+                    return Consistent;
+
+                for (int i = 0; i < result.length; ++i)
+                    if (!ring.isZero(lhs[0][i])) {
+                        result[i] = ring.divideExact(rhs[0], lhs[0][i]);
+                        return Consistent;
+                    }
+
+                return Inconsistent;
+            }
             if (lhs[0].length > 1)
                 return UnderDetermined;
-            if (lhs[0].length < 1)
-                return Inconsistent;
+
+            return Inconsistent;
         }
 
-        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs, false, true);
-        if (nUnderDetermined > 0)
+        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs, false, !solveIfUnderDetermined);
+        if (!solveIfUnderDetermined && nUnderDetermined > 0)
             // under-determined system
             return UnderDetermined;
 
         int nRows = rhs.length;
         int nColumns = lhs[0].length;
 
-        if (nColumns > nRows)
+        if (!solveIfUnderDetermined && nColumns > nRows)
             // under-determined system
-            return null;
+            return UnderDetermined;
 
         if (nRows > nColumns)
             // over-determined system
@@ -269,15 +298,75 @@ public final class LinearSolver {
                     // inconsistent system
                     return Inconsistent;
 
+        if (nRows > nColumns)
+            for (int i = nColumns + 1; i < nRows; ++i)
+                if (!ring.isZero(rhs[i]))
+                    return Inconsistent;
 
-        // back substitution
-        for (int i = nColumns - 1; i >= 0; i--) {
-            E sum = ring.getZero();
-            for (int j = i + 1; j < nColumns; j++) {
-                sum = ring.add(sum, ring.multiply(lhs[i][j], result[j]));
+        ring.fillZeros(result);
+        // back substitution in case of determined system
+        if (nUnderDetermined == 0 && nColumns <= nRows) {
+            for (int i = nColumns - 1; i >= 0; i--) {
+                E sum = ring.getZero();
+                for (int j = i + 1; j < nColumns; j++)
+                    sum = ring.add(sum, ring.multiply(lhs[i][j], result[j]));
+                result[i] = ring.divideExact(ring.subtract(rhs[i], sum), lhs[i][i]);
             }
-            result[i] = ring.divideExact(ring.subtract(rhs[i], sum), lhs[i][i]);
+            return Consistent;
         }
+
+        // back substitution in case of underdetermined system
+        TIntArrayList nzColumns = new TIntArrayList(), nzRows = new TIntArrayList();
+        //number of zero columns
+        int nZeroColumns = 0;
+        int iRow = 0;
+        for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
+            // find pivot row and swap
+            iRow = iColumn - nZeroColumns;
+            if (ring.isZero(lhs[iRow][iColumn])) {
+                if (iColumn == (nColumns - 1) && !ring.isZero(rhs[iRow]))
+                    return Inconsistent;
+                ++nZeroColumns;
+                to = Math.min(nRows + nZeroColumns, nColumns);
+                continue;
+            }
+
+            // scale current row
+            E[] row = lhs[iRow];
+            E val = row[iColumn];
+            E valInv = ring.reciprocal(val);
+
+            for (int i = iColumn; i < nColumns; i++)
+                row[i] = ring.multiply(valInv, row[i]);
+            rhs[iRow] = ring.multiply(valInv, rhs[iRow]);
+
+            // scale all rows before
+            for (int i = 0; i < iRow; i++) {
+                E[] pRow = lhs[i];
+                E v = pRow[iColumn];
+                if (ring.isZero(v))
+                    continue;
+                for (int j = iColumn; j < nColumns; ++j)
+                    pRow[j] = ring.subtract(pRow[j], ring.multiply(v, row[j]));
+                rhs[i] = ring.subtract(rhs[i], ring.multiply(v, rhs[iRow]));
+            }
+
+            if (!ring.isZero(rhs[iRow]) && ring.isZero(lhs[iRow][iColumn]))
+                return Inconsistent;
+
+            nzColumns.add(iColumn);
+            nzRows.add(iRow);
+        }
+
+        ++iRow;
+        if (iRow < nRows)
+            for (; iRow < nRows; ++iRow)
+                if (!ring.isZero(rhs[iRow]))
+                    return Inconsistent;
+
+        for (int i = 0; i < nzColumns.size(); ++i)
+            result[nzColumns.get(i)] = rhs[nzRows.get(i)];
+
         return Consistent;
     }
 
@@ -562,7 +651,7 @@ public final class LinearSolver {
                 for (int j = iColumn; j < nColumns; ++j)
                     pRow[j] = ring.subtract(pRow[j], ring.multiply(v, row[j]));
                 if (rhs != null)
-                    rhs[i] = ring.subtract(rhs[i], ring.multiply(v, rhs[iColumn]));
+                    rhs[i] = ring.subtract(rhs[i], ring.multiply(v, rhs[iRow]));
             }
         }
     }
@@ -598,6 +687,21 @@ public final class LinearSolver {
      * @return system information (inconsistent, under-determined or consistent)
      */
     public static SystemInfo solve(IntegersZp64 ring, long[][] lhs, long[] rhs, long[] result) {
+        return solve(ring, lhs, rhs, result, false);
+    }
+
+    /**
+     * Solves linear system {@code lhs.x = rhs} and reduces the lhs to row echelon form. The result is stored in {@code
+     * result} (which should be of the enough length and filled with zeros).
+     *
+     * @param ring                   the ring
+     * @param lhs                    the lhs of the system  (will be reduced to row echelon form)
+     * @param rhs                    the rhs of the system
+     * @param result                 where to place the result
+     * @param solveIfUnderDetermined give some solution even if the system is under determined
+     * @return system information (inconsistent, under-determined or consistent)
+     */
+    public static SystemInfo solve(IntegersZp64 ring, long[][] lhs, long[] rhs, long[] result, boolean solveIfUnderDetermined) {
         if (lhs.length != rhs.length)
             throw new IllegalArgumentException("lhs.length != rhs.length");
         if (rhs.length == 0)
@@ -607,23 +711,35 @@ public final class LinearSolver {
                 result[0] = ring.divide(rhs[0], lhs[0][0]);
                 return Consistent;
             }
+            if (solveIfUnderDetermined) {
+                if (rhs[0] == 0)
+                    return Consistent;
+
+                for (int i = 0; i < result.length; ++i)
+                    if (lhs[0][i] != 0) {
+                        result[i] = ring.divide(rhs[0], lhs[0][i]);
+                        return Consistent;
+                    }
+
+                return Inconsistent;
+            }
             if (lhs[0].length > 1)
                 return UnderDetermined;
-            if (lhs[0].length < 1)
-                return Inconsistent;
+
+            return Inconsistent;
         }
 
-        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs, false, true);
-        if (nUnderDetermined > 0)
+        int nUnderDetermined = rowEchelonForm(ring, lhs, rhs, false, !solveIfUnderDetermined);
+        if (!solveIfUnderDetermined && nUnderDetermined > 0)
             // under-determined system
             return UnderDetermined;
 
         int nRows = rhs.length;
         int nColumns = lhs[0].length;
 
-        if (nColumns > nRows)
+        if (!solveIfUnderDetermined && nColumns > nRows)
             // under-determined system
-            return null;
+            return UnderDetermined;
 
         if (nRows > nColumns)
             // over-determined system
@@ -633,15 +749,74 @@ public final class LinearSolver {
                     // inconsistent system
                     return Inconsistent;
 
+        if (nRows > nColumns)
+            for (int i = nColumns + 1; i < nRows; ++i)
+                if (rhs[i] != 0)
+                    return Inconsistent;
 
-        // back substitution
-        for (int i = nColumns - 1; i >= 0; i--) {
-            long sum = 0;
-            for (int j = i + 1; j < nColumns; j++) {
-                sum = ring.add(sum, ring.multiply(lhs[i][j], result[j]));
+        // back substitution in case of determined system
+        if (nUnderDetermined == 0 && nColumns <= nRows) {
+            for (int i = nColumns - 1; i >= 0; i--) {
+                long sum = 0;
+                for (int j = i + 1; j < nColumns; j++)
+                    sum = ring.add(sum, ring.multiply(lhs[i][j], result[j]));
+                result[i] = ring.divide(ring.subtract(rhs[i], sum), lhs[i][i]);
             }
-            result[i] = ring.divide(ring.subtract(rhs[i], sum), lhs[i][i]);
+            return Consistent;
         }
+
+        // back substitution in case of underdetermined system
+        TIntArrayList nzColumns = new TIntArrayList(), nzRows = new TIntArrayList();
+        //number of zero columns
+        int nZeroColumns = 0;
+        int iRow = 0;
+        for (int iColumn = 0, to = Math.min(nRows, nColumns); iColumn < to; ++iColumn) {
+            // find pivot row and swap
+            iRow = iColumn - nZeroColumns;
+            if (lhs[iRow][iColumn] == 0) {
+                if (iColumn == (nColumns - 1) && rhs[iRow] != 0)
+                    return Inconsistent;
+                ++nZeroColumns;
+                to = Math.min(nRows + nZeroColumns, nColumns);
+                continue;
+            }
+
+            // scale current row
+            long[] row = lhs[iRow];
+            long val = row[iColumn];
+            long valInv = ring.reciprocal(val);
+
+            for (int i = iColumn; i < nColumns; i++)
+                row[i] = ring.multiply(valInv, row[i]);
+            rhs[iRow] = ring.multiply(valInv, rhs[iRow]);
+
+            // scale all rows before
+            for (int i = 0; i < iRow; i++) {
+                long[] pRow = lhs[i];
+                long v = pRow[iColumn];
+                if (v == 0)
+                    continue;
+                for (int j = iColumn; j < nColumns; ++j)
+                    pRow[j] = ring.subtract(pRow[j], ring.multiply(v, row[j]));
+                rhs[i] = ring.subtract(rhs[i], ring.multiply(v, rhs[iRow]));
+            }
+
+            if (rhs[iRow] != 0 && lhs[iRow][iColumn] == 0)
+                return Inconsistent;
+
+            nzColumns.add(iColumn);
+            nzRows.add(iRow);
+        }
+
+        ++iRow;
+        if (iRow < nRows)
+            for (; iRow < nRows; ++iRow)
+                if (rhs[iRow] != 0)
+                    return Inconsistent;
+
+        for (int i = 0; i < nzColumns.size(); ++i)
+            result[nzColumns.get(i)] = rhs[nzRows.get(i)];
+
         return Consistent;
     }
 

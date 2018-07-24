@@ -3928,6 +3928,20 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
+     * Returns a BigInteger whose value is {@code (this mod m}).  This method
+     * differs from {@code remainder} in that it always returns a
+     * <i>non-negative</i> BigInteger.
+     *
+     * @param m the modulus.
+     * @return {@code this mod m}
+     * @throws ArithmeticException {@code m} &le; 0
+     * @see #remainder
+     */
+    public BigInteger mod(long m) {
+        return mod(valueOf(m));
+    }
+
+    /**
      * Returns a BigInteger whose value is
      * <tt>(this<sup>exponent</sup> mod m)</tt>.  (Unlike {@code pow}, this
      * method permits negative exponents.)
