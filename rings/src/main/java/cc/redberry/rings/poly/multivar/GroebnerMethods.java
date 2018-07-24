@@ -488,7 +488,7 @@ public final class GroebnerMethods {
     /* **************************************** Partial fractions **************************************** */
 
     /**
-     * Computes Leintart's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
+     * Computes Leinart's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     List<Rational<Poly>> LeinartDecomposition(Rational<Poly> fraction) {

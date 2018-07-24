@@ -14,7 +14,7 @@ import static cc.redberry.rings.Rings.Q;
  *
  * @since 2.3
  */
-public final class GroebnerBasisData {
+public final class GroebnerBasesData {
 
     /* **************************************** Katsura **************************************************** */
 

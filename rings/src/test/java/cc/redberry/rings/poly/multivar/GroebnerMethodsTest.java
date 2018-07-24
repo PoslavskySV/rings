@@ -73,7 +73,7 @@ public class GroebnerMethodsTest extends AMultivariateTest {
     @Ignore
     @Test
     public void test3() {
-        List<MultivariatePolynomial<Rational<BigInteger>>> katsura = GroebnerBasisData.katsura(8);
+        List<MultivariatePolynomial<Rational<BigInteger>>> katsura = GroebnerBasesData.katsura(8);
         eliminate(katsura.stream().map(p -> p.mapCoefficients(Zp64(17), r -> r.numerator().longValueExact())).collect(Collectors.toList()), 0)
                 .stream().sorted(Comparator.comparingInt(AMultivariatePolynomial::nUsedVariables))
                 .forEach(System.out::println);

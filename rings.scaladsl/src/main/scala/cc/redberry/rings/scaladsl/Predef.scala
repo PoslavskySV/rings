@@ -176,21 +176,32 @@ private[scaladsl] trait Predef {
   sPoly <: IUnivariatePolynomial[sPoly],
   E](poly: sPoly, variables: Array[String])
   : MultipleFieldExtension[Term, mPoly, sPoly, E]
-  = MultipleFieldExtension(rings.Rings.SplittingField(poly), variables)
+  = updateCoder[Term, mPoly, sPoly, E](poly.degree(), MultipleFieldExtension(rings.Rings.SplittingField(poly), variables))
 
   /**
     * Splitting field of a given polynomial.
     */
   def SplittingField[E](poly: UnivariatePolynomial[E], variables: Array[String])
   : MultipleFieldExtension[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E]
-  = MultipleFieldExtension(rings.Rings.SplittingField[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]](poly), variables)
+  = updateCoder[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E], E](poly.degree(), MultipleFieldExtension(rings.Rings.SplittingField[Monomial[E], MultivariatePolynomial[E], UnivariatePolynomial[E]](poly), variables))
 
   /**
     * Splitting field of a given polynomial.
     */
   def SplittingFieldZp64(poly: UnivariatePolynomialZp64, variables: Array[String])
   : MultipleFieldExtension[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long]
-  = MultipleFieldExtension(rings.Rings.SplittingField[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64](poly), variables)
+  = updateCoder[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64, Long](poly.degree(), MultipleFieldExtension(rings.Rings.SplittingField[MonomialZp64, MultivariatePolynomialZp64, UnivariatePolynomialZp64](poly), variables))
+
+  private def updateCoder[
+  Term <: AMonomial[Term],
+  mPoly <: AMultivariatePolynomial[Term, mPoly],
+  sPoly <: IUnivariatePolynomial[sPoly],
+  E](degree: Int, mExt: MultipleFieldExtension[Term, mPoly, sPoly, E]): MultipleFieldExtension[Term, mPoly, sPoly, E] = {
+    for (i <- 0 until (degree - 1)) {
+      mExt.coder.withEncoder(MultipleFieldExtension(mExt.getSubExtension(i), mExt.variables.slice(0, i + 1)).coder)
+    }
+    mExt
+  }
 
   object UnivariatePolynomial {
     def apply[I, E](cfs: I*)(implicit ring: Ring[E]): UnivariatePolynomial[E] = cfs.headOption match {

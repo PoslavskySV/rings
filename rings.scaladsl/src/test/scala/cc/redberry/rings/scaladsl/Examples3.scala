@@ -216,4 +216,15 @@ class Examples3 {
     assert(s1 * s2 + s1 * s3 + s2 * s3 == field("25/17"))
     assert(s1 + s2 + s3 == field("14/17"))
   }
+
+  @Test
+  def testSplittingField1(): Unit = {
+    import syntax._
+    // some irreducible polynomial
+    val poly = UnivariateRing(Q, "x")("17*x^3 - 14*x^2 + 25*x +  15")
+    // create splitting field as multiple field extension
+    // s1,s2,s3 are roots of specified poly
+    implicit val field = SplittingField(poly, Array("s1", "s2", "s3"))
+    println(field)
+  }
 }

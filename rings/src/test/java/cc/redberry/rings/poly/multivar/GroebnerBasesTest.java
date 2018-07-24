@@ -170,7 +170,7 @@ public class GroebnerBasesTest extends AMultivariateTest {
         for (int i = 3; i <= its(8, 9); i++) {
             System.out.println(String.format("=> Katsura%s:", i));
             List<MultivariatePolynomialZp64> ideal =
-                    GroebnerBasisData.katsura(i)
+                    GroebnerBasesData.katsura(i)
                             .stream()
                             .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator())))
                             .map(p -> p.setOrdering(GREVLEX))
@@ -204,7 +204,7 @@ public class GroebnerBasesTest extends AMultivariateTest {
         for (int i = 5; i <= its(7, 7); i++) {
             System.out.println(String.format("=> Cyclic%s:", i));
             List<MultivariatePolynomialZp64> ideal =
-                    GroebnerBasisData.cyclic(i)
+                    GroebnerBasesData.cyclic(i)
                             .stream()
                             .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator())))
                             .map(p -> p.setOrdering(GREVLEX))
@@ -801,7 +801,7 @@ public class GroebnerBasesTest extends AMultivariateTest {
     @Test
     public void testHilbertGB7() throws Exception {
         List<MultivariatePolynomialZp64> ideal =
-                mod(GroebnerBasisData.katsura(8).stream().map(p -> p.mapCoefficients(Z, Rational::numerator)).collect(Collectors.toList()), 17);
+                mod(GroebnerBasesData.katsura(8).stream().map(p -> p.mapCoefficients(Z, Rational::numerator)).collect(Collectors.toList()), 17);
 
         MultivariatePolynomialZp64 factory = ideal.get(0);
 
