@@ -2558,7 +2558,7 @@ public class MultivariateGCDTest extends AMultivariateTest {
                     randomPoly(minimalPoly.degree(), Q, __ -> Q.mk(rand.nextInt(100), 1 + rand.nextInt(10)), rand));
             System.out.println("\n\n");
             System.out.println("Ring: " + numberField);
-            testGCDAlgorithms(source, its(10, 30),
+            testGCDAlgorithms(source, its(10, 10),
                     GCDAlgorithm.named("Zippel with rational reconstruction", MultivariateGCD::ZippelGCDInNumberFieldViaRationalReconstruction),
                     GCDAlgorithm.named("Zippel with Langemyr & McCallum", MultivariateGCD::ZippelGCDInNumberFieldViaLangemyrMcCallum),
                     GCDAlgorithm.named("Modular with rational reconstruction", (a, b) -> ModularGCDInNumberFieldViaRationalReconstruction(a, b, MultivariateGCD::PolynomialGCD)),
