@@ -93,7 +93,7 @@ public final class MultivariateResultants {
         return Resultant(
                 MultivariatePolynomial.asNormalMultivariate(a, 0),
                 MultivariatePolynomial.asNormalMultivariate(b, 0),
-                variable)
+                1 + variable)
                 .asOverUnivariateEliminate(0);
     }
 
@@ -105,7 +105,7 @@ public final class MultivariateResultants {
         return Resultant(
                 MultivariatePolynomial.asNormalMultivariate(a, cfVars, mainVars),
                 MultivariatePolynomial.asNormalMultivariate(b, cfVars, mainVars),
-                variable)
+                cfVars.length + variable)
                 .asOverMultivariateEliminate(cfVars);
     }
 
@@ -116,7 +116,7 @@ public final class MultivariateResultants {
         return Resultant(
                 MultivariatePolynomialZp64.asNormalMultivariate(a, 0),
                 MultivariatePolynomialZp64.asNormalMultivariate(b, 0),
-                variable).asOverUnivariateEliminate(0);
+                1 + variable).asOverUnivariateEliminate(0);
     }
 
     private static MultivariatePolynomial<MultivariatePolynomialZp64>
@@ -128,7 +128,7 @@ public final class MultivariateResultants {
         return Resultant(
                 MultivariatePolynomialZp64.asNormalMultivariate(a, cfVars, mainVars),
                 MultivariatePolynomialZp64.asNormalMultivariate(b, cfVars, mainVars),
-                variable).asOverMultivariateEliminate(cfVars);
+                cfVars.length + variable).asOverMultivariateEliminate(cfVars);
     }
 
     static <E> MultivariatePolynomial<Rational<E>> ResultantInQ(

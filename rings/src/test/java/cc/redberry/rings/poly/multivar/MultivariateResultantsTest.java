@@ -562,6 +562,19 @@ public class MultivariateResultantsTest extends AMultivariateTest {
         System.out.println("Modular      : " + TimeUnits.statisticsNanotime(modular));
     }
 
+    @Test
+    public void test9() {
+        MultivariateRing<MultivariatePolynomial<Rational<BigInteger>>> cfRing = MultivariateRing(2, Q);
+        Coder<MultivariatePolynomial<Rational<BigInteger>>, ?, ?> cfCoder = Coder.mkMultivariateCoder(cfRing, "c", "d");
+
+        MultivariateRing<MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>> ring = MultivariateRing(2, cfRing);
+        Coder<MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>>, ?, ?> coder = Coder.mkMultivariateCoder(ring, cfCoder, "x", "y");
+
+        MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> a = coder.parse("2 + x^2");
+        MultivariatePolynomial<MultivariatePolynomial<Rational<BigInteger>>> b = coder.parse("3 + y^2");
+        assertEquals(coder.parse("(2 + x^2)^2"), Resultant(a, b, 1));
+    }
+
     static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     SingularResult<Term, Poly> SingularResultant(Poly a, Poly b, int variable)
             throws IOException, InterruptedException {

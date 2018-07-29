@@ -589,7 +589,7 @@ public class MultipleFieldExtension<
                                     aE.createConstant(extension.generator()),
                                     aE.createMonomial(1)),
                     gcd = UnivariateGCD.PolynomialGCD(aE, bE).monic();
-            assert gcd.degree() == 1;
+            assert gcd.degree() == 1 : gcd.degree();
 
             // representations
             UnivariatePolynomial<E> aRep = extension.negate(gcd.cc());

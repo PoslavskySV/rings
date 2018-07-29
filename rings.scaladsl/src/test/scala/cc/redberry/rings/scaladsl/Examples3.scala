@@ -1,6 +1,6 @@
 package cc.redberry.rings.scaladsl
 
-import cc.redberry.rings.poly.PolynomialMethods.Factor
+import cc.redberry.rings.poly.PolynomialMethods.{Factor, PolynomialGCD}
 import cc.redberry.rings.scaladsl.util.timing
 import org.junit.Test
 
@@ -219,12 +219,60 @@ class Examples3 {
 
   @Test
   def testSplittingField1(): Unit = {
-    import syntax._
     // some irreducible polynomial
     val poly = UnivariateRing(Q, "x")("17*x^3 - 14*x^2 + 25*x +  15")
     // create splitting field as multiple field extension
     // s1,s2,s3 are roots of specified poly
     implicit val field = SplittingField(poly, Array("s1", "s2", "s3"))
     println(field)
+  }
+
+  @Test
+  def testParametricNumberField1(): Unit = {
+    import syntax._
+    // Q[c, d]
+    val params = Frac(MultivariateRing(Q, Array("c", "d")))
+    // A minimal polynomial X^2 + c = 0
+    val generator = UnivariatePolynomial(params("c"), params(0), params(1))(params)
+    // Algebraic number field Q(sqrt(c)), here "s" denotes square root of c
+    implicit val cfRing = AlgebraicNumberField(generator, "s")
+    // ring of polynomials  Q(sqrt(c))(x, y, z)
+    implicit val ring = MultivariateRing(cfRing, Array("x", "y", "z"))
+    // bring variables
+    val (x, y, z, s) = ring("x", "y", "z", "s")
+    // some polynomials
+    val poly1 = (x + y + s).pow(3) * (x - y - z).pow(2)
+    val poly2 = (x + y + s).pow(3) * (x + y + z).pow(4)
+
+    // compute gcd
+    val gcd = PolynomialGCD(poly1, poly2)
+    println(ring stringify gcd)
+  }
+
+  @Test
+  def testParametricNumberField2(): Unit = {
+    import syntax._
+    // Q[c, d]
+    val params = Frac(MultivariateRing(Q, Array("c", "d")))
+    // A minimal polynomial X^2 + c = 0
+    val gen1 = UnivariatePolynomial(params("c"), params(0), params(1))(params)
+    // A minimal polynomial X^2 + d = 0
+    val gen2 = UnivariatePolynomial(params("d"), params(0), params(1))(params)
+
+    val ext = MultipleFieldExtension(Array(gen1, gen2), Array("s1", "s2"))
+    implicit val cfRing = ext.getSimpleExtension("s")
+
+    // ring of polynomials  Q(sqrt(c), sqrt(d))(x, y, z)
+    implicit val ring = MultivariateRing(cfRing, Array("x", "y", "z"))
+    // bring variables
+    val (x, y, z, s1, s2) = ring("x", "y", "z", "s1", "s2")
+    // some polynomials
+    val poly1 = (x + s2 * y + s1).pow(2) * (x - y - z + s2).pow(2)
+    val poly2 = (x + s2 * y + s1).pow(1) * (x + y + z - s1).pow(3)
+
+    println(MultivariateRing(ext, ring.variables) stringify poly1.mapCoefficients(ext, p => ext.valueOf(p.composition(ext.getPrimitiveElement))))
+    //    // compute gcd
+    //    val gcd = PolynomialGCD(poly1, poly2)
+    //    println(ring stringify gcd)
   }
 }

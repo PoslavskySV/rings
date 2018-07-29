@@ -341,7 +341,8 @@ public class Rational<E> implements Comparable<Rational<E>>,
             Operand op = stream().map(mapper).collect(Collectors.toCollection(Operand::new));
             if (toExpand != this)
                 op.toExpand = toExpand.stream().map(mapper).collect(Collectors.toList());
-            op.expandForm = mapper.apply(expandForm);
+            if (expandForm != null)
+                op.setExpandForm(mapper.apply(expandForm));
             return op;
         }
 
