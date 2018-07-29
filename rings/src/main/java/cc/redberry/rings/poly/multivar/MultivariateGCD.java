@@ -399,7 +399,7 @@ public final class MultivariateGCD {
         else if (isOverMultivariateZp64(a))
             return (Poly) PolynomialGCDOverMultivariateZp64((MultivariatePolynomial) a, (MultivariatePolynomial) b);
 
-        throw new RuntimeException("Multivariate GCD over " + a.coefficientRingToString() + " ring not supported.");
+        return null;
     }
 
     static <Poly extends AMultivariatePolynomial>

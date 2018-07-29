@@ -72,7 +72,7 @@ public final class GroebnerBases {
             return GroebnerBasisInGF(generators, monomialOrder, null);
         if (factory.isOverZ())
             return (List<Poly>) GroebnerBasisInZ((List) generators, monomialOrder, null, true);
-        if (Util.isOverRationals(factory))
+        if (Util.isOverRationals(factory) && ((MultivariatePolynomial) factory).ring.equals(Rings.Q))
             return (List<Poly>) GroebnerBasisInQ((List) generators, monomialOrder, null, true);
         else
             return BuchbergerGB(generators, monomialOrder);

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-ringsVersion=2.5
-ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings."
-
 # CHECK JAVA VERSION
 java="java"
 sedString1="s/\s*\([^.]*\)\..*/\1/"
@@ -54,6 +51,7 @@ case $os in
     ;;
 esac
 
+ringsVersion=2.5.1
 ammArgs=()
 javaArgs=()
 
@@ -74,6 +72,11 @@ do
             esac
 
             ;;
+         -V|--use-version)
+            ringsVersion="$1"
+            shift
+            ;;
+
          -v|--version)
             echo "$ringsString"
             exit 0
@@ -136,6 +139,9 @@ if [ ${#ammArgs[@]} -eq 0 ]; then
         })'
 fi
 
+ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings."
+
+
 JAVA_OPTS="-XX:+AggressiveOpts ${javaArgs[@]}" amm \
 	-b "Running Ammonite Repl
 $ringsString" \
@@ -151,9 +157,11 @@ $ringsString" \
 		import poly.{univar, multivar}
 		import poly.PolynomialMethods._
 		import multivar.MonomialOrder._
+        import multivar.GroebnerMethods
 		import rings.scaladsl._
 		import util._
 		import syntax._
+        import scala.collection.JavaConversions._
 		implicit val $$tPrintBigInteger    : pprint.TPrint[IntZ]               = pprint.TPrint.literal[IntZ]("IntZ")
 		implicit val $$tPrintRational      : pprint.TPrint[rings.Rational[_]]  = pprint.TPrint.literal[rings.Rational[_]]("Rational")
 		implicit val $$tPrintMonomialOrder : pprint.TPrint[Ordering]           = pprint.TPrint.literal[Ordering]("MonomialOrder")
