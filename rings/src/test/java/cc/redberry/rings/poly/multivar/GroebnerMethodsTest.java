@@ -1,12 +1,10 @@
 package cc.redberry.rings.poly.multivar;
 
-import cc.redberry.rings.IntegersZp64;
-import cc.redberry.rings.Rational;
-import cc.redberry.rings.Rationals;
-import cc.redberry.rings.Rings;
+import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -344,5 +342,55 @@ public class GroebnerMethodsTest extends AMultivariateTest {
         assertTrue(IntStream.range(0, initialPolys.size())
                 .mapToObj(i -> initialPolys.get(i).clone().multiply(certificate.get(i)))
                 .reduce(initialPolys.get(0).createZero(), (a, b) -> a.add(b)).isOne());
+    }
+
+    @Test
+    public void test10() {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> paramsRing = MultivariateRing(3, Z);
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?> cfCoder = Coder.mkRationalsCoder(Frac(paramsRing), Coder.mkMultivariateCoder(paramsRing, "m1", "m2", "m3"));
+
+        MultivariateRing<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> ring = MultivariateRing(2, Frac(paramsRing));
+        Coder<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>, ?, ?> coder = Coder.mkMultivariateCoder(ring, cfCoder, "p", "q");
+
+        Rationals<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> fRing = Frac(ring);
+        Coder<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, coder);
+
+        Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>> f = new Rational<>(ring,
+                coder.parse("1"),
+                coder.parse("((p - q)^2 - m3^2)*(p^2 - m1^2)*(q^2 - m2^2)"));
+
+        List<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>>> decomposition = LeinartDecomposition(f);
+        assertTrue(f.subtract(decomposition.stream().reduce(fRing.getZero(), fRing::add)).isZero());
+
+        for (int i = 0; i < decomposition.size(); i++) {
+            FactorDecomposition<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>>> facs = fRing.factor(decomposition.get(i));
+            System.out.println(facs.toString(fCoder));
+        }
+    }
+
+    @Test
+    public void test11() {
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomialZp64>> paramsRing = MultivariateRing(3, GF(2, 16));
+        Coder<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>, ?, ?> cfCoder = Coder.mkRationalsCoder(Frac(paramsRing), Coder.mkMultivariateCoder(paramsRing, "m1", "m2", "m3"));
+
+        MultivariateRing<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>> ring = MultivariateRing(2, Frac(paramsRing));
+        Coder<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>, ?, ?> coder = Coder.mkMultivariateCoder(ring, cfCoder, "p", "q");
+
+        Rationals<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>> fRing = Frac(ring);
+        Coder<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, coder);
+
+        Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>> f = new Rational<>(ring,
+                coder.parse("1"),
+                coder.parse("((p - q)^2 - m3^2)*(p^2 - m1^2)*(q^2 - m2^2)"));
+
+        List<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>> decomposition = LeinartDecomposition(f);
+
+        for (int i = 0; i < decomposition.size(); i++) {
+            FactorDecomposition<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>> facs = fRing.factor(decomposition.get(i));
+            System.out.println(facs.toString(fCoder));
+        }
+
+        assertTrue(f.subtract(decomposition.stream().reduce(fRing.getZero(), fRing::add)).isZero());
+
     }
 }

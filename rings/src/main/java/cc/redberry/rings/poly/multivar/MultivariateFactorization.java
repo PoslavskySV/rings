@@ -529,6 +529,10 @@ public final class MultivariateFactorization {
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
 
+        MonomialZp64 mContent = poly.monomialContent();
+        if (mContent.totalDegree != 0)
+            return bivariateDenseFactorSquareFreeInGF(poly.divideOrNull(mContent)).addFactor(poly.create(mContent), 1);
+
         if (isBivariateCertainlyIrreducible(poly))
             return PolynomialFactorDecomposition.of(poly);
 
@@ -728,6 +732,10 @@ public final class MultivariateFactorization {
 
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
+
+        Monomial<E> mContent = poly.monomialContent();
+        if (mContent.totalDegree != 0)
+            return bivariateDenseFactorSquareFreeInGF(poly.divideOrNull(mContent)).addFactor(poly.create(mContent), 1);
 
         if (isBivariateCertainlyIrreducible(poly))
             return PolynomialFactorDecomposition.of(poly);
@@ -1000,6 +1008,10 @@ public final class MultivariateFactorization {
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
 
+        Monomial<BigInteger> mContent = poly.monomialContent();
+        if (mContent.totalDegree != 0)
+            return bivariateDenseFactorSquareFreeInZ(poly.divideOrNull(mContent)).addFactor(poly.create(mContent), 1);
+
         if (isBivariateCertainlyIrreducible(poly))
             return PolynomialFactorDecomposition.of(poly);
 
@@ -1050,7 +1062,11 @@ public final class MultivariateFactorization {
                 tryZeroFirst = false;
             } else {
                 int bound = 10 * (univariateFactorizations / 5 + 1);
+                if (bound < usedSubstitutions.size())
+                    bound = usedSubstitutions.size();
                 do {
+                    if (usedSubstitutions.size() == bound)
+                        bound *= 2;
                     substitution = BigInteger.valueOf(cc.redberry.rings.poly.multivar.PrivateRandom.getRandom().nextInt(bound));
                 } while (usedSubstitutions.contains(substitution));
                 usedSubstitutions.add(substitution);

@@ -6,10 +6,10 @@ import cc.redberry.combinatorics.IntCompositions;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.linear.LinearSolver;
+import cc.redberry.rings.poly.IPolynomial;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.PolynomialMethods;
 import cc.redberry.rings.util.ArraysUtil;
-import gnu.trove.list.array.TIntArrayList;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
@@ -34,8 +34,14 @@ public final class GroebnerMethods {
     /**
      * Eliminates specified variables from the given ideal.
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial>
     List<Poly> eliminate(List<Poly> ideal, int variable) {
+        return eliminate0(ideal, variable);
+    }
+
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> eliminate0(List<Poly> ideal, int variable) {
         if (ideal.isEmpty())
             return Collections.emptyList();
 
@@ -69,7 +75,7 @@ public final class GroebnerMethods {
     /**
      * Eliminates specified variables from the given ideal.
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Poly extends AMultivariatePolynomial>
     List<Poly> eliminate(List<Poly> ideal, int... variables) {
         for (int variable : variables)
             ideal = eliminate(ideal, variable);
@@ -83,7 +89,8 @@ public final class GroebnerMethods {
      * that the given set is certainly independent). The method applies two criteria: it tests for lead set (LEX)
      * independence and does a probabilistic Jacobian test.
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial>
     boolean probablyAlgebraicallyDependentQ(List<Poly> sys) {
         if (sys.isEmpty())
             return false;
@@ -113,7 +120,7 @@ public final class GroebnerMethods {
     /**
      * Returns true if a given set of polynomials is algebraically dependent or false otherwise.
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Poly extends AMultivariatePolynomial>
     boolean algebraicallyDependentQ(List<Poly> sys) {
         return !algebraicRelations(sys).isEmpty();
     }
@@ -154,7 +161,7 @@ public final class GroebnerMethods {
 
     /** Probabilistic test for the maximality of the rank of Jacobian matrix */
     @SuppressWarnings("unchecked")
-    static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    static <Poly extends AMultivariatePolynomial>
     boolean probablyMaximalJacobianRankQ(Poly[][] jacobian) {
         if (jacobian[0][0] instanceof MultivariatePolynomialZp64)
             return probablyMaximalJacobianRankQ((MultivariatePolynomialZp64[][]) jacobian);
@@ -212,8 +219,14 @@ public final class GroebnerMethods {
     /**
      * Gives a list of algebraic relations (annihilating polynomials) for the given list of polynomials
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial>
     List<Poly> algebraicRelations(List<Poly> polys) {
+        return algebraicRelations0(polys);
+    }
+
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> algebraicRelations0(List<Poly> polys) {
         if (!probablyAlgebraicallyDependentQ(polys))
             return Collections.emptyList();
 
@@ -261,9 +274,10 @@ public final class GroebnerMethods {
      *         moderate degree bounds exist (either since {@code polynomials} have a common root or because the degree
      *         bound on the solutions is so big that the system is intractable for computer)
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial>
     List<Poly> NullstellensatzCertificate(List<Poly> polynomials) {
-        return NullstellensatzSolver(polynomials, polynomials.get(0).createOne(), true);
+        return NullstellensatzCertificate(polynomials, true);
     }
 
     /**
@@ -276,9 +290,10 @@ public final class GroebnerMethods {
      *         moderate degree bounds exist (either since {@code polynomials} have a common root or because the degree
      *         bound on the solutions is so big that the system is intractable for computer)
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial>
     List<Poly> NullstellensatzCertificate(List<Poly> polynomials, boolean boundTotalDeg) {
-        return NullstellensatzSolver(polynomials, polynomials.get(0).createOne(), boundTotalDeg);
+        return NullstellensatzSolver(polynomials, (Poly) polynomials.get(0).createOne(), boundTotalDeg);
     }
 
     /**
@@ -294,8 +309,14 @@ public final class GroebnerMethods {
      *         moderate degree bounds exists
      */
     @SuppressWarnings("unchecked")
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    public static <Poly extends AMultivariatePolynomial>
     List<Poly> NullstellensatzSolver(List<Poly> polynomials, Poly rhs, boolean boundTotalDeg) {
+        return NullstellensatzSolver0(polynomials, rhs, boundTotalDeg);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Poly> NullstellensatzSolver0(List<Poly> polynomials, Poly rhs, boolean boundTotalDeg) {
         if (rhs.isOverZ())
             // fixme: improve when Bareiss will be done
             // switch to Q and then to Z
@@ -490,8 +511,17 @@ public final class GroebnerMethods {
     /**
      * Computes Leinart's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
      */
-    public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    @SuppressWarnings("unchecked")
+    public static <Poly extends AMultivariatePolynomial>
     List<Rational<Poly>> LeinartDecomposition(Rational<Poly> fraction) {
+        return LeinartDecomposition0(fraction);
+    }
+
+    /**
+     * Computes Leinart's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
+     */
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    List<Rational<Poly>> LeinartDecomposition0(Rational<Poly> fraction) {
         FactorDecomposition<Poly> denDecomposition = fraction.factorDenominator();
         List<Factor<Term, Poly>> denominator = IntStream.range(0, denDecomposition.size())
                 .mapToObj(i -> new Factor<>(denDecomposition.get(i), denDecomposition.getExponent(i)))
@@ -522,22 +552,13 @@ public final class GroebnerMethods {
         if (!probablyAlgebraicallyDependentQ(fraction.bareDenominatorNoUnits()))
             return Collections.singletonList(fraction);
 
-        TIntArrayList positions = new TIntArrayList();
-        List<Poly> denPolys = new ArrayList<>();
         List<Poly> raisedDenominator = fraction.raisedDenominator();
-        for (int i = 0; i < raisedDenominator.size(); ++i) {
-            if (raisedDenominator.get(i).isConstant())
-                continue;
-            positions.add(i);
-            denPolys.add(raisedDenominator.get(i));
-        }
+        assert raisedDenominator.stream().noneMatch(IPolynomial::isConstant);
 
-        List<Poly> annihilators = algebraicRelations(denPolys);
+        List<Poly> annihilators = algebraicRelations(raisedDenominator);
         if (annihilators.isEmpty())
             return Collections.singletonList(fraction);
 
-        int[] varsMapping = positions.toArray();
-        annihilators = annihilators.stream().map(p -> p.mapVariables(varsMapping)).collect(Collectors.toList());
         // denominators are algebraically dependent
         // choose the simplest annihilator
         Poly annihilator = annihilators
@@ -556,8 +577,8 @@ public final class GroebnerMethods {
         List<Fraction<Term, Poly>> result = new ArrayList<>();
         for (Term numFactor : annihilator) {
             // numFactor / minNormTerm / denominator
-            int[] numExponents = numFactor.exponents;
-            int[] denExponents = ArraysUtil.sum(denominatorExponents, minNormTerm.exponents);
+            int[] numExponents = ArraysUtil.multiply(denominatorExponents, numFactor.exponents);
+            int[] denExponents = ArraysUtil.sum(denominatorExponents, ArraysUtil.multiply(denominatorExponents, minNormTerm.exponents));
 
             for (int i = 0; i < numExponents.length; ++i) {
                 if (numExponents[i] >= denExponents[i]) {
@@ -604,10 +625,20 @@ public final class GroebnerMethods {
         }
 
         Fraction(Poly numerator, List<Factor<Term, Poly>> denominator, Poly denominatorConstantFactor) {
+            denominator = new ArrayList<>(denominator);
+            denominatorConstantFactor = denominatorConstantFactor.clone();
+            for (int i = denominator.size() - 1; i >= 0; --i)
+                if (denominator.get(i).isConstant()) {
+                    denominatorConstantFactor = denominatorConstantFactor.multiply(denominator.get(i).raised);
+                    denominator.remove(i);
+                }
             Poly cGcd = PolynomialMethods.PolynomialGCD(numerator, denominatorConstantFactor);
             this.numerator = numerator.divideByLC(cGcd);
             this.denominator = denominator;
             this.denominatorConstantFactor = denominatorConstantFactor.divideByLC(cGcd);
+
+            for (int i = 0; i < raisedDenominator().size(); ++i)
+                assert !(raisedDenominator().get(i).isConstant());
         }
 
         final List<Poly> raisedDenominator() {
@@ -637,7 +668,7 @@ public final class GroebnerMethods {
         final Poly raised;
 
         Factor(Poly factor, int exponent, Poly raised) {
-            this.factor = factor;
+            this.factor = exponent == 0 ? factor.createOne() : factor;
             this.exponent = exponent;
             this.raised = raised;
         }
@@ -656,6 +687,10 @@ public final class GroebnerMethods {
             if (newExponent % exponent == 0)
                 return new Factor<>(factor, newExponent, PolynomialMethods.polyPow(raised, newExponent / exponent));
             return new Factor<>(factor, newExponent);
+        }
+
+        boolean isConstant() {
+            return factor.isConstant();
         }
     }
 }

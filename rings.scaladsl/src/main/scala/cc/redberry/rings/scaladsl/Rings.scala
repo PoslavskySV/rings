@@ -88,6 +88,12 @@ sealed class Ring[E](val theRing: rings.Ring[E])
   final def apply(a: String, b: String, c: String, d: String, e: String): (E, E, E, E, E)
   = (apply(a), apply(b), apply(c), apply(d), apply(e))
 
+  final def apply(a: String, b: String, c: String, d: String, e: String, f: String): (E, E, E, E, E, E)
+  = (apply(a), apply(b), apply(c), apply(d), apply(e), apply(f))
+
+  final def apply(a: String, b: String, c: String, d: String, e: String, f: String, g: String): (E, E, E, E, E, E, E)
+  = (apply(a), apply(b), apply(c), apply(d), apply(e), apply(f), apply(g))
+
   final def apply(a: Int, b: Int): (E, E) = (apply(a), apply(b))
 
   final def apply(a: Int, b: Int, c: Int): (E, E, E)
@@ -98,6 +104,12 @@ sealed class Ring[E](val theRing: rings.Ring[E])
 
   final def apply(a: Int, b: Int, c: Int, d: Int, e: Int): (E, E, E, E, E)
   = (apply(a), apply(b), apply(c), apply(d), apply(e))
+
+  final def apply(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int): (E, E, E, E, E, E)
+  = (apply(a), apply(b), apply(c), apply(d), apply(e), apply(f))
+
+  final def apply(a: Int, b: Int, c: Int, d: Int, e: Int, f: Int, g: Int): (E, E, E, E, E, E, E)
+  = (apply(a), apply(b), apply(c), apply(d), apply(e), apply(f), apply(g))
 
   /** element class  */
   private lazy val eClass: Class[_ <: E] = theRing.getZero.getClass
