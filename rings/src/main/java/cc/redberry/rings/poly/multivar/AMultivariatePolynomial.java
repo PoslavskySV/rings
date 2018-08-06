@@ -113,6 +113,23 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Renames variables {@code from} to {@code to} and {@code to} to {@code from} (new instance created)
+     *
+     * @param poly the polynomial
+     * @param from from variables
+     * @param to   to variables
+     */
+    public static <T extends AMonomial<T>, P extends AMultivariatePolynomial<T, P>>
+    P swapVariables(P poly, int[] from, int[] to) {
+        int[] newVariables = ArraysUtil.sequence(poly.nVariables);
+        for (int i = 0; i < from.length; i++) {
+            newVariables[from[i]] = to[i];
+            newVariables[to[i]] = from[i];
+        }
+        return renameVariables(poly, newVariables, poly.ordering);
+    }
+
+    /**
      * Rename variables from [0,1,...N] to [newVariables[0], newVariables[1], ..., newVariables[N]] (new instance
      * created)
      *
@@ -133,7 +150,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * @param newVariables the new variables
      * @return renamed term
      */
-    public static <T extends AMonomial<T>, P extends AMultivariatePolynomial<T, P>>
+    public static <T extends AMonomial<T>>
     T renameVariables(T e, int[] newVariables) {
         return e.setDegreeVector(map(e.exponents, newVariables), e.totalDegree);
     }
@@ -389,6 +406,11 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     @Override
     public final boolean isMonomial() {
         return size() <= 1;
+    }
+
+    /** Returns whether this is a plain variable (with no coefficient) */
+    public final boolean isVariable() {
+        return isMonomial() && isEffectiveUnivariate() && lcAsPoly().isOne();
     }
 
     @Override

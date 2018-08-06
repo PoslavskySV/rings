@@ -281,9 +281,9 @@ public class Rational<E> implements Comparable<Rational<E>>,
 
             Operand r = new Operand(this);
             r.add(oth);
-            if (expandForm != null) {
+            if (expandForm != null)
                 r.setExpandForm(ring.multiply(expandForm, oth));
-            } if (toExpand != this) {
+            if (toExpand != this) {
                 r.toExpand = new ArrayList<>(toExpand);
                 r.toExpand.add(oth);
             }
@@ -351,6 +351,9 @@ public class Rational<E> implements Comparable<Rational<E>>,
         }
 
         Operand pow(BigInteger exponent) {
+            if (exponent.isOne())
+                return deepCopy();
+
             Operand pow = stream().map(f -> ring.pow(f, exponent)).collect(Collectors.toCollection(Operand::new));
             if (expandForm != null) {
                 if (size() == 1)
@@ -488,7 +491,7 @@ public class Rational<E> implements Comparable<Rational<E>>,
      * Signum of this rational
      */
     public int signum() {
-        return ring.signum(numerator.unitOrOne());
+        return ring.signum(numerator()) * ring.signum(denominator());
     }
 
     /**
@@ -664,7 +667,9 @@ public class Rational<E> implements Comparable<Rational<E>>,
      * @param exponent exponent
      */
     public Rational<E> pow(int exponent) {
-        return new Rational<>(true, ring, numerator.pow(exponent), denominator.pow(exponent));
+        return exponent >= 0
+                ? new Rational<>(true, ring, numerator.pow(exponent), denominator.pow(exponent))
+                : reciprocal().pow(-exponent);
     }
 
     /**
@@ -673,7 +678,9 @@ public class Rational<E> implements Comparable<Rational<E>>,
      * @param exponent exponent
      */
     public Rational<E> pow(long exponent) {
-        return new Rational<>(true, ring, numerator.pow(exponent), denominator.pow(exponent));
+        return exponent >= 0
+                ? new Rational<>(true, ring, numerator.pow(exponent), denominator.pow(exponent))
+                : reciprocal().pow(-exponent);
     }
 
     /**
@@ -682,7 +689,9 @@ public class Rational<E> implements Comparable<Rational<E>>,
      * @param exponent exponent
      */
     public Rational<E> pow(BigInteger exponent) {
-        return new Rational<>(true, ring, numerator.pow(exponent), denominator.pow(exponent));
+        return exponent.signum() >= 0
+                ? new Rational<>(true, ring, numerator.pow(exponent), denominator.pow(exponent))
+                : reciprocal().pow(exponent.negate());
     }
 
     /**
