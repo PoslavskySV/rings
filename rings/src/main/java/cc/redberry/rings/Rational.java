@@ -702,6 +702,13 @@ public class Rational<E> implements Comparable<Rational<E>>,
     }
 
     /**
+     * Maps rational
+     */
+    public Rational<E> map(Function<E, E> function) {
+        return new Rational<>(ring, numerator.map(function), denominator.map(function));
+    }
+
+    /**
      * Stream of numerator and denominator
      */
     public Stream<E> stream() {
@@ -733,6 +740,17 @@ public class Rational<E> implements Comparable<Rational<E>>,
             return str.stringify(numerator.expand());
         String num = str.stringify(numerator.expand());
         String den = str.stringify(denominator.expand());
+        return encloseMathParenthesisInSumIfNeeded(num)
+                + "/"
+                + (IStringifier.hasMulDivPlusMinus(0, den) ? "(" + den + ")" : den);
+    }
+
+    public String toStringFactors(IStringifier<Rational<E>> stringifier) {
+        IStringifier<E> str = stringifier.substringifier(ring);
+        if (isIntegral())
+            return str.stringify(numerator.expand());
+        String num = numerator.stream().map(s -> "(" + str.stringify(s) + ")").collect(Collectors.joining("*"));
+        String den = denominator.stream().map(s -> "(" + str.stringify(s) + ")").collect(Collectors.joining("*"));
         return encloseMathParenthesisInSumIfNeeded(num)
                 + "/"
                 + (IStringifier.hasMulDivPlusMinus(0, den) ? "(" + den + ")" : den);

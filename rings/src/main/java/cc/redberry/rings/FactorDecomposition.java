@@ -93,16 +93,16 @@ public class FactorDecomposition<E>
 
     /** add another unit factor */
     public FactorDecomposition<E> addUnit(E unit) {
-        if (!isUnit(unit))
-            throw new IllegalArgumentException("not a unit: " + unit);
+//        if (!isUnit(unit))
+//            throw new IllegalArgumentException("not a unit: " + unit);
         this.unit = ring.multiply(this.unit, unit);
         return this;
     }
 
     /** add another unit factor */
     public FactorDecomposition<E> addUnit(E unit, int exponent) {
-        if (!isUnit(unit))
-            throw new IllegalArgumentException("not a unit: " + unit);
+//        if (!isUnit(unit))
+//            throw new IllegalArgumentException("not a unit: " + unit);
         if (ring.isOne(unit))
             return this;
         this.unit = ring.multiply(this.unit, ring.pow(unit, exponent));

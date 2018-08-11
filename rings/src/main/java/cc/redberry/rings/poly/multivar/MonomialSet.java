@@ -70,5 +70,24 @@ public final class MonomialSet<Term extends AMonomial<Term>>
 
     @Override
     @SuppressWarnings("unchecked")
-    public MonomialSet<Term> clone() {return (MonomialSet<Term>) super.clone();}
+    public MonomialSet<Term> clone() {
+        return (MonomialSet<Term>) super.clone();
+    }
+
+    @Override
+    public int hashCode() {
+        int h = 0;
+        Iterator<Map.Entry<DegreeVector, Term>> i = entrySet().iterator();
+        while (i.hasNext())
+            h += i.next().getValue().hashCode();
+        return h;
+    }
+
+    public int skeletonHashCode() {
+        int h = 0;
+        Iterator<Map.Entry<DegreeVector, Term>> i = entrySet().iterator();
+        while (i.hasNext())
+            h += i.next().getKey().dv().hashCode();
+        return h;
+    }
 }

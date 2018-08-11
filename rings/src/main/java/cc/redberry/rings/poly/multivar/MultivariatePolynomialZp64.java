@@ -1840,6 +1840,20 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     }
 
     /**
+     * Maps terms of this using specified mapping function
+     *
+     * @param newRing the new ring
+     * @param mapper  mapping
+     * @return a new polynomial with terms obtained by applying mapper to this terms
+     */
+    public MultivariatePolynomialZp64 mapTerms(IntegersZp64 newRing, Function<MonomialZp64, MonomialZp64> mapper) {
+        return terms.values()
+                .stream()
+                .map(mapper)
+                .collect(new PolynomialCollector<>(() -> MultivariatePolynomialZp64.zero(nVariables, newRing, ordering)));
+    }
+
+    /**
      * Maps coefficients of this using specified mapping function
      *
      * @param newRing the new ring

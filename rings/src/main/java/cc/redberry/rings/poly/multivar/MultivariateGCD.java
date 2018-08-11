@@ -35,6 +35,7 @@ import static cc.redberry.rings.ChineseRemainders.createMagic;
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.Util.commonDenominator;
 import static cc.redberry.rings.poly.multivar.Conversions64bit.*;
+import static cc.redberry.rings.poly.multivar.MultivariateDivision.dividesQ;
 import static cc.redberry.rings.poly.multivar.MultivariateDivision.pseudoRemainder;
 
 
@@ -572,9 +573,90 @@ public final class MultivariateGCD {
             return gcdWithLinearPoly(b, a);
         if (b.degree() == 1)
             return gcdWithLinearPoly(a, b);
-        if (a.equals(b))
-            return a.clone();
+
+        Poly eq = equalsUpToConstant(a, b);
+        if (eq != null)
+            return eq;
+
         return null;
+    }
+
+    /** Returns monic (or primitive) gcd of a and b if they are equal up to a factor or returns null otherwise */
+    @SuppressWarnings("unchecked")
+    private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
+    Poly equalsUpToConstant(Poly a, Poly b) {
+        if (a instanceof MultivariatePolynomial)
+            return (Poly) equalsUpToConstant((MultivariatePolynomial) a, (MultivariatePolynomial) b);
+        else
+            return (Poly) equalsUpToConstant((MultivariatePolynomialZp64) a, (MultivariatePolynomialZp64) b);
+    }
+
+    /** Returns monic (or primitive) gcd of a and b if they are equal up to a factor or returns null otherwise */
+    private static <E> MultivariatePolynomial<E>
+    equalsUpToConstant(MultivariatePolynomial<E> a, MultivariatePolynomial<E> b) {
+        if (a == b)
+            return a.clone();
+        if (a.size() != b.size())
+            return null;
+        if (!a.lt().dvEquals(b.lt()))
+            return null;
+        Iterator<Monomial<E>>
+                aIt = a.terms.values().iterator(),
+                bIt = b.terms.values().iterator();
+        Ring<E> ring = a.ring;
+        MonomialSet<Monomial<E>> result = new MonomialSet<>(a.ordering);
+        E c = ring.gcd(a.lc(), b.lc());
+        if (ring.signum(a.lc()) != ring.signum(c))
+            c = ring.negate(c);
+        E aCorrection = ring.divideExact(a.lc(), c);
+        E bCorrection = ring.divideExact(b.lc(), c);
+        while (aIt.hasNext()) {
+            Monomial<E>
+                    aTerm = aIt.next(),
+                    bTerm = bIt.next();
+            if (!aTerm.dvEquals(bTerm))
+                return null;
+
+            c = ring.gcd(aTerm.coefficient, bTerm.coefficient);
+            if (ring.signum(aTerm.coefficient) != ring.signum(c))
+                c = ring.negate(c);
+
+            if (!ring.divideExact(aTerm.coefficient, c).equals(aCorrection)
+                    || !ring.divideExact(bTerm.coefficient, c).equals(bCorrection))
+                return null;
+
+            result.add(aTerm.setCoefficient(c));
+        }
+        return a.create(result);
+    }
+
+    /** Returns monic (or primitive) gcd of a and b if they are equal up to a factor or returns null otherwise */
+    private static MultivariatePolynomialZp64
+    equalsUpToConstant(MultivariatePolynomialZp64 a, MultivariatePolynomialZp64 b) {
+        if (a == b)
+            return a.clone();
+        if (a.size() != b.size())
+            return null;
+        if (!a.lt().dvEquals(b.lt()))
+            return null;
+        Iterator<MonomialZp64>
+                aIt = a.terms.values().iterator(),
+                bIt = b.terms.values().iterator();
+        IntegersZp64 ring = a.ring;
+        long bCorrection = ring.divide(b.lc(), a.lc());
+        while (aIt.hasNext()) {
+            MonomialZp64
+                    aTerm = aIt.next(),
+                    bTerm = bIt.next();
+            if (!aTerm.dvEquals(bTerm))
+                return null;
+
+            long bc = ring.divide(bTerm.coefficient, aTerm.coefficient);
+            if (bc != bCorrection)
+                return null;
+        }
+
+        return a.clone();
     }
 
     @SuppressWarnings("unchecked")
@@ -656,6 +738,11 @@ public final class MultivariateGCD {
             // do this only if polynomials are relatively small
             adjustDegreeBounds(a, b, degreeBounds);
             adjusted = true;
+
+            if (Arrays.equals(degreeBounds, a.degreesRef()) && dividesQ(b, a))
+                return new GCDInput<>(a.clone());
+            if (Arrays.equals(degreeBounds, b.degreesRef()) && dividesQ(a, b))
+                return new GCDInput<>(b.clone());
         }
 
         GCDInput<Term, Poly> earlyGCD;
@@ -664,9 +751,15 @@ public final class MultivariateGCD {
         if (earlyGCD != null)
             return earlyGCD;
 
-        if (!adjusted)
+        if (!adjusted) {
             // adjust degree bounds with randomized substitutions and univariate images (relatively expensive)
             adjustDegreeBounds(a, b, degreeBounds);
+
+            if (Arrays.equals(degreeBounds, a.degreesRef()) && dividesQ(b, a))
+                return new GCDInput<>(a.clone());
+            if (Arrays.equals(degreeBounds, b.degreesRef()) && dividesQ(a, b))
+                return new GCDInput<>(b.clone());
+        }
 
         // get rid of variables with degreeBounds[var] == 0 if such occured after a call to #adjustDegreeBounds
         earlyGCD = getRidOfUnusedVariables(a, b, gcdAlgorithm, monomialGCD, degreeBounds);
