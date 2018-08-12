@@ -308,7 +308,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
 
     /** release caches */
     protected void release() {
-        cachesDegrees = null;
+        cachedDegrees = null;
         cachedDegree = -1;
     }
 
@@ -598,19 +598,19 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /** cached degrees */
-    private int[] cachesDegrees = null;
+    private int[] cachedDegrees = null;
 
     /** returns reference (content must not be modified) */
     protected int[] degreesRef() {
-        if (cachesDegrees == null) {
+        if (cachedDegrees == null) {
             int[] degrees = new int[nVariables];
             for (Term db : terms)
                 for (int i = 0; i < nVariables; i++)
                     if (db.exponents[i] > degrees[i])
                         degrees[i] = db.exponents[i];
-            return cachesDegrees = degrees;
+            return cachedDegrees = degrees;
         }
-        return cachesDegrees;
+        return cachedDegrees;
     }
 
     /**

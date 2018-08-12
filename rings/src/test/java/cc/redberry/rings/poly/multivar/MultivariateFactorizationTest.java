@@ -1988,6 +1988,23 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void testMultivariateFactorization38RandomZa() throws Exception {
+        //[, , -, ]
+        String[] vars = {"x1", "x2", "x3", "x4"};
+        MultivariatePolynomial<BigInteger> pp[] = new MultivariatePolynomial[]{
+                MultivariatePolynomial.parse("-1+401*x3^3*x4^3+155*x1^2*x2^2*x3^2*x4-174*x1^2*x2*x3^5*x4^3+243*x1^2*x2^5*x3^4*x4", vars),
+                MultivariatePolynomial.parse("-1+555*x1*x3^3+89*x1*x2*x3^3*x4+255*x2^3*x3^3*x4^2+660*x1^3*x2^3*x3^2*x4+377*x1^2*x2^3*x3^2*x4^3", vars),
+                MultivariatePolynomial.parse("-1+236*x2^2*x3^5*x4^4-481*x1^4*x2^2*x3^5*x4-642*x1^2*x2^5*x3^4*x4^3+610*x1^4*x2^4*x3^4*x4^2", vars),
+                MultivariatePolynomial.parse("-517-223*x2^2*x3^3*x4+234*x1^2*x3^2*x4^3", vars),
+        }, poly = multiply(pp);
+
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.Factor(poly);
+        Assert.assertEquals(4, factors.size());
+        Assert.assertEquals(poly, factors.multiply());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void testMultivariateFactorization39() throws Exception {
         String[] vars = {"a", "b", "c"};
         MultivariatePolynomial<BigInteger> pp[] = new MultivariatePolynomial[]{

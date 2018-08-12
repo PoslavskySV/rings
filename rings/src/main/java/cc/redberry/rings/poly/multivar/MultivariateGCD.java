@@ -264,7 +264,7 @@ public final class MultivariateGCD {
     public static <Poly extends AMultivariatePolynomial> Poly PolynomialGCD(Poly a, Poly b) {
         a.assertSameCoefficientRingWith(b);
         if (a.isOverFiniteField())
-            return PolynomialGCDinGF(a, b);
+            return ensureMonicOverGF(PolynomialGCDinGF(a, b));
         if (a.isOverZ())
             return (Poly) PolynomialGCDinZ((MultivariatePolynomial) a, (MultivariatePolynomial) b);
         if (Util.isOverRationals(a))
@@ -555,6 +555,14 @@ public final class MultivariateGCD {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static <Poly extends AMultivariatePolynomial>
+    Poly ensureMonicOverGF(Poly g) {
+        if (g.isOverFiniteField() && !g.isMonic())
+            return (Poly) g.monic();
+        return g;
+    }
+
     private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly trivialGCD(Poly a, Poly b) {
         if (a == b)
@@ -627,7 +635,7 @@ public final class MultivariateGCD {
 
             result.add(aTerm.setCoefficient(c));
         }
-        return a.create(result);
+        return ensureMonicOverGF(a.create(result));
     }
 
     /** Returns monic (or primitive) gcd of a and b if they are equal up to a factor or returns null otherwise */
@@ -656,7 +664,7 @@ public final class MultivariateGCD {
                 return null;
         }
 
-        return a.clone();
+        return a.clone().monic();
     }
 
     @SuppressWarnings("unchecked")
@@ -740,9 +748,9 @@ public final class MultivariateGCD {
             adjusted = true;
 
             if (Arrays.equals(degreeBounds, a.degreesRef()) && dividesQ(b, a))
-                return new GCDInput<>(a.clone().multiply(monomialGCD));
+                return new GCDInput<>(ensureMonicOverGF(a.clone().multiply(monomialGCD)));
             if (Arrays.equals(degreeBounds, b.degreesRef()) && dividesQ(a, b))
-                return new GCDInput<>(b.clone().multiply(monomialGCD));
+                return new GCDInput<>(ensureMonicOverGF(b.clone().multiply(monomialGCD)));
         }
 
         GCDInput<Term, Poly> earlyGCD;
@@ -756,9 +764,9 @@ public final class MultivariateGCD {
             adjustDegreeBounds(a, b, degreeBounds);
 
             if (Arrays.equals(degreeBounds, a.degreesRef()) && dividesQ(b, a))
-                return new GCDInput<>(a.clone().multiply(monomialGCD));
+                return new GCDInput<>(ensureMonicOverGF(a.clone().multiply(monomialGCD)));
             if (Arrays.equals(degreeBounds, b.degreesRef()) && dividesQ(a, b))
-                return new GCDInput<>(b.clone().multiply(monomialGCD));
+                return new GCDInput<>(ensureMonicOverGF(b.clone().multiply(monomialGCD)));
         }
 
         // get rid of variables with degreeBounds[var] == 0 if such occured after a call to #adjustDegreeBounds
