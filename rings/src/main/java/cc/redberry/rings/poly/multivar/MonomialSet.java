@@ -76,18 +76,18 @@ public final class MonomialSet<Term extends AMonomial<Term>>
 
     @Override
     public int hashCode() {
-        int h = 0;
+        int h = 17;
         Iterator<Map.Entry<DegreeVector, Term>> i = entrySet().iterator();
         while (i.hasNext())
-            h += i.next().getValue().hashCode();
+            h += 13 + h * i.next().getValue().hashCode();
         return h;
     }
 
     public int skeletonHashCode() {
-        int h = 0;
+        int h = 17;
         Iterator<Map.Entry<DegreeVector, Term>> i = entrySet().iterator();
         while (i.hasNext())
-            h += i.next().getKey().dv().hashCode();
+            h += 13 + h * i.next().getKey().dv().hashCode();
         return h;
     }
 }

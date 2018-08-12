@@ -740,9 +740,9 @@ public final class MultivariateGCD {
             adjusted = true;
 
             if (Arrays.equals(degreeBounds, a.degreesRef()) && dividesQ(b, a))
-                return new GCDInput<>(a.clone());
+                return new GCDInput<>(a.clone().multiply(monomialGCD));
             if (Arrays.equals(degreeBounds, b.degreesRef()) && dividesQ(a, b))
-                return new GCDInput<>(b.clone());
+                return new GCDInput<>(b.clone().multiply(monomialGCD));
         }
 
         GCDInput<Term, Poly> earlyGCD;
@@ -756,9 +756,9 @@ public final class MultivariateGCD {
             adjustDegreeBounds(a, b, degreeBounds);
 
             if (Arrays.equals(degreeBounds, a.degreesRef()) && dividesQ(b, a))
-                return new GCDInput<>(a.clone());
+                return new GCDInput<>(a.clone().multiply(monomialGCD));
             if (Arrays.equals(degreeBounds, b.degreesRef()) && dividesQ(a, b))
-                return new GCDInput<>(b.clone());
+                return new GCDInput<>(b.clone().multiply(monomialGCD));
         }
 
         // get rid of variables with degreeBounds[var] == 0 if such occured after a call to #adjustDegreeBounds

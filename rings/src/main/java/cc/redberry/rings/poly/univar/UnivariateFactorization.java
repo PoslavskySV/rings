@@ -518,9 +518,12 @@ public final class UnivariateFactorization {
     public static <PolyZ extends IUnivariatePolynomial<PolyZ>> PolynomialFactorDecomposition<PolyZ> FactorSquareFreeInZ(PolyZ poly) {
         ensureIntegersDomain(poly);
         if (poly.degree() <= 1 || poly.isMonomial())
-            return PolynomialFactorDecomposition.of(
-                    poly.isMonic() ? poly.createOne() : poly.contentAsPoly(),
-                    poly.isMonic() ? poly : poly.clone().primitivePart());
+            if (poly.isMonic())
+                return PolynomialFactorDecomposition.of(poly);
+            else {
+                PolyZ c = poly.contentAsPoly();
+                return PolynomialFactorDecomposition.of(c, poly.clone().divideByLC(c));
+            }
 
         PolyZ content = poly.contentAsPoly();
         if (poly.signumOfLC() < 0)
@@ -558,7 +561,7 @@ public final class UnivariateFactorization {
                 return PolynomialFactorDecomposition.of(poly);
             else {
                 Poly c = poly.contentAsPoly();
-                return PolynomialFactorDecomposition.of(c, poly.divideByLC(c));
+                return PolynomialFactorDecomposition.of(c, poly.clone().divideByLC(c));
             }
 
 
