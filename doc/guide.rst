@@ -2646,19 +2646,19 @@ The generic parent class for multivariate polynomials is `AMultivariatePolynomia
         genericFuncWithRing(ring.parse("a + b"), ring);     
 
 
-.. _MultivariatePolynomialZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomialZp64.java
+.. _MultivariatePolynomialZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomialZp64.html
 
-.. _MultivariatePolynomial<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomial.java
+.. _MultivariatePolynomial<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MultivariatePolynomial.html
 
 .. _AMultivariatePolynomial<MonomialType, PolyType>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/AMultivariatePolynomial.html
 
-.. _DegreeVector: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/DegreeVector.java
+.. _DegreeVector: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/DegreeVector.html
 
-.. _AMonomial: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/AMonomial.java
+.. _AMonomial: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/AMonomial.html
 
-.. _MonomialZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MonomialZp64.java
+.. _MonomialZp64: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/MonomialZp64.html
 
-.. _Monomial<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/Monomial<E>.java
+.. _Monomial<E>: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/poly/multivar/Monomial.html
 
 
 .. admonition:: Full API documentation
