@@ -388,7 +388,10 @@ public final class UnivariateFactorization {
             return SmallPrimes.nextPrime(val);
     }
 
-    final static int N_MODULAR_FACTORIZATION_TRIALS = 2;
+    final static int
+            N_MIN_MODULAR_FACTORIZATION_TRIALS = 2, // minimal number of modular trials
+            N_SIMPLE_MOD_PATTERN_FACTORS = 12, // number of modular factors sufficient small enough to proceed to reconstruction
+            N_MODULAR_FACTORIZATION_TRIALS = 4; // maximal number of modular trials
 
     /**
      * Factors primitive square-free polynomial using Hensel lifting
@@ -412,6 +415,9 @@ public final class UnivariateFactorization {
         PolynomialFactorDecomposition<UnivariatePolynomialZp64> lModularFactors = null;
 
         for (int attempt = 0; attempt < N_MODULAR_FACTORIZATION_TRIALS; attempt++) {
+            if (attempt >= N_MIN_MODULAR_FACTORIZATION_TRIALS && lModularFactors.size() <= N_SIMPLE_MOD_PATTERN_FACTORS)
+                break;
+
             long tmpModulus;
             do {
                 tmpModulus = SmallPrimes.nextPrime(randomModulusInf());
@@ -421,6 +427,7 @@ public final class UnivariateFactorization {
 
             // do modular factorization
             PolynomialFactorDecomposition<UnivariatePolynomialZp64> tmpFactors = FactorInGF(moduloImage.monic());
+
             if (tmpFactors.size() == 1)
                 return PolynomialFactorDecomposition.of(poly);
 

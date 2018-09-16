@@ -20,8 +20,8 @@ import org.junit.Test;
 
 import java.util.function.Supplier;
 
-import static cc.redberry.rings.Rings.Q;
-import static cc.redberry.rings.Rings.UnivariateRing;
+import static cc.redberry.rings.Rings.*;
+import static cc.redberry.rings.poly.univar.UnivariateFactorization.Factor;
 import static cc.redberry.rings.poly.univar.UnivariateFactorization.FactorInNumberField;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -546,5 +546,11 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
 
             }
         }
+    }
+
+    @Test(timeout = 100_000)
+    public void test7() {
+        UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.parse("x^259 - 1", Z, "x");
+        assertEquals(4, Factor(poly).size());
     }
 }
