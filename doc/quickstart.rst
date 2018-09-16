@@ -32,8 +32,8 @@ or just by typing the following commands at the prompt:
 
 .. code-block:: bash
 
-	$ sudo curl -L -o /usr/local/bin/amm https://git.io/v5Tct && sudo chmod +x /usr/local/bin/amm
-	$ sudo curl -L -o /usr/local/bin/rings.repl https://git.io/vd7EY && chmod +x /usr/local/bin/rings.repl
+	$ sudo sh -c '(echo "#!/usr/bin/env sh" && curl -L https://github.com/lihaoyi/Ammonite/releases/download/1.1.2/2.12-1.1.2) > /usr/local/bin/amm && chmod +x /usr/local/bin/amm'
+	$ sudo sh -c 'curl -L -o /usr/local/bin/rings.repl https://git.io/vd7EY && chmod +x /usr/local/bin/rings.repl'
 
 Now run |Rings|\ *.repl*:
 
@@ -41,7 +41,7 @@ Now run |Rings|\ *.repl*:
 
 	$ rings.repl
 	Loading...
-	Rings 2.4: efficient Java/Scala library for polynomial rings
+	Rings 2.5.2: efficient Java/Scala library for polynomial rings
 
 	@ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 	ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -64,7 +64,7 @@ Java/Scala library
 
 .. code-block:: scala
 
-	libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.4"
+	libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.5.2"
 
 For using |Rings| solely in Java there is Maven artifact:
 
@@ -73,7 +73,7 @@ For using |Rings| solely in Java there is Maven artifact:
 	<dependency>
 	    <groupId>cc.redberry</groupId>
 	    <artifactId>rings</artifactId>
-	    <version>2.4</version>
+	    <version>2.5.2</version>
 	</dependency>
 
 
