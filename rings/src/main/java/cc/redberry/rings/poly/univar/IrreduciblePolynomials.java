@@ -32,7 +32,7 @@ public final class IrreduciblePolynomials {
         if (poly.isOverFiniteField())
             return finiteFieldIrreducibleQ(poly);
         else
-            return UnivariateFactorization.Factor(poly).isTrivial();
+            return !poly.isMonomial() && UnivariateFactorization.Factor(poly).isTrivial();
     }
 
     /**
@@ -54,6 +54,9 @@ public final class IrreduciblePolynomials {
     public static <Poly extends IUnivariatePolynomial<Poly>> boolean
     finiteFieldIrreducibleViaModularComposition(Poly poly) {
         Util.ensureOverFiniteField(poly);
+
+        if (poly.isMonomial())
+            return false;
 
         if (canConvertToZp64(poly))
             return finiteFieldIrreducibleViaModularComposition(asOverZp64(poly));
@@ -128,6 +131,9 @@ public final class IrreduciblePolynomials {
     public static <Poly extends IUnivariatePolynomial<Poly>> boolean
     finiteFieldIrreducibleBenOr(Poly poly) {
         Util.ensureOverFiniteField(poly);
+
+        if (poly.isMonomial())
+            return false;
 
         if (canConvertToZp64(poly))
             return finiteFieldIrreducibleBenOr(asOverZp64(poly));

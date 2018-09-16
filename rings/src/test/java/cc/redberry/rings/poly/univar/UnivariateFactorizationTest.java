@@ -509,7 +509,7 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
                     .mapCoefficients(Q, cf -> Q.mkNumerator(cf.mod(10)));
 
             minimalPoly.setLC(Q.mkNumerator(rndd.nextInt(1, 10)));
-            if (!IrreduciblePolynomials.irreducibleQ(minimalPoly)) {
+            if (minimalPoly.isMonomial() || !IrreduciblePolynomials.irreducibleQ(minimalPoly)) {
                 --i;
                 continue;
             }

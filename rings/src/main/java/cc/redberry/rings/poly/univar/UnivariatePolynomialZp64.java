@@ -415,6 +415,8 @@ public final class UnivariatePolynomialZp64 extends AUnivariatePolynomial64<Univ
 
     @Override
     public UnivariatePolynomialZp64 multiply(UnivariatePolynomialZp64 oth) {
+        assertSameCoefficientRingWith(oth);
+
         if (isZero())
             return this;
         if (oth.isZero())

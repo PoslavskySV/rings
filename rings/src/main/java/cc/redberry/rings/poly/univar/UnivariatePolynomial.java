@@ -839,6 +839,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public UnivariatePolynomial<E> add(UnivariatePolynomial<E> oth) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return this;
         if (isZero())
@@ -877,6 +879,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return {@code this + oth * factor} modulo {@code modulus}
      */
     public UnivariatePolynomial<E> addMul(UnivariatePolynomial<E> oth, E factor) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return this;
 
@@ -894,6 +898,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
 
     @Override
     public UnivariatePolynomial<E> subtract(UnivariatePolynomial<E> oth) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return this;
         if (isZero())
@@ -916,6 +922,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * @return {@code this - factor * x^exponent * oth}
      */
     public UnivariatePolynomial<E> subtract(UnivariatePolynomial<E> oth, E factor, int exponent) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return this;
 
@@ -1048,6 +1056,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     @Override
     @SuppressWarnings("unchecked")
     public UnivariatePolynomial<E> multiply(UnivariatePolynomial<E> oth) {
+        assertSameCoefficientRingWith(oth);
+
         if (isZero())
             return this;
         if (oth.isZero())

@@ -482,6 +482,8 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
 
     @Override
     public final lPoly add(lPoly oth) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return self;
         if (isZero())
@@ -520,6 +522,8 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
      * @return {@code this + oth * factor} modulo {@code modulus}
      */
     public final lPoly addMul(lPoly oth, long factor) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return self;
 
@@ -537,6 +541,8 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
 
     @Override
     public final lPoly subtract(lPoly oth) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return self;
         if (isZero())
@@ -559,6 +565,8 @@ abstract class AUnivariatePolynomial64<lPoly extends AUnivariatePolynomial64<lPo
      * @return {@code this - factor * x^exponent * oth}
      */
     public final lPoly subtract(lPoly oth, long factor, int exponent) {
+        assertSameCoefficientRingWith(oth);
+
         if (oth.isZero())
             return self;
 

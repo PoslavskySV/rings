@@ -71,7 +71,8 @@ public class MultivariateResultantsTest extends AMultivariateTest {
             brown.addValue(System.nanoTime() - start);
 
             SingularResult<MonomialZp64, MultivariatePolynomialZp64> expected = SingularResultant(a, b, variable);
-            singular.addValue(expected.nanotime);
+            if (expected != null)
+                singular.addValue(expected.nanotime);
 
             assertEquals(expected.resultant, actual);
         }
