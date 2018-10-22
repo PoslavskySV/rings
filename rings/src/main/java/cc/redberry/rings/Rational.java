@@ -90,11 +90,13 @@ public class Rational<E> implements Comparable<Rational<E>>,
     private static final int SIMPLE_INTEGER_N_BITS = 512;
 
     // criteria singletons
-    private static final Predicate<BigInteger> intSimplicityCriteria = p -> p.bitLength() <= SIMPLE_INTEGER_N_BITS;
-    private static final Predicate<IUnivariatePolynomial> upolySimplicityCriteria = p -> p.size() <= SIMPLE_UPOLY_SIZE;
-    private static final Predicate<AMultivariatePolynomial> mpolySimplicityCriteria
-            = p -> p.size() <= SIMPLE_MPOLY_DENSE_SIZE || (p.size() < SIMPLE_MPOLY_SPARSE_SIZE && p.sparsity2() < SIMPLE_POLY_SPARSITY2);
-    private static final Predicate defaultFalse = __ -> false;
+    private static final Predicate<BigInteger> intSimplicityCriteria =
+            (Predicate<BigInteger> & java.io.Serializable) (p -> p.bitLength() <= SIMPLE_INTEGER_N_BITS);
+    private static final Predicate<IUnivariatePolynomial> upolySimplicityCriteria =
+            (Predicate<IUnivariatePolynomial> & java.io.Serializable) (p -> p.size() <= SIMPLE_UPOLY_SIZE);
+    private static final Predicate<AMultivariatePolynomial> mpolySimplicityCriteria =
+            (Predicate<AMultivariatePolynomial> & java.io.Serializable) (p -> p.size() <= SIMPLE_MPOLY_DENSE_SIZE || (p.size() < SIMPLE_MPOLY_SPARSE_SIZE && p.sparsity2() < SIMPLE_POLY_SPARSITY2));
+    private static final Predicate defaultFalse = (Predicate & java.io.Serializable) (__ -> false);
 
     @SuppressWarnings("unchecked")
     private static <E> Predicate<E> simplicityCriteria(Ring<E> ring) {

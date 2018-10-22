@@ -21,7 +21,7 @@ import java.util.stream.Stream;
  * @since 2.2
  */
 public class FactorDecomposition<E>
-        implements Iterable<E>, Stringifiable<E> {
+        implements Iterable<E>, Stringifiable<E>, java.io.Serializable {
     /** The ring */
     public final Ring<E> ring;
     /** unit coefficient */

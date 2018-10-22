@@ -14,6 +14,7 @@ import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.test.AbstractTest;
+import cc.redberry.rings.util.SerializableFunction;
 import cc.redberry.rings.util.TimeUnits;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -24,7 +25,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static cc.redberry.rings.Rings.*;
@@ -48,7 +48,7 @@ public class CoderTest extends AbstractTest {
                 notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
         Coder<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, Function.identity());
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, SerializableFunction.identity());
 
         MultivariatePolynomial<BigInteger> p = polyRing.parse("x*x2*x4 + 2 + z - y*z*x^2 + x1*x2*x3*x4*x*y*z");
         String expression = polyRing.pow(p, 30).toString(vars);
@@ -90,7 +90,7 @@ public class CoderTest extends AbstractTest {
                 notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
         Coder<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, Function.identity());
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, SerializableFunction.identity());
 
         String expressionStr = "x + y + z*x - z*y";
 
@@ -114,7 +114,7 @@ public class CoderTest extends AbstractTest {
                 notOptimizedParser = Coder.mkCoder(baseRing, eVars, null, null, null);
 
         Coder<MultivariatePolynomial<BigInteger>, ?, ?>
-                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, Function.identity());
+                optimizedParser = Coder.mkCoder(baseRing, eVars, polyRing, pVars, SerializableFunction.identity());
 
         String expressionStr = "-x^2*y^2*z^3 + x*y^2 + z^2*x - z*y*x";
 

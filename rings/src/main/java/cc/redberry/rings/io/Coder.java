@@ -11,6 +11,7 @@ import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.multivar.*;
 import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
+import cc.redberry.rings.util.SerializableFunction;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -33,7 +34,8 @@ public class Coder<
         Element,
         Term extends AMonomial<Term>,
         Poly extends AMultivariatePolynomial<Term, Poly>>
-        implements IParser<Element>, IStringifier<Element> {
+        implements IParser<Element>, IStringifier<Element>, java.io.Serializable {
+
     // parser stuff
     /** the base ring */
     protected final Ring<Element> baseRing;
@@ -44,7 +46,7 @@ public class Coder<
     /** map variableName -> variableIndex (if it is a polynomial variable) */
     protected final Map<String, Integer> pVariables;
     /** convert polynomial to base ring elements */
-    protected final Function<Poly, Element> polyToElement;
+    protected final SerializableFunction<Poly, Element> polyToElement;
 
     // stringifier stuff
     /** toString bindings */
@@ -56,7 +58,7 @@ public class Coder<
                   Map<String, Element> eVariables,
                   MultivariateRing<Poly> polyRing,
                   Map<String, Integer> pVariables,
-                  Function<Poly, Element> polyToElement) {
+                  SerializableFunction<Poly, Element> polyToElement) {
         this.baseRing = baseRing;
         this.eVariables = eVariables;
         this.polyRing = polyRing;
@@ -165,7 +167,7 @@ public class Coder<
             Map<String, Element> eVariables,
             MultivariateRing<Poly> polyRing,
             Map<String, Poly> pVariables,
-            Function<Poly, Element> polyToElement) {
+            SerializableFunction<Poly, Element> polyToElement) {
         Map<String, Integer> iVariables = new HashMap<>();
         if (pVariables != null)
             for (Map.Entry<String, Poly> v : pVariables.entrySet()) {
@@ -276,7 +278,7 @@ public class Coder<
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     Coder<Poly, Term, Poly> mkMultivariateCoder(MultivariateRing<Poly> ring,
                                                 Map<String, Poly> variables) {
-        return mkCoder(ring, variables, ring, variables, Function.identity());
+        return mkCoder(ring, variables, ring, variables, SerializableFunction.identity());
     }
 
     /**
@@ -434,7 +436,7 @@ public class Coder<
     Coder<E, ?, ?> mkNestedCoder(Ring<E> ring,
                                  Map<String, E> variables,
                                  Coder<I, ?, ?> innerCoder,
-                                 Function<I, E> imageFunc) {
+                                 SerializableFunction<I, E> imageFunc) {
         if (ring instanceof MultivariateRing && ((MultivariateRing) ring).factory() instanceof MultivariatePolynomial)
             return mkMultivariateCoder((MultivariateRing) ring, innerCoder, (Map) variables);
         else if (ring instanceof UnivariateRing && ((UnivariateRing) ring).factory() instanceof UnivariatePolynomial)
@@ -590,7 +592,7 @@ public class Coder<
     //////////////////////////////////////////////////////Operands//////////////////////////////////////////////////////
 
     /** optimized operations with operands */
-    private interface IOperand<P, E> {
+    private interface IOperand<P, E> extends java.io.Serializable {
         /** to auxiliary poly */
         P toPoly();
 

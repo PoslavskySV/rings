@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Simple math expression tokenizer
  */
-public final class Tokenizer {
+public final class Tokenizer implements java.io.Serializable {
     private final CharacterStream stream;
 
     /**
@@ -192,7 +192,7 @@ public final class Tokenizer {
             SPACE = new Token(TokenType.T_SPACE, " ");
 
     /** Simple token */
-    public static final class Token {
+    public static final class Token implements java.io.Serializable {
         public final TokenType tokenType;
         public final String content;
 
@@ -208,7 +208,7 @@ public final class Tokenizer {
     }
 
     /** Stream of chars. Implementations are not synchronized and doesn't support concurrent iteration. */
-    public interface CharacterStream {
+    public interface CharacterStream extends java.io.Serializable {
         /** next char available in this stream */
         boolean hasNext();
 
