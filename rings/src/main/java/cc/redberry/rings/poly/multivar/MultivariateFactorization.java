@@ -236,6 +236,8 @@ public final class MultivariateFactorization {
             return PolynomialFactorDecomposition.of(poly);
         PolynomialFactorDecomposition<Poly> result = PolynomialFactorDecomposition.empty(poly);
         for (int i = 0; i < poly.nVariables; i++) {
+            if (poly.degree(i) == 0)
+                continue;
             Poly factor = poly.asUnivariate(i).content();
             result.addFactor(factor, 1);
             poly = MultivariateDivision.divideExact(poly, factor);
@@ -2570,7 +2572,8 @@ public final class MultivariateFactorization {
 
                     assert biFactors
                             .mapTo(p -> iEvaluation.evaluateFrom(p, 1).asUnivariate()).primitive().canonical()
-                            .equals(biFactorsMain.mapTo(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).primitive().canonical());
+                            .equals(biFactorsMain.mapTo(p -> evaluation.evaluateFrom(p, 1).asUnivariate()).primitive().canonical())
+                            : poly.toString();
 
                     // square-free decomposition of the leading coefficients of bivariate factors
                     PolynomialFactorDecomposition[] ulcFactors = (PolynomialFactorDecomposition[])
