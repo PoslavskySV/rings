@@ -646,4 +646,66 @@ public class MultivariatePolynomialTest extends AMultivariateTest {
         System.out.println("Horner create      : " + statisticsNanotime(hornerCreateStat));
         System.out.println("Plain              : " + statisticsNanotime(plainStat));
     }
+
+    @Test
+    public void testComposition1() {
+        String[] vars = {"x", "y", "z"};
+        MultivariatePolynomial<BigInteger>
+                poly = MultivariatePolynomial.parse("x + 2*y + 3*z", vars),
+                y = MultivariatePolynomial.parse("x^3", vars),
+                z = MultivariatePolynomial.parse("x^5", vars);
+
+        assertEquals(parse("x + 2*x^3 + 3*x^5", vars), poly.composition(new int[]{1, 2}, new MultivariatePolynomial[]{y, z}));
+        assertEquals(parse("x^3 + 2*x^5 + 3*z", vars), poly.composition(new int[]{0, 1}, new MultivariatePolynomial[]{y, z}));
+        assertEquals(parse("x^5 + 2*x^3 + 3*z", vars), poly.composition(new int[]{1, 0}, new MultivariatePolynomial[]{y, z}));
+        assertEquals(parse("x + 2*x^5 + 3*x^3", vars), poly.composition(new int[]{2, 1}, new MultivariatePolynomial[]{y, z}));
+        assertEquals(parse("x^5 + 2*y + 3*x^3", vars), poly.composition(new int[]{2, 0}, new MultivariatePolynomial[]{y, z}));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testComposition2() {
+        RandomGenerator rnd = getRandom();
+        String[] vars = {"d", "s34", "x", "y", "z", "du0", "du1"};
+        for (int n = 0; n < 10; ++n) {
+            int
+                    l = rnd.nextInt(vars.length),
+                    m = rnd.nextInt(vars.length);
+
+            ArraysUtil.swap(vars, l, m);
+            MultivariatePolynomial<BigInteger> poly = parse("du0^4*du1^3*s34^2 + du0^3*du1^4*s34^2 - du0^3*du1^3*s34^3 - du0^3*du1^3*s34^2*x + du0^2*du1^3*s34^3*x - du0^4*du1^3*s34*y - du0^3*du1^4*s34*y - 3*du0^3*du1^2*s34^3*y - 3*du0^2*du1^3*s34^3*y + 3*du0^2*du1^2*s34^4*y + du0^3*du1^3*s34*x*y + du0^3*du1^2*s34^2*x*y - du0^2*du1^3*s34^2*x*y + du0^2*du1^2*s34^3*x*y - 2*du0*du1^2*s34^4*x*y + du0^3*du1^3*s34*y^2 + 3*du0^3*du1^2*s34^2*y^2 + 3*du0^2*du1^3*s34^2*y^2 + 3*du0^2*du1*s34^4*y^2 + 3*du0*du1^2*s34^4*y^2 - 3*du0*du1*s34^5*y^2 - du0^3*du1^2*s34*x*y^2 - du0^2*du1^2*s34^2*x*y^2 - 2*du0^2*du1*s34^3*x*y^2 + 2*du0*du1^2*s34^3*x*y^2 + du0*du1*s34^4*x*y^2 + du1*s34^5*x*y^2 - 3*du0^2*du1^2*s34^2*y^3 - 3*du0^2*du1*s34^3*y^3 - 3*du0*du1^2*s34^3*y^3 - du0*s34^5*y^3 - du1*s34^5*y^3 + s34^6*y^3 + 2*du0^2*du1*s34^2*x*y^3 - du0*du1*s34^3*x*y^3 + du0*s34^4*x*y^3 - du1*s34^4*x*y^3 - s34^5*x*y^3 + 3*du0*du1*s34^3*y^4 + du0*s34^4*y^4 + du1*s34^4*y^4 - du0*s34^3*x*y^4 + s34^4*x*y^4 - s34^4*y^5 - du0^4*du1^3*s34*z - du0^3*du1^4*s34*z + du0^3*du1^2*s34^3*z + du0^3*du1^3*s34*x*z - 3*du0^3*du1^2*s34^2*x*z - 4*du0^2*du1^3*s34^2*x*z + du0^2*du1^2*s34^3*x*z + 3*du0^2*du1^2*s34^2*x^2*z - 2*du0*du1^2*s34^3*x^2*z + du0^4*du1^3*y*z + du0^3*du1^4*y*z + du0^3*du1^3*s34*y*z + 2*du0^3*du1^2*s34^2*y*z + 4*du0^2*du1^3*s34^2*y*z - 2*du0^2*du1^2*s34^3*y*z - 2*du0^2*du1*s34^4*y*z - du0^3*du1^3*x*y*z + 2*du0^3*du1^2*s34*x*y*z + 4*du0^2*du1^3*s34*x*y*z - du0^2*du1^2*s34^2*x*y*z + 2*du0^2*du1*s34^3*x*y*z + 4*du0*du1^2*s34^3*x*y*z + 2*du0*du1*s34^4*x*y*z - 3*du0^2*du1^2*s34*x^2*y*z - 2*du0^2*du1*s34^2*x^2*y*z + 2*du0*du1^2*s34^2*x^2*y*z + 2*du0*du1*s34^3*x^2*y*z - 2*du1*s34^4*x^2*y*z - du0^3*du1^3*y^2*z - 3*du0^3*du1^2*s34*y^2*z - 4*du0^2*du1^3*s34*y^2*z - du0^2*du1^2*s34^2*y^2*z - du0^2*du1*s34^3*y^2*z - 5*du0*du1^2*s34^3*y^2*z + 4*du0*du1*s34^4*y^2*z + du0*s34^5*y^2*z + du0^3*du1^2*x*y^2*z - 4*du0*du1^2*s34^2*x*y^2*z - du0*du1*s34^3*x*y^2*z + du0*s34^4*x*y^2*z - 3*s34^5*x*y^2*z + 2*du0^2*du1*s34*x^2*y^2*z - 2*du0*du1*s34^2*x^2*y^2*z - 2*du0*s34^3*x^2*y^2*z + 2*du1*s34^3*x^2*y^2*z + 3*s34^4*x^2*y^2*z + 3*du0^2*du1^2*s34*y^3*z + 3*du0^2*du1*s34^2*y^3*z + 5*du0*du1^2*s34^2*y^3*z - du0*du1*s34^3*y^3*z + 2*du1*s34^4*y^3*z - 2*s34^5*y^3*z - 2*du0^2*du1*s34*x*y^3*z - du0*du1*s34^2*x*y^3*z - 2*du0*s34^3*x*y^3*z + s34^4*x*y^3*z + 2*du0*s34^2*x^2*y^3*z - 3*s34^3*x^2*y^3*z - 3*du0*du1*s34^2*y^4*z - du0*s34^3*y^4*z - 2*du1*s34^3*y^4*z + s34^4*y^4*z + du0*s34^2*x*y^4*z + 2*s34^3*x*y^4*z + s34^3*y^5*z + du0^3*du1^3*s34*z^2 - du0^3*du1^2*s34^2*z^2 + 3*du0^3*du1^2*s34*x*z^2 + 3*du0^2*du1^3*s34*x*z^2 + 2*du0^2*du1^2*s34^2*x*z^2 - 2*du0^2*du1*s34^3*x*z^2 - 3*du0^2*du1^2*s34*x^2*z^2 + 3*du0^2*du1*s34^2*x^2*z^2 + 5*du0*du1^2*s34^2*x^2*z^2 + du0*du1*s34^3*x^2*z^2 - 3*du0*du1*s34^2*x^3*z^2 + du1*s34^3*x^3*z^2 - du0^3*du1^3*y*z^2 + du0^3*du1^2*s34*y*z^2 - du0^2*du1^3*s34*y*z^2 - du0^2*du1^2*s34^2*y*z^2 + 2*du0^2*du1*s34^3*y*z^2 - 3*du0^3*du1^2*x*y*z^2 - 3*du0^2*du1^3*x*y*z^2 - 3*du0^2*du1^2*s34*x*y*z^2 - 4*du0*du1^2*s34^2*x*y*z^2 - 2*du0*s34^4*x*y*z^2 + 3*du0^2*du1^2*x^2*y*z^2 - du0^2*du1*s34*x^2*y*z^2 - 5*du0*du1^2*s34*x^2*y*z^2 - 2*du0*du1*s34^2*x^2*y*z^2 + du0*s34^3*x^2*y*z^2 + 3*du1*s34^3*x^2*y*z^2 + 3*s34^4*x^2*y*z^2 + 3*du0*du1*s34*x^3*y*z^2 + du0*s34^2*x^3*y*z^2 - du1*s34^2*x^3*y*z^2 - 3*s34^3*x^3*y*z^2 + du0^2*du1^3*y^2*z^2 + du0^2*du1^2*s34*y^2*z^2 - 2*du0^2*du1*s34^2*y^2*z^2 + 2*du0*du1^2*s34^2*y^2*z^2 - du0*du1*s34^3*y^2*z^2 - du0*s34^4*y^2*z^2 + du0^2*du1^2*x*y^2*z^2 + 2*du0^2*du1*s34*x*y^2*z^2 + 4*du0*du1^2*s34*x*y^2*z^2 - 2*du0*du1*s34^2*x*y^2*z^2 + du0*s34^3*x*y^2*z^2 - 3*du1*s34^3*x*y^2*z^2 + 6*s34^4*x*y^2*z^2 - 2*du0^2*du1*x^2*y^2*z^2 + du0*du1*s34*x^2*y^2*z^2 + du0*s34^2*x^2*y^2*z^2 - 3*du1*s34^2*x^2*y^2*z^2 - 3*s34^3*x^2*y^2*z^2 - du0*s34*x^3*y^2*z^2 + 3*s34^2*x^3*y^2*z^2 - 2*du0*du1^2*s34*y^3*z^2 + du0*du1*s34^2*y^3*z^2 + du0*s34^3*y^3*z^2 - du1*s34^3*y^3*z^2 + s34^4*y^3*z^2 + 2*du0*du1*s34*x*y^3*z^2 + du0*s34^2*x*y^3*z^2 + 3*du1*s34^2*x*y^3*z^2 - 3*s34^3*x*y^3*z^2 - 2*du0*s34*x^2*y^3*z^2 + du1*s34^2*y^4*z^2 - s34^3*y^4*z^2 - 3*s34^2*x*y^4*z^2 - 3*du0^2*du1^2*s34*x*z^3 + 2*du0^2*du1*s34^2*x*z^3 - 3*du0^2*du1*s34*x^2*z^3 - 3*du0*du1^2*s34*x^2*z^3 - 4*du0*du1*s34^2*x^2*z^3 + du0*s34^3*x^2*z^3 + 3*du0*du1*s34*x^3*z^3 - du0*s34^2*x^3*z^3 - 2*du1*s34^2*x^3*z^3 - s34^3*x^3*z^3 + s34^2*x^4*z^3 + 3*du0^2*du1^2*x*y*z^3 - 2*du0^2*du1*s34*x*y*z^3 + 2*du0*du1^2*s34*x*y*z^3 - 2*du0*du1*s34^2*x*y*z^3 + 2*du0*s34^3*x*y*z^3 + 3*du0^2*du1*x^2*y*z^3 + 3*du0*du1^2*x^2*y*z^3 + 3*du0*du1*s34*x^2*y*z^3 - 2*du0*s34^2*x^2*y*z^3 - 6*s34^3*x^2*y*z^3 - 3*du0*du1*x^3*y*z^3 + 2*du1*s34*x^3*y*z^3 + 3*s34^2*x^3*y*z^3 - s34*x^4*y*z^3 - 2*du0*du1^2*x*y^2*z^3 + 2*du0*du1*s34*x*y^2*z^3 - 2*du0*s34^2*x*y^2*z^3 + 2*du1*s34^2*x*y^2*z^3 - 3*s34^3*x*y^2*z^3 + du0*du1*x^2*y^2*z^3 + du0*s34*x^2*y^2*z^3 + 3*s34^2*x^2*y^2*z^3 + du0*x^3*y^2*z^3 - 2*s34*x^3*y^2*z^3 - 2*du1*s34*x*y^3*z^3 + 3*s34^2*x*y^3*z^3 + 3*s34*x^2*y^3*z^3 + 3*du0*du1*s34*x^2*z^4 - du0*s34^2*x^2*z^4 + du0*s34*x^3*z^4 + du1*s34*x^3*z^4 + 2*s34^2*x^3*z^4 - s34*x^4*z^4 - 3*du0*du1*x^2*y*z^4 + du0*s34*x^2*y*z^4 - du1*s34*x^2*y*z^4 + 3*s34^2*x^2*y*z^4 - du0*x^3*y*z^4 - du1*x^3*y*z^4 - s34*x^3*y*z^4 + x^4*y*z^4 + du1*x^2*y^2*z^4 - 3*s34*x^2*y^2*z^4 - x^3*y^2*z^4 - s34*x^3*z^5 + x^3*y*z^5", vars);
+
+            int
+                    du0 = parse("du0", vars).univariateVariable(),
+                    du1 = parse("du1", vars).univariateVariable(),
+                    s34 = parse("s34", vars).univariateVariable(),
+                    d = parse("d", vars).univariateVariable(),
+                    x = parse("x", vars).univariateVariable(),
+                    y = parse("y", vars).univariateVariable(),
+                    z = parse("z", vars).univariateVariable();
+
+            int[] from = {s34, x, y, du0, du1};
+            MultivariatePolynomial<BigInteger>[] to = new MultivariatePolynomial[]{
+                    parse("x", vars),
+                    parse("0", vars),
+                    parse("s34", vars),
+                    parse("y", vars),
+                    parse("0", vars)
+            };
+
+            MultivariatePolynomial<BigInteger> expected = parse("-(s34^5*x^4) + s34^3*x^6 + s34^4*x^4*y - s34^3*x^5*y + s34^5*x^3*z + s34^4*x^4*z - 2*s34^3*x^5*z - s34^4*x^3*y*z + s34^2*x^5*y*z - s34^4*x^3*z^2 + s34^3*x^4*z^2 + s34^3*x^3*y*z^2 - s34^2*x^4*y*z^2", vars);
+            assertEquals(expected, poly.composition(from, to));
+
+            for (int i = 0; i < 10; ++i) {
+                l = rnd.nextInt(from.length);
+                m = rnd.nextInt(from.length);
+                if (l == m)
+                    continue;
+                ArraysUtil.swap(from, l, m);
+                ArraysUtil.swap(to, l, m);
+                assertEquals(expected, poly.composition(from, to));
+            }
+        }
+
+    }
 }

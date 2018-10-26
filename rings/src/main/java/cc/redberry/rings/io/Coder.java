@@ -87,6 +87,15 @@ public class Coder<
         return this;
     }
 
+    /** Add string -> element mapping */
+    public Coder<Element, Term, Poly> bindPolynomialVariable(String var, int index) {
+        if (pVariables != null)
+            pVariables.put(var, index);
+        if (polyToElement != null)
+            eVariables.put(var, polyToElement.apply(polyRing.variable(index)));
+        return this;
+    }
+
     /** Add stringifier of inner elements */
     public Coder<Element, Term, Poly> withEncoder(Coder<?, ?, ?> subencoder) {
         subcoders.put(subencoder.baseRing, subencoder);

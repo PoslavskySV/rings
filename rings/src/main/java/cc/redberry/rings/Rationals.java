@@ -150,7 +150,11 @@ public final class Rationals<E> implements Ring<Rational<E>> {
         return Rational.one(ring);
     }
 
+    @SuppressWarnings("unchecked")
     private FactorDecomposition<Rational<E>> factor(Rational<E> element, Function<E, FactorDecomposition<E>> factor) {
+        if (element.isZero())
+            return FactorDecomposition.of(this, element);
+
         FactorDecomposition<E> numFactors = element.numerator.stream()
                 .map(factor)
                 .reduce(FactorDecomposition.empty(ring), FactorDecomposition::addAll);
@@ -191,17 +195,17 @@ public final class Rationals<E> implements Ring<Rational<E>> {
     }
 
     @Override
-    public boolean isZero(Rational element) {
+    public boolean isZero(Rational<E> element) {
         return element.isZero();
     }
 
     @Override
-    public boolean isOne(Rational element) {
+    public boolean isOne(Rational<E> element) {
         return element.isOne();
     }
 
     @Override
-    public boolean isUnit(Rational element) {
+    public boolean isUnit(Rational<E> element) {
         return !isZero(element);
     }
 

@@ -393,7 +393,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
 
     /** Returns whether this is a plain variable (with no coefficient) */
     public final boolean isVariable() {
-        return isMonomial() && isEffectiveUnivariate() && lcAsPoly().isOne();
+        return isMonomial() && isEffectiveUnivariate() && lcAsPoly().isOne() && !isConstant();
     }
 
     @Override
@@ -921,11 +921,11 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
      * {@code variables} that is polynomial in R[variables][other_variables]
      *
      * @param variables the variables to separate
-     * @param prdering  monomial order to use for result
+     * @param ordering  monomial order to use for result
      * @return multivariate polynomial with coefficients being multivariate polynomials polynomials over {@code
      *         variables} that is polynomial in R[variables][other_variables]
      */
-    public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int[] variables, Comparator<DegreeVector> prdering);
+    public abstract MultivariatePolynomial<Poly> asOverMultivariateEliminate(int[] variables, Comparator<DegreeVector> ordering);
 
     /**
      * Convert univariate polynomial over multivariate polynomials to a normal multivariate poly
@@ -1566,6 +1566,28 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         return asUnivariate(variable).evaluate(value);
     }
 
+    /**
+     * Substitutes given polynomial instead of specified variable (that is {@code this(x_1, ..., value, ..., x_N)},
+     * where value is on the place of specified variable)
+     */
+    public final Poly composition(int[] variables, Poly[] values) {
+        if (variables.length == 0)
+            throw new IllegalArgumentException();
+        if (variables.length != values.length)
+            throw new IllegalArgumentException();
+        assertSameCoefficientRingWith(values[0]);
+
+        variables = variables.clone();
+        values = values.clone();
+        ArraysUtil.quickSort(variables, values);
+        // R[variables][other_variables] => R[other_variables][variables]
+        int[] mainVariables = ArraysUtil.intSetDifference(ArraysUtil.sequence(0, nVariables), variables);
+
+        MultivariatePolynomial<Poly> r = asOverMultivariate(mainVariables).evaluate(variables, values);
+        assert r.isConstant();
+        return r.cc();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -1582,7 +1604,7 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         return terms.hashCode();
     }
 
-    public int skeletonHashCode(){
+    public int skeletonHashCode() {
         return terms.skeletonHashCode();
     }
 

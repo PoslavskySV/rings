@@ -145,4 +145,9 @@ public class RationalsTest extends AbstractTest {
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
     }
+
+    @Test
+    public void test7() {
+        System.out.println(Q.factor(Q.mkNumerator(0)));
+    }
 }

@@ -63,6 +63,9 @@ public class Rational<E> implements Comparable<Rational<E>>,
     }
 
     Rational(Ring<E> ring, Operand numerator, Operand denominator) {
+        if (denominator.isZero())
+            throw new ArithmeticException("division by zero");
+
         this.ring = ring;
         this.simplicityCriteria = simplicityCriteria(ring);
         @SuppressWarnings("unchecked")
@@ -73,6 +76,9 @@ public class Rational<E> implements Comparable<Rational<E>>,
     }
 
     Rational(boolean skipNormalize, Ring<E> ring, Operand numerator, Operand denominator) {
+        if (denominator.isZero())
+            throw new ArithmeticException("division by zero");
+
         this.ring = ring;
         this.simplicityCriteria = simplicityCriteria(ring);
         this.numerator = numerator;
@@ -372,21 +378,24 @@ public class Rational<E> implements Comparable<Rational<E>>,
     /** bring fraction to canonical form */
     private void normalize(Operand[] numden) {
         Operand numerator = numden[0].shallowCopy();
-        Operand denominator = numden[1].shallowCopy();
+        Operand denominator;
+        if (numerator.isZero())
+            denominator = new Operand(ring.getOne());
+        else
+            denominator = numden[1].shallowCopy();
 
         numerator.normalize();
         denominator.normalize();
 
-        if (numerator.isZero())
-            denominator = new Operand(ring.getOne());
-        else if (denominator.isUnit()) {
-            numerator = numerator.multiply(ring.reciprocal(denominator.expand()));
-            denominator = new Operand(ring.getOne());
-        } else if (denominator.unitOrNull() != null) {
-            E du = ring.reciprocal(denominator.unitOrNull());
-            denominator = denominator.multiply(du);
-            numerator = numerator.multiply(du);
-        }
+        if (!numerator.isZero())
+            if (denominator.isUnit()) {
+                numerator = numerator.multiply(ring.reciprocal(denominator.expand()));
+                denominator = new Operand(ring.getOne());
+            } else if (denominator.unitOrNull() != null) {
+                E du = ring.reciprocal(denominator.unitOrNull());
+                denominator = denominator.multiply(du);
+                numerator = numerator.multiply(du);
+            }
 
         numden[0] = numerator;
         numden[1] = denominator;
@@ -707,7 +716,10 @@ public class Rational<E> implements Comparable<Rational<E>>,
      * Maps rational
      */
     public Rational<E> map(Function<E, E> function) {
-        return new Rational<>(ring, numerator.map(function), denominator.map(function));
+        Operand num = numerator.map(function);
+        Operand den = denominator.map(function);
+        Operand[] nd = reduceGcd(num, den);
+        return new Rational<>(ring, nd[0], nd[1]);
     }
 
     /**

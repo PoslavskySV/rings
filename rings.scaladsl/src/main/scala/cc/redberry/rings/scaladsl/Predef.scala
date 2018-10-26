@@ -41,6 +41,12 @@ private[scaladsl] trait Predef {
   implicit def ringMethods[Poly <: IPolynomial[Poly], E](ring: IPolynomialRing[Poly, E]): rings.poly.IPolynomialRing[Poly] = ring.theRing
 
   /**
+    * Delegate [[Frac]] methods for [[rings.Rationals]]
+    */
+  implicit def ringMethods[E](ring: Frac[E]): rings.Rationals[E]
+  = ring.theRing.asInstanceOf[rings.Rationals[E]]
+
+  /**
     * Delegate [[IPolynomialRing]] methods for [[IPolynomialRing]]
     */
   implicit def ringMethods[E](ring: UnivariateRing[E]): poly.UnivariateRing[UnivariatePolynomial[E]]
