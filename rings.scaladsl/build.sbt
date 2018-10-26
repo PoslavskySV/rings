@@ -4,7 +4,7 @@ organization := "cc.redberry"
 
 name := "rings.scaladsl"
 
-version := "2.5.3"
+version := "2.5.3-SNAPSHOT"
 
 scalaVersion := "2.12.3"
 
