@@ -706,6 +706,14 @@ public class MultivariatePolynomialTest extends AMultivariateTest {
                 assertEquals(expected, poly.composition(from, to));
             }
         }
+    }
 
+    @Test
+    public void testToString() {
+        String str = MultivariatePolynomial.parse("- x - y", "x", "y").toString();
+        assertTrue(str.equals("-x-y") || str.equals("-y-x"));
+
+        str = MultivariatePolynomial.parse("- 2*x - y*z", "x", "y", "z").toString();
+        assertTrue(str.equals("-2*x-y*z") || str.equals("-y*z-2*x"));
     }
 }

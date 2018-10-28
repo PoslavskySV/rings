@@ -2069,7 +2069,9 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         for (Monomial<E> term : terms) {
             E cf = term.coefficient;
             String cfString;
-            if (!ring.isOne(cf) || term.totalDegree == 0)
+            if (ring.isMinusOne(cf) && term.totalDegree != 0)
+                cfString = "-";
+            else if (!ring.isOne(cf) || term.totalDegree == 0)
                 cfString = cfStringifier.stringify(cf);
             else
                 cfString = "";
@@ -2083,17 +2085,20 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
             StringBuilder cfBuilder = new StringBuilder();
             cfBuilder.append(cfString);
 
+            boolean appended = false;
             for (int i = 0; i < nVariables; ++i) {
                 if (term.exponents[i] == 0)
                     continue;
 
-                if (cfBuilder.length() != 0)
+                if (!(cfString.equals("-") && !appended) && cfBuilder.length() != 0)
                     cfBuilder.append("*");
 
                 cfBuilder.append(varStrings[i]);
 
                 if (term.exponents[i] > 1)
                     cfBuilder.append("^").append(term.exponents[i]);
+
+                appended = true;
             }
 
             sb.append(cfBuilder);
