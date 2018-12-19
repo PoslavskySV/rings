@@ -23,6 +23,13 @@ The key features of Rings include:
 
 The full documentation is available at [<http://rings.readthedocs.io>](https://rings.readthedocs.io).
 
+A more academic description of the library can be found in:
+
+> Stanislav Poslavsky, _Rings: An efficient Java/Scala library for polynomial rings_, Computer Physics Communications, Volume 235, 2019, Pages 400-413, [doi:10.1016/j.cpc.2018.09.005](https://doi.org/10.1016/j.cpc.2018.09.005)
+
+(please, cite this paper if you use Rings)
+
+
 Set up
 ------
 

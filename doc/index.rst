@@ -52,6 +52,13 @@ Rings sources are hosted at GitHub: https://github.com/PoslavskySV/rings.
    algorithms
 
 
+Citation
+========
+
+Please, cite this paper if you use Rings:
+
+.. [POS19] Stanislav Poslavsky, *Rings: An efficient Java/Scala library for polynomial rings*, Computer Physics Communications, Volume 235, 2019, Pages 400-413, `doi:10.1016/j.cpc.2018.09.005 <https://doi.org/10.1016/j.cpc.2018.09.005>`_
+
 
 License
 =======
