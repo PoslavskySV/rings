@@ -117,6 +117,7 @@
                     <runOrder>random</runOrder>
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
+                    <useSystemClassLoader>false</useSystemClassLoader>
                 </configuration>
             </plugin>
             <plugin>
