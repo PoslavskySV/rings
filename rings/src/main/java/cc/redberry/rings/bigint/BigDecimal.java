@@ -29,6 +29,7 @@
 
 package cc.redberry.rings.bigint;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 
 /**
@@ -3714,29 +3715,15 @@ public class BigDecimal extends Number {
         }
     }
 
-    private static class UnsafeHolder {
-        private static final sun.misc.Unsafe unsafe;
-        private static final long intCompactOffset;
-        private static final long intValOffset;
-
-        static {
-            try {
-                unsafe = sun.misc.Unsafe.getUnsafe();
-                intCompactOffset = unsafe.objectFieldOffset
-                        (BigDecimal.class.getDeclaredField("intCompact"));
-                intValOffset = unsafe.objectFieldOffset
-                        (BigDecimal.class.getDeclaredField("intVal"));
-            } catch (Exception ex) {
-                throw new ExceptionInInitializerError(ex);
-            }
-        }
-
-        static void setIntCompactVolatile(BigDecimal bd, long val) {
-            unsafe.putLongVolatile(bd, intCompactOffset, val);
-        }
-
-        static void setIntValVolatile(BigDecimal bd, BigInteger val) {
-            unsafe.putObjectVolatile(bd, intValOffset, val);
+    private static final Field fIntCompact, fIntVal;
+    static {
+        try {
+            fIntCompact = BigDecimal.class.getDeclaredField("intCompact");
+            fIntVal = BigDecimal.class.getDeclaredField("intVal");
+            fIntCompact.setAccessible(true);
+            fIntVal.setAccessible(true);
+        } catch (NoSuchFieldException e){
+            throw new RuntimeException(e);
         }
     }
 
@@ -3756,7 +3743,11 @@ public class BigDecimal extends Number {
             throw new java.io.StreamCorruptedException(message);
             // [all values of scale are now allowed]
         }
-        UnsafeHolder.setIntCompactVolatile(this, compactValFor(intVal));
+        try {
+            fIntCompact.set(this, compactValFor(intVal));
+        } catch (IllegalAccessException e){
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -3768,7 +3759,11 @@ public class BigDecimal extends Number {
             throws java.io.IOException {
         // Must inflate to maintain compatible serial form.
         if (this.intVal == null)
-            UnsafeHolder.setIntValVolatile(this, BigInteger.valueOf(this.intCompact));
+            try {
+                fIntVal.set(this, BigInteger.valueOf(this.intCompact));
+            } catch (IllegalAccessException e){
+                throw new RuntimeException(e);
+            }
         // Could reset intVal back to null if it has to be set.
         s.defaultWriteObject();
     }

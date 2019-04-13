@@ -30,8 +30,6 @@
 package cc.redberry.rings.bigint;
 
 import org.apache.commons.math3.random.RandomGenerator;
-import sun.misc.DoubleConsts;
-import sun.misc.FloatConsts;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -124,6 +122,22 @@ import java.util.concurrent.*;
  */
 
 public final class BigInteger extends Number implements Comparable<BigInteger> {
+    // sun.misc.DoubleConsts
+    private static class DoubleConsts {
+        static final int SIGNIFICAND_WIDTH = 53;
+        static final int EXP_BIAS = 1023;
+        static final long SIGN_BIT_MASK = -9223372036854775808L;
+        static final long SIGNIF_BIT_MASK = 4503599627370495L;
+    }
+
+    // sun.misc.FloatConsts
+    private class FloatConsts {
+        static final int SIGNIFICAND_WIDTH = 24;
+        static final int EXP_BIAS = 127;
+        static final int SIGN_BIT_MASK = -2147483648;
+        static final int SIGNIF_BIT_MASK = 8388607;
+    }
+
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
      * 1 for positive.  Note that the BigInteger zero <i>must</i> have
@@ -5808,11 +5822,12 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
             throw new java.io.StreamCorruptedException(message);
         }
 
-        // Commit final fields via Unsafe
-        UnsafeHolder.putSign(this, sign);
-
-        // Calculate mag field from magnitude and discard magnitude
-        UnsafeHolder.putMag(this, mag);
+        try {
+            fSignum.set(this, sign);
+            fMag.set(this, mag);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
         if (mag.length >= MAX_MAG_LENGTH) {
             try {
                 checkRange();
@@ -5822,42 +5837,17 @@ public final class BigInteger extends Number implements Comparable<BigInteger> {
         }
     }
 
-    // Support for resetting final fields while deserializing
-    private static class UnsafeHolder {
-        private static final sun.misc.Unsafe unsafe;
-        private static final long signumOffset;
-        private static final long magOffset;
+    private static final Field fSignum, fMag;
 
-        static {
-            try {
-                unsafe = getUnsafe();// sun.misc.Unsafe.getUnsafe();
-                signumOffset = unsafe.objectFieldOffset
-                        (BigInteger.class.getDeclaredField("signum"));
-                magOffset = unsafe.objectFieldOffset
-                        (BigInteger.class.getDeclaredField("mag"));
-            } catch (Exception ex) {
-                throw new ExceptionInInitializerError(ex);
-            }
+    static {
+        try {
+            fSignum = BigInteger.class.getDeclaredField("signum");
+            fMag = BigInteger.class.getDeclaredField("mag");
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
         }
-
-        @SuppressWarnings("restriction")
-        private static sun.misc.Unsafe getUnsafe() {
-            try {
-                Field workaround = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-                workaround.setAccessible(true);
-                return (sun.misc.Unsafe) workaround.get(null);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        static void putSign(BigInteger bi, int sign) {
-            unsafe.putIntVolatile(bi, signumOffset, sign);
-        }
-
-        static void putMag(BigInteger bi, int[] magnitude) {
-            unsafe.putObjectVolatile(bi, magOffset, magnitude);
-        }
+        fSignum.setAccessible(true);
+        fMag.setAccessible(true);
     }
 
     /**
