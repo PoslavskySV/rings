@@ -509,19 +509,19 @@ public final class GroebnerMethods {
     /* **************************************** Partial fractions **************************************** */
 
     /**
-     * Computes Leinart's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
+     * Computes Leinartas's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
      */
     @SuppressWarnings("unchecked")
     public static <Poly extends AMultivariatePolynomial>
-    List<Rational<Poly>> LeinartDecomposition(Rational<Poly> fraction) {
-        return LeinartDecomposition0(fraction);
+    List<Rational<Poly>> LeinartasDecomposition(Rational<Poly> fraction) {
+        return LeinartasDecomposition0(fraction);
     }
 
     /**
-     * Computes Leinart's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
+     * Computes Leinartas's decomposition of given rational expression (see https://arxiv.org/abs/1206.4740)
      */
     private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    List<Rational<Poly>> LeinartDecomposition0(Rational<Poly> fraction) {
+    List<Rational<Poly>> LeinartasDecomposition0(Rational<Poly> fraction) {
         FactorDecomposition<Poly> denDecomposition = fraction.factorDenominator();
         List<Factor<Term, Poly>> denominator = IntStream.range(0, denDecomposition.size())
                 .mapToObj(i -> new Factor<>(denDecomposition.get(i), denDecomposition.getExponent(i)))

@@ -265,14 +265,14 @@ public class GroebnerMethodsTest extends AMultivariateTest {
 
 
     @Test
-    public void testLeinartDecomposition1() {
+    public void testLeinartasDecomposition1() {
         MultivariateRing<MultivariatePolynomialZp64> mRing = MultivariateRingZp64(3, 17);
         Coder<MultivariatePolynomialZp64, ?, ?> mCoder = Coder.mkPolynomialCoder(mRing, "x", "y", "z");
         Rationals<MultivariatePolynomialZp64> fRing = Frac(mRing);
         Coder<Rational<MultivariatePolynomialZp64>, ?, ?> fCoder = Coder.mkRationalsCoder(fRing, mCoder);
 
         Rational<MultivariatePolynomialZp64> f = fCoder.parse("(x + y) / (x^2 + y^2) / (x^3 - x * y - 1) / (x - y)");
-        List<Rational<MultivariatePolynomialZp64>> decomposition = LeinartDecomposition(f);
+        List<Rational<MultivariatePolynomialZp64>> decomposition = LeinartasDecomposition(f);
 
         assertTrue(f.subtract(decomposition.stream().reduce(fRing.getZero(), fRing::add)).isZero());
     }
@@ -359,7 +359,7 @@ public class GroebnerMethodsTest extends AMultivariateTest {
                 coder.parse("1"),
                 coder.parse("((p - q)^2 - m3^2)*(p^2 - m1^2)*(q^2 - m2^2)"));
 
-        List<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>>> decomposition = LeinartDecomposition(f);
+        List<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<BigInteger>>>>> decomposition = LeinartasDecomposition(f);
         assertTrue(f.subtract(decomposition.stream().reduce(fRing.getZero(), fRing::add)).isZero());
 
         for (int i = 0; i < decomposition.size(); i++) {
@@ -383,7 +383,7 @@ public class GroebnerMethodsTest extends AMultivariateTest {
                 coder.parse("1"),
                 coder.parse("((p - q)^2 - m3^2)*(p^2 - m1^2)*(q^2 - m2^2)"));
 
-        List<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>> decomposition = LeinartDecomposition(f);
+        List<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>> decomposition = LeinartasDecomposition(f);
 
         for (int i = 0; i < decomposition.size(); i++) {
             FactorDecomposition<Rational<MultivariatePolynomial<Rational<MultivariatePolynomial<UnivariatePolynomialZp64>>>>> facs = fRing.factor(decomposition.get(i));
