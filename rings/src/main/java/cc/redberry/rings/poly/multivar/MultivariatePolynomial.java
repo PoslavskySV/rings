@@ -34,6 +34,7 @@ import static cc.redberry.rings.poly.multivar.MultivariatePolynomialZp64.MAX_POW
 /**
  * @since 1.0
  */
+@SuppressWarnings("ALL")
 public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Monomial<E>, MultivariatePolynomial<E>> {
     private static final long serialVersionUID = 1L;
     /** The coefficient ring */
@@ -1772,6 +1773,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
         return loadFrom(newMap);
     }
 
+    @SuppressWarnings("Duplicates")
     private MultivariatePolynomial<E> multiplyKronecker(MultivariatePolynomial<E> oth) {
         int[] resultDegrees = new int[nVariables];
         int[] thisDegrees = degreesRef();
@@ -1798,35 +1800,39 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
     /**
      * Convert to Kronecker's representation
      */
-    private TLongObjectHashMap<CfHolder<E>> toKronecker(long[] kroneckerMap) {
-        TLongObjectHashMap<CfHolder<E>> result = new TLongObjectHashMap<>(size());
+    private TLongObjectHashMap<E> toKronecker(long[] kroneckerMap) {
+        TLongObjectHashMap<E> result = new TLongObjectHashMap<>(size());
         for (Monomial<E> term : this) {
             long exponent = term.exponents[0];
             for (int i = 1; i < term.exponents.length; i++)
                 exponent += term.exponents[i] * kroneckerMap[i];
             assert !result.contains(exponent);
-            result.put(exponent, new CfHolder<>(term.coefficient));
+            result.put(exponent, term.coefficient);
         }
         return result;
     }
 
     private static <E> TLongObjectHashMap<CfHolder<E>> multiplySparseUnivariate(Ring<E> ring,
-                                                                                TLongObjectHashMap<CfHolder<E>> a,
-                                                                                TLongObjectHashMap<CfHolder<E>> b) {
+                                                                                TLongObjectHashMap<E> a,
+                                                                                TLongObjectHashMap<E> b) {
         TLongObjectHashMap<CfHolder<E>> result = new TLongObjectHashMap<>(a.size() + b.size());
-        TLongObjectIterator<CfHolder<E>> ait = a.iterator();
+        TLongObjectIterator<E> ait = a.iterator();
         while (ait.hasNext()) {
             ait.advance();
-            TLongObjectIterator<CfHolder<E>> bit = b.iterator();
+            TLongObjectIterator<E> bit = b.iterator();
             while (bit.hasNext()) {
                 bit.advance();
 
                 long deg = ait.key() + bit.key();
-                E val = ring.multiply(ait.value().coefficient, bit.value().coefficient);
-
-                CfHolder<E> r = result.putIfAbsent(deg, new CfHolder<>(val));
-                if (r != null)
+                E av = ait.value();
+                E bv = bit.value();
+                E val = ring.multiply(av, bv);
+                CfHolder<E> r = result.get(deg);
+                if (r != null) {
                     r.coefficient = ring.add(r.coefficient, val);
+                } else {
+                    result.put(deg, new CfHolder<>(val));
+                }
             }
         }
         return result;

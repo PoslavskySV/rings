@@ -16,6 +16,7 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.ArraysUtil;
+import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.iterator.TLongObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -35,6 +36,7 @@ import java.util.function.LongFunction;
  * @see AMultivariatePolynomial
  * @since 1.0
  */
+@SuppressWarnings("Duplicates")
 public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<MonomialZp64, MultivariatePolynomialZp64> {
     private static final long serialVersionUID = 1L;
     /**
@@ -372,7 +374,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * -modulus/2 <= cfx <= modulus/2}).
      *
      * @return Z[X] version of this with coefficients represented in symmetric modular form ({@code -modulus/2 <= cfx <=
-     * modulus/2}).
+     *         modulus/2}).
      */
     public MultivariatePolynomial<BigInteger> asPolyZSymmetric() {
         MonomialSet<Monomial<BigInteger>> bTerms = new MonomialSet<>(ordering);
@@ -1092,8 +1094,8 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @param variable the variable
      * @param value    the value
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, long)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, long)})
      */
     public MultivariatePolynomialZp64 evaluate(int variable, long value) {
         value = ring.modulus(value);
@@ -1108,8 +1110,8 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      *
      * @param variable the variable
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, long)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, long)})
      */
     MultivariatePolynomialZp64 evaluate(int variable, lPrecomputedPowers powers) {
         if (degree(variable) == 0)
@@ -1141,8 +1143,8 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @param variables the variables
      * @param values    the values
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, long)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, long)})
      */
     @SuppressWarnings("unchecked")
     public MultivariatePolynomialZp64 evaluate(int[] variables, long[] values) {
@@ -1198,7 +1200,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @param variable the variable
      * @param value    the value
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} and  {@code nVariables
-     * = nVariables - 1})
+     *         = nVariables - 1})
      */
     public MultivariatePolynomialZp64 eliminate(int variable, long value) {
         value = ring.modulus(value);
@@ -1217,8 +1219,8 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
      * @param variables the variables
      * @param values    the values
      * @return a new multivariate polynomial with {@code value} substituted for {@code variable} but still with the same
-     * {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to {@link
-     * #eliminate(int, long)})
+     *         {@link #nVariables} (though the effective number of variables is {@code nVariables - 1}, compare to
+     *         {@link #eliminate(int, long)})
      */
     @SuppressWarnings("unchecked")
     public MultivariatePolynomialZp64 eliminate(int[] variables, long[] values) {
@@ -1644,35 +1646,34 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
     /**
      * Convert to Kronecker's representation
      */
-    private TLongObjectHashMap<CfHolder> toKronecker(long[] kroneckerMap) {
-        TLongObjectHashMap<CfHolder> result = new TLongObjectHashMap<>(size());
+    private long[][] toKronecker(long[] kroneckerMap) {
+        long[][] result = new long[size()][2];
+        int j = 0;
         for (MonomialZp64 term : this) {
             long exponent = term.exponents[0];
             for (int i = 1; i < term.exponents.length; i++)
                 exponent += term.exponents[i] * kroneckerMap[i];
-            assert !result.contains(exponent);
-            result.put(exponent, new CfHolder(term.coefficient));
+            result[j][0] = exponent;
+            result[j][1] = term.coefficient;
+            ++j;
         }
         return result;
     }
 
     private static TLongObjectHashMap<CfHolder> multiplySparseUnivariate(IntegersZp64 ring,
-                                                                         TLongObjectHashMap<CfHolder> a,
-                                                                         TLongObjectHashMap<CfHolder> b) {
-        TLongObjectHashMap<CfHolder> result = new TLongObjectHashMap<>(a.size() + b.size());
-        TLongObjectIterator<CfHolder> ait = a.iterator();
-        while (ait.hasNext()) {
-            ait.advance();
-            TLongObjectIterator<CfHolder> bit = b.iterator();
-            while (bit.hasNext()) {
-                bit.advance();
+                                                                         long[][] a,
+                                                                         long[][] b) {
+        TLongObjectHashMap<CfHolder> result = new TLongObjectHashMap<>(a.length + b.length);
+        for (long[] ai : a) {
+            for (long[] bi : b) {
+                long deg = ai[0] + bi[0];
+                long val = ring.multiply(ai[1], bi[1]);
 
-                long deg = ait.key() + bit.key();
-                long val = ring.multiply(ait.value().coefficient, bit.value().coefficient);
-
-                CfHolder r = result.putIfAbsent(deg, new CfHolder(val));
+                CfHolder r = result.get(deg);
                 if (r != null)
                     r.coefficient = ring.add(r.coefficient, val);
+                else
+                    result.put(deg, new CfHolder(val));
             }
         }
         return result;
