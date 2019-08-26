@@ -76,6 +76,8 @@ public class HenselLiftingTest extends AUnivariateTest {
 
         out:
         for (long modulus : getModulusArray(nPrimes, 0, 5, 0)) {
+            if (modulus == 2)
+                continue;
             PolyZp aMod = modulus(aFactor, modulus);
             PolyZp bMod = modulus(bFactor, modulus);
             if (aMod.degree() != aFactor.degree() || bMod.degree() != bFactor.degree())
