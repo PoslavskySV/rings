@@ -2,7 +2,7 @@
 [![image](https://readthedocs.org/projects/rings/badge/?version=latest)](https://rings.readthedocs.io)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.svg)](http://www.javadoc.io/doc/cc.redberry/rings)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?label=scaladoc)](http://www.javadoc.io/doc/cc.redberry/rings.scaladsl_2.12)
-[![image](https://img.shields.io/maven-central/v5cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.5.2%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.5.2%7Cjar)
 [![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.5.2%7Cjar)
 [![image](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat)](https://opensource.org/licenses/Apache-2.0)
 
