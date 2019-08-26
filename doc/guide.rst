@@ -197,6 +197,43 @@ It is worst to mention, that multiplication defined in `IntegersZp64`_ is especi
 .. _IntegersZp: http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/IntegersZp.html
 
 
+When doing a lot of operations in a fixed finite field with small cardinality, it is recommended to precompute all modular inverses. This way division in the field become as fast as multiplication. Example:
+
+
+.. tabs::
+
+   .. code-tab:: java
+
+        IntegersZp64 zp = new IntegersZp64(modulus);
+        // build complete table
+        zp.buildCachedReciprocals();
+        // takes zero time
+        zp.reciprocal(123);
+
+
+        // if polynomial ring is given
+        UnivariateRing<UnivariatePolynomialZp64> pRing = Rings.UnivariateRingZp64(17);
+        // the same instance of coefficient ring is used for all polynomials
+        // one can access it using any polynomial instance
+        pRing.factory().ring.buildCachedReciprocals();
+
+
+   .. code-tab:: scala
+
+        val zp = Zp64(modulus)
+        // build complete table
+        zp.buildCachedReciprocals()
+
+        // if polynomial ring is given
+        val pRing = UnivariateRingZp64(modulus, "x")
+        // the same instance of coefficient ring is used for all polynomials
+        // one can access it using any polynomial instance
+        pRing.factory().ring.buildCachedReciprocals()
+
+
+Precomputing table of inverses is not done by default even for very small fields, to avoid huge memory consumtion when many instances with different primes are allocated (often case).
+
+
 .. admonition:: Full API documentation
 
     * API docs for ``IntegersZp64``: `cc.redberry.rings.IntegersZp64 <http://javadoc.io/page/cc.redberry/rings/latest/cc/redberry/rings/IntegersZp64.html>`_
