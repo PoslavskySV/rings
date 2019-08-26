@@ -19,7 +19,7 @@ jobs:
 
       - run:
           command: |
-              sudo apt-get install singular
+              sudo apt-get update && sudo apt-get install singular
       - run:
           command: |
               git submodule sync --recursive
