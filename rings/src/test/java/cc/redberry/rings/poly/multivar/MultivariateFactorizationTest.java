@@ -3,9 +3,10 @@ package cc.redberry.rings.poly.multivar;
 import cc.redberry.rings.*;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
-import cc.redberry.rings.poly.*;
+import cc.redberry.rings.poly.AlgebraicNumberField;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.test.FactorizationInput;
 import cc.redberry.rings.poly.univar.*;
 import cc.redberry.rings.test.Benchmark;
@@ -29,7 +30,6 @@ import java.util.stream.Stream;
 
 import static cc.redberry.rings.Rings.*;
 import static cc.redberry.rings.poly.PolynomialMethods.Factor;
-import static cc.redberry.rings.poly.PolynomialMethods.FactorSquareFree;
 import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MultivariateFactorization.*;
@@ -2333,6 +2333,31 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
                 .parse("-1*x3^2*x4^2*x5+2*x1*x3*x4^2*x5-1*x1^2*x4^2*x5+2*x2*x3^2*x4*x5-4*x1*x2*x3*x4*x5+2*x1^2*x2*x4*x5-1*x2^2*x3^2*x5+2*x1*x2^2*x3*x5-1*x1^2*x2^2*x5+x3^2*x4^3-1*x1*x3*x4^3+x3^3*x4^2-2*x2*x3^2*x4^2-2*x1*x3^2*x4^2+x1*x2*x3*x4^2+x1^2*x3*x4^2+x1^2*x2*x4^2-1*x2*x3^3*x4+x2^2*x3^2*x4+x1*x2*x3^2*x4+x1*x2^2*x3*x4+x1^2*x2*x3*x4-2*x1^2*x2^2*x4-1*x1^3*x2*x4+x1*x2^2*x3^2-1*x1*x2^3*x3-2*x1^2*x2^2*x3+x1^2*x2^3+x1^3*x2^2",
                         "x0", "x1", "x2", "x3", "x4", "x5");
         assertEquals(3, factorToPrimitive(poly).size());
+    }
+
+    @Test
+    public void testNumberField4() {
+        UnivariatePolynomial<Rational<BigInteger>> minimalPoly =
+                UnivariatePolynomial.create(Q, Q.valueOf(1), Q.valueOf(0), Q.valueOf(1));
+        AlgebraicNumberField<UnivariatePolynomial<Rational<BigInteger>>>
+                field = new AlgebraicNumberField<>(minimalPoly);
+
+
+        MultivariateRing<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>> mRing = Rings.MultivariateRing(3, field);
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> uCoder = Coder.mkUnivariateCoder(field, "t");
+        Coder<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>,
+                Monomial<UnivariatePolynomial<Rational<BigInteger>>>,
+                MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
+                coder = Coder.mkMultivariateCoder(mRing, uCoder, "x", "y", "z");
+
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> p1 = coder.parse("x^2 - 1 ");
+        MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> p2 = coder.parse("x^4 + 1");
+        for (MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>> p : Arrays.asList(p1, p2)) {
+            PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomial<Rational<BigInteger>>>>
+                    facs = MultivariateFactorization.Factor(p);
+            assertEquals(p, facs.multiply());
+            assertEquals(2, facs.size());
+        }
     }
 
     /* ==================================== Test data =============================================== */

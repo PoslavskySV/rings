@@ -1,6 +1,7 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings.poly.PolynomialMethods.{Factor, PolynomialGCD}
+import cc.redberry.rings.poly.univar.UnivariateResultants
 import cc.redberry.rings.scaladsl.util.timing
 import org.junit.Test
 
@@ -230,7 +231,7 @@ class Examples3 {
   @Test
   def testParametricNumberField1(): Unit = {
     import syntax._
-    // Q[c, d]
+    // Frac(Q[c, d])
     val params = Frac(MultivariateRing(Q, Array("c", "d")))
     // A minimal polynomial X^2 + c = 0
     val generator = UnivariatePolynomial(params("c"), params(0), params(1))(params)
@@ -252,7 +253,7 @@ class Examples3 {
   @Test
   def testParametricNumberField2(): Unit = {
     import syntax._
-    // Q[c, d]
+    // Frac(Q[c, d])
     val params = Frac(MultivariateRing(Q, Array("c", "d")))
     // A minimal polynomial X^2 + c = 0
     val gen1 = UnivariatePolynomial(params("c"), params(0), params(1))(params)

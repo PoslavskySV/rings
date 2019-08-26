@@ -123,6 +123,10 @@ sealed class Ring[E](val theRing: rings.Ring[E])
     * Casts e to element of this
     */
   final def element(e: Any): E = e.asInstanceOf[E]
+
+  final def zero = theRing.getZero
+  final def one = theRing.getOne
+  final def negativeOne = theRing.getNegativeOne
 }
 
 /**

@@ -67,8 +67,6 @@ public final class UnivariateGCD {
         T r = tryNested(a, b);
         if (r != null)
             return r;
-        if (a.isOverField())
-            return HalfGCD(a, b);
         T t = trivialGCD(a, b);
         if (t != null)
             return t;
