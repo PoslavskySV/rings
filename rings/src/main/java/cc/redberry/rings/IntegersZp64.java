@@ -77,9 +77,29 @@ public final class IntegersZp64 implements java.io.Serializable {
         return multiply(a, reciprocal(b));
     }
 
+
+    /** cached modular inverses */
+    private volatile int[] cachedReciprocals = null;
+
+    /** builds a table of cached reciprocals */
+    public void buildCachedReciprocals() {
+        if (cachedReciprocals != null)
+            return;
+        synchronized (this) {
+            if (cachedReciprocals == null) {
+                int[] cachedReciprocals = new int[MachineArithmetic.safeToInt(modulus)];
+                for (int val = 1; val < cachedReciprocals.length; ++val)
+                    cachedReciprocals[val] = (int) MachineArithmetic.modInverse(val, modulus);
+                this.cachedReciprocals = cachedReciprocals;
+            }
+        }
+    }
+
     /** Returns modular inverse of {@code val} */
     public long reciprocal(long val) {
-        return MachineArithmetic.modInverse(val, modulus);
+        return cachedReciprocals == null
+                ? MachineArithmetic.modInverse(val, modulus)
+                : (val < cachedReciprocals.length ? cachedReciprocals[(int) val] : MachineArithmetic.modInverse(val, modulus));
     }
 
     /** Negate mod operation */
