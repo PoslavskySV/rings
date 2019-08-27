@@ -47,6 +47,15 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
     }
 
     /**
+     * Raise term in a power of {@code exponent}
+     *
+     * @param term     the term
+     * @param exponent the exponent
+     * @return {@code term^exponent}
+     */
+    Term pow(Term term, int exponent);
+
+    /**
      * Negates term
      */
     Term negate(Term term);
@@ -123,6 +132,20 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
             if (dv == null)
                 return null;
             return new MonomialZp64(dv, ring.divide(dividend.coefficient, divider.coefficient));
+        }
+
+        @Override
+        public MonomialZp64 pow(MonomialZp64 term, int exponent) {
+            if (exponent == 1)
+                return term;
+            if (exponent == 0)
+                return getUnitTerm(term.nVariables());
+            if (term.totalDegree > Integer.MAX_VALUE / exponent)
+                throw new ArithmeticException("overflow");
+            int[] exps = new int[term.exponents.length];
+            for (int i = 0; i < exps.length; ++i)
+                exps[i] = term.exponents[i] * exponent;
+            return new MonomialZp64(exps, term.totalDegree * exponent, ring.powMod(term.coefficient, exponent));
         }
 
         @Override
@@ -212,6 +235,20 @@ public interface IMonomialAlgebra<Term extends AMonomial<Term>> extends Serializ
             if (div == null)
                 return null;
             return new Monomial<>(dv, div);
+        }
+
+        @Override
+        public Monomial<E> pow(Monomial<E> term, int exponent) {
+            if (exponent == 1)
+                return term;
+            if (exponent == 0)
+                return getUnitTerm(term.nVariables());
+            if (term.totalDegree > Integer.MAX_VALUE / exponent)
+                throw new ArithmeticException("overflow");
+            int[] exps = new int[term.exponents.length];
+            for (int i = 0; i < exps.length; ++i)
+                exps[i] = term.exponents[i] * exponent;
+            return new Monomial<>(exps, term.totalDegree * exponent, ring.pow(term.coefficient, exponent));
         }
 
         @Override

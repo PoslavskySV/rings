@@ -799,10 +799,9 @@ public class Coder<
                 int e = exponent.intValue();
                 if (((long) term.totalDegree) * e > Short.MAX_VALUE)
                     return super.pow(exponent);
-                int[] exponents = term.exponents;
-                for (int i = 0; i < exponents.length; ++i)
-                    exponents[i] *= e;
-                return new MonomialOperand(term.forceSetDegreeVector(exponents, term.totalDegree * e));
+
+                IMonomialAlgebra<Term> ma = polyRing.monomialAlgebra();
+                return new MonomialOperand(ma.pow(term, e));
             }
             return super.pow(exponent);
         }

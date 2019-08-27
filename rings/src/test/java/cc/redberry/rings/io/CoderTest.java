@@ -4,10 +4,10 @@ import cc.redberry.rings.Rational;
 import cc.redberry.rings.Rationals;
 import cc.redberry.rings.Rings;
 import cc.redberry.rings.bigint.BigInteger;
-import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.MultivariateRing;
 import cc.redberry.rings.poly.SimpleFieldExtension;
 import cc.redberry.rings.poly.UnivariateRing;
+import cc.redberry.rings.poly.*;
 import cc.redberry.rings.poly.multivar.Ideal;
 import cc.redberry.rings.poly.multivar.Monomial;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
@@ -468,6 +468,12 @@ public class CoderTest extends AbstractTest {
         assertDecode(wCoder, wQuot.valueOf(wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^116")));
         assertDecode(wCoder, wQuot.valueOf(wCoder.parse("1 + x / t + y + t * x^2 + t * y^2 + z*W^1161 + W^22")));
         assertEquals("(Frac(((Z/17)[t]/<6+7*t+14*t^2+t^3>)[x, y, z]))[W]/<1+W^2+W^4>", wQuot.toString(wCoder));
+    }
+
+    @Test
+    public void test16() {
+        Coder<UnivariatePolynomial<Rational<BigInteger>>, ?, ?> coder = Coder.mkUnivariateCoder(UnivariateRing(Q), "x");
+        assertEquals(coder.parse("-1 + (2*x)^4"), coder.parse("-1 + 2^4*x^4"));
     }
 
     private static <E> void assertDecode(Coder<E, ?, ?> coder, E element) {
