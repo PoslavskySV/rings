@@ -774,6 +774,7 @@ public class GroebnerBasesTest extends AMultivariateTest {
     }
 
     @Test
+    @RequiresSingular
     public void testHilbertGB6() throws Exception {
         String[] vars = {"x1", "x2", "x3", "x4"};
         MultivariatePolynomial<BigInteger>

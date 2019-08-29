@@ -34,6 +34,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class UnivariateResultantsTest extends APolynomialTest {
     @Test
+    @RequiresSingular
     public void test1() throws Exception {
         UnivariatePolynomial<BigInteger>
                 a = UnivariatePolynomialZ64.create(1, 2, 13).toBigPoly(),
@@ -47,6 +48,7 @@ public class UnivariateResultantsTest extends APolynomialTest {
     }
 
     @Test
+    @RequiresSingular
     public void test2() throws Exception {
         UnivariatePolynomial<BigInteger>
                 a = UnivariatePolynomialZ64.create(-45, 18, 72, -27, -27, 0, 9).toBigPoly(),

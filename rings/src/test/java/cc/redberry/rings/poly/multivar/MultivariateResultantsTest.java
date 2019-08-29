@@ -162,6 +162,7 @@ public class MultivariateResultantsTest extends AMultivariateTest {
     }
 
     @Test
+    @RequiresSingular
     public void testSparseInterpolation1() throws IOException, InterruptedException {
         MultivariateRing<MultivariatePolynomialZp64> ring = MultivariateRingZp64(3, Zp64(1048583));
         Coder<MultivariatePolynomialZp64, ?, ?> coder = Coder.mkMultivariateCoder(ring, "x", "y", "z");
