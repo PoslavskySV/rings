@@ -3,6 +3,7 @@ package cc.redberry.rings;
 import cc.redberry.rings.bigint.BigInteger;
 import cc.redberry.rings.io.Coder;
 import cc.redberry.rings.poly.MultivariateRing;
+import cc.redberry.rings.poly.multivar.Monomial;
 import cc.redberry.rings.poly.multivar.MultivariatePolynomial;
 import cc.redberry.rings.test.AbstractTest;
 import cc.redberry.rings.util.TimeUnits;
@@ -11,6 +12,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.stream.IntStream;
 
 import static cc.redberry.rings.Rings.*;
@@ -149,5 +153,25 @@ public class RationalsTest extends AbstractTest {
     @Test
     public void test7() {
         System.out.println(Q.factor(Q.mkNumerator(0)));
+    }
+
+    @Test
+    public void testSer1() throws IOException {
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(3, Rings.Z);
+        Rationals<MultivariatePolynomial<BigInteger>> field = Frac(ring);
+
+        MultivariatePolynomial<BigInteger> p = MultivariatePolynomial.parse("1+x+y", "x", "y");
+        MultivariatePolynomial<BigInteger> q = MultivariatePolynomial.parse("1+x-y", "x", "y");
+        Rational<MultivariatePolynomial<BigInteger>> r = field.mk(p, q);
+
+        ByteArrayOutputStream bstream = new ByteArrayOutputStream();
+        ObjectOutputStream ostream = new ObjectOutputStream(bstream);
+
+        ostream.writeObject(r);
+
+        Coder<MultivariatePolynomial<BigInteger>, Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> mCoder = Coder.mkMultivariateCoder(ring, "x", "y");
+        Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?> coder = Coder.mkRationalsCoder(field, mCoder);
+        System.out.println(coder.encode(r));
+        assert r.equals(coder.decode(coder.encode(r)));
     }
 }
