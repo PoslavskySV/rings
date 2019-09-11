@@ -74,6 +74,7 @@
                     <additionalJOptions>
                         <additionalJOption>-Xdoclint:none</additionalJOption>
                     </additionalJOptions>
+                    <source>1.8</source>
                 </configuration>
             </plugin>
             <plugin>
