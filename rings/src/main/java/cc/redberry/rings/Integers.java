@@ -128,4 +128,23 @@ public final class Integers extends AIntegers {
     public BigInteger binomial(long n, long k) {
         return factorial(n).divideExact(factorial(k)).divideExact(factorial(n - k));
     }
+
+    protected Object readResolve() {
+        return Integers;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        return Integers;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this.getClass().equals(obj.getClass());
+    }
+
+    @Override
+    public int hashCode() {
+        return 0x1a2e9d8f;
+    }
 }
