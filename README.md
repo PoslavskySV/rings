@@ -2,8 +2,8 @@
 [![image](https://readthedocs.org/projects/rings/badge/?version=latest)](https://rings.readthedocs.io)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.svg)](http://www.javadoc.io/doc/cc.redberry/rings)
 [![image](http://www.javadoc.io/badge/cc.redberry/rings.scaladsl_2.12.svg?label=scaladoc)](http://www.javadoc.io/doc/cc.redberry/rings.scaladsl_2.12)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.5.2%7Cjar)
-[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.5.2%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings%7C2.5.3%7Cjar)
+[![image](https://img.shields.io/maven-central/v/cc.redberry/rings.scaladsl_2.12/2.svg?style=flat)](https://search.maven.org/#artifactdetails%7Ccc.redberry%7Crings.scaladsl_2.12%7C2.5.3%7Cjar)
 [![image](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat)](https://opensource.org/licenses/Apache-2.0)
 
 Rings: efficient Java/Scala library for polynomial rings
@@ -53,7 +53,7 @@ Now run Rings<i>.repl</i>:
 ``` scala
 $ rings.repl
 Loading...
-Rings 2.5.2: efficient Java/Scala library for polynomial rings
+Rings 2.5.3: efficient Java/Scala library for polynomial rings
 
 @ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -82,7 +82,7 @@ $ rings.repl myRingsScript.sc
 Rings is currently available for Java and Scala. To get started with Scala SBT, simply add the following dependence to your `build.sbt` file:
 
 ``` scala
-libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.5.2"
+libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.5.3"
 ```
 
 For using Rings solely in Java there is Maven artifact:
@@ -91,9 +91,66 @@ For using Rings solely in Java there is Maven artifact:
 <dependency>
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.5.2</version>
+    <version>2.5.3</version>
 </dependency>
 ```
+
+### Development version
+
+Download latest Rings from the develop:
+```bash
+git clone https://github.com/PoslavskySV/rings.git
+cd rings
+```
+
+Install Java artifact locally:
+```bash
+cd rings
+mvn install -DskipTests
+```
+
+Install Rings.scaladsl locally:
+```bash
+cd rings.scaladsl
+sbt publishLocal
+```
+
+To run a simple REPL run e.g.:
+```bash
+cd rings.scaladsl
+sbt console
+```
+
+```scala
+@
+import cc.redberry.rings
+import cc.redberry.rings.primes.{SmallPrimes, BigPrimes}
+import rings.{bigint, primes, linear, poly}
+import poly.{univar, multivar}
+import poly.PolynomialMethods._
+import multivar.MonomialOrder._
+import multivar.GroebnerMethods
+import rings.scaladsl._
+import util._
+import syntax._
+
+@ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
+ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
+
+@ val poly1 = ring("x + y - z").pow(8) 
+poly1: MultivariatePolynomial[IntZ] = z^8-8*y*z^7+28*y^2*z^6-56*y^3*z^5+70*...
+
+@ val poly2 = ring("x - y + z").pow(8) 
+poly1: MultivariatePolynomial[IntZ] = z^8-8*y*z^7+28*y^2*z^6-56*y^3*z^5+70*...
+
+@ Factor(poly1 - poly2)
+res13: FactorDecomposition[MultivariatePolynomial[IntZ]] = 
+       16*(x)*((-1)*z+y)
+       *(z^4-4*y*z^3+6*y^2*z^2-4*y^3*z+y^4+6*x^2*z^2-12*x^2*y*z+6*x^2*y^2+x^4)
+       *(z^2-2*y*z+y^2+x^2)
+```
+
+
 
 Examples: rings, ideals, Gröbner bases, GCDs & factorization
 -------------------------------------------------------------
