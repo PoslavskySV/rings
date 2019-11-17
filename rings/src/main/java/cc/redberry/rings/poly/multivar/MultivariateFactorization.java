@@ -384,9 +384,12 @@ public final class MultivariateFactorization {
      * @param points set of 2d points (x,y)
      * @return the convex hull
      */
-    static int[][] convexHul(int[][] points) {
-        if (points.length <= 3)
+    static int[][] convexHull(int[][] points) {
+        if (points.length <= 2) {
+            if (points[0][0] == points[1][0] && points[0][1] == points[1][1])
+                return new int[][]{ points[0] };
             return points;
+        }
 
         // find the base point
         int basePointIndex = 0, minY = Integer.MAX_VALUE, minX = Integer.MAX_VALUE;
@@ -462,7 +465,7 @@ public final class MultivariateFactorization {
         List<int[]> points = new ArrayList<>();
         for (DegreeVector dv : poly)
             points.add(dv.exponents.clone());
-        return convexHul(points.toArray(new int[points.size()][]));
+        return convexHull(points.toArray(new int[points.size()][]));
     }
 
     /** Newton polygon of bivariate polynomial */

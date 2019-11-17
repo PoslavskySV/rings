@@ -2360,6 +2360,15 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         }
     }
 
+    @Test
+    public void testBivariateWithSingularConvexHull1() {
+        String[] vars = {"x", "y"};
+        MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.parse("4*y^2-5*x*y+x^2 ", Rings.Z, vars);
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> f = Factor(poly);
+        assertEquals(2, f.size());
+        FactorDecompositionTest.assertFactorization(poly, f);
+    }
+
     /* ==================================== Test data =============================================== */
 
     static double DETALIZATION_PERCENT = 100;
