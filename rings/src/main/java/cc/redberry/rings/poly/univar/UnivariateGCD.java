@@ -133,7 +133,8 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Computes {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}. Half-GCD algorithm is used.
+     * Computes {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}. Either resultant-based modular
+     * or Half-GCD algorithm is used.
      *
      * @param a the polynomial
      * @param b the polynomial
@@ -965,18 +966,19 @@ public final class UnivariateGCD {
     }
 
     /**
-     * Modular GCD algorithm for polynomials over Z.
+     * Computes {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)}.
      *
-     * @param a the first polynomial
-     * @param b the second polynomial
-     * @return GCD of two polynomials
+     * @param a the polynomial
+     * @param b the polynomial
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
+     * @see #ExtendedHalfGCD(IUnivariatePolynomial, IUnivariatePolynomial)
      */
     @SuppressWarnings({"ConstantConditions", "unchecked"})
     public static UnivariatePolynomial<Rational<BigInteger>>[] ModularExtendedRationalGCD(
             UnivariatePolynomial<Rational<BigInteger>> a,
             UnivariatePolynomial<Rational<BigInteger>> b) {
         if (a == b || a.equals(b))
-            return new UnivariatePolynomial[]{a.createOne(), a.createZero(), a.clone()};
+            return new UnivariatePolynomial[]{a.clone(), a.createZero(), a.createOne()};
 
         if (a.degree() < b.degree()) {
             UnivariatePolynomial<Rational<BigInteger>>[] r = ModularExtendedRationalGCD(b, a);
@@ -1201,9 +1203,7 @@ public final class UnivariateGCD {
     /**
      * Modular extended GCD algorithm for polynomials over Q with the use of resultants.
      *
-     * @param a the first polynomial
-     * @param b the second polynomial
-     * @return GCD of two polynomials
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
      */
     @SuppressWarnings({"ConstantConditions", "unchecked"})
     public static UnivariatePolynomial<Rational<BigInteger>>[]
@@ -1230,16 +1230,14 @@ public final class UnivariateGCD {
     /**
      * Modular extended GCD algorithm for polynomials over Z with the use of resultants.
      *
-     * @param a the first polynomial
-     * @param b the second polynomial
-     * @return GCD of two polynomials
+     * @return array of {@code [gcd(a,b), s, t]} such that {@code s * a + t * b = gcd(a, b)} (gcd is monic)
      */
     @SuppressWarnings({"ConstantConditions", "unchecked"})
     public static UnivariatePolynomial<BigInteger>[]
     ModularExtendedResultantGCDInZ(UnivariatePolynomial<BigInteger> a,
                                    UnivariatePolynomial<BigInteger> b) {
         if (a == b || a.equals(b))
-            return new UnivariatePolynomial[]{a.createOne(), a.createZero(), a.clone()};
+            return new UnivariatePolynomial[]{a.clone(), a.createZero(), a.createOne()};
 
         if (a.degree() < b.degree()) {
             UnivariatePolynomial<BigInteger>[] r = ModularExtendedResultantGCDInZ(b, a);

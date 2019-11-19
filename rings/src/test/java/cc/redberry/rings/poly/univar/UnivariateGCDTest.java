@@ -858,6 +858,28 @@ public class UnivariateGCDTest extends AUnivariateTest {
         System.out.println("Resultant: " + resultant);
     }
 
+    @Test
+    public void test37() {
+        UnivariatePolynomial<Rational<BigInteger>>
+                a = UnivariatePolynomial.parse("(x - 1)^2*(x - 2)^2", Q),
+                b = UnivariatePolynomial.parse("(x - 1)*(x^2 - 3)", Q);
+
+        UnivariatePolynomial<Rational<BigInteger>>[] xgcd = PolynomialExtendedGCD(a, b);
+        assertExtendedGCD(xgcd, a, b);
+        System.out.println(Arrays.toString(xgcd));
+    }
+
+    @Test
+    public void test38() {
+        UnivariatePolynomial<BigInteger>
+                a = UnivariatePolynomial.parse("3+3*x^3", Z),
+                b = UnivariatePolynomial.parse("3+3*x^3", Z);
+
+        UnivariatePolynomial<BigInteger>[] xgcd = PolynomialExtendedGCD(a, b);
+        assertExtendedGCD(xgcd, a, b);
+        System.out.println(Arrays.toString(xgcd));
+    }
+
     private static void testExtendedHalfGCDRandom(int minimalDegree, int maximalDegree, int nIterations) throws Exception {
         RandomGenerator rnd = getRandom();
         RandomDataGenerator rndd = getRandomData();
