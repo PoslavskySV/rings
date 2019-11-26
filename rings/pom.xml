@@ -6,7 +6,7 @@
 
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.5.4</version>
+    <version>2.5.5</version>
     <packaging>jar</packaging>
     <name>rings</name>
     <url>https://github.com/PoslavskySV/rings/</url>
