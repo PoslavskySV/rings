@@ -41,7 +41,7 @@ Now run |Rings|\ *.repl*:
 
 	$ rings.repl
 	Loading...
-	Rings 2.5.2: efficient Java/Scala library for polynomial rings
+	Rings 2.5.6: efficient Java/Scala library for polynomial rings
 
 	@ implicit val ring = MultivariateRing(Z, Array("x", "y", "z"))
 	ring: MultivariateRing[IntZ] = MultivariateRing(Z, Array("x", "y", "z"), LEX)
@@ -64,7 +64,7 @@ Java/Scala library
 
 .. code-block:: scala
 
-	libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.5.2"
+	libraryDependencies += "cc.redberry" %% "rings.scaladsl" % "2.5.6"
 
 For using |Rings| solely in Java there is Maven artifact:
 
@@ -73,7 +73,7 @@ For using |Rings| solely in Java there is Maven artifact:
 	<dependency>
 	    <groupId>cc.redberry</groupId>
 	    <artifactId>rings</artifactId>
-	    <version>2.5.2</version>
+	    <version>2.5.6</version>
 	</dependency>
 
 
@@ -1047,7 +1047,7 @@ Full benchmarks can be found at :ref:`ref-benchmarks` page. Benchmarks presented
  - `Mathematica <http://www.wolfram.com/mathematica>`_ (version 11.1.1.0)
  - `Singular <https://www.singular.uni-kl.de>`_ (version 4.1.0)
  - `NTL <http://www.shoup.net/ntl/>`_ (version 10.4.0)
- - `FLINT <http://www.flintlib.org>`_ (version 2.5.2_1)
+ - `FLINT <http://www.flintlib.org>`_ (version 2.5.6_1)
 
 
 .. figure:: _static/gcd_z_5vars_rings_vs_singular.png
