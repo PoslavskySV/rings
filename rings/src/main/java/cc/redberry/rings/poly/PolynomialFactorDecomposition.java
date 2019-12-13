@@ -72,7 +72,7 @@ public final class PolynomialFactorDecomposition<Poly extends IPolynomial<Poly>>
         for (int i = fTmp.length - 1; i >= 0; --i) {
             Poly poly = fTmp[i];
             if (poly.isMonomial() && eTmp[i] != 1) {
-                poly = PolynomialMethods.polyPow(poly, eTmp[i], false);
+                poly = PolynomialMethods.polyPow(poly, eTmp[i], true);
                 assert poly.isMonomial();
             }
             if (poly.signumOfLC() < 0) {
