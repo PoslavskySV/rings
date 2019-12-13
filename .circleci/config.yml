@@ -7,7 +7,7 @@ branches:
 jobs:
   build:
     docker:
-      - image: circleci/openjdk:11-jdk
+      - image: circleci/openjdk:jdk
 
     working_directory: ~/repo
 
@@ -19,7 +19,10 @@ jobs:
 
       - run:
           command: |
-              sudo apt-get update && sudo apt-get install singular
+              sudo apt-get update || sudo apt-get update
+      - run:
+          command: |
+              sudo apt-get install singular
       - run:
           command: |
               git submodule sync --recursive
