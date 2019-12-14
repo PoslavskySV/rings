@@ -29,8 +29,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static cc.redberry.rings.Rings.*;
-import static cc.redberry.rings.poly.PolynomialMethods.Factor;
-import static cc.redberry.rings.poly.PolynomialMethods.polyPow;
+import static cc.redberry.rings.poly.PolynomialMethods.*;
 import static cc.redberry.rings.poly.multivar.MonomialOrder.GREVLEX;
 import static cc.redberry.rings.poly.multivar.MultivariateFactorization.*;
 import static org.junit.Assert.assertEquals;
@@ -2333,6 +2332,22 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
                 .parse("-1*x3^2*x4^2*x5+2*x1*x3*x4^2*x5-1*x1^2*x4^2*x5+2*x2*x3^2*x4*x5-4*x1*x2*x3*x4*x5+2*x1^2*x2*x4*x5-1*x2^2*x3^2*x5+2*x1*x2^2*x3*x5-1*x1^2*x2^2*x5+x3^2*x4^3-1*x1*x3*x4^3+x3^3*x4^2-2*x2*x3^2*x4^2-2*x1*x3^2*x4^2+x1*x2*x3*x4^2+x1^2*x3*x4^2+x1^2*x2*x4^2-1*x2*x3^3*x4+x2^2*x3^2*x4+x1*x2*x3^2*x4+x1*x2^2*x3*x4+x1^2*x2*x3*x4-2*x1^2*x2^2*x4-1*x1^3*x2*x4+x1*x2^2*x3^2-1*x1*x2^3*x3-2*x1^2*x2^2*x3+x1^2*x2^3+x1^3*x2^2",
                         "x0", "x1", "x2", "x3", "x4", "x5");
         assertEquals(3, factorToPrimitive(poly).size());
+    }
+
+    @Test
+    public void testMonomial1() {
+        MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial
+                .parse("-x*y", Zp(17),"x", "y");
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> f = FactorSquareFree(poly);
+        assertEquals(poly, f.multiply());
+    }
+
+    @Test
+    public void testMonomial2() {
+        MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial
+                .parse("-x*y","x", "y");
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> f = FactorSquareFree(poly);
+        assertEquals(poly, f.multiply());
     }
 
     @Test

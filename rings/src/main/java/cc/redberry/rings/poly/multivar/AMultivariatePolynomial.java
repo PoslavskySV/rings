@@ -1118,9 +1118,10 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
         int[] exponents = monomial == null ? null : monomial.exponents.clone();
         int totalDegree = -1;
         for (Term degreeVector : terms)
-            if (exponents == null)
+            if (exponents == null) {
                 exponents = degreeVector.exponents.clone();
-            else {
+                totalDegree = degreeVector.totalDegree;
+            } else {
                 totalDegree = setMin(degreeVector.exponents, exponents);
                 if (totalDegree == 0)
                     break;
