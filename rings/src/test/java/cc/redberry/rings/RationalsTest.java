@@ -157,7 +157,7 @@ public class RationalsTest extends AbstractTest {
 
     @Test
     public void testSer1() throws IOException {
-        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(3, Rings.Z);
+        MultivariateRing<MultivariatePolynomial<BigInteger>> ring = Rings.MultivariateRing(2, Rings.Z);
         Rationals<MultivariatePolynomial<BigInteger>> field = Frac(ring);
 
         MultivariatePolynomial<BigInteger> p = MultivariatePolynomial.parse("1+x+y", "x", "y");
@@ -171,7 +171,6 @@ public class RationalsTest extends AbstractTest {
 
         Coder<MultivariatePolynomial<BigInteger>, Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> mCoder = Coder.mkMultivariateCoder(ring, "x", "y");
         Coder<Rational<MultivariatePolynomial<BigInteger>>, ?, ?> coder = Coder.mkRationalsCoder(field, mCoder);
-        System.out.println(coder.encode(r));
-        assert r.equals(coder.decode(coder.encode(r)));
+        Assert.assertTrue(r.equals(coder.decode(coder.encode(r))));
     }
 }
