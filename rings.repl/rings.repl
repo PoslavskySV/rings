@@ -142,7 +142,7 @@ fi
 ringsString="Rings ${ringsVersion}: efficient Java/Scala library for polynomial rings."
 
 
-JAVA_OPTS="-XX:+AggressiveOpts ${javaArgs[@]}" amm \
+JAVA_OPTS="${javaArgs[@]}" amm \
 	-b "Running Ammonite Repl
 $ringsString" \
 	--predef-code \
