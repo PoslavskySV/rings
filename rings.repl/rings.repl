@@ -121,7 +121,7 @@ fi
 
 if [ "$printJArgs" == "true" ]
 then
-	echo "-XX:+AggressiveOpts ${javaArgs[@]}"
+	echo "${javaArgs[@]}"
 fi
 
 
