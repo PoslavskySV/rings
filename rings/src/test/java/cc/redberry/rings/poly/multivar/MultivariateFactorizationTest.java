@@ -1965,7 +1965,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
             PrivateRandom.getRandom().setSeed(i);
             long start = System.nanoTime();
             PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> factors = MultivariateFactorization.factorToPrimitive(base);
-            Assert.assertEquals(3, factors.size());
+            Assert.assertEquals(5, factors.size());
             FactorDecompositionTest.assertFactorization(base, factors);
             //System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
