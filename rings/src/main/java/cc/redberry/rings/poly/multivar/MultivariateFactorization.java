@@ -239,7 +239,7 @@ public final class MultivariateFactorization {
             if (poly.degree(i) == 0)
                 continue;
             Poly factor = poly.asUnivariate(i).content();
-            result.addFactor(factor, 1);
+            result.addAll(factorToPrimitive(factor));
             poly = MultivariateDivision.divideExact(poly, factor);
         }
         result.addFactor(poly, 1);

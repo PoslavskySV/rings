@@ -2384,6 +2384,14 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         FactorDecompositionTest.assertFactorization(poly, f);
     }
 
+    @Test
+    public void test2() {
+        MultivariatePolynomial<BigInteger> poly = MultivariatePolynomial.parse("(x1-1)*(x2-1)*(x3-1)*(x4-1)", Rings.Z);
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> f = Factor(poly);
+        assertEquals(4, f.size());
+        FactorDecompositionTest.assertFactorization(poly, f);
+    }
+
     /* ==================================== Test data =============================================== */
 
     static double DETALIZATION_PERCENT = 100;
