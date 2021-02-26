@@ -172,7 +172,7 @@ public class GroebnerBasesTest extends AMultivariateTest {
             List<MultivariatePolynomialZp64> ideal =
                     GroebnerBasesData.katsura(i)
                             .stream()
-                            .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator())))
+                            .map(p -> p.mapCoefficientsZp64(ring, r -> ring.modulus(r.numerator())))
                             .map(p -> p.setOrdering(GREVLEX))
                             .collect(Collectors.toList());
 
@@ -206,7 +206,7 @@ public class GroebnerBasesTest extends AMultivariateTest {
             List<MultivariatePolynomialZp64> ideal =
                     GroebnerBasesData.cyclic(i)
                             .stream()
-                            .map(p -> p.mapCoefficients(ring, r -> ring.modulus(r.numerator())))
+                            .map(p -> p.mapCoefficientsZp64(ring, r -> ring.modulus(r.numerator())))
                             .map(p -> p.setOrdering(GREVLEX))
                             .collect(Collectors.toList());
 

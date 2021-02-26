@@ -317,7 +317,7 @@ public final class MultivariateFactorization {
         for (int i = 0; i < factorization.size(); i++) {
             if (!factorization.get(i).stream().allMatch(p -> p.isConstant()))
                 return null;
-            result.addFactor(factorization.get(i).mapCoefficients(poly.ring, UnivariatePolynomialZp64::cc), factorization.getExponent(i));
+            result.addFactor(factorization.get(i).mapCoefficientsZp64(poly.ring, UnivariatePolynomialZp64::cc), factorization.getExponent(i));
         }
         return result;
     }

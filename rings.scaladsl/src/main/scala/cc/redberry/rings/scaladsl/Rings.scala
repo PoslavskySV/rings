@@ -28,7 +28,7 @@ sealed class Ring[E](val theRing: rings.Ring[E])
   /**
     * String from/to conversion for ring elements
     */
-  lazy val coder: Coder[ElementType] = Coder.mkCoder(theRing)
+  lazy val coder: ACoder[ElementType] = Coder.mkCoder(theRing)
 
   /**
     * Convert element to string
@@ -140,7 +140,7 @@ final case class Frac[E](ring: Ring[E]) extends Ring[Rational[E]](rings.Rings.Fr
   /**
     * String from/to conversion for ring elements
     */
-  override lazy val coder: Coder[ElementType] = Coder.mkRationalsCoder[E](fracRing, ring.coder)
+  override lazy val coder: ACoder[ElementType] = Coder.mkRationalsCoder[E](fracRing, ring.coder)
 
   def apply(a: E): Rational[E] = new Rational[E](rationalsDomain.ring, a)
 
@@ -330,7 +330,7 @@ private[scaladsl] sealed abstract class AUnivariateRingZp64
   /**
     * String from/to conversion for ring elements
     */
-  final override lazy val coder: Coder[ElementType] = Coder.mkUnivariateCoder(theRing, variable)
+  final override lazy val coder: ACoder[ElementType] = Coder.mkUnivariateCoder(theRing, variable)
 
   /**
     * Constant polynomial with specified value
@@ -399,7 +399,7 @@ private[scaladsl] sealed abstract class AUnivariateRing[E]
   /**
     * String from/to conversion for ring elements
     */
-  final override lazy val coder: Coder[ElementType] = Coder.mkUnivariateCoder(theRing, cfRing.coder, variable)
+  final override lazy val coder: ACoder[ElementType] = Coder.mkUnivariateCoder(theRing, cfRing.coder, variable)
 
   /**
     * Constant polynomial with specified value
@@ -667,7 +667,7 @@ final case class MultivariateRingZp64
   /**
     * String from/to conversion for ring elements
     */
-  override lazy val coder: Coder[ElementType] = Coder.mkMultivariateCoder[MonomialType, PolyType](multivariateRing, variables: _*)
+  override lazy val coder: ACoder[ElementType] = Coder.mkMultivariateCoder[MonomialType, PolyType](multivariateRing, variables: _*)
 
   /**
     * The coefficient ring
@@ -762,7 +762,7 @@ final case class MultivariateRing[E]
   /**
     * String from/to conversion for ring elements
     */
-  override lazy val coder: Coder[ElementType] = Coder.mkMultivariateCoder[E](multivariateRing, cfRing.coder, variables: _*)
+  override lazy val coder: ACoder[ElementType] = Coder.mkMultivariateCoder[E](multivariateRing, cfRing.coder, variables: _*)
 
   /**
     * The coefficient ring
@@ -1061,7 +1061,7 @@ final case class QuotientRing[Term <: AMonomial[Term], Poly <: AMultivariatePoly
   /**
     * String from/to conversion for ring elements
     */
-  override lazy val coder: Coder[ElementType] = baseRing.coder
+  override lazy val coder: ACoder[ElementType] = baseRing.coder
 
   /**
     * @inheritdoc
@@ -1084,7 +1084,7 @@ E](override val theRing: rings.poly.MultipleFieldExtension[Term, mPoly, sPoly],
   /**
     * String from/to conversion for ring elements
     */
-  override lazy val coder: Coder[mPoly] = Coder.mkMultipleExtensionCoder[Term, mPoly, sPoly](theRing, variables: _*)
+  override lazy val coder: ACoder[mPoly] = Coder.mkMultipleExtensionCoder[Term, mPoly, sPoly](theRing, variables: _*)
 
   /**
     * @inheritdoc

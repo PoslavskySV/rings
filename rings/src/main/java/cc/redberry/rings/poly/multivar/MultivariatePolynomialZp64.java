@@ -16,7 +16,6 @@ import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZ64;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.ArraysUtil;
-import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.iterator.TLongObjectIterator;
 import gnu.trove.list.array.TIntArrayList;
 import gnu.trove.map.hash.TIntObjectHashMap;
@@ -1083,7 +1082,7 @@ public final class MultivariatePolynomialZp64 extends AMultivariatePolynomial<Mo
             lPrecomputedPowers[] pp = new lPrecomputedPowers[nEvalVariables];
             for (int i = 0; i < nEvalVariables; ++i)
                 pp[i] = new lPrecomputedPowers(Math.min(evalDegrees[i], MAX_POWERS_CACHE_SIZE), values[i], ring);
-            return recForm.mapCoefficients(ring,
+            return recForm.mapCoefficientsZp64(ring,
                     p -> evaluateSparseRecursiveForm(p, new lPrecomputedPowersHolder(ring, pp), nEvalVariables - 1));
         }
     }

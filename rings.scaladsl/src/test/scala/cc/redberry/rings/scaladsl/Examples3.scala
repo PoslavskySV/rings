@@ -1,7 +1,6 @@
 package cc.redberry.rings.scaladsl
 
 import cc.redberry.rings.poly.PolynomialMethods.{Factor, PolynomialGCD}
-import cc.redberry.rings.poly.univar.UnivariateResultants
 import cc.redberry.rings.scaladsl.util.timing
 import org.junit.Test
 

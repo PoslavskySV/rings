@@ -439,7 +439,7 @@ public final class GroebnerMethods {
 
         return certificate
                 .stream()
-                .map(p -> p.mapCoefficients(ring, m -> m.evaluate(result)))
+                .map(p -> p.mapCoefficientsZp64(ring, m -> m.evaluate(result)))
                 .collect(Collectors.toList());
     }
 

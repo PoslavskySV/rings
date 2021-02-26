@@ -6,7 +6,7 @@
 
     <groupId>cc.redberry</groupId>
     <artifactId>rings</artifactId>
-    <version>2.5.7</version>
+    <version>2.5.8</version>
     <packaging>jar</packaging>
     <name>rings</name>
     <url>https://github.com/PoslavskySV/rings/</url>
@@ -165,7 +165,7 @@
         <dependency>
             <groupId>cc.redberry</groupId>
             <artifactId>combinatorics</artifactId>
-            <version>2.0</version>
+            <version>2.1</version>
             <scope>compile</scope>
         </dependency>
 
@@ -185,7 +185,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.2</version>
+            <version>3.6.1</version>
         </dependency>
     </dependencies>
 </project>

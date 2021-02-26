@@ -639,7 +639,7 @@ class Examples {
       val ring: Any = null
       // enable operations in cfRing
       implicit val _ = cfRing
-      Array(1 + t, 2 + t, 3 + t, 12 + t)
+      Array(cfRing(1) + t, cfRing(2) + t, cfRing(3) + t, cfRing(12) + t)
     }
 
     // some values for interpolation

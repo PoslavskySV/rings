@@ -2011,7 +2011,7 @@ public final class MultivariatePolynomial<E> extends AMultivariatePolynomial<Mon
      * @param mapper    mapping
      * @return a new polynomial with terms obtained by applying mapper to this terms (only coefficients are changed)
      */
-    public MultivariatePolynomialZp64 mapCoefficients(IntegersZp64 newDomain, ToLongFunction<E> mapper) {
+    public MultivariatePolynomialZp64 mapCoefficientsZp64(IntegersZp64 newDomain, ToLongFunction<E> mapper) {
         return terms.values()
                 .stream()
                 .map(t -> new MonomialZp64(t.exponents, t.totalDegree, mapper.applyAsLong(t.coefficient)))

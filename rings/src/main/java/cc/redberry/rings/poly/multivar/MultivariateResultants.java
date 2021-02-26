@@ -601,8 +601,8 @@ public final class MultivariateResultants {
             IntegersZp64 ring = Zp64(basePrime);
             // reduce Z -> Zp
             MultivariatePolynomialZp64
-                    aMod = a.mapCoefficients(ring, c -> c.mod(basePrime).longValue()),
-                    bMod = b.mapCoefficients(ring, c -> c.mod(basePrime).longValue());
+                    aMod = a.mapCoefficientsZp64(ring, c -> c.mod(basePrime).longValue()),
+                    bMod = b.mapCoefficientsZp64(ring, c -> c.mod(basePrime).longValue());
             if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
                 continue;
 
@@ -625,8 +625,8 @@ public final class MultivariateResultants {
                 ring = Zp64(prime);
 
                 // reduce Z -> Zp
-                aMod = a.mapCoefficients(ring, c -> c.mod(prime).longValue());
-                bMod = b.mapCoefficients(ring, c -> c.mod(prime).longValue());
+                aMod = a.mapCoefficientsZp64(ring, c -> c.mod(prime).longValue());
+                bMod = b.mapCoefficientsZp64(ring, c -> c.mod(prime).longValue());
                 if (!aMod.sameSkeletonQ(a) || !bMod.sameSkeletonQ(b))
                     continue;
 
