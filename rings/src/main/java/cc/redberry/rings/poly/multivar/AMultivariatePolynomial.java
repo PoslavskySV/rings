@@ -10,7 +10,9 @@ import cc.redberry.rings.poly.univar.IUnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomial;
 import cc.redberry.rings.poly.univar.UnivariatePolynomialZp64;
 import cc.redberry.rings.util.ArraysUtil;
+import gnu.trove.impl.hash.TIntIntHash;
 import gnu.trove.iterator.TIntIterator;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 import org.apache.commons.math3.random.RandomGenerator;
 
@@ -625,6 +627,41 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
+     * Returns the array where i-th element is a number of monomials that contain i-th variable
+     */
+    public final int[] occurrences() {
+        int[] occurrences = new int[nVariables];
+        for (Term t : terms) {
+            for (int i = 0; i < nVariables; i++) {
+                if (t.exponents[i] > 0)
+                    ++occurrences[i];
+            }
+        }
+        return occurrences;
+    }
+
+    /**
+     * Returns the array where i-th element is a number of unique degrees of i-th variable
+     */
+    public final int[] uniqueOccurrences() {
+        TIntHashSet[] degrees = new TIntHashSet[nVariables];
+        for (int i = 0; i < nVariables; i++) {
+            degrees[i] = new TIntHashSet();
+        }
+        int[] occurrences = new int[nVariables];
+        for (Term t : terms) {
+            for (int i = 0; i < nVariables; i++) {
+                int exp = t.exponents[i];
+                if (exp > 0 && !degrees[i].contains(exp)) {
+                    degrees[i].add(exp);
+                    ++occurrences[i];
+                }
+            }
+        }
+        return occurrences;
+    }
+
+    /**
      * Returns the multidegree of this polynomial i.e. exponents of the leading term (without copying)
      *
      * @return the multidegree of this polynomial i.e. exponents of the leading term (without copying)
@@ -859,7 +896,8 @@ public abstract class AMultivariatePolynomial<Term extends AMonomial<Term>, Poly
     }
 
     /**
-     * */
+     *
+     */
     public static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     Poly asMultivariate(UnivariatePolynomial<Poly> univariate, int uVariable, boolean join) {

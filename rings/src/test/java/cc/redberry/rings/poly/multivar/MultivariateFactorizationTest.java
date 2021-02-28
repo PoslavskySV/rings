@@ -975,6 +975,78 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         //6s
     }
 
+    @Test
+    public void testMultivariateFactorizationRandom3b() throws Exception {
+        IntegersZp64 ring = new IntegersZp64(60457);
+        String[] vars = {"x1", "x2", "x3", "x4", "x5"};
+        MultivariatePolynomialZp64
+                factors[] =
+                {
+                        MultivariatePolynomialZp64.parse("10530+202*x2^2*x4^2*x5^3+15574*x2^3*x3^2*x4^2+23836*x1^2*x2^3*x4^3+14368*x1^2*x2^3*x3^2*x4^2+x2^3*x3*x4^3*x5^3", ring, vars),
+                        MultivariatePolynomialZp64.parse("36476+13693*x2^2*x3^2*x5^3+49089*x2^2*x3^3*x4^2*x5+33708*x1^2*x2^2*x3^2*x4*x5^2+54454*x1*x2^3*x3^2*x4^3*x5+x1^2*x3^3*x4^3*x5^3", ring, vars),
+                        MultivariatePolynomialZp64.parse("28774+43421*x1*x3*x4^3*x5+24538*x1*x2^3*x4*x5^2+50703*x1*x2^3*x3*x4*x5+4893*x1^2*x2*x3^3*x5^3+x1^3*x2^3*x3*x4^2*x5^2", ring, vars),
+                };
+
+        MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
+        System.out.println(Arrays.toString(base.degrees()));
+        System.out.println(Arrays.toString(base.uniqueOccurrences()));
+        System.out.println(Arrays.toString(base.occurrences()));
+
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        PrivateRandom.getRandom().setSeed(0);
+        for (int i = 0; i < its(10, 10); i++) {
+            long start = System.nanoTime();
+            PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(3, decomposition.size());
+            FactorDecompositionTest.assertFactorization(base, decomposition);
+        }
+
+        //258ms
+        //98ms
+        //86ms
+        //75ms
+        //69ms
+        //58ms
+        //53ms
+        //53ms
+        //67ms
+        //61ms
+    }
+
+    @Test
+    public void testMultivariateFactorizationRandom3с() throws Exception {
+        IntegersZp64 ring = new IntegersZp64(30269);
+        String[] vars = {"x1", "x2", "x3", "x4", "x5", "x6"};
+        MultivariatePolynomialZp64
+                factors[] =
+                {
+                        MultivariatePolynomialZp64.parse("10547+20772*x1^2*x2*x4*x5+27875*x1*x3^3*x4^3+26220*x1*x2*x3^2*x5^2*x6^2+24653*x1^2*x2*x3^3*x5^3+x1^2*x2^3*x3^3*x5^2*x6", ring, vars),
+                        MultivariatePolynomialZp64.parse("3825+29887*x1^2+15923*x1*x2*x3^2*x4*x5^3+10398*x1^2*x3*x4*x5^3*x6^3+27248*x1*x2^2*x4^3*x5^2*x6^2+x1^2*x2^3*x3^3*x4^2*x6^3", ring, vars),
+                };
+
+        MultivariatePolynomialZp64 base = factors[0].createOne().multiply(factors);
+
+        assert MultivariateSquareFreeFactorization.isSquareFree(base);
+        PrivateRandom.getRandom().setSeed(0);
+        for (int i = 0; i < its(10, 10); i++) {
+            long start = System.nanoTime();
+            PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateFactorization.factorPrimitiveInGF(base);
+            System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
+            Assert.assertEquals(2, decomposition.size());
+            FactorDecompositionTest.assertFactorization(base, decomposition);
+        }
+        //96ms
+        //34ms
+        //33ms
+        //37ms
+        //23ms
+        //17ms
+        //19ms
+        //13ms
+        //13ms
+        //14ms
+    }
 
     @Test
     public void testMultivariateFactorization18_SmallDomain() throws Exception {
@@ -2392,6 +2464,14 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
         FactorDecompositionTest.assertFactorization(poly, f);
     }
 
+    @Test(timeout = 120000L)
+    public void test3() {
+        MultivariatePolynomial<BigInteger> p = MultivariatePolynomial.parse("x12^2-7*x11*x12-x02*x12-x02*x11-x12^3+6*x11*x12^2-x03*x12^2+x02*x12^2+7*x11^2*x12+2*x10*x11*x12+2*x09*x11*x12+2*x08*x11*x12+4*x06*x11*x12+2*x04*x11*x12-x03*x11*x12+2*x02*x11*x12+4*x01*x11*x12+x02*x03*x12+x02*x11^2-2*x02*x06*x11+2*x02*x04*x11+x02*x03*x11-x09*x12^3+x08*x12^3+x07*x12^3-x06*x12^3-x05*x12^3+x04*x12^3-x10*x11*x12^2-3*x09*x11*x12^2-4*x06*x11*x12^2-3*x05*x11*x12^2+x04*x11*x12^2-4*x01*x11*x12^2+x02*x09*x12^2-x02*x08*x12^2-x02*x07*x12^2+2*x02*x06*x12^2+x02*x05*x12^2-2*x02*x04*x12^2-x10*x11^2*x12-2*x09*x11^2*x12-x08*x11^2*x12-x07*x11^2*x12-3*x06*x11^2*x12-2*x05*x11^2*x12-4*x01*x11^2*x12-x02*x10*x11*x12+x02*x09*x11*x12-2*x02*x08*x11*x12+3*x02*x06*x11*x12+3*x02*x05*x11*x12-6*x02*x04*x11*x12-x02^2*x06*x12+x02^2*x04*x12-x02*x10*x11^2-x02*x08*x11^2+x02*x07*x11^2+x02*x06*x11^2+2*x02*x05*x11^2-4*x02*x04*x11^2-x02^2*x06*x11+x02^2*x04*x11");
+        for (int i = 0; i < its(10, 20); i++) {
+            FactorDecompositionTest.assertFactorization(p, MultivariateFactorization.Factor(p));
+        }
+    }
+
     /* ==================================== Test data =============================================== */
 
     static double DETALIZATION_PERCENT = 100;
@@ -2570,7 +2650,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
 
             @Override
             public String toString() {
-                return super.toString() + " (content filtered)";
+                return source.toString() + " (content filtered)";
             }
         };
     }
@@ -2590,7 +2670,7 @@ public class MultivariateFactorizationTest extends AMultivariateTest {
 
             @Override
             public String toString() {
-                return super.toString() + " (square-free)";
+                return source.toString() + " (square-free)";
             }
         };
     }

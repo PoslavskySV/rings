@@ -387,7 +387,7 @@ public final class MultivariateFactorization {
     static int[][] convexHull(int[][] points) {
         if (points.length <= 2) {
             if (points[0][0] == points[1][0] && points[0][1] == points[1][1])
-                return new int[][]{ points[0] };
+                return new int[][]{points[0]};
             return points;
         }
 
@@ -658,7 +658,6 @@ public final class MultivariateFactorization {
         assert uFactorization.factors.stream().allMatch(UnivariatePolynomialZp64::isMonic);
 
         // univariate factors are calculated
-        @SuppressWarnings("unchecked")
         List<UnivariatePolynomialZp64> factorList = uFactorization.factors;
 
         // we don't precompute correct leading coefficients of bivariate factors
@@ -1136,7 +1135,6 @@ public final class MultivariateFactorization {
             modulus = modulus.multiply(bBasePrime);
         IntegersZp zpDomain = new IntegersZp(modulus);
 
-        @SuppressWarnings("unchecked")
         List<UnivariatePolynomial<BigInteger>> factorsListZp = uFactorization.mapTo(f -> f.setRing(zpDomain)).monic().factors;
         MultivariatePolynomial<BigInteger>
                 baseZp = reducedPoly.setRing(zpDomain),
@@ -1360,7 +1358,7 @@ public final class MultivariateFactorization {
      * @param switchToExtensionField whether to switch to extension field if ring cardinality is too small
      * @return factor decomposition
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly>
@@ -1373,7 +1371,7 @@ public final class MultivariateFactorization {
 
     /* ================================ Multivariate factorization over finite fields ================================ */
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> factorInExtensionFieldGeneric(Poly poly, FactorizationAlgorithm<Term, Poly> algorithm) {
         if (poly instanceof MultivariatePolynomialZp64)
@@ -1421,26 +1419,44 @@ public final class MultivariateFactorization {
     static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     OrderByDegrees<Term, Poly> orderByDegrees(Poly poly, boolean reduceNVariables, int mainVariable) {
+        return orderByDegrees(poly, reduceNVariables, false, mainVariable);
+    }
+
+    /**
+     * @param poly              the poly
+     * @param reduceNVariables  whether to drop unused vars (making poly.nVariables smaller)
+     * @param sortByOccurrences whether to sort according to unique occurrences
+     * @param mainVariable      the main variable (will be x1)
+     */
+    static <Term extends AMonomial<Term>,
+            Poly extends AMultivariatePolynomial<Term, Poly>>
+    OrderByDegrees<Term, Poly> orderByDegrees(Poly poly, boolean reduceNVariables, boolean sortByOccurrences, int mainVariable) {
         int
                 nVariables = poly.nVariables,
-                degreeBounds[] = poly.degrees(); // degree bounds for lifting
+                degreeBounds[] = poly.degrees(),  // degree bounds for lifting
+                uniqueOccurrences[] = poly.uniqueOccurrences(), // occurrences for sorting
+                occurrences[] = poly.occurrences(); // occurrences for sorting
 
-        // swap variables so that the first variable will have the maximal degree,
-        // and all non-used variables are at the end of poly
+        // Swap variables so that the first variable will have the maximal degree,
+        // and all non-used variables are at the end of poly.
+        //
+        // The rest of sorting is done in the following way (thanks to Takahiro Ueda,
+        // https://github.com/PoslavskySV/rings/issues/71):
+        // variables are ordered by occurrences in descendent order. This way the number of terms in
+        // bivariate images will be higher, so heuristically this should reduce the probability of
+        // false-positive bivariate factorizations.
 
         int[] variables = ArraysUtil.sequence(nVariables);
         if (mainVariable != -1) {
             int mainDegree = degreeBounds[mainVariable];
             degreeBounds[mainVariable] = Integer.MAX_VALUE;
-            //sort in descending order (NOTE: use stable sorting algorithm!!!)
-            ArraysUtil.insertionSort(ArraysUtil.negate(degreeBounds), variables);
+            //sort
+            sortByDegreeAndOccurrences(degreeBounds, variables, uniqueOccurrences, occurrences, sortByOccurrences);
             //recover degreeBounds
-            ArraysUtil.negate(degreeBounds);
             degreeBounds[ArraysUtil.firstIndexOf(mainVariable, variables)] = mainDegree;
         } else {
-            //sort in descending order (NOTE: use stable sorting algorithm!!!)
-            ArraysUtil.insertionSort(ArraysUtil.negate(degreeBounds), variables);
-            ArraysUtil.negate(degreeBounds);//recover degreeBounds
+            //sort
+            sortByDegreeAndOccurrences(degreeBounds, variables, uniqueOccurrences, occurrences, sortByOccurrences);
 
             // chose the main variable in such way that the derivative
             // with respect to the main variable is not zero (avoid p-power)
@@ -1471,13 +1487,52 @@ public final class MultivariateFactorization {
         return new OrderByDegrees<>(poly, degreeBounds, variables, nVariables);
     }
 
+    private static void sortByDegreeAndOccurrences(int[] degreeBounds, int[] variables,
+                                                   int[] uniqueOccurrences, int[] occurrences,
+                                                   boolean sortByOccurrences) {
+        if(!sortByOccurrences) {
+            ArraysUtil.insertionSort(ArraysUtil.negate(degreeBounds), variables);
+            ArraysUtil.negate(degreeBounds);
+            return;
+        }
+        DegreeWithOccurrence[] data = new DegreeWithOccurrence[degreeBounds.length];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = new DegreeWithOccurrence(degreeBounds[i], uniqueOccurrences[i], occurrences[i]);
+        }
+        //sort in descending order (NOTE: use stable sorting algorithm!!!)
+        ArraysUtil.insertionSort(data, variables);
+        for (int i = 0; i < data.length; i++) {
+            degreeBounds[i] = data[i].degree;
+        }
+    }
+
+    private static final class DegreeWithOccurrence implements Comparable<DegreeWithOccurrence>  {
+        final int degree, uniqueOccurrences, occurrences;
+
+        DegreeWithOccurrence(int degree, int uniqueOccurrences, int occurrences) {
+            this.degree = degree;
+            this.uniqueOccurrences = uniqueOccurrences;
+            this.occurrences = occurrences;
+        }
+
+        @Override
+        public int compareTo(DegreeWithOccurrence oth) {
+            int c = -Integer.compare(degree, oth.degree);
+            if (c != 0)
+                return c;
+            c = - Integer.compare(uniqueOccurrences, oth.uniqueOccurrences);
+            if (c != 0)
+                return c;
+            return - Integer.compare(occurrences, oth.occurrences);
+        }
+    }
+
     /**
      * Factor primitive square-free multivariate polynomial over finite field
      *
      * @param polynomial the primitive square-free polynomial
      * @return factor decomposition
      */
-    @SuppressWarnings("unchecked")
     static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> factorPrimitiveInGF(final Poly polynomial) {
@@ -1491,7 +1546,6 @@ public final class MultivariateFactorization {
      * @param switchToExtensionField whether to switch to the extension field
      * @return factor decomposition
      */
-    @SuppressWarnings("unchecked")
     static <Term extends AMonomial<Term>,
             Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> factorPrimitiveInGF(
@@ -1502,7 +1556,7 @@ public final class MultivariateFactorization {
             return factorUnivariate(polynomial);
 
         // order the polynomial by degrees
-        OrderByDegrees<Term, Poly> input = orderByDegrees(polynomial, true, -1);
+        OrderByDegrees<Term, Poly> input = orderByDegrees(polynomial, true, true, -1);
         PolynomialFactorDecomposition<Poly> decomposition = factorPrimitiveInGF0(input.ordered, switchToExtensionField);
         if (decomposition == null)
             return null;
@@ -1626,7 +1680,7 @@ public final class MultivariateFactorization {
             this.variable = variable;
             this.content = content;
             this.primitivePart = primitivePart;
-            this.ppOrdered = orderByDegrees(primitivePart, false, variable);
+            this.ppOrdered = orderByDegrees(primitivePart, false, true, variable);
             assert !containsPPower(primitivePart, variable);
         }
     }
@@ -2117,8 +2171,10 @@ public final class MultivariateFactorization {
             return factors.mapTo(p -> AMultivariatePolynomial.swapVariables(p, 1, fixSecondVar + 2));
     }
 
-    private static boolean isSmallCharacteristics(IPolynomial poly) {
-        return poly.coefficientRingCharacteristic().bitLength() <= 5;
+    private static boolean isSmallCharacteristics(IPolynomial<?> poly) {
+        BigInteger ch = poly.coefficientRingCharacteristic();
+        assert !ch.isZero();
+        return ch.bitLength() <= 5;
     }
 
     /**
@@ -2387,7 +2443,7 @@ public final class MultivariateFactorization {
             return factorUnivariate(polynomial);
 
         // order the polynomial by degrees
-        OrderByDegrees<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> input = orderByDegrees(polynomial, true, -1);
+        OrderByDegrees<Monomial<BigInteger>, MultivariatePolynomial<BigInteger>> input = orderByDegrees(polynomial, true, true,-1);
         PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> decomposition = factorPrimitiveInZ0(input.ordered);
         if (decomposition == null)
             return null;
