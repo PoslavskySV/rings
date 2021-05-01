@@ -59,7 +59,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
         MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
         for (int i = 0; i < its(1, 5); i++) {
             long start = System.nanoTime();
-            FactorDecompositionTest.assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
+            FactorDecompositionTest.assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationBernardin(lPoly));
             System.out.println(TimeUnits.nanosecondsToString(System.nanoTime() - start));
         }
 
@@ -85,7 +85,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
         MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
-        FactorDecompositionTest.assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly));
+        FactorDecompositionTest.assertFactorization(lPoly, MultivariateSquareFreeFactorization.SquareFreeFactorizationBernardin(lPoly));
     }
 
     @Test
@@ -98,7 +98,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
         MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
-        PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
+        PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationBernardin(lPoly);
         FactorDecompositionTest.assertFactorization(lPoly, decomposition);
     }
 
@@ -111,7 +111,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square());
 
         MultivariatePolynomialZp64 lPoly = MultivariatePolynomial.asOverZp64(poly);
-        PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(lPoly);
+        PolynomialFactorDecomposition<MultivariatePolynomialZp64> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationBernardin(lPoly);
         FactorDecompositionTest.assertFactorization(lPoly, decomposition);
     }
 
@@ -137,7 +137,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
                 poly = a.square().multiply(b.square()).multiply(c.square());
 
 
-        PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser(poly);
+        PolynomialFactorDecomposition<MultivariatePolynomial<UnivariatePolynomialZp64>> decomposition = MultivariateSquareFreeFactorization.SquareFreeFactorizationBernardin(poly);
         FactorDecompositionTest.assertFactorization(poly, decomposition);
     }
 

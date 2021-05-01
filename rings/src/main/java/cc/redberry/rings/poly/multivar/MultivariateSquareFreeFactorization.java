@@ -30,13 +30,13 @@ public final class MultivariateSquareFreeFactorization {
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
     PolynomialFactorDecomposition<Poly> SquareFreeFactorization(Poly poly) {
         if (poly.isOverFiniteField())
-            return SquareFreeFactorizationMusser(poly);
+            return SquareFreeFactorizationBernardin(poly);
         else if (MultivariateGCD.isOverPolynomialRing(poly))
             return MultivariateFactorization.tryNested(poly, MultivariateSquareFreeFactorization::SquareFreeFactorization);
         else if (poly.coefficientRingCharacteristic().isZero())
             return SquareFreeFactorizationYunZeroCharacteristics(poly);
         else
-            return SquareFreeFactorizationMusser(poly);
+            return SquareFreeFactorizationBernardin(poly);
     }
 
     /**
@@ -203,19 +203,19 @@ public final class MultivariateSquareFreeFactorization {
 
 
     /**
-     * Performs square-free factorization of a {@code poly} which coefficient ring has any characteristic using Musser's
-     * algorithm.
+     * Performs square-free factorization of a {@code poly} over finite field using Bernardin's algorithm (see
+     * Factorization of multivariate polynomials over finite fields, 1999, https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.34.5310&rep=rep1&type=pdf).
      *
      * @param poly the polynomial
      * @return square-free decomposition
      */
     public static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusser(Poly poly) {
+    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationBernardin(Poly poly) {
         if (poly.coefficientRingCharacteristic().isZero())
             throw new IllegalArgumentException("Positive characteristic expected");
 
         if (canConvertToZp64(poly))
-            return SquareFreeFactorizationMusser(asOverZp64(poly)).mapTo(Conversions64bit::convertFromZp64);
+            return SquareFreeFactorizationBernardin(asOverZp64(poly)).mapTo(Conversions64bit::convertFromZp64);
 
         if (poly.isEffectiveUnivariate())
             return factorUnivariate(poly);
@@ -223,7 +223,7 @@ public final class MultivariateSquareFreeFactorization {
         poly = poly.clone();
         Poly[] content = reduceContent(poly);
         Poly lc = poly.lcAsPoly();
-        PolynomialFactorDecomposition<Poly> fct = SquareFreeFactorizationMusser0(poly);
+        PolynomialFactorDecomposition<Poly> fct = SquareFreeFactorizationBernardin0(poly);
         addMonomial(fct, content[1]);
         return fct.addFactor(content[0], 1).addFactor(lc, 1);
     }
@@ -231,7 +231,7 @@ public final class MultivariateSquareFreeFactorization {
     /** {@code poly} will be destroyed */
     @SuppressWarnings("ConstantConditions")
     private static <Term extends AMonomial<Term>, Poly extends AMultivariatePolynomial<Term, Poly>>
-    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationMusser0(Poly poly) {
+    PolynomialFactorDecomposition<Poly> SquareFreeFactorizationBernardin0(Poly poly) {
         poly.monic();
         if (poly.isConstant())
             return PolynomialFactorDecomposition.unit(poly);
@@ -263,7 +263,7 @@ public final class MultivariateSquareFreeFactorization {
             }
             if (!gcd.isConstant()) {
                 gcd = pRoot(gcd);
-                PolynomialFactorDecomposition<Poly> gcdFactorization = SquareFreeFactorizationMusser0(gcd);
+                PolynomialFactorDecomposition<Poly> gcdFactorization = SquareFreeFactorizationBernardin0(gcd);
                 gcdFactorization.raiseExponents(poly.coefficientRingCharacteristic().intValueExact());
                 result.addAll(gcdFactorization);
                 return result;
@@ -271,7 +271,7 @@ public final class MultivariateSquareFreeFactorization {
                 return result;
         } else {
             Poly pRoot = pRoot(poly);
-            PolynomialFactorDecomposition<Poly> fd = SquareFreeFactorizationMusser0(pRoot);
+            PolynomialFactorDecomposition<Poly> fd = SquareFreeFactorizationBernardin0(pRoot);
             fd.raiseExponents(poly.coefficientRingCharacteristic().intValueExact());
             return fd.setUnit(poly.createOne());
         }

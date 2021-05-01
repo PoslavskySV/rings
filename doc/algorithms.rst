@@ -182,62 +182,65 @@ Index of algorithms implemented in Rings
 
  - `MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
 
-38. *Multivariate square-free factorization in non-zero characteristic (Musser's algorithm)* |____| ([Muss71]_, Sec. 8.3 in [GeCL92]_):
+38. *Multivariate square-free factorization in zero characteristic (Mussers's algorithm)* |____| ([Muss71]_, Sec. 8.3 in [GeCL92]_):
 
- - `MultivariateSquareFreeFactorization.SquareFreeFactorizationMusser <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
  - `MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
 
-39. *Bernardin's fast dense multivariate Hensel lifting* |____| ([Bern99]_, [LeeM13]_) |br| both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
+39. *Multivariate square-free factorization in non-zero characteristic (Bernardins's algorithm)* |____| ([Bern99]_):
+
+ - `MultivariateSquareFreeFactorization.SquareFreeFactorizationBernardin <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateSquareFreeFactorization.java>`_
+
+40. *Bernardin's fast dense multivariate Hensel lifting* |____| ([Bern99]_, [LeeM13]_) |br| both for bivariate case (original Bernardin's paper) and multivariate case (Lee thesis) and both with and without precomputed leading coefficients:
 
  - `multivar.HenselLifting <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java>`_
 
-40. *Sparse Hensel lifting* |____| ([Kalt85]_, [LeeM13]_)
+41. *Sparse Hensel lifting* |____| ([Kalt85]_, [LeeM13]_)
 
  - `multivar.HenselLifting <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/HenselLifting.java>`_
 
-41. *Fast dense bivariate factorization with recombination* |____| ([Bern99]_, [LeeM13]_):
+42. *Fast dense bivariate factorization with recombination* |____| ([Bern99]_, [LeeM13]_):
 
  - `MultivariateFactorization.bivariateDenseFactorSquareFreeInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
  - `MultivariateFactorization.bivariateDenseFactorSquareFreeInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-42. *Kaltofen's multivariate factorization in finite fields* |____| ([Kalt85]_, [LeeM13]_) |br| modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to [LeeM13]_, but at the same time has many differences in details:
+43. *Kaltofen's multivariate factorization in finite fields* |____| ([Kalt85]_, [LeeM13]_) |br| modified version of original Kaltofen's algorithm for leading coefficient precomputation with square-free decomposition (instead of distinct variables decomposition) due to Lee is used; further adaptations are made to work in finite fields of very small cardinality; the resulting algorithm is close to [LeeM13]_, but at the same time has many differences in details:
 
  - `MultivariateFactorization.factorInGF <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-43. *Kaltofen's multivariate factorization Z* |____| ([Kalt85]_, [LeeM13]_) |br| (with the same modifications as for algorithm for finite fields):
+44. *Kaltofen's multivariate factorization Z* |____| ([Kalt85]_, [LeeM13]_) |br| (with the same modifications as for algorithm for finite fields):
 
  - `MultivariateFactorization.factorInZ <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-44. *Multivariate polynomial factorization over algebraic number fields* |br| uses Trager's algorithm [Trag76]_
+45. *Multivariate polynomial factorization over algebraic number fields* |br| uses Trager's algorithm [Trag76]_
 
  - `MultivariateFactorization.FactorInNumberField <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateFactorization.java>`_
 
-45. *Multivariate polynomial interpolation with Newton method*:
+46. *Multivariate polynomial interpolation with Newton method*:
 
  - `MultivariateInterpolation <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/MultivariateInterpolation.java>`_
 
-46. *Primitive elements of multiple field extensions* |____| ([Trag76]_, [Yoko89]_):
+47. *Primitive elements of multiple field extensions* |____| ([Trag76]_, [Yoko89]_):
 
  - `MultipleFieldExtension <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/MultipleFieldExtension.java>`_
  
-47. *Construction of splitting fields* |____| ([Trag76]_, [Yoko89]_):
+48. *Construction of splitting fields* |____| ([Trag76]_, [Yoko89]_):
 
  - `MultipleFieldExtension <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/MultipleFieldExtension.java>`_
 
  
-48. *Buchberger algorihm for Groebner basis* |____| ([Buch76]_, [BecW93]_, [CLOS97]_) |br| with Gebauer-Moller installation of Buchberger criteria ([GebM88]_, [BecW93]_) and sugar strategy for lexicographic orders ([GMNR88]_):
+49. *Buchberger algorihm for Groebner basis* |____| ([Buch76]_, [BecW93]_, [CLOS97]_) |br| with Gebauer-Moller installation of Buchberger criteria ([GebM88]_, [BecW93]_) and sugar strategy for lexicographic orders ([GMNR88]_):
 
  - `GroebnerBases.BuchbergerGB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBases.java>`_
 
-49. *Faugere's F4 algorithm for Groebner basis* |____| ([Faug99]_) |br| with fast sparse linear algebra [FauL10]_ and simplification algoritm from [JouV11]_:
+50. *Faugere's F4 algorithm for Groebner basis* |____| ([Faug99]_) |br| with fast sparse linear algebra [FauL10]_ and simplification algoritm from [JouV11]_:
 
  - `GroebnerBases.F4GB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBases.java>`_
 
-50. *Hilbert-Poincare series and Hilbert-driven methods for Groebner bases* |____| ([Trav96]_):
+51. *Hilbert-Poincare series and Hilbert-driven methods for Groebner bases* |____| ([Trav96]_):
 
  - `GroebnerBases.HilbertGB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBases.java>`_
 
-51. *Modular Groebner bases in Z* |____| ([Arno03]_):
+52. *Modular Groebner bases in Z* |____| ([Arno03]_):
 
  - `GroebnerBases.ModularGB <https://github.com/PoslavskySV/rings/tree/develop/rings/src/main/java/cc/redberry/rings/poly/multivar/GroebnerBases.java>`_
 
