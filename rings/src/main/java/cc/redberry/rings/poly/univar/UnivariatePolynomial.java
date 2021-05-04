@@ -1658,12 +1658,12 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
      * Kronecker substitution adapted from https://github.com/tbuktu/ntru/blob/master/src/main/java/net/sf/ntru/polynomial/BigIntPolynomial.java
      */
     private static BigInteger[] squareKronecker0(UnivariatePolynomial<BigInteger> poly) {
-        int len = poly.data.length;
+        int len = poly.degree + 1;
 
         // determine #bits needed per coefficient
         int logMinDigits = 32 - Integer.numberOfLeadingZeros(len - 1);
         int maxLength = 0;
-        for (BigInteger cf : poly.data)
+        for (BigInteger cf : poly)
             maxLength = Math.max(maxLength, cf.bitLength());
 
         int k = logMinDigits + 2 * maxLength + 1;   // in bits
@@ -1718,16 +1718,16 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
                        UnivariatePolynomial<BigInteger> poly2) {
         if (poly2.degree > poly1.degree)
             return multiplyKronecker0(poly2, poly1);
-        int len1 = poly1.data.length;
-        int len2 = poly2.data.length;
+        int len1 = poly1.degree + 1;
+        int len2 = poly2.degree + 1;
 
         // determine #bits needed per coefficient
         int logMinDigits = 32 - Integer.numberOfLeadingZeros(len1 - 1);
         int maxLengthA = 0;
-        for (BigInteger cf : poly1.data)
+        for (BigInteger cf : poly1)
             maxLengthA = Math.max(maxLengthA, cf.bitLength());
         int maxLengthB = 0;
-        for (BigInteger cf : poly2.data)
+        for (BigInteger cf : poly2)
             maxLengthB = Math.max(maxLengthB, cf.bitLength());
 
         int k = logMinDigits + maxLengthA + maxLengthB + 1;   // in bits
@@ -1783,8 +1783,8 @@ public final class UnivariatePolynomial<E> implements IUnivariatePolynomial<Univ
     }
 
     private static int[] toIntArray(UnivariatePolynomial<BigInteger> a, int k) {
-        int len = a.data.length;
-        int sign = a.data[a.degree()].signum();
+        int len = a.degree + 1;
+        int sign = a.lc().signum();
 
         int[] aInt = new int[len * k];
         for (int i = len - 1; i >= 0; i--) {
