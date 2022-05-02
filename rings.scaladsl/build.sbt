@@ -4,11 +4,11 @@ organization := "cc.redberry"
 
 name := "rings.scaladsl"
 
-version := "2.5.7"
+version := "2.5.8"
 
 scalaVersion := "2.13.5"
 
-crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5")
+crossScalaVersions := Seq("2.12.13", "2.13.5")
 
 moduleName := name.value
 

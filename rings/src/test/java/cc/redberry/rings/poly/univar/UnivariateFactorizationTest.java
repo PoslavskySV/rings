@@ -553,4 +553,10 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.parse("x^259 - 1", Z, "x");
         assertEquals(4, Factor(poly).size());
     }
+
+    @Test(timeout = 100_000)
+    public void test10() {
+        UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.parse("x^70 + 1", Z, "x");
+        assertEquals(4, Factor(poly).size());
+    }
 }
