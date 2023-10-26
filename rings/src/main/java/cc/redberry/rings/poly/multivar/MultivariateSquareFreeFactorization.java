@@ -117,10 +117,8 @@ public final class MultivariateSquareFreeFactorization {
         PolynomialFactorDecomposition<Poly> decomposition = PolynomialFactorDecomposition.unit(content[0]);
         addMonomial(decomposition, content[1]);
         SquareFreeFactorizationYun0(poly, decomposition);
-        if (Util.isOverSimpleNumberField(poly)) {
-            // lc correction (needed for number fields)
-            decomposition.setLcFrom(original);
-        }
+        // lc correction
+        decomposition.setLcFrom(original);
         return decomposition;
     }
 

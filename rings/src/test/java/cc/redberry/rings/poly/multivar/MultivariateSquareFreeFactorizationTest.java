@@ -18,6 +18,8 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static cc.redberry.rings.poly.multivar.MultivariateGCDTest.createMonomial;
+import static cc.redberry.rings.poly.multivar.MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics;
+import static cc.redberry.rings.poly.multivar.MultivariateSquareFreeFactorization.SquareFreeFactorizationYunZeroCharacteristics;
 
 /**
  * @since 1.0
@@ -39,7 +41,7 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
             FactorDecompositionTest.assertFactorization(poly, yun);
 
             start = System.nanoTime();
-            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> mus = MultivariateSquareFreeFactorization.SquareFreeFactorizationMusserZeroCharacteristics(poly);
+            PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>> mus = SquareFreeFactorizationMusserZeroCharacteristics(poly);
             System.out.println("Musser: " + TimeUnits.nanosecondsToString(System.nanoTime() - start));
 
             FactorDecompositionTest.assertFactorization(poly, mus);
@@ -154,5 +156,16 @@ public class MultivariateSquareFreeFactorizationTest extends AMultivariateTest {
 
             Assert.assertEquals(expected, MultivariateSquareFreeFactorization.SquareFreeFactorization(poly));
         }
+    }
+
+    @Test
+    public void test7() {
+        MultivariatePolynomial<BigInteger>
+                a = MultivariatePolynomial.parse("2*y^3-3*x*y^2+x^3");
+
+        PolynomialFactorDecomposition<MultivariatePolynomial<BigInteger>>
+                r = SquareFreeFactorizationYunZeroCharacteristics(a);
+
+        FactorDecompositionTest.assertFactorization(a, r);
     }
 }
