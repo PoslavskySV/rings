@@ -483,6 +483,19 @@ public final class UnivariateFactorization {
         return (int) infinum;
     }
 
+    /** number of Hensel squarings that lift {@code modulus} to at least {@code bound2}, or -1 if that overflows a long */
+    private static int henselIterations(long modulus, double bound2) {
+        int iterations = 0;
+        long liftedModulus = modulus;
+        while (liftedModulus < bound2) {
+            if (MachineArithmetic.isOverflowMultiply(liftedModulus, liftedModulus))
+                return -1;
+            liftedModulus = MachineArithmetic.safeMultiply(liftedModulus, liftedModulus);
+            ++iterations;
+        }
+        return iterations;
+    }
+
     /**
      * Factors square-free polynomial using Hensel lifting
      *
@@ -516,6 +529,12 @@ public final class UnivariateFactorization {
                 moduloImage = poly.modulus(tmpModulus, true);
             } while (!UnivariateSquareFreeFactorization.isSquareFree(moduloImage));
 
+            if (henselIterations(tmpModulus, bound2) < 0) {
+                if (modularFactors == null)
+                    return null;
+                break;
+            }
+
             PolynomialFactorDecomposition<UnivariatePolynomialZp64> tmpFactors = FactorInGF(moduloImage.monic());
             if (modularFactors == null || tmpFactors.size() < modularFactors.size()) {
                 modularFactors = tmpFactors;
@@ -524,15 +543,10 @@ public final class UnivariateFactorization {
         }
 
         // do Hensel lifting
-        // determine number of Hensel steps
-        int henselIterations = 0;
+        int henselIterations = henselIterations(modulus, bound2);
         long liftedModulus = modulus;
-        while (liftedModulus < bound2) {
-            if (MachineArithmetic.isOverflowMultiply(liftedModulus, liftedModulus))
-                return null;
+        for (int i = 0; i < henselIterations; ++i)
             liftedModulus = MachineArithmetic.safeMultiply(liftedModulus, liftedModulus);
-            ++henselIterations;
-        }
 
         // actual lift
         if (henselIterations > 0)
