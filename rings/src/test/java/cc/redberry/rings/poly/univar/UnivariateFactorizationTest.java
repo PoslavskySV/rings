@@ -559,4 +559,35 @@ public class UnivariateFactorizationTest extends AUnivariateTest {
         UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.parse("x^70 + 1", Z, "x");
         assertEquals(4, Factor(poly).size());
     }
+
+    // AL-4656
+    @Test(timeout = 10_000)
+    public void testXPow54Minus1() {
+        assertCyclotomicFactorization("x^54 - 1", 8);
+    }
+
+    // AL-4656
+    @Test(timeout = 10_000)
+    public void testXPow46Minus1() {
+        assertCyclotomicFactorization("x^46 - 1", 4);
+    }
+
+    // AL-4656
+    @Test(timeout = 10_000)
+    public void testXPow46Plus1() {
+        assertCyclotomicFactorization("x^46 + 1", 2);
+    }
+
+    // AL-4656
+    @Test(timeout = 10_000)
+    public void testXPow40Plus1() {
+        assertCyclotomicFactorization("x^40 + 1", 2);
+    }
+
+    private static void assertCyclotomicFactorization(String polyString, int nFactors) {
+        UnivariatePolynomial<BigInteger> poly = UnivariatePolynomial.parse(polyString, Z, "x");
+        PolynomialFactorDecomposition<UnivariatePolynomial<BigInteger>> factors = Factor(poly);
+        FactorDecompositionTest.assertFactorization(poly, factors);
+        assertEquals(nFactors, factors.size());
+    }
 }

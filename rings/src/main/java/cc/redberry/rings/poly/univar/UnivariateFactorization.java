@@ -483,6 +483,19 @@ public final class UnivariateFactorization {
         return (int) infinum;
     }
 
+    /** number of Hensel squarings that lift {@code modulus} to at least {@code bound2}, or -1 if that overflows a long */
+    private static int henselIterations(long modulus, double bound2) {
+        int iterations = 0;
+        long liftedModulus = modulus;
+        while (liftedModulus < bound2) {
+            if (MachineArithmetic.isOverflowMultiply(liftedModulus, liftedModulus))
+                return -1;
+            liftedModulus = MachineArithmetic.safeMultiply(liftedModulus, liftedModulus);
+            ++iterations;
+        }
+        return iterations;
+    }
+
     /**
      * Factors square-free polynomial using Hensel lifting
      *
@@ -494,29 +507,46 @@ public final class UnivariateFactorization {
 
         long lc = poly.lc();
         double bound2 = 2.0 * poly.mignotteBound() * Math.abs(lc);
-        // choose prime at random
+        // factor recombination is exponential in the number of modular factors, so try more primes when it is large
         int trial32Modulus = chooseModulusLowerBound(bound2) - 1;
-        long modulus;
-        UnivariatePolynomialZp64 moduloImage;
-        do {
-            trial32Modulus = next32BitPrime(trial32Modulus + 1);
-            modulus = Integer.toUnsignedLong(trial32Modulus);
-            moduloImage = poly.modulus(modulus, true);
-        } while (!UnivariateSquareFreeFactorization.isSquareFree(moduloImage));
+        long modulus = -1;
+        PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors = null;
+        for (int attempt = 0; ; ++attempt) {
+            if (modularFactors != null) {
+                if (modularFactors.size() <= N_SIMPLE_MOD_PATTERN_FACTORS)
+                    break;
+                if (attempt >= N_MODULAR_FACTORIZATION_TRIALS
+                        && (modularFactors.size() < N_TOO_MUCH_FACTORS_COUNT
+                        || attempt >= N_MODULAR_FACTORIZATION_TRIALS_TOO_MUCH_FACTORS))
+                    break;
+            }
 
-        // do Hensel lifting
-        // determine number of Hensel steps
-        int henselIterations = 0;
-        long liftedModulus = modulus;
-        while (liftedModulus < bound2) {
-            if (MachineArithmetic.isOverflowMultiply(liftedModulus, liftedModulus))
-                return null;
-            liftedModulus = MachineArithmetic.safeMultiply(liftedModulus, liftedModulus);
-            ++henselIterations;
+            long tmpModulus;
+            UnivariatePolynomialZp64 moduloImage;
+            do {
+                trial32Modulus = next32BitPrime(trial32Modulus + 1);
+                tmpModulus = Integer.toUnsignedLong(trial32Modulus);
+                moduloImage = poly.modulus(tmpModulus, true);
+            } while (!UnivariateSquareFreeFactorization.isSquareFree(moduloImage));
+
+            if (henselIterations(tmpModulus, bound2) < 0) {
+                if (modularFactors == null)
+                    return null;
+                break;
+            }
+
+            PolynomialFactorDecomposition<UnivariatePolynomialZp64> tmpFactors = FactorInGF(moduloImage.monic());
+            if (modularFactors == null || tmpFactors.size() < modularFactors.size()) {
+                modularFactors = tmpFactors;
+                modulus = tmpModulus;
+            }
         }
 
-        // do modular factorization
-        PolynomialFactorDecomposition<UnivariatePolynomialZp64> modularFactors = FactorInGF(moduloImage.monic());
+        // do Hensel lifting
+        int henselIterations = henselIterations(modulus, bound2);
+        long liftedModulus = modulus;
+        for (int i = 0; i < henselIterations; ++i)
+            liftedModulus = MachineArithmetic.safeMultiply(liftedModulus, liftedModulus);
 
         // actual lift
         if (henselIterations > 0)
